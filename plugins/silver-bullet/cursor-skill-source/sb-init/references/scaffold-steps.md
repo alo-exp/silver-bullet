@@ -15,7 +15,7 @@ If Phase 0 determined this is an update:
 3. If the project already has a project instruction file (`project instruction file` in primary host, `AGENTS.md` in Cursor), strip any SB-owned sections from it (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, Legacy Lifecycle, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that do not mention silver-bullet.md.
 4. If the project instruction file already exists, verify it contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 5. Run conflict detection (same as step 3.1c below).
-5a. Run step 3.7.5 to re-register or refresh SB hooks in `$HOME/.cursor/settings.json`.
+5a. Run step 3.7.5 to remove Silver Bullet's duplicate hook copies from `$HOME/.cursor/settings.json` (it never adds hooks).
 6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All SB-owned lifecycle skills active."
 
 ### Template refresh (only when user explicitly requests it)
@@ -315,7 +315,7 @@ fi
 - **Manual install** (run directly): removes stale Silver Bullet registrations, then registers every (event, matcher, command) of the manifest with the install path substituted, each matcher in its own group.
 
 Only Silver Bullet's own entries are ever touched; the user's hooks stay as they are. The file is written atomically with a `.sb-backup` of the previous content. On nonzero exit, warn but do NOT stop init:
-> ⚠️  Could not auto-register hooks in the host settings file. Run `/sb:init` again after installation completes, or add hooks manually from `hooks/hooks.json`.
+> ⚠️  Could not clean up stale Silver Bullet hook entries in the host settings file. Run `/sb:init` again after installation completes. Do not add hooks by hand: a registered plugin already supplies its own hooks, and a hand-added copy would run them twice.
 
 Idempotent — re-running `/sb:init` adds no duplicate entries.
 

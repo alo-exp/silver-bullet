@@ -38,7 +38,7 @@ class LiveDispatchModelRoutingTests(unittest.TestCase):
         self.assertEqual(cursor_model_for("grok-4.5"), "cursor-grok-4.5-high")
 
     def test_cursor_models_to_try_excludes_last_resort_by_default(self) -> None:
-        with mock.patch.dict(os.environ, {}, clear=False):
+        with mock.patch.dict(os.environ, {"SB_CURSOR_MODEL_ALLOW_FALLBACK": "1"}, clear=False):
             os.environ.pop("SB_CURSOR_MODEL_LAST_RESORT", None)
             models = cursor_models_to_try("gpt-5.6-sol-medium")
         self.assertEqual(models[0], "gpt-5.6-sol-medium")
@@ -46,9 +46,15 @@ class LiveDispatchModelRoutingTests(unittest.TestCase):
         self.assertNotIn("auto", models)
 
     def test_cursor_models_to_try_includes_last_resort_when_configured(self) -> None:
-        with mock.patch.dict(os.environ, {"SB_CURSOR_MODEL_LAST_RESORT": "auto"}, clear=False):
+        env = {"SB_CURSOR_MODEL_LAST_RESORT": "auto", "SB_CURSOR_MODEL_ALLOW_FALLBACK": "1"}
+        with mock.patch.dict(os.environ, env, clear=False):
             models = cursor_models_to_try("gpt-5.6-sol-medium")
         self.assertEqual(models[-1], "auto")
+
+    def test_cursor_models_to_try_is_primary_only_without_fallback(self) -> None:
+        with mock.patch.dict(os.environ, {"SB_CURSOR_MODEL_LAST_RESORT": "auto"}, clear=False):
+            os.environ.pop("SB_CURSOR_MODEL_ALLOW_FALLBACK", None)
+            self.assertEqual(cursor_models_to_try("gpt-5.6-sol-medium"), ["gpt-5.6-sol-medium"])
 
     def test_cursor_output_is_failure_action_required(self) -> None:
         raw = "ActionRequiredError: You've hit your usage limit\n"
@@ -89,7 +95,7 @@ class LiveDispatchModelRoutingTests(unittest.TestCase):
         out_dir = self._out_dir()
 
         with mock.patch.dict(os.environ, {"SB_CURSOR_MODEL_ALLOW_FALLBACK": "1"}, clear=False):
-            with mock.patch.object(live_dispatch.subprocess, "run", side_effect=fake_run):
+            with mock.patch.object(live_dispatch, "_run_cli", side_effect=fake_run):
                 result = run_cursor_worker(
                     logical_model_id="gpt-5.6-sol-medium",
                     prompt="test",
@@ -97,7 +103,9 @@ class LiveDispatchModelRoutingTests(unittest.TestCase):
                 )
         self.assertEqual(result.status, "fallback")
         self.assertGreater(len(calls), 1)
-        self.assertIn("--trust", calls[0])
+        # Research workers never auto-approve commands or writes (R11-01).
+        self.assertNotIn("--force", calls[0])
+        self.assertNotIn("--yolo", calls[0])
 
     def test_run_cursor_worker_fails_closed_without_fallback(self) -> None:
         def fake_run(cmd, **kwargs):  # noqa: ANN001
@@ -110,7 +118,7 @@ class LiveDispatchModelRoutingTests(unittest.TestCase):
 
         with mock.patch.dict(os.environ, {}, clear=False):
             os.environ.pop("SB_CURSOR_MODEL_ALLOW_FALLBACK", None)
-            with mock.patch.object(live_dispatch.subprocess, "run", side_effect=fake_run):
+            with mock.patch.object(live_dispatch, "_run_cli", side_effect=fake_run):
                 result = run_cursor_worker(
                     logical_model_id="gpt-5.6-sol-medium",
                     prompt="test",

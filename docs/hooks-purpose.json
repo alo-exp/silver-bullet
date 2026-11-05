@@ -107,6 +107,7 @@
         "jq-gate.sh",
         "tool-input.sh",
         "tool-input/",
+        "shell-analysis.sh",
         "path-canonical.sh",
         "stop-coalesce.sh",
         "ups-coalesce.sh",
@@ -196,5 +197,5 @@
       ]
     }
   ],
-  "lib_footer": "`hooks/lib/completion-audit/` holds the modules `completion-audit.sh` sources (command classification, planning tier, deploy tier, change class, gate runners, state helpers). `hooks/lib/tool-input/` holds the Python helpers `tool-input.sh` calls to parse tool payloads (command strings, write targets, patch paths, RTK unwrapping)."
+  "lib_footer": "`hooks/lib/completion-audit/` holds the modules `completion-audit.sh` sources (command classification, planning tier, deploy tier, change class, gate runners, state helpers). `hooks/lib/tool-input/` holds the Python helpers `tool-input.sh` calls to parse tool payloads (command strings, write targets, patch paths, RTK unwrapping); they share `shell_analysis.py`, the shell-command analyzer that `shell-analysis.sh` loads with `sb_tool_input_load` (delivery actions and tier, read-only verdict, write targets, opaque and unseen parts); completion-audit loads it once per call, the other gates start it through the accessors until they adopt the load."
 }

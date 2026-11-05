@@ -315,10 +315,8 @@ Before generating PDF, verify:
 ## Generation Command
 
 ```bash
-weasyprint input.html output.pdf
+python3 scripts/html_to_pdf.py --html input.html --pdf output.pdf
 ```
 
-Options:
-- `--presentational-hints` - Respect HTML presentational hints
-- `-s stylesheet.css` - Apply external stylesheet
-- `--pdf-variant pdf/ua-1` - Generate accessible PDF
+The script calls WeasyPrint with a URL fetcher that refuses `file://` and network URLs
+(reports quote untrusted web text); keep stylesheets and images inline.

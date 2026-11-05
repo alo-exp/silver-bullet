@@ -132,11 +132,13 @@ class PoolSelection:
 
 @dataclass
 class BudgetPolicy:
+    """Run caps. max_agents and concurrency are enforced at dispatch; the CLIs report no usage,
+    so the USD and token caps are recorded in the manifest but cannot be metered in v1."""
+
     max_cost_micro_usd: int = field(default_factory=lambda: usd_to_micro_usd(DEFAULT_MAX_COST_USD))
     max_total_tokens: int = DEFAULT_MAX_TOTAL_TOKENS
     max_agents: int = DEFAULT_MAX_AGENTS
     concurrency: int = DEFAULT_CONCURRENCY
-    allow_unknown_cost: bool = False
 
 
 def resolve_pool(selection: PoolSelection, subscription: str | None = None) -> list[dict[str, Any]]:
@@ -254,6 +256,16 @@ def empty_ledger(run_id: str) -> dict[str, Any]:
     return body
 
 
+def append_ledger_entry(ledger: dict[str, Any], entry: dict[str, Any]) -> dict[str, Any]:
+    """Append one dispatch event, bumping the generation and re-hashing the entry chain."""
+    generation = int(ledger.get("generation", 0)) + 1
+    full = {"entry_id": f"entry-{generation:06d}", "timestamp": utc_now_iso(), **entry}
+    ledger["entries"].append(full)
+    ledger["generation"] = generation
+    ledger["head_hash"] = sha256_json(ledger["entries"])
+    return full
+
+
 def build_work_item_manifest(
     run_id: str,
     work_item_id: str,
@@ -273,10 +285,12 @@ def build_work_item_manifest(
         "budget": {
             "currency_micro_usd_cap": budget.max_cost_micro_usd,
             "total_tokens_cap": budget.max_total_tokens,
-            "currency_micro_usd_actual": 0,
-            "total_tokens_actual": 0,
-            "price_known": not budget.allow_unknown_cost,
-            "usage_metered": True,
+            "max_agents": budget.max_agents,
+            "concurrency": budget.concurrency,
+            # The worker CLIs report no token or price data, so nothing is metered and no
+            # actuals are claimed; only the agent cap and concurrency are enforced.
+            "price_known": False,
+            "usage_metered": False,
             "budget_stop_reason": None,
         },
         "outputs": [],

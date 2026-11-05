@@ -1,0 +1,620 @@
+[
+ {
+  "kind": "H",
+  "claim": "Revenue was 5 in 2023.",
+  "quote": "Revenue was 5 in 2023.",
+  "source": "r8 attack8.py (identical or equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "The rаte is 5%.",
+  "quote": "The rate is 5%.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The fee is ５０ euros.",
+  "quote": "The fee is 50 euros.",
+  "source": "r8 attack8.py (identical or equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is 1000 euros.",
+  "quote": "The fee is 1 000 euros.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The fee is 1 000 euros.",
+  "quote": "The fee is 1 000 euros.",
+  "source": "r8 attack8.py (equal by the rule: other space or composed accent)"
+ },
+ {
+  "kind": "H",
+  "claim": "Revenue was 10 %.",
+  "quote": "Revenue was 10 %.",
+  "source": "r8 attack8.py (equal by the rule: other space or composed accent)"
+ },
+ {
+  "kind": "H",
+  "claim": "José Pérez leads the team.",
+  "quote": "José Pérez leads the team.",
+  "source": "r8 attack8.py (equal by the rule: composed accent)"
+ },
+ {
+  "kind": "F",
+  "claim": "Jose Perez leads the team.",
+  "quote": "José Pérez leads the team.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug is n​ot approved.",
+  "quote": "The drug is not approved.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug is ‏ approved.",
+  "quote": "The drug is not approved.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug is approved​.",
+  "quote": "The drug is not approved.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The API serves 10⁹ requests.",
+  "quote": "The API serves 10⁶ requests.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Water is H₃O.",
+  "quote": "Water is H₂O.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Latency is 5 s.",
+  "quote": "Latency is 5 ms.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Latency is 5 Ms.",
+  "quote": "Latency is 5 ms.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The plant produces 5 mW.",
+  "quote": "The plant produces 5 MW.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The plant produces 5mW.",
+  "quote": "The plant produces 5MW.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The file is 5 Mb.",
+  "quote": "The file is 5 MB.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The link runs at 5 GBps.",
+  "quote": "The link runs at 5 Gbps.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The dose is 500 Mg.",
+  "quote": "The dose is 500 mg.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 5K users.",
+  "quote": "Acme has 5k users.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 5M users.",
+  "quote": "Acme has 5k users.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Delivery takes 3–5 days.",
+  "quote": "Delivery takes 3-5 days.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Delivery takes 35 days.",
+  "quote": "Delivery takes 3-5 days.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Delivery takes 3 -5 days.",
+  "quote": "Delivery takes 3-5 days.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "It launched on 04/03/2024.",
+  "quote": "It launched on 03/04/2024.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "It launched on 2024-04-03.",
+  "quote": "It launched on 2024-03-04.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The tool can export PDFs.",
+  "quote": "The tool cannot export PDFs.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The tool will export PDFs.",
+  "quote": "The tool won't export PDFs.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The tool is free.",
+  "quote": "The tool isn't free.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The tool ships with a charger.",
+  "quote": "The tool ships without a charger.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The tool exports PDFs.",
+  "quote": "The tool fails to export PDFs.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is profitable.",
+  "quote": "Acme is unprofitable.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is a profit.",
+  "quote": "Acme is a non-profit.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme sha sell X.",
+  "quote": "Acme shan't sell X.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The tool does export PDFs.",
+  "quote": "The tool doesn`t export PDFs.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The tool does export PDFs.",
+  "quote": "The tool doesn′t export PDFs.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme announced the new release.",
+  "quote": "Acme announced the news release.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme sells glass.",
+  "quote": "Acme sells glasses.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme sells security.",
+  "quote": "Acme sells securities.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Hepatitis cases rose 20% in 2023.",
+  "quote": "Hepatitis A cases rose 20% in 2023.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Vitamin A deficiency is common in Europe.",
+  "quote": "Vitamin deficiency is common in Europe.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Class shares rose 5%.",
+  "quote": "Class A shares rose 5%.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Is the vaccine safe.",
+  "quote": "Is the vaccine safe?",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The vaccine is safe.",
+  "quote": "The vaccine is safe?",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The plan is free.",
+  "quote": "The plan is free*.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue was $5[000].",
+  "quote": "Revenue was $5.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue grew 5[0]% in 2023.",
+  "quote": "Revenue grew 5% in 2023.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 3[00] employees.",
+  "quote": "Acme has 3 employees.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is not profitable.",
+  "quote": "Acme is ~~not~~ profitable.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is ~~not~~ profitable.",
+  "quote": "Acme is not profitable.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is `not` profitable.",
+  "quote": "Acme is not profitable.",
+  "source": "r8 attack8.py (identical or equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is <del>not</del> profitable.",
+  "quote": "Acme is profitable.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is <!-- not --> profitable.",
+  "quote": "Acme is profitable.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Sales to us firms rose.",
+  "quote": "Sales to US firms rose.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme ranks 1 in Europe.",
+  "quote": "Acme ranks No. 1 in Europe.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The ratio is 1:3.",
+  "quote": "The ratio is 3:1.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The ratio is 31.",
+  "quote": "The ratio is 3:1.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is n̶o̶t̶ profitable.",
+  "quote": "Acme is profitable.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is $5.",
+  "quote": "The fee is £5.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is A$5.",
+  "quote": "The fee is US$5.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The fee is 5€.",
+  "quote": "The fee is 5 €.",
+  "source": "r8 attack8.py (identical or equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "Margin was -12%.",
+  "quote": "Margin was −12%.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Margin was - 12%.",
+  "quote": "Margin was -12%.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Margin was −12%.",
+  "quote": "Margin was 12%.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue was 12 million.",
+  "quote": "Revenue was 1½ million.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The fee is 5 dollars.",
+  "quote": "The fee is ٥ dollars.",
+  "source": "r8 attack8.py (identical or equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme sold the iss unit.",
+  "quote": "Acme sold the IS unit.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme makes good.",
+  "quote": "Acme makes goods.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug work.",
+  "quote": "The drug works.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme does sell X.",
+  "quote": "Acme does not sell X.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme doe sell X.",
+  "quote": "Acme does sell X.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme raised £ 5m.",
+  "quote": "Acme raised £5m.",
+  "source": "r8 attack8.py (identical or equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue fell 10% (not 5%).",
+  "quote": "Revenue fell 5% (not 10%).",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue: Acme 7%; Initech 5%.",
+  "quote": "Revenue: Acme 5%; Initech 7%.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Prices rose 5X.",
+  "quote": "Prices rose 5x.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Prices rose 5x.",
+  "quote": "Prices rose 5×.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The limit is 5GB.",
+  "quote": "The limit is 5 GB.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme ships to Аcme EU.",
+  "quote": "Acme ships to the EU.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme cannot sell X.",
+  "quote": "Acme can not only sell X.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The can not index rose.",
+  "quote": "The CANT index rose.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug is approved.",
+  "quote": "The drug is approved [for adults].",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The drug is approved for adults only.",
+  "quote": "The drug is approved (for adults only).",
+  "source": "r8 attack8.py (identical or equal by the rule)"
+ },
+ {
+  "kind": "H",
+  "claim": "The drug is approved for adults [1, 2].",
+  "quote": "The drug is approved for adults.",
+  "source": "r8 attack8.py (identical or equal by the rule)"
+ },
+ {
+  "kind": "H",
+  "claim": "The drug is approved for [12] adults.",
+  "quote": "The drug is approved for adults.",
+  "source": "r8 attack8.py (identical or equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug is approved for [12] adults.",
+  "quote": "The drug is approved for 12 adults.",
+  "source": "r8 attack8.py"
+ },
+ {
+  "kind": "H",
+  "claim": "売上は50％増加した。",
+  "quote": "売上は５０％増加した。",
+  "source": "r8 honest8.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The fee is ５０ euros.",
+  "quote": "The fee is 50 euros.",
+  "source": "r8 honest8.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme ranks 1 in Europe.",
+  "quote": "Acme ranks No. 1 in Europe.",
+  "source": "r8 honest8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Version 3 added SSO.",
+  "quote": "Version 2 added SSO.",
+  "source": "r8 honest8.py (claim differs from the source)"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme had debt in 2023.",
+  "quote": "Acme had no debt in 2023.",
+  "source": "r8 honest8.py (claim differs from the source)"
+ },
+ {
+  "kind": "H",
+  "claim": "The study found no significant effect.",
+  "quote": "The study found no significant effect.",
+  "source": "r8 honest8.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The tool is not free.",
+  "quote": "No, the tool is not free.",
+  "source": "r8 honest8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Chapter 4 covers pricing.",
+  "quote": "Chapter 3 covers pricing.",
+  "source": "r8 honest8.py (claim differs from the source)"
+ },
+ {
+  "kind": "F",
+  "claim": "Python 3.12 is supported.",
+  "quote": "Python 3.11 is supported.",
+  "source": "r8 honest8.py (claim differs from the source)"
+ },
+ {
+  "kind": "F",
+  "claim": "The SDK does not support Python.",
+  "quote": "The SDK supports Python.",
+  "source": "r8 honest8.py (claim differs from the source)"
+ },
+ {
+  "kind": "H",
+  "claim": "Over 50% of users churned in 2023[3].",
+  "quote": "Over 50% of users churned in 2023.",
+  "source": "r8 honest8.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's revenue rose.",
+  "quote": "Acme’s revenue rose.",
+  "source": "r8 honest8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is a market leader.",
+  "quote": "Acme is the market leader.",
+  "source": "r8 follow-up: articles are significant words"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has a free tier.",
+  "quote": "Acme has the free tier.",
+  "source": "r8 follow-up: articles are significant words"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is market leader.",
+  "quote": "Acme is the market leader.",
+  "source": "r8 follow-up: articles are significant words"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is the market leader.",
+  "quote": "Acme is market leader.",
+  "source": "r8 follow-up: articles are significant words"
+ },
+ {
+  "kind": "F",
+  "claim": "The Acme user logged in.",
+  "quote": "An Acme user logged in.",
+  "source": "r8 follow-up: articles are significant words"
+ }
+]
