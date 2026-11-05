@@ -212,7 +212,7 @@ class VendorMentionCorpusTests(unittest.TestCase):
                      "Try https://devin.ai/ now."):
             vendors = set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))
             self.assertTrue(vendors & {"cursor", "cursor-agents", "devin"}, text)
-        for text in ("Export the logo as devin.ai and send it.", "Email devin.ai@school.edu.", "conductor.build() registers it.",
+        for text in ("Export the logo as devin.ai and send it.", "Email devin.ai@example.com.", "conductor.build() registers it.",
                      "The DOS program CURSOR.COM runs.", "See user_cursor.com.", "Redirect via https://example.org?next=cursor.com",
                      "Redirect via https://example.org#tembo.io", "Run ./autogen.sh before ./configure.", "cursor.com", "Visit cursor.COM/x"):
             vendors = set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))
