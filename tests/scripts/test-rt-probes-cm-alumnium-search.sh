@@ -118,6 +118,14 @@ sb_test_consent_grant context_mode wire
 out="$(PATH="$(hr_path_without context-mode)" rt_repair_context_mode 2>/dev/null)"
 assert_contains "cm repair: install not consented" "$(jq -c . <<<"$out")" '"install_not_consented"'
 assert_not_contains "cm repair: no npm install without install consent" "$(cat "$HR_LOG")" "npm install"
+# install without wire: the optimizer would skip everything, so it is not run and nothing is claimed
+sb_test_consent_revoke_all
+sb_test_consent_grant context_mode install
+: >"$HR_LOG"
+out="$(rt_repair_context_mode 2>/dev/null)"
+assert_eq "cm repair (install-only grant): skipped, no success action, no restart" '{"actions":[],"failures":["wire_not_consented"],"restart_required":false}' "$(jq -c . <<<"$out")"
+assert_not_contains "cm repair (install-only grant): the optimizer never ran" "$(cat "$HR_LOG")" "optimize-rtk-context-mode"
+assert_contains "cm repair (install-only grant): says why" "$(rt_repair_context_mode 2>&1 >/dev/null)" "skipped: no consent (capability wire)"
 sb_test_consent_grant context_mode install,wire
 mv "$HR_STAGE/scripts/optimize-rtk-context-mode.sh" "$HR_STAGE/scripts/opt.off"
 assert_eq "cm repair: no optimizer" '{"actions":[],"failures":[],"restart_required":false}' "$(rt_repair_context_mode 2>/dev/null | jq -c .)"

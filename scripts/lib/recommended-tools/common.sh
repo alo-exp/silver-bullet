@@ -406,6 +406,11 @@ rt_mutation_allowed() {
   return 0
 }
 
+# rt_wire_skipped_notice TOOL: tell the user a host-config step was skipped for lack of consent.
+rt_wire_skipped_notice() {
+  printf 'skipped: no consent (capability wire) for %s\n' "${1:-}" >&2
+}
+
 rt_any_five_tool_mutation_allowed() {
   local tool
   for tool in graphify agentmemory rtk context_mode leanctx; do

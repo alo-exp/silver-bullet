@@ -150,7 +150,7 @@ These scripts run only for tools the user granted, and say how to grant the rest
 
 | Script | Needs | Without it |
 |---|---|---|
-| `reconcile-recommended-tools.sh` (apply) and the repairs it runs | `install` for package installs, `wire` for host-config writes | `mutation_not_authorized` / `install_not_consented` failures, nothing changed |
+| `reconcile-recommended-tools.sh` (apply) and the repairs it runs | `install` for package installs, `wire` for host-config writes | `mutation_not_authorized` / `install_not_consented` / `wire_not_consented` failures ("skipped: no consent (capability wire)"), nothing changed, no restart flag |
 | `optimize-rtk-context-mode.sh` | `wire` per tool (`rtk`, `context_mode`); `install` for `npm install -g context-mode` | the tool is skipped with the grant command |
 | `optimize-five-tool-stack.sh`, `install-leanctx-sb.sh` | `wire` (and `install`, plus `--installer-sha256`, for the lean-ctx installer) for `leanctx` | exits 0 with the grant command; the installer is never piped from the network into a shell |
 | `install-global-toolstack.sh`, `install-recommended-tools-cursor.sh --global` | `wire` for at least one tool, and Cursor installed (`--force` skips only that check, never consent). A machine-wide `~/.cursor/rules/<tool>.mdc` rule is installed only for a tool with `wire` (`token-compression-enforcement` needs `rtk` or `context_mode`, `recommended-tools` any tool); a differing rule is backed up first | skipped with `SKIP: global rule ...`; an existing `~/.cursor/toolstack.json` is never overwritten |
