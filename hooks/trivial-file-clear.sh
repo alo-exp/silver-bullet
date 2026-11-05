@@ -15,6 +15,17 @@ if [[ -f "$_sb_runtime_paths_dir/sb-project-gate.sh" ]]; then
   sb_project_active_or_exit
 fi
 
+# Edit/Write tools always mean a file write. A shell call (R2-36: `echo x > src/app.js` is a write
+# the Edit gates never see) counts only when the F2 classifier lists a path the command writes.
+if [[ -f "$_sb_runtime_paths_dir/shell-analysis.sh" ]]; then
+  # shellcheck source=lib/shell-analysis.sh
+  source "$_sb_runtime_paths_dir/shell-analysis.sh"
+  sb_tool_input_load "$(cat 2>/dev/null)"
+  if [[ "${SB_TI_STATUS:-}" == "ok" && "${SB_TI_TOOL_KIND:-}" == "shell" && -z "${SB_SA_WRITE_PATHS:-}" ]]; then
+    exit 0
+  fi
+fi
+
 rm -f -- "${SB_RUNTIME_STATE_DIR}/trivial"
 
 # R2-36: leave a hook-written trace that the agent itself wrote a file this session, so the

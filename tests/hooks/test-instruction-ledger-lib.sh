@@ -83,7 +83,7 @@ assert_file_exists "drop: file kept" "$LF"
 id1="$(sb_instruction_ledger_prompt_id "hello")"
 assert_match "prompt id (shasum) is 12 hex chars" '^[0-9a-f]{12}$' "$id1"
 assert_eq "prompt id deterministic" "$id1" "$(sb_instruction_ledger_prompt_id "hello")"
-NOSHA="$(tl_path_without shasum)"
+NOSHA="$(tl_path_without shasum sha256sum)"
 id2="$(PATH="$NOSHA" sb_instruction_ledger_prompt_id "hello")"
 assert_match "prompt id (cksum fallback) is numeric" '^[0-9]+$' "$id2"
 
@@ -151,10 +151,10 @@ ledger other/branch "$G"
 sb_instruction_ledger_seed_from_prompt "$PB"
 assert_eq "seed: foreign ledger dropped before seeding" "feature/test" "$(jq -r .scope.branch "$LF")"
 rm -f "$LF"
-tl_stub shasum 'exit 0'
+tl_stub sha256sum 'exit 0'
 sb_instruction_ledger_seed_from_prompt "$PB"
 assert_file_absent "seed: empty prompt id aborts" "$LF"
-rm -f "$TL_BIN/shasum"; hash -r
+rm -f "$TL_BIN/sha256sum"; hash -r
 dg_real_jq="$(command -v jq)"
 tl_stub jq "if [[ \"\$*\" == *'@base64'* ]]; then exit 1; fi; exec $dg_real_jq \"\$@\""; hash -r
 sb_instruction_ledger_seed_from_prompt "$PB"

@@ -3,7 +3,7 @@
 
 sb_outcomes_session_file() {
   [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 1
-  printf '%s/outcomes-session.json' "$SB_RUNTIME_STATE_DIR"
+  printf '%s/outcomes-session%s.json' "$SB_RUNTIME_STATE_DIR" "${SB_SESSION_KEY:+-$SB_SESSION_KEY}"
 }
 
 # R2-19: the checklist is derived from recorded skills and plan files, never from what an agent
@@ -32,11 +32,33 @@ sb_outcomes_seal() {
   printf '%s\n' "$digest" >"${outfile}.sha256" 2>/dev/null || true
 }
 
-# Reset an outcomes file that was changed outside the hooks. No sha256 tool: cannot verify, allow.
+# A deleted checklist is tamper, not "never created" (R2-19): the seal or the instruction ledger
+# of the same session proves a prompt was seeded. The checklist comes back all pending.
+sb_outcomes_restore_deleted() {
+  local outfile="$1" ledger
+  ledger="${SB_RUNTIME_STATE_DIR}/instruction-ledger${SB_SESSION_KEY:+-$SB_SESSION_KEY}.json"
+  [[ -f "${outfile}.sha256" || -f "$ledger" ]] || return 0
+  printf '%s\toutcomes-session.json deleted; checklist restored as pending\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"${SB_RUNTIME_STATE_DIR}/outcomes-tamper.log" 2>/dev/null || true
+  jq -n --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '{
+    prompt_id: "restored", started_at: $at, prompt_preview: "(checklist deleted outside the hooks)",
+    outcomes: [
+      {id:"route", label:"Route via /sb or approved workflow composer", status:"pending", evidence:"", decision_class:"autonomous_default"},
+      {id:"scope", label:"Define concrete deliverables for this prompt", status:"pending", evidence:"", decision_class:"autonomous_default"},
+      {id:"verify", label:"Run verification before claiming completion", status:"pending", evidence:"", decision_class:"autonomous_default"}
+    ]}' >"$outfile" 2>/dev/null
+  sb_outcomes_seal
+}
+
+# Reset an outcomes file that was changed or deleted outside the hooks. No sha256 tool: cannot verify, allow.
 sb_outcomes_reject_tampered() {
   local outfile digest stored
   outfile="$(sb_outcomes_session_file)" || return 0
-  [[ -f "$outfile" ]] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+  if [[ ! -f "$outfile" ]]; then
+    sb_outcomes_restore_deleted "$outfile"
+    return 0
+  fi
   digest="$(sb_outcomes_sha256_of "$outfile")" || return 0
   stored="$(head -1 "${outfile}.sha256" 2>/dev/null || true)"
   [[ "$stored" == "$digest" ]] && return 0
@@ -65,7 +87,9 @@ sb_outcomes_jq_update() {
 
 sb_outcomes_prompt_id() {
   local prompt="$1"
-  if command -v shasum >/dev/null 2>&1; then
+  if command -v sha256sum >/dev/null 2>&1; then
+    printf '%s' "$prompt" | sha256sum 2>/dev/null | awk '{print substr($1,1,12)}'
+  elif command -v shasum >/dev/null 2>&1; then
     printf '%s' "$prompt" | shasum -a 256 2>/dev/null | awk '{print substr($1,1,12)}'
   else
     printf '%s' "$prompt" | cksum 2>/dev/null | awk '{print $1}'

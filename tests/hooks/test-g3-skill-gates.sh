@@ -117,7 +117,9 @@ pre_tool apply_patch
 assert_eq "a second worker return needs a second audit" deny "$(decision)"
 run "$SUB" "$(jq -cn --arg c "$TL_REPO_ROOT/scripts/silver-bullet invoke-skill sb:completion-audit" '{hook_event_name:"PreToolUse",tool_name:"exec_command",tool_input:{cmd:$c,command:$c}}')"
 assert_not_contains "the audit itself stays reachable through the Codex adapter" "$TL_OUT" '"deny"'
-run "$SUB" "$(jq -cn --arg c "$TL_REPO_ROOT/scripts/silver-bullet invoke-skill sb:completion-audit" '{hook_event_name:"PostToolUse",tool_name:"exec_command",tool_input:{cmd:$c,command:$c}}')"
+mkdir -p "$SD/skill-invocations"
+jq -n --arg cwd "$(cd "$EC_PROJ" && pwd -P)" --argjson now "$(date +%s)" '{channel:"silver-bullet.invoke-skill",status:"loaded",canonical_skill:"silver-completion-audit",cwd:$cwd,timestamp_epoch:$now,skill_file:"x",script:"y"}' >"$SD/skill-invocations/r.json"
+run "$SUB" "$(jq -cn --arg c "$TL_REPO_ROOT/scripts/silver-bullet invoke-skill sb:completion-audit" '{hook_event_name:"PostToolUse",tool_name:"exec_command",tool_input:{cmd:$c,command:$c},tool_response:{exit_code:0}}')"
 pre_tool exec_command
 assert_not_contains "audit through the Codex adapter clears the gate" "$TL_OUT" '"deny"'
 task_return

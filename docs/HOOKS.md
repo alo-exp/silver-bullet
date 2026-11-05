@@ -4,7 +4,7 @@
 > Do not edit by hand: change those files, then run `python3 scripts/generate-hook-reference.py`.
 > `tests/docs/test-hook-reference.sh` fails when this file is stale.
 
-`hooks/hooks.json` registers **97 hook commands** backed by **64 scripts** across 7 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
+`hooks/hooks.json` registers **98 hook commands** backed by **64 scripts** across 7 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
 
 ## How hooks are wired
 
@@ -88,30 +88,31 @@ After a tool runs; a hook can report, record state, or ask the agent to stop.
 |---|---------|--------|---------|
 | 1 | `Write\|Edit\|MultiEdit\|apply_patch` | `record-site-session.sh` | 10 |
 | 2 | `Write\|Edit\|MultiEdit\|apply_patch` | `trivial-file-clear.sh` | 5 |
-| 3 | `Task\|Subagent\|Agent` | `subagent-stop-enforcement.sh` | 10 |
-| 4 | `Task\|Subagent\|Agent` | `review-fix-ladder-guard.sh` | 10 |
-| 5 | `Skill\|Bash\|exec_command` | `subagent-stop-enforcement.sh` | 10 |
-| 6 | `Skill` | `semantic-compress.sh` | 30 |
-| 7 | `Skill\|Bash\|exec_command` | `record-skill.sh` | 10 |
-| 8 | `Skill\|Bash\|exec_command` | `flow-advance.sh` | 15 |
-| 9 | `Skill\|Bash\|exec_command` | `review-fix-ladder-guard.sh` | 10 |
-| 10 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `phase-lock-heartbeat.sh` | 10 |
-| 11 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | `dev-cycle-check.sh` | 15 |
-| 12 | `.*` | `compliance-status.sh` | 15 |
-| 13 | `.*` | `timeout-check.sh` | 10 |
-| 14 | `Bash\|exec_command` | `completion-audit.sh` | 15 |
-| 15 | `Bash\|exec_command` | `pr-traceability.sh` | 10 |
-| 16 | `Bash\|exec_command` | `session-log-init.sh` | 10 |
-| 17 | `Bash\|exec_command` | `ci-status-check.sh` | 30 |
-| 18 | `Bash\|exec_command` | `record-graphify-query.sh` | 10 |
-| 19 | `Bash\|exec_command` | `record-agentmemory-usage.sh` | 10 |
-| 20 | `Bash\|exec_command` | `record-token-compression-usage.sh` | 10 |
-| 21 | `Bash\|exec_command` | `record-leanctx-usage.sh` | 10 |
-| 22 | `Bash\|exec_command` | `record-site-visual-evidence.sh` | 10 |
-| 23 | `Bash\|exec_command` | `record-recommended-mcp.sh` | 10 |
-| 24 | `CallMcpTool\|MCP` | `record-leanctx-usage.sh` | 10 |
-| 25 | `CallMcpTool\|MCP` | `record-recommended-mcp.sh` | 10 |
-| 26 | `CallMcpTool\|MCP` | `record-agentmemory-usage.sh` | 10 |
+| 3 | `Bash\|exec_command` | `trivial-file-clear.sh` | 10 |
+| 4 | `Task\|Subagent\|Agent` | `subagent-stop-enforcement.sh` | 10 |
+| 5 | `Task\|Subagent\|Agent` | `review-fix-ladder-guard.sh` | 10 |
+| 6 | `Skill\|Bash\|exec_command` | `subagent-stop-enforcement.sh` | 10 |
+| 7 | `Skill` | `semantic-compress.sh` | 30 |
+| 8 | `Skill\|Bash\|exec_command` | `record-skill.sh` | 10 |
+| 9 | `Skill\|Bash\|exec_command` | `flow-advance.sh` | 15 |
+| 10 | `Skill\|Bash\|exec_command` | `review-fix-ladder-guard.sh` | 10 |
+| 11 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `phase-lock-heartbeat.sh` | 10 |
+| 12 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | `dev-cycle-check.sh` | 15 |
+| 13 | `.*` | `compliance-status.sh` | 15 |
+| 14 | `.*` | `timeout-check.sh` | 10 |
+| 15 | `Bash\|exec_command` | `completion-audit.sh` | 15 |
+| 16 | `Bash\|exec_command` | `pr-traceability.sh` | 10 |
+| 17 | `Bash\|exec_command` | `session-log-init.sh` | 10 |
+| 18 | `Bash\|exec_command` | `ci-status-check.sh` | 30 |
+| 19 | `Bash\|exec_command` | `record-graphify-query.sh` | 10 |
+| 20 | `Bash\|exec_command` | `record-agentmemory-usage.sh` | 10 |
+| 21 | `Bash\|exec_command` | `record-token-compression-usage.sh` | 10 |
+| 22 | `Bash\|exec_command` | `record-leanctx-usage.sh` | 10 |
+| 23 | `Bash\|exec_command` | `record-site-visual-evidence.sh` | 10 |
+| 24 | `Bash\|exec_command` | `record-recommended-mcp.sh` | 10 |
+| 25 | `CallMcpTool\|MCP` | `record-leanctx-usage.sh` | 10 |
+| 26 | `CallMcpTool\|MCP` | `record-recommended-mcp.sh` | 10 |
+| 27 | `CallMcpTool\|MCP` | `record-agentmemory-usage.sh` | 10 |
 
 ### SubagentStart
 
@@ -227,7 +228,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `subagent-stop-enforcement.sh` | PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PostToolUse `Task\|Subagent\|Agent`; PostToolUse `Skill\|Bash\|exec_command`; Stop `.*`; UserPromptSubmit `.*` | Tracks Task worker spawns and returns; at Stop, blocks a parent session whose workers ran but `sb:completion-audit` is not recorded. |
 | `timeout-check.sh` | PostToolUse `.*` | Autonomous mode only: warns on wall-clock timeout and on 30/60/100 tool calls without a recorded skill. |
 | `token-compression-tools-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in: requires recent RTK usage before substantive commits. |
-| `trivial-file-clear.sh` | PostToolUse `Write\|Edit\|MultiEdit\|apply_patch` | Deletes the legacy trivial-session marker after any file write. |
+| `trivial-file-clear.sh` | PostToolUse `Write\|Edit\|MultiEdit\|apply_patch`; PostToolUse `Bash\|exec_command` | Deletes the legacy trivial-session marker after any file write. |
 | `trivial-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Blocks agents from creating the legacy trivial marker (any spelling of its path: `~`, `$HOME`, `cd` + relative, cp/mv/ln/tee/dd); small changes go through `/sb:fast`. |
 | `uat-gate.sh` | PreToolUse `Bash\|Skill\|exec_command` | Blocks `sb:release` (Skill tool or Codex `invoke-skill`) and milestone completion when `UAT.md` is missing, failing or stale against the spec version. |
 | `v-loop-rollup-gate.sh` | Stop `.*` | At Stop, blocks when active site-session V-loops lack evidence. |
@@ -261,6 +262,6 @@ Hooks source these helpers; none of them is registered as a hook. Each file's he
 - **Orchestrator, delegation and review ladder:** `orchestrator-directive.sh`, `orchestrator-event-log.sh`, `orchestrator-parent.sh`, `orchestrator-scheduler.sh`, `orchestrator-skill-atom.sh`, `orchestrator-state.sh`, `agent-delegation-state.sh`, `review-fix-ladder-state.sh`, `rfl-policy-c-assert.sh`
 - **Opt-in recommended tools (five-tool stack):** `recommended-tools.sh`, `recommended-tools-registry.sh`, `graphify-gate.sh`, `agentmemory-gate.sh`, `alumnium-gate.sh`, `context-mode-gate.sh`, `context-mode-read-deny.sh`, `leanctx-gate.sh`, `rtk-gate.sh`, `token-compression-tools-gate.sh`, `stack-compression-coordinator.sh`, `stack-optimizer.sh`, `graphify-am-global.sh`, `rtk-cm-global.sh`
 - **Site sessions:** `site-session.sh`
-- **Other:** `planning-floor.sh`, `state-seal.sh`
+- **Other:** `planning-floor.sh`, `session-key.sh`, `state-seal.sh`
 
 `hooks/lib/completion-audit/` holds the modules `completion-audit.sh` sources (command classification, planning tier, deploy tier, change class, gate runners, state helpers). `hooks/lib/tool-input/` holds the Python helpers `tool-input.sh` calls to parse tool payloads (command strings, write targets, patch paths, RTK unwrapping); they share `shell_analysis.py`, the shell-command analyzer that `shell-analysis.sh` loads with `sb_tool_input_load` (delivery actions and tier, read-only verdict, write targets, opaque and unseen parts); completion-audit loads it once per call, the other gates start it through the accessors until they adopt the load.

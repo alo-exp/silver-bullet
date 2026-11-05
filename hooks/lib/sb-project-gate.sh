@@ -56,7 +56,8 @@ _sb_find_project_config_walk_from() {
     if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
       break
     fi
-    search_dir="$(dirname "$search_dir")"
+    search_dir="${search_dir%/*}"
+    [[ -n "$search_dir" ]] || search_dir="/"
   done
 
   return 1

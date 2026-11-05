@@ -75,12 +75,27 @@ sb_outcomes_reject_tampered
 assert_eq "reject: unwritable tamper log tolerated, file still reset" pending "$(jq -r '.outcomes[0].status' "$OF")"
 rmdir "$SD/outcomes-tamper.log"
 
-# ---- queue-clear log failure does not stop the clear ------------------------------------------------
-mkdir "$SD/queue-clear.log"
+# ---- queue clear is fail-closed on the audit and on missing arguments --------------------------------
 printf '{"current_flow":"silver-plan","flow_queue":["silver-plan"]}' >"$SD/orchestrator.json"
-sb_orchestrator_clear_queue_on_interrupt "please build the login page" && r=cleared || r=kept
-assert_eq "queue clear still happens with an unwritable log" cleared "$r"
-rmdir "$SD/queue-clear.log"
+GOODIN='{"session_id":"s1"}'
+qproj="$TL_TMP/qproj"; mkdir -p "$qproj"
+assert_eq "queue clear: no repo root, never clears" 1 "$(rc sb_orchestrator_clear_queue_on_interrupt "please build the login page" "" "$GOODIN")"
+assert_eq "queue clear: no payload, never clears" 1 "$(rc sb_orchestrator_clear_queue_on_interrupt "please build the login page" "$qproj" "")"
+assert_eq "queue clear: classifier missing, never clears" 1 "$( unset -f sb_prompt_is_bare_work_request; rc sb_orchestrator_clear_queue_on_interrupt "please build the login page" "$qproj" "$GOODIN")"
+mkdir -p "$qproj/.planning/orchestrator-override-log.jsonl"
+assert_eq "queue clear: audit cannot be written, queue kept" 1 "$(rc sb_orchestrator_clear_queue_on_interrupt "please build the login page" "$qproj" "$GOODIN")"
+assert_file_exists "queue kept" "$SD/orchestrator.json"
+rm -rf "$qproj/.planning"
+sb_orchestrator_clear_queue_on_interrupt "please build the login page" "$qproj" "$GOODIN" && r=cleared || r=kept
+assert_eq "queue clear: audited, then cleared" cleared "$r"
+
+# ---- provenance helper ----------------------------------------------------------------------------------
+mkdir -p "$SB_RUNTIME_HOME_ROOT/projects"; printf x >"$SB_RUNTIME_HOME_ROOT/projects/t.jsonl"
+assert_eq "provenance: ok with a transcript under the host root" 0 "$(rc sb_orchestrator_prompt_provenance_ok "{\"session_id\":\"s\",\"transcript_path\":\"$SB_RUNTIME_HOME_ROOT/projects/t.jsonl\"}")"
+assert_eq "provenance: worker env refused" 1 "$(SB_ORCHESTRATOR_WORKER=1 rc sb_orchestrator_prompt_provenance_ok "$GOODIN")"
+assert_eq "provenance: agent_id refused" 1 "$(rc sb_orchestrator_prompt_provenance_ok '{"session_id":"s","agent_id":"a"}')"
+assert_eq "provenance: outside the host root refused" 1 "$(rc sb_orchestrator_prompt_provenance_ok '{"session_id":"s","transcript_path":"/etc/hostname"}')"
+assert_eq "provenance: provenance json is an object" object "$(sb_orchestrator_provenance_json "$GOODIN" x | jq -r type)"
 
 # ---- override audit failure paths -----------------------------------------------------------------------
 proj="$TL_TMP/ovproj"; mkdir -p "$proj"

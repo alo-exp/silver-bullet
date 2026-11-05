@@ -386,6 +386,17 @@
         ]
       },
       {
+        "matcher": "Bash|exec_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/trivial-file-clear.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Task|Subagent|Agent",
         "hooks": [
           {

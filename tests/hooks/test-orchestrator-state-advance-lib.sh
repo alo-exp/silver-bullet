@@ -123,7 +123,13 @@ assert_file_absent "fallback removes the directive file directly" "$DIRF"
 echo "=== clear on interrupt ==="
 # shellcheck source=../../hooks/lib/prompt-classifier.sh
 source "$TL_REPO_ROOT/hooks/lib/prompt-classifier.sh"
-interrupt() { sb_orchestrator_clear_queue_on_interrupt "$@" && echo cleared || echo kept; }
+# shellcheck source=../../hooks/lib/orchestrator-directive.sh
+source "$TL_REPO_ROOT/hooks/lib/orchestrator-directive.sh"
+# shellcheck source=../../hooks/lib/orchestrator-parent.sh
+source "$TL_REPO_ROOT/hooks/lib/orchestrator-parent.sh"
+IPROJ="$TL_TMP/iproj"; mkdir -p "$IPROJ"
+IIN='{"session_id":"sess-1"}'
+interrupt() { sb_orchestrator_clear_queue_on_interrupt "$1" "$IPROJ" "${2-$IIN}" && echo cleared || echo kept; }
 mkpending() { orch_write_state '{"current_flow":"silver-plan","flow_queue":["silver-plan"]}'; printf '{}' >"$DIRF"; }
 mkpending
 assert_eq "empty prompt" kept "$(interrupt "")"
@@ -135,12 +141,17 @@ assert_file_exists "queue survives a follow-up" "$STATE"
 assert_eq "informational query keeps an active queue (R4-08)" kept "$(interrupt "what are the remaining deliverables?")"
 assert_file_exists "queue survives the status question" "$STATE"
 assert_eq "bare work request clears" cleared "$(interrupt "please build the login page")"
-assert_contains "the clear is traceable" "$(cat "$SB_RUNTIME_STATE_DIR/queue-clear.log")" "please build the login page"
+assert_contains "the clear is traceable in the project audit log" "$(jq -r .reason "$IPROJ/.planning/orchestrator-override-log.jsonl")" "please build the login page"
 mkpending
+assert_eq "a payload without a session id never clears (R4-08)" kept "$(interrupt "please build the login page" '{}')"
+assert_eq "a worker session never clears (R4-08)" kept "$(SB_ORCHESTRATOR_WORKER=1 interrupt "please build the login page")"
+assert_file_exists "queue survives the forged clears" "$STATE"
 assert_eq "other prompts keep the queue" kept "$(interrupt "hmm")"
 mkpending
 assert_eq "without classifiers nothing clears" kept "$( unset -f sb_prompt_is_orchestrator_followup sb_prompt_is_bare_work_request; interrupt "please build the login page")"
 assert_eq "without the followup classifier: bare work still clears" cleared "$( unset -f sb_prompt_is_orchestrator_followup; interrupt "please build the login page")"
+mkpending
+assert_eq "no repo root or payload: never clears" kept "$(sb_orchestrator_clear_queue_on_interrupt "please build the login page" >/dev/null 2>&1 && echo cleared || echo kept)"
 
 echo "=== composer chain ==="
 rm -f "$STATE" "$DIRF" "$EVENTS"

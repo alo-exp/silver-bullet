@@ -21,10 +21,11 @@ sb_ups_coalesce_seen_file() {
 
 sb_ups_coalesce_fingerprint() {
   local content="${1:-}"
-  if command -v shasum >/dev/null 2>&1; then
-    printf '%s' "$content" | shasum -a 256 2>/dev/null | awk '{print $1}'
-  elif command -v sha256sum >/dev/null 2>&1; then
+  # sha256sum first: `shasum` is a Perl script that costs ~80 ms to start (R2-23).
+  if command -v sha256sum >/dev/null 2>&1; then
     printf '%s' "$content" | sha256sum 2>/dev/null | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    printf '%s' "$content" | shasum -a 256 2>/dev/null | awk '{print $1}'
   else
     printf '%s' "$content" | cksum 2>/dev/null | awk '{print $1}'
   fi
