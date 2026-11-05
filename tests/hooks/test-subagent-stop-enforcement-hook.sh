@@ -38,8 +38,8 @@ assert_file_absent "cert run bypass: nothing recorded" "$PENDING"
 mkdir -p "$TL_TMP/plain/.git"
 ( cd "$TL_TMP/plain" && tl_run_hook "$HOOK" "$(ev PostToolUse Task)" && printf '%s|%s' "$TL_STATUS" "$TL_OUT" ) >"$TL_TMP/plain.out"
 assert_eq "outside an SB project: silent" "0|" "$(cat "$TL_TMP/plain.out")"
-: >"$ROUTING"
-tl_run_hook "$HOOK" "$(ev PostToolUse Task)"
+printf '%s\n' "$(($(date +%s) + 600))" >"$ROUTING"
+SB_E2E_ENTERPRISE_MATRIX=1 tl_run_hook "$HOOK" "$(ev PostToolUse Task)"
 assert_eq "e2e matrix routing row: silent" "0|" "$TL_STATUS|$TL_OUT"
 assert_file_absent "e2e matrix routing row: nothing recorded" "$PENDING"
 rm -f "$ROUTING"
@@ -72,7 +72,7 @@ assert_file_absent "worker spawn: no log" "$SPAWNS"
 
 echo "=== PreToolUse: pending audit blocks the next action ==="
 mark_pending
-for t in Task Edit Write MultiEdit Shell Bash; do
+for t in Task Edit Write MultiEdit Shell Bash apply_patch exec_command; do
   tl_run_hook "$HOOK" "$(ev PreToolUse "$t" "" "ls")"
   assert_eq "$t denied while the audit is pending" deny "$(decision)"
 done
@@ -89,12 +89,7 @@ SB_ORCHESTRATOR_WORKER=1 tl_run_hook "$HOOK" "$(ev PreToolUse Task)"
 assert_eq "worker spawns are not gated" "0|" "$TL_STATUS|$TL_OUT"
 printf 'silver-completion-audit\n' >"$STATE_REC"
 tl_run_hook "$HOOK" "$(ev PreToolUse Edit)"
-assert_eq "audit recorded: edits allowed" "0|" "$TL_STATUS|$TL_OUT"
-rm -f "$STATE_REC"
-printf 'silver-completion-audit\n' >"$TL_TMP/state-target"
-ln -s "$TL_TMP/state-target" "$STATE_REC"
-tl_run_hook "$HOOK" "$(ev PreToolUse Edit)"
-assert_eq "a symlinked state file is not trusted" deny "$(decision)"
+assert_eq "an audit recorded earlier on the branch does not cover a later worker return (R2-24)" deny "$(decision)"
 rm -f "$STATE_REC"
 rm -f "$PENDING"
 tl_run_hook "$HOOK" "$(ev PreToolUse Edit)"
@@ -102,32 +97,23 @@ assert_eq "nothing pending: edits allowed" "0|" "$TL_STATUS|$TL_OUT"
 printf '{"pending":false}\n' >"$PENDING"
 tl_run_hook "$HOOK" "$(ev PreToolUse Edit)"
 assert_eq "pending=false: edits allowed" "0|" "$TL_STATUS|$TL_OUT"
-rm -f "$PENDING"
-mark_pending
-SILVER_BULLET_STATE_FILE="$SB_RUNTIME_STATE_DIR/alt-state" tl_run_hook "$HOOK" "$(ev PreToolUse Edit)"
-assert_eq "state file override honoured (not recorded there)" deny "$(decision)"
-printf 'silver-completion-audit\n' >"$SB_RUNTIME_STATE_DIR/alt-state"
-SILVER_BULLET_STATE_FILE="$SB_RUNTIME_STATE_DIR/alt-state" tl_run_hook "$HOOK" "$(ev PreToolUse Edit)"
-assert_eq "state file override honoured (recorded there)" "0|" "$TL_STATUS|$TL_OUT"
-rm -f "$SB_RUNTIME_STATE_DIR/alt-state"
 
-echo "=== Skill invocation of the audit clears the gate ==="
-for when in PreToolUse PostToolUse; do
-  for sk in silver-completion-audit sb:completion-audit completion-audit; do
-    mark_pending
-    printf '{"spawned_at":"x"}\n' >"$SPAWNS"
-    tl_run_hook "$HOOK" "$(ev "$when" Skill "$sk")"
-    assert_eq "$when $sk: silent" "0|" "$TL_STATUS|$TL_OUT"
-    assert_file_absent "$when $sk: pending cleared" "$PENDING"
-    assert_file_absent "$when $sk: spawn log cleared" "$SPAWNS"
-  done
+echo "=== Skill invocation of the audit clears the gate (PostToolUse) ==="
+for sk in silver-completion-audit sb:completion-audit completion-audit; do
   mark_pending
-  tl_run_hook "$HOOK" "$(ev "$when" Skill silver-plan)"
-  assert_file_exists "$when other skill leaves the pending marker" "$PENDING"
-  rm -f "$PENDING"
+  printf '{"spawned_at":"x"}\n' >"$SPAWNS"
+  tl_run_hook "$HOOK" "$(ev PostToolUse Skill "$sk")"
+  assert_eq "PostToolUse $sk: silent" "0|" "$TL_STATUS|$TL_OUT"
+  assert_file_absent "PostToolUse $sk: pending cleared" "$PENDING"
+  assert_file_absent "PostToolUse $sk: spawn log cleared" "$SPAWNS"
 done
 mark_pending
-tl_run_hook "$HOOK" "$(jq -cn '{hook_event_name:"PreToolUse",tool_name:"Skill",tool_input:{name:"completion-audit"}}')"
+tl_run_hook "$HOOK" "$(ev PostToolUse Skill silver-plan)"
+assert_file_exists "PostToolUse other skill leaves the pending marker" "$PENDING"
+tl_run_hook "$HOOK" "$(ev PreToolUse Skill silver-completion-audit)"
+assert_eq "PreToolUse Skill is not this hook's business" "0|" "$TL_STATUS|$TL_OUT"
+assert_file_exists "PreToolUse Skill leaves the pending marker" "$PENDING"
+tl_run_hook "$HOOK" "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{name:"completion-audit"}}')"
 assert_file_absent "skill named via tool_input.name clears the gate" "$PENDING"
 
 echo "=== PostToolUse: a returning Task worker requires an audit ==="
@@ -193,7 +179,10 @@ rm -f "$SB_RUNTIME_STATE_DIR/trivial"
 mark_pending
 printf 'silver-completion-audit\n' >"$STATE_REC"
 tl_run_hook "$HOOK" "$(ev Stop)"
-assert_eq "audit recorded: stop allowed" "0|" "$TL_STATUS|$TL_OUT"
+assert_eq "audit recorded but a worker returned since: stop blocked (R2-24)" block "$(decision)"
+rm -f "$PENDING"
+tl_run_hook "$HOOK" "$(ev Stop)"
+assert_eq "audit recorded, nothing pending: stop allowed" "0|" "$TL_STATUS|$TL_OUT"
 assert_file_absent "audit recorded: spawn log cleared" "$SPAWNS"
 assert_file_absent "audit recorded: pending marker cleared" "$PENDING"
 tl_run_hook "$HOOK" "$(ev SessionEnd)"
@@ -219,14 +208,6 @@ notdir="$TL_TMP/regular-file"
 : >"$notdir"
 SB_RUNTIME_STATE_DIR="$notdir/state" tl_run_hook "$HOOK" "$(ev PostToolUse Task)"
 assert_contains "uncreatable state dir: reminder still emitted" "$(ctx)" "completion-audit"
-# Unreadable state file: treated as no audit recorded.
-reset
-mark_pending
-printf 'silver-completion-audit\n' >"$STATE_REC"
-orch_stub_failing cat '.silver-bullet/state'
-tl_run_hook "$HOOK" "$(ev PreToolUse Edit)"
-orch_unstub cat
-assert_eq "unreadable state file: audit not seen, edit denied" deny "$(decision)"
 # jq failing on individual extractions.
 reset
 orch_stub_failing jq '.tool_name'

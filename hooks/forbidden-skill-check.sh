@@ -2,7 +2,7 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# PreToolUse hook (matcher: Skill)
+# PreToolUse hook (matcher: Skill|Bash|exec_command — the Skill tool and the Codex invoke-skill adapter)
 # Blocks invocation of forbidden skills that bypass Silver Bullet enforcement.
 #
 # Forbidden skills (hardcoded):
@@ -48,36 +48,32 @@ input=$(cat)
 # ── Error handler: warn and exit 0 on unexpected failure ─────────────────────
 trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️  forbidden-skill-check.sh: unexpected error — skipping check\"}}" ; exit 0' ERR
 
-# ── Extract skill name from tool input ───────────────────────────────────────
-raw_skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""')
-[[ -z "$raw_skill" ]] && exit 0
-
-_SB_RETIRED_NS_COLON=$(printf '%s%s:' gs d)
-_SB_RETIRED_NS_HYPHEN=$(printf '%s%s-' gs d)
-
-# Block retired GSD namespace (removed from SB runtime).
-if [[ "$raw_skill" == ${_SB_RETIRED_NS_COLON}* ]] || [[ "$raw_skill" == ${_SB_RETIRED_NS_HYPHEN}* ]]; then
-  reason="FORBIDDEN SKILL — ${raw_skill} is blocked. GSD lifecycle skills were removed from Silver Bullet. Use /sb routing and SB-owned skills (sb:context, sb:plan, sb:execute, sb:verify, sb:ship). See silver-bullet.md."
-  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+deny() {
+  local json_reason
+  json_reason=$(printf '%s' "$1" | jq -Rs '.')
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
   exit 0
+}
+
+# ── Which skills does this call invoke? (Skill tool, or the Codex invoke-skill adapter) ──────
+# Unparsable input is an unexpected error (the trap warns), as it always was.
+printf '%s' "$input" | jq -e . >/dev/null
+if [[ -f "$_lib_dir/skill-channel.sh" ]]; then
+  # shellcheck source=lib/skill-channel.sh
+  source "$_lib_dir/skill-channel.sh"
+  sb_skill_channel_load "$input"
+else
+  # Without the channel lib the Skill tool's own field is still enforced.
+  SB_SKILL_CHANNEL_NAMES="$(printf '%s' "$input" | jq -r '.tool_input.skill // ""')"
+  SB_SKILL_CHANNEL_STATUS="ok"
 fi
+if [[ "$SB_SKILL_CHANNEL_STATUS" == "helper_unavailable" ]]; then
+  deny "$(sb_shell_analysis_helper_message)"
+fi
+[[ -n "$SB_SKILL_CHANNEL_NAMES" ]] || exit 0
 
-# Strip all namespace prefixes (e.g. "outer:inner:executing-plans" → "executing-plans")
-# Threat T-07-01: greedy strip prevents double-namespace bypass (SENTINEL finding)
-skill_name="$raw_skill"
-while [[ "$skill_name" == *:* ]]; do
-  skill_name="${skill_name#*:}"
-done
-
-# Invariant: if raw_skill was non-empty but contained only colons, skill_name
-# is now empty. Empty skill_name safely matches no forbidden entry.
-[[ -z "$skill_name" ]] && exit 0
-
-# ── Hardcoded forbidden list ──────────────────────────────────────────────────
+# ── Config: configurable forbidden list ───────────────────────────────────────
 FORBIDDEN_HARDCODED="executing-plans subagent-driven-development"
-
-# ── Read configurable forbidden list from .silver-bullet.json ────────────────
 config_file=""
 search_dir="$PWD"
 while true; do
@@ -90,34 +86,47 @@ while true; do
   fi
   search_dir=$(dirname "$search_dir")
 done
-
 forbidden_cfg=""
 if [[ -n "$config_file" ]]; then
   forbidden_cfg=$(jq -r '(.skills.forbidden // []) | .[]' "$config_file" 2>/dev/null || true)
 fi
 
-# ── Check against hardcoded forbidden list ────────────────────────────────────
-for entry in $FORBIDDEN_HARDCODED; do
-  if [[ "$skill_name" == "$entry" ]]; then
-    reason="FORBIDDEN SKILL — ${skill_name} is blocked by Silver Bullet. Use /sb:execute for execution and /sb:plan for planning. See silver-bullet.md section 6."
-    json_reason=$(printf '%s' "$reason" | jq -Rs '.')
-    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
-    exit 0
-  fi
-done
+_SB_RETIRED_NS=$(printf '%s%s' gs d)
 
-# ── Check against configurable forbidden list ─────────────────────────────────
-if [[ -n "$forbidden_cfg" ]]; then
-  while IFS= read -r entry; do
-    [[ -z "$entry" ]] && continue
-    if [[ "$skill_name" == "$entry" ]]; then
-      reason="FORBIDDEN SKILL -- ${skill_name} is blocked by project configuration. See .silver-bullet.json skills.forbidden."
-      json_reason=$(printf '%s' "$reason" | jq -Rs '.')
-      printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
-      exit 0
+while IFS= read -r raw_skill; do
+  [[ -n "$raw_skill" ]] || continue
+  # Normalise before every comparison (R2-17): trim, lower-case, then look at EVERY namespace
+  # segment, so `Executing-Plans`, ` executing-plans ` and `marketplace:gsd-execute-phase` match.
+  norm="$(printf '%s' "$raw_skill" | tr '[:upper:]' '[:lower:]' | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')"
+  [[ -n "$norm" ]] || continue
+  skill_name="${norm##*:}"
+  rest="$norm"
+  while [[ -n "$rest" ]]; do
+    segment="${rest%%:*}"
+    if [[ "$rest" == *:* ]]; then rest="${rest#*:}"; else rest=""; fi
+    # Block retired GSD namespace (removed from SB runtime).
+    if [[ "$segment" == "$_SB_RETIRED_NS" || "$segment" == "${_SB_RETIRED_NS}-"* ]]; then
+      deny "FORBIDDEN SKILL — ${raw_skill} is blocked. GSD lifecycle skills were removed from Silver Bullet. Use /sb routing and SB-owned skills (sb:context, sb:plan, sb:execute, sb:verify, sb:ship). See silver-bullet.md."
     fi
-  done <<< "$forbidden_cfg"
-fi
+  done
+  # Invariant: a skill that is only colons leaves skill_name empty, which matches no entry.
+  [[ -n "$skill_name" ]] || continue
+
+  for entry in $FORBIDDEN_HARDCODED; do
+    if [[ "$skill_name" == "$entry" ]]; then
+      deny "FORBIDDEN SKILL — ${skill_name} is blocked by Silver Bullet. Use /sb:execute for execution and /sb:plan for planning. See silver-bullet.md section 6."
+    fi
+  done
+
+  if [[ -n "$forbidden_cfg" ]]; then
+    while IFS= read -r entry; do
+      [[ -z "$entry" ]] && continue
+      if [[ "$skill_name" == "$(printf '%s' "$entry" | tr '[:upper:]' '[:lower:]')" ]]; then
+        deny "FORBIDDEN SKILL -- ${skill_name} is blocked by project configuration. See .silver-bullet.json skills.forbidden."
+      fi
+    done <<< "$forbidden_cfg"
+  fi
+done <<< "$SB_SKILL_CHANNEL_NAMES"
 
 # Skill is not forbidden — allow
 exit 0

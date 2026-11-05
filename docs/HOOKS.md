@@ -4,7 +4,7 @@
 > Do not edit by hand: change those files, then run `python3 scripts/generate-hook-reference.py`.
 > `tests/docs/test-hook-reference.sh` fails when this file is stale.
 
-`hooks/hooks.json` registers **96 hook commands** backed by **64 scripts** across 7 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
+`hooks/hooks.json` registers **99 hook commands** backed by **64 scripts** across 7 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
 
 ## How hooks are wired
 
@@ -50,35 +50,37 @@ Before a tool runs; a hook can deny the call.
 | 13 | `Task\|Subagent\|Agent` | `rfl-policy-c-gate.sh` | 10 |
 | 14 | `Skill` | `review-fix-ladder-guard.sh` | 10 |
 | 15 | `Skill` | `rfl-policy-c-gate.sh` | 10 |
-| 16 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `subagent-stop-enforcement.sh` | 10 |
-| 17 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-preview-preflight.sh` | 10 |
-| 18 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-chrome-guard.sh` | 10 |
-| 19 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `compression-marker-guard.sh` | 10 |
-| 20 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `orchestrator-directive-guard.sh` | 10 |
-| 21 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `trivial-file-guard.sh` | 10 |
-| 22 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `dev-cycle-check.sh` | 15 |
-| 23 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `graphify-gate.sh` | 10 |
-| 24 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `agentmemory-gate.sh` | 10 |
-| 25 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `alumnium-gate.sh` | 10 |
-| 26 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `leanctx-gate.sh` | 10 |
-| 27 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `stack-compression-coordinator.sh` | 10 |
-| 28 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `rtk-gate.sh` | 10 |
-| 29 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `context-mode-gate.sh` | 10 |
-| 30 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `token-compression-tools-gate.sh` | 10 |
-| 31 | `Read\|Grep` | `stack-compression-coordinator.sh` | 10 |
-| 32 | `Read\|Grep` | `context-mode-read-deny.sh` | 10 |
-| 33 | `WebFetch` | `stack-compression-coordinator.sh` | 10 |
-| 34 | `CallMcpTool\|MCP` | `stack-compression-coordinator.sh` | 10 |
-| 35 | `Skill` | `forbidden-skill-check.sh` | 10 |
-| 36 | `Skill` | `dependency-skill-check.sh` | 10 |
-| 37 | `Skill` | `uat-gate.sh` | 10 |
-| 38 | `Bash\|exec_command` | `site-regression-gate.sh` | 120 |
-| 39 | `Bash\|exec_command` | `live-publish-evidence-gate.sh` | 15 |
-| 40 | `Bash\|exec_command` | `industry-tooling-hint.sh` | 5 |
-| 41 | `Bash\|exec_command` | `roadmap-freshness.sh` | 10 |
-| 42 | `Bash\|exec_command` | `ci-status-check.sh` | 30 |
-| 43 | `Bash\|exec_command` | `spec-floor-check.sh` | 10 |
-| 44 | `Bash\|exec_command` | `rfl-policy-c-gate.sh` | 10 |
+| 16 | `Bash\|exec_command` | `forbidden-skill-check.sh` | 10 |
+| 17 | `Bash\|exec_command` | `uat-gate.sh` | 10 |
+| 18 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `subagent-stop-enforcement.sh` | 10 |
+| 19 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-preview-preflight.sh` | 10 |
+| 20 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-chrome-guard.sh` | 10 |
+| 21 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `compression-marker-guard.sh` | 10 |
+| 22 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `orchestrator-directive-guard.sh` | 10 |
+| 23 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `trivial-file-guard.sh` | 10 |
+| 24 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `dev-cycle-check.sh` | 15 |
+| 25 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `graphify-gate.sh` | 10 |
+| 26 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `agentmemory-gate.sh` | 10 |
+| 27 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `alumnium-gate.sh` | 10 |
+| 28 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `leanctx-gate.sh` | 10 |
+| 29 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `stack-compression-coordinator.sh` | 10 |
+| 30 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `rtk-gate.sh` | 10 |
+| 31 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `context-mode-gate.sh` | 10 |
+| 32 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `token-compression-tools-gate.sh` | 10 |
+| 33 | `Read\|Grep` | `stack-compression-coordinator.sh` | 10 |
+| 34 | `Read\|Grep` | `context-mode-read-deny.sh` | 10 |
+| 35 | `WebFetch` | `stack-compression-coordinator.sh` | 10 |
+| 36 | `CallMcpTool\|MCP` | `stack-compression-coordinator.sh` | 10 |
+| 37 | `Skill` | `forbidden-skill-check.sh` | 10 |
+| 38 | `Skill` | `dependency-skill-check.sh` | 10 |
+| 39 | `Skill` | `uat-gate.sh` | 10 |
+| 40 | `Bash\|exec_command` | `site-regression-gate.sh` | 120 |
+| 41 | `Bash\|exec_command` | `live-publish-evidence-gate.sh` | 15 |
+| 42 | `Bash\|exec_command` | `industry-tooling-hint.sh` | 5 |
+| 43 | `Bash\|exec_command` | `roadmap-freshness.sh` | 10 |
+| 44 | `Bash\|exec_command` | `ci-status-check.sh` | 30 |
+| 45 | `Bash\|exec_command` | `spec-floor-check.sh` | 10 |
+| 46 | `Bash\|exec_command` | `rfl-policy-c-gate.sh` | 10 |
 
 ### PostToolUse
 
@@ -90,27 +92,28 @@ After a tool runs; a hook can report, record state, or ask the agent to stop.
 | 2 | `Write\|Edit\|MultiEdit\|apply_patch` | `trivial-file-clear.sh` | 5 |
 | 3 | `Task\|Subagent\|Agent` | `subagent-stop-enforcement.sh` | 10 |
 | 4 | `Task\|Subagent\|Agent` | `review-fix-ladder-guard.sh` | 10 |
-| 5 | `Skill` | `semantic-compress.sh` | 30 |
-| 6 | `Skill\|Bash\|exec_command` | `record-skill.sh` | 10 |
-| 7 | `Skill\|Bash\|exec_command` | `flow-advance.sh` | 15 |
-| 8 | `Skill\|Bash\|exec_command` | `review-fix-ladder-guard.sh` | 10 |
-| 9 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `dev-cycle-check.sh` | 15 |
-| 10 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `phase-lock-heartbeat.sh` | 10 |
-| 11 | `.*` | `compliance-status.sh` | 15 |
-| 12 | `.*` | `timeout-check.sh` | 10 |
-| 13 | `Bash\|exec_command` | `completion-audit.sh` | 15 |
-| 14 | `Bash\|exec_command` | `pr-traceability.sh` | 10 |
-| 15 | `Bash\|exec_command` | `session-log-init.sh` | 10 |
-| 16 | `Bash\|exec_command` | `ci-status-check.sh` | 30 |
-| 17 | `Bash\|exec_command` | `record-graphify-query.sh` | 10 |
-| 18 | `Bash\|exec_command` | `record-agentmemory-usage.sh` | 10 |
-| 19 | `Bash\|exec_command` | `record-token-compression-usage.sh` | 10 |
-| 20 | `Bash\|exec_command` | `record-leanctx-usage.sh` | 10 |
-| 21 | `Bash\|exec_command` | `record-site-visual-evidence.sh` | 10 |
-| 22 | `Bash\|exec_command` | `record-recommended-mcp.sh` | 10 |
-| 23 | `CallMcpTool\|MCP` | `record-leanctx-usage.sh` | 10 |
-| 24 | `CallMcpTool\|MCP` | `record-recommended-mcp.sh` | 10 |
-| 25 | `CallMcpTool\|MCP` | `record-agentmemory-usage.sh` | 10 |
+| 5 | `Skill\|Bash\|exec_command` | `subagent-stop-enforcement.sh` | 10 |
+| 6 | `Skill` | `semantic-compress.sh` | 30 |
+| 7 | `Skill\|Bash\|exec_command` | `record-skill.sh` | 10 |
+| 8 | `Skill\|Bash\|exec_command` | `flow-advance.sh` | 15 |
+| 9 | `Skill\|Bash\|exec_command` | `review-fix-ladder-guard.sh` | 10 |
+| 10 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `dev-cycle-check.sh` | 15 |
+| 11 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `phase-lock-heartbeat.sh` | 10 |
+| 12 | `.*` | `compliance-status.sh` | 15 |
+| 13 | `.*` | `timeout-check.sh` | 10 |
+| 14 | `Bash\|exec_command` | `completion-audit.sh` | 15 |
+| 15 | `Bash\|exec_command` | `pr-traceability.sh` | 10 |
+| 16 | `Bash\|exec_command` | `session-log-init.sh` | 10 |
+| 17 | `Bash\|exec_command` | `ci-status-check.sh` | 30 |
+| 18 | `Bash\|exec_command` | `record-graphify-query.sh` | 10 |
+| 19 | `Bash\|exec_command` | `record-agentmemory-usage.sh` | 10 |
+| 20 | `Bash\|exec_command` | `record-token-compression-usage.sh` | 10 |
+| 21 | `Bash\|exec_command` | `record-leanctx-usage.sh` | 10 |
+| 22 | `Bash\|exec_command` | `record-site-visual-evidence.sh` | 10 |
+| 23 | `Bash\|exec_command` | `record-recommended-mcp.sh` | 10 |
+| 24 | `CallMcpTool\|MCP` | `record-leanctx-usage.sh` | 10 |
+| 25 | `CallMcpTool\|MCP` | `record-recommended-mcp.sh` | 10 |
+| 26 | `CallMcpTool\|MCP` | `record-agentmemory-usage.sh` | 10 |
 
 ### SubagentStart
 
@@ -177,10 +180,10 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `context-mode-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.context_mode`): checks Context Mode install and MCP/hook wiring. |
 | `context-mode-read-deny.sh` | PreToolUse `Read\|Grep` | Opt-in (`recommended_tools.context_mode`): denies Read/Grep on files larger than `read_deny_bytes`. |
 | `debug-dump.sh` | PreToolUse `.*` | Debug only: when the `debug-dump` flag file exists in the runtime state dir, appends each PreToolUse payload to `hook-dump.jsonl` there. Never blocks. |
-| `dependency-skill-check.sh` | PreToolUse `Skill` | Compatibility gate for dependency-skill invocations. Does not block SB-absorbed namespaces; forbidden execution modes are handled by `forbidden-skill-check.sh`. |
+| `dependency-skill-check.sh` | PreToolUse `Skill` | Inert compatibility stub: every path allows, it enforces nothing. Kept so the Skill matcher surface stays stable; forbidden execution modes are blocked by `forbidden-skill-check.sh`. |
 | `dev-cycle-check.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PostToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Planning-floor gate: blocks source edits and shell writes until workflow admission or the `required_planning` skills are recorded. Also blocks edits under the host plugin cache and direct writes to SB state files. |
 | `flow-advance.sh` | PostToolUse `Skill\|Bash\|exec_command` | Advances the autonomous orchestrator flow queue after a skill or tracked command completes. |
-| `forbidden-skill-check.sh` | PreToolUse `Skill` | Blocks forbidden skills: the built-in list (`executing-plans`, `subagent-driven-development`) plus `skills.forbidden`. |
+| `forbidden-skill-check.sh` | PreToolUse `Bash\|exec_command`; PreToolUse `Skill` | Blocks forbidden skills: the built-in list (`executing-plans`, `subagent-driven-development`) plus `skills.forbidden`. |
 | `graphify-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.graphify`): requires a recent Graphify query before substantive work. |
 | `industry-tooling-hint.sh` | PreToolUse `Bash\|exec_command` | Optional reminders about industry tooling for shell commands; active only when `hooks.industry_tooling.enabled` is true. |
 | `instruction-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | Blocks creating a brand-new root `CLAUDE.md` or `AGENTS.md` during initialization; existing files may be reconciled in place. |
@@ -223,12 +226,12 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `stack-compression-lifecycle.sh` | SessionStart `startup\|clear\|compact` | On compaction, records the LeanCTX lifecycle phase after the agentmemory snapshot. |
 | `stop-check.sh` | Stop `.*`; SubagentStop `.*` | Stop/SubagentStop gate: blocks a task-complete declaration while `required_planning` skills are missing, and enforces doc-scheme finalization when `docs/doc-scheme.md` exists. |
 | `subagent-start.sh` | SubagentStart `.*` | Injects the worker banner and tool requirements into subagent sessions. |
-| `subagent-stop-enforcement.sh` | PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PostToolUse `Task\|Subagent\|Agent`; Stop `.*`; UserPromptSubmit `.*` | Tracks Task worker spawns and returns; at Stop, blocks a parent session whose workers ran but `sb:completion-audit` is not recorded. |
+| `subagent-stop-enforcement.sh` | PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PostToolUse `Task\|Subagent\|Agent`; PostToolUse `Skill\|Bash\|exec_command`; Stop `.*`; UserPromptSubmit `.*` | Tracks Task worker spawns and returns; at Stop, blocks a parent session whose workers ran but `sb:completion-audit` is not recorded. |
 | `timeout-check.sh` | PostToolUse `.*` | Autonomous mode only: warns on wall-clock timeout and on 30/60/100 tool calls without a recorded skill. |
 | `token-compression-tools-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in: requires recent RTK usage before substantive commits. |
 | `trivial-file-clear.sh` | PostToolUse `Write\|Edit\|MultiEdit\|apply_patch` | Deletes the legacy trivial-session marker after any file write. |
 | `trivial-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Blocks agents from creating the legacy trivial marker; small changes go through `/sb:fast`. |
-| `uat-gate.sh` | PreToolUse `Skill` | Blocks `sb:release` and milestone completion when `UAT.md` is missing, failing or stale against the spec version. |
+| `uat-gate.sh` | PreToolUse `Bash\|exec_command`; PreToolUse `Skill` | Blocks `sb:release` and milestone completion when `UAT.md` is missing, failing or stale against the spec version. |
 | `v-loop-rollup-gate.sh` | Stop `.*` | At Stop, blocks when active site-session V-loops lack evidence. |
 | `workflow-chain-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | Inside a composed workflow (`.planning/workflows/<id>.md`), blocks implementation edits until the pre-execution chain is recorded. |
 
@@ -255,7 +258,7 @@ Hooks source these helpers; none of them is registered as a hook. Each file's he
 
 - **Runtime paths and hook plumbing:** `runtime-paths.sh`, `hook-bootstrap.sh`, `hook-output.sh`, `hook-subproc-timeout.sh`, `hook-audit.sh`, `jq-gate.sh`, `tool-input.sh`, `tool-input/`, `shell-analysis.sh`, `path-canonical.sh`, `stop-coalesce.sh`, `ups-coalesce.sh`, `rtk-compat.sh`, `cert-bypass.sh`
 - **Project activation, state and safety:** `sb-project-gate.sh`, `project-active.sh`, `branch-scope.sh`, `trivial-bypass.sh`, `nofollow-guard.sh`, `plugin-cache-guard.sh`, `core-rules-integrity.sh`, `capability-tier.sh`, `enforcement-tier-gate.sh`, `prerequisite-probe.sh`, `check-sb-update.sh`, `session-ledger.sh`, `phase-path.sh`
-- **Required skills and workflow tracking:** `required-skills.sh`, `skill-discovery.sh`, `workflow-utils.sh`, `quality-gates-mode.sh`, `prompt-classifier.sh`, `outcomes-gate.sh`, `instruction-ledger.sh`
+- **Required skills and workflow tracking:** `required-skills.sh`, `skill-discovery.sh`, `skill-channel.sh`, `workflow-utils.sh`, `quality-gates-mode.sh`, `prompt-classifier.sh`, `outcomes-gate.sh`, `instruction-ledger.sh`
 - **Delivery gates:** `completion-audit/`, `artifact-substance-gate.sh`, `doc-scheme-gate.sh`, `evidence-schema-gate.sh`, `enterprise-policy.sh`, `github-run-list.sh`, `e2e-matrix-routing.sh`
 - **Orchestrator, delegation and review ladder:** `orchestrator-directive.sh`, `orchestrator-event-log.sh`, `orchestrator-parent.sh`, `orchestrator-scheduler.sh`, `orchestrator-skill-atom.sh`, `orchestrator-state.sh`, `agent-delegation-state.sh`, `review-fix-ladder-state.sh`, `rfl-policy-c-assert.sh`
 - **Opt-in recommended tools (five-tool stack):** `recommended-tools.sh`, `recommended-tools-registry.sh`, `graphify-gate.sh`, `agentmemory-gate.sh`, `alumnium-gate.sh`, `context-mode-gate.sh`, `context-mode-read-deny.sh`, `leanctx-gate.sh`, `rtk-gate.sh`, `token-compression-tools-gate.sh`, `stack-compression-coordinator.sh`, `stack-optimizer.sh`, `graphify-am-global.sh`, `rtk-cm-global.sh`
