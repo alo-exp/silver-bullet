@@ -1,6 +1,6 @@
 # Phase A spike — LeanCTX shell-rewrite regression
 
-**Plan:** [autonomous-toolstack-reconciliation_2b7bddfa.plan.md](/Users/shafqat/.cursor/plans/autonomous-toolstack-reconciliation_2b7bddfa.plan.md) §3  
+**Plan:** [autonomous-toolstack-reconciliation_2b7bddfa.plan.md](/Users/<user>/.cursor/plans/autonomous-toolstack-reconciliation_2b7bddfa.plan.md) §3  
 **Date:** 2026-07-17  
 **Decision:** **Option 1** — remove LeanCTX shell-rewrite ownership entirely in `five_tool_routed`.
 
@@ -38,10 +38,10 @@ Would require a PostSessionStart or periodic hook to re-order after LeanCTX obse
 
 ## Implementation
 
-- [`scripts/lib/global-toolstack/patch-hooks.py`](/Users/shafqat/.cursor/worktrees/repo/goja/scripts/lib/global-toolstack/patch-hooks.py) — filter out `lean-ctx hook rewrite` entries; insert `shell-compression.sh` only when missing.
-- [`scripts/lib/global-toolstack/fix-shell-compression-hook.py`](/Users/shafqat/.cursor/worktrees/repo/goja/scripts/lib/global-toolstack/fix-shell-compression-hook.py) — same removal + RTK-before-CM ordering.
-- [`scripts/lib/recommended-tools/probe-rtk.sh`](/Users/shafqat/.cursor/worktrees/repo/goja/scripts/lib/recommended-tools/probe-rtk.sh) — `leanctx_rewrite_present` evidence flag.
-- [`scripts/lib/global-toolstack/session-bootstrap.sh`](/Users/shafqat/.cursor/worktrees/repo/goja/scripts/lib/global-toolstack/session-bootstrap.sh) — remains read-only verifier (no mutation).
+- [`scripts/lib/global-toolstack/patch-hooks.py`](/Users/<user>/.cursor/worktrees/repo/goja/scripts/lib/global-toolstack/patch-hooks.py) — filter out `lean-ctx hook rewrite` entries; insert `shell-compression.sh` only when missing.
+- [`scripts/lib/global-toolstack/fix-shell-compression-hook.py`](/Users/<user>/.cursor/worktrees/repo/goja/scripts/lib/global-toolstack/fix-shell-compression-hook.py) — same removal + RTK-before-CM ordering.
+- [`scripts/lib/recommended-tools/probe-rtk.sh`](/Users/<user>/.cursor/worktrees/repo/goja/scripts/lib/recommended-tools/probe-rtk.sh) — `leanctx_rewrite_present` evidence flag.
+- [`scripts/lib/global-toolstack/session-bootstrap.sh`](/Users/<user>/.cursor/worktrees/repo/goja/scripts/lib/global-toolstack/session-bootstrap.sh) — remains read-only verifier (no mutation).
 
 ## Verification
 

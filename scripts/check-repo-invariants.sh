@@ -20,7 +20,7 @@ ROOT="$(cd "${SELF_DIR}/.." && pwd)"
 CHECKS=(json-valid manifest-versions release-identity hook-executable hook-references
   template-placeholders deploy-snippet-list required-subset-tracked config-matches-template
   workflows-mirror worm-indicators binary-signatures vendored-skills-lock tracked-file-size
-  site-duplicate-ids workflow-hardening)
+  site-duplicate-ids workflow-hardening personal-data)
 SELECTED=()
 
 usage_error() {
@@ -136,20 +136,30 @@ check_hook-executable() {
 # $CLAUDE_PLUGIN_ROOT/..., and that script must exist. A bare hooks/... or scripts/... path
 # would resolve against the user's project at runtime and run project-controlled code.
 check_hook-references() {
-  local cmd script bare ok=0 named
+  local cmd script bare rel ok=0 named
+  # The only accepted shape: [bash|sh] <plugin-root script> followed by plain arguments. Anything
+  # else (chained commands, substitutions, project-relative interpreters) is rejected (allowlist).
+  # shellcheck disable=SC2016  # literal regex, $ is not expanded
+  local shape='^((bash|sh) +)?("\$\{CLAUDE_PLUGIN_ROOT\}/[A-Za-z0-9_./-]+"|"?\$CLAUDE_PLUGIN_ROOT"?/[A-Za-z0-9_./-]+)( +[A-Za-z0-9_./=:@-]+)*$'
   while IFS= read -r cmd; do
     named=0
+    if [[ ! "$cmd" =~ $shape || "$cmd" == *..* ]]; then
+      echo "  hooks.json command is not a single plugin-root script with plain arguments: $cmd"
+      ok=1
+    fi
     # Every ${CLAUDE_PLUGIN_ROOT}/ path in the command must exist, not only the first.
     while IFS= read -r script; do
       named=1
       [[ -f "$script" ]] || { echo "  hooks.json references a missing script: $script"; ok=1; }
     done < <(printf '%s\n' "$cmd" | grep -oE '\$\{?CLAUDE_PLUGIN_ROOT\}?"?/[^"'"'"'[:space:]&|;]+' | sed -E 's|^.*CLAUDE_PLUGIN_ROOT\}?"?/||')
-    # A bare hooks/ or scripts/ path anywhere in the command resolves against the user's project.
+    # Any other hooks/ or scripts/ path (bare, ./hooks/..., $PWD/hooks/..., ${CLAUDE_PROJECT_DIR}/scripts/...)
+    # resolves against the user's project, not the plugin.
     while IFS= read -r bare; do
       named=1
-      echo "  hooks.json runs $bare relative to the working directory (the user's project); use \${CLAUDE_PLUGIN_ROOT}/$bare"
+      rel="$(printf '%s' "$bare" | sed -E 's#^(.*/)?((hooks|scripts)/.*)$#\2#')"
+      echo "  hooks.json runs $bare from the user's project; use \${CLAUDE_PLUGIN_ROOT}/$rel"
       ok=1
-    done < <(printf '%s\n' "$cmd" | sed -E 's|\$\{?CLAUDE_PLUGIN_ROOT\}?"?/[^"'"'"'[:space:]&|;]+||g' | tr -s '[:space:]"'"'"'&|;' '\n' | grep -E '^(hooks|scripts)/' || true)
+    done < <(printf '%s\n' "$cmd" | sed -E 's|\$\{?CLAUDE_PLUGIN_ROOT\}?"?/[^"'"'"'[:space:]&|;]+||g' | tr -s '[:space:]"'"'"'&|;' '\n' | grep -E '(^|/)(hooks|scripts)/' || true)
     if [[ "$named" == 0 ]]; then
       echo "  hooks.json command names no hooks/ or scripts/ file: $cmd"
       ok=1
@@ -247,6 +257,7 @@ check_vendored-skills-lock() { python3 "$SELF_DIR/lib/repo_invariants.py" vendor
 check_tracked-file-size() { python3 "$SELF_DIR/lib/repo_invariants.py" tracked-file-size .; }
 check_site-duplicate-ids() { python3 "$SELF_DIR/lib/repo_invariants.py" site-duplicate-ids .; }
 check_workflow-hardening() { python3 "$SELF_DIR/lib/repo_invariants.py" workflow-hardening .; }
+check_personal-data() { python3 "$SELF_DIR/lib/repo_invariants.py" personal-data .; }
 
 status=0
 for check in "${SELECTED[@]}"; do

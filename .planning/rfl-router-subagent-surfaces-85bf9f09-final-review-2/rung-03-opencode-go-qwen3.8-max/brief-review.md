@@ -13,8 +13,8 @@ Independently re-hash both copies. Live SHA at brief write (2026-08-28):
 `28713951db2720a81da75e64d4c69f530f5032b94c10719e1ee1fd4f1dc5368a` / **641355** bytes
 
 Copies (must stay byte-identical; you MUST NOT Edit/Write either):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 If your re-hash differs from the live SHA above, use **your** live SHA in the report and treat any copy split as a HIGH freeze-integrity finding. Do not sync copies.
 

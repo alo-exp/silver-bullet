@@ -1,6 +1,6 @@
 # Rung 3 verify pass 2 (independent) — Qwen3.8 XHigh (OpenCode)
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 **Method:** VERIFY-ONLY pass 2, independent of pass 1. Fresh re-read of the full plan (407 lines) plus independent line-level greps for every I-25..I-31 fix marker and a new-blocker sweep (flag-scope contradictions, event-vocabulary closure, schema consistency, mermaid/§4.2/§9/§12 agreement). No plan edits.
 

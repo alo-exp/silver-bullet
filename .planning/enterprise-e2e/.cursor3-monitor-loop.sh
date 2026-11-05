@@ -2,8 +2,8 @@
 # Round Cursor-3 REAL monitor: poll pipeline rows 11-22, §5b verdict, fixture commit, ledger, Phase C.
 set -euo pipefail
 
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
-FIXTURE="/Users/shafqat/projects/enterprise-grade-test-app-cursor"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
+FIXTURE="/Users/<user>/projects/enterprise-grade-test-app-cursor"
 LOG="${SB_ROOT}/.e2e-cursor3-pipeline-live.log"
 STATE="${SB_ROOT}/.planning/enterprise-e2e/cursor3-real-pipeline.state"
 LEDGER="${SB_ROOT}/.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md"

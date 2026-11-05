@@ -1,7 +1,7 @@
 # RFL rung 9 — GPT-5.6 Sol Extra High (REVIEW ONLY)
 
 **When:** 2026-08-24T07:19:25Z
-**Plan:** [.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 **SHA-256:** `133f350405f66d9724f1e536360b7e02eedc0a0a0353c2131f4da87dade05cad` (413 lines)
 
 ```

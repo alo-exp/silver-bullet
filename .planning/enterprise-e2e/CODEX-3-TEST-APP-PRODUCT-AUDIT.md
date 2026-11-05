@@ -129,4 +129,4 @@ Round Codex-3 REAL is the **first honest Codex product certification** on a clea
 
 ---
 
-*Audit finalized 2026-07-03; post-main-merge sync 2026-07-04 @ `56dc2374`. Evidence: fixture git @ `/Users/shafqat/projects/enterprise-grade-test-app` branch `enterprise-e2e/round-9-codex`, SB logs @ `.e2e-row*-codex-attempt.log`, rescore @ `.codex-r3-force1416-rescore.log`.*
+*Audit finalized 2026-07-03; post-main-merge sync 2026-07-04 @ `56dc2374`. Evidence: fixture git @ `/Users/<user>/projects/enterprise-grade-test-app` branch `enterprise-e2e/round-9-codex`, SB logs @ `.e2e-row*-codex-attempt.log`, rescore @ `.codex-r3-force1416-rescore.log`.*

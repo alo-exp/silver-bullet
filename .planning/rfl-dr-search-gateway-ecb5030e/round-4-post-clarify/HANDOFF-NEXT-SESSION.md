@@ -4,9 +4,9 @@ Copy the **Prompt** block into a new chat that is rooted on the **main checkout*
 
 ## State
 
-- **Plan (canonical; may be outside git):** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+- **Plan (canonical; may be outside git):** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 - **Round:** `.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/`
-- **Work from main:** `/Users/shafqat/projects/silver-bullet/repo` (confirm with `git worktree list`). Do **not** reopen worktree `ewwf` if removed.
+- **Work from main:** `/Users/<user>/projects/silver-bullet/repo` (confirm with `git worktree list`). Do **not** reopen worktree `ewwf` if removed.
 - **Freeze SHA (re-hash the plan before any action):** `f6ba43bb7d7d4d4ca394333ae5f7c15022059040edac9ec75585654630584cd6`
 - **Commit SHA (RFL artifacts on feature branch `cursor/c7ad820b`):** `04de855ef6919315fef215f20fb8dd841c6e3f61`
 - **Main SHA (after local land):** `ec54642697e064030ba68d37fd687692194b79ea`
@@ -34,10 +34,10 @@ Copy the **Prompt** block into a new chat that is rooted on the **main checkout*
 ```
 You are continuing Round 4 post-clarify RFL from main. Start at rung 3.
 
-You are the RFL parent/launcher (not the reviewer). Work from the main checkout at /Users/shafqat/projects/silver-bullet/repo (confirm with `git worktree list`). Do not reopen worktree ewwf if it was removed.
+You are the RFL parent/launcher (not the reviewer). Work from the main checkout at /Users/<user>/projects/silver-bullet/repo (confirm with `git worktree list`). Do not reopen worktree ewwf if it was removed.
 
 Canonical plan (reviewer corpus = this file ONLY):
-  /Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md
+  /Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md
 Round dir:
   .planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/
 Skill: skills/silver-review-fix-ladder/SKILL.md Policy G (pack-ledger).
@@ -45,7 +45,7 @@ Skill: skills/silver-review-fix-ladder/SKILL.md Policy G (pack-ledger).
 First action (before any Task):
 1. Graphify CLI: `graphify query "review-fix-ladder Policy G pack-ledger encoder"` (not Graphify MCP query_graph).
 2. agentmemory `memory_save` that you resumed from HANDOFF-NEXT-SESSION.md on main.
-3. Re-hash the plan: `shasum -a 256 /Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+3. Re-hash the plan: `shasum -a 256 /Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
    Required freeze: f6ba43bb7d7d4d4ca394333ae5f7c15022059040edac9ec75585654630584cd6
    If drifted, STOP.
 4. Refresh the encoder brief (redirect stdout; do not handwrite briefs):

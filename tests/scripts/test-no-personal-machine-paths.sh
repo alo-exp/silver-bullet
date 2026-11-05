@@ -5,23 +5,32 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 
 cd "$TL_REPO_ROOT"
-PERSONAL_HOME='/Users/shafqat'
-
-# Files that quote the path as data (a path-leak detector, a Codex trust-config fixture, a
-# recorded terminal capture) and so legitimately keep it.
-ALLOWED_DATA=(
-  ':!tests/scripts/test-no-personal-machine-paths.sh'
-  ':!tests/scripts/test-codex-cli-isolation.sh'
-  ':!tests/tui-contract/fixtures/*'
-  ':!tests/e2e-live/scenarios/test-e2e-live-full-surface-journey.sh'
-)
-
-hits="$(git grep -n -- "$PERSONAL_HOME" -- hooks scripts skills site templates Makefile tests "${ALLOWED_DATA[@]}" || true)"
-assert_eq "no personal home in executable code" "" "$hits"
+# R13-11: no tracked text file (code, docs, .planning, research, .agentmemory) holds a personal
+# home-directory path or an email address outside the allowlist. The invariant never prints the
+# value it found, so a failure names only file and line.
+hits="$(python3 scripts/lib/repo_invariants.py personal-data . || true)"
+assert_eq "no personal paths or foreign emails in tracked files" "" "$hits"
 
 for doc in docs/ENTERPRISE-E2E-LIVE-TEST.md scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md docs/testing/MANUAL-E2E-SMOKE-TEST.md; do
-  assert_eq "operator doc $doc has no personal home" "" "$(grep -n -- "$PERSONAL_HOME" "$doc" || true)"
   assert_contains "operator doc $doc defines <sb-repo>" "$(cat "$doc")" '<sb-repo>'
+done
+
+# The private files stay out of the tree and out of future commits.
+for gone in SETUP_REPORT.md .planning/rfl-prd-silver-doctor-opt-in-coverage-20260828/CLAUDE-QUOTA.md; do
+  assert_eq "$gone is not tracked" "" "$(git ls-files -- "$gone")"
+done
+assert_eq "no AI session transcripts (.err) are tracked" "" "$(git ls-files -- '*.err')"
+assert_eq "no planning run logs are tracked" "" "$(git ls-files -- '.planning/**/*.log' 'research/**/*.log')"
+assert_eq "no rotated run logs (.log.attemptN, .err.N) are tracked" "" "$(git ls-files | grep -E '\.(err|log)\.' || true)"
+assert_eq "no AI CLI stdout/stderr captures are tracked" "" "$(git ls-files | awk -F/ '{print $NF "\t" $0}' | grep -E -i '^[^\t]*(stdout|stderr)' | cut -f2 || true)"
+assert_eq "no AI CLI .out run captures are tracked" "" "$(git ls-files | grep -E '\.out($|\.)' || true)"
+for pattern in docs/a/x-stdout.txt docs/a/x-stderr.txt .planning/a/rung/invoke.stdout .planning/a/rung/invoke.stderr .planning/a/rung/preflight.stdout.attempt2 .planning/a/logs/stdout-retry2.txt .planning/a/logs/stdout.txt .planning/a/logs/review-stdout.txt .planning/a/logs/review-stderr.txt SETUP_REPORT.md .planning/a/x.err .planning/a/launch.nohup.out .planning/a/launch.nohup.out.attempt2 research/a/probe.out .planning/a/x.err.attempt2 .planning/a/opencode-run.log.attempt2 .planning/a/run.log research/a/run.log .planning/a/CLAUDE-QUOTA.md; do
+  assert_eq ".gitignore covers $pattern" "0" "$(git check-ignore -q -- "$pattern" && echo 0 || echo 1)"
+done
+
+# The capture patterns are scoped to the run directories: honest fixture and source names stay committable.
+for name in tests/fixtures/expected-stdout.txt tests/golden/cmd-stderr.txt tests/fixtures/stdout.txt scripts/x.log.sh docs/guide.log.md tests/fixtures/run.stdout tests/fixtures/x.err tests/fixtures/expected.out; do
+  assert_eq "$name is not ignored" "1" "$(git check-ignore -q -- "$name" && echo 0 || echo 1)"
 done
 
 # hosts.json: test_app_root must be portable (relative to the SB checkout), never absolute.

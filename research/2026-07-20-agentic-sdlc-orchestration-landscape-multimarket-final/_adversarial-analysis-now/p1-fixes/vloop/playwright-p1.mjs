@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import playwrightPkg from "/Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/node_modules/playwright/index.js";
+import playwrightPkg from "/Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/node_modules/playwright/index.js";
 const { chromium } = playwrightPkg;
 import fs from "fs";
 import path from "path";

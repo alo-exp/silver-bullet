@@ -1,6 +1,6 @@
 # Rung 2 review — DeepSeek V4 Pro Max (OpenCode)
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 **Method:** `/silver:agent-opencode` — `scripts/agent-opencode/invoke.sh` missing in this sparse HEAD (would also refuse non-`mimo-v2.5`). Native fallback `opencode run -m opencode-go/deepseek-v4-pro --variant max --auto`. Banner `build · deepseek-v4-pro`. Not remapped to Grok or Fast.
 

@@ -1,6 +1,6 @@
 # Rung 3 review — Qwen3.8 XHigh (OpenCode)
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 **Method:** Qwen3.8 XHigh via opencode CLI, non-interactive (direct spec review; no TUI harness). Full plan read from disk (407 lines, verbatim, two passes). Charter V1–V10 re-run with `rg`. Rung-01/rung-02 reviews and this rung's prior draft (`review.prior-stale.md`, `verify_1.md`, `verify_2.md`) reconciled against the current text.
 

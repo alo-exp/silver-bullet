@@ -1,7 +1,7 @@
 # Validation Overlay Results — 2026-06-29 (outcome-only registry)
 
 **Run:** Enterprise E2E validation overlay (outcome claims) + pre-release overlay (feature claims)  
-**SB repo:** `/Users/shafqat/projects/silver-bullet/repo` @ `main`  
+**SB repo:** `/Users/<user>/projects/silver-bullet/repo` @ `main`  
 **Matrix driver:** Not disturbed — overlay ran alongside active matrix (no pkill)
 
 ---

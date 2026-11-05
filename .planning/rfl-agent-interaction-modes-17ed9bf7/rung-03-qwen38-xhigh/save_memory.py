@@ -7,7 +7,7 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path("/Users/shafqat/projects/silver-bullet/repo")
+ROOT = Path("/Users/<user>/projects/silver-bullet/repo")
 PAYLOAD = {
     "title": "RFL AIM 17ed9bf7 rung-2-fix already-done; starting rung-3 Qwen3.8 XHigh",
     "kind": "decision",

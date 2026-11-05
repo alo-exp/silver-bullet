@@ -3,8 +3,8 @@
 # Prior wrapper pass wrote a 686-byte IN_PROGRESS stub then was SIGTERM'd at 600s
 # while OmniRoute was still returning HTTP 200. Archive that stub and re-run invoke.sh.
 set -u
-RUNG="/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high"
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
+RUNG="/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
 INVOKE="${SB_ROOT}/scripts/agent-pi/invoke.sh"
 REPORT="${RUNG}/review.md"
 LOGDIR="${RUNG}/logs"

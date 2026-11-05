@@ -2,8 +2,8 @@
 
 Operator protocol for executing 22 supervised Claude TUI workflow sessions against `alo-exp/enterprise-grade-test-app`. Evidence lands in round ledgers under this directory.
 
-**Working directory for SB fixes:** `/Users/shafqat/projects/silver-bullet/repo`  
-**Working directory for Claude TUI:** `/Users/shafqat/projects/enterprise-grade-test-app`
+**Working directory for SB fixes:** `/Users/<user>/projects/silver-bullet/repo`  
+**Working directory for Claude TUI:** `/Users/<user>/projects/enterprise-grade-test-app`
 
 ---
 
@@ -11,7 +11,7 @@ Operator protocol for executing 22 supervised Claude TUI workflow sessions again
 
 1. SB repo on intended release commit; `bash tests/run-all-tests.sh` green.
 2. `bash scripts/install-claude.sh` from SB repo checkout (local marketplace).
-3. Test app cloned at `/Users/shafqat/projects/enterprise-grade-test-app`; pin baseline SHA in ledger header.
+3. Test app cloned at `/Users/<user>/projects/enterprise-grade-test-app`; pin baseline SHA in ledger header.
 4. **Graphify** (SB repo): `graphify update .` after SB code edits; graph current before round start.
 5. **agentmemory:** server healthy (`curl -sf http://localhost:3111/agentmemory/health`); MCP connected for Claude.
 
@@ -20,7 +20,7 @@ Operator protocol for executing 22 supervised Claude TUI workflow sessions again
 ## Preflight (before Session 0)
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo
+cd /Users/<user>/projects/silver-bullet/repo
 bash tests/e2e-live/hook-delivery-preflight.sh   # SB_LIVE_AGENT=claude when set
 ```
 
@@ -37,7 +37,7 @@ export SB_LIVE_DEBUG_DUMP=1
 Before opening Claude TUI for each workflow row:
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo
+cd /Users/<user>/projects/silver-bullet/repo
 graphify query "<workflow slug> routes hooks skills orchestrator"
 ```
 
@@ -63,7 +63,7 @@ At test-app init (Session 0): after `/silver:init`, in test app CWD run `graphif
 ## Session 0 — Bootstrap (`/silver:init`)
 
 ```bash
-cd /Users/shafqat/projects/enterprise-grade-test-app
+cd /Users/<user>/projects/enterprise-grade-test-app
 claude   # TUI, CWD = test app
 ```
 

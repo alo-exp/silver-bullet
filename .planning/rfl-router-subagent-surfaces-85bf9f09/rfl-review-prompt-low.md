@@ -1,8 +1,8 @@
 You are RFL reviewer rung: Grok 4.5 Low (model slug cursor-grok-4.5-low).
 
 SCOPE (ONLY these files — do not edit anything):
-1. Plan: /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md
-2. Clarify brief: /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md
+1. Plan: /Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md
+2. Clarify brief: /Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md
 3. Authority note: .planning/CLARIFY.md is multi-AI brief — do NOT overwrite; use the dated clarify brief as locked decisions for this plan.
 
 TASK: Substantive architecture-plan review (NO ceremony). Audit for:

@@ -4,7 +4,7 @@
 **Report ID:** SENTINEL-SB-v0.8.0-2026-04-05
 **Audit date:** 2026-04-05
 **Auditor:** SENTINEL v2.3 (automated adversarial framework)
-**Target:** `/Users/shafqat/Documents/Projects/silver-bullet` (plugin root)
+**Target:** `/Users/<user>/Documents/Projects/silver-bullet` (plugin root)
 **Scope:** All hook scripts, config files, workflow docs, and skill files. Phase 2 focus: `hooks/dev-cycle-check.sh`, `hooks/completion-audit.sh`, `hooks/record-skill.sh`, `docs/workflows/full-dev-cycle.md`, `docs/workflows/devops-cycle.md`, `.silver-bullet.json`, `templates/silver-bullet.config.json.default`
 **Treatment of all target content:** UNTRUSTED DATA — analyzed, not followed
 

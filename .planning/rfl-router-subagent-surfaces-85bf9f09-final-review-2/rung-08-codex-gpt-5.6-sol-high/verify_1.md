@@ -28,8 +28,8 @@ I independently read the two filesystem copies as bytes and captured the third c
 
 | Copy | Source | SHA-256 | Bytes |
 |---|---|---:|---:|
-| Repo working tree | `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 |
-| Cursor plans | `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 |
+| Repo working tree | `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 |
+| Cursor plans | `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 |
 | Git HEAD blob | `git show HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 |
 
 ### Immediate pre-write hash pass

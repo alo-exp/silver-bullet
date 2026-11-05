@@ -8,12 +8,12 @@ Cursor Task gemini-3.7-flash-high (no Pi)
 - **Phase:** VERIFY-ONLY pass 2/2 (`rung_06_verify_2`) — no triage, no fix, no freeze edits, no ladder advancement to rung 7
 - **Date:** 2026-08-27
 - **Parent session:** `d5150f38-4d37-458d-9bdb-5e6f985975d3`
-- **Prior review:** [`review.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/review.md) — **CLEAN**, HIGH 0 / MED 0 / LOW 0 / NIT 0, **Cursor Task Gemini (no Pi)**, APPLY no. Hashed `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` / 621247 bytes.
-- **Prior verify_1:** [`verify-1.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/verify-1.md) — **CLEAN / VERIFY_PASS**, Cursor Task Gemini (no Pi), SHA `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` / 621247 bytes.
+- **Prior review:** [`review.md`](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/review.md) — **CLEAN**, HIGH 0 / MED 0 / LOW 0 / NIT 0, **Cursor Task Gemini (no Pi)**, APPLY no. Hashed `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` / 621247 bytes.
+- **Prior verify_1:** [`verify-1.md`](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/verify-1.md) — **CLEAN / VERIFY_PASS**, Cursor Task Gemini (no Pi), SHA `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` / 621247 bytes.
 - **Parent Policy A:** **no ACCEPT to apply** this rung
 - **Scope (independently re-hashed; disk wins):**
-  - [`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
-  - [`/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
 
 ---
 
@@ -35,8 +35,8 @@ Both copies of the plan freeze were independently read and hashed via SHA-256 di
 
 | File Target | Path | Size (Bytes) | Computed SHA-256 | Status |
 |---|---|---|---|---|
-| Repo Copy | `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | 621,247 | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | MATCH |
-| Cursor Copy | `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | 621,247 | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | MATCH |
+| Repo Copy | `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | 621,247 | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | MATCH |
+| Cursor Copy | `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | 621,247 | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | MATCH |
 
 - **Byte-identical verification:** **YES** (`buf1.equals(buf2)` is `true`; identical byte count of 621,247 across 4,290 lines).
 - **Canonical freeze verified:** `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` / 621247 bytes.
