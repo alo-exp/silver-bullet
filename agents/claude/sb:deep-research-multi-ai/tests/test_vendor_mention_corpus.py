@@ -208,15 +208,46 @@ class VendorMentionCorpusTests(unittest.TestCase):
         self.assertEqual(leaks, [], f"{len(leaks)} of 76 rows credit a wrong vendor")
 
     def test_a_pack_url_must_be_a_real_url_to_credit(self) -> None:
-        for text in ("See https://www.cursor.com/pricing for plans.", "Docs: cursor.com/pricing.", "Visit www.cursor.com today.",
+        for text in ("See https://www.cursor.com/pricing for plans.", "Visit www.cursor.com today.",
                      "Try https://devin.ai/ now."):
             vendors = set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))
             self.assertTrue(vendors & {"cursor", "cursor-agents", "devin"}, text)
         for text in ("Export the logo as devin.ai and send it.", "Email devin.ai@example.com.", "conductor.build() registers it.",
                      "The DOS program CURSOR.COM runs.", "See user_cursor.com.", "Redirect via https://example.org?next=cursor.com",
-                     "Redirect via https://example.org#tembo.io", "Run ./autogen.sh before ./configure.", "cursor.com", "Visit cursor.COM/x"):
+                     "Redirect via https://example.org#tembo.io", "Run ./autogen.sh before ./configure.", "cursor.com", "Visit cursor.COM/x",
+                     "Docs: cursor.com/pricing.", "Go: github.com/obra/superpowers/skills."):
             vendors = set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))
             self.assertEqual(vendors & self.ambiguous, set(), text)
+
+    def test_the_r9_url_attacks_credit_nothing_in_text_or_in_source_ref(self) -> None:
+        spec = json.loads((Path(__file__).parent / "fixtures" / "vendor_url_cases.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(spec["neg"]), 70)
+        leaks = []
+        for text in spec["neg"]:
+            words = text.split(" ")
+            for row in (text, {"text": text + " Cursor Devin Conductor Tembo Superpowers GSD Codex", "source_ref": words[2] if len(words) > 2 else text}):
+                body = row if isinstance(row, str) else row["text"]
+                extra = {} if isinstance(row, str) else {"source_ref": row["source_ref"]}
+                with m.claim_scope(m._declared_for_row(dict(extra, text=body), self.known, self.pack)):
+                    got = set(m._extract_slugs_from_text(body, self.known, self.pack))
+                got |= set(sc._envelope_evidence_slugs(envs(body, extra), self.pack))
+                if got & self.ambiguous:
+                    leaks.append((sorted(got & self.ambiguous), row))
+        self.assertEqual(leaks, [], f"{len(leaks)} of 140 rows credit an ambiguous vendor")
+
+    def test_only_a_parsed_url_with_a_scheme_or_www_credits(self) -> None:
+        yes = ("See https://www.cursor.com/pricing for plans.", "Try https://devin.ai/ now.", "See https://docs.cursor.com/x.",
+               "See <https://cursor.com>.", "See [Cursor](https://cursor.com/pricing).", "(see HTTPS://cursor.com/pricing)",
+               "Use www.tembo.io, now.", "Port https://cursor.com:8443/x works.", "https://cursor.com.", '"https://cursor.com/x" is the link.')
+        for text in yes:
+            self.assertTrue((set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))) & self.ambiguous, text)
+        no = ("https://devin.ai:443@mirror.example/gates", "https://devin.ai%2eexample.org/", "cursor.com.\u00e9vil.io", "https://cursor.com.\u00e9vil.io/",
+              "Visit cursor.com/x or devin.ai/2 today.", "[https://devin.ai/](https://example.com/)", "x(https://cursor.com/) y", "https://cursor.com.evil.io/",
+              "https://notcursor.com/", "https://evilcursor.com/", "https://Cursor.com/", "https://cursor.com\\@evil.io/")
+        for text in no:
+            self.assertEqual((set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))) & self.ambiguous, set(), text)
+        self.assertEqual(self.registry.url_slug("cursor.com/pricing"), None)
+        self.assertEqual(self.registry.url_slug("https://cursor.com/pricing"), "cursor")
 
     def test_autogen_is_a_build_tool_name_so_it_needs_a_signal(self) -> None:
         self.assertIn("autogen", self.registry.ambiguous_vendors())
