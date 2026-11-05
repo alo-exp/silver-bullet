@@ -175,6 +175,10 @@ _sb_consent_lock_reclaim() { # LOCK ANYWAY: remove LOCK when its owner is gone (
   return "$rc"
 }
 
+_sb_consent_write_owner() { # LOCK: record this process as the lock's owner
+  printf '%s' "$$" >"${1}/pid" 2>/dev/null
+}
+
 sb_consent_set() {
   local lock dir tries="${SB_CONSENT_LOCK_TRIES:-100}" rc=0 ownerless=0
   [[ "$tries" =~ ^[1-9][0-9]{0,2}$|^1000$ ]] || tries=100
@@ -184,7 +188,7 @@ sb_consent_set() {
     return $?
   fi
   lock="${dir}/.consent.lock"
-  until mkdir "$lock" 2>/dev/null && printf '%s' "$$" >"${lock}/pid" 2>/dev/null; do
+  until mkdir "$lock" 2>/dev/null; do
     _sb_consent_lock_reclaim "$lock" "$ownerless" && continue
     tries=$((tries - 1))
     if ((tries <= 0)); then
@@ -198,6 +202,9 @@ sb_consent_set() {
     fi
     sleep 0.1
   done
+  # The directory is the lock; the owner record is best effort. Without it the lock stays
+  # reclaimable after the wait (see above), so an unwritable pid file never fails the write.
+  _sb_consent_write_owner "$lock" || true
   _sb_consent_set_locked "$@" || rc=$?
   rm -rf -- "$lock"
   return "$rc"
