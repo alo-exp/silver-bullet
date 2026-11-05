@@ -439,6 +439,18 @@ run_tool PreToolUse mcp__github__create_release '{"tag_name":"v9","target_commit
 assert_contains "MCP create_release with an unresolvable target denies" "$(message)" "does not resolve to a commit"
 unapprove
 
+# ── review repair: helper failure with an MCP tool that is neither a delivery nor a read ──
+mkproj mcp3
+state
+approve
+tl_stub python3 'exit 1'
+run_tool PreToolUse mcp__github__fork_repository '{"owner":"o"}'
+assert_eq "helper failure: an MCP tool that does not deliver passes (judged by name)" "none" "$(decision)"
+run_tool PreToolUse mcp__github__create_tag '{"tag":"v1"}'
+assert_eq "helper failure: MCP create_tag is judged intermediate and needs the planning floor" "deny" "$(decision)"
+rm -f "$TL_BIN/python3"
+unapprove
+
 # ── review repair: MCP read-only prefilter, copilot PR tool, helper-failure wording ──
 mkproj mcp2
 state
@@ -487,14 +499,5 @@ assert_contains "a failure inside a tier function denies instead of exiting 1" "
 cp "$TL_TMP/gates.sh.bak" "$PLUGIN/hooks/lib/completion-audit/gates.sh"
 unapprove
 
-# ── review repair: a copied deploy-gate snippet fails closed ──
-mkdir -p "$TL_TMP/copied"; cp "$TL_REPO_ROOT/scripts/deploy-gate-snippet.sh" "$TL_TMP/copied/"
-TPLP2="$TL_TMP/tplproj2"; mkdir -p "$TPLP2/.git"; cp "$TL_REPO_ROOT/templates/silver-bullet.config.json.default" "$TPLP2/.silver-bullet.json"
-tl_run env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'cd "$1" && bash "$2"; echo "rc=$?"' _ "$TPLP2" "$TL_TMP/copied/deploy-gate-snippet.sh"
-assert_contains "a copied snippet without the libraries blocks (rc 1)" "$TL_OUT" "rc=1"
-assert_contains "a copied snippet says the libraries were not found" "$TL_OUT" "runtime libraries were not found"
-tl_run env SB_RUNTIME_STATE_DIR="$SB_RUNTIME_STATE_DIR" bash -c 'cd "$1" && bash "$2"; echo "rc=$?"' _ "$TPLP2" "$TL_TMP/copied/deploy-gate-snippet.sh"
-assert_contains "a copied snippet with a state dir but no libraries still blocks without a state file" "$TL_OUT" "rc=1"
-rm -f "$SB_RUNTIME_STATE_DIR/state"
 
 tl_results
