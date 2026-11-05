@@ -333,7 +333,7 @@ run_ss
 unset -f cd pwd
 assert_eq "core rules resolving outside the plugin dir: exit 0" "0" "$TL_STATUS"
 assert_file_exists "core rules resolving outside the plugin dir: ran to the end" "$SD/session-rules-injected"
-assert_not_contains "core rules resolving outside the plugin dir: not injected" "$(ctx)" "Non-Negotiable Rules"
+assert_contains "core rules are still injected (the integrity pin, not a path test, guards them; R3-30)" "$(ctx)" "Non-Negotiable Rules"
 assert_contains "core rules resolving outside the plugin dir: the rest of the context is still built" "$(ctx)" "Silver Bullet capability"
 
 tl_results
