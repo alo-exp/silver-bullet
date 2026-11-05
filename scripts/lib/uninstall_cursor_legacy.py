@@ -62,7 +62,27 @@ TOOLSTACK_GATES = frozenset(
         "token-compression-tools-gate.sh",
         "record-graphify-query.sh",
         "record-agentmemory-usage.sh",
+        "session-bootstrap.sh",
+        "shell-compression.sh",
     }
+)
+# Programs the retired Cursor merge treated as Silver Bullet's wherever they sit.
+ADAPTER_PROGRAMS = frozenset({"codex-hook-adapter.sh"})
+# Files the Cursor hooks kept in ~/.cursor/.silver-bullet (exact names; nothing else there is touched).
+STATE_FILES = (
+    "site-session.json",
+    "site-visual-evidence.json",
+    "site-vloops.json",
+    "agent-delegation-active.json",
+    "subagent-spawns.jsonl",
+    "live-publish-evidence.json",
+    "pending-completion-audit.json",
+)
+PLUGIN_DIRS = (
+    "cache/alo-labs/silver-bullet",
+    "cache/alo-labs-agent-plugins/silver-bullet",
+    "cache/alo-labs-cursor/silver-bullet",
+    "marketplaces/github.com/alo-exp/silver-bullet",
 )
 PLUGIN_ROOT_PLACEHOLDERS = ("${CURSOR_PLUGIN_ROOT}", "$CURSOR_PLUGIN_ROOT")
 
@@ -89,7 +109,8 @@ RULES = {
 
 TOOLSTACK_HEADER = "# Global toolstack helpers — reads ~/.cursor/toolstack.json; defers to SB when bridge active."
 TOOLSTACK_STATE_DIR = "~/.cursor/state/toolstack"
-MCP_NAMES = frozenset({"graphify", "leanctx", "agentmemory", "context-mode", "alumnium"})
+_MCP_BASE = ("graphify", "leanctx", "agentmemory", "context-mode", "alumnium")
+MCP_NAMES = frozenset(_MCP_BASE) | frozenset("user-" + name for name in _MCP_BASE)
 MCP_RUNTIME_DIRS = ("/.silver-bullet/", "/five-tool-stack/")
 PLUGIN_ID = "silver-bullet@alo-labs"
 
@@ -138,8 +159,17 @@ class Cleanup:
         for placeholder in PLUGIN_ROOT_PLACEHOLDERS:
             if program.startswith(placeholder + "/hooks/") and program.rsplit("/", 1)[1] in self.hook_names:
                 return True
-        toolstack = str(self.home / "hooks" / "toolstack") + "/"
-        return program.startswith(toolstack) and program[len(toolstack) :] in TOOLSTACK_GATES
+        if program.rsplit("/", 1)[-1] in ADAPTER_PROGRAMS:
+            return True
+        for toolstack in (
+            str(self.home / "hooks" / "toolstack") + "/",
+            "~/.cursor/hooks/toolstack/",
+            "$HOME/.cursor/hooks/toolstack/",
+            "${HOME}/.cursor/hooks/toolstack/",
+        ):
+            if program.startswith(toolstack) and program[len(toolstack) :] in TOOLSTACK_GATES:
+                return True
+        return False
 
     def is_sb_entry(self, entry) -> bool:
         command = entry.get("command") if isinstance(entry, dict) else None
@@ -277,9 +307,9 @@ class Cleanup:
 
     def clean_plugins(self) -> None:
         plugins = self.home / "plugins"
-        for rel in ("cache/alo-labs/silver-bullet", "marketplaces/github.com/alo-exp/silver-bullet"):
+        for rel in PLUGIN_DIRS:
             path = plugins / rel
-            if path.is_dir() and not path.is_symlink():
+            if path.is_symlink() or path.is_dir():
                 self.move_away(path)
         local = plugins / "local" / "silver-bullet"
         manifest = local / ".cursor-plugin" / "plugin.json"
@@ -299,7 +329,15 @@ class Cleanup:
             del installed[PLUGIN_ID]
             self.save_json(registry, data)
 
+    def clean_state(self) -> None:
+        state = self.home / ".silver-bullet"
+        for name in STATE_FILES:
+            path = state / name
+            if path.is_symlink() or path.is_file():
+                self.move_away(path)
+
     def run(self) -> int:
+        failed = False
         for step in (
             self.clean_hooks,
             self.clean_mcp,
@@ -307,13 +345,18 @@ class Cleanup:
             self.clean_rules,
             self.clean_toolstack,
             self.clean_plugins,
+            self.clean_state,
         ):
-            step()
+            try:
+                step()
+            except ConfigError as exc:
+                print(f"ERROR: {exc}", file=sys.stderr)
+                failed = True
         if self.changes:
             print(f"Cursor legacy cleanup: {self.changes} change(s); moved items are under {self.bucket}")
         else:
             print(f"Cursor legacy cleanup: nothing Silver Bullet created was found under {self.home}")
-        return 0
+        return 1 if failed else 0
 
 
 def main(argv: list[str]) -> int:
@@ -325,11 +368,7 @@ def main(argv: list[str]) -> int:
     if not home.is_dir():
         print(f"Cursor legacy cleanup: no {home} directory, nothing to do")
         return 0
-    try:
-        return Cleanup(home, args.dry_run).run()
-    except ConfigError as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
-        return 1
+    return Cleanup(home, args.dry_run).run()
 
 
 if __name__ == "__main__":

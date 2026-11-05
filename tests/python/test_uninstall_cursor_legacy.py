@@ -258,6 +258,95 @@ class RulesToolstackPluginsTest(Base):
         self.assertTrue((self.home / "plugins/local/silver-bullet").is_dir())
 
 
+class ReviewRepairTest(Base):
+    def test_toolstack_session_bootstrap_and_shell_compression_entries_are_stripped(self):
+        deployed = str(self.home / "hooks" / "toolstack")
+        data = {
+            "hooks": {
+                "sessionStart": [{"command": f"bash {deployed}/session-bootstrap.sh"}, USER_HOOK],
+                "preToolUse": [
+                    {"command": f"bash {deployed}/shell-compression.sh"},
+                    {"command": "bash ~/.cursor/hooks/toolstack/session-bootstrap.sh"},
+                    {"command": "bash $HOME/.cursor/hooks/toolstack/shell-compression.sh"},
+                    {"command": f"bash {deployed}/mine.sh"},
+                ],
+            }
+        }
+        path = self.write_json("hooks.json", data)
+        self.assertEqual(self.clean()[0], 0)
+        hooks = json.loads(path.read_text())["hooks"]
+        self.assertEqual(hooks["sessionStart"], [USER_HOOK])
+        self.assertEqual(hooks["preToolUse"], [{"command": f"bash {deployed}/mine.sh"}])
+
+    def test_every_plugin_path_the_old_uninstall_removed_is_covered(self):
+        paths = (
+            "plugins/cache/alo-labs/silver-bullet",
+            "plugins/cache/alo-labs-agent-plugins/silver-bullet",
+            "plugins/cache/alo-labs-cursor/silver-bullet",
+            "plugins/marketplaces/github.com/alo-exp/silver-bullet",
+        )
+        for rel in paths:
+            with self.subTest(rel=rel):
+                self.write(rel + "/abc/file", "x")
+                neighbour = self.write(str(Path(rel).parent / "other" / "file"), "keep")
+                self.assertEqual(self.clean()[0], 0)
+                self.assertFalse((self.home / rel).exists())
+                self.assertTrue(neighbour.exists())
+
+    def test_cursor_cache_sha_symlinks_are_moved_not_followed(self):
+        target = self.home / "plugins" / "cache" / "alo-labs" / "silver-bullet" / "deadbeef"
+        target.mkdir(parents=True)
+        link = self.home / "plugins" / "cache" / "alo-labs-cursor" / "silver-bullet" / "deadbeef"
+        link.parent.mkdir(parents=True)
+        link.symlink_to(target)
+        self.assertEqual(self.clean()[0], 0)
+        self.assertFalse(link.is_symlink())
+        self.assertFalse((self.home / "plugins/cache/alo-labs-cursor/silver-bullet").exists())
+
+    def test_symlinked_plugin_directory_itself_is_moved(self):
+        real = self.home / "elsewhere"
+        real.mkdir()
+        link = self.home / "plugins" / "cache" / "alo-labs-agent-plugins" / "silver-bullet"
+        link.parent.mkdir(parents=True)
+        link.symlink_to(real)
+        self.assertEqual(self.clean()[0], 0)
+        self.assertFalse(link.is_symlink())
+        self.assertTrue(real.is_dir())
+
+    def test_sb_state_files_are_moved_and_neighbours_stay(self):
+        for name in m.STATE_FILES:
+            self.write(f".silver-bullet/{name}", "x")
+        mine = self.write(".silver-bullet/mine.json", "keep")
+        self.assertEqual(self.clean()[0], 0)
+        for name in m.STATE_FILES:
+            self.assertFalse((self.home / ".silver-bullet" / name).exists(), name)
+        self.assertTrue(mine.exists())
+
+    def test_codex_adapter_program_is_stripped_but_user_hooks_stay(self):
+        adapter = "/home/u/.cursor/plugins/cache/alo-labs/silver-bullet/1/hooks/codex-hook-adapter.sh"
+        path = self.write_json("hooks.json", {"hooks": {"stop": [{"command": f"bash {adapter} stop.sh"}, USER_HOOK]}})
+        self.assertEqual(self.clean()[0], 0)
+        self.assertEqual(json.loads(path.read_text())["hooks"]["stop"], [USER_HOOK])
+
+    def test_user_prefixed_mcp_server_in_the_runtime_is_removed(self):
+        path = self.write_json(
+            "mcp.json",
+            {"mcpServers": {"user-agentmemory": {"command": "/h/.silver-bullet/five-tool-stack/x"}, "user-other": {"command": "x"}}},
+        )
+        self.assertEqual(self.clean()[0], 0)
+        self.assertEqual(list(json.loads(path.read_text())["mcpServers"]), ["user-other"])
+
+    def test_a_malformed_file_does_not_stop_the_other_steps(self):
+        self.write("mcp.json", "{bad")
+        self.write("agents/sb:plan.md", "x")
+        self.write("plugins/cache/alo-labs/silver-bullet/1/x", "x")
+        code, _, err = self.clean()
+        self.assertEqual(code, 1)
+        self.assertIn("ERROR", err)
+        self.assertFalse((self.home / "agents/sb:plan.md").exists())
+        self.assertFalse((self.home / "plugins/cache/alo-labs/silver-bullet").exists())
+
+
 class RunTest(Base):
     def populate(self):
         self.write_json("hooks.json", {"hooks": {"stop": [{"command": SB_BRIDGE}]}})
