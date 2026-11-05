@@ -64,10 +64,7 @@ if [[ "$hook_event" == "PreToolUse" ]]; then
     needs_evidence=true
   fi
 elif [[ "$hook_event" == "Stop" ]]; then
-  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
-    source "$_lib_dir/orchestrator-parent.sh"
-    sb_orchestrator_is_worker_session 2>/dev/null && exit 0
-  fi
+  # Stop is always the parent's event (workers end with SubagentStop): no worker skip (R9-05).
   if sb_site_session_gates_apply; then
     if [[ -f "${SB_STATE_DIR}/site-session.json" ]]; then
       push_intent="$(jq -r '.push_intent // false' "${SB_STATE_DIR}/site-session.json" 2>/dev/null || echo false)"

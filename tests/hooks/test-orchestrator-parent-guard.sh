@@ -54,6 +54,16 @@ assert_contains() {
   fi
 }
 
+assert_not_parent_block() { # name output: a worker may still be held to the directive, never to parent mode
+  if grep -qF 'ORCHESTRATOR PARENT' <<<"$2"; then
+    echo "FAIL: $1 (got a parent-mode block: $2)"
+    FAIL=$((FAIL + 1))
+  else
+    echo "PASS: $1"
+    PASS=$((PASS + 1))
+  fi
+}
+
 assert_empty() {
   local name="$1" hay="$2"
   if [[ -z "$hay" ]]; then
@@ -153,78 +163,48 @@ out_skill=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"S
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_contains "parent blocks direct flow skill" "$out_skill" "ORCHESTRATOR PARENT"
 
-# Worker detected via marker file without SB_ORCHESTRATOR_WORKER env
+# Worker identity is the payload's agent_id (R4-02); the spawn record file confers nothing.
 WORK2=$(mktemp -d)
 git -C "$WORK2" init -q
 echo '{"sb_initiated":true,"orchestrator_mode":"parent","state":{"state_file":"'"$TMPSTATE"'"}}' >"$WORK2/.silver-bullet.json"
 echo '# SB' >"$WORK2/silver-bullet.md"
 mkdir -p "$WORK2/.planning/workflows"
-jq -n --arg at "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" '{skill:"silver-plan",template:"PLAN",spawned_at:$at}' \
-  >"${SB_TEST_DIR}/orchestrator-worker-active.json"
-out_worker=$(cd "$WORK2" && printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{}}' | env -u SB_ORCHESTRATOR_PARENT -u SB_ORCHESTRATOR_WORKER \
-  SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
-if grep -qF 'ORCHESTRATOR PARENT' <<<"$out_worker"; then
-  echo "FAIL: worker marker without env should not get parent block"
-  FAIL=$((FAIL + 1))
-else
-  echo "PASS: worker marker without env treated as worker"
-  PASS=$((PASS + 1))
-fi
-
-out_worker_bash=$(cd "$WORK2" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"gh issue create"}}' | env -u SB_ORCHESTRATOR_PARENT -u SB_ORCHESTRATOR_WORKER \
-  SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+run_guard() { # run_guard WORKDIR PAYLOAD
+  (cd "$1" && printf '%s' "$2" | env -u SB_ORCHESTRATOR_PARENT -u SB_ORCHESTRATOR_WORKER \
+    SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+}
+EDIT_PARENT='{"hook_event_name":"PreToolUse","tool_name":"Edit","session_id":"main","tool_input":{}}'
+EDIT_WORKER='{"hook_event_name":"PreToolUse","tool_name":"Edit","session_id":"main","agent_id":"agent-A","agent_type":"general-purpose","tool_input":{}}'
+BASH_WORKER='{"hook_event_name":"PreToolUse","tool_name":"Bash","agent_id":"agent-A","tool_input":{"command":"gh issue create"}}'
+assert_contains "parent Edit is denied" "$(run_guard "$WORK2" "$EDIT_PARENT")" "ORCHESTRATOR PARENT"
+assert_not_parent_block "payload with agent_id is a worker: no parent-mode block" "$(run_guard "$WORK2" "$EDIT_WORKER")"
+out_worker_bash=$(run_guard "$WORK2" "$BASH_WORKER")
 if grep -qF 'ORCHESTRATOR DIRECTIVE' <<<"$out_worker_bash"; then
-  echo "FAIL: worker marker should allow Bash without directive skill recorded"
+  echo "FAIL: worker should allow Bash without directive skill recorded"
   FAIL=$((FAIL + 1))
 else
-  echo "PASS: worker marker allows Bash when directive pending"
+  echo "PASS: worker allows Bash when directive pending"
   PASS=$((PASS + 1))
 fi
+
+# R4-02: a parent Agent spawn must not turn the parent into a worker.
+run_guard "$WORK2" '{"hook_event_name":"PreToolUse","tool_name":"Agent","session_id":"main","tool_input":{"description":"look around"}}' >/dev/null
+assert_contains "after spawning, the parent Edit is still denied" "$(run_guard "$WORK2" "$EDIT_PARENT")" "ORCHESTRATOR PARENT"
+assert_contains "after spawning, the parent Bash is still denied" "$(run_guard "$WORK2" '{"hook_event_name":"PreToolUse","tool_name":"Bash","session_id":"main","tool_input":{"command":"git commit -am x"}}')" "ORCHESTRATOR PARENT"
+# A forged marker file confers nothing.
+printf '{"spawned_at":"%s"}\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >"${SB_TEST_DIR}/orchestrator-worker-active.json"
+assert_contains "forged marker: parent Edit still denied" "$(run_guard "$WORK2" "$EDIT_PARENT")" "ORCHESTRATOR PARENT"
+# Pending blocking directive: a spawn does not open the parent's Bash either.
+printf '{"next_skill":"silver-plan","blocking":true,"reason":"r"}\n' >"${SB_TEST_DIR}/orchestrator-directive.json"
+assert_contains "pending directive + spawn: parent Bash denied" "$(run_guard "$WORK2" '{"hook_event_name":"PreToolUse","tool_name":"Bash","session_id":"main","tool_input":{"command":"rm -rf src && git commit -am x"}}')" "ORCHESTRATOR PARENT"
+# Two parallel workers: one worker finishing (SubagentStop) leaves the other classified as a worker.
+STOP_A='{"hook_event_name":"SubagentStop","agent_id":"agent-A","session_id":"main"}'
+(cd "$WORK2" && printf '%s' "$STOP_A" | SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$REPO_ROOT/hooks/stop-check.sh" >/dev/null 2>&1 || true)
+EDIT_WORKER_B='{"hook_event_name":"PreToolUse","tool_name":"Edit","session_id":"main","agent_id":"agent-B","tool_input":{}}'
+assert_not_parent_block "worker B still a worker after worker A stopped" "$(run_guard "$WORK2" "$EDIT_WORKER_B")"
+assert_contains "the parent is still denied after worker A stopped" "$(run_guard "$WORK2" "$EDIT_PARENT")" "ORCHESTRATOR PARENT"
+rm -f "${SB_TEST_DIR}/orchestrator-worker-active.json" "${SB_TEST_DIR}/orchestrator-directive.json"
 rm -rf "$WORK2" 2>/dev/null || true
-
-# Marker without spawned_at is invalid — parent guards must still apply
-WORK4=$(mktemp -d)
-git -C "$WORK4" init -q
-echo '{"sb_initiated":true,"orchestrator_mode":"parent","state":{"state_file":"'"$TMPSTATE"'"}}' >"$WORK4/.silver-bullet.json"
-echo '# SB' >"$WORK4/silver-bullet.md"
-printf '{"skill":"silver-plan","template":"PLAN"}\n' >"${SB_TEST_DIR}/orchestrator-worker-active.json"
-if sb_orchestrator_is_worker_session; then
-  echo "FAIL: marker without spawned_at must not classify session as worker"
-  FAIL=$((FAIL + 1))
-else
-  echo "PASS: marker without spawned_at ignored"
-  PASS=$((PASS + 1))
-fi
-out_invalid=$(cd "$WORK4" && printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{}}' | env -u SB_ORCHESTRATOR_PARENT -u SB_ORCHESTRATOR_WORKER \
-  SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
-assert_contains "invalid marker still blocks parent Edit" "$out_invalid" "ORCHESTRATOR PARENT"
-rm -rf "$WORK4" 2>/dev/null || true
-
-# Worker marker readable without jq on PATH
-WORK3=$(mktemp -d)
-git -C "$WORK3" init -q
-echo '{"sb_initiated":true,"orchestrator_mode":"parent","state":{"state_file":"'"$TMPSTATE"'"}}' >"$WORK3/.silver-bullet.json"
-echo '# SB' >"$WORK3/silver-bullet.md"
-printf '{"skill":"silver-plan","template":"PLAN","spawned_at":"%s"}\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-  >"${SB_TEST_DIR}/orchestrator-worker-active.json"
-FAKE_BIN=$(mktemp -d)
-cat >"$FAKE_BIN/jq" <<'SH'
-#!/usr/bin/env bash
-exit 1
-SH
-chmod +x "$FAKE_BIN/jq"
-PATH="$FAKE_BIN:$PATH"
-export PATH
-unset SB_ORCHESTRATOR_PARENT SB_ORCHESTRATOR_WORKER 2>/dev/null || true
-if sb_orchestrator_is_worker_session; then
-  echo "PASS: worker marker detected without jq"
-  PASS=$((PASS + 1))
-else
-  echo "FAIL: worker marker should be detected without jq"
-  FAIL=$((FAIL + 1))
-fi
-rm -rf "$FAKE_BIN"
-rm -rf "$WORK3" 2>/dev/null || true
 
 # Delegate wrapper: stage 6 requires DIRECT_FALLBACK (default-on V2)
 unset SB_AGENT_DELEGATE_V2 SB_AGENT_DELEGATE_DIRECT_FALLBACK

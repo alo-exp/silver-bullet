@@ -42,6 +42,8 @@ fi
 
 # Read JSON from stdin (hook event + optional context)
 stop_input="$(cat 2>/dev/null || true)"
+# shellcheck disable=SC2034  # read by sb_orchestrator_is_worker_session (subagent identity)
+SB_ORCH_HOOK_INPUT="$stop_input"
 stop_hook_event="$(printf '%s' "$stop_input" | jq -r '.hook_event_name // "Stop"' 2>/dev/null || echo Stop)"
 
 if [[ -f "$_lib_dir_early/stop-coalesce.sh" ]]; then
@@ -217,7 +219,7 @@ fi
     source "$lib_dir/orchestrator-scheduler.sh"
   fi
   if [[ "$stop_hook_event" == "SubagentStop" ]] && sb_orchestrator_is_worker_session 2>/dev/null; then
-    sb_orchestrator_clear_worker_marker 2>/dev/null || true
+    # A worker's own stop. Do not touch shared state: other workers may still be running.
     exit 0
   fi
   if [[ -f "$lib_dir/e2e-matrix-routing.sh" ]]; then
@@ -230,6 +232,8 @@ fi
   _stop_project_root="$(dirname "$config_file")"
   if sb_orchestrator_is_parent_session 2>/dev/null \
     && sb_orchestrator_state_applies_to_project "$_stop_project_root" 2>/dev/null; then
+    # No endless trap: release after repeated blocks with no orchestrator progress (R4-05).
+    sb_orchestrator_stop_block_released 2>/dev/null && exit 0
     cur_flow=""
     orch_file="$(sb_orchestrator_state_file 2>/dev/null || true)"
     [[ -f "$orch_file" ]] && cur_flow="$(jq -r '.current_flow // ""' "$orch_file" 2>/dev/null || true)"
@@ -251,6 +255,7 @@ fi
   if sb_orchestrator_is_parent_session 2>/dev/null \
     && declare -f sb_scheduler_parent_stop_blocked >/dev/null 2>&1 \
     && sb_scheduler_parent_stop_blocked "$_stop_project_root" 2>/dev/null; then
+    sb_orchestrator_stop_block_released 2>/dev/null && exit 0
     sched_reason="$(sb_scheduler_parent_stop_block_reason "$_stop_project_root" 2>/dev/null || printf 'Orchestrator scheduler: pending batch dispatch or join.')"
     if declare -f sb_orchestrator_event_record_stop_block >/dev/null 2>&1; then
       sb_orchestrator_event_record_stop_block "$sched_reason" 2>/dev/null || true

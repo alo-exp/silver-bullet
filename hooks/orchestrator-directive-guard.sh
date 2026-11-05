@@ -34,10 +34,6 @@ sb_odg_hook_field() {
       printf '%s' "$json" | grep -oE '"tool_name"[[:space:]]*:[[:space:]]*"[^"]+"' 2>/dev/null \
         | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || printf '%s' "$default"
       ;;
-    prompt)
-      printf '%s' "$json" | grep -oE '"prompt"[[:space:]]*:[[:space:]]*"[^"]*"' 2>/dev/null \
-        | head -1 | sed -E 's/.*"([^"]*)"$/\1/' || printf '%s' "$default"
-      ;;
     tool_input.skill)
       printf '%s' "$json" | grep -oE '"skill"[[:space:]]*:[[:space:]]*"[^"]+"' 2>/dev/null \
         | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || printf '%s' "$default"
@@ -60,13 +56,14 @@ if declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_ac
 fi
 
 input="$(cat 2>/dev/null || true)"
+# shellcheck disable=SC2034  # read by sb_orchestrator_is_worker_session (subagent identity)
+SB_ORCH_HOOK_INPUT="$input"
 [[ -n "$input" ]] || exit 0
 
 hook_event="$(sb_odg_hook_field "$input" 'hook_event_name' 'PreToolUse')"
 [[ "$hook_event" == "PreToolUse" ]] || exit 0
 
 tool_name="$(sb_odg_hook_field "$input" 'tool_name' '')"
-prompt="$(sb_odg_hook_field "$input" 'prompt' '')"
 
 emit_block() {
   local reason="$1"
@@ -137,8 +134,8 @@ if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrat
         tmpl="$(jq -r '.next_worker_template // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
         args="$(jq -r '.args // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
       fi
-      # Always write the worker marker on delegation spawn (#275). Claude Agent
-      # workers never get SubagentStart; the marker is their only classification signal.
+      # Evidence record of the delegation only. Worker identity is the payload's agent_id,
+      # per call (R4-02): this file must never make the parent itself look like a worker.
       sb_orchestrator_mark_worker_spawn "${expected:-ad-hoc}" "$tmpl" "$args" 2>/dev/null || true
       exit 0
       ;;
@@ -157,6 +154,10 @@ if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrat
     fi
     if declare -f sb_orchestrator_parent_bash_allowed >/dev/null 2>&1 && \
        sb_orchestrator_parent_bash_allowed "$_odg_cmd"; then
+      exit 0
+    fi
+    if [[ -n "${SB_ORCH_PARENT_BASH_DENY_REASON:-}" ]]; then
+      emit_block "$SB_ORCH_PARENT_BASH_DENY_REASON"
       exit 0
     fi
   fi
@@ -180,18 +181,8 @@ case "$tool_name" in
   *) exit 0 ;;
 esac
 
-# User override in prompt (audited on UserPromptSubmit; here we only honor if already logged this session)
-if [[ -n "$prompt" ]] && sb_orchestrator_prompt_has_override "$prompt"; then
-  repo_root=""
-  if declare -f sb_find_project_root >/dev/null 2>&1; then
-    repo_root="$(sb_find_project_root 2>/dev/null || true)"
-  fi
-  reason="$(sb_orchestrator_extract_override_reason "$prompt")"
-  expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
-  sb_orchestrator_log_override "${repo_root:-$PWD}" "$reason" "$expected"
-  sb_orchestrator_directive_clear
-  exit 0
-fi
+# SB OVERRIDE is a UserPromptSubmit concern (outcomes-check logs and clears it). PreToolUse
+# payloads carry no user prompt, so no override is honoured here (R4-28).
 
 # Workers spawned by parent: allow Bash without skill pre-record (delivery ops).
 if declare -f sb_orchestrator_worker_allows_bash >/dev/null 2>&1 \

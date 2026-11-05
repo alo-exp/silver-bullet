@@ -427,25 +427,44 @@ printf '{"skill":"silver-plan","template":"PLAN","spawned_at":"2020-01-01T00:00:
   SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
   bash "$HOOK" </dev/null 2>/dev/null ) || true
 assert_file_missing "startup clears stale orchestrator-worker-active.json" "$OVERRIDE_DIR/orchestrator-worker-active.json"
+# R4-02: the spawn record is evidence only. A fresh one does not make a session a worker, so a
+# startup without a subagent id clears it and injects no worker banner.
 printf '{"skill":"silver-plan","template":"PLAN","spawned_at":"%s"}\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
   > "$OVERRIDE_DIR/orchestrator-worker-active.json"
-out_worker=$( cd "$HOOK_WORKDIR" && \
+out_parent=$( cd "$HOOK_WORKDIR" && \
   SB_RUNTIME_PRESERVE_STATE_DIR=1 \
   SB_RUNTIME_STATE_DIR="$OVERRIDE_DIR" \
   SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
   bash "$HOOK" </dev/null 2>/dev/null ) || true
+assert_file_missing "startup without a subagent id clears a fresh spawn record" "$OVERRIDE_DIR/orchestrator-worker-active.json"
+if grep -qF 'SB WORKER SUBAGENT' <<<"$out_parent"; then
+  echo "  FAIL: a fresh spawn record must not make the main session a worker"
+  FAIL=$((FAIL + 1))
+else
+  echo "  PASS: a fresh spawn record does not make the main session a worker"
+  PASS=$((PASS + 1))
+fi
+# A SessionStart that carries the host's subagent id is a worker: record preserved, banner injected.
+printf '{"skill":"silver-plan","template":"PLAN","spawned_at":"%s"}\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+  > "$OVERRIDE_DIR/orchestrator-worker-active.json"
+out_worker=$( cd "$HOOK_WORKDIR" && \
+  printf '{"hook_event_name":"SessionStart","source":"startup","agent_id":"agent-A","agent_type":"general-purpose"}' | \
+  SB_RUNTIME_PRESERVE_STATE_DIR=1 \
+  SB_RUNTIME_STATE_DIR="$OVERRIDE_DIR" \
+  SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
+  bash "$HOOK" 2>/dev/null ) || true
 if [[ -f "$OVERRIDE_DIR/orchestrator-worker-active.json" ]]; then
-  echo "  PASS: startup preserves fresh orchestrator-worker-active.json (#275)"
+  echo "  PASS: startup with a subagent id preserves the spawn record (#275)"
   PASS=$((PASS + 1))
 else
-  echo "  FAIL: startup should preserve fresh orchestrator-worker-active.json (#275)"
+  echo "  FAIL: startup with a subagent id should preserve the spawn record (#275)"
   FAIL=$((FAIL + 1))
 fi
 if grep -qF 'SB WORKER SUBAGENT' <<<"$out_worker"; then
-  echo "  PASS: SessionStart injects worker banner when marker fresh (#275)"
+  echo "  PASS: SessionStart injects worker banner for a subagent id (#275)"
   PASS=$((PASS + 1))
 else
-  echo "  FAIL: SessionStart should inject worker banner when marker fresh (#275)"
+  echo "  FAIL: SessionStart should inject worker banner for a subagent id (#275)"
   FAIL=$((FAIL + 1))
 fi
 rm -rf "$HOOK_WORKDIR" "$OVERRIDE_DIR"
