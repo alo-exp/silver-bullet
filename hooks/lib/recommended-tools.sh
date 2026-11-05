@@ -218,14 +218,16 @@ sb_rt_stamp_write() {
   local path="${1:-}" dir tmp state_dir
   [[ -n "$path" && ! -d "$path" ]] || return 1
   dir="$(dirname "$path")"
-  # Only the runtime state dir itself is created with parents; any other directory (a
-  # marker subdirectory) must have its parent already, so a stamp never makes a tree.
+  # Only the runtime state dir itself is created with parents (a fixed path); a marker
+  # subdirectory of it is created one level deep with plain mkdir, never a tree.
   state_dir="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"
-  if [[ "$dir" == "${state_dir%/}" ]]; then
-    mkdir -p "$dir" 2>/dev/null || return 1
-  else
-    [[ -d "$dir" ]] || mkdir "$dir" 2>/dev/null || return 1
-  fi
+  state_dir="${state_dir%/}"
+  case "$dir" in
+    "$state_dir") mkdir -p "$dir" 2>/dev/null || return 1 ;;
+    "$state_dir"/*/*) [[ -d "$dir" ]] || return 1 ;;
+    "$state_dir"/*) mkdir -p "$state_dir" 2>/dev/null && { [[ -d "$dir" ]] || mkdir "$dir" 2>/dev/null; } || return 1 ;;
+    *) [[ -d "$dir" ]] || return 1 ;;
+  esac
   tmp="$(mktemp "${path}.XXXXXX" 2>/dev/null)" || return 1
   if date +%s >"$tmp" 2>/dev/null && mv -f -- "$tmp" "$path" 2>/dev/null; then
     return 0

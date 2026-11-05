@@ -70,7 +70,7 @@ assert_file_exists "clearing query state leaves the directive file in place" "$S
 
 echo "=== a stamp can never be a path inside a directory named like an SB state file ==="
 for ctl in trivial state branch mode orchestrator-directive.json planning-edit-override roadmap-edit-override skill-invocations; do
-  rm -rf "$STATE/$ctl"
+  rm -rf "${STATE:?}/$ctl"
   cfg "$(jq -cn --arg p "\${SB_RUNTIME_STATE_DIR}/$ctl/x-usage" '{graphify:{enabled_by_user:true, query_state_file:$p}}')"
   assert_eq "query_state_file $ctl/x-usage falls back" "$STATE/graphify-query" "$(sb_graphify_query_state_path "$GH_CFG")"
   sb_graphify_record_query "$GH_CFG"
