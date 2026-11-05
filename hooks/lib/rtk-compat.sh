@@ -6,8 +6,8 @@
 # scripts should bypass RTK filters when RTK is on PATH.
 #
 # Policy (Option C):
-#   • Agent Shell: full RTK when recommended_tools.rtk.enabled_by_user is true
-#     (upstream PreToolUse rewrite; SB hooks see original command before RTK).
+#   • Agent Shell: full RTK when the user consented to RTK (hooks/lib/user-consent.sh) in
+#     this SB project (upstream PreToolUse rewrite; SB hooks see original command before RTK).
 #   • SB hook bridge (cursor-hook-bridge.sh): no RTK_DISABLED when user opted in.
 #   • Harness / install scripts: export SB_RTK_COMPAT_MODE=verbatim before source
 #     to force RTK_DISABLED=1 for deterministic output parsing.
@@ -23,7 +23,8 @@ sb_rtk_user_opted_in() {
   if [[ -f "$_compat_lib_dir/sb-project-gate.sh" ]]; then
     # shellcheck source=sb-project-gate.sh
     source "$_compat_lib_dir/sb-project-gate.sh"
-    config_file="$(sb_find_project_config 2>/dev/null || true)"
+    # Walk-only: another session's cached project root must not decide this one.
+    config_file="$(sb_find_project_config_walk_only 2>/dev/null || true)"
   fi
   [[ -n "$config_file" && -f "$config_file" ]] || return 1
   if [[ -f "$_compat_lib_dir/recommended-tools.sh" ]]; then

@@ -24,9 +24,9 @@ Consent lives in `.silver-bullet.json`:
 
 | `enabled_by_user` | Behavior |
 |-----------------|----------|
-| `null` | Consent pending — SB prompts at init, update, session start |
-| `true` | Mandatory when install succeeded — hooks require LeanCTX for owned surfaces |
-| `false` | Advisory only — two-tool RTK + Context Mode stack unchanged |
+| `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project .`) |
+| `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 **MCP namespace:** LeanCTX tools are registered with the `lctx_` prefix. Never register raw `ctx_*` from LeanCTX when Context Mode is opted in — SB merge scripts enforce this separation.
 

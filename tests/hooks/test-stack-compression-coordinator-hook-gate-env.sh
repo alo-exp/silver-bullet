@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Shared PreToolUse gate assertions, part b (bypasses, project config, library faults) for hooks/stack-compression-coordinator.sh (tg2_gate_suite)
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 # shellcheck source=../lib/c-toolgates-2-helpers.sh
@@ -9,15 +13,17 @@ tg2_init_project
 tg2_install_jq_stub
 
 HOOK=hooks/stack-compression-coordinator.sh
-COORD="$SB_RUNTIME_STATE_DIR/stack-compression-coordinator"
-MUTEX="$SB_RUNTIME_STATE_DIR/stack-compression-mutex"
+# Coordinator state is scoped to one project and one host session (R5-13); the payloads carry no session id.
+COORD="$(source "$TL_REPO_ROOT/hooks/lib/stack-compression-coordinator.sh"; SB_STACK_SESSION=""; export SB_STACK_SESSION; sb_stack_coordinator_state_path "$TG2_CFG")"
+MUTEX="$(source "$TL_REPO_ROOT/hooks/lib/stack-compression-coordinator.sh"; SB_STACK_SESSION=""; export SB_STACK_SESSION; sb_stack_mutex_state_path "$TG2_CFG")"
 LEAN_CFG='{"sb_initiated":true,
  "recommended_tools":{"leanctx":{"enabled_by_user":true},"rtk":{"enabled_by_user":true},"context_mode":{"enabled_by_user":true}},
  "optimization_profiles":{"five_tool_routed":{"routes":{"sb_read":"leanctx","sb_shell":"rtk","sb_graph":"graphify","sb_remember":"agentmemory","sb_webfetch":"context_mode","sb_slice":"context_mode","sb_grep":"context_mode"}}}}'
-EDIT="$(tg2_edit_input)"
+# The coordinator guards the compression surfaces (Read, Grep, WebFetch, Bash, MCP); edits are not its business.
+EDIT="$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"Read", tool_input:{file_path:"/x"}}')"
 
 reset() { rm -f "$COORD" "$MUTEX" "$SB_RUNTIME_STATE_DIR/project-root"; tg2_cfg "$LEAN_CFG"; }
-dirty_mutex() { printf '{"violations":[{"route":"sb_shell","attempted":"leanctx","incumbent":"rtk","reason":"x","epoch":1}]}' >"$MUTEX"; }
+dirty_mutex() { mkdir -p "$(dirname "$MUTEX")"; printf '{"violations":[{"route":"sb_shell","attempted":"leanctx","incumbent":"rtk","reason":"x","epoch":1}]}' >"$MUTEX"; }
 mutex_count() { [[ -f "$MUTEX" ]] && jq -r '.violations | length' "$MUTEX" || echo "none"; }
 owner_of() { [[ -f "$COORD" ]] && jq -r --arg r "$1" '.surfaces[$r].owner // ""' "$COORD" || true; }
 mcp_input() { # tool [server] [arguments-json]
@@ -33,8 +39,8 @@ tg2_scenario_off() {
     suspended) jq '.recommended_tools |= with_entries(.value.enforcement_suspended=true)' <<<"$LEAN_CFG" >"$TG2_CFG" ;;
   esac
 }
-# While the mutex is dirty every tool call except a compliant recovery is blocked, including
-# payloads whose tool cannot be determined.
-TG2_GARBAGE_DENIES=yes TG2_SUITE_PART=b tg2_gate_suite "$HOOK" stack-compression-coordinator "$EDIT" "STACK COMPRESSION CONFLICT" "$TG2_PROJ/src/app.js" no yes
+# While the mutex is dirty the compression surfaces are blocked except for a compliant recovery;
+# a payload that cannot be parsed is never blocked.
+TG2_SUITE_PART=b tg2_gate_suite "$HOOK" stack-compression-coordinator "$EDIT" "STACK COMPRESSION CONFLICT" "" no yes
 
 tl_results

@@ -139,15 +139,17 @@ OC="$HOME/.config/opencode/opencode.json"
 assert_eq "opencode dry-run message" "DRY-RUN: merge agentmemory MCP into $OC" "$(GA_GLOBAL_DRY_RUN=1 ga_opencode_merge_agentmemory_mcp)"
 assert_file_absent "dry-run does not create config" "$OC"
 ga_opencode_merge_agentmemory_mcp
-assert_eq "new config has MCP" "@agentmemory/mcp" "$(jq -r '.mcp.agentmemory.args[1]' "$OC")"
+assert_eq "new config has the manifest MCP entry (local type, command array)" "local mcp" "$(jq -r '[.mcp.agentmemory.type, .mcp.agentmemory.command[1]] | join(" ")' "$OC")"
+assert_eq "entry carries the AGENTMEMORY_URL environment" "http://localhost:3111" "$(jq -r .mcp.agentmemory.environment.AGENTMEMORY_URL "$OC")"
 printf '{"theme":"dark","mcp":{"other":{"type":"stdio"}}}' >"$OC"
 ga_opencode_merge_agentmemory_mcp
 assert_eq "merge keeps other keys" "dark" "$(jq -r .theme "$OC")"
 assert_eq "merge keeps other MCP" "stdio" "$(jq -r .mcp.other.type "$OC")"
-assert_eq "merge adds agentmemory" "npx" "$(jq -r .mcp.agentmemory.command "$OC")"
+assert_eq "merge adds agentmemory (no npx stdio form)" "local" "$(jq -r .mcp.agentmemory.type "$OC")"
+assert_eq "merge is idempotent: a second run leaves the entry identical" "$(jq -c .mcp.agentmemory "$OC")" "$(ga_opencode_merge_agentmemory_mcp; jq -c .mcp.agentmemory "$OC")"
 printf '{"theme":"dark"}' >"$OC"
-no_t "merge without jq fails" env PATH="$PB" bash -c 'source "$1"; ga_opencode_merge_agentmemory_mcp' _ "$LIBF"
-assert_eq "config untouched when jq missing" '{"theme":"dark"}' "$(cat "$OC")"
+no_t "merge without python3 fails" env PATH="$PB" bash -c 'source "$1"; ga_opencode_merge_agentmemory_mcp' _ "$LIBF"
+assert_eq "config untouched when python3 is missing" '{"theme":"dark"}' "$(cat "$OC")"
 printf "not json" >"$OC"
 no_t "merge with invalid existing json fails" ga_opencode_merge_agentmemory_mcp 2>/dev/null
 assert_eq "invalid config left untouched" "not json" "$(cat "$OC")"
@@ -352,7 +354,7 @@ assert_contains "codex plugin marketplace add" "$(calls)" "codex plugin marketpl
 assert_contains "agentmemory connect codex" "$(calls)" "agentmemory connect codex --with-hooks"
 ga_apply_agentmemory_host opencode
 assert_file_exists "opencode host merges MCP config" "$HOME/.config/opencode/opencode.json"
-assert_eq "opencode MCP merged" "npx" "$(jq -r .mcp.agentmemory.command "$HOME/.config/opencode/opencode.json")"
+assert_eq "opencode MCP merged from the manifest" "local" "$(jq -r .mcp.agentmemory.type "$HOME/.config/opencode/opencode.json")"
 rm -rf "$HOME/.config"
 
 # ---------- apply host (full) ----------

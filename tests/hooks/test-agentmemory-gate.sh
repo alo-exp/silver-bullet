@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Tests for hooks/agentmemory-gate.sh PreToolUse enforcement
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -28,7 +32,7 @@ MOCK_BIN=""
 
 cleanup_all() {
   rm -rf "$TMPDIR_TEST" "${TEST_HOME:-}" "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" \
-    "${SB_TEST_DIR}/agentmemory-usage-${TEST_RUN_ID}" \
+    "${SB_TEST_DIR}/t${TEST_RUN_ID}-agentmemory-usage" \
     "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "$MOCK_BIN"
 }
 trap cleanup_all EXIT
@@ -40,6 +44,19 @@ assert_deny() {
     PASS=$((PASS + 1))
   else
     echo "  FAIL: $label — expected deny, got: $output"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+assert_contains() {
+  local label="$1" output="$2" needle="$3"
+  local reason
+  reason="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.permissionDecisionReason // ""')"
+  if grep -qF -- "$needle" <<<"$reason"; then
+    echo "  PASS: $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: $label — expected [$needle] in: $output"
     FAIL=$((FAIL + 1))
   fi
 }
@@ -107,10 +124,10 @@ EOF
 setup() {
   TMPDIR_TEST="$(mktemp -d)"
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
-  AM_STATE="${SB_TEST_DIR}/agentmemory-usage-${TEST_RUN_ID}"
+  AM_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-agentmemory-usage"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   TMPFILE="${TMPDIR_TEST}/src/app.js"
-  rm -f "$TMPSTATE" "$AM_STATE" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+  rm -f "$TMPSTATE" "$AM_STATE" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "${SB_TEST_DIR}/agentmemory-health"
   mkdir -p "$(dirname "$TMPFILE")" "${TMPDIR_TEST}/.agentmemory/memory"
   touch "$TMPFILE"
   git -C "$TMPDIR_TEST" init -q
@@ -154,7 +171,13 @@ setup
 write_cfg null true
 install_mock_agentmemory
 out="$(run_edit)"
-assert_allow "consent pending bypasses gate" "$out"
+assert_deny "user consent alone enforces (the project file stays silent)" "$out"
+
+setup
+write_cfg true true
+install_mock_agentmemory
+out="$(XDG_CONFIG_HOME="$TMPDIR_TEST/no-consent" run_edit)"
+assert_allow "project recommendation without user consent bypasses gate (consent pending)" "$out"
 
 setup
 write_cfg true true true
@@ -174,7 +197,8 @@ install_mock_agentmemory
 export SB_AGENTMEMORY_MCP_ARTIFACT="/no/such/agentmemory-mcp-${TEST_RUN_ID}.json"
 out="$(run_edit)"
 unset SB_AGENTMEMORY_MCP_ARTIFACT
-assert_allow "CLI without MCP soft-allows edit (#259)" "$out"
+assert_deny "CLI without MCP still requires usage (the agent can recall over REST)" "$out"
+assert_contains "missing MCP wiring is explained" "$out" "AGENTMEMORY MCP NOT WIRED"
 
 setup
 write_cfg true true
@@ -190,7 +214,8 @@ wire_test_mcp
 rm -f "$AM_STATE"
 out="$(run_edit)"
 unwire_test_mcp
-assert_allow "server down soft-allows edit (#259)" "$out"
+assert_deny "server down no longer exempts the usage requirement" "$out"
+assert_contains "server down is explained with the start command" "$out" "AGENTMEMORY SERVER DOWN"
 
 setup
 write_cfg true true
@@ -204,7 +229,7 @@ assert_deny "MCP wired but no fresh usage blocks edit" "$out"
 # RED-5: auto-scaffold export root on substantive Write when opted in.
 setup
 write_cfg true true
-GF_STATE="${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}"
+GF_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query"
 jq --arg gf "$GF_STATE" \
   '.recommended_tools.graphify = {"enabled_by_user": true, "query_state_file": $gf}' \
   "$TMPCFG" >"${TMPCFG}.tmp" && mv "${TMPCFG}.tmp" "$TMPCFG"

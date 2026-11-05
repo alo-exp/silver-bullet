@@ -3,6 +3,10 @@
 # is unavailable (symlink farm without it), when cat fails, and when the project-active
 # helper reports the project as not initiated.
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 unset SB_AGENT_CERT_RUN SB_KAY_HOOK_BRIDGE_INVOKED
@@ -44,7 +48,9 @@ for entry in "${GATES[@]}"; do
   gh_farm "$name-notoolinput" "$hook" tool-input.sh
   GH_REPO="$GH_FARM" gh_run "$hook" "$edit"
   assert_gate_denies "$name: payload parsed via jq without tool-input library" ""
-  GH_REPO="$GH_FARM" gh_run "$hook" "$(gh_bash_input "git commit -m x")"
+  # Alumnium only guards browser work, so its gated command is a browser-tool run
+  gated_cmd="git commit -m x"; [[ "$name" == alumnium ]] && gated_cmd="npx playwright test"
+  GH_REPO="$GH_FARM" gh_run "$hook" "$(gh_bash_input "$gated_cmd")"
   assert_gate_denies "$name: command parsed via jq without tool-input library" ""
 
   # project-active helper says "not initiated": allow
@@ -53,8 +59,13 @@ for entry in "${GATES[@]}"; do
   GH_REPO="$GH_FARM" gh_run "$hook" "$edit"
   assert_gate_allows "$name: uninitiated project allows"
 
-  # in-hook project search (no project-gate library): walks up from a nested directory
-  gh_farm "$name-search" "$hook" sb-project-gate.sh project-active.sh
+  # no project-gate library: the hook cannot locate its project and stays inert
+  gh_farm "$name-nogate" "$hook" sb-project-gate.sh project-active.sh
+  GH_REPO="$GH_FARM" gh_run "$hook" "$edit"
+  assert_gate_allows "$name: missing project-gate library fails open"
+
+  # project search: walks up from a nested directory (the real project-gate library)
+  gh_farm "$name-search" "$hook"
   NEST="$TL_TMP/nest-$name"; rm -rf "$NEST"
   mkdir -p "$NEST/only-json/a/b" "$NEST/only-md/a/b" "$NEST/both/a/b" "$NEST/none/a/b"
   cp "$GH_CFG" "$NEST/only-json/.silver-bullet.json"
@@ -97,17 +108,21 @@ rm -f "$TL_BIN/cat"; hash -r
 
 # ---- context-mode-read-deny ----
 RD=hooks/context-mode-read-deny.sh
-jq -n '{config_version:"1", sb_initiated:true, recommended_tools:{context_mode:{enabled_by_user:true, read_deny_bytes:10}}}' >"$GH_CFG"
-head -c 50 /dev/zero | tr '\0' a >"$GH_PROJ/src/big.txt"
+jq -n '{config_version:"1", sb_initiated:true, recommended_tools:{context_mode:{enabled_by_user:true}}}' >"$GH_CFG"
+head -c 9000 /dev/zero | tr '\0' a >"$GH_PROJ/src/big.txt"
+# Context Mode installed and wired: the nudge only applies when its ctx_* tools exist.
+tl_stub context-mode 'exit 0'; hash -r
+printf '{"mcpServers":{"context-mode":{}}}' >"$TL_TMP/cm-mcp.json"; export SB_CONTEXT_MODE_MCP_ARTIFACT="$TL_TMP/cm-mcp.json"
+rd_acks() { rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"; }
 rin="$(jq -cn --arg p "$GH_PROJ/src/big.txt" '{hook_event_name:"PreToolUse", tool_name:"Read", tool_input:{file_path:$p}}')"
-GH_REPO="$REAL_REPO" gh_run "$RD" "$rin"
-assert_gate_denies "read-deny: baseline denies" "50 bytes"
+rd_acks; GH_REPO="$REAL_REPO" gh_run "$RD" "$rin"
+assert_gate_denies "read-deny: baseline denies" "9000 bytes"
 gh_farm rd-nolib "$RD" -
 GH_REPO="$GH_FARM" gh_run "$RD" "$rin"
 assert_gate_allows "read-deny: no libraries fails open"
 gh_farm rd-noaudit "$RD" hook-audit.sh
-GH_REPO="$GH_FARM" gh_run "$RD" "$rin"
-assert_gate_denies "read-deny: deny survives missing audit library" "50 bytes"
+rd_acks; GH_REPO="$GH_FARM" gh_run "$RD" "$rin"
+assert_gate_denies "read-deny: deny survives missing audit library" "9000 bytes"
 gh_farm rd-notoolinput "$RD" tool-input.sh
 GH_REPO="$GH_FARM" gh_run "$RD" "$rin"
 assert_gate_allows "read-deny: without tool-input library the read path is unknown, allow"
@@ -127,7 +142,7 @@ gh_farm rd-nosize "$RD" context-mode-read-deny.sh
   printf 'sb_context_mode_should_deny_read() { printf %%s "%s"; }\n' "$GH_PROJ/src/big.txt"
 } >"$GH_FARM/hooks/lib/context-mode-read-deny.sh"
 GH_REPO="$GH_FARM" gh_run "$RD" "$rin"
-assert_gate_denies "read-deny: unknown size reported as 0 bytes" "0 bytes > 10 byte threshold"
+assert_gate_denies "read-deny: unknown size reported as 0 bytes" "0 bytes > 5120 byte threshold"
 # read-path helper failing leaves the audit target empty but still denies
 gh_farm rd-nopath "$RD" context-mode-read-deny.sh
 {
@@ -136,6 +151,6 @@ gh_farm rd-nopath "$RD" context-mode-read-deny.sh
   printf 'sb_context_mode_should_deny_read() { printf %%s "%s"; }\n' "$GH_PROJ/src/big.txt"
 } >"$GH_FARM/hooks/lib/context-mode-read-deny.sh"
 GH_REPO="$GH_FARM" gh_run "$RD" "$rin"
-assert_gate_denies "read-deny: failing read-path helper does not break the decision" "50 bytes"
+assert_gate_denies "read-deny: failing read-path helper does not break the decision" "9000 bytes"
 
 tl_results

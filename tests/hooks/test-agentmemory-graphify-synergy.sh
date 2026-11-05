@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # agentmemory + Graphify synergy — usage gate defers to fresh Graphify query
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -38,7 +42,7 @@ fi
 mkdir -p "${SB_TEST_DIR}"
 
 cleanup_all() {
-  rm -rf "$TMPDIR_TEST" "${TEST_HOME:-}" "${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}" "$MOCK_BIN"
+  rm -rf "$TMPDIR_TEST" "${TEST_HOME:-}" "${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query" "$MOCK_BIN"
 }
 trap cleanup_all EXIT
 
@@ -84,7 +88,7 @@ unwire_test_mcp() {
 echo "=== agentmemory + Graphify synergy tests ==="
 
 TMPDIR_TEST="$(mktemp -d)"
-GRAPHIFY_STATE="${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}"
+GRAPHIFY_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query"
 TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
 TMPFILE="${TMPDIR_TEST}/src/app.js"
 mkdir -p "$(dirname "$TMPFILE")" "${TMPDIR_TEST}/.agentmemory/memory" "${TMPDIR_TEST}/graphify-out"

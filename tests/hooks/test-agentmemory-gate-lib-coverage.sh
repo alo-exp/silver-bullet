@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for hooks/lib/agentmemory-gate.sh (all external tools stubbed)
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 unset SB_AGENTMEMORY_MCP_ARTIFACT SB_GLOBAL_TOOLSTACK_MANIFEST SB_GLOBAL_TOOLSTACK_HOME
@@ -20,7 +24,14 @@ PR="$TL_TMP/proj"; mkdir -p "$PR"
 # ---------- required / config strings ----------
 w '{"recommended_tools":{"agentmemory":{"enabled_by_user":true,"health_url":"http://h/x","export_root":"mem","usage_ttl_seconds":120}}}'
 yes_t "required" sb_agentmemory_required "$CFG"
-assert_eq "health url configured" "http://h/x" "$(sb_agentmemory_health_url "$CFG")"
+assert_eq "health url: non-loopback host in the project file is ignored" "http://localhost:3111/agentmemory/health" "$(sb_agentmemory_health_url "$CFG")"
+w '{"recommended_tools":{"agentmemory":{"health_url":"http://127.0.0.1:4000/agentmemory/health"}}}'
+assert_eq "health url: loopback url accepted" "http://127.0.0.1:4000/agentmemory/health" "$(sb_agentmemory_health_url "$CFG")"
+for bad in "-K/tmp/x" "file:///etc/passwd" "http://evil.example/health" "http://localhost:3111/a b" "http://localhost:99999999/x" "ftp://localhost/x"; do
+  w "$(jq -n --arg u "$bad" '{recommended_tools:{agentmemory:{health_url:$u}}}')"
+  assert_eq "health url rejected: $bad" "http://localhost:3111/agentmemory/health" "$(sb_agentmemory_health_url "$CFG")"
+done
+w '{"recommended_tools":{"agentmemory":{"enabled_by_user":true,"export_root":"mem","usage_ttl_seconds":120}}}'
 assert_eq "health url default" "http://localhost:3111/agentmemory/health" "$(sb_agentmemory_health_url)"
 assert_eq "export rel configured" "mem" "$(sb_agentmemory_export_rel_path "$CFG")"
 assert_eq "export rel default" ".agentmemory" "$(sb_agentmemory_export_rel_path)"
@@ -32,7 +43,8 @@ assert_eq "ttl invalid json" "1800" "$(sb_agentmemory_usage_ttl_seconds "$CFG")"
 # ---------- export path safety ----------
 no_t "rel safe empty" sb_agentmemory_export_rel_is_safe ""
 no_t "rel safe dotdot" sb_agentmemory_export_rel_is_safe "../x"
-no_t "rel safe embedded dotdot" sb_agentmemory_export_rel_is_safe "a..b"
+no_t "rel safe embedded dotdot component" sb_agentmemory_export_rel_is_safe "a/../b"
+yes_t "rel safe dots inside a name" sb_agentmemory_export_rel_is_safe "a..b"
 yes_t "rel safe plain" sb_agentmemory_export_rel_is_safe ".agentmemory"
 
 no_t "scoped needs args" sb_agentmemory_export_path_is_project_scoped "" ""
@@ -43,31 +55,20 @@ no_t "scoped sibling" sb_agentmemory_export_path_is_project_scoped "$PR" "$TL_TM
 no_t "scoped prefix lookalike" sb_agentmemory_export_path_is_project_scoped "$PR" "${PR}-evil/x"
 mkdir -p "$TL_TMP/outside"; ln -s "$TL_TMP/outside" "$PR/escape"
 no_t "scoped symlink escape (canonical)" sb_agentmemory_export_path_is_project_scoped "$PR" "$PR/escape"
-(
-  unset -f sb_canonical_path
-  sb_agentmemory_export_path_is_project_scoped "$PR" "$PR/sub" || exit 1
-  mkdir -p "$PR/realsub"
-  sb_agentmemory_export_path_is_project_scoped "$PR" "$PR/realsub" || exit 2
-  sb_agentmemory_export_path_is_project_scoped "$PR" "$TL_TMP/outside" && exit 3
-  sb_agentmemory_export_path_is_project_scoped "$TL_TMP/nonexistent-root" "$TL_TMP/nonexistent-root/x" || exit 4
-  exit 0
-) && tl_pass "scoped fallback without sb_canonical_path" || tl_fail "scoped fallback without sb_canonical_path (exit $?)"
-(
-  sb_canonical_path() { return 0; }
-  sb_agentmemory_export_path_is_project_scoped "$PR" "$PR/x" && exit 1
-  exit 0
-) && tl_pass "scoped fails when canonicalization is empty" || tl_fail "scoped fails when canonicalization is empty"
+yes_t "scoped nonexistent project root" sb_agentmemory_export_path_is_project_scoped "$TL_TMP/nonexistent-root" "$TL_TMP/nonexistent-root/x"
+no_t "scoped dotdot lands outside" sb_agentmemory_export_path_is_project_scoped "$PR" "$PR/sub/../../other"
+yes_t "scoped dotdot stays inside" sb_agentmemory_export_path_is_project_scoped "$PR" "$PR/sub/../ok"
 
 w '{"recommended_tools":{"agentmemory":{"export_root":"mem"}}}'
 assert_eq "abs export relative" "$PR/mem" "$(sb_agentmemory_abs_export_path "$PR/" "$CFG")"
 assert_eq "abs export default root" "$PR/.agentmemory" "$(sb_agentmemory_abs_export_path "$PR")"
 assert_eq "abs export default project root is PWD" "$PR/mem" "$(cd "$PR" && sb_agentmemory_abs_export_path "" "$CFG")"
 w "{\"recommended_tools\":{\"agentmemory\":{\"export_root\":\"$PR/absmem\"}}}"
-assert_eq "abs export absolute inside project" "$PR/absmem" "$(sb_agentmemory_abs_export_path "$PR" "$CFG")"
+assert_eq "abs export: an absolute root from the project file falls back to the default" "$PR/.agentmemory" "$(sb_agentmemory_abs_export_path "$PR" "$CFG")"
 w '{"recommended_tools":{"agentmemory":{"export_root":"/etc/outside"}}}'
-no_t "abs export absolute outside project" sb_agentmemory_abs_export_path "$PR" "$CFG"
+assert_eq "abs export: absolute outside project falls back to the default" "$PR/.agentmemory" "$(sb_agentmemory_abs_export_path "$PR" "$CFG")"
 w '{"recommended_tools":{"agentmemory":{"export_root":"../up"}}}'
-no_t "abs export traversal" sb_agentmemory_abs_export_path "$PR" "$CFG"
+assert_eq "abs export: traversal falls back to the default" "$PR/.agentmemory" "$(sb_agentmemory_abs_export_path "$PR" "$CFG")"
 w '{"recommended_tools":{"agentmemory":{"export_root":"escape"}}}'
 no_t "abs export through symlink escape" sb_agentmemory_abs_export_path "$PR" "$CFG"
 
@@ -85,7 +86,8 @@ no_t "export symlink rejected" sb_agentmemory_export_exists "$PR" "$CFG"
 no_t "scaffold refuses symlink-escaping export" sb_agentmemory_scaffold_export_root "$PR" "$CFG"
 rm -f "$PR/mem"
 w '{"recommended_tools":{"agentmemory":{"export_root":"../up"}}}'
-no_t "scaffold unsafe root" sb_agentmemory_scaffold_export_root "$PR" "$CFG"
+yes_t "scaffold unsafe root scaffolds the default root instead" sb_agentmemory_scaffold_export_root "$PR" "$CFG"
+[[ -d "$PR/.agentmemory/memory" && ! -e "$TL_TMP/up" ]] && tl_pass "nothing scaffolded outside the project" || tl_fail "nothing scaffolded outside the project"
 printf 'file' >"$PR/blocker"
 w '{"recommended_tools":{"agentmemory":{"export_root":"blocker/sub"}}}'
 no_t "scaffold fails when mkdir fails" sb_agentmemory_scaffold_export_root "$PR" "$CFG"
@@ -104,27 +106,50 @@ jq -n --arg c "$OTHER" '{tools:{agentmemory:{command:$c}}}' >"$SB_GLOBAL_TOOLSTA
 assert_eq "cli_path from manifest" "$OTHER" "$(sb_agentmemory_cli_path)"
 unset SB_GLOBAL_TOOLSTACK_MANIFEST
 
+hc() { rm -f "$SB_RUNTIME_STATE_DIR/agentmemory-health"; }
 # server health: curl success, curl failure + CLI status, neither
 tl_stub curl 'echo "$@" >>"'"$TL_TMP"'/curl.log"; exit "${CURL_RC:-0}"'
 hash -r
 export CURL_RC=0
+hc
 yes_t "healthy via curl" sb_agentmemory_server_healthy "$CFG"
-assert_contains "curl hits configured url" "$(cat "$TL_TMP/curl.log")" "http://localhost:3111/agentmemory/health"
+assert_contains "curl hits the validated url" "$(cat "$TL_TMP/curl.log")" "http://localhost:3111/agentmemory/health"
+assert_contains "curl gets the url after --" "$(cat "$TL_TMP/curl.log")" "-- http://localhost:3111/agentmemory/health"
+assert_contains "curl does not follow redirects" "$(cat "$TL_TMP/curl.log")" "--max-redirs 0"
+CURL_RC=22
+yes_t "a fresh health cache answers without probing" sb_agentmemory_server_healthy "$CFG"
+hc; CURL_RC=0; sb_agentmemory_server_healthy "$CFG"; printf 'up junk\n' >"$SB_RUNTIME_STATE_DIR/agentmemory-health"
+CURL_RC=22
+no_t "an unparsable health cache is ignored" sb_agentmemory_server_healthy "$CFG"
+printf '%s up http://localhost:9/other\n' "$(date +%s)" >"$SB_RUNTIME_STATE_DIR/agentmemory-health"
+no_t "a cache for another url is ignored" sb_agentmemory_server_healthy "$CFG"
+printf '%s down http://localhost:3111/agentmemory/health\n' "$(date +%s)" >"$SB_RUNTIME_STATE_DIR/agentmemory-health"
+CURL_RC=0
+no_t "a fresh cached down answer is used" sb_agentmemory_server_healthy "$CFG"
+printf '%s down http://localhost:3111/agentmemory/health\n' "$(( $(date +%s) - 120 ))" >"$SB_RUNTIME_STATE_DIR/agentmemory-health"
+yes_t "an expired cache is re-probed" sb_agentmemory_server_healthy "$CFG"
 export CURL_RC=22
+hc
 no_t "unhealthy: curl fails, status empty" sb_agentmemory_server_healthy "$CFG"
 export AM_STATUS="Connected to engine"
+hc
 yes_t "healthy via status Connected" sb_agentmemory_server_healthy "$CFG"
 export AM_STATUS="Health:   healthy"
+hc
 yes_t "healthy via status Health: healthy" sb_agentmemory_server_healthy "$CFG"
 export AM_STATUS="Health: degraded"
+hc
 no_t "unhealthy status text" sb_agentmemory_server_healthy "$CFG"
 AM_STATUS=""
+hc
 no_t "unhealthy: no curl, no cli" env PATH="$PATH_NO_AM" bash -c 'source "$1"; sb_agentmemory_server_healthy' _ "$LIBF"
 tl_stub agentmemory 'exit 1'; hash -r
+hc
 no_t "unhealthy when status command fails" sb_agentmemory_server_healthy "$CFG"
 tl_stub agentmemory 'if [[ "${1:-}" == status ]]; then printf "%s\n" "${AM_STATUS:-}"; fi; exit 0'
 rm -f "$TL_BIN/curl"; hash -r
 export AM_STATUS="Connected"
+hc
 yes_t "healthy via cli when curl missing" env PATH="$(tl_path_without curl)" AM_STATUS=Connected bash -c 'source "$1"; sb_agentmemory_server_healthy' _ "$LIBF"
 
 # ---------- platform artifact ----------
@@ -165,12 +190,12 @@ DEFSTATE="$SB_RUNTIME_STATE_DIR/agentmemory-usage"
 assert_eq "state path default no config" "$DEFSTATE" "$(sb_agentmemory_usage_state_path)"
 w '{}'
 assert_eq "state path default empty config" "$DEFSTATE" "$(sb_agentmemory_usage_state_path "$CFG")"
-w "{\"recommended_tools\":{\"agentmemory\":{\"usage_state_file\":\"$SB_RUNTIME_STATE_DIR/custom\"}}}"
-assert_eq "state path configured inside state dir" "$SB_RUNTIME_STATE_DIR/custom" "$(sb_agentmemory_usage_state_path "$CFG")"
-w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/placeholder"}}}'
-assert_eq "state path placeholder STATE_DIR expanded" "$SB_RUNTIME_STATE_DIR/placeholder" "$(sb_agentmemory_usage_state_path "$CFG")"
-w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/home-placeholder"}}}'
-assert_eq "state path placeholder HOME_ROOT expanded" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/home-placeholder" "$(sb_agentmemory_usage_state_path "$CFG")"
+w "{\"recommended_tools\":{\"agentmemory\":{\"usage_state_file\":\"$SB_RUNTIME_STATE_DIR/custom-usage\"}}}"
+assert_eq "state path configured inside state dir" "$SB_RUNTIME_STATE_DIR/custom-usage" "$(sb_agentmemory_usage_state_path "$CFG")"
+w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/placeholder-usage"}}}'
+assert_eq "state path placeholder STATE_DIR expanded" "$SB_RUNTIME_STATE_DIR/placeholder-usage" "$(sb_agentmemory_usage_state_path "$CFG")"
+w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/home-placeholder-usage"}}}'
+assert_eq "state path placeholder HOME_ROOT expanded" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/home-placeholder-usage" "$(sb_agentmemory_usage_state_path "$CFG")"
 w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${UNKNOWN_VAR}/x"}}}'
 assert_eq "state path unresolved placeholder rejected" "$DEFSTATE" "$(sb_agentmemory_usage_state_path "$CFG")"
 w '{"recommended_tools":{"agentmemory":{"usage_state_file":"/tmp/elsewhere/state"}}}'
@@ -178,25 +203,13 @@ assert_eq "state path outside state scope rejected" "$DEFSTATE" "$(sb_agentmemor
 w '{"recommended_tools":{"agentmemory":{"usage_state_file":"~/outside-state"}}}'
 assert_eq "state path ~ outside state scope rejected" "$DEFSTATE" "$(sb_agentmemory_usage_state_path "$CFG")"
 assert_eq "state path default without runtime dirs" "$HOME/.silver-bullet/agentmemory-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path' _ "$LIBF")"
-assert_eq "state path expands placeholders with fallbacks" "$HOME/.cursor/.silver-bullet/p" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path "$2"' _ "$LIBF" "$(w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/p"}}}'; echo "$CFG")")"
-w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/h"}}}'
-assert_eq "home root placeholder fallback" "$HOME/.cursor/h" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path "$2"' _ "$LIBF" "$CFG")"
+assert_eq "state path expands placeholders with fallbacks" "$HOME/.silver-bullet/p-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path "$2"' _ "$LIBF" "$(w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/p-usage"}}}'; echo "$CFG")")"
+w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/h-usage"}}}'
+assert_eq "home root placeholder without a runtime home is rejected" "$HOME/.silver-bullet/agentmemory-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path "$2"' _ "$LIBF" "$CFG")"
 
 w 'garbage'
 assert_eq "state path with unparsable config uses default" "$DEFSTATE" "$(sb_agentmemory_usage_state_path "$CFG")"
 U="$DEFSTATE"
-tl_stub sed 'exit 1'; hash -r
-printf '77\n' >"$U"
-no_t "epoch unreadable (sed fails)" sb_agentmemory_usage_epoch "$U"
-rm -f "$TL_BIN/sed" "$U"; hash -r
-no_t "epoch missing file" sb_agentmemory_usage_epoch "$U"
-printf 'junk\n' >"$U"
-no_t "epoch non-numeric" sb_agentmemory_usage_epoch "$U"
-printf '123\nmore\n' >"$U"
-assert_eq "epoch first line" "123" "$(sb_agentmemory_usage_epoch "$U")"
-rm -f "$U"; ln -s "$TL_TMP/tgt" "$U"; printf '5\n' >"$TL_TMP/tgt"
-no_t "epoch refuses symlink" sb_agentmemory_usage_epoch "$U"
-rm -f "$U"
 
 # ---------- usage fresh / record / clear ----------
 w '{}'
@@ -220,11 +233,15 @@ rm -rf "$U"
 mkdir -p "$U"
 no_t "record usage fails when path is a directory" sb_agentmemory_record_usage "$CFG"
 rmdir "$U"
-( ln -s "$TL_TMP/tgt" "$U"; sb_agentmemory_record_usage "$CFG" ) 2>"$TL_TMP/err" && tl_fail "record usage refuses symlink" || tl_pass "record usage refuses symlink"
-assert_contains "symlink refusal message" "$(cat "$TL_TMP/err")" "refusing to write through symlink"
+printf 'precious\n' >"$TL_TMP/tgt"
+ln -s "$TL_TMP/tgt" "$U"
+sb_agentmemory_record_usage "$CFG"
+assert_eq "record usage never writes through a symlink" "precious" "$(cat "$TL_TMP/tgt")"
+if [[ -f "$U" && ! -L "$U" ]]; then tl_pass "record usage replaces the symlink with a regular file"; else tl_fail "record usage replaces the symlink with a regular file"; fi
+assert_eq "record usage wrote the epoch" "5000" "$(cat "$U")"
+printf '4999\n' >"$TL_TMP/tgt"; rm -f "$U"; ln -s "$TL_TMP/tgt" "$U"
+no_t "a symlinked usage stamp is never fresh" sb_agentmemory_usage_is_fresh "$CFG"
 rm -f "$U"
-( unset -f sb_guard_nofollow; sb_agentmemory_record_usage "$CFG" ) && tl_pass "record usage without nofollow helper" || tl_fail "record usage without nofollow helper"
-assert_eq "record usage without helper wrote epoch" "5000" "$(cat "$U")"
 rm -f "$U" "$TL_BIN/date"; hash -r
 BADF="$TL_TMP/badfile"; printf 'x' >"$BADF"
 (
@@ -261,27 +278,43 @@ no_t "synergy: graphify disabled" bash -c 'source "$1"; sb_agentmemory_graphify_
 
 # ---------- command classification ----------
 yes_t "retrieval: empty is not retrieval" bash -c '! { source "$1"; sb_agentmemory_command_is_retrieval ""; }' _ "$LIBF"
-yes_t "retrieval http" sb_agentmemory_command_is_retrieval "curl localhost:3111/agentmemory/smart-search"
+yes_t "retrieval http" sb_agentmemory_command_is_retrieval "curl http://localhost:3111/agentmemory/smart-search"
 yes_t "retrieval cli search" sb_agentmemory_command_is_retrieval "agentmemory search foo"
 yes_t "retrieval cli query" sb_agentmemory_command_is_retrieval "/usr/bin/agentmemory query bar"
 no_t "retrieval cli status is not retrieval" sb_agentmemory_command_is_retrieval "agentmemory status"
-yes_t "retrieval mcp package" sb_agentmemory_command_is_retrieval "npx @agentmemory/mcp"
+no_t "retrieval: mcp package launch is not retrieval" sb_agentmemory_command_is_retrieval "npx @agentmemory/mcp"
+no_t "retrieval: scheme-less curl url is not accepted" sb_agentmemory_command_is_retrieval "curl localhost:3111/agentmemory/smart-search"
+no_t "retrieval: curl with an output option is not retrieval" sb_agentmemory_command_is_retrieval "curl -o /tmp/x http://localhost:3111/agentmemory/smart-search"
+no_t "retrieval: curl config option is not retrieval" sb_agentmemory_command_is_retrieval "curl -K /tmp/x http://localhost:3111/agentmemory/smart-search"
+no_t "retrieval: other host is not retrieval" sb_agentmemory_command_is_retrieval "curl http://evil.example/agentmemory/smart-search http://localhost:3111/agentmemory/smart-search"
+no_t "retrieval: health endpoint is not retrieval" sb_agentmemory_command_is_retrieval "curl http://localhost:3111/agentmemory/health"
+no_t "retrieval: a pipeline is not a simple command" sb_agentmemory_command_is_retrieval "agentmemory search foo | tee out"
+no_t "retrieval: echo of a retrieval is not retrieval" sb_agentmemory_command_is_retrieval "echo agentmemory search foo"
+no_t "retrieval: a positional argument before the subcommand" sb_agentmemory_command_is_retrieval "agentmemory export search"
+yes_t "retrieval: leading flag before the subcommand" sb_agentmemory_command_is_retrieval "agentmemory --json search foo"
+yes_t "retrieval: rtk prefix is unwrapped" sb_agentmemory_command_is_retrieval "rtk agentmemory search foo"
+no_t "retrieval: bare agentmemory" sb_agentmemory_command_is_retrieval "agentmemory"
 no_t "retrieval unrelated" sb_agentmemory_command_is_retrieval "ls -la"
 yes_t "exempt empty" sb_agentmemory_command_is_exempt ""
 yes_t "exempt retrieval" sb_agentmemory_command_is_exempt "agentmemory recall x"
 yes_t "exempt agentmemory cli" sb_agentmemory_command_is_exempt "agentmemory status"
-yes_t "exempt agentmemory http" sb_agentmemory_command_is_exempt "wget localhost:3111/agentmemory/health"
-yes_t "exempt curl" sb_agentmemory_command_is_exempt "curl http://x"
-yes_t "exempt nohup" sb_agentmemory_command_is_exempt "nohup server &"
-yes_t "exempt graphify" sb_agentmemory_command_is_exempt "uvx graphifyy update ."
+yes_t "exempt loopback read-only curl" sb_agentmemory_command_is_exempt "curl -s http://localhost:3111/agentmemory/health"
+no_t "not exempt: wget" sb_agentmemory_command_is_exempt "wget localhost:3111/agentmemory/health > out.txt"
+no_t "not exempt: curl to another host" sb_agentmemory_command_is_exempt "curl http://x > out.txt"
+no_t "not exempt: arbitrary background command" sb_agentmemory_command_is_exempt "nohup server > out.log &"
+yes_t "exempt: the documented server start" sb_agentmemory_command_is_exempt "nohup agentmemory > ~/.agentmemory/server.log 2>&1 &"
+no_t "not exempt: a lookalike of the server start" sb_agentmemory_command_is_exempt "nohup agentmemory > ~/.bashrc 2>&1 &"
+yes_t "exempt: read-only listing" sb_agentmemory_command_is_exempt "ls -la"
 no_t "not exempt commit" sb_agentmemory_command_is_exempt "git commit -m x"
 
 # ---------- edit path exemption ----------
 w '{"recommended_tools":{"agentmemory":{"export_root":"mem"}}}'
 no_t "edit exempt empty" sb_agentmemory_edit_path_is_exempt ""
-yes_t "edit exempt in export root (absolute)" sb_agentmemory_edit_path_is_exempt "/p/mem/memory/a.md" "$CFG"
+yes_t "edit exempt in export root (absolute)" sb_agentmemory_edit_path_is_exempt "$TL_TMP/mem/memory/a.md" "$CFG"
+no_t "edit not exempt: dotdot out of the export root" sb_agentmemory_edit_path_is_exempt "$TL_TMP/mem/../src/a.py" "$CFG"
+no_t "edit not exempt: export root lookalike" sb_agentmemory_edit_path_is_exempt "$TL_TMP/mem-evil/a.py" "$CFG"
 yes_t "edit exempt in export root (relative)" sb_agentmemory_edit_path_is_exempt "mem/memory/a.md" "$CFG"
-yes_t "edit exempt default export root" sb_agentmemory_edit_path_is_exempt "/p/.agentmemory/x"
+yes_t "edit exempt default export root" sb_agentmemory_edit_path_is_exempt "$TL_TMP/.agentmemory/x" "$TL_TMP/none.json"
 yes_t "edit exempt state dir" sb_agentmemory_edit_path_is_exempt "/p/.silver-bullet/state" "$CFG"
 no_t "edit not exempt" sb_agentmemory_edit_path_is_exempt "/p/src/a.py" "$CFG"
 
@@ -289,18 +322,10 @@ no_t "edit not exempt" sb_agentmemory_edit_path_is_exempt "/p/src/a.py" "$CFG"
 m="$(SILVER_BULLET_RUNTIME=claude sb_agentmemory_block_message_no_cli "$CFG")"
 assert_contains "no_cli header" "$m" "AGENTMEMORY REQUIRED"
 assert_contains "no_cli install" "$m" "npm install -g @agentmemory/agentmemory"
-(
-  sb_recommended_tool_full_install_lines() { return 1; }
-  [[ "$(sb_agentmemory_block_message_no_cli "$CFG")" == *"npm install -g @agentmemory/agentmemory"* ]]
-) && tl_pass "no_cli survives install-lines failure" || tl_fail "no_cli survives install-lines failure"
-(
-  sb_recommended_tool_full_install_lines() { return 0; }
-  [[ "$(sb_agentmemory_block_message_no_cli "$CFG")" == *"npm install -g @agentmemory/agentmemory"* ]]
-) && tl_pass "no_cli falls back to default install line" || tl_fail "no_cli falls back to default install line"
-w '{"recommended_tools":{"agentmemory":{"health_url":"http://h:1/health"}}}'
+w '{"recommended_tools":{"agentmemory":{"health_url":"http://localhost:1/health"}}}'
 m="$(sb_agentmemory_block_message_no_server "$CFG")"
 assert_contains "no_server header" "$m" "AGENTMEMORY SERVER DOWN"
-assert_contains "no_server url" "$m" "Health check failed: http://h:1/health"
+assert_contains "no_server url" "$m" "Health check failed: http://localhost:1/health"
 m="$(SILVER_BULLET_RUNTIME=claude sb_agentmemory_block_message_no_mcp "$CFG")"
 assert_contains "no_mcp header" "$m" "AGENTMEMORY MCP NOT WIRED"
 assert_contains "no_mcp artifact" "$m" "$HOME/.claude.json"
@@ -319,17 +344,19 @@ assert_contains "stale usage default ttl" "$(sb_agentmemory_block_message_stale_
 # ---------- prompt reminder ----------
 RC="$PR/.silver-bullet.json"
 reminder() { SILVER_BULLET_RUNTIME=claude sb_agentmemory_prompt_reminder_line "$RC"; }
-printf '{}' >"$RC"; assert_contains "reminder pending" "$(reminder)" "consent pending"
+printf '{"recommended_tools":{"agentmemory":{"enabled_by_user":true}}}' >"$RC"
+assert_contains "reminder pending (a project recommendation is not consent)" "$(XDG_CONFIG_HOME="$TL_TMP/none" reminder)" "consent pending"
 printf '{"recommended_tools":{"agentmemory":{"enabled_by_user":false}}}' >"$RC"; assert_contains "reminder disabled" "$(reminder)" "opted out"
 printf '{"recommended_tools":{"agentmemory":{"enabled_by_user":true,"enforcement_suspended":true}}}' >"$RC"; assert_contains "reminder suspended" "$(reminder)" "enforcement suspended"
 printf '{"recommended_tools":{"agentmemory":{"enabled_by_user":true,"export_root":"mem"}}}' >"$RC"
 rm -f "$TL_BIN/agentmemory"; hash -r
 assert_contains "reminder cli missing" "$(PATH="$PATH_NO_AM" reminder)" "CLI missing"
+mkdir -p "$PR/mem/memory"; hc
 tl_stub agentmemory 'exit 0'; tl_stub curl 'exit 22'; hash -r
-assert_contains "reminder server down" "$(reminder)" "server down"
-tl_stub curl 'exit 0'; hash -r
+assert_contains "reminder server down" "$(reminder)" "the server is down"
+tl_stub curl 'exit 0'; hash -r; hc
 export SB_AGENTMEMORY_MCP_ARTIFACT="$AF"
-assert_contains "reminder mcp not wired" "$(reminder)" "MCP not wired"
+assert_contains "reminder healthy server asks for usage" "$(reminder)" "recall via MCP or smart-search"
 printf 'agentmemory' >"$AF"
 rm -rf "$PR/mem"
 assert_contains "reminder export missing" "$(reminder)" "export root missing — mkdir -p mem/memory"

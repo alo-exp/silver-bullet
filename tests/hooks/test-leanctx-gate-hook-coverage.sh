@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for hooks/leanctx-gate.sh (PreToolUse). The lean-ctx CLI is a stub.
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 unset SB_LEANCTX_MCP_ARTIFACT SB_AGENT_CERT_RUN SB_KAY_HOOK_BRIDGE_INVOKED
@@ -23,8 +27,12 @@ EDIT="$(gh_edit_input)"
 gh_scenario_block
 gh_run "$HOOK" "$EDIT"
 assert_contains "no-cli message names verify command" "$(gh_reason)" "lean-ctx --version"
-gh_run "$HOOK" "$(gh_bash_input "bash scripts/install-leanctx-sb.sh --host claude > install.log")"
-assert_gate_allows "installer command is exempt"
+gh_run "$HOOK" "$(gh_bash_input "bash $TL_REPO_ROOT/scripts/install-leanctx-sb.sh --host claude")"
+assert_gate_allows "the plugin's own installer command is exempt"
+gh_run "$HOOK" "$(gh_bash_input "bash scripts/install-leanctx-sb.sh --host claude > out.log")"
+assert_gate_denies "a project-relative installer script is not Silver Bullet's and is gated" "LEANCTX REQUIRED"
+gh_run "$HOOK" "$(gh_bash_input "lean-ctx --version")"
+assert_gate_allows "LeanCTX's own CLI is exempt"
 
 # CLI present, MCP not wired
 lc_cli
@@ -37,10 +45,9 @@ gh_run "$HOOK" "$EDIT"
 assert_gate_denies "no usage stamp is denied" "LEANCTX USAGE REQUIRED"
 assert_contains "stale message ttl" "$(gh_reason)" "every 1800s"
 base_cfg '.recommended_tools.leanctx.usage_ttl_seconds = 200 | .recommended_tools.leanctx.cli_command = "myctx"'
-tl_stub myctx 'exit 0'; hash -r
 gh_run "$HOOK" "$EDIT"
 assert_contains "configured ttl in message" "$(gh_reason)" "every 200s"
-assert_contains "configured cli in message" "$(gh_reason)" "myctx status"
+assert_contains "the CLI in the message is always lean-ctx, never a config string" "$(gh_reason)" "lean-ctx status"
 printf '%s\n' "$(( $(date +%s) - 900 ))" >"$USTATE"
 gh_run "$HOOK" "$EDIT"
 assert_gate_denies "usage older than ttl is denied" "LEANCTX USAGE REQUIRED"
@@ -49,13 +56,11 @@ gh_run "$HOOK" "$EDIT"
 assert_gate_allows "fresh usage allows edits"
 gh_run "$HOOK" "$(gh_bash_input "git commit -m x")"
 assert_gate_allows "fresh usage allows commits"
-# custom CLI command must exist
+# R5-10: cli_command in the project file is not honoured, so it cannot make a command count as usage
 base_cfg '.recommended_tools.leanctx.cli_command = "myctx"'
-rm -f "$TL_BIN/myctx"; hash -r
-gh_run "$HOOK" "$EDIT"
-assert_gate_denies "configured cli missing is denied" "LEANCTX REQUIRED"
 tl_stub myctx 'exit 0'; hash -r
+rm -f "$USTATE"
 gh_run "$HOOK" "$EDIT"
-assert_gate_allows "configured cli present allows"
+assert_gate_denies "a configured cli_command does not satisfy the gate" "LEANCTX USAGE REQUIRED"
 
 tl_results
