@@ -20,7 +20,7 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 **Contrast with `/sb:agent-codex`, `/sb:agent-cursor`, `/sb:agent-claude`, and `/sb:agent-pi`:** Multi-host on-demand delegation siblings. Use **agent-opencode** when OpenCode CLI (`opencode run`) is the intended executor with MiMo V2.5 via opencode-go; use **agent-pi** for Pi CLI (`pi -p`); use **agent-claude** for Claude Code TUI; use **agent-codex** for Codex CLI; use **agent-cursor** for Cursor CLI.
 
-**Contrast with enterprise E2E matrix:** Reuses proven OpenCode live adapter (`tests/live/agents/opencode/agent.sh`, `opencode run` with tail-idle completion, quota retry, model pin). Does **not** load matrix ledger, §5b product gates, fixture branch locks, or row outcome writers.
+**Contrast with enterprise E2E matrix:** Reuses proven OpenCode live adapter (`scripts/lib/agent-adapters/opencode.sh`, `opencode run` with tail-idle completion, quota retry, model pin). Does **not** load matrix ledger, §5b product gates, fixture branch locks, or row outcome writers.
 
 ---
 
@@ -130,7 +130,7 @@ Set explicitly — **fixture vs real project**:
 | Variable | Real product project | SB fixture / live-test |
 |----------|---------------------|-------------------------|
 | `OPENCODE_WORK_DIR` | Target repo root (e.g. `enterprise-grade-test-app`) | Fixture clone path |
-| `SB_ROOT` | SB install path (for harness scripts) | SB repo checkout |
+| `SB_ROOT` | Plugin root (default: the installed plugin; the host adapter ships in `scripts/lib/agent-adapters/`, no SB clone needed) | SB repo checkout |
 | `SB_AGENT_OPENCODE_FIXTURE` | `0` (default) | `1` — enables live-test guard patterns |
 | `SB_AGENT_OPENCODE_LIGHTWEIGHT` | `1` (delegate default) | `0` — keep full MCP boot in child |
 | `SB_LIVE_OPENCODE_ISOLATION_ACTIVE` | `0` unless isolating config | `1` for hermetic live tests |
@@ -244,7 +244,7 @@ Sidekick-inspired **single-task** lifecycle:
 | Class | Signals | Parent action |
 |-------|---------|---------------|
 | **Stuck** | Idle timeout, no post-submit output | Re-brief with narrower scope; retry once; try `--use-interactive` |
-| **Quota (429)** | `rate limit`, `429`, `token plan` in log | delegate.sh retries automatically; if exhausted, schedule resume |
+| **Quota (429)** | provider error text only (HTTP status 429, `rate_limit_error`, "quota exceeded"-style sentences); a bare `429` or `quota` in test output or file names is not one | delegate re-runs only if the work dir is unchanged since the attempt (git) or `--quota-retry` was passed; 5-hour/weekly windows are never short-retried; if exhausted, schedule resume |
 | **Auth** | `auth`, `login`, `not logged in` | Stop — user must refresh OpenCode credentials; do not rotate keys in prompt |
 | **Model policy** | `OPENCODE_MODEL must be mimo-v2.5` | Fix env — harness enforces pin; do not override in brief |
 | **Harness** | `ERROR:` from adapter harness | Fix SB harness; file issue if reproducible |
@@ -295,7 +295,8 @@ Honest outcomes: do not claim PASS on timeout-only logs, inherited baseline arti
 
 | Risk | Mitigation |
 |------|------------|
-| **Secrets in brief/log** | `agent-delegate-common.sh` rejects briefs with `api_key`/`sk-` patterns; logs redacted before persist |
+| **Secrets in brief/log** | Best effort, not a guarantee. `agent-delegate-common.sh` rejects briefs holding value-shaped credentials (token prefixes such as `sk-`/`ghp_`/`github_pat_`/`xox`/`AKIA`, JWTs, PEM keys, `Bearer <token>`, `KEY=<high-entropy value>`; case-insensitive; plain words like "password: field" are fine). Logs are created 0600 and redacted after the run and on interrupt (a SIGKILL leaves the raw 0600 log); the brief itself is still passed to the host CLI as an argument, so it is visible to local `ps` |
+| **Permission mode** | `--mode` defaults to `permissive` only when `--work-dir` is inside the current project; any other directory (fresh clone, scratch dir) defaults to `strict`. `strict` never adds bypass flags (no hook-trust bypass, workspace-write sandbox on Codex). Override with `--mode` or `SB_AGENT_DELEGATE_DEFAULT_MODE` |
 | **Matrix env bleed** | `agent-opencode/env.sh` clears `SB_E2E_*` ledger/lock vars |
 | **Model drift** | `agent_opencode_pin_mimo_model_env` rejects non-MiMo overrides in harness, delegate, adapter |
 | **Credential rotation in prompt** | Forbidden — auth failures escalate to user |
@@ -323,5 +324,5 @@ Run `security` / SENTINEL lens on harness changes under `scripts/agent-opencode/
 - Cursor sibling: [`skills/silver-agent-cursor/SKILL.md`](../silver-agent-cursor/SKILL.md)
 - Pi sibling: [`skills/silver-agent-pi/SKILL.md`](../silver-agent-pi/SKILL.md)
 - Harness: `scripts/agent-opencode/` (`invoke.sh`, `preflight.sh`, `monitor.sh`, `env.sh`), `scripts/agent-opencode-delegate.sh`
-- Live adapter: `tests/live/agents/opencode/agent.sh`
+- Live adapter: `scripts/lib/agent-adapters/opencode.sh`
 - CLI lib: `scripts/lib/opencode-cli.sh` (`agent_opencode_pin_mimo_model_env`)

@@ -19,7 +19,7 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 **Contrast with `/sb:agent-codex`, `/sb:agent-cursor`, `/sb:agent-claude`, and `/sb:agent-opencode`:** Multi-host on-demand delegation siblings. Use **agent-pi** when Pi CLI (`pi -p`) is the intended executor with MiMo V2.5 via opencode-go; use **agent-opencode** for OpenCode CLI (`opencode run`); use **agent-claude** for Cursor TUI; use **agent-codex** for Codex CLI; use **agent-cursor** for Cursor CLI.
 
-**Contrast with enterprise E2E matrix:** Reuses proven Pi live adapter (`tests/live/agents/pi/agent.sh`, `pi -p` with tail-idle completion, quota retry, model pin). Does **not** load matrix ledger, §5b product gates, fixture branch locks, or row outcome writers.
+**Contrast with enterprise E2E matrix:** Reuses proven Pi live adapter (`scripts/lib/agent-adapters/pi.sh`, `pi -p` with tail-idle completion, quota retry, model pin). Does **not** load matrix ledger, §5b product gates, fixture branch locks, or row outcome writers.
 
 ---
 
@@ -129,7 +129,7 @@ Set explicitly — **fixture vs real project**:
 | Variable | Real product project | SB fixture / live-test |
 |----------|---------------------|-------------------------|
 | `PI_WORK_DIR` | Target repo root (e.g. `enterprise-grade-test-app`) | Fixture clone path |
-| `SB_ROOT` | SB install path (for harness scripts) | SB repo checkout |
+| `SB_ROOT` | Plugin root (default: the installed plugin; the host adapter ships in `scripts/lib/agent-adapters/`, no SB clone needed) | SB repo checkout |
 | `SB_AGENT_PI_FIXTURE` | `0` (default) | `1` — enables live-test guard patterns |
 | `SB_AGENT_PI_LIGHTWEIGHT` | `1` (delegate default) | `0` — keep full MCP boot in child |
 | `SB_LIVE_PI_ISOLATION_ACTIVE` | `0` unless isolating config | `1` for hermetic live tests |
@@ -233,7 +233,7 @@ Sidekick-inspired **single-task** lifecycle:
 | Class | Signals | Parent action |
 |-------|---------|---------------|
 | **Stuck** | Idle timeout, no post-submit output | Re-brief with narrower scope; retry once |
-| **Quota (429)** | `rate limit`, `429`, `token plan`, `5-hour usage limit` in log | short 60s retries only for unknown/transient 429; 5-hour/weekly/monthly fail-fast. RFL `--schedule-quota-retry` after classify (arms at/launchd + SessionStart wake); `--quota-retry-wake` retries the same model if the ladder is still active, else asks the user via QUOTA-RETRY-ASK.md |
+| **Quota (429)** | provider error text only (HTTP status 429, `rate_limit_error`, quota sentences, `5-hour usage limit`); a bare `429` or `quota` in output is not one | short 60s retries only for unknown/transient 429; 5-hour/weekly/monthly fail-fast. RFL `--schedule-quota-retry` after classify (arms at/launchd + SessionStart wake); `--quota-retry-wake` retries the same model if the ladder is still active, else asks the user via QUOTA-RETRY-ASK.md |
 | **Auth** | `auth`, `login`, `not logged in` | Stop — user must refresh Pi credentials; do not rotate keys in prompt |
 | **OmniRoute/OpenCode 401** | `401`, `Missing API key`, `invalid_api_key` after attempt + one retry | Substitute Cursor Grok 4.6 High (`cursor-grok-4.6-high` / `sb-grok-4-6-high`). Never Fast. Never Extra High as unspecified default. Do not skip-failed. |
 | **Model policy** | `PI_PROVIDER must be opencode-go` / `PI_MODEL must be mimo-v2.5` | Fix env — harness enforces pin; do not override in brief |
@@ -285,7 +285,8 @@ Honest outcomes: do not claim PASS on timeout-only logs, inherited baseline arti
 
 | Risk | Mitigation |
 |------|------------|
-| **Secrets in brief/log** | `agent-delegate-common.sh` rejects briefs with `api_key`/`sk-` patterns; logs redacted before persist |
+| **Secrets in brief/log** | Best effort, not a guarantee. `agent-delegate-common.sh` rejects briefs holding value-shaped credentials (token prefixes such as `sk-`/`ghp_`/`github_pat_`/`xox`/`AKIA`, JWTs, PEM keys, `Bearer <token>`, `KEY=<high-entropy value>`; case-insensitive; plain words like "password: field" are fine). Logs are created 0600 and redacted after the run and on interrupt (a SIGKILL leaves the raw 0600 log); the brief itself is still passed to the host CLI as an argument, so it is visible to local `ps` |
+| **Permission mode** | `--mode` defaults to `permissive` only when `--work-dir` is inside the current project; any other directory (fresh clone, scratch dir) defaults to `strict`. `strict` never adds bypass flags (no hook-trust bypass, workspace-write sandbox on Codex). Override with `--mode` or `SB_AGENT_DELEGATE_DEFAULT_MODE` |
 | **Matrix env bleed** | `agent-pi/env.sh` clears `SB_E2E_*` ledger/lock vars |
 | **Model drift** | `agent_pi_pin_mimo_model_env` rejects non-MiMo overrides in harness, delegate, adapter |
 | **Credential rotation in prompt** | Forbidden — auth failures escalate to user |
@@ -312,5 +313,5 @@ Run `security` / SENTINEL lens on harness changes under `scripts/agent-pi/` befo
 - Cursor sibling: [`skills/silver-agent-cursor/SKILL.md`](../silver-agent-cursor/SKILL.md)
 - OpenCode sibling: [`skills/silver-agent-opencode/SKILL.md`](../silver-agent-opencode/SKILL.md)
 - Harness: `scripts/agent-pi/` (`invoke.sh`, `preflight.sh`, `monitor.sh`, `env.sh`), `scripts/agent-pi-delegate.sh`
-- Live adapter: `tests/live/agents/pi/agent.sh`
+- Live adapter: `scripts/lib/agent-adapters/pi.sh`
 - CLI lib: `scripts/lib/pi-cli.sh` (`agent_pi_pin_mimo_model_env`)
