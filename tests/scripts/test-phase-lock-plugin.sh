@@ -169,13 +169,22 @@ assert_eq "an honest claim succeeds" 0 "$TL_STATUS"
 assert_eq "only the lock file and its sidecar exist" ".phase-locks.json .phase-locks.json.lock phases" "$(ls -A "$PRJ/.planning" | tr '\n' ' ' | sed 's/ $//')"
 
 # config fallbacks: a bare plugin tree (no templates/) and a project without config
-BARE="$TL_TMP/bare"; mkdir -p "$BARE/scripts"; ln -s "$SCRIPT" "$BARE/scripts/phase-lock.sh"
+mkdir -p "$TL_TMP/bare"
 mkproj 1800; rm -f "$PRJ/.silver-bullet.json"
-bare() { tl_run env -u SB_PHASE_LOCK_FILE -u SB_DEFAULT_CONFIG bash -c 'cd "$1" && shift && exec "$@"' _ "$PRJ" bash "$BARE/scripts/phase-lock.sh" "$@"; }
+bare() { tl_run env -u SB_PHASE_LOCK_FILE -u SB_DEFAULT_CONFIG SB_PHASE_LOCK_PLUGIN_ROOT="$TL_TMP/bare" bash -c 'cd "$1" && shift && exec "$@"' _ "$PRJ" bash "$SCRIPT" "$@"; }
 bare claim 2 martian t
 assert_eq "no template anywhere: unknown runtime refused" 3 "$TL_STATUS"
 assert_contains "no template anywhere: the built-in tag list" "$TL_ERR" "allowed: claude codex opencode pi goose hermes forge"
 bare peek 1
 assert_contains "no template anywhere: the default ttl of 1800 s applies" "$TL_OUT" '"expired":true'
+
+# a failing temp file leaves the lock file untouched and fails the operation
+mkproj 1800
+before="$(cat "$PRJ/.planning/.phase-locks.json")"
+tl_stub mktemp 'exit 1'
+inprj claim 5 claude t
+rm -f "$TL_BIN/mktemp"
+assert_eq "no temp file: the claim fails" 1 "$TL_STATUS"
+assert_eq "no temp file: the lock file is unchanged" "$before" "$(cat "$PRJ/.planning/.phase-locks.json")"
 
 tl_results
