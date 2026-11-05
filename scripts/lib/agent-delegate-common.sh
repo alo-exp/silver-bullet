@@ -124,9 +124,15 @@ agent_delegate_workdir_fingerprint() {
     git -C "$work_dir" rev-parse HEAD 2>/dev/null || echo no-head
     git -C "$work_dir" status --porcelain -uall 2>/dev/null || true
     git -C "$work_dir" diff HEAD --no-ext-diff 2>/dev/null || true
+    # Symlinks are recorded by their target string and never followed (a link to /dev/zero or a FIFO
+    # must not hang the delegation); only regular files are read, at most 4 MiB each.
     (cd "$work_dir" && git ls-files -o --exclude-standard -z 2>/dev/null | while IFS= read -r -d '' f; do
-      printf '%s ' "$f"
-      git hash-object -- "$f" 2>/dev/null
+      if [[ -L "$f" ]]; then
+        printf '%s -> %s\n' "$f" "$(readlink "$f")"
+      elif [[ -f "$f" ]]; then
+        printf '%s %s ' "$f" "$(wc -c <"$f" | tr -d ' ')"
+        head -c 4194304 <"$f" | git hash-object --stdin
+      fi
     done
     true)
   } | cksum

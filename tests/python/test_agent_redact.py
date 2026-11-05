@@ -24,7 +24,7 @@ SAMPLES = {
     "google": "AIza" + "SyA-1234567890abcdefghijklmnopqrstuv",
     "sk": "sk-" + "ant-api03-abcdefgh",
     "jwt": JWT,
-    "pem": "-----BEGIN RSA PRIVATE KEY-----\nMIIabc\n-----END RSA PRIVATE KEY-----",
+    "pem": "-----BEGIN RSA PRIVATE KEY-----\nMIIabcdefghijklmnop\n-----END RSA PRIVATE KEY-----",
 }
 
 
@@ -105,6 +105,63 @@ class ScanTests(unittest.TestCase):
         ):
             with self.subTest(text=text):
                 self.assertIsNone(agent_redact.scan(text))
+
+
+# Regression corpus (R10b-06 r2): literal secrets the scanner must keep catching, and honest briefs it
+# must keep accepting. Fake values are assembled so no scanner flags this file.
+CORPUS_SECRETS = [
+    "stripe_api_key: " + "sk_test_" + "4eC39HqLyjWDarjtT1zdp7dc",
+    "STRIPE_SECRET_KEY=" + "sk_live_" + "51H8abcdefghijklmnop",
+    "key " + "rk_live_" + "abcdefghijklmnop12",
+    "API_KEY=Xk9_aP2mQ7vR4tL8nB3cW5",
+    "Authorization: Bearer abc_def_ghi_jkl_mno_pqr",
+    "API_KEY=Ab3.Xy9.Qw7.Er5.Ty1.Ui3",
+    "client_secret=hJkLqWeRtYuIoPaSdFgZ",
+    "secret = aB3dE5gH7jK9mN1pQ3sT5vW7",
+    "hook https://hooks.slack.com/" + "services/T0123ABCD/B0123ABCD/abcDEF123ghiJKL456",
+    "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAabcdefgh\n-----END RSA PRIVATE KEY-----",
+    "DB=postgres://app:Zq8vLm2Xr9TnW4@db.prod.test/x",
+    "whsec_" + "abcdefghijklmnopqrstuv",
+]
+CORPUS_HONEST = [
+    "DATABASE_URL=postgres://postgres:postgres@localhost:5432/test",
+    "mysql://root:root@127.0.0.1/db",
+    "git clone https://x-access-token:${GH_TOKEN}@github.test/org/repo",
+    "https://user:<password>@host.test/x",
+    "Never commit files that start with -----BEGIN PRIVATE KEY----- markers.",
+    "csrf_token = 123e4567-e89b-12d3-a456-426614174000",
+    "session_token: 123E4567-E89B-12D3-A456-426614174000",
+    "api_key=my_api_key_variable_name",
+    "token: GOOGLE_CLIENT_SECRET_2_VALUE",
+    "secret = SessionSecretProviderFactory",
+    "Authorization: Bearer <token> is documented",
+    "password: req.body.passwordConfirmation",
+]
+
+
+class CorpusTests(unittest.TestCase):
+    def test_literal_secrets_are_caught(self):
+        for text in CORPUS_SECRETS:
+            with self.subTest(text=text[:30]):
+                self.assertIsNotNone(agent_redact.scan(text))
+
+    def test_honest_briefs_pass(self):
+        for text in CORPUS_HONEST:
+            with self.subTest(text=text[:30]):
+                self.assertIsNone(agent_redact.scan(text))
+
+    def test_pem_line_number_and_prose(self):
+        self.assertEqual(agent_redact.scan("a\nb\n-----BEGIN PRIVATE KEY-----\nMIIEowIBAAKCAQEAabcdefgh"), ("pem", 3))
+        self.assertIsNone(agent_redact.scan("a header line -----BEGIN PRIVATE KEY----- in prose"))
+
+    def test_userinfo_rules(self):
+        self.assertEqual(agent_redact.scan("x https://deploy:Zq8vLm2Xr9TnW4@host.test/r")[0], "url-userinfo")
+        self.assertIsNone(agent_redact.scan("x https://deploy:deploy@host.test/r"))
+
+    def test_camel_case_names_and_random_letter_runs(self):
+        self.assertIsNone(agent_redact.scan("secret=getSecretFromVaultClientFactory"))
+        self.assertIsNotNone(agent_redact.scan("secret=qWeRtYuIoPaSdFgHjKlZxCvB"))
+        self.assertIsNotNone(agent_redact.scan("secret=" + "qwertyuiopasdfghjklzxcvbnm"[::-1] + "ABCDEFGHIJKLMNOPQRSTUV"))
 
 
 class MoreRedactionTests(unittest.TestCase):

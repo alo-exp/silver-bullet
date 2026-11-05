@@ -26,10 +26,11 @@ agent_cli_path() {
   printf '%s\n' "$cli"
 }
 
-# Per-run transcript directory. Never inside SB_ROOT (the plugin cache in an installed package):
-# CODEX_TRANSCRIPT_DIR (live-test isolation sets it), else a private directory under TMPDIR.
+# Live-test isolation names the transcript directory in CODEX_TRANSCRIPT_DIR. Production runs have no
+# fixed location (see codex_transcript_dir_prepare); there is nothing to report then.
 agent_transcript_dir() {
-  printf '%s\n' "${CODEX_TRANSCRIPT_DIR:-${TMPDIR:-/tmp}/sb-codex-transcripts.$(id -u).$$}"
+  [[ -n "${CODEX_TRANSCRIPT_DIR:-}" ]] || return 1
+  printf '%s\n' "$CODEX_TRANSCRIPT_DIR"
 }
 
 agent_preflight() {
@@ -71,6 +72,33 @@ for _, _, path in entries[keep_archives:]:
 PY
 }
 
+# Transcript directories of earlier runs (private mktemp dirs) older than a day are removed on start.
+codex_sweep_old_transcripts() {
+  if find "${TMPDIR:-/tmp}" -maxdepth 1 -type d -name 'sb-codex-transcripts.*' -user "$(id -un)" -mtime +1 \
+    -exec rm -rf {} + >/dev/null 2>&1; then
+    :
+  fi
+}
+
+# Choose and validate the directory the transcript is written to; prints it. Without
+# CODEX_TRANSCRIPT_DIR a fresh `mktemp -d` directory is used (mode 0700, unpredictable name, so nobody
+# can pre-plant it). A named directory must be a real directory (not a symlink) that this user owns.
+# Fails closed: nothing is written when the directory cannot be trusted.
+codex_transcript_dir_prepare() {
+  local dir="${CODEX_TRANSCRIPT_DIR:-}"
+  if [[ -z "$dir" ]]; then
+    codex_sweep_old_transcripts
+    dir="$(mktemp -d "${TMPDIR:-/tmp}/sb-codex-transcripts.XXXXXX")" || return 1
+  else
+    ( umask 077; mkdir -p "$dir" ) || return 1
+  fi
+  if ! [[ -d "$dir" && ! -L "$dir" && -O "$dir" ]]; then
+    printf 'ERROR: refusing transcript directory (symlink or not owned by this user): %s\n' "$dir" >&2
+    return 1
+  fi
+  chmod 700 "$dir" && printf '%s\n' "$dir"
+}
+
 codex_capture_transcript() {
   local transcript_source_file="$1"
   local prompt_file="$2"
@@ -79,12 +107,13 @@ codex_capture_transcript() {
   local archive_id
   local meta_dest
 
-  transcript_dir="$(agent_transcript_dir)"
-  ( umask 077; mkdir -p "$transcript_dir" )
-  chmod 700 "$transcript_dir"
   [[ -f "$transcript_source_file" ]] || return 1
+  transcript_dir="$(codex_transcript_dir_prepare)" || return 1
   umask 077
   transcript_dest="${transcript_dir}/latest.jsonl"
+  meta_dest="${transcript_dir}/latest.meta.json"
+  # Never write through a planted link (a named directory can hold one).
+  [[ ! -L "$transcript_dest" && ! -L "$meta_dest" ]] || { printf 'ERROR: transcript target is a symlink\n' >&2; return 1; }
   if [[ -f "$prompt_file" ]]; then
     python3 - "$transcript_source_file" "$prompt_file" "$transcript_dest" <<'PY'
 import json
@@ -108,7 +137,6 @@ PY
   archive_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
   cp -f -- "$transcript_dest" "${transcript_dir}/${archive_id}.jsonl"
   codex_rotate_transcripts "$transcript_dir" 4
-  meta_dest="${transcript_dir}/latest.meta.json"
   jq -n \
     --arg archive_id "$archive_id" \
     --arg captured_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
@@ -156,6 +184,35 @@ Current state file contents:
 ${state_contents}
 
 EOF
+}
+
+# The Codex TUI launcher: runs from the plugin root with the delegation env assembled by agent_invoke
+# (its locals are visible here through bash dynamic scope).
+codex_run_tui_launcher() {
+  cd "$SB_ROOT" || return 1
+  TERM="xterm-256color" \
+    CODEX_RUNTIME_AGENT="codex" \
+    CODEX_LAUNCH_MODE="${CODEX_LAUNCH_MODE:-interactive}" \
+    CODEX_MODEL="$codex_model" \
+    CODEX_MODEL_PROVIDER="$codex_model_provider" \
+    CODEX_REASONING_EFFORT="$codex_reasoning_effort" \
+    CODEX_BIN="$cli" \
+    CODEX_WORK_DIR="$WORK_DIR" \
+    CODEX_PROMPT_FILE="$prompt_file" \
+    SILVER_BULLET_PROMPT_FILE="$prompt_file" \
+    CODEX_LAST_MESSAGE_FILE="$last_message_file" \
+    CODEX_TRANSCRIPT_FILE="$transcript_file" \
+    CODEX_JSON="1" \
+    CODEX_COLOR="never" \
+    CODEX_INTERACTIVE_PROMPT_INPUT="1" \
+    CODEX_SANDBOX_MODE="$sandbox_mode" \
+    CODEX_INTERACTIVE_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-${CLAUDE_INTERACTIVE_TIMEOUT:-900}}" \
+    CODEX_INTERACTIVE_QUIET_TIMEOUT="${CODEX_INTERACTIVE_QUIET_TIMEOUT:-${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-120}}" \
+    CODEX_INTERACTIVE_READY_TIMEOUT="${CODEX_INTERACTIVE_READY_TIMEOUT:-${CLAUDE_INTERACTIVE_READY_TIMEOUT:-20}}" \
+    CODEX_BYPASS=$([[ "$mode" == "permissive" ]] && printf '1' || printf '0') \
+    CODEX_BYPASS_HOOK_TRUST="$hook_trust_bypass" \
+    CODEX_AUTO_TRUST_HOOKS="$auto_trust_hooks" \
+    python3 "$SB_ROOT/scripts/codex-interactive-invoke.py"
 }
 
 agent_invoke() {
@@ -376,32 +433,7 @@ PY
     return 0
   fi
 
-  output="$(
-    cd "$SB_ROOT"
-    TERM="xterm-256color" \
-      CODEX_RUNTIME_AGENT="codex" \
-      CODEX_LAUNCH_MODE="${CODEX_LAUNCH_MODE:-interactive}" \
-      CODEX_MODEL="$codex_model" \
-      CODEX_MODEL_PROVIDER="$codex_model_provider" \
-      CODEX_REASONING_EFFORT="$codex_reasoning_effort" \
-      CODEX_BIN="$cli" \
-      CODEX_WORK_DIR="$WORK_DIR" \
-      CODEX_PROMPT_FILE="$prompt_file" \
-      SILVER_BULLET_PROMPT_FILE="$prompt_file" \
-      CODEX_LAST_MESSAGE_FILE="$last_message_file" \
-      CODEX_TRANSCRIPT_FILE="$transcript_file" \
-      CODEX_JSON="1" \
-      CODEX_COLOR="never" \
-      CODEX_INTERACTIVE_PROMPT_INPUT="1" \
-      CODEX_SANDBOX_MODE="$sandbox_mode" \
-      CODEX_INTERACTIVE_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-${CLAUDE_INTERACTIVE_TIMEOUT:-900}}" \
-      CODEX_INTERACTIVE_QUIET_TIMEOUT="${CODEX_INTERACTIVE_QUIET_TIMEOUT:-${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-120}}" \
-      CODEX_INTERACTIVE_READY_TIMEOUT="${CODEX_INTERACTIVE_READY_TIMEOUT:-${CLAUDE_INTERACTIVE_READY_TIMEOUT:-20}}" \
-      CODEX_BYPASS=$([[ "$mode" == "permissive" ]] && printf '1' || printf '0') \
-      CODEX_BYPASS_HOOK_TRUST="$hook_trust_bypass" \
-      CODEX_AUTO_TRUST_HOOKS="$auto_trust_hooks" \
-      python3 "$SB_ROOT/scripts/codex-interactive-invoke.py"
-  )" || true
+  output="$(codex_run_tui_launcher)" || true
   if [[ -f "$last_message_file" ]]; then
     output="${output}"$'\n'"$(cat "$last_message_file")"
     rm -f -- "$last_message_file"

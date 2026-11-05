@@ -203,7 +203,7 @@ assert_contains "prompt: nothing provided message" "$TL_ERR" "provide --prompt, 
 agent_delegate_brief_has_secrets "x ${fake_sk}" && tl_pass "secrets: sk key" || tl_fail "secrets: sk key"
 agent_delegate_brief_has_secrets "x ${fake_ghp}" && tl_pass "secrets: ghp token" || tl_fail "secrets: ghp token"
 # R10b-06: upper-case env assignments, Bearer JWTs and prefix tokens are caught ...
-for sample in "AWS_SECRET_ACCESS_KEY=${fake_val}" "GITLAB_TOKEN=$(printf '%s%s' 'glpat-' 'abcdefghij0123456789xy')" "Authorization: Bearer ${fake_jwt}" "${fake_pat}" "${fake_xox}" "${fake_aws}" "-----BEGIN RSA PRIVATE KEY-----"; do
+for sample in "AWS_SECRET_ACCESS_KEY=${fake_val}" "GITLAB_TOKEN=$(printf '%s%s' 'glpat-' 'abcdefghij0123456789xy')" "Authorization: Bearer ${fake_jwt}" "${fake_pat}" "${fake_xox}" "${fake_aws}" $'-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAabcdefgh'; do
   agent_delegate_brief_has_secrets "context: ${sample}" && tl_pass "secrets: rejects ${sample:0:14}..." || tl_fail "secrets: rejects ${sample:0:14}..."
 done
 # ... and an honest auth-feature brief is not refused
@@ -438,6 +438,18 @@ echo two >>"$QD_REPO/untracked.txt"
 FP_U2="$(agent_delegate_workdir_fingerprint "$QD_REPO")"
 [[ "$FP_U1" != "$FP_U2" ]] && tl_pass "fingerprint sees edits to untracked files" || tl_fail "fingerprint sees edits to untracked files"
 rm -f "$QD_REPO/untracked.txt"
+# untracked symlinks (to /dev/zero, to a FIFO, outside the tree) are never followed (r2)
+ln -s /dev/zero "$QD_REPO/zero-link"; mkfifo "$QD_REPO/a-fifo"; head -c 2000 /dev/urandom >"$TL_TMP/outside.bin"; ln -s "$TL_TMP/outside.bin" "$QD_REPO/out-link"
+start=$SECONDS
+FP_L1="$(timeout 20 bash -c 'source "$1"; agent_delegate_workdir_fingerprint "$2"' _ "$ST/scripts/lib/agent-delegate-common.sh" "$QD_REPO")"
+[[ $((SECONDS - start)) -lt 10 && -n "$FP_L1" ]] && tl_pass "fingerprint does not hang on a link to /dev/zero or a FIFO" || tl_fail "fingerprint does not hang on a link to /dev/zero or a FIFO"
+head -c 2000 /dev/urandom >"$TL_TMP/outside.bin"
+FP_L2="$(timeout 20 bash -c 'source "$1"; agent_delegate_workdir_fingerprint "$2"' _ "$ST/scripts/lib/agent-delegate-common.sh" "$QD_REPO")"
+assert_eq "fingerprint ignores the content behind links (never reads outside the tree)" "$FP_L1" "$FP_L2"
+ln -sfn "$TL_TMP/elsewhere" "$QD_REPO/out-link"
+FP_L3="$(timeout 20 bash -c 'source "$1"; agent_delegate_workdir_fingerprint "$2"' _ "$ST/scripts/lib/agent-delegate-common.sh" "$QD_REPO")"
+[[ "$FP_L1" != "$FP_L3" ]] && tl_pass "fingerprint sees a retargeted link" || tl_fail "fingerprint sees a retargeted link"
+rm -f "$QD_REPO/zero-link" "$QD_REPO/a-fifo" "$QD_REPO/out-link"
 echo changed >"$QD_REPO/new.txt"
 rc=0; err="$(agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>&1 >/dev/null)" || rc=$?
 assert_eq "retry decision: changed repo stops" 1 "$rc"

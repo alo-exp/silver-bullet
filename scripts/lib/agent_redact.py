@@ -23,7 +23,7 @@ REDACTED = "[REDACTED]"
 
 # Variable names that carry a secret: the keyword must END the name (so "tokens: 12" is left alone).
 _NAME = (
-    r"[A-Za-z0-9_.-]*(?:secret[_-]?access[_-]?key|client[_-]?secret|secret|token|password|passwd|"
+    r"[A-Za-z0-9_.-]*(?:secret[_-]?access[_-]?key|secret[_-]?key|client[_-]?secret|secret|token|password|passwd|"
     r"api[_-]?key|access[_-]?key|private[_-]?key|credentials?)"
 )
 _VALUE = r"[^\s\"',;]+"
@@ -38,6 +38,9 @@ _PREFIXED = [
     ("slack", re.compile(r"\bxox[abprs]-[A-Za-z0-9-]{10,}"), "xox-" + REDACTED),
     ("aws", re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"), REDACTED),
     ("google", re.compile(r"\bAIza[0-9A-Za-z_-]{35}"), REDACTED),
+    ("slack-webhook", re.compile(r"https://hooks\.slack\.com/services/T[A-Za-z0-9]+/B[A-Za-z0-9]+/[A-Za-z0-9]+"), "https://hooks.slack.com/services/" + REDACTED),
+    ("stripe", re.compile(r"\b[sr]k_(?:live|test)_[A-Za-z0-9]{10,}"), "sk_" + REDACTED),
+    ("stripe-webhook", re.compile(r"\bwhsec_[A-Za-z0-9]{16,}"), "whsec_" + REDACTED),
     ("sk", re.compile(r"\bsk-[A-Za-z0-9_-]{8,}"), "sk-" + REDACTED),
     ("npm", re.compile(r"\bnpm_[A-Za-z0-9]{20,}"), "npm_" + REDACTED),
     ("huggingface", re.compile(r"\bhf_[A-Za-z0-9]{20,}"), "hf_" + REDACTED),
@@ -67,42 +70,80 @@ def _entropy(value):
 
 
 _IDENT_CHAIN = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*(?:(?:\.|::|->)[A-Za-z_$][A-Za-z0-9_$]*)+$")
-_UNDERSCORE_IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_LOWER_SNAKE = re.compile(r"^[A-Za-z_][A-Za-z_]*$")
+_UPPER_SNAKE = re.compile(r"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$")
 _PLAIN_WORD = re.compile(r"^[A-Za-z]+$")
-_ENV_REF = re.compile(r"^(?:process\.env|os\.environ|os\.getenv|getenv|ENV\[|settings\.|config\.|secrets\.|vault\.|\$\{|\$[A-Z_]|<|%\()", re.I)
-_PEM_HEADER = re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")
+_UUID = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+_ENV_REF = re.compile(r"^(?:process\.env|os\.environ|os\.getenv|getenv|ENV\[|settings\.|config\.|secrets\.|vault\.|\$\{|\$[A-Za-z_]|<|%\()", re.I)
+_PEM_BLOCK = re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----[ \t]*\r?\n[ \t]*[A-Za-z0-9+/=]{16,}")
+_USERINFO = re.compile(r"://([^\s/@:]+):([^\s/@]+)@")
+_TRIVIAL_PASSWORDS = {"password", "passwd", "secret", "admin", "root", "test", "changeme", "example", "user", "pass"}
 
 
-def _looks_random(value):
-    """A literal secret-shaped assignment value: long, not a placeholder, not a code reference
-    (identifier, dotted/attribute chain, call, environment or settings lookup), high entropy."""
+def _is_reference(value):
+    """Placeholders and code references: nothing literal to leak."""
+    return (
+        value[0] in "<{$[(%"
+        or value.lower().startswith(("xxxx", "your", "example", "changeme"))
+        or "(" in value
+        or ")" in value
+        or bool(_ENV_REF.match(value))
+    )
+
+
+def _case_transition_rate(value):
+    flips = sum(1 for a, b in zip(value, value[1:]) if a.islower() != b.islower())
+    return flips / len(value)
+
+
+def _looks_random(value, bearer=False):
+    """A literal secret-shaped value: long, not a reference/placeholder/UUID/identifier, and
+    random-looking. A Bearer token is never a code identifier, so only references are exempt there."""
     value = value.strip("\"'")
-    if len(value) < 16:
-        return False
-    if value[0] in "<{$[(" or value.lower().startswith(("xxxx", "your", "example", "changeme")):
-        return False
-    if "(" in value or ")" in value or _ENV_REF.match(value):
-        return False
-    if _IDENT_CHAIN.match(value) or (_UNDERSCORE_IDENT.match(value) and "_" in value):
+    if len(value) < 16 or _is_reference(value) or _UUID.match(value):
         return False
     entropy = _entropy(value)
-    if _PLAIN_WORD.match(value):
-        # camelCase / PascalCase names read as identifiers; only a long random letter run is a key
-        return len(value) >= 24 and entropy >= 4.3
-    return entropy >= 3.5
+    if bearer:
+        return entropy >= 3.0
+    has_digit = any(c.isdigit() for c in value)
+    if not has_digit:
+        if _IDENT_CHAIN.match(value) or (_LOWER_SNAKE.match(value) and "_" in value):
+            return False
+        if _PLAIN_WORD.match(value):
+            # camelCase / PascalCase names read as identifiers; a letter run that flips case almost
+            # every character, or a long high-entropy one, is a key
+            return _case_transition_rate(value) >= 0.5 or (len(value) >= 24 and entropy >= 4.3)
+    elif _UPPER_SNAKE.match(value):
+        return False  # SCREAMING_SNAKE names (GOOGLE_CLIENT_SECRET_2) are identifiers
+    return entropy >= 3.0
+
+
+def _userinfo_secret(user, password):
+    """A password in URL userinfo that is neither a reference, a trivial local default nor the user name."""
+    return not (
+        _is_reference(password)
+        or password.lower() in _TRIVIAL_PASSWORDS
+        or password == user
+    )
 
 
 def scan(text):
     """Return ``(kind, line_number)`` of the first literal credential in ``text``, or None."""
+    block = _PEM_BLOCK.search(text)
+    pem_line = text.count("\n", 0, block.start()) + 1 if block else None
     for number, line in enumerate(text.splitlines(), 1):
+        if number == pem_line:
+            return "pem", number
         for kind, pattern, _replacement in _PREFIXED:
-            if kind == "pem":
-                if _PEM_HEADER.search(line):
-                    return kind, number
-            elif pattern.search(line):
+            if kind in ("pem", "url-userinfo"):
+                continue
+            if pattern.search(line):
                 return kind, number
+        for match in _USERINFO.finditer(line):
+            if _userinfo_secret(match.group(1), match.group(2)):
+                return "url-userinfo", number
         for match in re.finditer(r"\b(?:bearer)\s+([A-Za-z0-9._~+/=-]{16,})", line, re.I):
-            if _looks_random(match.group(1)):
+            if _looks_random(match.group(1), bearer=True):
                 return "bearer", number
         for match in _ASSIGN.finditer(line):
             if _looks_random(match.group(3)):
