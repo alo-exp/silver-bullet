@@ -139,7 +139,7 @@ Silver Bullet detects and blocks:
 - Hook skip attempts (hooks fire on every tool call, not just session start)
 - Trivial-mode abuse (agents cannot create the legacy trivial marker — `trivial-file-guard.sh` — and `session-start` deletes stale markers)
 
-The audited escape hatch for orchestrator directives is `SB OVERRIDE: <reason>` in a user message; it is logged to `.planning/orchestrator-override-log.jsonl`.
+The audited escape hatch for orchestrator directives is a user message whose first line is `SB OVERRIDE: <reason>` (8+ character reason, host `session_id` required). The hook writes a hash-chained record to `.planning/orchestrator-override-log.jsonl` before it clears the pending directive and the flow queue; if the record cannot be written nothing is cleared. It does not lift parent-mode tool restrictions or other PreToolUse gates.
 
 ## Scalability
 

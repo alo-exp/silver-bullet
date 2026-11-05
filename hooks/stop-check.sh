@@ -43,11 +43,16 @@ fi
 # Read JSON from stdin (hook event + optional context)
 stop_input="$(cat 2>/dev/null || true)"
 stop_hook_event="$(printf '%s' "$stop_input" | jq -r '.hook_event_name // "Stop"' 2>/dev/null || echo Stop)"
+# R2-10: the host sets stop_hook_active once it is already continuing because of a Stop hook.
+stop_hook_active="$(printf '%s' "$stop_input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo false)"
 
 if [[ -f "$_lib_dir_early/stop-coalesce.sh" ]]; then
   # shellcheck source=lib/stop-coalesce.sh
   source "$_lib_dir_early/stop-coalesce.sh"
-  if [[ "$stop_hook_event" == "Stop" ]] && declare -f sb_stop_coalesce_reset >/dev/null 2>&1; then
+  # R2-22: a stale coalesce file must not silence the secondary gates of a later event, so every
+  # Stop and SubagentStop starts clean (stop-check is the first Stop-family gate).
+  if [[ "$stop_hook_event" == "Stop" || "$stop_hook_event" == "SubagentStop" ]] \
+    && declare -f sb_stop_coalesce_reset >/dev/null 2>&1; then
     sb_stop_coalesce_reset
   fi
 fi
@@ -197,7 +202,11 @@ fi
 if [[ -f "$lib_dir/trivial-bypass.sh" ]]; then
   # shellcheck disable=SC1090
   source "$lib_dir/trivial-bypass.sh"
-  sb_trivial_bypass "$trivial_file"
+  # R3-02: only the state directory's own `trivial` file may stand for the marker; a forged
+  # state.trivial_file naming any other existing file must not switch the Stop gate off.
+  if sb_trivial_path_trusted "$trivial_file" "$sb_default_trivial"; then
+    sb_trivial_bypass "$trivial_file"
+  fi
 fi
 
 # Orchestrator parent mode — parent Stop blocked while flow queue pending; worker SubagentStop clears marker.
@@ -276,7 +285,18 @@ if [[ -f "$stall_block_file" && ! -L "$stall_block_file" ]]; then
   else
     stall_mtime=$(stat -c %Y "$stall_block_file" 2>/dev/null || echo 0)
   fi
-  if [[ -z "$session_start_epoch" || ! "$session_start_epoch" =~ ^[0-9]+$ || "$stall_mtime" -ge "$session_start_epoch" ]]; then
+  # R2-09: a skill recorded after the stall flag was written is the progress the flag asks for.
+  state_mtime=0
+  if [[ -f "$state_file" && ! -L "$state_file" ]]; then
+    if [[ "$(uname)" == "Darwin" ]]; then
+      state_mtime=$(stat -f %m "$state_file" 2>/dev/null || echo 0)
+    else
+      state_mtime=$(stat -c %Y "$state_file" 2>/dev/null || echo 0)
+    fi
+  fi
+  if (( state_mtime > stall_mtime )); then
+    rm -f -- "$stall_block_file" 2>/dev/null || true
+  elif [[ -z "$session_start_epoch" || ! "$session_start_epoch" =~ ^[0-9]+$ || "$stall_mtime" -ge "$session_start_epoch" ]]; then
     stall_count=$(cat "$stall_block_file" 2>/dev/null || echo "100")
     stall_reason="Autonomous stall detected: ${stall_count} tool calls without workflow progress. Invoke the next SB skill before declaring done."
     json_reason=$(printf '%s' "$stall_reason" | jq -Rs '.')
@@ -296,6 +316,7 @@ fi
 # Clean tree + no local-only commits ahead of origin → nothing to deploy → skip.
 # Untracked files (including .gitignored ones) count as dirty — active work.
 # Fail-closed on rev-list/ref-resolution failure (HOOK-06 / #17).
+sb_dirty_filtered=""
 if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   tree_clean=false
   # `--untracked-files=all` makes porcelain deterministic across user-local
@@ -310,7 +331,9 @@ if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   if [[ -n "$porcelain" ]]; then
     # Built-in transient-artifact patterns (extended-grep, anchored to
     # status-line shape `XX path`).
-    sb_transient_re="(\.${SB_RUNTIME_NAME}/scheduled_tasks\.lock|\.${SB_RUNTIME_NAME}/settings\.local\.json|\.superpowers/|\.planning/workflows/|REVIEW\.md)"
+    # R2-30: anchored to the path (a `docs/CODE-REVIEW.md` or `SECURITY-REVIEW.md` is real work), and
+    # handed to awk through ENVIRON so backslash escapes are not re-processed (no stderr warnings).
+    sb_transient_re="(^\.${SB_RUNTIME_NAME}/scheduled_tasks\.lock$|^\.${SB_RUNTIME_NAME}/settings\.local\.json$|^\.superpowers/|^\.planning/workflows/|^REVIEW\.md$|^\.planning/(.*/)?[^/]*REVIEW\.md$)"
     # Project-configured additional patterns (newline-separated, ERE-escaped
     # by the user). Resolved via .silver-bullet.json walk-up.
     sb_cfg_search="$PWD"
@@ -341,13 +364,15 @@ if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # Drop any porcelain line whose path component matches the transient regex.
     # Porcelain format: "XY path" — path starts at column 4. Use awk to extract
     # the path so renames (R/C with " -> ") don't confuse the filter.
-    filtered=$(printf '%s\n' "$porcelain" | awk -v re="$sb_transient_re" '
+    filtered=$(printf '%s\n' "$porcelain" | SB_TRANSIENT_RE="$sb_transient_re" awk '
+      BEGIN { re = ENVIRON["SB_TRANSIENT_RE"] }
       {
         path = substr($0, 4)
         sub(/^.* -> /, "", path)
         if (path !~ re) print
       }
     ')
+    sb_dirty_filtered="$filtered"
     [[ -z "$filtered" ]] && tree_clean=true
   else
     tree_clean=true
@@ -418,9 +443,51 @@ fi
 state_contents=""
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
 
-# HOOK-04: empty state file means no skills were tracked — non-dev session.
-# Fail-open by design: nothing to gate against.
-[[ -z "$state_contents" ]] && exit 0
+# stat mtime helper (BSD and GNU).
+sb_stop_mtime() {
+  if [[ "$(uname)" == "Darwin" ]]; then
+    stat -f %m "$1" 2>/dev/null || echo 0
+  else
+    stat -c %Y "$1" 2>/dev/null || echo 0
+  fi
+}
+
+# R2-36: true when this session's agent wrote a file (trivial-file-clear.sh leaves the
+# `files-written` marker after every Write/Edit) AND a still-dirty path is project source.
+# A chat-only session over the user's own pending edits stays allowed.
+sb_stop_agent_wrote_source() {
+  local marker="${SB_STATE_DIR}/files-written" epoch="" src_pattern src_exclude line path
+  [[ -f "$marker" && ! -L "$marker" && -n "$sb_dirty_filtered" ]] || return 1
+  if [[ -n "${SILVER_BULLET_SESSION_START_FILE:-}" && -f "${SILVER_BULLET_SESSION_START_FILE}" ]]; then
+    epoch=$(cat "${SILVER_BULLET_SESSION_START_FILE}" 2>/dev/null || true)
+  elif [[ -f "${SB_STATE_DIR}/session-start-time" ]]; then
+    epoch=$(cat "${SB_STATE_DIR}/session-start-time" 2>/dev/null || true)
+  fi
+  [[ "$epoch" =~ ^[0-9]+$ ]] || return 1
+  (( $(sb_stop_mtime "$marker") >= epoch )) || return 1
+  src_pattern=$(jq -r '.project.src_pattern // "/src/"' "$config_file" 2>/dev/null || echo "/src/")
+  if ! grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$' <<<"$src_pattern" || grep -qE '^\.\*$|^\.\+$|^/$|^$' <<<"$src_pattern"; then
+    src_pattern="/src/"
+  fi
+  src_exclude=$(jq -r '.project.src_exclude_pattern // ""' "$config_file" 2>/dev/null || true)
+  grep -qE '^[a-zA-Z0-9/_.|()\\-]*$' <<<"$src_exclude" || src_exclude=""
+  while IFS= read -r line; do
+    path="/${line:3}"
+    path="${path##* -> }"
+    [[ "$path" == /* ]] || path="/$path"
+    grep -qE "$src_pattern" <<<"$path" || continue
+    [[ -n "$src_exclude" ]] && grep -qE "$src_exclude" <<<"$path" && continue
+    return 0
+  done <<<"$sb_dirty_filtered"
+  return 1
+}
+
+# HOOK-04: empty state file means no skills were tracked — usually a non-dev session, so allow.
+# R2-36: but not when the agent itself wrote project source this session; then the planning
+# floor applies exactly as if one unrelated skill had been recorded.
+if [[ -z "$state_contents" ]] && ! sb_stop_agent_wrote_source; then
+  exit 0
+fi
 
 # Emit block JSON for Stop
 emit_stop_block() {
@@ -447,6 +514,21 @@ run_doc_scheme_task_gate() {
     sb_doc_scheme_gate_enforce "task" "$repo_root" "$SB_STATE_DIR" "emit_stop_block"
   fi
   return 0
+}
+
+# R2-10: a block the agent cannot clear from inside the session (the branch file belongs to
+# the host's global runtime state, so a branch switch or a concurrent session trips it) must
+# not trap the session. The first Stop blocks; once the host reports stop_hook_active the
+# same condition is released with a visible message and an audit line instead of looping.
+sb_stop_block_unclearable() {
+  local reason="$1" json_reason
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  if [[ "$stop_hook_active" == "true" ]]; then
+    printf '%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$reason" >>"${SB_STATE_DIR}/stop-loop-release.log" 2>/dev/null || true
+    printf '{"systemMessage":%s}' "$json_reason"
+    return 0
+  fi
+  printf '{"decision":"block","reason":%s}' "$json_reason"
 }
 
 # ── Branch-scope validation: skip if state is from a different branch ─────────
@@ -481,16 +563,14 @@ fi
 # M-04: branch / worktree mismatch — warn visibly instead of silent fail-open.
 if declare -f sb_branch_scope_mismatch >/dev/null 2>&1; then
   if sb_branch_scope_mismatch "$current_branch" "$current_git_toplevel"; then
-    warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' (worktree ${stored_state_toplevel:-unknown}) but current scope is '${current_branch}' (${current_git_toplevel:-unknown}). Run a fresh session-start on this worktree before declaring done."
-    json_warn=$(printf '%s' "$warn_msg" | jq -Rs '.')
-    printf '{"decision":"block","reason":%s}' "$json_warn"
+    warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' (worktree ${stored_state_toplevel:-unknown}) but current scope is '${current_branch}' (${current_git_toplevel:-unknown}). Start a fresh session (session-start re-scopes the state) or, after switching branches on purpose, invoke the required planning skills again on this branch before declaring done."
+    sb_stop_block_unclearable "$warn_msg"
     exit 0
   fi
 elif [[ -n "$stored_state_branch" && -n "$current_branch" && \
       "$stored_state_branch" != "$current_branch" ]]; then
-  warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' but current branch is '${current_branch}'. Run a fresh session-start on this branch before declaring done."
-  json_warn=$(printf '%s' "$warn_msg" | jq -Rs '.')
-  printf '{"decision":"block","reason":%s}' "$json_warn"
+  warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' but current branch is '${current_branch}'. Start a fresh session (session-start re-scopes the state) or invoke the required planning skills again on this branch before declaring done."
+  sb_stop_block_unclearable "$warn_msg"
   exit 0
 fi
 

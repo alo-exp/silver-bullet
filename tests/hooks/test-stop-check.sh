@@ -851,7 +851,7 @@ else
 fi
 teardown
 
-echo "--- ORCH-4: routing row marker alone exempts Stop (no SB_E2E_ENTERPRISE_MATRIX in hook env) ---"
+echo "--- ORCH-4: routing row marker alone does NOT exempt Stop (R5-06: harness env is required) ---"
 setup
 write_current_planning_state
 jq -n \
@@ -867,7 +867,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" ]]; then
   unset SB_E2E_MATRIX_ROUTING_ROW
   sb_e2e_matrix_set_routing_row_marker
   out=$(run_hook)
-  assert_passes "ORCH-4: marker alone allows Stop with pending orchestrator queue" "$out"
+  assert_blocks "ORCH-4: marker alone (no SB_E2E_ENTERPRISE_MATRIX in hook env) still blocks the queue" "$out"
   sb_e2e_matrix_clear_routing_row_marker
 else
   echo "  SKIP: e2e-matrix-routing.sh missing"
@@ -886,10 +886,12 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$SUBAGENT_HOOK" ]];
     source "$REPO_ROOT/hooks/lib/site-session.sh"
     sb_site_session_record_subagent_spawn '{"subagent_type":"generalPurpose"}' 2>/dev/null || true
   fi
+  export SB_E2E_ENTERPRISE_MATRIX=1
   sb_e2e_matrix_set_routing_row_marker
   sub_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SUBAGENT_HOOK" 2>/dev/null || true )
   assert_passes "ORCH-5: subagent-stop allows Stop during routing row" "$sub_out"
   sb_e2e_matrix_clear_routing_row_marker
+  unset SB_E2E_ENTERPRISE_MATRIX
   sub_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SUBAGENT_HOOK" 2>/dev/null || true )
   assert_blocks "ORCH-5b: subagent-stop blocks without routing marker when workers ran" "$sub_out"
 else
@@ -907,10 +909,12 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$LEDGER_HOOK" ]]; t
     >"${SB_TEST_DIR}/instruction-ledger.json"
   ledger_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$LEDGER_HOOK" 2>/dev/null || true )
   assert_blocks "ORCH-6a: instruction-ledger blocks Stop with unresolved items" "$ledger_out"
+  export SB_E2E_ENTERPRISE_MATRIX=1
   sb_e2e_matrix_set_routing_row_marker
   ledger_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$LEDGER_HOOK" 2>/dev/null || true )
   assert_passes "ORCH-6b: instruction-ledger allows Stop during routing row marker" "$ledger_out"
   sb_e2e_matrix_clear_routing_row_marker
+  unset SB_E2E_ENTERPRISE_MATRIX
 else
   echo "  SKIP: instruction-ledger-gate or e2e-matrix-routing missing"
 fi
@@ -926,10 +930,12 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$SITE_REG_HOOK" ]];
     >"${SB_TEST_DIR}/site-session.json"
   site_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SITE_REG_HOOK" 2>/dev/null || true )
   assert_blocks "ORCH-7a: site-regression blocks Stop with active session" "$site_out"
+  export SB_E2E_ENTERPRISE_MATRIX=1
   sb_e2e_matrix_set_routing_row_marker
   site_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SITE_REG_HOOK" 2>/dev/null || true )
   assert_passes "ORCH-7b: site-regression allows Stop during routing row marker" "$site_out"
   sb_e2e_matrix_clear_routing_row_marker
+  unset SB_E2E_ENTERPRISE_MATRIX
 else
   echo "  SKIP: site-regression-gate or e2e-matrix-routing missing"
 fi

@@ -10,11 +10,13 @@
 _sb_ups_coalesce_turn_ttl_seconds=5
 
 sb_ups_coalesce_turn_file() {
-  printf '%s/ups-coalesce-turn' "${SB_RUNTIME_STATE_DIR:-/tmp}"
+  [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 1
+  printf '%s/ups-coalesce-turn' "$SB_RUNTIME_STATE_DIR"
 }
 
 sb_ups_coalesce_seen_file() {
-  printf '%s/ups-coalesce-seen' "${SB_RUNTIME_STATE_DIR:-/tmp}"
+  [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 1
+  printf '%s/ups-coalesce-seen' "$SB_RUNTIME_STATE_DIR"
 }
 
 sb_ups_coalesce_fingerprint() {

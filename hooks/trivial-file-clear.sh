@@ -16,3 +16,9 @@ if [[ -f "$_sb_runtime_paths_dir/sb-project-gate.sh" ]]; then
 fi
 
 rm -f -- "${SB_RUNTIME_STATE_DIR}/trivial"
+
+# R2-36: leave a hook-written trace that the agent itself wrote a file this session, so the
+# Stop planning floor can tell the agent's edits from the user's own pending changes.
+if [[ -d "${SB_RUNTIME_STATE_DIR}" && ! -L "${SB_RUNTIME_STATE_DIR}/files-written" ]]; then
+  : >"${SB_RUNTIME_STATE_DIR}/files-written" 2>/dev/null || true
+fi

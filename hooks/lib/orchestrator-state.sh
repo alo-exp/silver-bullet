@@ -370,7 +370,9 @@ sb_orchestrator_clear_queue() {
   fi
 }
 
-# Clear stale flow queue when the user interrupts with a new goal or informational query.
+# Clear a stale flow queue when the user abandons it for a new goal (a bare work request).
+# A status or informational question mid-flow must NOT wipe an active queue (R4-08); the
+# clear is recorded in queue-clear.log so it is traceable.
 sb_orchestrator_clear_queue_on_interrupt() {
   local prompt="${1:-}"
   [[ -n "$prompt" ]] || return 1
@@ -379,13 +381,10 @@ sb_orchestrator_clear_queue_on_interrupt() {
     && sb_prompt_is_orchestrator_followup "$prompt"; then
     return 1
   fi
-  if declare -f sb_prompt_is_informational_query >/dev/null 2>&1 \
-    && sb_prompt_is_informational_query "$prompt"; then
-    sb_orchestrator_clear_queue
-    return 0
-  fi
   if declare -f sb_prompt_is_bare_work_request >/dev/null 2>&1 \
     && sb_prompt_is_bare_work_request "$prompt"; then
+    printf '%s\tcleared stale flow queue for new goal: %.80s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+      "$(printf '%s' "$prompt" | tr '\n\t' '  ')" >>"${SB_RUNTIME_STATE_DIR}/queue-clear.log" 2>/dev/null || true
     sb_orchestrator_clear_queue
     return 0
   fi

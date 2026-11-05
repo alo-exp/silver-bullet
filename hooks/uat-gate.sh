@@ -80,7 +80,7 @@ fi
 # Check 3: NOT-RUN blocks milestone release (UATG-02)
 if grep -qvE '\|\s*(#|Total|PASS|FAIL|Status|Result)\s*\|' < <(grep -E '\| NOT-RUN \|' "$UAT"); then
   not_run_count=$(grep -E '\| NOT-RUN \|' "$UAT" | grep -cvE '\|\s*(#|Total|PASS|FAIL|Status|Result)\s*\|' || true)
-  emit_block "UAT GATE: ${not_run_count} criterion/criteria marked NOT-RUN in .planning/UAT.md. Execute all criteria before completing milestone. Override only with explicit SB OVERRIDE: documented waiver in user message (audited)."
+  emit_block "UAT GATE: ${not_run_count} criterion/criteria marked NOT-RUN in .planning/UAT.md. Execute all criteria before completing milestone."
   exit 0
 fi
 

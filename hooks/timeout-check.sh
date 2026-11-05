@@ -124,6 +124,8 @@ if [[ "$current_state_mtime" -gt "$last_state_mtime" ]] && [[ "$current_state_mt
   sb_guard_nofollow "$last_progress_file"
   echo "$call_count" > "$last_progress_file"
   last_progress_count=$call_count
+  # R2-09: recorded progress is what the stall flag asks for, so it no longer applies.
+  rm -f -- "$SB_DIR/stall-block" 2>/dev/null || true
 fi
 
 calls_since_progress=$((call_count - last_progress_count))

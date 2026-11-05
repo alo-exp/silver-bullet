@@ -247,28 +247,87 @@ assert_eq "corrupt directive: empty block" "" "$(sb_orchestrator_directive_conte
 echo "=== override helpers ==="
 proj="$TL_TMP/proj"
 mkdir -p "$proj/.planning"
-sb_orchestrator_log_override "" "why" && rc=0 || rc=$?
-assert_eq "log_override without root is a no-op" 0 "$rc"
-sb_orchestrator_log_override "$TL_TMP/none" "why"
-assert_file_absent "no .planning dir: nothing logged" "$TL_TMP/none/.planning"
-( PATH="$(tl_path_without jq)"; sb_orchestrator_log_override "$proj" "why" )
-assert_file_absent "no jq: nothing logged" "$proj/.planning/orchestrator-override-log.jsonl"
-sb_orchestrator_log_override "$proj" "because" silver-plan
-sb_orchestrator_log_override "$proj" "again"
 log="$proj/.planning/orchestrator-override-log.jsonl"
+sb_orchestrator_log_override "" "why" && rc=0 || rc=$?
+assert_eq "log_override without root fails closed" 1 "$rc"
+sb_orchestrator_log_override "$TL_TMP/none" "why" && rc=0 || rc=$?
+assert_eq "log_override for a missing directory fails closed" 1 "$rc"
+( PATH="$(tl_path_without jq)"; sb_orchestrator_log_override "$proj" "why" ) && rc=0 || rc=$?
+assert_eq "no jq: log fails closed" 1 "$rc"
+assert_file_absent "no jq: nothing logged" "$log"
+( PATH="$(tl_path_without sha256sum shasum openssl)"; sb_orchestrator_log_override "$proj" "first" ; sb_orchestrator_log_override "$proj" "second" ) && rc=0 || rc=$?
+assert_eq "no sha256 tool: the chained second entry fails closed" 1 "$rc"
+rm -f "$log" "$SB_RUNTIME_STATE_DIR/orchestrator-override-log.jsonl"
+sb_orchestrator_log_override "$proj" "because" silver-plan '{"session_id":"s1","prompt_sha256":"abc"}'
+sb_orchestrator_log_override "$proj" "again"
 assert_eq "two entries appended" 2 "$(wc -l <"$log" | tr -d ' ')"
 assert_eq "entry kind" directive-override "$(sed -n 1p "$log" | jq -r .kind)"
 assert_eq "entry reason" because "$(sed -n 1p "$log" | jq -r .reason)"
 assert_eq "entry expected_skill" silver-plan "$(sed -n 1p "$log" | jq -r .expected_skill)"
-sb_orchestrator_prompt_has_override "please SB OVERRIDE: skip it" && rc=0 || rc=$?
-assert_eq "override marker detected" 0 "$rc"
-sb_orchestrator_prompt_has_override "sb   override: lower case" && rc=0 || rc=$?
-assert_eq "override marker is case-insensitive" 0 "$rc"
-sb_orchestrator_prompt_has_override "no marker here" && rc=0 || rc=$?
-assert_eq "no marker" 1 "$rc"
-assert_eq "reason extracted" "skip the gate" "$(sb_orchestrator_extract_override_reason "hello SB OVERRIDE: skip the gate")"
-assert_eq "reason extraction is case-insensitive" "go" "$(sb_orchestrator_extract_override_reason "sb override: go")"
+assert_eq "entry provenance session id" s1 "$(sed -n 1p "$log" | jq -r .session_id)"
+assert_eq "first entry starts the chain" genesis "$(sed -n 1p "$log" | jq -r .prev)"
+assert_eq "second entry chains the first line's sha256" "$(sed -n 1p "$log" | sb_orchestrator_sha256)" "$(sed -n 2p "$log" | jq -r .prev)"
+assert_eq "state-dir mirror written" 2 "$(wc -l <"$SB_RUNTIME_STATE_DIR/orchestrator-override-log.jsonl" | tr -d ' ')"
+mkdir -p "$TL_TMP/p2"; ln -s /dev/null "$TL_TMP/p2/.planning-target"
+mkdir -p "$TL_TMP/p3/.planning"; ln -s /dev/null "$TL_TMP/p3/.planning/orchestrator-override-log.jsonl"
+sb_orchestrator_log_override "$TL_TMP/p3" "x" && rc=0 || rc=$?
+assert_eq "log symlinked to /dev/null: refused (R4-14)" 1 "$rc"
+mkdir -p "$TL_TMP/p4"; ln -s "$TL_TMP/p2" "$TL_TMP/p4/.planning"
+sb_orchestrator_log_override "$TL_TMP/p4" "x" && rc=0 || rc=$?
+assert_eq ".planning symlink: refused" 1 "$rc"
+mkdir -p "$TL_TMP/p5"
+sb_orchestrator_log_override "$TL_TMP/p5" "no planning dir yet" silver-plan
+assert_eq "missing .planning is created and the override logged (R4-14)" 1 "$(wc -l <"$TL_TMP/p5/.planning/orchestrator-override-log.jsonl" | tr -d ' ')"
+chmod 500 "$TL_TMP/p5/.planning" 2>/dev/null || true
+if [[ ! -w "$TL_TMP/p5/.planning/orchestrator-override-log.jsonl" || "$(id -u)" != 0 ]]; then
+  mkdir -p "$TL_TMP/p6/.planning/orchestrator-override-log.jsonl"
+  sb_orchestrator_log_override "$TL_TMP/p6" "x" && rc=0 || rc=$?
+  assert_eq "unwritable log (a directory): refused" 1 "$rc"
+fi
+chmod 700 "$TL_TMP/p5/.planning" 2>/dev/null || true
+sb_orchestrator_prompt_has_override "SB OVERRIDE: skip the gate" && rc=0 || rc=$?
+assert_eq "override marker on the first line detected" 0 "$rc"
+sb_orchestrator_prompt_has_override $'\n  SB OVERRIDE: leading blank lines are fine\nmore text' && rc=0 || rc=$?
+assert_eq "leading blank lines and indentation tolerated" 0 "$rc"
+for bad in "please SB OVERRIDE: skip it now" "sb   override: lower case reason" "no marker here" "SB OVERRIDE:" "SB OVERRIDE: short" "SB OVERRIDE: <reason>" $'Why am I blocked?\nSB OVERRIDE: a reason that is long enough' $'> SB OVERRIDE: quoted reason here' "what does sb override: do exactly?"; do
+  sb_orchestrator_prompt_has_override "$bad" && rc=0 || rc=$?
+  assert_eq "not an override: ${bad//$'\n'/ / }" 1 "$rc"
+done
+assert_eq "reason extracted" "skip the gate" "$(sb_orchestrator_extract_override_reason "SB OVERRIDE: skip the gate  ")"
 assert_eq "no reason without marker" "" "$(sb_orchestrator_extract_override_reason "nothing")"
+
+echo "=== override apply ==="
+ORCH="$SB_RUNTIME_STATE_DIR/orchestrator.json"
+src_apply() { # input
+  printf '{"x":1}' >"$ORCH"; printf '{"next_skill":"silver-plan"}' >"$(sb_orchestrator_directive_file)"
+  sb_orchestrator_override_apply "$1" "SB OVERRIDE: production outage hotfix" "$2" && rc=0 || rc=$?
+}
+sb_orchestrator_clear_queue() { rm -f "$ORCH" "$(sb_orchestrator_directive_file)"; }
+rm -rf "$TL_TMP/p7"; mkdir -p "$TL_TMP/p7"
+src_apply '{"hook_event_name":"UserPromptSubmit"}' "$TL_TMP/p7"
+assert_eq "no session_id: refused (2)" 2 "$rc"
+assert_contains "refusal says why" "$SB_OVERRIDE_REFUSAL" "session_id"
+assert_file_exists "refused: directive kept" "$(sb_orchestrator_directive_file)"
+src_apply '{"session_id":"s9","transcript_path":"/nonexistent/t.jsonl"}' "$TL_TMP/p7"
+assert_eq "transcript_path that is not a file: refused" 2 "$rc"
+src_apply '{"session_id":"s9"}' "/nonexistent/root"
+assert_eq "audit record cannot be written: refused" 2 "$rc"
+assert_contains "refusal names the audit log" "$SB_OVERRIDE_REFUSAL" "audit record"
+assert_file_exists "refused: queue kept" "$ORCH"
+printf 'x\n' >"$TL_TMP/t.jsonl"
+src_apply '{"session_id":"s9","transcript_path":"'"$TL_TMP"'/t.jsonl"}' "$TL_TMP/p7"
+assert_eq "valid payload: honoured" 0 "$rc"
+assert_file_absent "honoured: directive cleared" "$(sb_orchestrator_directive_file)"
+assert_file_absent "honoured: queue abandoned" "$ORCH"
+entry="$(tail -1 "$TL_TMP/p7/.planning/orchestrator-override-log.jsonl")"
+assert_eq "logged session id" s9 "$(jq -r .session_id <<<"$entry")"
+assert_eq "logged host" "$SB_RUNTIME_NAME" "$(jq -r .host <<<"$entry")"
+assert_eq "logged prompt hash" "$(printf '%s' 'SB OVERRIDE: production outage hotfix' | sb_orchestrator_sha256)" "$(jq -r .prompt_sha256 <<<"$entry")"
+assert_eq "logged expected skill" silver-plan "$(jq -r .expected_skill <<<"$entry")"
+sb_orchestrator_override_apply '{"session_id":"s9"}' "just a normal prompt" "$TL_TMP/p7" && rc=0 || rc=$?
+assert_eq "no marker: not an override (1)" 1 "$rc"
+unset -f sb_orchestrator_clear_queue
+. "$TL_REPO_ROOT/hooks/lib/orchestrator-state.sh"
 
 echo "=== sync from state ==="
 rm -f "$DIR"

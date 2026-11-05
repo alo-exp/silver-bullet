@@ -291,7 +291,7 @@ plugins/silver-bullet/            Codex/Cursor package surface (mostly symlinks)
 | `/sb` not available | Install the plugin and restart the session |
 | Hooks not firing | Run `/sb:init`: hooks stay inert until both `.silver-bullet.json` and `silver-bullet.md` exist in the project root |
 | CI is red and you need to push a fix | Start the commit message with `fix(ci):` or `ci:` (or include `[ci-fix]`), or push changes under `.github/workflows/`, `tests/` or `package.json`; as a last resort `touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override` |
-| An orchestrator directive blocks and cannot be satisfied | Reply with `SB OVERRIDE: <reason>`; the override is logged to `.planning/orchestrator-override-log.jsonl` |
+| An orchestrator directive blocks and cannot be satisfied | Start your next message with `SB OVERRIDE: <reason>`; the override is logged to `.planning/orchestrator-override-log.jsonl` |
 | Want to refresh templates | Re-run `/sb:init` |
 
 Run `bash scripts/sb-doctor.sh` for an install and activation audit and `bash scripts/sb-diagnostics.sh` for the capability tier. [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) covers more cases, including the hook payload debug dump.

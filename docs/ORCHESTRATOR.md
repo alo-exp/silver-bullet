@@ -31,7 +31,7 @@ Config: `"orchestrator_mode": "parent"` (only allowed value; default in template
 | `.scheduler.batch_dispatch` (in `orchestrator.json`) | Session | Active parallel/sequential batch handoffs + join status |
 | `.silver-bullet/orchestrator-workers/*.md` | Project | Worker prompt templates (stamped by `sb:init`) |
 | `.planning/orchestrator-composition-log.jsonl` | Committed | Autonomous composition audit |
-| `.planning/orchestrator-override-log.jsonl` | Committed | User `SB OVERRIDE:` audit trail |
+| `.planning/orchestrator-override-log.jsonl` | Committed | User `SB OVERRIDE:` audit trail (hash-chained; mirrored in the runtime state dir) |
 
 ## Directive schema (`orchestrator-directive.json`)
 
@@ -138,7 +138,7 @@ Silver Bullet hooks do **not** read host mode from stdin today. Operators and ag
 |-----------|------------|----------------|
 | **Agent (default)** | Spawn Task workers; read-only Bash in parent | Full PreToolUse/Stop stack |
 | **Plan** (`SwitchMode` → plan) | Read/Grep/Glob + Task PLAN worker; **no** direct Edit/Write in parent | `orchestrator-directive-guard` still blocks parent writes; route planning via workers |
-| **Debug** | Route to `sb:debug` / `sb:forensics` queue — not freestyle Bash | Stop/PreToolUse still fire; use `SB OVERRIDE:` only for audited bypass |
+| **Debug** | Route to `sb:debug` / `sb:forensics` queue — not freestyle Bash | Stop/PreToolUse still fire; an `SB OVERRIDE:` message clears the pending directive and flow queue (audited) but not parent-mode tool limits |
 | **Ask** | Read-only tools | Aligns with parent read-only subset |
 
 **Enterprise E2E:** Matrix rows run in autonomous Agent mode. Do not switch to Plan/Debug mid-row — outcome scorers expect worker completion markers.
