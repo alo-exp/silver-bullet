@@ -1,5 +1,4 @@
 # shellcheck shell=bash
-# shellcheck disable=SC2034  # SB_ORCH_PARENT_BASH_DENY_REASON / SB_SCHEDULER_JOIN_RESULT are results read by callers
 # Orchestrator parent mode — parent session delegates via Task workers only.
 
 _sb_orch_parent_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -77,9 +76,24 @@ sb_orchestrator_guard_applies_to_workspace() {
 }
 
 # Parent orchestrator session — config parent mode and not a worker subagent.
+# Parent-mode enforcement needs the host to say who a worker is. Claude Code does (agent_id on every
+# subagent call); Codex does not yet, so there a worker is indistinguishable from the parent and
+# enforcing parent mode would deny a worker's own edits. On such hosts parent mode is INACTIVE (a
+# clean no-op) unless SB_ORCHESTRATOR_PARENT=1 forces it.
+sb_orchestrator_host_identifies_workers() {
+  case "${SILVER_BULLET_RUNTIME:-claude}" in
+    claude) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 # shellcheck disable=SC2120  # optional payload argument; hooks usually set SB_ORCH_HOOK_INPUT instead
 sb_orchestrator_is_parent_session() {
   if sb_orchestrator_is_worker_session "${1:-}"; then
+    return 1
+  fi
+  if ! sb_orchestrator_host_identifies_workers \
+     && [[ "${SB_ORCHESTRATOR_PARENT:-}" != "1" && "${SB_ORCHESTRATOR_PARENT:-}" != "true" ]]; then
     return 1
   fi
   local config_file=""
@@ -122,6 +136,10 @@ sb_orchestrator_worker_template_for_skill() {
     FLOW-DOCUMENT|DOCUMENT|silver-ensure-docs) printf 'DOCUMENT' ;;
     FLOW-RELEASE|RELEASE|silver-release|silver-create-release) printf 'RELEASE' ;;
     silver-blast-radius) printf 'BLAST-RADIUS' ;;
+    # Delivery-floor skills run inside their atom's worker template (the directive names the skill).
+    silver-triage) printf 'REVIEW-TRIAGE' ;;
+    tdd) printf 'EXECUTE' ;;
+    verify-tests) printf 'VERIFY' ;;
     silver-validate) printf 'VALIDATE' ;;
     silver-fast) printf 'FAST' ;;
     silver|silver-orchestrator) printf 'ROUTER' ;;
@@ -316,6 +334,46 @@ _sb_orch_parent_lone_argv() {
     | select(. != null and length > 0)' 2>/dev/null
 }
 
+# No assignment/env prefix may change how a sanctioned command starts or which program it finds
+# (BASH_ENV=, PATH=, LD_PRELOAD= ... make a trusted name run something else). F2 drops plain
+# NAME=value words from argv, so the prefix is read from its rtk_unwrapped field and from `env`
+# entries; the same is applied to every sh -c payload (nested, bounded depth).
+_sb_orch_parent_prefix_free() {
+  local depth="${1:-0}" payload payloads
+  [[ -z "${SB_SA_RTK_UNWRAPPED:-}" ]] || return 1
+  if printf '%s' "${SB_SA_JSON:-}" | jq -e '[.commands[]? | select((.argv[0] // "") | split("/") | last == "env")] | length > 0' >/dev/null 2>&1; then
+    return 1
+  fi
+  (( depth < 4 )) || return 1
+  payloads="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '
+    .commands[]? | .argv as $a
+    | select((["bash", "sh", "zsh", "dash", "ksh"] | index(($a[0] // "") | split("/") | last)) != null)
+    | ([$a[1:] | to_entries[] | select(.value | test("^-[A-Za-z]*c[A-Za-z]*$"))][0].key) as $k
+    | select($k != null) | ($a[$k + 2] // empty) | @base64' 2>/dev/null)"
+  while IFS= read -r payload; do
+    [[ -n "$payload" ]] || continue
+    payload="$(printf '%s' "$payload" | base64 -d 2>/dev/null)"
+    sb_shell_analysis_load "$payload"
+    [[ "$SB_TI_STATUS" == "ok" ]] || return 1
+    _sb_orch_parent_prefix_free $((depth + 1)) || return 1
+  done <<<"$payloads"
+  return 0
+}
+
+# `bash <script> invoke-skill ...`: the script must be this plugin's own scripts/silver-bullet, not
+# a file the project or the agent put under that name. Direct and `bash -c` forms are unaffected.
+_sb_orch_parent_script_form_ok() {
+  local script plugin_script
+  script="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '
+    (.commands[0].argv // []) as $a
+    | if (["bash", "sh", "zsh", "dash", "ksh"] | index(($a[0] // "") | split("/") | last)) == null then empty
+      elif any($a[1:][]; test("^-[A-Za-z]*c[A-Za-z]*$")) then empty
+      else ([$a[1:][] | select(startswith("-") | not)][0] // empty) end' 2>/dev/null)"
+  [[ -n "$script" ]] || return 0
+  plugin_script="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/scripts/silver-bullet"
+  [[ "$(cd "$(dirname "$script")" 2>/dev/null && pwd)/$(basename "$script")" == "$plugin_script" ]]
+}
+
 # Skill named by a lone "silver-bullet invoke-skill <skill>" call, else nothing (rc 1).
 sb_orchestrator_extract_invoke_skill_adapter() {
   local command_str="$1" argv
@@ -337,6 +395,7 @@ sb_orchestrator_parent_delegate_bash_allowed() {
   _sb_orch_parent_load_analysis "$command_str" || return 1
   [[ "$SB_TI_STATUS" == "ok" && -z "$SB_SA_WRITE_PATHS" ]] || return 1
   argv="$(_sb_orch_parent_lone_argv)" || return 1
+  _sb_orch_parent_prefix_free || return 1
   jq -e '
     .[0] as $p
     | any(["codex", "cursor", "claude", "opencode", "pi"][];
@@ -353,6 +412,7 @@ sb_orchestrator_parent_resolve_ledger_bash_allowed() {
   _sb_orch_parent_load_analysis "$command_str" || return 1
   [[ "$SB_TI_STATUS" == "ok" && -z "$SB_SA_WRITE_PATHS" ]] || return 1
   argv="$(_sb_orch_parent_lone_argv)" || return 1
+  _sb_orch_parent_prefix_free || return 1
   jq -e '
     .[0] as $p
     | ($p == "scripts/resolve-instruction-ledger.sh" or ($p | endswith("/scripts/resolve-instruction-ledger.sh")))
@@ -377,6 +437,7 @@ sb_orchestrator_parent_bash_allowed() {
   case "$SB_TI_STATUS" in
     ok) ;;
     helper_unavailable)
+      # shellcheck disable=SC2034  # result variable read by callers
       SB_ORCH_PARENT_BASH_DENY_REASON="$(sb_shell_analysis_helper_message 2>/dev/null || printf 'Silver Bullet cannot inspect this Bash call: python3 is a required prerequisite.')"
       return 1
       ;;
@@ -386,6 +447,8 @@ sb_orchestrator_parent_bash_allowed() {
 
   adapter_skill="$(sb_orchestrator_extract_invoke_skill_adapter "$command_str" 2>/dev/null || true)"
   if [[ -n "$adapter_skill" ]]; then
+    # extract just analysed this command: the globals still describe it.
+    _sb_orch_parent_prefix_free && _sb_orch_parent_script_form_ok || return 1
     sb_orchestrator_parent_skill_allowed "$adapter_skill"
     return $?
   fi

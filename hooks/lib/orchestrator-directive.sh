@@ -95,6 +95,9 @@ sb_orchestrator_flow_to_skill() {
     security|SECURITY)
       printf 'security'
       ;;
+    tdd|verify-tests)
+      printf '%s' "$flow"
+      ;;
     silver-*)
       printf '%s' "$flow"
       ;;

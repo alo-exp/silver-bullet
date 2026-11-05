@@ -9,6 +9,8 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
 fi
 
 export SILVER_BULLET_TEST_HOOK_ENFORCED=1
+# Parent mode is enforced on hosts that identify workers (Claude); Codex is covered at the end.
+export SILVER_BULLET_RUNTIME=claude
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 GUARD="$REPO_ROOT/hooks/orchestrator-directive-guard.sh"
@@ -121,7 +123,7 @@ out_spawn=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"m
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_empty "parent allows Codex spawn_agent" "$out_spawn"
 
-out_invoke=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"bash /path/to/silver-bullet invoke-skill sb '\''$silver ship readiness'\''"}}' | \
+out_invoke=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"bash '"$REPO_ROOT"'/scripts/silver-bullet invoke-skill sb '\''$silver ship readiness'\''"}}' | \
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_empty "parent allows Codex invoke-skill sb adapter" "$out_invoke"
 
@@ -247,6 +249,29 @@ else
   PASS=$((PASS + 1))
 fi
 unset SB_AGENT_DELEGATE_V2 SB_AGENT_DELEGATE_DIRECT_FALLBACK
+
+
+# Hosts that cannot identify workers (Codex): parent-mode enforcement is inactive, a clean no-op.
+WORK5=$(mktemp -d)
+git -C "$WORK5" init -q
+echo '{"sb_initiated":true,"orchestrator_mode":"parent","state":{"state_file":"'"$TMPSTATE"'"}}' >"$WORK5/.silver-bullet.json"
+echo '# SB' >"$WORK5/silver-bullet.md"
+mkdir -p "$WORK5/.planning/workflows"
+printf '# wf\n' >"$WORK5/.planning/workflows/WF-1.md"
+printf '{"next_skill":"silver-plan","blocking":false,"reason":"r"}\n' >"${SB_TEST_DIR}/orchestrator-directive.json"
+PATCH='{"hook_event_name":"PreToolUse","tool_name":"apply_patch","tool_input":{"command":["apply_patch","*** Begin Patch\n*** Update File: src/a.txt\n*** End Patch"]}}'
+guard_rt() { # guard_rt RUNTIME PAYLOAD [env...]
+  local rt="$1" payload="$2"; shift 2
+  (cd "$WORK5" && printf '%s' "$payload" | env -u SB_ORCHESTRATOR_PARENT -u SB_ORCHESTRATOR_WORKER "$@" SILVER_BULLET_RUNTIME="$rt" \
+    SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+}
+assert_empty "codex worker apply_patch (no agent id) is not denied as the parent" "$(guard_rt codex "$PATCH")"
+assert_empty "codex parent Bash is not denied either (parent mode inactive)" "$(guard_rt codex '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"rm -rf x"}}')"
+assert_contains "claude: the same patch without an agent id is the parent: denied" "$(guard_rt claude "$PATCH")" "ORCHESTRATOR PARENT"
+assert_not_parent_block "claude: the same patch from a subagent is a worker" "$(guard_rt claude "${PATCH%\}}"',"agent_id":"a1"}')"
+assert_contains "codex with SB_ORCHESTRATOR_PARENT=1 forced: enforced" "$(guard_rt codex "$PATCH" SB_ORCHESTRATOR_PARENT=1)" "ORCHESTRATOR PARENT"
+rm -f "${SB_TEST_DIR}/orchestrator-directive.json"
+rm -rf "$WORK5"
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

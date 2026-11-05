@@ -27,8 +27,13 @@ sb_orchestrator_event_append() {
     '{at: $at, type: $type, payload: (try ($payload | fromjson) catch {})}' 2>/dev/null || true)"
   [[ -n "$entry" ]] || return 1
   [[ -L "$logfile" ]] && return 1
-  printf '%s\n' "$entry" >>"$logfile" 2>/dev/null || return 1
-  sb_orchestrator_event_log_trim "$logfile"
+  # Append and trim under the same lock: a trim (tail + rename) must not lose an appended event.
+  sb_orchestrator_with_lock _sb_orchestrator_event_write "$logfile" "$entry"
+}
+
+_sb_orchestrator_event_write() {
+  printf '%s\n' "$2" >>"$1" 2>/dev/null || return 1
+  sb_orchestrator_event_log_trim "$1"
   return 0
 }
 

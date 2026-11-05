@@ -263,13 +263,13 @@ echo "=== Group 3: Orchestrator Queue Ordering ==="
 
 feature_q="$(sb_orchestrator_default_queue_for_composer silver-feature)"
 check "silver-feature: quality-gates before execute in orchestrator queue" \
-  "$(grep -q 'FLOW-QUALITY-GATE,silver-context,silver-plan,silver-validate,silver-execute' <<<"$feature_q" && echo pass || echo fail)"
+  "$(grep -q 'FLOW-QUALITY-GATE,silver-context,silver-plan,silver-validate,tdd,silver-execute' <<<"$feature_q" && echo pass || echo fail)"
 check "silver-feature: review before verify in orchestrator queue" \
-  "$(grep -q 'silver-review-request,silver-review,silver-review-triage,silver-verify' <<<"$feature_q" && echo pass || echo fail)"
+  "$(grep -q 'silver-review-request,silver-review,silver-review-triage,silver-triage,silver-verify' <<<"$feature_q" && echo pass || echo fail)"
 
 ui_q="$(sb_orchestrator_default_queue_for_composer silver-ui)"
 check "silver-ui: ui-contract before execute in orchestrator queue" \
-  "$(grep -q 'silver-ui-contract,silver-validate,silver-execute' <<<"$ui_q" && echo pass || echo fail)"
+  "$(grep -q 'silver-ui-contract,silver-validate,tdd,silver-execute' <<<"$ui_q" && echo pass || echo fail)"
 check "silver-ui: ui-review immediately after execute" \
   "$(grep -q 'silver-execute,silver-ui-review' <<<"$ui_q" && echo pass || echo fail)"
 
@@ -284,7 +284,7 @@ bugfix_pre="${bugfix_q%%,silver-execute*}"
 check "silver-bugfix: debug before plan in orchestrator queue" \
   "$([[ "${bugfix_pre%%,silver-plan*}" == silver-debug,* ]] && echo pass || echo fail)"
 check "silver-bugfix: planning floor (quality-gates, context) runs before plan (R10-02)" \
-  "$([[ "$bugfix_pre" == *quality-gates*silver-context*silver-plan ]] && echo pass || echo fail)"
+  "$([[ "$bugfix_pre" == *quality-gates*silver-context*silver-plan* ]] && echo pass || echo fail)"
 
 release_q="$(sb_orchestrator_default_queue_for_composer silver-release)"
 check "silver-release: branch-finish before ship in orchestrator queue" \

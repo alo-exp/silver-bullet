@@ -1,5 +1,4 @@
 # shellcheck shell=bash
-# shellcheck disable=SC2034  # SB_ORCH_PARENT_BASH_DENY_REASON / SB_SCHEDULER_JOIN_RESULT are results read by callers
 # Catalog-driven runtime scheduler — parallel batches, mutation-scope safety, join gates (Phase B).
 
 _sb_scheduler_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -851,6 +850,7 @@ _sb_scheduler_mark_handoff_joined() {
     SB_SCHEDULER_JOIN_RESULT="batch-complete"
     sb_scheduler_complete_active_batch "$repo_root" 2>/dev/null || true
   else
+    # shellcheck disable=SC2034  # result variable read by callers
     SB_SCHEDULER_JOIN_RESULT="batch-pending"
     sb_scheduler_write_batch_directive "$repo_root" 2>/dev/null || true
   fi

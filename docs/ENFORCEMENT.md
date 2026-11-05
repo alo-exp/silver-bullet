@@ -64,7 +64,7 @@ In the `devops-cycle` workflow the `_devops` variants (`required_planning_devops
 
 In orchestrator parent mode, the parent session spawns Task **workers**, each executing one atomic flow. Stop/SubagentStop handling differs by role:
 
-- **Worker on `SubagentStop`** (a hook payload carrying the host's `agent_id`, or `SB_ORCHESTRATOR_WORKER=1`): `stop-check.sh` exits 0 and leaves shared state alone, because other workers may still be running. Workers are **not** individually subjected to the planning-floor or delivery gates — they perform a single flow and return to the parent. Enforcement is the parent's responsibility.
+- **Worker on `SubagentStop`** (a hook payload carrying the host's `agent_id`, or `SB_ORCHESTRATOR_WORKER=1`): `stop-check.sh` exits 0 and leaves shared state alone, because other workers may still be running. On Claude every `SubagentStop` carries `agent_id`, so a worker's `SubagentStop` is never gated by `stop-check.sh` or `site-visual-evidence-gate.sh`; the parent's own `Stop` is. Workers are **not** individually subjected to the planning-floor or delivery gates — they perform a single flow and return to the parent. Enforcement is the parent's responsibility.
 - **Parent on `Stop` with a pending flow queue:** `stop-check.sh` blocks and instructs the parent to spawn the next Task worker for the next flow before ending the session. The parent cannot declare the composition complete while flows remain queued.
 
 This division means the planning-floor and delivery gates are enforced **once, at the parent level**, against the cumulative state the workers contributed — never redundantly on each worker SubagentStop.

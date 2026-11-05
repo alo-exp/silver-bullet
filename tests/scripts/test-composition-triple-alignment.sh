@@ -152,7 +152,7 @@ parse_orchestrator_pre_exec() {
   # The queue also carries the planning-floor skills (required_planning) that dev-cycle-check and
   # completion-audit demand but this chain guard does not (R10-02). Those extras are checked by
   # test-orchestrator-queue-order.sh; here only floor tokens the guard lacks are set aside.
-  local floor_extra="" f
+  local floor_extra=" tdd" f   # tdd: delivery-floor token (R10-02 part B), not a chain-guard marker
   for f in $(sb_orchestrator_planning_floor_csv "$composer" | tr ',' ' '); do
     case ",${GUARD_SET_FOR_FILTER}," in *",$(normalize_token "$f"),"*) ;; *) floor_extra="$floor_extra $(normalize_token "$f")" ;; esac
   done
