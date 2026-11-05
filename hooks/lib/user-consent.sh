@@ -157,9 +157,13 @@ _sb_consent_clean_source() {
 # no owner record after the wait, is taken over under a second lock directory
 # (<lock>.takeover), inside which the owner is checked again, so two waiters never remove a
 # lock a third has just taken. SB_CONSENT_LOCK_TRIES (default 100, 0.1 s apart; a value that
-# is not a positive integer means the default) bounds the wait.
+# is not an integer from 1 to 1000 means the default) bounds the wait.
 _sb_consent_lock_reclaim() { # LOCK ANYWAY: remove LOCK when its owner is gone (or ANYWAY=1 and it has none)
   local lock="$1" anyway="$2" pid rc=1
+  # A takeover directory left by a killed process (older than a minute) is removed first.
+  if [[ -n "$(find "${lock}.takeover" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then
+    rmdir "${lock}.takeover" 2>/dev/null
+  fi
   mkdir "${lock}.takeover" 2>/dev/null || return 1
   pid="$(cat "${lock}/pid" 2>/dev/null || true)"
   if [[ "$pid" =~ ^[0-9]+$ ]]; then
@@ -173,7 +177,7 @@ _sb_consent_lock_reclaim() { # LOCK ANYWAY: remove LOCK when its owner is gone (
 
 sb_consent_set() {
   local lock dir tries="${SB_CONSENT_LOCK_TRIES:-100}" rc=0 ownerless=0
-  [[ "$tries" =~ ^[1-9][0-9]*$ ]] || tries=100
+  [[ "$tries" =~ ^[1-9][0-9]{0,2}$|^1000$ ]] || tries=100
   dir="$(dirname "$(sb_consent_store_path)")"
   if ! (umask 077 && mkdir -p "$dir") 2>/dev/null; then
     _sb_consent_set_locked "$@"
@@ -189,7 +193,7 @@ sb_consent_set() {
         tries=1
         continue
       fi
-      _sb_consent_err "another sb-consent is writing ${dir}; try again (remove ${lock} if none is running)"
+      _sb_consent_err "another sb-consent is writing ${dir}; try again (remove ${lock} and ${lock}.takeover if no sb-consent is running)"
       return 2
     fi
     sleep 0.1

@@ -68,6 +68,20 @@ assert_eq "recording a query leaves the directive file alone" '{"pending":true}'
 sb_graphify_clear_query_state "$GH_CFG"
 assert_file_exists "clearing query state leaves the directive file in place" "$STATE/orchestrator-directive.json"
 
+echo "=== a stamp can never be a path inside a directory named like an SB state file ==="
+for ctl in trivial state branch mode orchestrator-directive.json planning-edit-override roadmap-edit-override skill-invocations; do
+  rm -rf "$STATE/$ctl"
+  cfg "$(jq -cn --arg p "\${SB_RUNTIME_STATE_DIR}/$ctl/x-usage" '{graphify:{enabled_by_user:true, query_state_file:$p}}')"
+  assert_eq "query_state_file $ctl/x-usage falls back" "$STATE/graphify-query" "$(sb_graphify_query_state_path "$GH_CFG")"
+  sb_graphify_record_query "$GH_CFG"
+  assert_file_absent "no $ctl directory was created" "$STATE/$ctl"
+done
+ln -sfn "$TL_TMP/outside" "$STATE/linkd"
+for bad in '${SB_RUNTIME_STATE_DIR}/linkd/x-usage' '${SB_RUNTIME_STATE_DIR}/../x-usage' '${SB_RUNTIME_STATE_DIR}/a/../x-usage' '${SB_RUNTIME_STATE_DIR}/./x-usage'; do
+  cfg "$(jq -cn --arg p "$bad" '{graphify:{enabled_by_user:true, query_state_file:$p}}')"
+  assert_eq "query_state_file $bad falls back" "$STATE/graphify-query" "$(sb_graphify_query_state_path "$GH_CFG")"
+done
+rm -f "$STATE/linkd"; assert_file_absent "nothing was written through the symlink" "$TL_TMP/outside/x-usage"
 echo "=== R5-02: a version string is never evaluated ==="
 PWNED="$TL_TMP/pwned-version"
 # HOME is a set variable: an unset name would abort under set -u before its subscript is evaluated.
