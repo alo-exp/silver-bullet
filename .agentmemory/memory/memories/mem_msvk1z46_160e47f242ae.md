@@ -6,7 +6,7 @@ updated: "2026-08-16T08:40:51.442Z"
 strength: 7
 version: 1
 concepts: ["RFL", "rung9", "verify_1", "VERIFY_PASS", "CLEAN", "DR search gateway"]
-files: ["/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-dr-search-gateway-ecb5030e/rung-09-gpt-5.6-sol-high/verify_1.md"]
+files: ["/Users/<user>/projects/silver-bullet/repo/.planning/rfl-dr-search-gateway-ecb5030e/rung-09-gpt-5.6-sol-high/verify_1.md"]
 ---
 
 # RFL DR search gateway ecb5030e rung 9 GPT-5.6 Sol High verify_1 completed CLEAN 

@@ -66,9 +66,9 @@ completed: 2026-04-26
 
 ## Files Created/Modified
 
-- `/Users/shafqat/Documents/Projects/silver-bullet/site/help/getting-started/index.html` — Fix A (install command), Fix B (stale version parenthetical)
-- `/Users/shafqat/Documents/Projects/silver-bullet/site/help/reference/index.html` — Fix G (v0.19+ qualifier removed)
-- `/Users/shafqat/Documents/Projects/silver-bullet/site/help/workflows/silver-ui.html` — Fix K (Step 16 id + sidebar link)
+- `/Users/<user>/Documents/Projects/silver-bullet/site/help/getting-started/index.html` — Fix A (install command), Fix B (stale version parenthetical)
+- `/Users/<user>/Documents/Projects/silver-bullet/site/help/reference/index.html` — Fix G (v0.19+ qualifier removed)
+- `/Users/<user>/Documents/Projects/silver-bullet/site/help/workflows/silver-ui.html` — Fix K (Step 16 id + sidebar link)
 
 ## Decisions Made
 

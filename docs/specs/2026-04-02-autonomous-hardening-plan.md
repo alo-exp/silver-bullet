@@ -39,7 +39,7 @@ The hook needs: (a) sentinel cleanup unconditionally before dedup, (b) mode dete
 - [ ] **Step 1.1: Read current hook to understand exact line positions**
 
 ```bash
-cat -n /Users/shafqat/Documents/Projects/silver-bullet/hooks/session-log-init.sh
+cat -n /Users/<user>/Documents/Projects/silver-bullet/hooks/session-log-init.sh
 ```
 
 - [ ] **Step 1.2: Add new test cases to test-session-log-init.sh (before implementation)**
@@ -154,7 +154,7 @@ rm -rf "$SESSION_LOG_DIR7"
 - [ ] **Step 1.3: Run tests to confirm new ones fail (hook not yet updated)**
 
 ```bash
-bash /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh 2>&1 || true
+bash /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh 2>&1 || true
 ```
 Expected: Tests 1–3 pass; Tests 4–7 fail (sentinel and skeleton not yet implemented).
 
@@ -349,14 +349,14 @@ Note: `SENTINEL_SLEEP_OVERRIDE` env var allows tests to use a short sleep (e.g.,
 - [ ] **Step 1.5: Verify the file was written**
 
 ```bash
-head -5 /Users/shafqat/Documents/Projects/silver-bullet/hooks/session-log-init.sh
+head -5 /Users/<user>/Documents/Projects/silver-bullet/hooks/session-log-init.sh
 ```
 Expected: `#!/usr/bin/env bash`
 
 - [ ] **Step 1.6: Run all tests**
 
 ```bash
-bash /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh
+bash /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh
 ```
 Expected: all 7 tests print PASS, `All tests passed.`
 
@@ -514,13 +514,13 @@ printf 'All tests passed.\n'
 ```
 
 ```bash
-chmod +x /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-timeout-check.sh
+chmod +x /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-timeout-check.sh
 ```
 
 - [ ] **Step 2.2: Run test to confirm it fails (hook not yet written)**
 
 ```bash
-bash /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-timeout-check.sh 2>&1 || true
+bash /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-timeout-check.sh 2>&1 || true
 ```
 Expected: error (HOOK not found or permission denied).
 
@@ -576,13 +576,13 @@ printf '{"hookSpecificOutput":{"message":"⚠️ Autonomous session running 10+ 
 ```
 
 ```bash
-chmod +x /Users/shafqat/Documents/Projects/silver-bullet/hooks/timeout-check.sh
+chmod +x /Users/<user>/Documents/Projects/silver-bullet/hooks/timeout-check.sh
 ```
 
 - [ ] **Step 2.4: Run tests to confirm all pass**
 
 ```bash
-bash /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-timeout-check.sh
+bash /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-timeout-check.sh
 ```
 Expected: all tests PASS, `All tests passed.`
 
@@ -613,7 +613,7 @@ EOF
 - [ ] **Step 3.1: Read current hooks.json**
 
 ```bash
-cat /Users/shafqat/Documents/Projects/silver-bullet/hooks/hooks.json
+cat /Users/<user>/Documents/Projects/silver-bullet/hooks/hooks.json
 ```
 Confirm 6 PostToolUse entries. Confirm session-log-init entry has `"async": true`.
 
@@ -641,13 +641,13 @@ Add before the closing `]` of PostToolUse:
 - [ ] **Step 3.4: Verify JSON is valid and PostToolUse has 7 entries**
 
 ```bash
-jq '.hooks.PostToolUse | length' /Users/shafqat/Documents/Projects/silver-bullet/hooks/hooks.json
+jq '.hooks.PostToolUse | length' /Users/<user>/Documents/Projects/silver-bullet/hooks/hooks.json
 ```
 Expected: `7`
 
 ```bash
 jq '.hooks.PostToolUse[] | select(.hooks[].command | contains("session-log-init")) | .hooks[].async' \
-  /Users/shafqat/Documents/Projects/silver-bullet/hooks/hooks.json
+  /Users/<user>/Documents/Projects/silver-bullet/hooks/hooks.json
 ```
 Expected: `false`
 
@@ -679,7 +679,7 @@ The existing anti-stall rules have two triggers. Add a third.
 - [ ] **Step 4.1: Read current autonomous mode anti-stall rules in CLAUDE.md**
 
 ```bash
-grep -n "Anti-stall\|stall\|tool calls" /Users/shafqat/Documents/Projects/silver-bullet/CLAUDE.md
+grep -n "Anti-stall\|stall\|tool calls" /Users/<user>/Documents/Projects/silver-bullet/CLAUDE.md
 ```
 
 - [ ] **Step 4.2: Update anti-stall in CLAUDE.md**
@@ -712,8 +712,8 @@ Find the same `**Anti-stall**` block in `templates/CLAUDE.md.base` and apply the
 - [ ] **Step 4.4: Verify both files updated**
 
 ```bash
-grep -c "Per-step budget" /Users/shafqat/Documents/Projects/silver-bullet/CLAUDE.md
-grep -c "Per-step budget" /Users/shafqat/Documents/Projects/silver-bullet/templates/CLAUDE.md.base
+grep -c "Per-step budget" /Users/<user>/Documents/Projects/silver-bullet/CLAUDE.md
+grep -c "Per-step budget" /Users/<user>/Documents/Projects/silver-bullet/templates/CLAUDE.md.base
 ```
 Expected: `1` for each.
 
@@ -746,7 +746,7 @@ Three insertions + one addition to the workflow.
 
 ```bash
 grep -n "STEP 0\|SESSION MODE\|autonomous\|autonomous.*mode" \
-  /Users/shafqat/Documents/Projects/silver-bullet/templates/workflows/full-dev-cycle.md | head -15
+  /Users/<user>/Documents/Projects/silver-bullet/templates/workflows/full-dev-cycle.md | head -15
 ```
 
 - [ ] **Step 5.2: Extend Step 0 with answer injection**
@@ -828,7 +828,7 @@ This clears the timeout sentinel so `timeout-check.sh` stops warning.
 for term in "Pre-answers" "SKILL DISCOVERY" "Skill gap check (post-plan)" \
             "silver-bullet-sentinel-pid"; do
   count=$(grep -c "$term" \
-    /Users/shafqat/Documents/Projects/silver-bullet/templates/workflows/full-dev-cycle.md \
+    /Users/<user>/Documents/Projects/silver-bullet/templates/workflows/full-dev-cycle.md \
     2>/dev/null || echo 0)
   if [[ "$count" -gt 0 ]]; then
     printf 'PASS: "%s" found\n' "$term"
@@ -842,8 +842,8 @@ Expected: all 4 PASS.
 - [ ] **Step 5.7: Sync to installed workflow**
 
 ```bash
-cp /Users/shafqat/Documents/Projects/silver-bullet/templates/workflows/full-dev-cycle.md \
-   /Users/shafqat/Documents/Projects/silver-bullet/docs/workflows/full-dev-cycle.md
+cp /Users/<user>/Documents/Projects/silver-bullet/templates/workflows/full-dev-cycle.md \
+   /Users/<user>/Documents/Projects/silver-bullet/docs/workflows/full-dev-cycle.md
 ```
 
 - [ ] **Step 5.8: Commit**
@@ -870,25 +870,25 @@ EOF
 - [ ] **Step 6.1: Run all hook tests**
 
 ```bash
-bash /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh && \
-bash /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-timeout-check.sh
+bash /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh && \
+bash /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-timeout-check.sh
 ```
 Expected: `All tests passed.` for each.
 
 - [ ] **Step 6.2: Verify hooks.json**
 
 ```bash
-jq '.hooks.PostToolUse | length' /Users/shafqat/Documents/Projects/silver-bullet/hooks/hooks.json
+jq '.hooks.PostToolUse | length' /Users/<user>/Documents/Projects/silver-bullet/hooks/hooks.json
 ```
 Expected: `7`
 
 - [ ] **Step 6.3: Verify key strings in installed files**
 
 ```bash
-grep -c "Per-step budget" /Users/shafqat/Documents/Projects/silver-bullet/CLAUDE.md
-grep -c "SKILL DISCOVERY" /Users/shafqat/Documents/Projects/silver-bullet/docs/workflows/full-dev-cycle.md
-grep -c "Pre-answers" /Users/shafqat/Documents/Projects/silver-bullet/docs/workflows/full-dev-cycle.md
-grep -c "silver-bullet-sentinel-pid" /Users/shafqat/Documents/Projects/silver-bullet/docs/workflows/full-dev-cycle.md
+grep -c "Per-step budget" /Users/<user>/Documents/Projects/silver-bullet/CLAUDE.md
+grep -c "SKILL DISCOVERY" /Users/<user>/Documents/Projects/silver-bullet/docs/workflows/full-dev-cycle.md
+grep -c "Pre-answers" /Users/<user>/Documents/Projects/silver-bullet/docs/workflows/full-dev-cycle.md
+grep -c "silver-bullet-sentinel-pid" /Users/<user>/Documents/Projects/silver-bullet/docs/workflows/full-dev-cycle.md
 ```
 Expected: `1` each.
 

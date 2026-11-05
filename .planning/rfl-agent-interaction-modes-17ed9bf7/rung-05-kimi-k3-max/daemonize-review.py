@@ -6,7 +6,7 @@ import os
 import sys
 from pathlib import Path
 
-LOGDIR = Path("/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-05-kimi-k3-max")
+LOGDIR = Path("/Users/<user>/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-05-kimi-k3-max")
 SUB = os.environ.get("RFL_RETRY_SUBDIR", "attempt3")
 RETRY = LOGDIR / SUB
 RETRY.mkdir(parents=True, exist_ok=True)
@@ -22,7 +22,7 @@ if os.fork() > 0:
 
 os.chdir("/")
 os.environ["RFL_RETRY_SUBDIR"] = SUB
-os.environ["HOME"] = "/Users/shafqat"
+os.environ["HOME"] = "/Users/<user>"
 os.environ["RTK_DISABLED"] = "1"
 os.environ["LEANCTX_DISABLED"] = "1"
 

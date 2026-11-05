@@ -30,7 +30,7 @@ export RTK_DISABLED=1
 export SB_E2E_SESSION0_SKIP=1
 export SB_E2E_SESSION0_SKIP_REASON="Round 6; Session 0 satisfied in prior rounds"
 export SB_E2E_LEDGER_FILE="${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-6-LEDGER.md}"
-export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/<user>/projects/enterprise-grade-test-app}"
 export SB_E2E_MATRIX_LOG="${SB_E2E_MATRIX_LOG:-${SB_ROOT}/.e2e-matrix-round6-live.log}"
 export SB_ENTERPRISE_E2E_LIVE=1
 

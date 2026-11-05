@@ -88,7 +88,7 @@ Profile block (add to `.silver-bullet.json` `optimization_profiles`):
 
 ## Phase 0 — Gist update (first deliverable)
 
-Update [gist-leanctx-capability-analysis.md](.planning/archive/research/2026-07-05/2026-07-05-context-tools-feature-matrix-ultradeep/gist-leanctx-capability-analysis.md) and publish to [GitHub Gist](https://gist.github.com/shafqatevo/3ab842979d93dd524e4db291307241a4):
+Update [gist-leanctx-capability-analysis.md](.planning/archive/research/2026-07-05/2026-07-05-context-tools-feature-matrix-ultradeep/gist-leanctx-capability-analysis.md) and publish to [GitHub Gist](<private-gist-url>):
 
 | New section | Source |
 |-------------|--------|

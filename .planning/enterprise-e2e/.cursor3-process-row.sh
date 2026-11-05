@@ -2,8 +2,8 @@
 # Process one completed Cursor-3 REAL row: score, fixture commit, ledger line.
 set -euo pipefail
 ROW="${1:?row number}"
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
-FIXTURE="/Users/shafqat/projects/enterprise-grade-test-app-cursor"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
+FIXTURE="/Users/<user>/projects/enterprise-grade-test-app-cursor"
 LEDGER="$SB_ROOT/.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md"
 
 export SB_ROOT SB_E2E_LEDGER_FILE="$LEDGER" SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE"
