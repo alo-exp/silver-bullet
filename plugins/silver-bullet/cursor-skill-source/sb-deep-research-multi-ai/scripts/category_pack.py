@@ -333,11 +333,17 @@ def pack_prompt_block(pack: dict[str, Any]) -> str:
         f"  - `{c['id']}` — {c['label']}: {c['description']}"
         for c in (pack.get("exclusion_classes") or [])
     )
-    core_names = ", ".join(s.get("name", s.get("slug", "")) for s in get_core_seeds(pack))
-    adjacent_names = ", ".join(s.get("name", s.get("slug", "")) for s in get_adjacent_seeds(pack))
+    def named(entries: list[dict[str, Any]]) -> str:
+        """"Name (`slug`)": the slug is what a row's ``vendors`` field must carry."""
+        return ", ".join(
+            f"{e.get('name', e.get('slug', ''))} (`{e['slug']}`)" if e.get("slug") else str(e.get("name", "")) for e in entries
+        )
+
+    core_names = named(get_core_seeds(pack))
+    adjacent_names = named(get_adjacent_seeds(pack))
     market_lines = []
     for market in get_markets(pack):
-        seeds = ", ".join(s.get("name", s.get("slug", "")) for s in (market.get("seeds") or []))
+        seeds = named(market.get("seeds") or [])
         market_lines.append(
             f"  - **{market.get('display_name')}** (`{market.get('id')}`, {market.get('role')}): {seeds}"
         )
@@ -349,12 +355,8 @@ def pack_prompt_block(pack: dict[str, Any]) -> str:
 
 **Membership is NOT mutually exclusive:** a solution may compete as core/adjacent in one OR multiple markets when evidence supports it. Do not force exclusive single-market placement.
 """
-    hard_names = ", ".join(
-        e.get("name", e.get("slug", "")) for e in get_hard_exclusions(pack)
-    )
-    sunset_names = ", ".join(
-        e.get("name", e.get("slug", "")) for e in get_sunset_registry(pack)
-    )
+    hard_names = named(get_hard_exclusions(pack))
+    sunset_names = named(get_sunset_registry(pack))
     naming_rules = str(
         pack_overlay(pack).get("naming_rules")
         or "Use product-level names; apply parent/child dedupe from pack aliases."

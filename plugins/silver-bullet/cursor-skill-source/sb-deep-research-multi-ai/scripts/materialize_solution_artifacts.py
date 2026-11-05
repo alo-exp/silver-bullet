@@ -12,6 +12,7 @@ from typing import Any, Iterator
 
 from generated_files import write_generated_text
 from pack_vocabulary import activated, for_research_dir
+from vendor_identity import build_registry
 from category_pack import (
     build_known_solutions,
     build_overview_seeds,
@@ -204,206 +205,151 @@ def _mentions(lower_text: str, name: str) -> bool:
     return re.search(rf"(?<![a-z0-9]){re.escape(name)}(?![a-z0-9])", lower_text) is not None
 
 
-# Product names that are also ordinary English words or surnames ("director", "factory", "cursor", "cline", ...).
-# Pack vocabulary. Precision comes first (a false vendor tick is fabricated evidence), so such a name is credited
-# ONLY where an explicit product cue stands beside it (see _has_product_cue); without one it is a common word.
-# NON_VENDOR_TERMS are category words that a pack alias maps to a product ("sdlc" -> a plugin): they never count.
-AMBIGUOUS_NAMES: frozenset[str] = frozenset()
-NON_VENDOR_TERMS: frozenset[str] = frozenset()
-# The multi-word ambiguous names that are trusted when written in Title Case ("Silver Bullet uses ...", not
-# "no silver bullet", "No Silver Bullet: Essence", "Silver Bullet Thinking Is a Myth"). Pack vocabulary.
-PROPER_PHRASES: frozenset[str] = frozenset()
-# Ambiguous name -> lower-case words of the company that makes it ("conductor": {"melty"}). Pack vocabulary.
-PRODUCT_MAKERS: dict[str, frozenset[str]] = {}
-_CUE_AFTER = re.compile(
-    r"\.(?:ai|dev|com|io|app|sh)\b|\s*[✔✓✗✖✘]"
-    r"|\s(?:AI|IDE|Agents?|Plugins?|Cloud|Platform|CLI|App|SaaS|Code|Copilot|Dev|Composer|Droids?|SDK|Editor|Extension"
-    r"|Tool|Assistant)\b"
-    r"|(?i:\s+(?:ide|editor|extension|cli|app|plugins?|tool|assistant|sdk|coding\s+agents?)\b)"
-)
-_VERSION = re.compile(r"\s+v\d+(?:\.\d+)*\b|\s+\d+(?:\.\d+)+\b")
-# A maker beside the name is a cue only with a product verb after it: "Melty Conductor orchestrates" yes,
-# "Melty Conductor tracks distort" no.
-_PRODUCT_VERB = re.compile(
-    r"\s+(?:(?:support|provide|offer|ship|add|run|enforce|orchestrate|install|integrate|include|require|lack|enable"
-    r"|deliver|automate|claim|extend|expose|implement|ensure|commit)s?"
-    r"|(?:generate|create|execute|launch|announce|raise|allow|let)(?:s|d|ed)?)\b"
-)
-_DETERMINERS = frozenset("the a an no any this that these those our your their my his her its each every some".split())
-_PREV_WORD = re.compile(r"([A-Za-z][A-Za-z0-9'’-]*)[ \t]+$")
-_NEXT_WORD = re.compile(r"[ \t]+([A-Za-z][A-Za-z0-9'’-]*)")
-_LIST_LEAD = re.compile(
-    r"\b(?:leaders|competitors|vendors|alternatives|rivals|peers|seeds|candidates|players|exclusions|APOs?|solutions|products|packs)\b",
-    re.IGNORECASE,
-)
-_LIST_JOIN = re.compile(r"(?:[,:(]|\b(?:and|or|are|is|include[sd]?|including|like)\b)\s*$", re.IGNORECASE)
-_SENTENCE_END = re.compile(r"[.!?;\n]")
-_LIST_STOP = re.compile(r"[.!?;\n:()]")
-_LIST_SPLIT = re.compile(r",|\band\b|\bor\b", re.IGNORECASE)
-_LIST_OPEN = re.compile(r"\s*(?:,|\band\b|\bor\b)", re.IGNORECASE)
-_SPAN = 4  # words of a list member compared with a product name
-
+# Vendor identity (vendor_identity.py has the rule). A vendor whose display name has no distinctive token is
+# AMBIGUOUS ("Director", "Cursor", "Silver Bullet", "Devin"): its name is also an ordinary word or surname, so it is
+# credited only by an explicit signal: a ``vendors`` tag on the claim row, a ``source_ref`` that names it, its pack
+# URL, a qualified display ("Devin (Cognition)") or a whole matrix slot. The words around a name never credit it.
+# COINED_NAMES (pack vocabulary): invented single words that are distinctive on their own (name -> why).
+COINED_NAMES: frozenset[str] = frozenset()
 _NEVER = re.compile(r"(?!x)x")
-_ALIASES: dict[str, Any] = {"pack": None, "map": {}}
+_ALIASES: dict[str, Any] = {"key": None, "map": {}}
+
+
+def _run_key(known: dict[str, str] | None, pack: dict[str, Any] | None) -> tuple[Any, ...]:
+    """What identifies a run's vendor set across the copies the parsers make of it: the names and the pack id."""
+    return (tuple(sorted((known or {}).items())), (pack or {}).get("category_id"), COINED_NAMES, tuple(sorted(_RUN["aliases"].items())))
 
 
 def _alias_map(pack: dict[str, Any]) -> dict[str, str]:
     """The pack's alias -> canonical slug map, built once per pack (it costs milliseconds)."""
-    if _ALIASES["pack"] is not pack:
+    if _ALIASES["key"] != pack.get("category_id"):
         from category_pack import build_alias_map
 
-        _ALIASES.update(pack=pack, map=build_alias_map(pack))
+        _ALIASES.update(key=pack.get("category_id"), map=build_alias_map(pack))
     return _ALIASES["map"]
 
-_PHRASES: dict[str, Any] = {"key": None, "refs": None, "phrases": frozenset()}
+_PHRASES: dict[tuple[Any, ...], frozenset[str]] = {}
+_CACHE_SIZE = 8  # the classifier and the materialiser hold different copies of the vendor set: keep a few runs
 
 
 def _known_phrases() -> frozenset[str]:
     """Every product name and alias of the run, normalised ("claude harness"); rebuilt only when the run changes."""
     known, pack = _known_or_run(None), _RUN["pack"]
-    key = (id(known), len(known), id(pack))
-    if _PHRASES["key"] != key:
+    key = _run_key(known, pack)
+    if key not in _PHRASES:
         names = set(known) | set(known.values()) | set(_slug_aliases(pack))
         if pack:
             names |= set(_alias_map(pack))
-        phrases = frozenset(re.sub(r"[^a-z0-9]+", " ", str(n).lower()).strip() for n in names)
-        _PHRASES.update(key=key, refs=(known, pack), phrases=phrases)
-    return _PHRASES["phrases"]
+        if len(_PHRASES) >= _CACHE_SIZE:
+            _PHRASES.clear()
+        _PHRASES[key] = frozenset(re.sub(r"[^a-z0-9]+", " ", str(n).lower()).strip() for n in names)
+    return _PHRASES[key]
 
 
-def _normal(phrase: str) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", phrase.lower()).strip()
-
-
-def _plain_products() -> frozenset[str]:
-    """The run's product names that are not ambiguous words: a list that holds one is a list of products."""
-    phrases = _known_phrases()
-    key = (id(phrases), id(AMBIGUOUS_NAMES))
-    if _PHRASES.get("plain_key") != key:
-        _PHRASES.update(plain_key=key, plain=frozenset(p for p in phrases if p not in AMBIGUOUS_NAMES and p not in NON_VENDOR_TERMS))
-    return _PHRASES["plain"]
-
-
-def _in_vendor_list(text: str, start: int) -> bool:
-    """The name is a member of a list the sentence introduces as vendors ("The leaders are A, B and C")."""
-    prefix = text[max(0, start - 300):start]
-    breaks = [m.end() for m in _SENTENCE_END.finditer(prefix)]
-    prefix = prefix[breaks[-1]:] if breaks else prefix
-    if not _LIST_JOIN.search(prefix):
-        return False
-    return any(rx.search(prefix) for rx in (_LIST_LEAD, _MATRIX_LEADERS_RE, _CORE_SET_CLAIM_RE))
-
-
-def _product_in(tokens: list[str], from_end: bool) -> bool:
-    products = _plain_products()
-    for token in tokens:
-        words = _normal(token).split()
-        spans = (words[-n:] for n in range(1, _SPAN + 1)) if from_end else (words[:n] for n in range(1, _SPAN + 1))
-        if any(" ".join(span) in products for span in spans if span):
-            return True
-    return False
-
-
-def _list_with_a_product(text: str, start: int, end: int) -> bool:
-    """The name sits in a comma/and/or list that also holds a product that is not an ambiguous word."""
-    before = text[max(0, start - 160):start]
-    breaks = [m.end() for m in _LIST_STOP.finditer(before)]
-    before = before[breaks[-1]:] if breaks else before
-    after = text[end:end + 160]
-    stop = _LIST_STOP.search(after)
-    after = after[:stop.start()] if stop else after
-    tokens_before = _LIST_SPLIT.split(before)[:-1] if _LIST_JOIN.search(before) and not before.rstrip().lower().endswith(("are", "is")) else []
-    tokens_after = _LIST_SPLIT.split(after)[1:] if _LIST_OPEN.match(after) else []
-    return _product_in(tokens_before, True) or _product_in(tokens_after, False)
-
-
-def _maker_cue(text: str, start: int, end: int, key: str) -> bool:
-    makers = PRODUCT_MAKERS.get(key, ())
-    if not makers:
-        return False
-    prev = _PREV_WORD.search(text[max(0, start - 48):start])
-    if prev and prev.group(1).lower().removesuffix("'s").removesuffix("’s") in makers:
-        return bool(_PRODUCT_VERB.match(text, end) or _CUE_AFTER.match(text, end))
-    after = text[end:end + 48].lower()
-    return any(re.match(rf"\s*\(\s*{re.escape(m)}\b|\s+by\s+{re.escape(m)}\b", after) for m in makers)
-
-
-def _known_pair(text: str, start: int, key: str) -> bool:
-    """"Claude Harness", "GitHub Copilot": the word before makes the full product name the run knows."""
-    prev = _PREV_WORD.search(text[max(0, start - 48):start])
-    if not prev or not prev.group(1)[0].isupper():
-        return False
-    pair = f"{_normal(prev.group(1))} {key}"
-    return pair in _known_phrases() and pair not in AMBIGUOUS_NAMES
-
-
-def _proper_phrase(text: str, start: int, end: int) -> bool:
-    """A Title-Case multi-word name that is not part of a longer capitalised run or after a determiner."""
-    if not all(word[:1].isupper() for word in text[start:end].split()):
-        return False
-    prev = _PREV_WORD.search(text[max(0, start - 48):start])
-    if prev and (prev.group(1)[0].isupper() or prev.group(1).lower() in _DETERMINERS):
-        return False
-    following = _NEXT_WORD.match(text, end)
-    return not (following and following.group(1)[0].isupper())
-
-
-def _has_product_cue(text: str, start: int, end: int, key: str) -> bool:
-    """An explicit product cue beside a capitalised ambiguous name; everything else is a common word."""
-    following = [_normal(w) for w in re.findall(r"[A-Za-z0-9.+#-]+", text[end:end + 80])[:3]]
-    if any(f"{key} {' '.join(following[:n])}" in _known_phrases() for n in range(1, len(following) + 1)):
-        return False  # "Cursor Background Agents" is that product, not Cursor
-    return bool(
-        _CUE_AFTER.match(text, end)
-        or _VERSION.match(text, end)
-        or (key in PROPER_PHRASES and _proper_phrase(text, start, end))
-        or _maker_cue(text, start, end, key)
-        or _known_pair(text, start, key)
-        or _in_vendor_list(text, start)
-        or _list_with_a_product(text, start, end)
-    )
-
-
-# The vendor set of the run being parsed (known names incl. discovered vendors, and its pack):
-# prose parsers that take no explicit `known` resolve vendors from it.
-_RUN: dict[str, Any] = {"known": None, "pack": None}
+# The vendor set of the run being parsed (known names incl. discovered vendors, and its pack) and the vendors
+# the claim row being parsed declares: prose parsers that take no explicit `known` resolve vendors from it.
+_RUN: dict[str, Any] = {"known": None, "pack": None, "declared": frozenset(), "aliases": {}}
 
 
 @contextlib.contextmanager
-def run_context(known: dict[str, str] | None, pack: dict[str, Any] | None) -> Iterator[None]:
-    """Install the run's vendor set and pack for the prose parsers; restored on exit."""
+def run_context(known: dict[str, str] | None, pack: dict[str, Any] | None, aliases: dict[str, str] | None = None) -> Iterator[None]:
+    """Install the run's vendor set, pack and extra spellings (alias -> slug) for the prose parsers; restored on exit."""
     previous = dict(_RUN)
     _RUN["known"], _RUN["pack"] = known or previous["known"], pack or previous["pack"]
+    _RUN["aliases"] = {**previous["aliases"], **(aliases or {})}
     try:
         yield
     finally:
         _RUN.update(previous)
 
 
+@contextlib.contextmanager
+def claim_scope(declared: frozenset[str]) -> Iterator[None]:
+    """The vendors the claim row being parsed declares (its ``vendors`` tag, a source_ref that names them)."""
+    previous = _RUN["declared"]
+    _RUN["declared"] = frozenset(declared)
+    try:
+        yield
+    finally:
+        _RUN["declared"] = previous
+
+
 def _known_or_run(known: dict[str, str] | None) -> dict[str, str]:
     return known or _RUN["known"] or KNOWN_SOLUTIONS
 
 
-def mentions_vendor(text: str, lower: str, name: str) -> bool:
-    """Whole-word vendor mention.
+_REGISTRY: dict[tuple[Any, ...], Any] = {}
 
-    A category word (NON_VENDOR_TERMS) never counts. An ambiguous name (a common English word or surname:
-    AMBIGUOUS_NAMES) counts only when it is capitalised AND an explicit product cue stands beside it: a
-    product head noun, domain or version after it, its maker, the full known product name, or a list of
-    vendors. Without one it is a common word ("Hover the Cursor", "Growth is Linear"). Every look-around is
-    bounded, so the cost is linear in the claim length.
+
+def vendor_registry() -> Any:
+    """The registry of the run being parsed (spellings, distinctive tokens, URLs); rebuilt only when the run changes."""
+    known, pack = _known_or_run(None), _RUN["pack"]
+    key = _run_key(known, pack)
+    if key not in _REGISTRY:
+        if len(_REGISTRY) >= _CACHE_SIZE:
+            _REGISTRY.clear()
+        aliases = {**_slug_aliases(pack), **_head_aliases(pack), **_RUN["aliases"]}
+        _REGISTRY[key] = build_registry(known, pack, COINED_NAMES, aliases, _alias_map(pack) if pack else None)
+    return _REGISTRY[key]
+
+
+_SLOT_CLEAN = re.compile(
+    r"[✔✓✗✖✘*_`#]|\([^)]*\)|\bv?\d+(?:\.\d+)*\b|\b(?:only|also|pass|fail|scores?|true|yes|no|not|do|does|partially)\b",
+    re.IGNORECASE,
+)
+_SLOT_SPLIT = re.compile(r"[,;/]|\s+and\s+")
+_SIGNALS: dict[tuple[Any, ...], frozenset[str]] = {}
+
+
+def _slot_vendors(text: str, registry: Any) -> set[str]:
+    """Vendors that are a whole item of a recognised matrix line ("Matrix entry - X: A, B", "X ✔ for A, B", the pack's leader lists)."""
+    slots: list[str] = []
+    for rx in (_MATRIX_ENTRY_RE, _MATRIX_DASH_RE, _MATRIX_ROW_RE):
+        match = rx.search(text)
+        if match:
+            slots += [match.group("feature"), *_SLOT_SPLIT.split(match.group("body"))]
+    check = _CHECKMARK_FOR_RE.search(text) if _CHECK_THEN_FOR.search(text) else None
+    if check:
+        slots += _SLOT_SPLIT.split(check.group("body"))
+    for rx in (_MATRIX_LEADERS_RE, _CORE_SET_CLAIM_RE):
+        match = rx.search(text)
+        if match:
+            slots += _SLOT_SPLIT.split(text[match.end():])
+    found: set[str] = set()
+    for slot in slots:
+        key = " ".join(_SLOT_CLEAN.sub(" ", slot).split())
+        if key:
+            found |= registry.slugs_of(key)
+    return found
+
+
+def _text_signals(text: str, registry: Any) -> frozenset[str]:
+    """Vendors a text names by an explicit form (pack URL, qualified display, whole matrix slot); memoised per text."""
+    key = (text, id(registry))
+    hit = _SIGNALS.get(key)
+    if hit is None:
+        if len(_SIGNALS) >= 2048:
+            _SIGNALS.clear()
+        hit = _SIGNALS[key] = frozenset(registry.signals(text) | _slot_vendors(text, registry))
+    return hit
+
+
+def mentions_vendor(text: str, lower: str, name: str) -> bool:
+    """Whole-word vendor mention: does `text` credit the vendor `name` spells?
+
+    Credited when the claim row declares the vendor, when `name` is a prose spelling (it carries a distinctive
+    token of the vendor's own display: "GitHub Copilot", "Cc10x"), or when the text names the vendor by an
+    explicit form. Everything else is a common word. The words around a name never decide.
     """
-    key = name.lower()
-    if key in NON_VENDOR_TERMS or not _mentions(lower, name):
+    if not _mentions(lower, name):
         return False
-    if key not in AMBIGUOUS_NAMES:
+    registry = vendor_registry()
+    vendors = registry.slugs_of(name)
+    if not vendors:
+        return False
+    if vendors & _RUN["declared"] or registry.is_prose_spelling(name):
         return True
-    if re.search(rf"(?<![a-z0-9]){re.escape(key)}\.(?:com|ai|dev|io|app|sh)\b", lower):
-        return True  # the product's own domain, in any case
-    for match in re.finditer(rf"(?<![A-Za-z0-9]){re.escape(name)}(?![A-Za-z0-9])", text, re.IGNORECASE):
-        if match.group(0)[:1].isupper() and _has_product_cue(text, match.start(), match.end(), key):
-            return True
-    return False
+    return bool(vendors & _text_signals(text, registry))
 
 
 _EXTRACTED: dict[tuple[Any, ...], tuple[Any, list[str]]] = {}
@@ -417,14 +363,14 @@ def _extract_slugs_from_text(
     """The vendors a text mentions. The prose parsers ask about the same sentence many times: memoised per run."""
     effective = _known_or_run(known)
     pack = pack or _RUN["pack"]
-    key = (text, id(effective), len(effective), id(pack), id(AMBIGUOUS_NAMES), id(PRODUCT_MAKERS), id(NON_VENDOR_TERMS))
+    key = (text, _run_key(effective, pack), _RUN["declared"])
     hit = _EXTRACTED.get(key)
     if hit is None:
         if len(_EXTRACTED) >= 2048:
             _EXTRACTED.clear()
         with run_context(effective, pack):  # mentions_vendor judges a name against the run's product names
             found = _extract_slugs_uncached(text, effective, pack)
-        hit = _EXTRACTED[key] = ((effective, pack, AMBIGUOUS_NAMES, PRODUCT_MAKERS, NON_VENDOR_TERMS), found)
+        hit = _EXTRACTED[key] = ((effective, pack, COINED_NAMES), found)
     return list(hit[1])
 
 
@@ -466,7 +412,7 @@ def discover_solutions(
 
     known = _effective_known_solutions(need)
     scores: dict[str, int] = {}
-    for text in _iter_claim_texts(envelopes):
+    for text in _scoped_claim_texts(envelopes, known, pack):
         for slug in _extract_slugs_from_text(text, known, pack):
             scores[slug] = scores.get(slug, 0) + 1
     # Open world: vendors the workers name in structured matrix rows are discovered too.
@@ -477,31 +423,77 @@ def discover_solutions(
     return ranked
 
 
-def _iter_claim_texts(envelopes: list[dict[str, Any]]) -> list[str]:
-    texts: list[str] = []
+_CLAIM_FIELDS = (
+    ("evidence", ("claim", "text")),
+    ("claim_candidates", ("text", "claim")),
+    ("critiques", ("finding", "target")),
+    ("gaps", ("description", "area")),
+)
+
+
+def _claim_items(envelopes: list[dict[str, Any]]) -> list[tuple[str, dict[str, Any]]]:
+    items: list[tuple[str, dict[str, Any]]] = []
     for env in envelopes:
         payload = env.get("payload") or {}
-        for item in payload.get("evidence") or []:
-            if isinstance(item, dict):
-                claim = item.get("claim") or item.get("text") or ""
-                if claim:
-                    texts.append(str(claim))
-        for item in payload.get("claim_candidates") or []:
-            if isinstance(item, dict):
-                text = item.get("text") or item.get("claim") or ""
-                if text:
-                    texts.append(str(text))
-        for item in payload.get("critiques") or []:
-            if isinstance(item, dict):
-                finding = item.get("finding") or item.get("target") or ""
-                if finding:
-                    texts.append(str(finding))
-        for item in payload.get("gaps") or []:
-            if isinstance(item, dict):
-                desc = item.get("description") or item.get("area") or ""
-                if desc:
-                    texts.append(str(desc))
-    return texts
+        for key, fields in _CLAIM_FIELDS:
+            for item in payload.get(key) or []:
+                if isinstance(item, dict):
+                    text = next((item[f] for f in fields if item.get(f)), "")
+                    if text:
+                        items.append((str(text), item))
+    return items
+
+
+def _iter_claim_texts(envelopes: list[dict[str, Any]]) -> list[str]:
+    return [text for text, _item in _claim_items(envelopes)]
+
+
+def _source_segments(item: dict[str, Any]) -> list[str]:
+    values: list[str] = []
+    for field in ("source_ref", "url", "source", "supporting_sources"):
+        value = item.get(field)
+        values += [value] if isinstance(value, str) else [str(v) for v in value if isinstance(v, str)] if isinstance(value, list) else []
+    return [seg.strip() for value in values for seg in re.split(r";| \+ ", value) if seg.strip()]
+
+
+def _tagged_vendors(item: dict[str, Any], known: dict[str, str], pack: dict[str, Any] | None) -> set[str]:
+    tags = item.get("vendors")
+    registry = vendor_registry()
+    slugs = (resolve_structured_vendor(tag, known, pack) for tag in tags if isinstance(tag, str)) if isinstance(tags, list) else ()
+    return {registry.canonical(slug) for slug in slugs if slug}
+
+
+def _declared_for_row(item: dict[str, Any], known: dict[str, str] | None = None, pack: dict[str, Any] | None = None) -> frozenset[str]:
+    """The vendors a claim row declares: its ``vendors`` tag, and a source field that names one the text also names."""
+    effective, pack = _known_or_run(known), pack or _RUN["pack"]
+    with run_context(effective, pack):
+        registry = vendor_registry()
+        declared = _tagged_vendors(item, effective, pack)
+        lower = str(item.get("text") or item.get("claim") or item.get("finding") or item.get("description") or "").lower()
+        for segment in _source_segments(item):
+            vendor = registry.url_slug(segment)
+            vendor = registry.canonical(vendor or resolve_structured_vendor(segment, effective, pack) or "")
+            if vendor in registry.spellings_of and any(_mentions(lower, spelling) for spelling in registry.spellings_of[vendor]):
+                declared.add(vendor)
+        return frozenset(declared)
+
+
+def _scoped_claim_texts(envelopes: list[dict[str, Any]], known: dict[str, str] | None = None, pack: dict[str, Any] | None = None) -> Iterator[str]:
+    """The claim texts, each yielded with its row's declared vendors installed (restored when the loop ends)."""
+    previous = _RUN["declared"]
+    try:
+        for text, item in _claim_items(envelopes):
+            _RUN["declared"] = _declared_for_row(dict(item, text=text), known, pack)
+            yield text
+    finally:
+        _RUN["declared"] = previous
+
+
+def tagged_vendor_slugs(envelopes: list[dict[str, Any]], known: dict[str, str], pack: dict[str, Any] | None) -> set[str]:
+    """Vendors the workers tagged on claim rows (``vendors``): credited like ``matrix_entries`` vendors."""
+    with run_context(known, pack):
+        return {slug for _text, item in _claim_items(envelopes) for slug in _tagged_vendors(item, known, pack)}
+
 
 _MATRIX_ENTRY_RE = re.compile(
     r"Matrix entry\s*[—–\-]\s*(?P<feature>[^:]+?)(?:\s*\([^)]*\))?\s*:\s*(?P<body>.+)",
@@ -619,7 +611,9 @@ def _resolve_solution_slug(
     lower = head_clean.lower()
     for slug, display in sorted(effective.items(), key=lambda item: len(item[1]), reverse=True):
         disp = display.lower()
-        if lower == disp or lower.startswith(f"{disp} ") or disp.startswith(lower):
+        if lower == disp or (
+            (lower.startswith(f"{disp} ") or disp.startswith(lower)) and vendor_registry().canonical(slug) not in vendor_registry().ambiguous_vendors()
+        ):
             return _canonical_known_slug(slug, effective)
     slug = _normalize_slug(head_clean, effective, pack)
     if slug:
@@ -670,25 +664,26 @@ _NEGATION_BEFORE = re.compile(
     r"(?:\b(?:not|never|unlike|except|excluding|outside|neither|nor)|n't)[ \t]+(?:(?:on|in|a|an|the|of|among|one|any)[ \t]+){0,3}$",
     re.IGNORECASE,
 )
-_VENDORS: dict[str, Any] = {"key": None, "refs": None, "inside": _NEVER, "before": _NEVER}
+_VENDORS: dict[int, tuple[frozenset[str], re.Pattern[str], re.Pattern[str]]] = {}
 
 
 def _vendor_patterns() -> tuple[re.Pattern[str], re.Pattern[str]]:
     """(a product name anywhere, a product name ending right here) over the run's names; rebuilt when the run changes."""
     phrases = _known_phrases()
-    key = id(phrases)
-    if _VENDORS["key"] != key:
-        names = sorted(
-            (n for n in phrases if len(n) >= 3 and n not in NON_VENDOR_TERMS), key=len, reverse=True
-        )
+    if id(phrases) not in _VENDORS:
+        if len(_VENDORS) >= _CACHE_SIZE:
+            _VENDORS.clear()
+        names = sorted((n for n in phrases if len(n) >= 3), key=len, reverse=True)
         if names:
             body = "|".join(re.escape(n).replace(r"\ ", r"[\s-]") for n in names)
-            inside = re.compile(rf"(?<![a-z0-9])(?:{body})(?![a-z0-9])", re.IGNORECASE)
-            before = re.compile(rf"(?<![a-z0-9])(?:{body})\s*$", re.IGNORECASE)
+            patterns = (
+                re.compile(rf"(?<![a-z0-9])(?:{body})(?![a-z0-9])", re.IGNORECASE),
+                re.compile(rf"(?<![a-z0-9])(?:{body})\s*$", re.IGNORECASE),
+            )
         else:
-            inside = before = _NEVER
-        _VENDORS.update(key=key, refs=phrases, inside=inside, before=before)
-    return _VENDORS["inside"], _VENDORS["before"]
+            patterns = (_NEVER, _NEVER)
+        _VENDORS[id(phrases)] = (phrases, *patterns)
+    return _VENDORS[id(phrases)][1:]
 
 
 def _without_absence_clauses(text: str) -> str:
@@ -1213,6 +1208,8 @@ def _parse_solution_lead_negative(
         )
         if not any(re.search(pat, lower) for pat in patterns):
             continue
+        if not any(mentions_vendor(text, lower, name) for name in (slug.replace("-", " "), slug, display.lower())):
+            continue  # the lead word is the vendor only if the row says so
         if re.search(
             r"\bno\s+(?:workflow\s+)?catalog\b|\bwithout\b.{0,40}\bcatalog\b",
             lower,
@@ -1807,7 +1804,7 @@ def _parse_prose_unscoped(
 ) -> dict[str, dict[str, bool | None]]:
     effective = _known_or_run(known)
     support: dict[str, dict[str, bool | None]] = {}
-    for voter, text in enumerate(_iter_claim_texts(envelopes)):
+    for voter, text in enumerate(_scoped_claim_texts(envelopes, effective, pack)):
         _VOTER[0] = voter
         if _parse_core_set_bulk_claim(support, text, known=effective, pack=pack):
             continue
