@@ -84,26 +84,26 @@ rm -f "$STATE" "$TRIVIAL"
 # --- project config discovered by walking up --------------------------------------------
 PRJ="$TL_TMP/prj"; mkdir -p "$PRJ/.git" "$PRJ/a/b"
 cat >"$PRJ/.silver-bullet.json" <<JSON
-{"config_version":"$TVER","state":{"state_file":"~/custom/state","trivial_file":"~/custom/trivial"},
+{"config_version":"$TVER","state":{"state_file":"~/.claude/.silver-bullet/custom-state","trivial_file":"~/.claude/.silver-bullet/custom/trivial"},
  "skills":{"required_deploy":["cfg-one","cfg-two"]}}
 JSON
-mkdir -p "$HOME/custom"
-printf 'cfg-one\n' >"$HOME/custom/state"
+mkdir -p "$SB_RUNTIME_STATE_DIR/custom"
+printf 'cfg-one\n' >"$SB_RUNTIME_STATE_DIR/custom-state"
 gate "$PRJ/a/b"
 assert_eq "config required_deploy enforced" 1 "$TL_STATUS"
 assert_contains "config skill missing" "$TL_OUT" "    - cfg-two"
 assert_contains "state path from config (~ expanded)" "$TL_OUT" "cfg-two"
-printf 'cfg-one\ncfg-two\n' >"$HOME/custom/state"
+printf 'cfg-one\ncfg-two\n' >"$SB_RUNTIME_STATE_DIR/custom-state"
 gate "$PRJ/a/b"
 assert_eq "config satisfied -> 0" 0 "$TL_STATUS"
-assert_file_absent "custom state consumed" "$HOME/custom/state"
-echo t >"$HOME/custom/trivial"
+assert_file_absent "custom state consumed" "$SB_RUNTIME_STATE_DIR/custom-state"
+echo t >"$SB_RUNTIME_STATE_DIR/custom/trivial"
 gate "$PRJ"
 assert_contains "custom trivial honoured" "$TL_OUT" "Trivial change detected"
-assert_file_absent "custom trivial removed" "$HOME/custom/trivial"
-rm -f "$HOME/custom/state"
+assert_file_absent "custom trivial removed" "$SB_RUNTIME_STATE_DIR/custom/trivial"
+rm -f "$SB_RUNTIME_STATE_DIR/custom-state"
 gate "$PRJ"
-assert_contains "custom state path reported" "$TL_OUT" "No workflow state file found at $HOME/custom/state"
+assert_contains "custom state path reported" "$TL_OUT" "No workflow state file found at $SB_RUNTIME_STATE_DIR/custom-state"
 
 # empty config values keep defaults; empty required_deploy -> default list
 echo '{"state":{},"skills":{}}' >"$PRJ/.silver-bullet.json"
@@ -125,6 +125,61 @@ rm -f "$STATE"
 gate "$PRJ"
 assert_eq "invalid config -> fail open exit 0" 0 "$TL_STATUS"
 assert_eq "invalid config -> silent" "" "$TL_OUT"
+
+# --- R1-24: a config stamped from the shipped template resolves its state paths ---------
+TPLP="$TL_TMP/tplproj"; mkdir -p "$TPLP/.git"
+cp "$TL_REPO_ROOT/templates/silver-bullet.config.json.default" "$TPLP/.silver-bullet.json"
+jq '.skills.required_deploy=["alpha"]' "$TPLP/.silver-bullet.json" >"$TPLP/c.json" && mv "$TPLP/c.json" "$TPLP/.silver-bullet.json"
+printf 'alpha\n' >"$STATE"
+gate "$TPLP"
+assert_eq "template-stamped config (placeholders intact): gate passes with a full state file" 0 "$TL_STATUS"
+assert_contains "template-stamped config: all clear" "$TL_OUT" "All required workflow skills completed"
+printf 'x\n' >"$STATE"
+gate "$TPLP"
+assert_eq "template-stamped config: still blocks when a skill is missing" 1 "$TL_STATUS"
+# the hook's rules: branch finishing does not apply on main/master, recorded skills may match through aliases
+BR="$TL_TMP/brproj"; mkdir -p "$BR"; git -C "$BR" init -q -b main; git -C "$BR" -c user.email=a@b -c user.name=n commit -q --allow-empty -m i
+jq -n --arg v "$TVER" '{config_version:$v,skills:{required_deploy:["alpha","silver-branch-finish","finishing-a-development-branch"]}}' >"$BR/.silver-bullet.json"
+printf 'alpha\n' >"$STATE"
+gate "$BR"
+assert_eq "on main: branch-finishing skills are not required" 0 "$TL_STATUS"
+git -C "$BR" checkout -q -b feature
+printf 'alpha\n' >"$STATE"
+gate "$BR"
+assert_eq "on a feature branch: branch-finishing skills are required" 1 "$TL_STATUS"
+assert_contains "feature branch: lists silver-branch-finish" "$TL_OUT" "    - silver-branch-finish"
+# no required-skills library: the exact-line check still decides
+SNIPC="$TL_TMP/snipcopy"; mkdir -p "$SNIPC/scripts" "$SNIPC/hooks/lib"
+cp "$SNIP" "$SNIPC/scripts/"; cp "$TL_REPO_ROOT/hooks/lib/runtime-paths.sh" "$TL_REPO_ROOT/hooks/lib/trivial-bypass.sh" "$SNIPC/hooks/lib/"
+printf 'alpha\n' >"$STATE"
+tl_run bash -c 'cd "$1" && bash "$2"' _ "$EXP" "$SNIPC/scripts/deploy-gate-snippet.sh"
+assert_eq "without the required-skills library: exact state lines decide (alpha only -> beta missing)" 1 "$TL_STATUS"
+
+# --- R1-25: config paths outside the state directory are ignored and never deleted ----------
+EVIL="$TL_TMP/evil"; mkdir -p "$EVIL/.git"
+echo precious >"$TL_TMP/victim-trivial"; echo precious >"$TL_TMP/victim-state"
+jq -n --arg t "$TL_TMP/victim-trivial" --arg s "$TL_TMP/victim-state" '{state:{trivial_file:$t,state_file:$s},skills:{required_deploy:["alpha"]}}' >"$EVIL/.silver-bullet.json"
+rm -f "$STATE" "$TRIVIAL"
+gate "$EVIL"
+assert_eq "config pointing at outside files: the gate still blocks (no state at the real path)" 1 "$TL_STATUS"
+assert_contains "the real state path is used" "$TL_OUT" "No workflow state file found at $STATE"
+assert_file_exists "outside trivial file untouched" "$TL_TMP/victim-trivial"
+assert_file_exists "outside state file untouched" "$TL_TMP/victim-state"
+# a state-scoped custom path is honoured (and consumed like the default)
+CUS="$TL_TMP/custate"; mkdir -p "$CUS/.git"
+jq -n --arg v "$TVER" --arg s "$SB_RUNTIME_STATE_DIR/custom-state2" '{config_version:$v,state:{state_file:$s},skills:{required_deploy:["alpha"]}}' >"$CUS/.silver-bullet.json"
+printf 'alpha\n' >"$SB_RUNTIME_STATE_DIR/custom-state2"
+gate "$CUS"
+assert_eq "state-scoped custom state file is read" 0 "$TL_STATUS"
+assert_file_absent "a validated state-scoped custom state file is consumed like the default" "$SB_RUNTIME_STATE_DIR/custom-state2"
+# a trivial marker named in config must be the state directory's own `trivial`
+mkdir -p "$SB_RUNTIME_STATE_DIR/sub"
+jq -n --arg v "$TVER" --arg t "$SB_RUNTIME_STATE_DIR/sub/trivial" '{config_version:$v,state:{trivial_file:$t},skills:{required_deploy:["alpha"]}}' >"$CUS/.silver-bullet.json"
+echo t >"$SB_RUNTIME_STATE_DIR/sub/trivial"
+gate "$CUS"
+assert_contains "state-scoped custom trivial file is honoured" "$TL_OUT" "Trivial change detected"
+assert_file_absent "the validated trivial file is consumed" "$SB_RUNTIME_STATE_DIR/sub/trivial"
+rm -f "$SB_RUNTIME_STATE_DIR/sub/trivial" "$STATE" "$TRIVIAL"
 
 # --- legacy config: defaults + configured list, retired skills dropped (required-skills lib) ---
 LEG="$TL_TMP/leg"; mkdir -p "$LEG/.git"

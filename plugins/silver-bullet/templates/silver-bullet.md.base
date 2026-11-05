@@ -58,8 +58,8 @@ Twelve enforcement layers enforce compliance:
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|MultiEdit|Bash, with the workflow chain guard) — HARD STOP if planning skills (or the active composed workflow's pre-execution chain) are incomplete before source edits
 3. **Compliance status** (PostToolUse/all) — Shows workflow progress on every tool use (informational)
 4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — `planning-file-guard.sh` blocks direct edits to SB-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of the owning SB skill or workflow
-5. **Completion audit** (Pre+PostToolUse/Bash) — Blocks intermediate commits until planning is done; blocks PR/deploy/release until full workflow is done
-6. **CI status check** (Pre+PostToolUse/Bash) — Blocks `git push`, `gh pr create`/`merge` and `gh release create` while the latest CI run failed; after `git commit` it only warns, so a CI fix can still be committed
+5. **Completion audit** (Pre+PostToolUse/Bash, and PreToolUse on MCP tools such as the GitHub server's create/merge/push tools) — Blocks intermediate commits until planning is done; blocks PR/deploy/release until full workflow is done. A push to the default branch, or of a tag, counts as final delivery (full `required_deploy` floor); `project.push_to_default_branch_tier: "intermediate"` is the explicit opt-out
+6. **CI status check** (Pre+PostToolUse/Bash, PreToolUse on MCP tools) — Blocks `git push`, `gh pr create`/`merge` and `gh release create` while the latest CI run failed; after `git commit` it only warns, so a CI fix can still be committed
 7. **Session management** (SessionStart + PostToolUse) — Branch-scoped state reset at session start, session logging, autonomous mode timeout detection
 8. **Stop hook** (Stop/SubagentStop) — Blocks task-complete declaration if required_planning skills are missing (planning floor). The full `required_deploy` list is enforced at delivery (`gh pr create`, deploy, `gh release create`) by completion-audit. Per-prompt outcome checklist is enforced by `outcomes-check.sh` on the same events.
 9. **UserPromptSubmit recorder + reminder** (UserPromptSubmit) — Records requested SB and optional extension routes and re-injects missing skills list before every user message
@@ -982,7 +982,7 @@ These rules apply to `site/**`, Help Center pages, homepage copy, `site/help/sea
 **Site/help publish policy**
 - `site/**` publishes via direct commits to `main` without a patch release, version bump, git tag, or GitHub release unless the user explicitly requests a release.
 - Before pushing, run `bash tests/scripts/test-site-doc-freshness.sh` and `bash tests/scripts/test-site-content-freshness.sh`; site-only work does not require the full `tests/run-all-tests.sh` suite.
-- Publish path: commit + push to `main`; GitHub Pages deploys via `.github/workflows/pages.yml` (path-filtered to `site/**`).
+- Publish path: commit + push to `main` (a push to the default branch is final delivery; a site-only change uses the light change-class floor); GitHub Pages deploys via `.github/workflows/pages.yml` (path-filtered to `site/**`).
 - Expect **~1–15 minutes** end-to-end deploy latency (Pages queue + `Cache-Control: max-age=600` on GitHub Pages).
 
 **Live publish notification (mandatory)**

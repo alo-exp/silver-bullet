@@ -586,6 +586,12 @@ class PayloadTest(Base):
         self.assertEqual((res["actions"], res["read_only"], res["status"]), ([], False, "ok"))
         res = self.payload({"tool_name": "MCP", "tool_input": {}})
         self.assertEqual((res["tool"]["mcp_server"], res["tool"]["mcp_tool"]), ("", ""))
+        res = self.payload({"tool_name": "mcp__github__create_pull_request_with_copilot", "tool_input": {}})
+        self.assertEqual(res["actions"], ["pr_create"])
+        res = self.payload({"tool_name": "mcp__github__actions_run_trigger", "tool_input": {"method": "run_workflow"}})
+        self.assertEqual((res["actions"], res["tier"]), (["deploy"], "completion"))
+        res = self.payload({"tool_name": "mcp__github__actions_run_trigger", "tool_input": {"method": "Cancel_Workflow_Run"}})
+        self.assertEqual((res["actions"], res["tier"]), ([], "none"))
 
     def test_edit_patch_and_other_payloads(self):
         res = self.payload({"tool_name": "Write", "tool_input": {"file_path": "src/a.py"}})

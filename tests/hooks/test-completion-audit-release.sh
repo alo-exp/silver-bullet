@@ -50,34 +50,70 @@ printf 'adversarial-review-clean\n' >"$QG"
 run_ca PreToolUse "$REL"
 assert_contains "partial quality gate state" "$(message)" "pre-release quality sequence has not been completed"
 release_ready
-mkdir -p "$PROJ/scripts"
-write_exec "$PROJ/scripts/validate-launch-review.sh" 1
+# validators come from the plugin root, never from the project tree (R1-15, R13-10)
+write_exec "$PLUGIN/scripts/validate-launch-review.sh" 1
 run_ca PreToolUse "$REL"
 assert_contains "failing LAUNCH-REVIEW validator blocks" "$(message)" "LAUNCH-REVIEW.md does not satisfy"
-write_exec "$PROJ/scripts/validate-launch-review.sh" 0
-write_exec "$PROJ/scripts/validate-sentinel-skills-manifest.sh" 1
+write_exec "$PLUGIN/scripts/validate-launch-review.sh" 0
+write_exec "$PLUGIN/scripts/validate-sentinel-skills-manifest.sh" 1
 run_ca PreToolUse "$REL"
 assert_contains "failing SENTINEL validator blocks" "$(message)" "SENTINEL per-skill manifest is incomplete"
-write_exec "$PROJ/scripts/validate-sentinel-skills-manifest.sh" 0
+write_exec "$PLUGIN/scripts/validate-sentinel-skills-manifest.sh" 0
 run_ca PreToolUse "$REL"
 assert_eq "passing validators: release allowed" "allow" "$(decision)"
 run_ca PreToolUse "$REL" SB_REQUIRE_PRE_RELEASE_QUALITY_GATE=1
 assert_eq "env switch also enables the quality gate" "allow " "$(decision) $([[ "$(decision)" == allow ]] || message)"
+# a project-local validator that exits 0 cannot stand in for the plugin's, and a failing plugin one still blocks
+mkdir -p "$PROJ/scripts"
+write_exec "$PROJ/scripts/validate-launch-review.sh" 0
+write_exec "$PLUGIN/scripts/validate-launch-review.sh" 1
+run_ca PreToolUse "$REL"
+assert_contains "project-tree validator does not replace the plugin validator" "$(message)" "LAUNCH-REVIEW.md does not satisfy"
+write_exec "$PLUGIN/scripts/validate-launch-review.sh" 0
+chmod -x "$PLUGIN/scripts/validate-launch-review.sh"
+run_ca PreToolUse "$REL"
+assert_contains "a non-executable plugin validator blocks instead of skipping" "$(message)" "validate-launch-review.sh is missing or not executable"
+write_exec "$PLUGIN/scripts/validate-launch-review.sh" 0
+chmod -x "$PLUGIN/scripts/validate-sentinel-skills-manifest.sh"
+run_ca PreToolUse "$REL"
+assert_contains "a non-executable SENTINEL validator blocks instead of skipping" "$(message)" "validate-sentinel-skills-manifest.sh is missing or not executable"
+write_exec "$PLUGIN/scripts/validate-sentinel-skills-manifest.sh" 0
 
-# RC matrix
+# RC matrix: the predicate is the plugin's own; markers must be live passes for the commit being released
 mkproj rc '.release={require_rc_matrix:true}'
 state inst-a inst-b silver-create-release
-run_ca PreToolUse "$REL"
-assert_contains "rc matrix required, helper missing" "$(message)" "RC validation matrix incomplete"
 mkdir -p "$PROJ/scripts/lib"
-printf 'sb_smoke_rc_markers_complete() { return 1; }\n' >"$PROJ/scripts/lib/pre-release-host-isolation.sh"
-run_ca PreToolUse "$REL"
-assert_contains "rc markers incomplete" "$(message)" "RC validation matrix incomplete"
 printf 'sb_smoke_rc_markers_complete() { return 0; }\n' >"$PROJ/scripts/lib/pre-release-host-isolation.sh"
 run_ca PreToolUse "$REL"
-assert_eq "rc markers complete: allowed" "allow" "$(decision)"
+assert_contains "project-tree predicate that returns 0 does not satisfy the RC gate" "$(message)" "RC validation matrix incomplete"
+SHA="$(git -C "$PROJ" rev-parse HEAD)"
+RCDIR="$SB_RUNTIME_STATE_DIR/rc-validation"
+rc_markers() { # rc_markers STATUS COMMIT
+  mkdir -p "$RCDIR"
+  local h m
+  for h in cursor codex claude; do for m in fresh upgrade; do
+    printf 'host=%s\nmode=%s\nstatus=%s\ncommit=%s\n' "$h" "$m" "$1" "$2" >"$RCDIR/$h-$m"
+  done; done
+}
+rc_markers dry-run "$SHA"
+run_ca PreToolUse "$REL"
+assert_contains "dry-run markers do not satisfy the RC gate (R13-09)" "$(message)" "RC validation matrix incomplete"
+rc_markers skip "$SHA"
+run_ca PreToolUse "$REL"
+assert_contains "all-skip markers do not satisfy the RC gate (R8-13)" "$(message)" "RC validation matrix incomplete"
+rc_markers pass "0000000000000000000000000000000000000000"
+run_ca PreToolUse "$REL"
+assert_contains "markers for another commit do not satisfy the RC gate" "$(message)" "RC validation matrix incomplete"
+rc_markers pass "$SHA"
+run_ca PreToolUse "$REL"
+assert_eq "live pass markers for this commit: allowed" "allow" "$(decision)"
 run_ca PreToolUse "$REL" SB_REQUIRE_RC_MATRIX=1
 assert_eq "env switch enables rc matrix" "allow" "$(decision)"
+rc_markers skip "$SHA"
+printf 'commit=%s\n' "$SHA" >"$RCDIR/skip-waiver"
+run_ca PreToolUse "$REL"
+assert_eq "skip markers with a waiver for this commit: allowed" "allow" "$(decision)"
+rm -rf "$RCDIR"
 
 # release skill lists
 mkproj relskills '.skills.required_release=["inst-b"]'

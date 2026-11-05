@@ -114,8 +114,13 @@ check_cls docs README.md
 check_cls docs AGENTS.md
 check_cls docs silver-bullet.md
 check_cls other random.txt
-tl_run bash -c 'dcc_matches_src_scope() { [[ "$1" == vendor/* ]]; }; source "$1"; ca_classify_path vendor/x.js; ca_classify_path docs/a.md' _ "$CA/change-class.sh"
-assert_eq "dcc_matches_src_scope hook decides src, else falls through" "srcdocs" "$TL_OUT"
+check_cls src packages/site/src/api/payments.ts
+check_cls src apps/docs/server/index.js '/server/'
+check_cls other docs/tool.py
+check_cls other site/build.js
+check_cls site site/css/a.css
+check_cls src src/main.py
+check_cls other .mcp.json
 
 # git fixtures
 GITROOT="$TL_TMP/repo"
@@ -188,6 +193,44 @@ class_for .silver-bullet.json;               assert_eq "config only" "config" "$
 class_for docs/x.md site/a.html;             assert_eq "docs plus site" "docs" "$TL_OUT"
 class_for docs/x.md .silver-bullet.json;     assert_eq "docs plus config" "docs" "$TL_OUT"
 class_for site/a.html .silver-bullet.json;   assert_eq "site plus config" "docs" "$TL_OUT"
+
+# R1-10: the base is the remote default branch / upstream / develop, and committed code is never hidden
+# behind a tracked docs edit; with no measurable base the full floor stays
+dev_repo() { # dev_repo <name>: repo whose default branch is "develop", HEAD on a feature branch
+  local r="$TL_TMP/$1"
+  tl_git_repo "$r"; git -C "$r" branch -m main develop; git -C "$r" checkout -q -b feat
+  printf '%s' "$r"
+}
+r="$(dev_repo devbase)"
+mkdir -p "$r/app"; echo x >"$r/app/server.py"; git -C "$r" add app; git -C "$r" commit -q -m code
+mkdir -p "$r/docs"; echo n >"$r/docs/notes.md"
+git -C "$r" add docs/notes.md
+detect "$r"
+assert_eq "develop as default branch: committed code plus a docs edit is mixed, not docs" "mixed" "$TL_OUT"
+collect "$r"
+assert_contains "develop base: committed path listed" "$TL_OUT" "app/server.py"
+
+r="$TL_TMP/upstream-only"; tl_git_repo "$r"
+git -C "$r" branch -m main trunkless
+echo more >"$r/more.txt"; git -C "$r" add more.txt; git -C "$r" commit -q -m two
+mkdir -p "$r/docs"; echo n >"$r/docs/notes.md"; git -C "$r" add docs/notes.md
+detect "$r"
+assert_eq "committed work with no measurable base keeps the full floor" "mixed" "$TL_OUT"
+tl_run bash -c 'source "$1"; ca_change_base_unknown "$2" && echo unknown' _ "$CA/change-class.sh" "$r"
+assert_eq "ca_change_base_unknown reports an unmeasurable base" "unknown" "$TL_OUT"
+
+# on the default branch: unpushed commits (upstream..HEAD) are the change set
+remote="$TL_TMP/up-remote.git"; git init -q --bare "$remote"
+r="$TL_TMP/up-main"; tl_git_repo "$r"
+git -C "$r" remote add origin "$remote"; git -C "$r" push -q origin main 2>/dev/null; git -C "$r" branch -q --set-upstream-to=origin/main main
+mkdir -p "$r/app"; echo y >"$r/app/api.py"; git -C "$r" add app; git -C "$r" commit -q -m unpushed
+mkdir -p "$r/docs"; echo n >"$r/docs/notes.md"; git -C "$r" add docs/notes.md
+detect "$r"
+assert_eq "on main with an unpushed source commit plus a docs edit: mixed" "mixed" "$TL_OUT"
+git -C "$r" reset -q --soft origin/main; git -C "$r" reset -q
+rm -rf "$r/app"; git -C "$r" add docs/notes.md
+detect "$r"
+assert_eq "on main, nothing unpushed, docs edit only: docs" "docs" "$TL_OUT"
 
 detect "$GITROOT" "" "gh release create v1"
 assert_eq "release command forces release class" "release" "$TL_OUT"

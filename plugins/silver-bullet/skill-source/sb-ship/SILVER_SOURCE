@@ -40,6 +40,12 @@ SUMMARY/VERIFICATION, or a PR description draft.
      `gh pr create` / `gh release create` / `deploy` until a fresh `verify-tests`
      run is recorded. Run it here even when the suite was run earlier in the phase,
      so the recorded freshness marker reflects the shipped tree.
+   - Human approval: under the default `supervised` enterprise profile,
+     `gh pr create`, `gh pr merge`, `gh release create` and deploy commands are
+     blocked (`ENTERPRISE POLICY BLOCK`) until a human creates
+     `$HOME/.codex/.silver-bullet/enterprise-human-deploy-approved` from their own
+     terminal (it expires after `enterprise_policy.human_approval_ttl_minutes`).
+     Tell the user to approve before the ship action; never create the marker yourself.
 3. Run `sb:branch-finish` on non-main branches.
 4. Check git status and separate unrelated user changes from ship scope.
 5. Prepare PR or merge notes with:

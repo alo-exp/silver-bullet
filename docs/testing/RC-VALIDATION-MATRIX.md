@@ -10,7 +10,7 @@ Six cells: cursor/codex/claude × fresh/upgrade. Markers: `${SB_RUNTIME_STATE_DI
 |---------|-------|
 | **Operator pre-release** (macOS/dev machine with host CLIs + user keys) | All six cells — live TUI delegate when CLI + auth available |
 | **GitHub CI** ([`rc-validation.yml`](../../.github/workflows/rc-validation.yml)) | Optional/non-blocking diagnostic; cursor live when `CURSOR_API_KEY` present; codex/claude structural install only (`skip` marker `ci-no-first-party-keys`) |
-| **Release gate** (`release.require_rc_matrix`) | Requires six operator-local markers (`pass` or audited `skip`) — **not** satisfied by CI workflow alone |
+| **Release gate** (`release.require_rc_matrix`) | Requires six operator-local live `pass` markers written at the commit being released. `--dry-run` markers (`dry-run`), skipped cells and markers for another commit do not count; a human can accept skips for one commit with `rc-validation/skip-waiver` (`commit=<sha>`). **Not** satisfied by the CI workflow alone |
 
 Codex and Claude live RC cells are **operator-local pre-release** requirements until first-party or approved proxy API keys exist in CI. Third-party key proxy is explicitly out of scope.
 
@@ -37,7 +37,7 @@ in the checkout or fixture under test; then rerun from a fresh isolated fixture.
 ## Controls
 
 - **Gate:** `release.require_rc_matrix` (completion-audit / deploy-tier)
-- **Bypass:** `SB_SKIP_RC_MATRIX=1`
+- **Bypass:** `SB_SKIP_RC_MATRIX=1` (logged to `release-bypass-log.jsonl`; it writes no markers, so it does not satisfy the gate)
 - **CI mode:** `SB_RC_CI_MODE=1` or `GITHUB_ACTIONS=true` (auto-detected)
 - **Five-tool:** folded into cursor cells when leanctx opted in
 

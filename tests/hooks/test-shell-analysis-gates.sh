@@ -173,7 +173,8 @@ expect "no python3: read-only command allowed" allow "" 'ls -la' PATH="$NOPY"
 tl_stub python3 'exit 7'
 expect "broken python3: commit denied at the strictest floor" deny "COMPLETION BLOCKED" 'git -C . commit -m x'
 expect "broken python3: an alias the regex cannot see is denied" deny "COMPLETION BLOCKED" 'git -c alias.ci=commit ci -m x'
-expect "broken python3: even a harmless command is held" deny "COMPLETION BLOCKED" 'ls -la'
+expect "broken python3: a plainly read-only command is not held (R1-37 follow-up)" allow "" 'ls -la'
+expect "broken python3: a harmless command that is not on the read-only list is held" deny "COMPLETION BLOCKED" 'npm test'
 rm -f "$TL_BIN/python3"
 
 tl_results

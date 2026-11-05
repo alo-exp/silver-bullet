@@ -77,7 +77,38 @@ _ca_regex_tier() {
   fi
 }
 
-# ca_classify_command <full-cmd>
+# _ca_plain_readonly_command CMD: a single line of plain words naming a git read verb (or ls/pwd) that
+# cannot deliver. Used only when the analysis helper failed, so that a plainly read-only command is not
+# held at the strictest floor with a message about production delivery. No shell metacharacter,
+# quote, variable or substitution is allowed anywhere in the command, so nothing can hide a second command.
+_ca_plain_readonly_command() {
+  local text="$1"
+  [[ -n "$text" && "$text" =~ ^[A-Za-z0-9\ ._/=:@,+~^-]+$ ]] || return 1
+  case "$text" in
+    "git status" | "git status "* | "git diff" | "git diff "* | "git log" | "git log "* | "git show "* | \
+      "git rev-parse "* | "git ls-files" | "git ls-files "* | "git remote -v" | "ls" | "ls "* | "pwd") ;;
+    *) return 1 ;;
+  esac
+  # options that make an otherwise read-only verb write a file or run a program
+  case " $text " in
+    *" --output"* | *" -o "* | *" --ext-diff "* | *" --textconv "* | *" -c "* | *" -C "* | *" --exec"*) return 1 ;;
+  esac
+  return 0
+}
+
+# _ca_mcp_name_tier TOOL: tier of an MCP tool judged by its name alone (helper unavailable).
+_ca_mcp_name_tier() {
+  case "$1" in
+    *create_pull_request | *merge_pull_request | *create_release | *enable_pr_auto_merge | *actions_run_trigger | \
+      *create_merge_request | *accept_merge_request) printf 'completion' ;;
+    *push_files | *create_or_update_file | *delete_file | *create_commit | *update_pull_request_branch | \
+      *create_branch | *create_tag | *create_ref | *update_ref) printf 'intermediate' ;;
+    *) printf 'none' ;;
+  esac
+}
+
+# ca_classify_command <full-cmd> [<hook payload JSON>]
+# With a payload (an MCP tool call) the payload is analysed instead of the command text.
 # Sets globals: is_intermediate, is_completion, cmd_first_line.
 #   The class is the highest tier across all commands in the payload, so
 #   `git push && gh pr create` is completion (is_intermediate=false, is_completion=true).
@@ -96,15 +127,36 @@ _ca_regex_tier() {
 # Returns 0 when the command matches a delivery gate; 1 to skip (no gate).
 # shellcheck disable=SC2034  # the globals are outputs, read by completion-audit.sh and its tiers
 ca_classify_command() {
-  local cmd="$1" fallback
+  local cmd="$1" payload="${2:-}" fallback tool_name=""
   is_intermediate=false
   is_completion=false
   cmd_first_line=$(printf '%s' "$cmd" | head -1)
   ca_tier="none" ca_actions="" ca_possible_actions="" ca_could_be_delivery=false ca_opaque=false
   ca_unseen_reasons=""
 
-  _ca_analyse "$cmd"
+  if [[ -z "$payload" ]]; then
+    _ca_analyse "$cmd"
+  else
+    # an MCP call: the payload (not a command text) is analysed; the hook has already parsed it with jq
+    sb_tool_input_load "$payload"
+    tool_name="$(printf '%s' "$payload" | jq -r '.tool_name // ""')"
+  fi
   ca_analysis_status="${SB_TI_STATUS:-helper_unavailable}"
+  if [[ "$ca_analysis_status" == "helper_unavailable" && -n "$payload" ]]; then
+    # an MCP call the helper could not read: judge it by the tool name
+    ca_tier="$(_ca_mcp_name_tier "$tool_name")"
+    case "$ca_tier" in
+      completion) is_completion=true ;;
+      intermediate) is_intermediate=true ;;
+      *) return 1 ;;
+    esac
+    cmd_first_line="deploy [mcp ${tool_name}]"
+    [[ "$ca_tier" == "completion" ]] || cmd_first_line="git push [mcp ${tool_name}]"
+    return 0
+  fi
+  if [[ "$ca_analysis_status" == "helper_unavailable" ]] && _ca_plain_readonly_command "$cmd"; then
+    return 1
+  fi
   if [[ "$ca_analysis_status" == "helper_unavailable" ]] && declare -f sb_shell_analysis_load >/dev/null 2>&1 &&
     command -v python3 >/dev/null 2>&1; then
     # the library and python3 are there but the helper did not finish: the command cannot be inspected, and
@@ -143,4 +195,35 @@ ca_classify_command() {
     *) return 1 ;;
   esac
   return 0
+}
+
+# ca_push_targets_default_branch: an analysed push updates the default branch (main, master, init.defaultBranch,
+# the remote's default), any tag, or mirrors/pushes everything. Each destination is resolved through git
+# before matching: HEAD and @ are the current branch, refs/heads/x is x, and a bare name that is a tag (and
+# not a branch) is a tag push. A bare `git push` counts when the current branch is a default branch.
+# Needs the analysis of the command (SB_SA_JSON).
+ca_push_targets_default_branch() {
+  local names="main master" ref cur dst
+  ref="$(git symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null || true)"
+  [[ -z "$ref" ]] || names="$names ${ref#origin/}"
+  names="$names $(git config --get init.defaultBranch 2>/dev/null || true)"
+  cur="$(git symbolic-ref -q --short HEAD 2>/dev/null || true)"
+  if printf '%s' "${SB_SA_JSON:-}" | jq -e '(.push // []) | any(.[]; (.tags // false) or (.mirror // false) or (.all // false))' >/dev/null 2>&1; then
+    return 0
+  fi
+  if printf '%s' "${SB_SA_JSON:-}" | jq -e '(.push // []) | any(.[]; .default // false)' >/dev/null 2>&1; then
+    [[ " $names " == *" $cur "* ]] && return 0
+  fi
+  while IFS= read -r dst; do
+    case "$dst" in
+      HEAD | @) dst="$cur" ;;
+      refs/tags/*) return 0 ;;
+    esac
+    dst="${dst#refs/heads/}"
+    [[ -n "$dst" && " $names " == *" $dst "* ]] && return 0
+    if git show-ref --verify -q "refs/tags/$dst" 2>/dev/null && ! git show-ref --verify -q "refs/heads/$dst" 2>/dev/null; then
+      return 0
+    fi
+  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '(.push // [])[] | (.refspecs // [])[] | (sub("^\\+"; "") | split(":") | last)' 2>/dev/null)
+  return 1
 }

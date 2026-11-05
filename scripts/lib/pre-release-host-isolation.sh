@@ -292,20 +292,38 @@ sb_smoke_checkout_at_tag() {
 
 sb_smoke_rc_marker_dir() { printf '%s/rc-validation\n' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"; }
 
+# sb_smoke_write_rc_marker HOST MODE [STATUS] [ARTIFACT]: record one RC cell. STATUS is pass|fail|skip|dry-run.
+# The marker carries the commit it was written at (and the package version), so the release gate can
+# tell a marker from this release from an old one (R13-09, R8-13).
 sb_smoke_write_rc_marker() {
-  local host="$1" mode="$2" status="${3:-pass}" artifact="${4:-}" dir file
+  local host="$1" mode="$2" status="${3:-pass}" artifact="${4:-}" dir file root
+  root="${SB_PRE_RELEASE_REPO_ROOT:-$PWD}"
   dir="$(sb_smoke_rc_marker_dir)"; mkdir -p "$dir"; file="${dir}/${host}-${mode}"
   { printf 'host=%s\nmode=%s\nstatus=%s\n' "$host" "$mode" "$status"
     printf 'timestamp=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    printf 'commit=%s\n' "$(git -C "$root" rev-parse HEAD 2>/dev/null || true)"
+    printf 'version=%s\n' "$(jq -r '.version // empty' "$root/package.json" 2>/dev/null || true)"
     [[ -n "$artifact" ]] && printf 'artifact=%s\n' "$artifact"; } >"$file"
   printf '%s\n' "$file"
 }
 
+# sb_smoke_rc_markers_complete: every host x mode cell has a live pass for the commit being released
+# (SB_RC_RELEASE_COMMIT, else HEAD of the working directory). A dry-run, a skipped cell (no host CLI, CI
+# mode) or a marker written at another commit does not count. A human can accept skips for one commit by
+# writing `commit=<sha>` into `rc-validation/skip-waiver` in the state directory.
 sb_smoke_rc_markers_complete() {
-  local host mode dir file
+  local host mode dir file head waiver=false
   dir="$(sb_smoke_rc_marker_dir)"
+  head="${SB_RC_RELEASE_COMMIT:-$(git rev-parse HEAD 2>/dev/null || true)}"
+  [[ -n "$head" ]] || return 1
+  [[ -f "$dir/skip-waiver" && ! -L "$dir/skip-waiver" ]] && grep -qxF "commit=${head}" "$dir/skip-waiver" && waiver=true
   for host in cursor codex claude; do for mode in fresh upgrade; do
     file="${dir}/${host}-${mode}"
-    [[ -f "$file" ]] && grep -qE '^status=(pass|skip)$' "$file" || return 1
+    [[ -f "$file" && ! -L "$file" ]] || return 1
+    grep -qxF "commit=${head}" "$file" || return 1
+    if grep -qxF 'status=pass' "$file"; then
+      continue
+    fi
+    [[ "$waiver" == true ]] && grep -qxF 'status=skip' "$file" || return 1
   done; done
 }

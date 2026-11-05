@@ -15,7 +15,11 @@ export SILVER_BULLET_TEST_HOOK_ENFORCED=1
 export SB_ENTERPRISE_HUMAN_DEPLOY_APPROVAL=1
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-HOOK="$REPO_ROOT/hooks/completion-audit.sh"
+# shellcheck source=tests/lib/testlib.sh
+source "$REPO_ROOT/tests/lib/testlib.sh"
+TL_TMP="$(mktemp -d "${TMPDIR:-/tmp}/ca-plugin.XXXXXX")"
+# the hook runs from a copy of the plugin: validators and the RC predicate are loaded from the plugin root
+HOOK="$(tl_fake_plugin_root)/hooks/completion-audit.sh"
 CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 PASS=0
 FAIL=0
@@ -41,6 +45,7 @@ SESSION_START_FILE="${SB_TEST_DIR}/test-session-start-${TEST_RUN_ID}"
 VERIFY_TESTS_FILE="${SB_TEST_DIR}/verify-tests-state-${TEST_RUN_ID}"
 
 cleanup_all() {
+  rm -rf "$TL_TMP"
   rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
   rm -f "$RELEASE_LIVE_MATRIX_FILE"
   rm -f "$E2E_LIVE_MATRIX_FILE"
@@ -87,9 +92,9 @@ EOF
 
 write_verify_tests_state() {
   mkdir -p "$(dirname "$VERIFY_TESTS_FILE")"
-  cat > "$VERIFY_TESTS_FILE" << 'EOF'
+  cat > "$VERIFY_TESTS_FILE" << EOF
 verified_at=2026-05-10T00:00:00Z
-repo_root=/tmp/test
+repo_root=$TMPDIR_TEST
 commands:
   - bash tests/run-all-tests.sh
 EOF
@@ -1118,9 +1123,20 @@ teardown
 # Test 18: Trivial file bypass
 echo "--- Group 6: Bypass mechanisms ---"
 setup
+# the config names a custom trivial file: only the state directory's own `trivial` file is honoured (R3-02)
 touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 out=$(run_hook "PreToolUse" "git commit -m 'test'")
+assert_blocks "R3-02: config trivial_file naming another existing file does not bypass the gates" "$out"
+rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+touch "${SB_TEST_DIR}/trivial"
+out=$(run_hook "PreToolUse" "git commit -m 'test'")
 assert_passes "trivial file bypasses completion check" "$out"
+rm -f "${SB_TEST_DIR}/trivial"
+touch "${SB_RUNTIME_HOME_ROOT}/trivial-outside-state"
+jq '.state.trivial_file = "${SB_RUNTIME_HOME_ROOT}/trivial-outside-state"' "$TMPCFG" >"$TMPCFG.new" && mv "$TMPCFG.new" "$TMPCFG"
+out=$(run_hook "PreToolUse" "git commit -m 'test'")
+assert_blocks "R3-02: trivial_file outside the state directory is ignored" "$out"
+rm -f "${SB_RUNTIME_HOME_ROOT}/trivial-outside-state"
 teardown
 
 # Test 19: gh pr merge blocked when skills missing (Tier 2 delivery gate)

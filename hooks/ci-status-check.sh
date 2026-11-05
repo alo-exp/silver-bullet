@@ -59,21 +59,38 @@ if declare -f sb_tool_name >/dev/null 2>&1; then
 else
   tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""') || true
 fi
-if declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
-  sb_tool_is_shell_like "$tool_name" || exit 0
-fi
-if declare -f sb_tool_command_string >/dev/null 2>&1; then
-  cmd="$(sb_tool_command_string "$input")"
-else
-  cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
-fi
-[[ -z "$cmd" ]] && exit 0
+# Shell tools and MCP tools (the GitHub server's create/merge/push tools) are judged by the shell analysis
+# helper, not by text matching: aliases, global options, wrappers, gh api writes and MCP spellings all count.
+_ci_gate_tool=false
+case "$tool_name" in
+  mcp__* | CallMcpTool | MCP) _ci_gate_tool=true ;;
+  Bash | Shell | shell | exec_command) _ci_gate_tool=true ;;
+esac
+[[ "$_ci_gate_tool" == true ]] || exit 0
+SB_TI_STATUS="helper_unavailable"
+! declare -f sb_tool_input_load >/dev/null 2>&1 || sb_tool_input_load "$input"
+[[ "$SB_TI_STATUS" != "empty" ]] || exit 0
 
-# Trigger scope differs by event (see header comment above):
-if [[ "$hook_event" == "PreToolUse" ]]; then
-  grep -qE '\bgit push\b|\bgh pr (create|merge)\b|\bgh release create\b' <<<"$cmd" || exit 0
+# Trigger scope differs by event (see header comment above). When the helper could not read the payload the
+# call counts as gated: the CI check is the safe default.
+if [[ "$SB_TI_STATUS" == "ok" ]]; then
+  _ci_trigger=false
+  for _ci_action in push pr_create pr_merge release_create remote_write unseen; do
+    ! sb_shell_analysis_may_deliver "$_ci_action" || _ci_trigger=true
+  done
+  [[ "$hook_event" == "PreToolUse" ]] || ! sb_shell_analysis_may_deliver commit || _ci_trigger=true
+  [[ "$_ci_trigger" == true ]] || exit 0
 else
-  grep -qE '\bgit (commit|push)\b|\bgh pr (create|merge)\b|\bgh release create\b' <<<"$cmd" || exit 0
+  # the helper could not read the payload (python3 or the library is missing): fall back to the plain
+  # verbs so unrelated commands are not held, while the common spellings stay covered
+  _ci_cmd=""
+  ! declare -f sb_tool_command_string >/dev/null 2>&1 || _ci_cmd="$(sb_tool_command_string "$input")"
+  [[ -n "$_ci_cmd" ]] || _ci_cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
+  if [[ "$hook_event" == "PreToolUse" ]]; then
+    grep -qE '\bgit push\b|\bgh pr (create|merge)\b|\bgh release create\b' <<<"$_ci_cmd" || exit 0
+  else
+    grep -qE '\bgit (commit|push)\b|\bgh pr (create|merge)\b|\bgh release create\b' <<<"$_ci_cmd" || exit 0
+  fi
 fi
 
 # ── Resolve config file — exit silently if not a Silver Bullet project ───────
@@ -109,9 +126,22 @@ _trivial_file="${_sb_state_dir}/trivial"
 # projects to specify a custom state.trivial_file in .silver-bullet.json.
 _bypass_trivial="${_trivial_file}"
 _cfg_trivial=$(jq -r '.state.trivial_file // ""' "$config_file" 2>/dev/null || true)
-[[ -n "$_cfg_trivial" ]] && _bypass_trivial="$_cfg_trivial"
+# shellcheck source=lib/trivial-bypass.sh
+source "$_lib_dir/trivial-bypass.sh"
+if [[ -n "$_cfg_trivial" ]]; then
+  _cfg_trivial="$(sb_expand_state_config_path "$_cfg_trivial")"
+  # only the state directory's own `trivial` file may stand for a trivial session (R3-02, R1-21)
+  ! sb_trivial_path_trusted "$_cfg_trivial" "$_trivial_file" || _bypass_trivial="$_cfg_trivial"
+fi
+# The CI-red override is a short-lived human decision: it expires after SB_CI_OVERRIDE_TTL_MINUTES
+# (default 30), so it can no longer waive CI checks for good (R1-21).
+_ci_override_ttl="${SB_CI_OVERRIDE_TTL_MINUTES:-30}"
+[[ "$_ci_override_ttl" =~ ^[0-9]+$ ]] || _ci_override_ttl=30
 if [[ -f "$_ci_override_file" && ! -L "$_ci_override_file" ]]; then
-  exit 0
+  if [[ -n "$(find "$_ci_override_file" -mmin "-${_ci_override_ttl}" -print 2>/dev/null)" ]]; then
+    exit 0
+  fi
+  rm -f -- "$_ci_override_file"
 fi
 # Backward compat (v0.23.6 → v0.24): always checks the hardcoded default path —
 # detects when the old default trivial file is used as CI-red override.
@@ -131,16 +161,41 @@ if [[ -f "$_lib_dir/trivial-bypass.sh" ]]; then
   sb_trivial_bypass "$_bypass_trivial"
 fi
 
-# gh CLI required for real runs; test override bypasses it
-if [[ -n "${GH_STATUS_OVERRIDE:-}" ]]; then
+# gh CLI required for real runs; test override bypasses it (sandbox only: GH_STATUS_OVERRIDE would
+# otherwise let an environment variable replace CI status, R1-36)
+# shellcheck source=lib/github-run-list.sh
+source "$_lib_dir/github-run-list.sh"
+if [[ -n "${GH_STATUS_OVERRIDE:-}" ]] && sb_github_overrides_allowed; then
   run_json="$GH_STATUS_OVERRIDE"
 else
-  command -v gh >/dev/null 2>&1 || exit 0
+  if ! command -v gh >/dev/null 2>&1; then
+    printf '{"hookSpecificOutput":{"message":"ℹ️ ci-status-check: the gh CLI is not installed, so CI status was not checked for this command."}}'
+    exit 0
+  fi
   current_branch=$(git branch --show-current 2>/dev/null || echo "")
   branch_args=()
   [[ -n "$current_branch" ]] && branch_args=(--branch "$current_branch")
-  run_json=$(gh run list --limit 1 "${branch_args[@]}" --json status,conclusion,name,headBranch 2>/dev/null \
-    | jq -r '.[0] // empty' 2>/dev/null) || true
+  # The newest commit's runs, one per workflow (latest attempt): a red workflow is not hidden behind a
+  # later green run of another workflow (R1-21c). Bounded by the gh timeout; "cannot determine" is said out loud.
+  _ci_tmp="$(mktemp -d "${TMPDIR:-/tmp}/sb-ci-status.XXXXXX")"
+  _ci_rc=0
+  sb_run_hooked_command "${SB_GH_TIMEOUT_SECONDS:-8}" /dev/null "$_ci_tmp/out" "$_ci_tmp/err" \
+    gh run list --limit 30 ${branch_args[@]+"${branch_args[@]}"} --json status,conclusion,name,headBranch,headSha,createdAt || _ci_rc=$?
+  run_json=""
+  if [[ "$_ci_rc" -eq 0 ]]; then
+    run_json=$(jq -r '
+      (.[0].headSha // "") as $sha
+      | [.[] | select((.headSha // "") == $sha)]
+      | group_by(.name) | map(max_by(.createdAt // ""))
+      | ((map(select(.conclusion == "failure" or .conclusion == "cancelled")) | .[0])
+         // (map(select(.status == "in_progress")) | .[0])
+         // .[0] // empty)' "$_ci_tmp/out" 2>/dev/null) || true
+  fi
+  rm -rf -- "$_ci_tmp"
+  if [[ "$_ci_rc" -ne 0 ]]; then
+    printf '{"hookSpecificOutput":{"message":"ℹ️ ci-status-check: CI status could not be determined (gh failed or timed out), so it was not checked for this command."}}'
+    exit 0
+  fi
 fi
 
 [[ -z "${run_json:-}" ]] && exit 0
@@ -160,18 +215,13 @@ esac
 
 if [[ "$conclusion" == "failure" ]] || [[ "$conclusion" == "cancelled" ]]; then
   # ── CI-fix bypass (issue #95): allow pushes that ARE the fix ─────────────
-  # Option B: commit message starts with fix(ci): / ci: or contains [ci-fix]
-  # Option A: diff touches .github/workflows/, tests/, or package.json
-  if grep -qE '\bgit push\b' <<<"$cmd"; then
-    _top_msg=$(git log -1 --format="%s" 2>/dev/null || true)
-    if grep -qiE '^(fix\(ci\)|ci):|\[ci-fix\]' <<<"$_top_msg"; then
-      printf '{"hookSpecificOutput":{"message":"ℹ️ CI is red but commit matches ci-fix convention — allowing push."}}'
-      exit 0
-    fi
+  # The push may only change CI/test files (every changed path); a commit-message convention is
+  # agent-controlled text and no longer waives the block (R1-21a).
+  if [[ "${SB_SA_ACTIONS:-}" == "push" && -z "${SB_SA_POSSIBLE_ACTIONS:-}" ]]; then
     if git rev-parse "@{u}" >/dev/null 2>&1; then
       _changed=$(git diff "@{u}..HEAD" --name-only 2>/dev/null || true)
-      if [[ -n "$_changed" ]] && grep -qE '^\.github/workflows/|^tests/|^package\.json$' <<<"$_changed"; then
-        printf '{"hookSpecificOutput":{"message":"ℹ️ CI is red but push touches CI/test files — allowing push (suspected CI fix)."}}'
+      if [[ -n "$_changed" ]] && ! grep -qvE '^\.github/workflows/|^tests/|^package\.json$' <<<"$_changed"; then
+        printf '{"hookSpecificOutput":{"message":"ℹ️ CI is red but the push only touches CI/test files — allowing push (suspected CI fix)."}}'
         exit 0
       fi
     fi
@@ -183,18 +233,15 @@ Invoke /sb:debug now to investigate the failing CI run before continuing.
 Run: gh run list --limit 3 --json status,conclusion,name,headBranch
 Then: gh run view <run-id> --log-failed
 
-If you need to push a CI fix, one of the following auto-bypasses the block:
-  • Prefix your commit message with 'fix(ci):' or 'ci:' (or add [ci-fix])
-  • Ensure your diff touches .github/workflows/, tests/, or package.json
-  • Or create the override file: touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override"
+If you need to push a CI fix: a push whose every changed file is under .github/workflows/, tests/ or
+package.json is allowed. A human can also waive the block for ${_ci_override_ttl} minutes from their own terminal:
+  touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override"
 
   # PostToolUse/git commit: warn only — the commit already happened; emitting
   # decision:block here confuses the model about whether the commit succeeded and
   # can cause deadlock (can't commit the CI fix because PostToolUse blocks it).
   # Push, PR, and release operations are still hard-blocked (remote-state mutations).
-  if [[ "$hook_event" == "PostToolUse" ]] && \
-     grep -qE '\bgit commit\b' <<<"$cmd" && \
-     ! grep -qE '\bgit push\b|\bgh pr\b|\bgh release\b' <<<"$cmd"; then
+  if [[ "$hook_event" == "PostToolUse" && "${SB_SA_ACTIONS:-}" == "commit" && -z "${SB_SA_POSSIBLE_ACTIONS:-}" ]]; then
     json_msg=$(printf '%s' "$msg" | jq -Rs '.')
     printf '{"hookSpecificOutput":{"message":%s}}' "$json_msg"
   else

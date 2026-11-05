@@ -36,48 +36,48 @@ Before a tool runs; a hook can deny the call.
 | # | Matcher | Script | Timeout |
 |---|---------|--------|---------|
 | 1 | `.*` | `debug-dump.sh` | 5 |
-| 2 | `Bash\|Skill\|exec_command` | `phase-archive.sh` | 10 |
-| 3 | `Bash\|Skill\|exec_command` | `completion-audit.sh` | 15 |
-| 4 | `Bash\|Skill\|exec_command` | `spec-floor-check.sh` | 10 |
-| 5 | `Bash\|Skill\|exec_command` | `forbidden-skill-check.sh` | 10 |
-| 6 | `Bash\|Skill\|exec_command` | `uat-gate.sh` | 10 |
-| 7 | `Edit\|Write\|MultiEdit\|apply_patch` | `orchestrator-directive-guard.sh` | 10 |
-| 8 | `Edit\|Write\|MultiEdit\|apply_patch` | `agent-delegation-guard.sh` | 10 |
-| 9 | `Edit\|Write\|MultiEdit\|apply_patch` | `phase-lock-claim.sh` | 10 |
-| 10 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | `planning-file-guard.sh` | 10 |
-| 11 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | `instruction-file-guard.sh` | 10 |
-| 12 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | `workflow-chain-guard.sh` | 10 |
-| 13 | `Task\|Subagent\|Agent` | `orchestrator-directive-guard.sh` | 10 |
-| 14 | `Task\|Subagent\|Agent` | `subagent-stop-enforcement.sh` | 10 |
-| 15 | `Task\|Subagent\|Agent` | `review-fix-ladder-guard.sh` | 10 |
-| 16 | `Task\|Subagent\|Agent` | `rfl-policy-c-gate.sh` | 10 |
-| 17 | `Skill` | `review-fix-ladder-guard.sh` | 10 |
-| 18 | `Skill` | `rfl-policy-c-gate.sh` | 10 |
-| 19 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `subagent-stop-enforcement.sh` | 10 |
-| 20 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-preview-preflight.sh` | 10 |
-| 21 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-chrome-guard.sh` | 10 |
-| 22 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `compression-marker-guard.sh` | 10 |
-| 23 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `orchestrator-directive-guard.sh` | 10 |
-| 24 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `trivial-file-guard.sh` | 10 |
-| 25 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `graphify-gate.sh` | 10 |
-| 26 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `agentmemory-gate.sh` | 10 |
-| 27 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `alumnium-gate.sh` | 10 |
-| 28 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `leanctx-gate.sh` | 10 |
-| 29 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `stack-compression-coordinator.sh` | 10 |
-| 30 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `rtk-gate.sh` | 10 |
-| 31 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `context-mode-gate.sh` | 10 |
-| 32 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `token-compression-tools-gate.sh` | 10 |
-| 33 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | `dev-cycle-check.sh` | 15 |
-| 34 | `Read\|Grep` | `stack-compression-coordinator.sh` | 10 |
-| 35 | `Read\|Grep` | `context-mode-read-deny.sh` | 10 |
-| 36 | `WebFetch` | `stack-compression-coordinator.sh` | 10 |
-| 37 | `CallMcpTool\|MCP` | `stack-compression-coordinator.sh` | 10 |
-| 38 | `Skill` | `dependency-skill-check.sh` | 10 |
-| 39 | `Bash\|exec_command` | `site-regression-gate.sh` | 120 |
-| 40 | `Bash\|exec_command` | `live-publish-evidence-gate.sh` | 15 |
-| 41 | `Bash\|exec_command` | `industry-tooling-hint.sh` | 5 |
-| 42 | `Bash\|exec_command` | `roadmap-freshness.sh` | 10 |
-| 43 | `Bash\|exec_command` | `ci-status-check.sh` | 30 |
+| 2 | `Bash\|Skill\|exec_command` | `spec-floor-check.sh` | 10 |
+| 3 | `Bash\|Skill\|exec_command` | `forbidden-skill-check.sh` | 10 |
+| 4 | `Bash\|Skill\|exec_command` | `uat-gate.sh` | 10 |
+| 5 | `Bash\|Skill\|exec_command\|mcp__.*` | `phase-archive.sh` | 10 |
+| 6 | `Bash\|Skill\|exec_command\|mcp__.*` | `completion-audit.sh` | 15 |
+| 7 | `Bash\|Skill\|exec_command\|mcp__.*` | `ci-status-check.sh` | 30 |
+| 8 | `Edit\|Write\|MultiEdit\|apply_patch` | `orchestrator-directive-guard.sh` | 10 |
+| 9 | `Edit\|Write\|MultiEdit\|apply_patch` | `agent-delegation-guard.sh` | 10 |
+| 10 | `Edit\|Write\|MultiEdit\|apply_patch` | `phase-lock-claim.sh` | 10 |
+| 11 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | `planning-file-guard.sh` | 10 |
+| 12 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | `instruction-file-guard.sh` | 10 |
+| 13 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | `workflow-chain-guard.sh` | 10 |
+| 14 | `Task\|Subagent\|Agent` | `orchestrator-directive-guard.sh` | 10 |
+| 15 | `Task\|Subagent\|Agent` | `subagent-stop-enforcement.sh` | 10 |
+| 16 | `Task\|Subagent\|Agent` | `review-fix-ladder-guard.sh` | 10 |
+| 17 | `Task\|Subagent\|Agent` | `rfl-policy-c-gate.sh` | 10 |
+| 18 | `Skill` | `review-fix-ladder-guard.sh` | 10 |
+| 19 | `Skill` | `rfl-policy-c-gate.sh` | 10 |
+| 20 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `subagent-stop-enforcement.sh` | 10 |
+| 21 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-preview-preflight.sh` | 10 |
+| 22 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-chrome-guard.sh` | 10 |
+| 23 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `compression-marker-guard.sh` | 10 |
+| 24 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `orchestrator-directive-guard.sh` | 10 |
+| 25 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `trivial-file-guard.sh` | 10 |
+| 26 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `graphify-gate.sh` | 10 |
+| 27 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `agentmemory-gate.sh` | 10 |
+| 28 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `alumnium-gate.sh` | 10 |
+| 29 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `leanctx-gate.sh` | 10 |
+| 30 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `stack-compression-coordinator.sh` | 10 |
+| 31 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `rtk-gate.sh` | 10 |
+| 32 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `context-mode-gate.sh` | 10 |
+| 33 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `token-compression-tools-gate.sh` | 10 |
+| 34 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | `dev-cycle-check.sh` | 15 |
+| 35 | `Read\|Grep` | `stack-compression-coordinator.sh` | 10 |
+| 36 | `Read\|Grep` | `context-mode-read-deny.sh` | 10 |
+| 37 | `WebFetch` | `stack-compression-coordinator.sh` | 10 |
+| 38 | `CallMcpTool\|MCP` | `stack-compression-coordinator.sh` | 10 |
+| 39 | `Skill` | `dependency-skill-check.sh` | 10 |
+| 40 | `Bash\|exec_command` | `site-regression-gate.sh` | 120 |
+| 41 | `Bash\|exec_command` | `live-publish-evidence-gate.sh` | 15 |
+| 42 | `Bash\|exec_command` | `industry-tooling-hint.sh` | 5 |
+| 43 | `Bash\|exec_command` | `roadmap-freshness.sh` | 10 |
 | 44 | `Bash\|exec_command` | `rfl-policy-c-gate.sh` | 10 |
 
 ### PostToolUse
@@ -171,8 +171,8 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `agent-delegation-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | While an `/sb:agent-*` delegation is active, blocks parent-session edits on Claude and Codex and advises on Cursor. |
 | `agentmemory-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.agentmemory`): requires a recent agentmemory capture/retrieval before substantive work. |
 | `alumnium-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.alumnium`): checks that the Alumnium MCP server is wired before browser/visual work. |
-| `ci-status-check.sh` | PreToolUse `Bash\|exec_command`; PostToolUse `Bash\|exec_command` | Checks the latest GitHub Actions run for the branch. Pre: blocks `git push`, `gh pr create/merge` and `gh release create` while CI failed or was cancelled. Post: warns after `git commit`. CI-fix commits and the `ci-red-override` flag bypass it. |
-| `completion-audit.sh` | PreToolUse `Bash\|Skill\|exec_command`; PostToolUse `Bash\|exec_command` | Two-tier delivery gate. Commits, pushes and commit plumbing need `skills.required_planning`; `gh pr create/merge`, deploy commands and `gh release create` need `skills.required_deploy` plus the release gates (live matrices, quality-gate markers, RC matrix, green CI on the release commit). |
+| `ci-status-check.sh` | PreToolUse `Bash\|Skill\|exec_command\|mcp__.*`; PostToolUse `Bash\|exec_command` | Checks the latest GitHub Actions run for the branch. Pre: blocks `git push`, `gh pr create/merge` and `gh release create` while CI failed or was cancelled. Post: warns after `git commit`. CI-fix commits and the `ci-red-override` flag bypass it. |
+| `completion-audit.sh` | PreToolUse `Bash\|Skill\|exec_command\|mcp__.*`; PostToolUse `Bash\|exec_command` | Two-tier delivery gate. Commits, pushes and commit plumbing need `skills.required_planning`; `gh pr create/merge`, deploy commands and `gh release create` need `skills.required_deploy` plus the release gates (live matrices, quality-gate markers, RC matrix, green CI on the release commit). |
 | `compliance-status.sh` | PostToolUse `.*` | Prints workflow progress (flow N/M, or recorded-skill count) after every tool call. Informational only. |
 | `compression-marker-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Blocks writes whose new content contains a LeanCTX compression artifact (a line starting with `[lean-ctx:` or a `.plan.md [NL]` header, i.e. pasted `ctx_read` output). Sentences that mention the marker, removing a marker, files under `docs/` and files that already contain the marker are allowed. |
 | `context-mode-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.context_mode`): checks Context Mode install and MCP/hook wiring. |
@@ -190,7 +190,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `live-publish-evidence-gate.sh` | PreToolUse `Bash\|exec_command`; Stop `.*` | Requires fetched live-page evidence before a site publish is claimed LIVE (Stop) and before `git push` to main for site work. |
 | `orchestrator-directive-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch`; PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Orchestrator parent mode: blocks edits, shell commands and Task spawns until the skill named by the pending directive has been invoked. |
 | `outcomes-check.sh` | Stop `.*`; SubagentStop `.*`; UserPromptSubmit `.*` | Tracks the per-prompt outcome checklist; at Stop, blocks while outcomes are incomplete. |
-| `phase-archive.sh` | PreToolUse `Bash\|Skill\|exec_command` | Archives `.planning/phases/` directories before a real `phases clear` invocation (or a shell delete of the whole phases directory) runs; never skips new phases when an earlier archive exists. Fails closed: if archiving fails, the clear is denied. |
+| `phase-archive.sh` | PreToolUse `Bash\|Skill\|exec_command\|mcp__.*` | Archives `.planning/phases/` directories before a real `phases clear` invocation (or a shell delete of the whole phases directory) runs; never skips new phases when an earlier archive exists. Fails closed: if archiving fails, the clear is denied. |
 | `phase-lock-claim.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | Claims the `.planning/phases/<NNN>/` lock (via `.planning/scripts/phase-lock.sh`) before a session edits a phase's files. |
 | `phase-lock-heartbeat.sh` | PostToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Refreshes heartbeats for the phase locks this session holds (throttled to once per 5 minutes per phase). |
 | `phase-lock-release.sh` | Stop `.*`; SubagentStop `.*` | Releases this session's phase locks at Stop/SubagentStop. Never blocks. |

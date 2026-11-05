@@ -24,7 +24,8 @@ mkproj() {
   rm -f "$SB_RUNTIME_STATE_DIR"/release-live-matrix "$SB_RUNTIME_STATE_DIR"/e2e-live-matrix "$SB_RUNTIME_STATE_DIR"/inline-e2e-matrix "$QG"
 }
 
-HOOK="$TL_REPO_ROOT/hooks/completion-audit.sh"
+PLUGIN="$(tl_fake_plugin_root)"
+HOOK="$PLUGIN/hooks/completion-audit.sh"
 CFG_VERSION="$(jq -r '.config_version' "$TL_REPO_ROOT/templates/silver-bullet.config.json.default")"
 
 SKILLS="$TL_TMP/skills"

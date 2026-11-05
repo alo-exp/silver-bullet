@@ -9,7 +9,8 @@ R="$TL_REPO_ROOT"
 T="$TL_TMP/tree"
 mkdir -p "$T/scripts/lib" "$T/tests/live/lib" "$T/tests/scripts/lib"
 cp "$R/scripts/run-rc-validation-matrix.sh" "$T/scripts/"
-cp "$R/scripts/lib/pre-release-host-isolation.sh" "$T/scripts/lib/"
+cp "$R/scripts/lib/pre-release-host-isolation.sh" "$R/scripts/lib/release-bypass-audit.sh" "$T/scripts/lib/"
+mkdir -p "$T/hooks/lib"; cp "$R/hooks/lib/runtime-paths.sh" "$T/hooks/lib/"
 M="$T/scripts/run-rc-validation-matrix.sh"
 LOG="$TL_TMP/calls.log"
 MK="$SB_RUNTIME_STATE_DIR/rc-validation"
@@ -45,28 +46,31 @@ artifact_of() { sed -n 's/^artifact=//p' "$MK/$1" 2>/dev/null || true; }
 mrun SB_SKIP_RC_MATRIX=1
 assert_eq "skip exits 0" 0 "$TL_STATUS"; assert_contains "skip message" "$TL_OUT" "SKIP: SB_SKIP_RC_MATRIX=1"
 assert_eq "skip runs nothing" "" "$(cat "$LOG")"
+assert_contains "R13-20: the bypass is announced" "$TL_ERR" "AUDIT: release gate bypass SB_SKIP_RC_MATRIX=1"
+assert_contains "R13-20: the bypass is logged" "$(cat "$SB_RUNTIME_STATE_DIR/release-bypass-log.jsonl")" '"switch":"SB_SKIP_RC_MATRIX"'
+assert_eq "R13-20: a skip writes no markers, so the release gate still blocks" "MISSING" "$(marker cursor-fresh)"
 mrun --bogus
 assert_eq "unknown argument -> 2" 2 "$TL_STATUS"
 
 # --- dry run ------------------------------------------------------------------------------------------
 mrun --dry-run
 assert_eq "dry-run ok" 0 "$TL_STATUS"
-assert_contains "dry-run totals" "$TL_OUT" "RC matrix: 6 passed, 0 failed, 0 skipped"
+assert_contains "dry-run totals" "$TL_OUT" "RC matrix: 0 passed, 0 failed, 6 skipped"
 for h in cursor codex claude; do for m in fresh upgrade; do
-  assert_eq "dry-run marker $h-$m" pass "$(status_of "$h-$m")"
+  assert_eq "dry-run marker $h-$m is a dry-run, not a pass (R13-09)" dry-run "$(status_of "$h-$m")"
   assert_eq "dry-run artifact $h-$m" dry-run "$(artifact_of "$h-$m")"
 done; done
 assert_eq "dry-run runs no cell" "" "$(cat "$LOG")"
 
 # --- filters ---------------------------------------------------------------------------------------------------
 mrun --dry-run --host codex
-assert_contains "host filter totals" "$TL_OUT" "RC matrix: 2 passed"
+assert_contains "host filter totals" "$TL_OUT" "RC matrix: 0 passed, 0 failed, 2 skipped"
 assert_eq "host filter: only codex markers" "codex-fresh codex-upgrade" "$(ls "$MK" | tr '\n' ' ' | sed 's/ $//')"
 mrun --dry-run --mode upgrade
-assert_contains "mode filter totals" "$TL_OUT" "RC matrix: 3 passed"
+assert_contains "mode filter totals" "$TL_OUT" "RC matrix: 0 passed, 0 failed, 3 skipped"
 assert_eq "mode filter: only upgrade markers" "claude-upgrade codex-upgrade cursor-upgrade" "$(ls "$MK" | tr '\n' ' ' | sed 's/ $//')"
 mrun --dry-run --host cursor --mode fresh
-assert_contains "host+mode filter" "$TL_OUT" "RC matrix: 1 passed"
+assert_contains "host+mode filter" "$TL_OUT" "RC matrix: 0 passed, 0 failed, 1 skipped"
 mrun --dry-run --host nosuch
 assert_contains "no cell selected" "$TL_OUT" "RC matrix: 0 passed, 0 failed, 0 skipped"
 assert_eq "no cell selected exits 0" 0 "$TL_STATUS"

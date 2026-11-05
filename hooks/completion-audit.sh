@@ -2,16 +2,24 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
+# Read-only MCP tools (Gmail, Context7, file reads, searches...) cannot deliver: leave before sourcing the
+# libraries, which dominate the cost of a call. Payload is read here so the libraries see it later.
+input=$(cat)
+_ca_prefilter_tool="$(printf '%s' "$input" | sed -n 's/.*"tool_name"[[:space:]]*:[[:space:]]*"\(mcp__[^"]*\)".*/\1/p' | head -1)"
+case "${_ca_prefilter_tool##*__}" in
+  get_* | list_* | search_* | read_* | query* | resolve* | fetch* | find* | describe* | whoami) exit 0 ;;
+esac
+
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 # shellcheck source=lib/hook-bootstrap.sh
 source "${_lib_dir}/hook-bootstrap.sh"
+# shellcheck source=lib/trivial-bypass.sh
+source "${_lib_dir}/trivial-bypass.sh"
 for _ca_mod in classify gates state-helpers planning-tier change-class deploy-tier; do
   # shellcheck source=/dev/null
   source "${_lib_dir}/completion-audit/${_ca_mod}.sh"
 done
 
-# Read JSON from stdin
-input=$(cat)
 if declare -f sb_hook_exit_on_cert_run >/dev/null 2>&1; then
   sb_hook_exit_on_cert_run
 elif declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
@@ -57,20 +65,40 @@ if declare -f sb_tool_name >/dev/null 2>&1; then
 else
   tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
 fi
-if declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
-  sb_tool_is_shell_like "$tool_name" || exit 0
-fi
-if declare -f sb_tool_command_string >/dev/null 2>&1; then
-  cmd="$(sb_tool_command_string "$input")"
-else
-  cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
-fi
+mcp_payload=""
+case "$tool_name" in
+  mcp__* | CallMcpTool | MCP)
+    # MCP tools (the GitHub server's create/merge/push tools) are judged by the analyser from the payload
+    mcp_payload="$input"
+    cmd="$tool_name"
+    ;;
+  *)
+    if declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
+      sb_tool_is_shell_like "$tool_name" || exit 0
+    fi
+    if declare -f sb_tool_command_string >/dev/null 2>&1; then
+      cmd="$(sb_tool_command_string "$input")"
+    else
+      cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+    fi
+    ;;
+esac
 [[ -z "$cmd" ]] && exit 0
 
-ca_classify_command "$cmd" || exit 0
+ca_classify_command "$cmd" "$mcp_payload" || exit 0
 
 # ── Error handler: warn and exit 0 on unexpected failure ─────────────────────
-trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️  completion-audit.sh: unexpected error — skipping check\"}}" ; exit 0' ERR
+# A delivery command that reaches this point is gated: an unexpected failure must not let it through
+# (R1-09). On PreToolUse the error becomes a deny that says how to proceed; PostToolUse only warns.
+_ca_internal_error() {
+  if [[ "$hook_event" == "PreToolUse" ]]; then
+    emit_block "🛑 COMPLETION AUDIT ERROR — an internal check failed before the delivery gate could finish (completion-audit line ${1:-?}). Silver Bullet cannot verify this delivery command, so it is blocked. Check that the project's .silver-bullet.json is valid JSON and that ${SB_RUNTIME_STATE_DIR:-the runtime state directory} is a real directory you own (not a file or a symlink), then retry."
+  else
+    printf '{"hookSpecificOutput":{"message":"⚠️  completion-audit.sh: unexpected error — check skipped"}}'
+  fi
+  exit 0
+}
+trap '_ca_internal_error "$LINENO"' ERR
 
 # ── Resolve config file by walking up from $PWD ──────────────────────────────
 config_file=""
@@ -97,6 +125,11 @@ fi
 
 # ── Read config values ────────────────────────────────────────────────────────
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
+if [[ -e "$SB_STATE_DIR" || -L "$SB_STATE_DIR" ]] && [[ ! -d "$SB_STATE_DIR" || -L "$SB_STATE_DIR" ]]; then
+  # a file or symlink where the state directory belongs: deny instead of skipping every tier (R1-09)
+  emit_block "🛑 COMPLETION AUDIT — the runtime state directory ${SB_STATE_DIR} is not a real directory (it is a file or a symlink), so recorded skills cannot be trusted. Restore it as a plain directory (rm the file, then run /sb:init or start a new session), then retry."
+  exit 0
+fi
 mkdir -p "$SB_STATE_DIR"
 state_file="${SB_STATE_DIR}/state"
 trivial_file="${SB_STATE_DIR}/trivial"
@@ -124,13 +157,14 @@ config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" 
   (.release.quality_gate_state_file // ""),
   ((.release.require_plugin_runtime_matrix // false) | tostring),
   ((.release.require_pre_release_quality_gate // false) | tostring),
-  ((.release.require_rc_matrix // false) | tostring)
+  ((.release.require_rc_matrix // false) | tostring),
+  (.project.push_to_default_branch_tier // "completion")
 ] | join("\n")' "$config_file")
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
-state_file="${state_file/#\~/$HOME}"
+state_file="$(sb_expand_state_config_path "$state_file")"
 trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
-trivial_file="${trivial_file/#\~/$HOME}"
+trivial_file="$(sb_expand_state_config_path "$trivial_file")"
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/planning-tier.sh
 required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/planning-tier.sh
@@ -142,13 +176,15 @@ required_deploy_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/*-tier.sh
 active_workflow=$(printf '%s' "$config_vals" | sed -n '7p')
 cfg_quality_gate_state_file=$(printf '%s' "$config_vals" | sed -n '8p')
-[[ -n "$cfg_quality_gate_state_file" ]] && quality_gate_state_file="${cfg_quality_gate_state_file/#\~/$HOME}"
+[[ -n "$cfg_quality_gate_state_file" ]] && quality_gate_state_file="$(sb_expand_state_config_path "$cfg_quality_gate_state_file")"
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 release_require_plugin_runtime_matrix=$(printf '%s' "$config_vals" | sed -n '9p')
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 release_require_pre_release_quality_gate=$(printf '%s' "$config_vals" | sed -n '10p')
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 release_require_rc_matrix=$(printf '%s' "$config_vals" | sed -n '11p')
+
+push_to_default_branch_tier=$(printf '%s' "$config_vals" | sed -n '12p')
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
@@ -161,9 +197,9 @@ verify_tests_state_file="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-$verify_tests_
 if ! sb_runtime_path_is_state_scoped "$state_file"; then
   state_file="${SB_STATE_DIR}/state"
 fi
-if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
-  trivial_file="${SB_STATE_DIR}/trivial"
-fi
+# The trivial bypass file is never taken from project config except as the state directory's own
+# `trivial` file: a config pointing it at any other existing file would disable every gate (R3-02).
+sb_trivial_path_trusted "$trivial_file" "${SB_STATE_DIR}/trivial" || trivial_file="${SB_STATE_DIR}/trivial"
 if ! sb_runtime_path_is_state_scoped "$quality_gate_state_file"; then
   quality_gate_state_file="${SB_STATE_DIR}/quality-gate-state"
 fi
@@ -193,10 +229,23 @@ state_contents=""
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/*.sh
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
 
+# A push to the default branch (or any tag, --all, --mirror) is final delivery in every project (R1-22);
+# project.push_to_default_branch_tier = "intermediate" is the explicit opt-out.
 # shellcheck disable=SC2154  # is_intermediate is set by ca_classify in lib/completion-audit/classify.sh
-if [[ "$is_intermediate" == true ]]; then
-  # Contract: ca_run_planning_tier_gate always ends the hook with exit 0.
-  ca_run_planning_tier_gate
+if [[ "$is_intermediate" == true && "$push_to_default_branch_tier" != "intermediate" ]] && ca_push_targets_default_branch; then
+  is_intermediate=false
+  # shellcheck disable=SC2034  # read by the sourced lib/completion-audit tiers
+  is_completion=true
+  # shellcheck disable=SC2034  # read by lib/enterprise-policy.sh through the deploy tier
+  ca_tier="completion"
 fi
 
-ca_run_deploy_tier_gate
+# The tiers run in a subshell: a failure inside a tier function (the ERR trap is not inherited into
+# functions) then ends the subshell non-zero, which trips the ERR trap here and denies on PreToolUse.
+if [[ "$is_intermediate" == true ]]; then
+  # Contract: ca_run_planning_tier_gate always ends with exit 0 (inside the subshell).
+  (ca_run_planning_tier_gate)
+  exit 0
+fi
+
+(ca_run_deploy_tier_gate)

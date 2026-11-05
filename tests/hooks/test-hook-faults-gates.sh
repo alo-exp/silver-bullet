@@ -136,15 +136,16 @@ assert_eq "trivial: failing project check: allowed" "" "$TL_OUT"
 # ======== pr-traceability ======================================================
 ec_cfg '{"config_version":"0.40.0","sb_initiated":true}'
 printf 'spec-version=1.0\n' >"$SD/spec-session"
-tl_stub gh 'case "$*" in "pr view --json url --jq .url") printf "https://x/pr/1";; esac'
+tl_stub gh 'exit 0'
 mkdir -p "$EC_PROJ/.planning"
 printf -- '<!-- Populated automatically -->\n' >"$EC_PROJ/.planning/SPEC.md"
-pr_in='{"tool_name":"Bash","tool_input":{"command":"gh pr create"}}'
+# the PR URL comes from the create command's own output (R1-27)
+pr_in='{"tool_name":"Bash","tool_input":{"command":"gh pr create"},"tool_response":{"stdout":"https://x/pull/1"}}'
 ec_fail git '*"add"*'
 hook pr-traceability.sh "$EC_PROJ" "$pr_in"
 ec_unfail git
 assert_contains "pr: failing git add does not stop the update" "$TL_OUT" "Spec traceability added"
-assert_contains "pr: SPEC.md still updated" "$(cat "$EC_PROJ/.planning/SPEC.md")" "https://x/pr/1"
+assert_contains "pr: SPEC.md still updated" "$(cat "$EC_PROJ/.planning/SPEC.md")" "https://x/pull/1"
 rm -f "$EC_PROJ/.planning/SPEC.md"
 printf 'no findings here\n' >"$EC_PROJ/.planning/VALIDATION.md"
 hook pr-traceability.sh "$EC_PROJ" "$pr_in"
