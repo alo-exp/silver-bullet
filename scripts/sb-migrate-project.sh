@@ -25,11 +25,21 @@ fi
 
 PROJ_ROOT="$(dirname "$CONFIG")"
 
+# Validate before any mutation: a symlinked or unparseable config must stop the migration whole.
+if [[ -L "$CONFIG" ]]; then
+  echo "Refusing to migrate: $CONFIG is a symlink" >&2
+  exit 1
+fi
+if command -v jq >/dev/null 2>&1 && ! jq -e . "$CONFIG" >/dev/null 2>&1; then
+  echo "Refusing to migrate: $CONFIG is not valid JSON" >&2
+  exit 1
+fi
+
 bash "$PLUGIN_ROOT/scripts/sb-migrate-config.sh" "$PROJ_ROOT"
 bash "$PLUGIN_ROOT/scripts/sb-migrate-orchestrator-parent.sh" "$PROJ_ROOT"
 
 mkdir -p "$PROJ_ROOT/scripts"
-if [[ ! -x "$PROJ_ROOT/scripts/workflows.sh" ]]; then
+if [[ ! -e "$PROJ_ROOT/scripts/workflows.sh" ]]; then
   cp "$PLUGIN_ROOT/scripts/workflows.sh" "$PROJ_ROOT/scripts/workflows.sh"
   chmod +x "$PROJ_ROOT/scripts/workflows.sh"
   echo "Installed scripts/workflows.sh"

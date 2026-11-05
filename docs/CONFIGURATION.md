@@ -114,7 +114,7 @@ Named settings bundles for the five-tool stack, read by `hooks/lib/stack-optimiz
 | `issue_tracker` | `local` (default; `docs/issues/`), `github`, or `custom` | `sb:add`, `scripts/silver-add.sh` |
 | `issue_tracker_adapter.type`, `.create_issue_command`, `.dedupe_command`, `.payload_schema` | Command adapter used when `issue_tracker` is `custom` | `scripts/silver-add.sh` |
 | `compactPrompt` | Instruction text for context compaction: preserve `silver-bullet.md` rules verbatim. Carried forward by migration; no hook reads it | — |
-| `semantic_compression.enabled`, `.context_budget_kb`, `.min_file_size_bytes`, `.chunk_size_bytes`, `.top_chunks_per_file`, `.debug` | Context assembly after phase skills (budget, files considered, chunking, ranking) | `scripts/semantic-compress.sh` |
+| `semantic_compression.enabled`, `.context_budget_kb`, `.min_file_size_bytes`, `.chunk_size_bytes`, `.top_chunks_per_file`, `.debug` | Context assembly after phase skills (budget, files considered, chunking, ranking) | `scripts/semantic-compress.sh` (numbers are validated, `project.src_pattern` must stay inside the repository, symlinks and credential-like files are skipped, the cache in `.planning/.context-cache/` ignores itself) |
 | `multi_agent.identity_tags`, `.stale_lock_ttl_seconds` | Runtime identities allowed to hold phase locks, and when a lock is stale | `.planning/scripts/phase-lock.sh` (phase-lock hooks) |
 | `multi_agent.delegation_timeout_seconds` | Child delegation timeout described in [multi-agent-coordination.md](multi-agent-coordination.md); no script reads it at present | — |
 | `cursor_sb_agents.*` | Which SB-managed Cursor subagents to install (models, effort levels, name prefix, install status) | `scripts/install-cursor-sb-agents.sh`, `sb-doctor.sh` |
