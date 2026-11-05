@@ -57,6 +57,15 @@ reset_store
 assert_eq "no store: unset" "unset" "$(sb_consent_decision graphify enforce "$PROJ")"
 if sb_consent_store_mentions graphify; then tl_fail "no store mentions nothing"; else tl_pass "no store mentions nothing"; fi
 assert_eq "unknown tool: unset" "unset" "$(sb_consent_decision evil enforce)"
+reset_store
+assert_eq "pi enable words: no consent -> none" "" "$(sb_consent_pi_enable_words)"
+sb_consent_set granted rtk wire machine test >/dev/null
+sb_consent_set granted leanctx wire machine test >/dev/null
+sb_consent_set granted graphify install machine test >/dev/null
+assert_eq "pi enable words: wire only; leanctx needs install too; install alone is not wire" " --enable-tool rtk" "$(sb_consent_pi_enable_words)"
+sb_consent_set granted leanctx install,wire machine test >/dev/null
+assert_eq "pi enable words: leanctx with install+wire" " --enable-tool leanctx --enable-tool rtk" "$(sb_consent_pi_enable_words)"
+reset_store
 assert_eq "unknown capability: unset" "unset" "$(sb_consent_decision graphify root)"
 
 sb_consent_set granted graphify enforce machine test
