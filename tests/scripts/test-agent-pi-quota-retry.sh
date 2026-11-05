@@ -155,7 +155,7 @@ EOF
 INV_RUN="${WORKDIR}/rfl-invoke"
 INV_RUNG="${INV_RUN}/rung-10-claude-opus-5-high"
 mkdir -p "$INV_RUNG"
-export SB_AGENT_PI_DELEGATE="$FAKE"
+export SB_AGENT_PI_DELEGATE_SCRIPT="$FAKE"
 export SB_RFL_RUN_DIR="$INV_RUN"
 export SB_RFL_RUN_ID="rfl-invoke"
 export SB_RFL_RUNG_ID="rung-10"

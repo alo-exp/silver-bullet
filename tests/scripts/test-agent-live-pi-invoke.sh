@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/agent-pi/invoke.sh: argument filtering, expect-file path resolution, the --continue /
 # fresh-rewrite recovery after a plan-only first hop, and auth fail-fast. The delegate is a fake
-# script (SB_AGENT_PI_DELEGATE) and `pi` is a recording stub; nothing real runs.
+# script (SB_AGENT_PI_DELEGATE_SCRIPT) and `pi` is a recording stub; nothing real runs.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
@@ -34,7 +34,7 @@ printf '%s' "${FAKE_OUT-delegate-output}"
 exit "${FAKE_RC:-0}"
 EOF
 chmod +x "$FAKE"
-export SB_AGENT_PI_DELEGATE="$FAKE"
+export SB_AGENT_PI_DELEGATE_SCRIPT="$FAKE"
 export FAKE_RECORD="$TL_TMP/fake-record"
 
 # Recording pi: logs argv; writes PI_STUB_WRITE when run as the hop selected by PI_STUB_WHEN
@@ -69,12 +69,25 @@ inv() { tl_run timeout 60 bash "$INVOKE" "$@"; }
 
 # ---------------------------------------------------------------- delegate lookup
 reset
-tl_run timeout 60 env SB_AGENT_PI_DELEGATE="$TL_TMP/no-such-delegate" bash "$INVOKE" --work-dir "$W" --prompt x
+tl_run timeout 60 env SB_AGENT_PI_DELEGATE_SCRIPT="$TL_TMP/no-such-delegate" bash "$INVOKE" --work-dir "$W" --prompt x
 assert_eq "invoke with a missing delegate exits 1" "1" "$TL_STATUS"
 assert_contains "invoke with a missing delegate names it" "$TL_ERR" "missing delegate: $TL_TMP/no-such-delegate"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$TL_TMP/not-exec"
-tl_run timeout 60 env SB_AGENT_PI_DELEGATE="$TL_TMP/not-exec" bash "$INVOKE" --work-dir "$W"
+tl_run timeout 60 env SB_AGENT_PI_DELEGATE_SCRIPT="$TL_TMP/not-exec" bash "$INVOKE" --work-dir "$W"
 assert_eq "invoke with a non-executable delegate exits 1" "1" "$TL_STATUS"
+
+# R8-14: the delegation flag (=1, exported by env.sh --export and the Pi delegate) is not a path
+reset
+FAKE_RC=0 FAKE_OUT="flag-ok" tl_run timeout 60 env SB_AGENT_PI_DELEGATE=1 bash "$INVOKE" --work-dir "$W" --prompt x --skip-preflight
+assert_eq "invoke with SB_AGENT_PI_DELEGATE=1 still runs the delegate" "0" "$TL_STATUS"
+assert_contains "flag set: delegate output reached" "$TL_OUT" "flag-ok"
+(cd "$W" && printf '#!/usr/bin/env bash\necho RAN-LOCAL-ONE >&2\n' >1 && chmod +x 1)
+FAKE_RC=0 FAKE_OUT="flag-ok" tl_run bash -c "cd '$W' && SB_AGENT_PI_DELEGATE=1 bash '$INVOKE' --work-dir '$W' --prompt x --skip-preflight"
+assert_not_contains "a ./1 in the working directory is never executed" "$TL_ERR$TL_OUT" "RAN-LOCAL-ONE"
+rm -f "$W/1"
+tl_run timeout 60 env SB_AGENT_PI_DELEGATE_SCRIPT="relative/delegate.sh" bash "$INVOKE" --work-dir "$W" --prompt x
+assert_eq "a relative delegate override is refused" "1" "$TL_STATUS"
+assert_contains "relative override explained" "$TL_ERR" "must be an absolute path"
 
 # ---------------------------------------------------------------- plain pass-through
 reset
