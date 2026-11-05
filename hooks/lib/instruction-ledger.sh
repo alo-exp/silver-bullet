@@ -51,7 +51,7 @@ sb_instruction_ledger_scope_mismatch() {
   worktree="${SB_INSTRUCTION_LEDGER_SCOPE_WORKTREE:-}"
   [[ -n "$branch" ]] || return 1
   lb="$(jq -r '.scope.branch // empty' "$outfile" 2>/dev/null || true)"
-  lw="$(jq -r '.scope.worktree // empty' "$outfile" 2>/dev/null || true)"
+  lw="$(jq -r '.scope.worktree // empty' "$outfile" 2>/dev/null)"
   # Unscoped legacy ledger: do not treat as mismatch (same-session still valid).
   [[ -n "$lb" || -n "$lw" ]] || return 1
   if [[ -n "$lb" && "$lb" != "$branch" ]]; then
@@ -73,7 +73,7 @@ sb_instruction_ledger_drop_if_scope_mismatch() {
   local outfile lw
   sb_instruction_ledger_scope_mismatch "${1:-$PWD}" || return 1
   outfile="$(sb_instruction_ledger_file)"
-  lw="$(jq -r '.scope.worktree // empty' "$outfile" 2>/dev/null || true)"
+  lw="$(jq -r '.scope.worktree // empty' "$outfile" 2>/dev/null)"
   if [[ -z "$lw" || "$lw" == "${SB_INSTRUCTION_LEDGER_SCOPE_WORKTREE:-}" ]]; then
     # The branch name was validated to [a-zA-Z0-9/_.-] by sb_instruction_ledger_current_scope.
     sb_instruction_ledger_jq_update "$outfile" ".scope.branch = \"${SB_INSTRUCTION_LEDGER_SCOPE_BRANCH}\""
@@ -87,7 +87,7 @@ sb_instruction_ledger_drop_if_scope_mismatch() {
 # relative scripts/ directory is the user's, not Silver Bullet's (R2-11).
 sb_instruction_ledger_resolver_path() {
   local here
-  here="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || return 1
+  here="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
   printf '%s/scripts/resolve-instruction-ledger.sh' "$here"
 }
 
@@ -294,7 +294,7 @@ sb_instruction_ledger_pending_summary() {
     "  bash \($resolver) done <item-id-or-label> --evidence \"…\"",
     "  bash \($resolver) deferred <item-id-or-label> --evidence \"…\"",
     "  bash \($resolver) list"
-  ' --arg resolver "$(sb_instruction_ledger_resolver_path 2>/dev/null || printf 'scripts/resolve-instruction-ledger.sh')" "$outfile" 2>/dev/null || true
+  ' --arg resolver "$(sb_instruction_ledger_resolver_path)" "$outfile" 2>/dev/null || true
 }
 
 # Sanctioned leaf writer: mark a pending leaf done|deferred with evidence.
@@ -304,7 +304,7 @@ sb_instruction_ledger_resolve_item() {
   local selector="${1:-}"
   local status="${2:-}"
   local evidence="${3:-}"
-  local outfile matches tmp
+  local outfile tmp
   outfile="$(sb_instruction_ledger_file)"
   [[ -n "$selector" ]] || return 1
   case "$status" in

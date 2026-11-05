@@ -76,7 +76,7 @@ if declare -f sb_instruction_ledger_drop_if_scope_mismatch >/dev/null 2>&1; then
   sb_instruction_ledger_drop_if_scope_mismatch "$PWD" 2>/dev/null || true
 fi
 
-sb_instruction_ledger_auto_resolve_parents 2>/dev/null || true
+sb_instruction_ledger_auto_resolve_parents 2>/dev/null
 if sb_instruction_ledger_all_resolved; then
   exit 0
 fi

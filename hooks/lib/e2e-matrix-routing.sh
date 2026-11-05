@@ -22,7 +22,7 @@ sb_e2e_matrix_routing_row_active() {
   [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]] || return 1
   marker="$(sb_e2e_matrix_routing_row_marker_file)" || return 1
   [[ -f "$marker" && ! -L "$marker" ]] || return 1
-  expiry="$(head -1 "$marker" 2>/dev/null || true)"
+  expiry="$(head -1 "$marker" 2>/dev/null)"
   [[ "$expiry" =~ ^[0-9]+$ ]] || return 1
   [[ "$expiry" -gt "$(date +%s)" ]]
 }

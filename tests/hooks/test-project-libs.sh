@@ -223,6 +223,7 @@ nok sb_dqg_pre_ship_marker_recorded $'x\n'
 # ---- e2e-matrix-routing -----------------------------------------------------
 # shellcheck source=../../hooks/lib/e2e-matrix-routing.sh
 source "$LIB/e2e-matrix-routing.sh"
+export SB_E2E_ENTERPRISE_MATRIX=1
 nok sb_e2e_matrix_routing_row_active
 sb_e2e_matrix_set_routing_row_marker
 ok sb_e2e_matrix_routing_row_active
@@ -234,7 +235,8 @@ nok sb_e2e_matrix_routing_row_active
 sb_e2e_matrix_clear_routing_row_marker
 assert_file_absent "clear removes a symlinked marker" "$M"
 assert_eq "marker dir created on set" "1" "$( rm -rf "${SD:?}"; sb_e2e_matrix_set_routing_row_marker; mkdir -p "$SD"; echo 1)"
-assert_eq "default marker dir without a state dir" "/tmp/e2e-matrix-routing-row" "$(env -u SB_RUNTIME_STATE_DIR bash -c "source '$LIB/e2e-matrix-routing.sh'; sb_e2e_matrix_routing_row_marker_file")"
+assert_eq "no /tmp fallback for the marker without a state dir (R5-06)" "" "$(env -u SB_RUNTIME_STATE_DIR bash -c "source '$LIB/e2e-matrix-routing.sh'; sb_e2e_matrix_routing_row_marker_file" || true)"
+unset SB_E2E_ENTERPRISE_MATRIX
 
 # ---- update-check fetch guard -----------------------------------------------
 # shellcheck source=../../hooks/lib/check-sb-update.sh

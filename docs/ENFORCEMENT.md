@@ -60,6 +60,15 @@ Silver Bullet enforces two **distinct** tiers:
 
 In the `devops-cycle` workflow the `_devops` variants (`required_planning_devops`, `required_deploy_devops`, `required_release_devops`) apply.
 
+### Stop-gate details
+
+- **Empty state.** An empty state file normally means a non-dev session and Stop is allowed. It is *not* allowed when the agent itself wrote project source this session: `trivial-file-clear.sh` leaves a `files-written` marker after every Write/Edit, and a dirty `src_pattern` path plus that fresh marker applies the planning floor. A chat-only session over the user's own pending edits stays allowed.
+- **Loop breaker.** A block the agent cannot clear from inside the session (the branch file belongs to the host's global runtime state, so a branch switch or a concurrent session trips it) blocks once; when the host reports `stop_hook_active` the same condition is released with a `systemMessage` and an audit line in `stop-loop-release.log`. A missing required skill is clearable and keeps blocking.
+- **Stall flag.** The autonomous stall flag (100 tool calls without a recorded skill) lifts as soon as a skill is recorded after it.
+- **Per-prompt gates.** The outcome checklist and instruction ledger belong to the parent's prompt: they hold the parent's Stop, never an ordinary subagent's SubagentStop. The checklist is derived from recorded skills and plan files and is sealed with a sha256 sidecar; a change made outside the hooks resets it to pending (`outcomes-tamper.log`). Ledger items keep per-item ids, survive a branch switch in the same worktree, and are resolved with the resolver's absolute path shown in the block.
+- **Completion audit.** Every Task worker return sets a pending marker that only a `/sb:completion-audit` run *after* it clears (Skill call, `silver-bullet invoke-skill` on Codex, or the user's own command); an older audit line in the state file does not cover a later worker.
+- **E2E harness marker.** The Stop exemption for the enterprise E2E routing row needs `SB_E2E_ENTERPRISE_MATRIX=1` in the hook's own environment and a marker file holding a future expiry epoch written by the harness; a `touch`-created file is ignored.
+
 ### Orchestrator Worker SubagentStop
 
 In orchestrator parent mode, the parent session spawns Task **workers**, each executing one atomic flow. Stop/SubagentStop handling differs by role:

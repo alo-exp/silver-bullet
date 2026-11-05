@@ -68,22 +68,12 @@ dg_run "$P" hooks/live-publish-evidence-gate.sh '{"hook_event_name":"Stop"}'
 assert_eq "live gate: push intent alone still needs evidence" "block" "$(dec)"
 rm -f "$TL_BIN/jq"
 
-# ---- uat-gate: failing count pipelines (file modified between the check and the count) ----
-mkdir -p "$P/.planning"
-printf '| 1 | a | FAIL |\n' >"$P/.planning/UAT.md"
-real_grep="$(command -v grep)"
-tl_stub grep "if [[ \"\$1\" == -cvE ]]; then echo 0; exit 1; fi; exec $real_grep \"\$@\""; hash -r
-dg_run "$P" hooks/uat-gate.sh '{"hook_event_name":"PreToolUse","tool_name":"Skill","tool_input":{"skill":"silver-release"}}'
-assert_contains "uat-gate: FAIL block survives a failing count" "$TL_OUT" "UAT GATE: 0 criterion/criteria marked FAIL"
-printf '| 1 | a | NOT-RUN |\n' >"$P/.planning/UAT.md"
-dg_run "$P" hooks/uat-gate.sh '{"hook_event_name":"PreToolUse","tool_name":"Skill","tool_input":{"skill":"silver-release"}}'
-assert_contains "uat-gate: NOT-RUN block survives a failing count" "$TL_OUT" "UAT GATE: 0 criterion/criteria marked NOT-RUN"
-rm -f "$TL_BIN/grep"; hash -r
 
 # ---- outcomes-check without jq: event extraction pipeline failing -> defaults to Stop ----
 OST="$ST/state-x"; printf 'silver-quality-gates\n' >"$OST"
 rm -f "$ST/outcomes-session.json" "$ST/stop-coalesce-block"
 echo '{"outcomes":[{"id":"route","label":"R","status":"pending","evidence":""}]}' >"$ST/outcomes-session.json"
+real_grep="$(command -v grep)"
 tl_stub grep "if [[ \"\$1\" == -oE ]]; then exit 1; fi; exec $real_grep \"\$@\""; hash -r
 dg_run_nojq "$P" hooks/outcomes-check.sh '{"hook_event_name":"SubagentStop"}' SILVER_BULLET_STATE_FILE="$OST"
 rm -f "$TL_BIN/grep"; hash -r

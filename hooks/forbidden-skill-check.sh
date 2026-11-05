@@ -99,16 +99,14 @@ while IFS= read -r raw_skill; do
   # segment, so `Executing-Plans`, ` executing-plans ` and `marketplace:gsd-execute-phase` match.
   norm="$(printf '%s' "$raw_skill" | tr '[:upper:]' '[:lower:]' | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')"
   [[ -n "$norm" ]] || continue
-  skill_name="${norm##*:}"
-  rest="$norm"
-  while [[ -n "$rest" ]]; do
-    segment="${rest%%:*}"
-    if [[ "$rest" == *:* ]]; then rest="${rest#*:}"; else rest=""; fi
+  IFS=':' read -r -a segments <<<"$norm"
+  for segment in "${segments[@]}"; do
     # Block retired GSD namespace (removed from SB runtime).
     if [[ "$segment" == "$_SB_RETIRED_NS" || "$segment" == "${_SB_RETIRED_NS}-"* ]]; then
       deny "FORBIDDEN SKILL — ${raw_skill} is blocked. GSD lifecycle skills were removed from Silver Bullet. Use /sb routing and SB-owned skills (sb:context, sb:plan, sb:execute, sb:verify, sb:ship). See silver-bullet.md."
     fi
   done
+  skill_name="${norm##*:}"
   # Invariant: a skill that is only colons leaves skill_name empty, which matches no entry.
   [[ -n "$skill_name" ]] || continue
 
