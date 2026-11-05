@@ -56,8 +56,10 @@ agent_claude_delegate_env_names() {
 }
 
 # Seed hasTrustDialogAccepted for work_dir so Quick safety check does not EOF
-# before prompt submission. Claude reads project trust from ~/.claude.json;
-# ephemeral CLAUDE_CONFIG_DIR/.claude.json is mirrored for isolated parity.
+# before prompt submission. With CLAUDE_CONFIG_DIR set, Claude reads project
+# trust from CLAUDE_CONFIG_DIR/.claude.json, so only that ephemeral file is
+# seeded by default. The user's global ~/.claude.json is touched only with
+# SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL=1 (atomic write, backup, abort on parse error).
 agent_claude_seed_folder_trust() {
   local work_dir="${1:-${CLAUDE_WORK_DIR:-${WORK_DIR:-}}}"
   local config_dir="${2:-${CLAUDE_CONFIG_DIR:-}}"
@@ -65,17 +67,24 @@ agent_claude_seed_folder_trust() {
   [[ "${SB_AGENT_CLAUDE_SEED_FOLDER_TRUST:-1}" == "1" ]] || return 0
   command -v python3 >/dev/null 2>&1 || return 0
 
+  # $3 = "global" for the user's real ~/.claude.json: never replace a file that
+  # does not parse (R4-11), keep a one-time backup, and write temp file + rename.
   _agent_claude_seed_folder_trust_json() {
     local json_path="$1"
     local target_dir="$2"
+    local kind="${3:-ephemeral}"
     mkdir -p "$(dirname "$json_path")"
-    python3 - "$json_path" "$target_dir" <<'PY'
+    if ! python3 - "$json_path" "$target_dir" "$kind" <<'PY'
 import json
+import os
 import pathlib
+import shutil
 import sys
+import tempfile
 
 path = pathlib.Path(sys.argv[1])
 raw = pathlib.Path(sys.argv[2])
+kind = sys.argv[3]
 resolved = raw.resolve()
 paths = []
 for candidate in (raw, resolved):
@@ -87,24 +96,52 @@ data = {}
 if path.is_file():
     try:
         data = json.loads(path.read_text())
-    except json.JSONDecodeError:
-        data = {}
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        data = None
+    if not isinstance(data, dict):
+        # Unparsable (or not an object): leave the user's file byte-identical.
+        sys.stderr.write("[agent-claude] %s does not parse; trust not seeded, file untouched\n" % path)
+        sys.exit(3)
 
 projects = data.setdefault("projects", {})
+if not isinstance(projects, dict):
+    sys.stderr.write("[agent-claude] %s has a non-object projects key; file untouched\n" % path)
+    sys.exit(3)
 for project_path in paths:
     entry = projects.setdefault(project_path, {})
     entry["hasTrustDialogAccepted"] = True
 
-path.write_text(json.dumps(data, indent=2) + "\n")
+if kind == "global" and path.is_file():
+    backup = path.with_name(path.name + ".sb-backup")
+    if not backup.exists():
+        shutil.copy2(str(path), str(backup))
+
+fd, tmp = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=str(path.parent))
+try:
+    with os.fdopen(fd, "w") as handle:
+        handle.write(json.dumps(data, indent=2) + "\n")
+    if path.is_file():
+        os.chmod(tmp, path.stat().st_mode & 0o7777)
+    os.replace(tmp, str(path))
+except BaseException:
+    if os.path.exists(tmp):
+        os.unlink(tmp)
+    raise
 PY
+    then
+      return 1
+    fi
     printf '[agent-claude] seeded folder trust for %s in %s\n' "$target_dir" "$json_path" >&2
   }
 
   if [[ -n "$config_dir" ]]; then
-    _agent_claude_seed_folder_trust_json "${config_dir}/.claude.json" "$work_dir"
+    _agent_claude_seed_folder_trust_json "${config_dir}/.claude.json" "$work_dir" ephemeral || true
   fi
-  if [[ "${SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL:-1}" == "1" && -n "${HOME:-}" ]]; then
-    _agent_claude_seed_folder_trust_json "${HOME}/.claude.json" "$work_dir"
+  # The ephemeral CLAUDE_CONFIG_DIR is enough for the worker. Writing trust into
+  # the user's real ~/.claude.json persists it past this run (R4-11, R8-15), so it
+  # is opt-in only.
+  if [[ "${SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL:-0}" == "1" && -n "${HOME:-}" ]]; then
+    _agent_claude_seed_folder_trust_json "${HOME}/.claude.json" "$work_dir" global || true
   fi
 }
 
