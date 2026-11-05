@@ -31,7 +31,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
 fi
 HOOK="$REPO_ROOT/hooks/phase-lock-claim.sh"
-HELPER_SRC="$REPO_ROOT/.planning/scripts/phase-lock.sh"
+HELPER_SRC="$REPO_ROOT/scripts/phase-lock.sh"   # the hooks run the plugin's copy (R3-03)
 
 PASS=0
 FAIL=0
@@ -58,8 +58,6 @@ setup() {
   git config user.email t@t
   git config user.name t
   mkdir -p .planning/scripts .planning/phases/099-test
-  cp "$HELPER_SRC" .planning/scripts/phase-lock.sh
-  chmod +x .planning/scripts/phase-lock.sh
   export SB_PHASE_LOCK_FILE="$TMPDIR_TEST/.planning/.phase-locks.json"
   rm -f "${SB_TEST_DIR}/claimed-phases-test-${TEST_RUN_ID}.txt" \
         "${SB_TEST_DIR}/claimed-phases-test2-${TEST_RUN_ID}.txt" \
@@ -131,7 +129,7 @@ teardown
 echo "--- T5: another runtime holds lock → exit 2 + stderr names owner ---"
 setup
 # Have opencode claim phase 099 directly via helper
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 opencode "simulated-other-runtime" >/dev/null 2>&1
+bash "$HELPER_SRC" claim 099 opencode "simulated-other-runtime" >/dev/null 2>&1
 
 json=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":".planning/phases/099-test/y.md"},"session_id":"test2-%s"}' "$TEST_RUN_ID")
 set +e
@@ -160,7 +158,7 @@ else
 fi
 
 # Cleanup opencode claim
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release 099 opencode >/dev/null 2>&1
+bash "$HELPER_SRC" release 099 opencode >/dev/null 2>&1
 teardown
 
 # ── Test 6: jq-missing fail-open (best-effort) ──────────────────────────────

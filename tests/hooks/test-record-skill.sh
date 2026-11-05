@@ -387,9 +387,19 @@ teardown
 # prefixes are peeled repeatedly; a foreign plugin keeps its namespace and mints no marker.
 echo "--- Group 6: namespace handling ---"
 setup
-run_hook "silver-bullet:superpowers:silver-quality-gates" >/dev/null
-assert_in_state "stacked trusted namespaces peeled (silver-bullet:superpowers:silver-quality-gates)" "silver-quality-gates"
-assert_not_in_state "namespaced form not recorded verbatim" "silver-bullet:superpowers:silver-quality-gates"
+run_hook "silver-bullet:superpowers:code-review" >/dev/null
+assert_in_state "stacked trusted namespaces peeled to a dependency's own name" "code-review"
+assert_not_in_state "namespaced form not recorded verbatim" "silver-bullet:superpowers:code-review"
+teardown
+
+setup
+run_hook "superpowers:silver-quality-gates" >/dev/null
+assert_not_in_state "a dependency plugin cannot mint an SB-owned marker (superpowers:silver-quality-gates)" "silver-quality-gates"
+teardown
+
+setup
+run_hook "engineering:silver-secure" >/dev/null
+assert_not_in_state "engineering:silver-secure mints nothing" "silver-secure"
 teardown
 
 setup

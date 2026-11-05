@@ -3,7 +3,7 @@
 #
 # PreToolUse hook fired on Edit | Write | MultiEdit. When the tool's
 # `tool_input.file_path` resolves under `.planning/phases/<NNN>/`, calls
-# `.planning/scripts/phase-lock.sh claim <NNN> <runtime> "<intent>"` and on
+# `scripts/phase-lock.sh (plugin root) claim <NNN> <runtime> "<intent>"` and on
 # success appends `<NNN>` to the session-claim manifest at
 # `<host runtime>/.silver-bullet/claimed-phases-<session>.txt` so the
 # Stop/SubagentStop release hook can release everything this session
@@ -83,7 +83,10 @@ phase=$(_resolve_phase_from_path "$file_path" || true)
 [[ -z "$phase" ]] && exit 0
 
 # ── Helper-exists check (graceful degrade for non-SB-initialized projects) ──
-helper="$PWD/.planning/scripts/phase-lock.sh"
+# The helper is Silver Bullet's own, resolved from the plugin root, never from the project (R3-03).
+_hook_dir="${BASH_SOURCE[0]%/*}"
+[[ "$_hook_dir" != "${BASH_SOURCE[0]}" ]] || _hook_dir="."
+helper="${_hook_dir}/../scripts/phase-lock.sh"
 if [[ ! -x "$helper" ]]; then
   # jq builds the JSON: the project path may contain quotes or backslashes (R3-26).
   jq -nc --arg m "⚠️ phase-lock-claim.sh: ${helper} not executable — skipping" \
@@ -116,8 +119,14 @@ umask 0077
 mkdir -p "$(dirname "$manifest")" 2>/dev/null || true
 
 # ── Idempotent claim — skip if this session already claimed this phase ──────
+# The manifest is only a hint: confirm through the helper that this session still owns the lock
+# (a stale-steal by another session leaves a manifest entry behind; R3-17). A refreshed
+# heartbeat proves ownership; anything else falls through to a real claim.
+export SB_PHASE_LOCK_SESSION="$session_id"
 if grep -Fxq "$phase" "$manifest" 2>/dev/null; then
-  exit 0
+  if "$helper" heartbeat "$phase" "${SB_RUNTIME_NAME}" >/dev/null 2>&1; then
+    exit 0
+  fi
 fi
 
 # ── Call helper ─────────────────────────────────────────────────────────────
@@ -135,7 +144,7 @@ case "$helper_rc" in
   0)
     # Acquired (or stolen-stale) — record in manifest.
     sb_safe_write "$manifest"
-    printf '%s\n' "$phase" >> "$manifest"
+    grep -Fxq "$phase" "$manifest" 2>/dev/null || printf '%s\n' "$phase" >> "$manifest"
     exit 0
     ;;
   2)
@@ -147,7 +156,7 @@ case "$helper_rc" in
     printf 'Attempted intent: %s\n' "$intent" >&2
     [[ -n "$helper_stderr" ]] && printf '%s\n' "$helper_stderr" >&2
     # shellcheck disable=SC2016  # backticks are literal markdown, not command substitution
-    printf 'Hint: run `.planning/scripts/phase-lock.sh peek %s` for details.\n' "$phase" >&2
+    printf 'Hint: run `scripts/phase-lock.sh (plugin root) peek %s` for details.\n' "$phase" >&2
     exit 2
     ;;
   *)

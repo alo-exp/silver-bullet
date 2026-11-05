@@ -106,7 +106,7 @@ Claude holds phase 070 lock.
 ```json
 {
   "multi_agent": {
-    "identity_tags": ["claude", "codex", "opencode"],
+    "identity_tags": ["claude", "codex", "opencode", "pi", "goose", "hermes"],
     "stale_lock_ttl_seconds": 1800,
     "delegation_timeout_seconds": 1200
   }
@@ -115,7 +115,7 @@ Claude holds phase 070 lock.
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `identity_tags` | `["claude","codex","opencode"]` | Recognized runtime identity tags. Unknown tags rejected by `phase-lock.sh claim`. |
+| `identity_tags` | `["claude","codex","opencode","pi","goose","hermes"]` | Recognized runtime identity tags. Unknown tags rejected by `phase-lock.sh claim`. |
 | `stale_lock_ttl_seconds` | `1800` | Lock expires after this many seconds without a heartbeat; another runtime may steal with a WARN. |
 | `delegation_timeout_seconds` | `1200` | Child runtime delegation timeout. |
 
@@ -126,10 +126,10 @@ Claude holds phase 070 lock.
 cat .planning/.phase-locks.json | jq
 
 # Peek a specific phase
-.planning/scripts/phase-lock.sh peek 070
+"${CLAUDE_PLUGIN_ROOT}/scripts/phase-lock.sh" peek 070
 
 # Releasing your own stale claim (run by the runtime that holds it)
-.planning/scripts/phase-lock.sh release 070 claude
+"${CLAUDE_PLUGIN_ROOT}/scripts/phase-lock.sh" release 070 claude
 ```
 
 ## When NOT to use multi-agent coordination
@@ -140,4 +140,4 @@ cat .planning/.phase-locks.json | jq
 ## See also
 
 - `silver-bullet.md` §11 (Multi-Agent Coordination) — runtime contract for end-user projects
-- `.planning/scripts/phase-lock.sh` — the canonical helper (Phase 70)
+- `scripts/phase-lock.sh` (plugin root) — the canonical helper (Phase 70)

@@ -13,12 +13,9 @@ ST="$SB_RUNTIME_STATE_DIR"
 dec() { [[ -n "$TL_OUT" ]] && jq -r '.hookSpecificOutput.permissionDecision // .decision // "none"' <<<"$TL_OUT" 2>/dev/null || echo none; }
 
 # ---- phase-lock-claim: nofollow-guard.sh missing -> inline sb_safe_write ----
-cat >"$P/.planning/scripts/phase-lock.sh" <<'STUB'
-#!/usr/bin/env bash
-exit 0
-STUB
-chmod +x "$P/.planning/scripts/phase-lock.sh"
-S1="$TL_TMP/s1"; dg_stage_hooks "$S1" nofollow-guard.sh
+# the claim hook runs the plugin's own helper (scripts/phase-lock.sh beside hooks/), never the project's
+stage_helper() { mkdir -p "$1/scripts"; printf '#!/usr/bin/env bash\nexit 0\n' >"$1/scripts/phase-lock.sh"; chmod +x "$1/scripts/phase-lock.sh"; }
+S1="$TL_TMP/s1"; dg_stage_hooks "$S1" nofollow-guard.sh; stage_helper "$S1"
 CLAIM="$(jq -cn --arg p "$P/.planning/phases/099-x/a.md" '{tool_name:"Edit",tool_input:{file_path:$p},session_id:"sa"}')"
 dg_run "$P" "$S1/hooks/phase-lock-claim.sh" "$CLAIM"
 assert_eq "claim(no nofollow-guard): still claims" "099" "$(cat "$ST/claimed-phases-sa.txt")"
@@ -29,7 +26,7 @@ assert_eq "claim(no nofollow-guard): manifest now regular" "yes" "$([[ -f "$ST/c
 rm -f "$ST/claimed-phases-sa.txt"
 
 # ---- phase-lock-claim: tool-input.sh missing -> jq file_path extraction ----
-S2="$TL_TMP/s2"; dg_stage_hooks "$S2" tool-input.sh
+S2="$TL_TMP/s2"; dg_stage_hooks "$S2" tool-input.sh; stage_helper "$S2"
 dg_run "$P" "$S2/hooks/phase-lock-claim.sh" "$CLAIM"
 assert_eq "claim(no tool-input): jq extraction claims the phase" "099" "$(cat "$ST/claimed-phases-sa.txt")"
 rm -f "$ST/claimed-phases-sa.txt"

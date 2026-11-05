@@ -45,6 +45,10 @@ if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"
 fi
+if [[ -f "$_lib_dir/skill-gates.sh" ]]; then
+  # shellcheck source=lib/skill-gates.sh
+  source "$_lib_dir/skill-gates.sh"
+fi
 if [[ -f "$_lib_dir/hook-output.sh" ]]; then
   # shellcheck source=lib/hook-output.sh
   source "$_lib_dir/hook-output.sh"
@@ -144,29 +148,6 @@ extract_invoke_skill_adapter_skill() {
   printf '%s' "$1" | python3 -c "$_SB_ADAPTER_PARSER_PY" 2>/dev/null || true
 }
 
-# R3-08: an adapter-invoked skill (`silver-bullet invoke-skill`) bypasses the Skill-matcher
-# PreToolUse gates, because the host sees a Bash call. Run the same gates here with a synthetic
-# Skill payload and refuse to record when any denies. Prints the first denial reason.
-adapter_skill_gate_denial() {
-  local skill="$1" gate payload out hooks_dir reason
-  hooks_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  payload="$(jq -cn --arg s "$skill" '{hook_event_name:"PreToolUse", tool_name:"Skill", tool_input:{skill:$s}, cwd:env.PWD}')"
-  for gate in review-fix-ladder-guard.sh rfl-policy-c-gate.sh forbidden-skill-check.sh dependency-skill-check.sh uat-gate.sh; do
-    [[ -x "$hooks_dir/$gate" ]] || continue
-    if ! out="$(printf '%s' "$payload" | "$hooks_dir/$gate" 2>/dev/null)"; then
-      # A gate that cannot answer is not an allow.
-      printf 'the %s gate failed' "$gate"
-      return 0
-    fi
-    reason="$(printf '%s' "$out" | jq -r 'select(.hookSpecificOutput.permissionDecision == "deny") | (.hookSpecificOutput.permissionDecisionReason // "denied")' 2>/dev/null)" || reason=""
-    if [[ -n "$reason" ]]; then
-      printf '%s' "$reason"
-      return 0
-    fi
-  done
-  return 1
-}
-
 invoke_skill_adapter_receipt_is_valid() {
   local raw_skill="$1"
   local canonical_skill="$raw_skill"
@@ -216,13 +197,15 @@ invoke_skill_adapter_receipt_is_valid() {
 }
 
 skills_to_record=()
-if [[ -n "$raw_skill" ]]; then
+# tool_input.skill is honoured only for the Skill tool itself: a Bash or exec_command payload that
+# happens to carry a `skill` key records nothing (its only route is the invoke-skill adapter below).
+if [[ -n "$raw_skill" && "$tool_name" == "Skill" ]]; then
   skills_to_record+=("$raw_skill")
 elif { [[ "$tool_name" == "Bash" ]] || { declare -f sb_tool_is_shell_like >/dev/null 2>&1 && sb_tool_is_shell_like "$tool_name"; }; }; then
   adapter_skill="$(extract_invoke_skill_adapter_skill "$cmd")"
   adapter_exit_code="$(printf '%s' "$input" | jq -r '.tool_response.exit_code // .tool_response.exitCode // 0' 2>/dev/null || printf '0')"
   if [[ -n "$adapter_skill" && "$adapter_exit_code" == "0" ]] && invoke_skill_adapter_receipt_is_valid "$adapter_skill"; then
-    if adapter_denial="$(adapter_skill_gate_denial "$adapter_skill")"; then
+    if adapter_denial="$(sb_skill_gates_denial "$adapter_skill" "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"; then
       sb_emit_hook_message "PostToolUse" "⚠️ Skill not recorded: the Skill gates deny ${adapter_skill} — ${adapter_denial}"
       exit 0
     fi

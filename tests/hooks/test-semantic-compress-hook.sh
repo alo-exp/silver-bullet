@@ -52,6 +52,18 @@ run_hook() {
   )
 }
 
+# Test 0: plugin-qualified names reach the same case as the bare ones (R3-20 follow-up)
+mkdir -p "$TMP/src" "$TMP/.planning"
+echo "# Goal for qualified names" >"$TMP/.planning/phase1-CONTEXT.md"
+for i in $(seq 1 30); do echo "qualified name line $i" >>"$TMP/src/q.sh"; done
+bare=$(run_hook '{"tool_input":{"skill":"sb:plan"}}')
+qual=$(run_hook '{"tool_input":{"skill":"silver-bullet:sb:plan"}}')
+assert_eq "silver-bullet:sb:plan produces the same output as sb:plan" "$bare" "$qual"
+case "$qual" in *additionalContext*) echo "PASS: qualified name produced context"; (( PASS++ )) || true ;; *) echo "FAIL: qualified name produced no context"; (( FAIL++ )) || true ;; esac
+assert_eq "a foreign plugin's plan skill is ignored" "" "$(run_hook '{"tool_input":{"skill":"evil:plan"}}')"
+assert_eq "an empty skill name is ignored" "" "$(run_hook '{"tool_input":{"skill":""}}')"
+rm -rf "$TMP/src" "$TMP/.planning/phase1-CONTEXT.md" "$TMP/.planning/.context-cache"
+
 # Test 1: non-phase skill → no output, exit 0
 result=$(run_hook '{"tool_input":{"skill":"superpowers:brainstorming"}}')
 assert_eq "non-phase skill: no output" "" "$result"

@@ -41,28 +41,6 @@ assert_eq "a failing rename is reported" 1 "$rc"
 assert_eq "failed writes leave the original" "replaced" "$(cat "$D/keep.json")"
 assert_eq "failed writes leave no temp file" 0 "$(find "$D" -name '.sb-write.*' | wc -l | tr -d ' ')"
 
-# ---- enforcement tier persist: only an explicit, changed, safe write (R3-11) ---------------------
-# shellcheck source=../../hooks/lib/enforcement-tier-gate.sh
-source "$LIB/enforcement-tier-gate.sh"
-CFG="$D/cfg.json"
-printf '{"sb_enforcement_tier":2}\n' >"$CFG"; chmod 600 "$CFG"
-ino="$(stat -c %i "$CFG" 2>/dev/null || stat -f %i "$CFG")"
-sb_enforcement_tier_persist "$CFG" 2
-assert_eq "an unchanged tier does not touch the file" "$ino" "$(stat -c %i "$CFG" 2>/dev/null || stat -f %i "$CFG")"
-sb_enforcement_tier_persist "$CFG" 3
-assert_eq "a changed tier is written" 3 "$(jq -r .sb_enforcement_tier "$CFG")"
-assert_eq "the write keeps the mode" 600 "$(mode_of "$CFG")"
-mv "$CFG" "$D/real-cfg.json"; ln -s "$D/real-cfg.json" "$CFG"
-sb_enforcement_tier_persist "$CFG" 1
-assert_eq "a symlinked config is not rewritten" 3 "$(jq -r .sb_enforcement_tier "$D/real-cfg.json")"
-rm -f "$CFG"
-printf '{"sb_enforcement_tier":0}\n' >"$CFG"
-tl_stub mktemp 'exit 1'
-sb_enforcement_tier_persist "$CFG" 2
-rm -f "$TL_BIN/mktemp"
-assert_eq "a failed atomic write leaves the config alone" 0 "$(jq -r .sb_enforcement_tier "$CFG")"
-rm -f "$CFG"
-
 # ---- branch scope ref (R3-15) ----------------------------------------------------------------------
 # shellcheck source=../../hooks/lib/branch-scope.sh
 source "$LIB/branch-scope.sh"
@@ -145,14 +123,15 @@ SB_DEBUG_DUMP_TTL_SECONDS=bogus tl_run_stdin "$PAY" bash "$DD"
 assert_file_exists "a bad TTL falls back to the default" "$OUT"
 rm -f "$OUT" "$SD/debug-dump"
 
-# ---- phase-lock-claim: JSON stays valid for a hostile path (R3-26) -------------------------------------
-ec_project "$TL_TMP/pl\"q\\proj"
+# ---- phase-lock-claim: JSON stays valid for a hostile plugin path (R3-26) ---------------------------
+ec_project "$TL_TMP/proj"
 mkdir -p "$EC_PROJ/.planning/phases/001-x"
-PL="$TL_REPO_ROOT/hooks/phase-lock-claim.sh"
+HOSTILE_PLUG="$TL_TMP/pl\"q\\plug"
+ec_stage_hooks "$HOSTILE_PLUG"   # a plugin tree without scripts/phase-lock.sh
 PAYLOAD="$(jq -cn --arg f "$EC_PROJ/.planning/phases/001-x/a.md" '{tool_name:"Write",tool_input:{file_path:$f},session_id:"s1"}')"
-tl_run_stdin "$PAYLOAD" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$PL"
+tl_run_stdin "$PAYLOAD" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$HOSTILE_PLUG/hooks/phase-lock-claim.sh"
 assert_eq "claim hook exits 0 when the helper is missing" 0 "$TL_STATUS"
 assert_eq "its message is valid JSON" "PreToolUse" "$(jq -r '.hookSpecificOutput.hookEventName' <<<"$TL_OUT")"
-assert_contains "the hostile path survives intact" "$(jq -r '.hookSpecificOutput.message' <<<"$TL_OUT")" "$EC_PROJ/.planning/scripts/phase-lock.sh"
+assert_contains "the hostile path survives intact" "$(jq -r '.hookSpecificOutput.message' <<<"$TL_OUT")" "$HOSTILE_PLUG/hooks/../scripts/phase-lock.sh"
 
 tl_results

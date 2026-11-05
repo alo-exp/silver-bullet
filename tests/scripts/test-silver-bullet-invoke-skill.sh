@@ -74,6 +74,18 @@ assert_eq "receipt cwd" "$(pwd -P)" "$(jq -r .cwd "$RC")"
 assert_match "receipt timestamp" '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z$' "$(jq -r .timestamp "$RC")"
 assert_match "receipt epoch is numeric" '^[0-9]+$' "$(jq -r .timestamp_epoch "$RC")"
 
+# R3-08: a skill the Skill gates deny is refused BEFORE its text is printed or a receipt written
+PRJ="$TL_TMP/gateproj"; mkdir -p "$PRJ"; git -C "$PRJ" init -q
+printf '{"sb_initiated":true,"skills":{"forbidden":["feature"]}}\n' >"$PRJ/.silver-bullet.json"; printf '# SB\n' >"$PRJ/silver-bullet.md"
+before="$(find "$RECEIPTS" -type f | wc -l | tr -d ' ')"
+tl_run bash -c 'cd "$1" && shift && exec bash "$@"' _ "$PRJ" "$SB" invoke-skill sb:feature
+assert_eq "a gate-denied skill exits 1" 1 "$TL_STATUS"
+assert_contains "the refusal names the gates and the reason" "$TL_ERR" "refused by the Silver Bullet Skill gates: FORBIDDEN SKILL"
+assert_not_contains "the skill text is not printed" "$TL_OUT" "BEGIN SKILL"
+assert_eq "no receipt is written for a denied skill" "$before" "$(find "$RECEIPTS" -type f | wc -l | tr -d ' ')"
+tl_run bash -c 'cd "$1" && shift && exec bash "$@"' _ "$PRJ" "$SB" invoke-skill sb:widget-not-forbidden
+assert_not_contains "an allowed skill is not refused by the gates" "$TL_ERR" "Skill gates"
+
 # candidate names: silver-X also tries sb-X; SILVER_SOURCE files count
 mkskill "$FX/skills" sb-widget SKILL.md "WIDGET"
 run invoke-skill silver-widget

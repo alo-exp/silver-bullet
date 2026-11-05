@@ -98,6 +98,11 @@ assert_eq "foreign namespace kept" "host:ns:name" "$(canon host:ns:name)"
 assert_eq "foreign security skill stays foreign" "evil:security" "$(canon evil:security)"
 assert_eq "foreign tdd skill stays foreign" "evil:tdd" "$(canon evil:tdd)"
 assert_eq "trusted plugin namespace unwrapped" "tdd" "$(canon superpowers:tdd)"
+# a dependency plugin supplies only its own names, never a Silver Bullet-owned one
+for n in superpowers:silver-plan engineering:silver-secure multai:silver-quality-gates superpowers:sb:plan design:sb-plan product-management:sb silver-bullet:superpowers:silver-plan; do
+  assert_eq "$n stays foreign" "$n" "$(canon "$n")"
+done
+assert_eq "engineering:code-review keeps its retired name" "code-review" "$(canon engineering:code-review)"
 assert_eq "SILVER_BULLET_SKILL_NAMESPACES extends the trusted list" "tdd" "$(SILVER_BULLET_SKILL_NAMESPACES='superpowers mine' canon mine:tdd)"
 assert_eq "an override replaces the default list" "superpowers:tdd" "$(SILVER_BULLET_SKILL_NAMESPACES='mine' canon superpowers:tdd)"
 assert_eq "only a namespace: no name" "" "$(canon silver-bullet: 2>/dev/null || true)"
