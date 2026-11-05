@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 (`verify_2`, independent of verify_1)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `1412d8c9d18e1e2204c8b5011906fc341fb19b1b7a77df9b708e51e47b175db4` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "allow-private cache fingerprint human writer fleet" --budget 2000` (143 nodes; oriented S1/F6/fingerprint contract)  
 **Apply ref:** S1 / I-16 (`--allow-private` in `stable_hash`)

@@ -8,7 +8,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path("/Users/shafqat/projects/silver-bullet/repo")
+ROOT = Path("/Users/<user>/projects/silver-bullet/repo")
 LOGDIR = ROOT / ".planning/rfl-agent-interaction-modes-17ed9bf7/rung-02-deepseek-v4-pro-max"
 OPENCODE = os.environ.get("OPENCODE_BIN", str(Path.home() / ".opencode/bin/opencode"))
 MSG = (LOGDIR / "prompt.md").read_text(encoding="utf-8")

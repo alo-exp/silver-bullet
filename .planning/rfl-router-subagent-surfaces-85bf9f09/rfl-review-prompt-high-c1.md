@@ -1,8 +1,8 @@
 You are RFL reviewer rung: Grok 4.5 High (model slug cursor-grok-4.5-high).
 
 SCOPE (read only):
-1. Plan: /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md
-2. Dated clarify: /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md
+1. Plan: /Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md
+2. Dated clarify: /Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md
 Do NOT overwrite multi-AI .planning/CLARIFY.md.
 
 Prior Low+Medium applied: I/A/V consistency, baseline/revalidation A-before-V, migration I/A/V, ALP-01/KLW-01, authorizer watermark, ordinary SM vs Iterate, A-loop min boundaries, six ingress states, blocker catalog, K/L fail-closed, five-tool table (plan+clarify synced), Alumnium OOS, advisor hard-block, critical_policy path, Q11 site/help, byte-identical plan mirrors.

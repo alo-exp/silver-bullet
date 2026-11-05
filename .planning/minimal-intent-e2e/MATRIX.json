@@ -12,7 +12,7 @@
   "host": "cursor",
   "orchestrator_mode": "parent",
   "fixture": {
-    "work_dir_default": "/Users/shafqat/projects/enterprise-grade-test-app",
+    "work_dir_default": "/Users/<user>/projects/enterprise-grade-test-app",
     "branch_prefix": "feature/minimal-intent-",
     "vision_template": "fixtures/MI-01-vision.md",
     "prefs_template": "fixtures/MI-01-prefs.json"

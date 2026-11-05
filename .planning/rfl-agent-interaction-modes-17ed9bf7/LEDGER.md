@@ -1,6 +1,6 @@
 # RFL close-out — dual interaction modes (plan/spec)
 
-**Plan (source of truth):** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan (source of truth):** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 **Charter:** `.planning/rfl-agent-interaction-modes-17ed9bf7/CHARTER.md`
 

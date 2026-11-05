@@ -8,7 +8,7 @@ Reusable handoff prompt for a **fresh session on `main`**. Task-detail mode incl
 
 - **Repo:** silver-bullet (`alo-exp/silver-bullet`)
 - **Origin:** https://github.com/alo-exp/silver-bullet.git
-- **Canonical root:** [`/Users/shafqat/projects/silver-bullet/repo`](/Users/shafqat/projects/silver-bullet/repo)
+- **Canonical root:** [`/Users/<user>/projects/silver-bullet/repo`](/Users/<user>/projects/silver-bullet/repo)
 - **Branch:** `main` (stay here). Pushed slice: [`e4d0761c`](https://github.com/alo-exp/silver-bullet/commit/e4d0761c) (Round-41 freeze + APPLY ACCEPT completeness) then [`2bc8157e`](https://github.com/alo-exp/silver-bullet/commit/2bc8157e) (host-agnostic worker wording). CI on `2bc8157e` failed because `test-reload-receipts.sh` assertions passed (30/0) then EXIT-trap `rm` raced a leftover `~/.local/share/lean-ctx` dir. Start the next session from the post-fix SHA on `main` after that cleanup commit is green.
 - **Plugin / tag:** `v0.52.0` (`package.json` 0.52.0). Not a plugin-release slice.
 - **Working tree junk (do not commit):** `.alumnium/logs/`, `${SB_RUNTIME_HOME_ROOT}/...`, MCP logs, secrets.
@@ -65,7 +65,7 @@ Do not treat `pending` as a spec leftover.
 
 ## First 3 Actions for Next Session
 
-1. In `/Users/shafqat/projects/silver-bullet/repo`, stay on **`main`**, `git pull` / confirm HEAD is the post-push SHA. Reconfirm plan freeze `a96045f9…` with `shasum` + `cmp`. Do not switch branches.
+1. In `/Users/<user>/projects/silver-bullet/repo`, stay on **`main`**, `git pull` / confirm HEAD is the post-push SHA. Reconfirm plan freeze `a96045f9…` with `shasum` + `cmp`. Do not switch branches.
 2. `graphify query "router_subagent_surfaces capability-contract wbs-projector /sb APPLY ACCEPT"` then start **implementation** of the pending YAML todos (not another review freeze unless findings force it).
 3. Keep the coverage map as you go: each YAML todo / WS / live-spec MUST → named test/assertion. Run targeted tests; full `bash tests/run-all-tests.sh` before relying on `origin/main` CI.
 

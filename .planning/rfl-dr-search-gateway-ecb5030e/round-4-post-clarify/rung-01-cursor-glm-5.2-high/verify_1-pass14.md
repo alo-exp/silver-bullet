@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 1/2 (`rung_1_verify_1`, post ACCEPT-apply of AC1–AC3 / I-37–I-39)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `32b8f337499b1933a57bf6ad438929c4b2cdbe821f0fb6a77cae337ea2a5407b` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr search gateway plan AC1 AC2 AC3 clear last.json.tmp reddit oauth lock cache_clear_busy"` (304 nodes; oriented gateway / reddit lock / clear)  
 **Apply ref:** AC1–AC3 / I-37–I-39 · **Prior verify:** [verify_1-pass13.md](verify_1-pass13.md) (AB1–AB4 PASS at `39673cb6…`)

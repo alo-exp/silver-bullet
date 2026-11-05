@@ -2,7 +2,7 @@
 
 Independent RFL round-2 **rung-10 verify_2** after panel-purge freeze. Native Cursor Grok 4.5 High (`cursor-grok-4.5-high` / `sb-grok-4-5-high`). No Pi. No Grok 4.6. No Fast. Did **not** copy [verify_1.md](verify_1.md) as evidence (filename glance only). No freeze edits. No YAML execute. No rung 11 invoke. No branch switch. No Policy D. No `--mark-ladder-status completed`.
 
-Repo: `/Users/shafqat/projects/silver-bullet/repo` on `main` (`81560474`). Graphify CLI first; hashlib authoritative.
+Repo: `/Users/<user>/projects/silver-bullet/repo` on `main` (`81560474`). Graphify CLI first; hashlib authoritative.
 
 ## Verdict
 

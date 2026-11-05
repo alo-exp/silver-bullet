@@ -40,35 +40,8 @@ require_valid_json() {
   fi
 }
 
-resolve_release_commit_sha() {
-  local version="$1"
-  local tag_sha head_sha
-  head_sha="$(git -C "$repo_root" rev-parse HEAD)"
-  tag_sha="$(git -C "$repo_root" rev-parse --verify --quiet "v${version}^{commit}" 2>/dev/null || true)"
-  if [[ -n "$tag_sha" && "$head_sha" != "$tag_sha" ]]; then
-    printf '%s\n' "$head_sha"
-    return 0
-  fi
-  if [[ -n "$tag_sha" ]]; then
-    printf '%s\n' "$tag_sha"
-    return 0
-  fi
-  printf '%s\n' "$head_sha"
-}
-
-resolve_marketplace_source_ref() {
-  local version="$1"
-  local tag_sha head_sha
-  head_sha="$(git -C "$repo_root" rev-parse HEAD)"
-  tag_sha="$(git -C "$repo_root" rev-parse --verify --quiet "v${version}^{commit}" 2>/dev/null || true)"
-  if [[ -n "$tag_sha" && "$head_sha" != "$tag_sha" ]]; then
-    printf 'main\n'
-    return 0
-  fi
-  printf 'v%s\n' "$version"
-}
-
-# update_marketplace_plugin_source MANIFEST VERSION REF SHA: pin the silver-bullet entry.
+# update_marketplace_plugin_source MANIFEST VERSION REF SHA: pin the silver-bullet entry to the
+# release tag (ref) and, once the tag exists, to its commit (sha; empty drops it).
 update_marketplace_plugin_source() {
   local manifest="$1"
   local version="$2"
@@ -83,7 +56,7 @@ update_marketplace_plugin_source() {
   agent_plugins_json_rewrite "$manifest" --arg v "$version" --arg ref "$source_ref" --arg sha "$release_sha" --arg path "plugins/silver-bullet" '
     (.plugins[] | select(.name=="silver-bullet") | .version) = $v
     | (.plugins[] | select(.name=="silver-bullet") | .source.ref) = $ref
-    | (.plugins[] | select(.name=="silver-bullet") | .source.sha) = $sha
+    | (.plugins[] | select(.name=="silver-bullet") | .source) |= (if $sha == "" then del(.sha) else .sha = $sha end)
     | (.plugins[] | select(.name=="silver-bullet") | .source.path) = $path
   '
 }
@@ -113,7 +86,7 @@ market_v=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$mark
 
 if [[ "$AGENT_PLUGINS_PUBLISH" != "1" ]]; then
   update_marketplace_plugin_source "$marketplace_json" "$plugin_v" \
-    "$(resolve_marketplace_source_ref "$plugin_v")" "$(resolve_release_commit_sha "$plugin_v")"
+    "v${plugin_v}" "$(agent_plugins_tag_commit_if_any "$repo_root" "$plugin_v")"
   if [[ "$plugin_v" == "$market_v" ]]; then
     echo "✓ Versions already in sync: $plugin_v"
   else

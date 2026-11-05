@@ -4,8 +4,8 @@ Phase: REVIEW-ONLY (rung_01_review)
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not write clarifications.md. Do not AskQuestion. Do not encode product forks.
 
 Scope (do not exceed — FORBIDDEN to touch any other path):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Canonical freeze SHA `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` (621095 bytes). Independently re-hash. Both copies must be treated as one freeze.
 

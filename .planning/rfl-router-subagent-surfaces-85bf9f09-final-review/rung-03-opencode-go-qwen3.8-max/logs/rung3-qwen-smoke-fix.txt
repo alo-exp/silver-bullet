@@ -1,7 +1,7 @@
 START 2026-08-26T17:44:46Z
 PI_PROVIDER=omniroute PI_MODEL=opencode-go/qwen3.8-max
 phase=rung_03_review smoke-after-thinking-off-idle-kill
-expect-file=/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-03-opencode-go-qwen3.8-max/review.md idle=120 hard=600
+expect-file=/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-03-opencode-go-qwen3.8-max/review.md idle=120 hard=600
 401: {"message":"[opencode-go/qwen3.8-max] [401]: Insufficient balance. Manage your billing here: https://opencode.ai/workspace/wrk_01KS4QW3V1S4F7Q545S66WNAXV/billing (reset after 59m 57s)"}
 [agent-pi] fail-fast: skipping --continue after first-run EXIT 1
 [agent-pi] first-hop billing: 401: {"message":"[opencode-go/qwen3.8-max] [401]: Insufficient balance. Manage your billing here: https://opencode.ai/workspace/wrk_01KS4QW3V1S4F7Q545S66WNAXV/billing (reset after 59m 57s)"}
@@ -28,8 +28,8 @@ Phase: REVIEW-ONLY (rung_03_review)
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not write clarifications.md. Do not AskQuestion. Do not encode product forks.
 
 Scope (do not exceed — FORBIDDEN to touch any other path):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Independently re-hash both copies. Disk wins.
 - Charter start SHA: `07b986094e983d39fe3c7d2f1ac215ae730cbd28ccf3957655f5ec4c53d3280a` / 620985 bytes (historical; do not treat as current)
@@ -49,7 +49,7 @@ Tasks:
 1. Audit the freeze against the charter. Full independent re-read.
 2. Report raw findings with line references and severity (HIGH / MED / LOW / NIT).
 3. You MUST **write** the report to `./review.md` in the current working directory (this rung folder). Do **not** reply with a plan-only sentence. The official deliverable is a written file at:
-   `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-03-opencode-go-qwen3.8-max/review.md`
+   `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-03-opencode-go-qwen3.8-max/review.md`
 4. Do NOT classify ACCEPT/REJECT, file issues, or apply fixes.
 5. MUST NOT Edit/Write either freeze copy.
 

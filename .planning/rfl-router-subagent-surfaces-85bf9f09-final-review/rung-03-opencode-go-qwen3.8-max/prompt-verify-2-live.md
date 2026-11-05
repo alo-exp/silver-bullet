@@ -4,8 +4,8 @@ Phase: VERIFY-ONLY pass 2/2 (`rung_03_verify_2`)
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not AskQuestion. Do not encode product forks. Do not combine with verify_1.
 
 Scope (do not exceed — FORBIDDEN to Edit/Write either freeze copy):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Independently re-hash both copies. Disk wins.
 Locked expected SHA: `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` / 621095 bytes.
@@ -13,7 +13,7 @@ Prior review (stale freeze `0e8510e0…` / 621086): `rung-03-opencode-go-qwen3.8
 Prior verify_1: `rung-03-opencode-go-qwen3.8-max/verify-1.md` — CLEAN / VERIFY_PASS, Grok 4.6 High substitute after Pi 401×2. Do **not** copy its verdict blindly; this is an independent second verify pass.
 
 You ARE allowed — and REQUIRED — to Write the verify report to this ABSOLUTE path (must exist when you finish):
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-03-opencode-go-qwen3.8-max/verify-2.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-03-opencode-go-qwen3.8-max/verify-2.md`
 
 Charter (same as review):
 - Completeness/consistency; closed locks intact (KEEP REJECT, Q1–Q3, Part A then Part B, no live `/sb:multi-ai-task`, no `sb:agent-wrap` even as alias, FAST not a Job / not a legal compose route, OmniRoute routing-only).

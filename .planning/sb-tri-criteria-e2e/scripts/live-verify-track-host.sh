@@ -6,8 +6,8 @@ set -euo pipefail
 HOST="${1:-}"
 TRACK="${2:-}"
 RUN_DIR="${3:-}"
-WORK_DIR="${SB_TRI_CRITERIA_WORK_DIR:-/Users/shafqat/projects/enterprise-grade-test-app}"
-SB_ROOT="${SB_ROOT:-/Users/shafqat/projects/silver-bullet/repo}"
+WORK_DIR="${SB_TRI_CRITERIA_WORK_DIR:-/Users/<user>/projects/enterprise-grade-test-app}"
+SB_ROOT="${SB_ROOT:-/Users/<user>/projects/silver-bullet/repo}"
 MIN_COMPOSER_SPACING_SEC="${SB_LIVE_MIN_COMPOSER_SPACING_SEC:-5}"
 
 usage() {

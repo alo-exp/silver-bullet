@@ -1,5 +1,20 @@
 # Changelog
 
+## [Unreleased]
+
+- Security: the Claude marketplace entry is pinned to the release tag (`ref`, plus `sha` once tagged); the Codex entry is pinned by `ref` only; the alignment test enforces it.
+- Privacy: working-tree scrub of personal machine paths, a quota plan, a machine setup report and AI CLI transcripts (history not rewritten); the new `personal-data` invariant keeps them out.
+- Skills: the graphify-managed `.agents/skills/graphify` and `.claude/skills/graphify` are hash-locked in `skills-lock.json`.
+- Payload: the public install path is `alo-labs/agent-plugins` (`plugins/silver-bullet`, ref and sha bumped per release); `.gitattributes` export-ignores `research/`, `.planning/` transcripts, `graphify-out/graph.json`, `.agentmemory/` and `*.bak`.
+- Cursor: `skills/` and `templates/workflows/` moved from `.cursorignore` to `.cursorindexingignore`.
+- Privacy invariant: also catches `Users-<n>-`, `_Users_<n>_`, `-home-<n>-`, `/var/home`, JSON-escaped and URL-encoded paths, PDFs and personal `.local` emails; allowlists CI and container accounts, `@2x.png` assets, `git@host:` remotes and role mailboxes.
+- Workflow hardening: block scalars under `- key: |` no longer hide sibling keys; more flow-style variants are rejected; `hook-references` is an allowlist.
+- Workflow hardening: a `${{ }}` in a commented line of a run or github-script body is still reported; anchors, tags, aliases and complex keys fail closed. Personal-data: more flattened/escaped forms, WSL paths, cloud/CI accounts, placeholder and bot emails, and an audited allowlist file (`.github/personal-data-allow.txt`). Run captures (including `*.out`) are removed and their ignore patterns scoped to `.planning/`, `research/` and `docs/`.
+- Workflow hardening now parses the workflows with PyYAML (anchors, merge keys, flow style and escapes resolved; fails closed without PyYAML or on a parse error). Personal-data adds a hashed maintainer-identity token list and drops the known-directory regex.
+- Personal-data allowlist entries are now `file <glob> <context hash>` (one quoted string or line, never a whole file; a name in a home-directory-shaped path is always reported); identity tokens are matched after decoding JSON/URL/HTML escapes, zero-width characters and Unicode compatibility forms. Workflow hardening also checks more action code inputs (`inlineScript`, `*-command`, list values, container options), `pull_request_target`/`workflow_run` head checkouts and case-insensitive `actions/checkout`; the validate job installs PyYAML under `actions/setup-python`.
+
+---
+
 ## [0.53.0] — 2026-09-07
 
 Minor release: public Silver Bullet namespace migration to `/sb`, removal of the historical `source-command-` command artefact, and cross-host package mirror alignment.
@@ -1579,10 +1594,6 @@ Launch-hardening release. Remediates all blocker/high/medium findings from the p
 ### Chores
 
 - `chore(release): prepare v0.37.1`
-
----
-
-## [Unreleased]
 
 ---
 

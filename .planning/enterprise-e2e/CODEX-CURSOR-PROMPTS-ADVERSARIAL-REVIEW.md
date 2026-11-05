@@ -410,5 +410,5 @@ SB_E2E_RCS_VALIDATION_OVERLAY=pass RTK_DISABLED=1 bash scripts/enterprise-e2e-rc
 
 - No automated harness script for cross-round comparison
 - [ENTERPRISE-E2E-LIVE-TEST.md](../../docs/ENTERPRISE-E2E-LIVE-TEST.md) is Claude-centric (no Codex/Cursor host tracks)
-- [enterprise_e2e_iteration_30417faf.plan.md](file:///Users/shafqat/.cursor/plans/enterprise_e2e_iteration_30417faf.plan.md) references Claude-only Round 1/2 todos
+- [enterprise_e2e_iteration_30417faf.plan.md](file:///Users/<user>/.cursor/plans/enterprise_e2e_iteration_30417faf.plan.md) references Claude-only Round 1/2 todos
 - Tri-host release still requires **three** host pairs independently (Claude 5+6, Codex 1+2, Cursor 1+2) — no single RELEASE-READINESS rollup doc

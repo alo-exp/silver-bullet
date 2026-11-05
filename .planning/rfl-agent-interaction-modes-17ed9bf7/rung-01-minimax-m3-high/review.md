@@ -1,6 +1,6 @@
 # Rung 1 review — MiniMax M3 High style (OpenCode)
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 **Method:** `/silver:agent-opencode` via `scripts/agent-opencode/invoke.sh` first; harness refused non-`mimo-v2.5`. Native fallback `opencode run -m opencode-go/minimax-m3 --variant high --auto` (exit 0) ADDed I-12–I-17.
 

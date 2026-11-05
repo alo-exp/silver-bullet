@@ -3,8 +3,8 @@
 # Avoid bash 3.2 + set -u empty-array EXTRA[@] unbound.
 # work-dir is the rung folder (not work/). Do not export a 120s zero-byte idle override.
 set -u
-RUNG="/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high"
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
+RUNG="/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
 INVOKE="${SB_ROOT}/scripts/agent-pi/invoke.sh"
 REPORT="${RUNG}/review.md"
 LOGDIR="${RUNG}/logs"

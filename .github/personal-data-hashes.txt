@@ -1,0 +1,8 @@
+# SHA-256 of lower-case identity tokens (the maintainer's username and name parts) and their length,
+# one '<sha256> <length>' per line. This only keeps the literal name out of the check's own source:
+# it is obfuscation, not secrecy (a short token falls to brute force, and the name is public in the
+# author fields and CODEOWNERS anyway). Never list a token that is not already public, such as a
+# private second name or handle. Not covered (accepted residuals): base64 or hex encodings, tokens
+# glued to other letters or digits, and homoglyphs outside Unicode compatibility folding.
+b1da41a48bd582c8f87d5e9277bbe90b72b9ebbb80b4e1639181abd436f7c627 7
+2d67c47b92d49f5cd67dee10d44286f100d15bd9519c905f0b03706b2ab3d0af 5

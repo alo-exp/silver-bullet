@@ -18,7 +18,7 @@ Contrast pattern: [ROUND-CURSOR-3-REAL-LEDGER.md](../../.planning/enterprise-e2e
 | SB repo SHA | `4412bb01` (fixture branch lock + Tier B relaunch) |
 | Test-app branch | `enterprise-e2e/round-9-codex` |
 | Test app baseline SHA | `09f8d1a` (pre-`826cb5c` — **no matrix pre-seed**) |
-| Test-app CWD | `/Users/shafqat/projects/enterprise-grade-test-app` |
+| Test-app CWD | `/Users/<user>/projects/enterprise-grade-test-app` |
 | Codex model | gpt-5.4 / gpt-5.5 (ladder); matrix per install pin |
 | Operator | Live subagent session |
 | Start date | 2026-07-02 |
@@ -255,7 +255,7 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 | Row | Root cause | Evidence |
 |-----|------------|----------|
 | **1** | **Frozen PASS** @ `4412bb01` — do not re-run | [.codex-r3-tierb-rescore.log](./.codex-r3-tierb-rescore.log) |
-| **3** | Codex wrote **84B stub** [feature-currency.md](file:///Users/shafqat/projects/enterprise-grade-test-app/.planning/workflows/feature-currency.md) only; **0 api/currency commits** despite `matrix_product_commit_clause` in prompt. Row log **15KB** — session queued prompt then exited before worker implementation. `planning-file-guard` blocked evidence writes (tui-watch). Outcomes: `OUT-PLAN-01` `OUT-TRACE-01` `OUT-CLARIFY-01` `OUT-VLOOP-01` partial → `OUT-WORLD-01` fail. | [.e2e-row3-codex-attempt.log](../../.e2e-row3-codex-attempt.log) |
+| **3** | Codex wrote **84B stub** [feature-currency.md](file:///Users/<user>/projects/enterprise-grade-test-app/.planning/workflows/feature-currency.md) only; **0 api/currency commits** despite `matrix_product_commit_clause` in prompt. Row log **15KB** — session queued prompt then exited before worker implementation. `planning-file-guard` blocked evidence writes (tui-watch). Outcomes: `OUT-PLAN-01` `OUT-TRACE-01` `OUT-CLARIFY-01` `OUT-VLOOP-01` partial → `OUT-WORLD-01` fail. | [.e2e-row3-codex-attempt.log](../../.e2e-row3-codex-attempt.log) |
 | **6** | **Product commit** `b22b730` README landed. Outcome FAIL: `OUT-KM-01` partial — `graphify-out/graph.json` absent on fixture; `enabled_by_user: null` for graphify/agentmemory (`SB_E2E_SESSION0_SKIP=1`). `OUT-WORLD-01` fail (composite). | [.e2e-row6-codex-attempt.log](../../.e2e-row6-codex-attempt.log) |
 
 **Harness fixes (force3 relaunch):**

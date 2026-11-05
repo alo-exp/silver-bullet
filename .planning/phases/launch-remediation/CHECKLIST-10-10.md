@@ -152,7 +152,7 @@
 | P8.2 | 2+ session simulation | Session 1 spec/plan; session 2 execute — state persists | ✅ |
 | P8.3 | DOGFOOD append | Results appended to `DOGFOOD-todo-app.md` | ✅ |
 
-**Wave verification:** Manual + hook smoke on `/Users/shafqat/projects/todo-app`
+**Wave verification:** Manual + hook smoke on `/Users/<user>/projects/todo-app`
 
 ---
 

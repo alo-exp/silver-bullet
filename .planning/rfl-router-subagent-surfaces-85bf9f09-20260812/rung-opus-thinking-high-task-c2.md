@@ -18,8 +18,8 @@
 
 ```
 cmp_exit:0
-ea243a96f7aeea04c48898b9c4f31b2a55b4c3e795b4099f6070c19a03bb6e92  /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md
-ea243a96f7aeea04c48898b9c4f31b2a55b4c3e795b4099f6070c19a03bb6e92  /Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md
+ea243a96f7aeea04c48898b9c4f31b2a55b4c3e795b4099f6070c19a03bb6e92  /Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md
+ea243a96f7aeea04c48898b9c4f31b2a55b4c3e795b4099f6070c19a03bb6e92  /Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md
 ```
 
 `cmp` exit 0 and identical SHA-256 on both sides (127382 bytes). **No mirror drift** — parity gate passes.
