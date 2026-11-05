@@ -169,4 +169,36 @@ run_stop
 assert_eq "R5-06: harness env + valid marker still exempts (E2E routing row)" "0:" "$TL_STATUS:$TL_OUT"
 unset SB_E2E_ENTERPRISE_MATRIX
 
+# ---- release log unwritable: the release still happens; trivial file named trivial elsewhere ----------------
+reset
+printf 'x\n' >"$EC_PROJ/dirty.txt"
+printf 'main\n/some/other/worktree\n' >"$SD/branch"
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\n' >"$SD/state"
+mkdir "$SD/stop-loop-release.log"
+run_stop '{"hook_event_name":"Stop","stop_hook_active":true}'
+assert_contains "R2-10: release survives an unwritable audit log" "$TL_OUT" "systemMessage"
+rmdir "$SD/stop-loop-release.log"
+reset
+printf 'x\n' >"$EC_PROJ/dirty.txt"
+mkdir -p "$SD/other"
+ec_cfg "{\"config_version\":\"0.40.0\",\"sb_initiated\":true,\"state\":{\"trivial_file\":\"$SD/other/trivial\"},\"skills\":{}}"
+: >"$SD/other/trivial"
+run_stop
+assert_eq "R3-02: a state-scoped file named trivial is honoured" "0:" "$TL_STATUS:$TL_OUT"
+# trivial-file-clear leaves the files-written trace even when it cannot be refreshed
+mkdir "$SD/files-written"
+tl_run_stdin '{}' bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_REPO_ROOT/hooks/trivial-file-clear.sh"
+assert_eq "R2-36: an unwritable marker is tolerated" 0 "$TL_STATUS"
+rmdir "$SD/files-written"
+tl_run_stdin '{}' bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_REPO_ROOT/hooks/trivial-file-clear.sh"
+assert_file_exists "R2-36: Write/Edit leaves the files-written marker" "$SD/files-written"
+reset
+
+# ---- R3-02 hand-off helpers (shared with the delivery gates) ------------------------------------------
+source "$TL_REPO_ROOT/hooks/lib/trivial-bypass.sh"
+assert_eq "state config path: ~ expands" "$HOME/x/trivial" "$(sb_expand_state_config_path '~/x/trivial')"
+assert_eq "state config path: \${SB_RUNTIME_HOME_ROOT} expands" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/trivial" "$(sb_expand_state_config_path '${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial')"
+assert_eq "state config path: \$SB_RUNTIME_HOME_ROOT expands" "$SB_RUNTIME_HOME_ROOT/t" "$(sb_expand_state_config_path '$SB_RUNTIME_HOME_ROOT/t')"
+assert_eq "state config path: no root leaves it alone" '${SB_RUNTIME_HOME_ROOT}/t' "$(SB_RUNTIME_HOME_ROOT= sb_expand_state_config_path '${SB_RUNTIME_HOME_ROOT}/t')"
+
 tl_results

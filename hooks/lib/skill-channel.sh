@@ -1,4 +1,5 @@
 # shellcheck shell=bash
+# shellcheck disable=SC2034  # SB_SKILL_CHANNEL_* are outputs read by the sourcing hooks
 # Skill-invocation channels for the Skill-gating hooks (forbidden-skill-check, uat-gate).
 #
 # Claude invokes a skill through the Skill tool (tool_input.skill). Codex has no Skill tool: its
@@ -22,7 +23,7 @@ fi
 
 sb_skill_channel_load() {
   local payload="${1:-}"
-  SB_SKILL_CHANNEL_NAMES="$(printf '%s' "$payload" | jq -r '.tool_input.skill // .tool_input.skillName // .tool_input.name // empty' 2>/dev/null || true)"
+  SB_SKILL_CHANNEL_NAMES="$(printf '%s' "$payload" | jq -r '.tool_input.skill // .tool_input.skillName // .tool_input.name // empty' 2>/dev/null)"
   SB_SKILL_CHANNEL_STATUS="ok"
   [[ -z "$SB_SKILL_CHANNEL_NAMES" ]] || return 0
   sb_tool_input_load "$payload"
@@ -39,5 +40,5 @@ sb_skill_channel_load() {
             and length > 1 and (.[1] | base) == "silver-bullet" then .[2:]
        else null end
      | select(. != null and .[0] == "invoke-skill" and (.[1] | type) == "string")
-     | .[1]] | .[]' 2>/dev/null || true)"
+     | .[1]] | .[]' 2>/dev/null)"
 }

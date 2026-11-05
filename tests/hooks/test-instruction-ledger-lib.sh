@@ -238,7 +238,7 @@ sb_instruction_ledger_seed_from_prompt "$(cat "$TL_TMP/bullets")"
 assert_eq "ids: three distinct ids" 3 "$(jq '[.intents[0].children[].id] | unique | length' "$LF")"
 login_id="$(jq -r '.intents[0].children[0].id' "$LF")"
 assert_eq "ids: resolving one leaves the others pending" 0 "$(rc sb_instruction_ledger_resolve_item "$login_id" "done" "only the login form")"
-assert_eq "ids: the login item is done" done "$(jq -r '.intents[0].children[0].status' "$LF")"
+assert_eq "ids: the login item is done" "done" "$(jq -r '.intents[0].children[0].status' "$LF")"
 assert_eq "ids: the logout item is still pending" pending "$(jq -r '.intents[0].children[1].status' "$LF")"
 # a legacy ledger with colliding ids: the shared id is ambiguous, an exact label still resolves one leaf
 jq '.intents[0].children[1].id = .intents[0].children[0].id | .intents[0].children[0].status = "pending"' "$LF" >"$LF.t" && mv "$LF.t" "$LF"

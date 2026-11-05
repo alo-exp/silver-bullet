@@ -37,7 +37,7 @@ printf '%s\n| 1 | a | PASS |\n| 2 | b | NOT-RUN |\n' "$HDR" >"$P/.planning/UAT.m
 dg_run "$P" "$H" "$(skill sb:release)"
 assert_eq "NOT-RUN rows deny" "deny" "$(dec)"
 assert_contains "NOT-RUN count reported" "$(reason)" "1 criterion/criteria marked NOT-RUN"
-assert_contains "NOT-RUN mentions audited waiver" "$(reason)" "SB OVERRIDE"
+assert_not_contains "NOT-RUN message promises no override it never reads" "$(reason)" "SB OVERRIDE"
 
 printf '| Total | PASS | FAIL | NOT-RUN |\n| 3 | 3 | 0 | 0 |\n%s\n| 1 | a | PASS |\n' "$HDR" >"$P/.planning/UAT.md"
 dg_run "$P" "$H" "$(skill sb:release)"

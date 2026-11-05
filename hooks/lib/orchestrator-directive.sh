@@ -305,13 +305,13 @@ sb_orchestrator_log_override() {
   [[ -n "$prov" ]] || prov='{}'
   [[ -n "$repo_root" && -d "$repo_root" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
-  local logfile now prev line
+  local logfile now prev line last
   logfile="$(sb_orchestrator_override_log "$repo_root")"
   [[ ! -L "$repo_root/.planning" && ! -L "$logfile" ]] || return 1
   mkdir -p "$repo_root/.planning" 2>/dev/null || return 1
   prev="genesis"
-  if [[ -s "$logfile" ]]; then
-    prev="$(tail -n 1 "$logfile" 2>/dev/null | sb_orchestrator_sha256)" || return 1
+  if last="$(tail -n 1 "$logfile" 2>/dev/null)" && [[ -n "$last" ]]; then
+    prev="$(printf '%s\n' "$last" | sb_orchestrator_sha256)" || return 1
   fi
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   line="$(jq -nc \
@@ -322,9 +322,13 @@ sb_orchestrator_log_override() {
     --argjson prov "$prov" \
     '{at:$at, kind:"directive-override", reason:$reason, expected_skill:$skill, prev:$prev} + $prov' 2>/dev/null)" || return 1
   printf '%s\n' "$line" >>"$logfile" 2>/dev/null || return 1
-  if [[ -n "${SB_RUNTIME_STATE_DIR:-}" && -d "$SB_RUNTIME_STATE_DIR" && ! -L "$SB_RUNTIME_STATE_DIR/orchestrator-override-log.jsonl" ]]; then
-    printf '%s\n' "$line" >>"$SB_RUNTIME_STATE_DIR/orchestrator-override-log.jsonl" 2>/dev/null || true
-  fi
+  sb_orchestrator_mirror_override "$line"
+}
+
+# Advisory copy of an audit line in the runtime state dir. Always succeeds.
+sb_orchestrator_mirror_override() {
+  local mirror="${SB_RUNTIME_STATE_DIR:-}/orchestrator-override-log.jsonl"
+  [[ -d "${SB_RUNTIME_STATE_DIR:-}" && ! -L "$mirror" ]] && printf '%s\n' "$1" >>"$mirror" 2>/dev/null
   return 0
 }
 
@@ -357,13 +361,14 @@ sb_orchestrator_prompt_has_override() {
 #     no longer holds the session. It does NOT lift parent-mode tool restrictions or other
 #     PreToolUse gates (docs/ORCHESTRATOR.md).
 # Status 0 honoured; 1 not an override; 2 override refused (SB_OVERRIDE_REFUSAL says why).
+# shellcheck disable=SC2034  # SB_OVERRIDE_REFUSAL is an output read by the caller
 sb_orchestrator_override_apply() {
   local input="${1:-}" prompt="${2:-}" repo_root="${3:-}" reason sid transcript host prov phash
   SB_OVERRIDE_REFUSAL=""
   reason="$(sb_orchestrator_extract_override_reason "$prompt")"
   [[ -n "$reason" ]] || return 1
-  sid="$(printf '%s' "$input" | jq -r '.session_id // ""' 2>/dev/null || true)"
-  transcript="$(printf '%s' "$input" | jq -r '.transcript_path // ""' 2>/dev/null || true)"
+  sid="$(printf '%s' "$input" | jq -r '.session_id // ""' 2>/dev/null)"
+  transcript="$(printf '%s' "$input" | jq -r '.transcript_path // ""' 2>/dev/null)"
   if [[ -z "$sid" ]]; then
     SB_OVERRIDE_REFUSAL="the prompt payload has no host session_id, so it cannot be verified as your own message"
     return 2

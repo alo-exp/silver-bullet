@@ -47,9 +47,17 @@ emit_block() {
 }
 
 # Which skills does this call invoke? The Skill tool, or the Codex invoke-skill adapter (R2-17).
-# shellcheck source=lib/skill-channel.sh
-source "$_lib_dir/skill-channel.sh"
-sb_skill_channel_load "$input"
+# Unparsable input is an unexpected error (the trap reports it).
+printf '%s' "$input" | jq -e . >/dev/null
+if [[ -f "$_lib_dir/skill-channel.sh" ]]; then
+  # shellcheck source=lib/skill-channel.sh
+  source "$_lib_dir/skill-channel.sh"
+  sb_skill_channel_load "$input"
+else
+  # Without the channel lib the Skill tool's own field is still gated.
+  SB_SKILL_CHANNEL_NAMES="$(printf '%s' "$input" | jq -r '.tool_input.skill // .tool_input.skillName // ""')"
+  SB_SKILL_CHANNEL_STATUS="ok"
+fi
 if [[ "$SB_SKILL_CHANNEL_STATUS" == "helper_unavailable" ]]; then
   emit_block "$(sb_shell_analysis_helper_message)"
   exit 0
@@ -63,7 +71,7 @@ while IFS= read -r raw_skill; do
   [[ -n "$raw_skill" ]] || continue
   canonical="$raw_skill"
   if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
-    canonical="$(sb_skill_canonical_name "$raw_skill" || true)"
+    canonical="$(sb_skill_canonical_name "$raw_skill")"
   fi
   canonical="$(printf '%s' "$canonical" | tr '[:upper:]' '[:lower:]')"
   [[ "$canonical" == "silver-release" ]] && is_release=true
@@ -73,7 +81,9 @@ done <<< "$SB_SKILL_CHANNEL_NAMES"
 # Paths come from the project root, not the hook's working directory (R2-25).
 uat_root="$PWD"
 if declare -f sb_find_project_root_walk_only >/dev/null 2>&1; then
-  uat_root="$(sb_find_project_root_walk_only 2>/dev/null || printf '%s' "$PWD")"
+  if found_root="$(sb_find_project_root_walk_only 2>/dev/null)"; then
+    uat_root="$found_root"
+  fi
 fi
 UAT="$uat_root/.planning/UAT.md"
 SPEC="$uat_root/.planning/SPEC.md"

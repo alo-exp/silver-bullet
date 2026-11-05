@@ -270,6 +270,15 @@ fi
   fi
 fi
 
+# stat mtime helper (BSD and GNU).
+sb_stop_mtime() {
+  if [[ "$(uname)" == "Darwin" ]]; then
+    stat -f %m "$1" 2>/dev/null || echo 0
+  else
+    stat -c %Y "$1" 2>/dev/null || echo 0
+  fi
+}
+
 # L-04: block Stop when autonomous stall flag is set (100+ tool calls, no skill progress).
 stall_block_file="${SB_STATE_DIR}/stall-block"
 if [[ -f "$stall_block_file" && ! -L "$stall_block_file" ]]; then
@@ -279,23 +288,14 @@ if [[ -f "$stall_block_file" && ! -L "$stall_block_file" ]]; then
   elif [[ -f "${SB_STATE_DIR}/session-start-time" ]]; then
     session_start_epoch=$(cat "${SB_STATE_DIR}/session-start-time" 2>/dev/null || true)
   fi
-  stall_mtime=0
-  if [[ "$(uname)" == "Darwin" ]]; then
-    stall_mtime=$(stat -f %m "$stall_block_file" 2>/dev/null || echo 0)
-  else
-    stall_mtime=$(stat -c %Y "$stall_block_file" 2>/dev/null || echo 0)
-  fi
+  stall_mtime=$(sb_stop_mtime "$stall_block_file")
   # R2-09: a skill recorded after the stall flag was written is the progress the flag asks for.
   state_mtime=0
   if [[ -f "$state_file" && ! -L "$state_file" ]]; then
-    if [[ "$(uname)" == "Darwin" ]]; then
-      state_mtime=$(stat -f %m "$state_file" 2>/dev/null || echo 0)
-    else
-      state_mtime=$(stat -c %Y "$state_file" 2>/dev/null || echo 0)
-    fi
+    state_mtime=$(sb_stop_mtime "$state_file")
   fi
   if (( state_mtime > stall_mtime )); then
-    rm -f -- "$stall_block_file" 2>/dev/null || true
+    rm -f -- "$stall_block_file"
   elif [[ -z "$session_start_epoch" || ! "$session_start_epoch" =~ ^[0-9]+$ || "$stall_mtime" -ge "$session_start_epoch" ]]; then
     stall_count=$(cat "$stall_block_file" 2>/dev/null || echo "100")
     stall_reason="Autonomous stall detected: ${stall_count} tool calls without workflow progress. Invoke the next SB skill before declaring done."
@@ -443,15 +443,6 @@ fi
 state_contents=""
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
 
-# stat mtime helper (BSD and GNU).
-sb_stop_mtime() {
-  if [[ "$(uname)" == "Darwin" ]]; then
-    stat -f %m "$1" 2>/dev/null || echo 0
-  else
-    stat -c %Y "$1" 2>/dev/null || echo 0
-  fi
-}
-
 # R2-36: true when this session's agent wrote a file (trivial-file-clear.sh leaves the
 # `files-written` marker after every Write/Edit) AND a still-dirty path is project source.
 # A chat-only session over the user's own pending edits stays allowed.
@@ -459,22 +450,21 @@ sb_stop_agent_wrote_source() {
   local marker="${SB_STATE_DIR}/files-written" epoch="" src_pattern src_exclude line path
   [[ -f "$marker" && ! -L "$marker" && -n "$sb_dirty_filtered" ]] || return 1
   if [[ -n "${SILVER_BULLET_SESSION_START_FILE:-}" && -f "${SILVER_BULLET_SESSION_START_FILE}" ]]; then
-    epoch=$(cat "${SILVER_BULLET_SESSION_START_FILE}" 2>/dev/null || true)
+    epoch=$(cat "${SILVER_BULLET_SESSION_START_FILE}" 2>/dev/null)
   elif [[ -f "${SB_STATE_DIR}/session-start-time" ]]; then
-    epoch=$(cat "${SB_STATE_DIR}/session-start-time" 2>/dev/null || true)
+    epoch=$(cat "${SB_STATE_DIR}/session-start-time" 2>/dev/null)
   fi
   [[ "$epoch" =~ ^[0-9]+$ ]] || return 1
   (( $(sb_stop_mtime "$marker") >= epoch )) || return 1
-  src_pattern=$(jq -r '.project.src_pattern // "/src/"' "$config_file" 2>/dev/null || echo "/src/")
+  src_pattern=$(jq -r '.project.src_pattern // "/src/"' "$config_file" 2>/dev/null)
   if ! grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$' <<<"$src_pattern" || grep -qE '^\.\*$|^\.\+$|^/$|^$' <<<"$src_pattern"; then
     src_pattern="/src/"
   fi
-  src_exclude=$(jq -r '.project.src_exclude_pattern // ""' "$config_file" 2>/dev/null || true)
+  src_exclude=$(jq -r '.project.src_exclude_pattern // ""' "$config_file" 2>/dev/null)
   grep -qE '^[a-zA-Z0-9/_.|()\\-]*$' <<<"$src_exclude" || src_exclude=""
   while IFS= read -r line; do
     path="/${line:3}"
     path="${path##* -> }"
-    [[ "$path" == /* ]] || path="/$path"
     grep -qE "$src_pattern" <<<"$path" || continue
     [[ -n "$src_exclude" ]] && grep -qE "$src_exclude" <<<"$path" && continue
     return 0

@@ -208,6 +208,14 @@ notdir="$TL_TMP/regular-file"
 : >"$notdir"
 SB_RUNTIME_STATE_DIR="$notdir/state" tl_run_hook "$HOOK" "$(ev PostToolUse Task)"
 assert_contains "uncreatable state dir: reminder still emitted" "$(ctx)" "completion-audit"
+# Unreadable state file at Stop: the audit line is not seen.
+reset
+printf '{"spawned_at":"x"}\n' >"$SPAWNS"
+printf 'silver-completion-audit\n' >"$STATE_REC"
+orch_stub_failing cat '.silver-bullet/state'
+tl_run_hook "$HOOK" "$(ev Stop)"
+orch_unstub cat
+assert_eq "unreadable state file: audit not seen, Stop blocked" block "$(decision)"
 # jq failing on individual extractions.
 reset
 orch_stub_failing jq '.tool_name'
