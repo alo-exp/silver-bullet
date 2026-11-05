@@ -2,7 +2,8 @@
 # Per-prompt outcome checklist — session state under ${SB_RUNTIME_STATE_DIR}/outcomes-session.json
 
 sb_outcomes_session_file() {
-  printf '%s/outcomes-session.json' "${SB_RUNTIME_STATE_DIR:-/tmp}"
+  [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 1
+  printf '%s/outcomes-session.json' "$SB_RUNTIME_STATE_DIR"
 }
 
 # Atomically apply a jq filter to a JSON file (unique mktemp; no fixed .tmp path).

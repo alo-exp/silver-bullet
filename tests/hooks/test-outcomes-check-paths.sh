@@ -12,7 +12,7 @@ mkdir -p "$P/sub" "$P/.planning" "$TL_TMP/outside"
 ST="$SB_RUNTIME_STATE_DIR"
 OF="$ST/outcomes-session.json"
 STATE="$ST/state"
-ups() { jq -cn --arg p "$1" '{hook_event_name:"UserPromptSubmit",prompt:$p}'; }
+ups() { jq -cn --arg p "$1" '{hook_event_name:"UserPromptSubmit",session_id:"sess-1",prompt:$p}'; }
 ev() { jq -cn --arg e "$1" '{hook_event_name:$e}'; }
 ctx() { jq -r '.hookSpecificOutput.additionalContext // ""' <<<"$TL_OUT"; }
 dec() { [[ -n "$TL_OUT" ]] && jq -r '.decision // "none"' <<<"$TL_OUT" 2>/dev/null || echo none; }
@@ -52,7 +52,7 @@ dg_run "$P" "$S2/hooks/outcomes-check.sh" "$(ups "build the thing")" SILVER_BULL
 assert_contains "no orchestrator libs: outcomes still seeded" "$(ctx)" "Outstanding"
 S3="$TL_TMP/s3"; dg_stage_hooks "$S3" orchestrator-parent.sh
 clean
-dg_run "$P" "$S3/hooks/outcomes-check.sh" "$(ups "SB OVERRIDE: because")" SILVER_BULLET_STATE_FILE="$STATE"
+dg_run "$P" "$S3/hooks/outcomes-check.sh" "$(ups "SB OVERRIDE: because it was needed")" SILVER_BULLET_STATE_FILE="$STATE"
 assert_file_exists "no parent lib: override still logged" "$P/.planning/orchestrator-override-log.jsonl"
 S4="$TL_TMP/s4"; dg_stage_hooks "$S4" sb-project-gate.sh
 clean

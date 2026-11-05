@@ -132,15 +132,15 @@ assert_eq "no pending queue" kept "$(interrupt "what is the status?")"
 mkpending
 assert_eq "follow-up answers keep the queue" kept "$(interrupt "yes")"
 assert_file_exists "queue survives a follow-up" "$STATE"
-assert_eq "informational query clears" cleared "$(interrupt "what are the remaining deliverables?")"
-assert_file_absent "queue gone after the informational query" "$STATE"
-mkpending
+assert_eq "informational query keeps an active queue (R4-08)" kept "$(interrupt "what are the remaining deliverables?")"
+assert_file_exists "queue survives the status question" "$STATE"
 assert_eq "bare work request clears" cleared "$(interrupt "please build the login page")"
+assert_contains "the clear is traceable" "$(cat "$SB_RUNTIME_STATE_DIR/queue-clear.log")" "please build the login page"
 mkpending
 assert_eq "other prompts keep the queue" kept "$(interrupt "hmm")"
 mkpending
-assert_eq "without classifiers nothing clears" kept "$( unset -f sb_prompt_is_orchestrator_followup sb_prompt_is_informational_query sb_prompt_is_bare_work_request; interrupt "what are the remaining deliverables?")"
-assert_eq "without the informational classifier: bare work still clears" cleared "$( unset -f sb_prompt_is_informational_query; interrupt "please build the login page")"
+assert_eq "without classifiers nothing clears" kept "$( unset -f sb_prompt_is_orchestrator_followup sb_prompt_is_bare_work_request; interrupt "please build the login page")"
+assert_eq "without the followup classifier: bare work still clears" cleared "$( unset -f sb_prompt_is_orchestrator_followup; interrupt "please build the login page")"
 
 echo "=== composer chain ==="
 rm -f "$STATE" "$DIRF" "$EVENTS"

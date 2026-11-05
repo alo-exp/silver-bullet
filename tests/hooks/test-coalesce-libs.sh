@@ -85,6 +85,9 @@ assert_eq "first reason wins" "first reason" "$(cat "$F")"
 if sb_stop_coalesce_suppress_secondary_block; then tl_pass "secondary blocks suppressed"; else tl_fail "secondary blocks suppressed"; fi
 sb_stop_coalesce_reset
 assert_file_absent "reset clears the record" "$F"
-assert_eq "default dir without a state dir" "/tmp/stop-coalesce-block" "$(env -u SB_RUNTIME_STATE_DIR bash -c 'source "$1"; sb_stop_coalesce_file' _ "$TL_REPO_ROOT/hooks/lib/stop-coalesce.sh")"
+assert_eq "no /tmp fallback without a state dir (R2-22)" "1:" "$(env -u SB_RUNTIME_STATE_DIR bash -c 'source "$1"; out="$(sb_stop_coalesce_file)"; echo "$?:$out"' _ "$TL_REPO_ROOT/hooks/lib/stop-coalesce.sh")"
+for f in hooks/lib/outcomes-gate.sh:sb_outcomes_session_file hooks/lib/instruction-ledger.sh:sb_instruction_ledger_file hooks/lib/ups-coalesce.sh:sb_ups_coalesce_turn_file hooks/lib/ups-coalesce.sh:sb_ups_coalesce_seen_file; do
+  assert_eq "no /tmp fallback: ${f#*:}" "1:" "$(env -u SB_RUNTIME_STATE_DIR bash -c 'source "$1"; out="$(${2})"; echo "$?:$out"' _ "$TL_REPO_ROOT/${f%%:*}" "${f#*:}")"
+done
 
 tl_results

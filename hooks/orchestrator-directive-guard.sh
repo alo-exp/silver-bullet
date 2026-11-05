@@ -34,10 +34,6 @@ sb_odg_hook_field() {
       printf '%s' "$json" | grep -oE '"tool_name"[[:space:]]*:[[:space:]]*"[^"]+"' 2>/dev/null \
         | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || printf '%s' "$default"
       ;;
-    prompt)
-      printf '%s' "$json" | grep -oE '"prompt"[[:space:]]*:[[:space:]]*"[^"]*"' 2>/dev/null \
-        | head -1 | sed -E 's/.*"([^"]*)"$/\1/' || printf '%s' "$default"
-      ;;
     tool_input.skill)
       printf '%s' "$json" | grep -oE '"skill"[[:space:]]*:[[:space:]]*"[^"]+"' 2>/dev/null \
         | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || printf '%s' "$default"
@@ -66,7 +62,6 @@ hook_event="$(sb_odg_hook_field "$input" 'hook_event_name' 'PreToolUse')"
 [[ "$hook_event" == "PreToolUse" ]] || exit 0
 
 tool_name="$(sb_odg_hook_field "$input" 'tool_name' '')"
-prompt="$(sb_odg_hook_field "$input" 'prompt' '')"
 
 emit_block() {
   local reason="$1"
@@ -180,18 +175,9 @@ case "$tool_name" in
   *) exit 0 ;;
 esac
 
-# User override in prompt (audited on UserPromptSubmit; here we only honor if already logged this session)
-if [[ -n "$prompt" ]] && sb_orchestrator_prompt_has_override "$prompt"; then
-  repo_root=""
-  if declare -f sb_find_project_root >/dev/null 2>&1; then
-    repo_root="$(sb_find_project_root 2>/dev/null || true)"
-  fi
-  reason="$(sb_orchestrator_extract_override_reason "$prompt")"
-  expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
-  sb_orchestrator_log_override "${repo_root:-$PWD}" "$reason" "$expected"
-  sb_orchestrator_directive_clear
-  exit 0
-fi
+# SB OVERRIDE is honoured only at UserPromptSubmit (outcomes-check.sh), where the host's own
+# prompt payload is verified and the audit record is written before the directive is cleared
+# (R4-07). A PreToolUse payload never carries the user's words, so nothing is honoured here.
 
 # Workers spawned by parent: allow Bash without skill pre-record (delivery ops).
 if declare -f sb_orchestrator_worker_allows_bash >/dev/null 2>&1 \
@@ -225,7 +211,7 @@ if [[ -f "$(sb_orchestrator_directive_file)" ]] && sb_orchestrator_directive_is_
     if ! sb_orchestrator_directive_skill_recorded "$expected" "$state_contents"; then
       directive_json="$(sb_orchestrator_directive_read 2>/dev/null || true)"
       reason="$(printf '%s' "$directive_json" | jq -r '.reason // "Orchestrator directive pending"' 2>/dev/null || true)"
-      emit_block "$(printf '🛑 ORCHESTRATOR DIRECTIVE — Invoke /%s before %s.\n\n%s\n\nTo bypass with audit log, include in your next user message: SB OVERRIDE: <reason>' "$expected" "$tool_name" "$reason")"
+      emit_block "$(printf '🛑 ORCHESTRATOR DIRECTIVE — Invoke /%s before %s.\n\n%s\n\nTo bypass with an audit log, start your next user message with the words SB OVERRIDE, a colon and your reason.' "$expected" "$tool_name" "$reason")"
       exit 0
     fi
     sb_orchestrator_directive_clear

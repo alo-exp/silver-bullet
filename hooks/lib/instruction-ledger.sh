@@ -10,7 +10,8 @@
 # direct Edit/Write of the ledger file remains blocked by state tamper guards.
 
 sb_instruction_ledger_file() {
-  printf '%s/instruction-ledger.json' "${SB_RUNTIME_STATE_DIR:-/tmp}"
+  [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 1
+  printf '%s/instruction-ledger.json' "$SB_RUNTIME_STATE_DIR"
 }
 
 sb_instruction_ledger_clear() {

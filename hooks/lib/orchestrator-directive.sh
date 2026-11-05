@@ -265,7 +265,7 @@ sb_orchestrator_directive_context_block() {
       (if (.args // "") != "" then "  args: " + .args + "\n" else "" end) +
       "  reason: " + (.reason // "queued flow") + "\n" +
       (if .blocking == true then
-        "  blocking: true — parent: spawn Task worker with template; worker: invoke /" + .next_skill + " before Edit/Write/Bash. SB OVERRIDE: <reason> for audited bypass."
+        "  blocking: true — parent: spawn Task worker with template; worker: invoke /" + .next_skill + " before Edit/Write/Bash. Start a user message with the words SB OVERRIDE, a colon and a reason for an audited bypass."
       else
         "  blocking: false — recommended next skill."
       end)
@@ -279,32 +279,112 @@ sb_orchestrator_directive_context_block() {
   printf '%s\n' "$block"
 }
 
+# sha256 of stdin as hex (GNU, BSD/macOS and OpenSSL fallbacks). Status 1 when none exists.
+sb_orchestrator_sha256() {
+  local out
+  if command -v sha256sum >/dev/null 2>&1; then
+    out="$(sha256sum 2>/dev/null)" || return 1
+  elif command -v shasum >/dev/null 2>&1; then
+    out="$(shasum -a 256 2>/dev/null)" || return 1
+  elif command -v openssl >/dev/null 2>&1; then
+    out="$(openssl dgst -sha256 -r 2>/dev/null)" || return 1
+  else
+    return 1
+  fi
+  printf '%s' "${out%% *}"
+}
+
+# sb_orchestrator_log_override REPO_ROOT REASON [SKILL] [PROVENANCE_JSON]
+# Append one audited override record. Fail closed (status 1, nothing cleared by the caller) when
+# the record cannot be written: no project root, no jq, a symlinked .planning/ or log (R4-14), an
+# unwritable log, or no sha256 tool. Each line carries the caller's provenance (session_id, host,
+# hook event, transcript path, prompt hash) and `prev`, the sha256 of the previous line, so a line
+# removed or edited afterwards breaks the chain. The record is mirrored into the runtime state dir.
 sb_orchestrator_log_override() {
-  local repo_root="$1"
-  local reason="$2"
-  local skill="${3:-}"
-  [[ -n "$repo_root" && -d "$repo_root/.planning" ]] || return 0
-  command -v jq >/dev/null 2>&1 || return 0
-  local logfile now
+  local repo_root="${1:-}" reason="${2:-}" skill="${3:-}" prov="${4:-}"
+  [[ -n "$prov" ]] || prov='{}'
+  [[ -n "$repo_root" && -d "$repo_root" ]] || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+  local logfile now prev line
   logfile="$(sb_orchestrator_override_log "$repo_root")"
+  [[ ! -L "$repo_root/.planning" && ! -L "$logfile" ]] || return 1
+  mkdir -p "$repo_root/.planning" 2>/dev/null || return 1
+  prev="genesis"
+  if [[ -s "$logfile" ]]; then
+    prev="$(tail -n 1 "$logfile" 2>/dev/null | sb_orchestrator_sha256)" || return 1
+  fi
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-  mkdir -p "$(dirname "$logfile")" 2>/dev/null || true
-  jq -nc \
+  line="$(jq -nc \
     --arg at "$now" \
     --arg reason "$reason" \
     --arg skill "$skill" \
-    '{at:$at, kind:"directive-override", reason:$reason, expected_skill:$skill}' \
-    >>"$logfile" 2>/dev/null || true
+    --arg prev "$prev" \
+    --argjson prov "$prov" \
+    '{at:$at, kind:"directive-override", reason:$reason, expected_skill:$skill, prev:$prev} + $prov' 2>/dev/null)" || return 1
+  printf '%s\n' "$line" >>"$logfile" 2>/dev/null || return 1
+  if [[ -n "${SB_RUNTIME_STATE_DIR:-}" && -d "$SB_RUNTIME_STATE_DIR" && ! -L "$SB_RUNTIME_STATE_DIR/orchestrator-override-log.jsonl" ]]; then
+    printf '%s\n' "$line" >>"$SB_RUNTIME_STATE_DIR/orchestrator-override-log.jsonl" 2>/dev/null || true
+  fi
+  return 0
+}
+
+# SB OVERRIDE is the user's own words (R4-12): the FIRST non-blank line of the message must be
+# `SB OVERRIDE: <reason>`, upper case, with a real reason on that line (8+ characters, not a
+# `<placeholder>`). A mention later in the text, inside a quoted/pasted block, in lower case or
+# with no reason (the guard's own denial text says `SB OVERRIDE: <reason>`) is not an override.
+sb_orchestrator_extract_override_reason() {
+  local prompt="${1:-}" first reason
+  first="$(printf '%s\n' "$prompt" | awk 'NF { print; exit }')"
+  local marker_re='^[[:space:]]*SB OVERRIDE:[[:space:]]*(.*)$'
+  [[ "$first" =~ $marker_re ]] || return 0
+  reason="${BASH_REMATCH[1]}"
+  reason="${reason%"${reason##*[![:space:]]}"}"
+  [[ ${#reason} -ge 8 ]] || return 0
+  [[ "$reason" == "<"*">" ]] && return 0
+  printf '%s' "$reason"
 }
 
 sb_orchestrator_prompt_has_override() {
-  local prompt="$1"
-  grep -qiE 'SB[[:space:]]+OVERRIDE:' <<<"$prompt" 
+  [[ -n "$(sb_orchestrator_extract_override_reason "${1:-}")" ]]
 }
 
-sb_orchestrator_extract_override_reason() {
-  local prompt="$1"
-  printf '%s' "$prompt" | sed -n 's/.*[Ss][Bb][[:space:]]*[Oo][Vv][Ee][Rr][Rr][Ii][Dd][Ee]:[[:space:]]*//p' | head -1
+# sb_orchestrator_override_apply INPUT_JSON PROMPT REPO_ROOT
+# Honour an SB OVERRIDE found in a real UserPromptSubmit payload (R4-07/R4-13/R4-14):
+#   - the payload must carry the host's session_id, and a transcript_path that is a regular file
+#     when given (a bare synthetic {"prompt": ...} piped in by the agent is refused);
+#   - the audit record (with provenance) must be written before anything is cleared;
+#   - it then clears the pending directive AND abandons the flow queue, so the parent Stop gate
+#     no longer holds the session. It does NOT lift parent-mode tool restrictions or other
+#     PreToolUse gates (docs/ORCHESTRATOR.md).
+# Status 0 honoured; 1 not an override; 2 override refused (SB_OVERRIDE_REFUSAL says why).
+sb_orchestrator_override_apply() {
+  local input="${1:-}" prompt="${2:-}" repo_root="${3:-}" reason sid transcript host prov phash
+  SB_OVERRIDE_REFUSAL=""
+  reason="$(sb_orchestrator_extract_override_reason "$prompt")"
+  [[ -n "$reason" ]] || return 1
+  sid="$(printf '%s' "$input" | jq -r '.session_id // ""' 2>/dev/null || true)"
+  transcript="$(printf '%s' "$input" | jq -r '.transcript_path // ""' 2>/dev/null || true)"
+  if [[ -z "$sid" ]]; then
+    SB_OVERRIDE_REFUSAL="the prompt payload has no host session_id, so it cannot be verified as your own message"
+    return 2
+  fi
+  if [[ -n "$transcript" && ! -f "$transcript" ]]; then
+    SB_OVERRIDE_REFUSAL="the payload's transcript_path is not a readable file"
+    return 2
+  fi
+  host="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-unknown}}"
+  phash="$(printf '%s' "$prompt" | sb_orchestrator_sha256)" || phash=""
+  prov="$(jq -nc --arg sid "$sid" --arg host "$host" --arg tp "$transcript" --arg ph "$phash" \
+    '{session_id:$sid, host:$host, hook_event:"UserPromptSubmit", transcript_path:$tp, prompt_sha256:$ph}' 2>/dev/null)" || prov='{}'
+  if ! sb_orchestrator_log_override "$repo_root" "$reason" "$(sb_orchestrator_directive_next_skill 2>/dev/null || true)" "$prov"; then
+    SB_OVERRIDE_REFUSAL="the audit record could not be written to .planning/orchestrator-override-log.jsonl"
+    return 2
+  fi
+  sb_orchestrator_directive_clear
+  if declare -f sb_orchestrator_clear_queue >/dev/null 2>&1; then
+    sb_orchestrator_clear_queue
+  fi
+  return 0
 }
 
 # Write directive from orchestrator.json current_flow when present.
