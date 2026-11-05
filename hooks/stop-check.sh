@@ -202,11 +202,9 @@ fi
 if [[ -f "$lib_dir/trivial-bypass.sh" ]]; then
   # shellcheck disable=SC1090
   source "$lib_dir/trivial-bypass.sh"
-  # R3-02: only the state directory's own `trivial` file may stand for the marker; a forged
-  # state.trivial_file naming any other existing file must not switch the Stop gate off.
-  if sb_trivial_path_trusted "$trivial_file" "$sb_default_trivial"; then
-    sb_trivial_bypass "$trivial_file"
-  fi
+  # only the state directory's own `trivial` file may stand for a trivial session (R3-02)
+  sb_trivial_path_trusted "$trivial_file" "$sb_default_trivial" || trivial_file="$sb_default_trivial"
+  sb_trivial_bypass "$trivial_file"
 fi
 
 # Orchestrator parent mode — parent Stop blocked while flow queue pending; worker SubagentStop clears marker.

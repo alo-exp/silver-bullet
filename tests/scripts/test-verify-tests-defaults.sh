@@ -31,7 +31,28 @@ check_default() { # check_default NAME FILE EXPECTED_CALL
   assert_contains "$1: runs expected command" "$(cat "$CALLS")" "$3"
   assert_file_exists "$1: marker written" "$MARKER"
 }
-check_default node package.json "npm test --if-present"
+check_default_content() { # check_default_content NAME FILE CONTENT EXPECTED_CALL
+  local d; d="$(newproj "$1")"
+  printf '%s' "$3" >"$d/$2"
+  : >"$CALLS"; rm -f "$MARKER"
+  inp "$d" bash "$VT"
+  assert_eq "$1: exits 0" 0 "$TL_STATUS"
+  assert_contains "$1: runs expected command" "$(cat "$CALLS")" "$4"
+  assert_file_exists "$1: marker written" "$MARKER"
+}
+check_default_content node package.json '{"scripts":{"test":"node --test"}}' "npm test"
+# R1-35: a package.json without a test script has no tests to run, so no marker is written for it
+d="$(newproj node-no-test)"; printf '{"name":"x"}' >"$d/package.json"
+: >"$CALLS"; rm -f "$MARKER"
+inp "$d" bash "$VT"
+assert_eq "package.json without a test script: exits 1" 1 "$TL_STATUS"
+assert_file_absent "package.json without a test script: no marker" "$MARKER"
+d="$(newproj node-empty-test)"; printf '{"scripts":{"test":""}}' >"$d/package.json"
+inp "$d" bash "$VT"
+assert_eq "package.json with an empty test script: exits 1" 1 "$TL_STATUS"
+d="$(newproj node-then-pytest)"; printf '{"name":"x"}' >"$d/package.json"; : >"$d/pytest.ini"
+: >"$CALLS"; inp "$d" bash "$VT"
+assert_contains "package.json without tests falls through to the next stack" "$(cat "$CALLS")" "pytest"
 check_default pyproject pyproject.toml "pytest"
 check_default pytest-ini pytest.ini "pytest"
 check_default setup-py setup.py "pytest"
@@ -58,9 +79,9 @@ assert_contains "run-all-tests.sh announced" "$TL_OUT" "Running: bash tests/run-
 assert_eq "package.json ignored when run-all-tests.sh exists" "" "$(cat "$CALLS")"
 
 # earlier markers beat later ones
-d="$(newproj priority)"; : >"$d/package.json"; : >"$d/go.mod"
+d="$(newproj priority)"; printf '{"scripts":{"test":"x"}}' >"$d/package.json"; : >"$d/go.mod"
 : >"$CALLS"; inp "$d" bash "$VT"
-assert_eq "node beats go" "npm test --if-present" "$(cat "$CALLS")"
+assert_eq "node beats go" "npm test" "$(cat "$CALLS")"
 
 # --- no commands -------------------------------------------------------------
 d="$(newproj bare)"

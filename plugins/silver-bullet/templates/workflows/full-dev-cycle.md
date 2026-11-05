@@ -143,6 +143,10 @@ required skills, artifact substance, and delivery readiness markers.
 - Run `/verify-tests`.
 - Check CI. If CI is red, run `/sb:debug`, fix, re-run tests, and re-check CI.
 - Run `/sb:ship` for phase-level PR/merge preparation.
+- Under the default `supervised` enterprise profile, `gh pr create`, `gh pr merge`, `gh release create`
+  and deploy commands stay blocked until a human creates
+  `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` from their own terminal. Ask the user to
+  approve before shipping; never create the marker yourself.
 
 `sb:ship` is a phase-level action. It is not a milestone release.
 

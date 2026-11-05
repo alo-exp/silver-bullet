@@ -1,6 +1,12 @@
 # shellcheck shell=bash
 # Silver Bullet — runtime capability tier probe (shared by session-start, diagnostics).
 
+_sb_cap_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if ! declare -f sb_runtime_in_test_sandbox >/dev/null 2>&1 && [[ -f "$_sb_cap_lib_dir/cert-bypass.sh" ]]; then
+  # shellcheck source=cert-bypass.sh
+  source "$_sb_cap_lib_dir/cert-bypass.sh"
+fi
+
 sb_capability_hooks_present() {
   local runtime_home="${1:-${SB_RUNTIME_HOME_ROOT:-}}"
   local runtime="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-}}"
@@ -54,7 +60,9 @@ sb_capability_tier_number() {
 }
 
 sb_capability_tier_name() {
-  if [[ "${SILVER_BULLET_TEST_HOOK_ENFORCED:-}" == "1" ]]; then
+  # test switch, honoured only in a throw-away sandbox (R1-36)
+  if [[ "${SILVER_BULLET_TEST_HOOK_ENFORCED:-}" == "1" ]] && declare -f sb_runtime_in_test_sandbox >/dev/null 2>&1 \
+    && sb_runtime_in_test_sandbox; then
     printf 'hook-enforced'
     return 0
   fi

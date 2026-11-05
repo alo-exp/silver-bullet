@@ -30,16 +30,6 @@
         "matcher": ".*"
       },
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/phase-archive.sh\"",
-        "timeout": 10,
-        "matcher": "Shell|Skill"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
-        "timeout": 15,
-        "matcher": "Shell|Skill"
-      },
-      {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
         "timeout": 10,
         "matcher": "Shell|Skill"
@@ -53,6 +43,21 @@
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
         "timeout": 10,
         "matcher": "Shell|Skill"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/phase-archive.sh\"",
+        "timeout": 10,
+        "matcher": "Shell|Skill|mcp__.*"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
+        "timeout": 15,
+        "matcher": "Shell|Skill|mcp__.*"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
+        "timeout": 30,
+        "matcher": "Shell|Skill|mcp__.*"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
@@ -177,11 +182,6 @@
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
         "timeout": 10,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
-        "timeout": 30,
         "matcher": "Shell"
       },
       {

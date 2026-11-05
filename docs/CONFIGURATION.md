@@ -22,6 +22,7 @@ This page lists every key in the template, which code reads it, and the keys the
 | `project.src_pattern` | `/src/` | Path-segment pattern for files that count as source and trigger the planning-floor gate; it is matched against the project-relative path, so `tools/src-gen.py` does not match `/src/`. Must look like a path segment pattern (`^/[a-zA-Z0-9/_.\|()-]*/?$`); unsafe or match-everything values fall back to `/src/` |
 | `project.src_exclude_pattern` | `__tests__\|\.test\.` | Regex for source-like files to exempt (tests), matched against the project-relative path. Limited to 200 safe characters, otherwise the default is used. Built-in test layouts (`tests/`, `test/`, `__tests__/`, `*_test.*`, `test_*.py`, `*Test.java`) are always exempt |
 | `project.active_workflow` | `full-dev-cycle` | `full-dev-cycle` or `devops-cycle`; selects the workflow doc and the `_devops` skill lists. In `devops-cycle`, `.yml`, `.yaml`, `.json` and `.toml` files count as infrastructure code |
+| `project.push_to_default_branch_tier` | `completion` | `completion` (default): a push to the default branch, of a tag, or with `--all`/`--mirror` needs the full `required_deploy` floor. `intermediate`: such pushes need only the planning floor (the explicit opt-out) |
 
 `dev-cycle-check.sh` reads the patterns; `completion-audit.sh` uses them to classify a change set.
 
@@ -57,13 +58,13 @@ Read by `completion-audit.sh` on `gh release create` ([ENFORCEMENT.md](ENFORCEME
 | Key | Template value | Meaning |
 |-----|----------------|---------|
 | `release.profile` | `"generic"` | Release profile label; carried forward by migration, not read by the hooks |
-| `release.require_plugin_runtime_matrix` | `true` | Require the live runtime matrix markers (`release-live-matrix`, `e2e-live-matrix`, `inline-e2e-matrix`) |
-| `release.require_pre_release_quality_gate` | `true` | Require the quality-gate markers `adversarial-review-clean`, `sentinel-skills-clean`, `quality-gate-stage-3`, `full-test-suite-rerun` |
-| `release.require_rc_matrix` | `true` | Require the six operator-local RC validation markers |
+| `release.require_plugin_runtime_matrix` | `false` | Require the live runtime matrix markers (`release-live-matrix`, `e2e-live-matrix`, `inline-e2e-matrix`) |
+| `release.require_pre_release_quality_gate` | `false` | Require the quality-gate markers `adversarial-review-clean`, `sentinel-skills-clean`, `quality-gate-stage-3`, `full-test-suite-rerun` |
+| `release.require_rc_matrix` | `false` | Require six operator-local live RC `pass` markers for the commit being released |
 | `release.quality_gate_state_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` | Where the quality-gate markers are read; cleared at session start |
 | `release._comment_quality_gate_markers` | — | Comment only |
 
-These gates were built for multi-host plugin releases. A downstream project that does not run live matrices sets the `require_*` flags it does not need to `false`.
+These gates were built for Silver Bullet's own multi-host plugin releases, so the template leaves them off and this repository turns them on. A project that runs the live matrices sets the `require_*` flags it needs to `true`.
 
 ## `hooks`
 
@@ -128,7 +129,8 @@ Named settings bundles for the five-tool stack, read by `hooks/lib/stack-optimiz
 | `session_mode_default` | `interactive` or `autonomous`; `session-start` applies it as the default session mode (`autonomous` only on hook-enforced hosts, and never over an existing choice) |
 | `clarify_auto` | Allow bounded `sb:clarify --auto` |
 | `production_deploy_requires_human` | When true, `gh pr create/merge`, `gh release create` and deploy commands are blocked until a human creates `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` ([ENFORCEMENT.md](ENFORCEMENT.md#enterprise-policy-delivery-block)). It is true in every shipped profile and is the default when no profile is configured |
-| `non_production_deploy_autonomy` | Exempt delivery commands that name a non-production target (`internal_dogfood` only) |
+| `non_production_deploy_autonomy` | Exempt a plain deploy command when a non-production word (staging, preview, non-prod, sandbox, dogfood, internal) appears as a whole word in its arguments; never `gh pr create/merge` or `gh release create` (`internal_dogfood` only). Residual: the word is not tied to a target flag, so `deploy --prod --token internal` is exempt too; prefer `supervised` where that matters |
+| `human_approval_ttl_minutes` (on `enterprise_policy`, not per profile) | How long the human approval marker stays valid (default 480) |
 | `evidence_schema_strict` | Force strict evidence-schema validation |
 | `orchestrator_mode`, `label`, `description` | Informational |
 
