@@ -58,7 +58,7 @@ class ProseParsersUseTheRunsVendorsTests(unittest.TestCase):
         # to tick, so prose adds nothing and the structured row decides
         got = m.parse_feature_support(envs("Redpanda provides tiered storage.", rows=rows), known=known)
         self.assertEqual({k: dict(v) for k, v in got.items()}, {"redpanda": {"Tiered storage": True}})
-        self.assertEqual(m._RUN, {"known": None, "pack": None, "declared": frozenset(), "aliases": {}})  # the run context is restored
+        self.assertEqual(m._RUN, {"known": None, "pack": None, "declared": frozenset(), "aliases": {}, "blocked": frozenset()})  # the run context is restored
 
     def test_run_context_is_used_by_the_helpers_and_restored_on_error(self) -> None:
         with self.assertRaises(RuntimeError):
@@ -81,7 +81,7 @@ class ProseParsersUseTheRunsVendorsTests(unittest.TestCase):
                 m._parse_prose_feature_support([], known={"acme": "Acme"})
         finally:
             m._parse_prose_unscoped = original
-        self.assertEqual(m._RUN, {"known": None, "pack": None, "declared": frozenset(), "aliases": {}})
+        self.assertEqual(m._RUN, {"known": None, "pack": None, "declared": frozenset(), "aliases": {}, "blocked": frozenset()})
 
 
 @plain_vendor_spellings
@@ -169,7 +169,7 @@ class TheSharedFixtureIsTheProductionRunContextTests(unittest.TestCase):
 
 class ContextIsRestoredTests(unittest.TestCase):
     def test_outside_the_fixture_no_run_is_active(self) -> None:
-        self.assertEqual(m._RUN, {"known": None, "pack": None, "declared": frozenset(), "aliases": {}})
+        self.assertEqual(m._RUN, {"known": None, "pack": None, "declared": frozenset(), "aliases": {}, "blocked": frozenset()})
         self.assertEqual((m.COINED_NAMES, m.HOST_RUNTIME_SLUGS), (frozenset(), frozenset()))
 
 

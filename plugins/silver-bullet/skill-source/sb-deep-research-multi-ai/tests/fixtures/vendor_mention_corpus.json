@@ -1549,13 +1549,19 @@
   "set": "r1_absence",
   "kind": "absence_keep",
   "slug": "barkain-workflow-orchestrator",
-  "text": "Barkain Workflow Orchestrator provides hook-enforced gates."
+  "text": "Barkain Workflow Orchestrator provides hook-enforced gates.",
+  "vendors": [
+   "barkain-workflow-orchestrator"
+  ]
  },
  {
   "set": "r1_absence",
   "kind": "absence_keep",
   "slug": "barkain-workflow-orchestrator",
-  "text": "Barkain Workflow Orchestrator provides workflow composition."
+  "text": "Barkain Workflow Orchestrator provides workflow composition.",
+  "vendors": [
+   "barkain-workflow-orchestrator"
+  ]
  },
  {
   "set": "r1_absence",
@@ -2978,5 +2984,460 @@
   "set": "r5_audit",
   "kind": "plain_english",
   "text": "Claude from accounting approved the invoice."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Cursor positions are saved per tab."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Move the Cursor."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Cursor's blink rate is configurable."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "CURSOR KEYS MOVE THE SELECTION."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "The Director's cut runs 3 hours and supports subtitles."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "director-level sign-off enforces gates."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Ask your Director."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Conductor rails carry the current; the Conductor supports high load."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "A lightning Conductor protects the roof."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Factory resets wipe the phone; the Factory supports bulk orders."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Factory AI, as a buzzword, means predictive maintenance."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "factory ai is a vague term."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Linear time complexity is supported."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "LINEAR SCALING: supported."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Linear's growth was steady (Linear, not exponential)."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Continue? Yes. Continue supports resuming the download."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Continue (verb): to carry on."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Copilot seats on the plane were full."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "The Copilot announced descent and supports the captain."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Cognition and memory decline with age."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Cognition (psychology) studies thought."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Aider and abettor were both charged."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Poolside bars open at noon and support cashless payments."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Superpowers like flight are fiction."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Windsurf lessons include free tier boards."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Codex Sinaiticus is a manuscript."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Patsy Cline sang Crazy."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Devin Booker scored 40 points."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Devin (Booker) scored again."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Sweep the floor."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Augment your income."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Silver Bullet, no; silver bullets don't exist (Brooks)."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "GSD: get stuff done."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "OMP stands for Office of Management Policy."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Our sdlc plugin wishlist is long."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Every swe agent benchmark is noisy."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Factory AI predictive maintenance has a free tier."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Oh my pi, what a day."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Devika from HR approved it."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Tembo means elephant."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Deepwork sessions boost focus."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Workflow Manager role: approves timesheets."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Claude Harness: a horse harness named Claude."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Open Interpreter services are offered at the court."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Amazon Q4 earnings beat."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Codex, Cursor and Continue are words in this crossword."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "## Cursor\nThe cursor supports hover."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "**Director**: approves the budget."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "`cursor.execute()` returns rows."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Use `linear` interpolation."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "[Cursor](https://example.com/css-cursor) properties"
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "[Devin](https://en.wikipedia.org/wiki/Devin_Booker) is a guard."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "See https://github.com/features/actions for CI; Copilot seats are separate."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Read cursor.co.uk for a stationery shop."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Visit continue.org for the charity."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "director.film hosts reviews."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Check https://linear.edu/course on algebra."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Visit https://evil.example/cursor.com for phishing tips."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "The repo github.com/gsd-builder/other has nothing to do with it."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "devin.aircraft.com sells planes."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "conductor.builder.io is a page builder."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "cursor.community forum is unrelated."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Our culture is GSD (Get Shit Done): ship fast."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "The GSD (Get Shit Done) mindset is a productivity meme."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Oh My Pi (OMP) is the name of our bakery."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Cognition (Devin) is a heading in my psych notes."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Critical \"path\" items are: Director, Producer."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Growth \"plan\" for Q3: Linear, steady."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "The arrow \"points\" here: Cursor."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Throw \"errors\" when: Continue, Retry."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix — Reloaded: Director, Wachowski."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "The Matrix - cast: Director, Producer, Editor."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "A row of \"seats\": Copilot, Captain."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix entry — not a product: Linear, Cursor."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Very high \"risk\" for: Factory, Conductor."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Quality ✔ for Director, Producer and Editor."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Startup-weighted core values: Linear growth, Continue learning."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "Commercial-weighted peer review: Director, Editor."
+ },
+ {
+  "set": "r6_false_positive",
+  "kind": "plain_english",
+  "text": "matrix leaders are: Cursor, Linear and GSD in our maths class."
+ },
+ {
+  "set": "r6_matrix_false_positive",
+  "kind": "plain_english",
+  "text": "Critical \"gap\": Cursor and keyboard navigation are untested."
+ },
+ {
+  "set": "r6_matrix_false_positive",
+  "kind": "plain_english",
+  "text": "The narrow \"Free tier\" offer: Continue, then upgrade."
+ },
+ {
+  "set": "r6_matrix_false_positive",
+  "kind": "plain_english",
+  "text": "Tomorrow's \"Quick onboarding\" session: Director, then the team leads."
+ },
+ {
+  "set": "r6_matrix_false_positive",
+  "kind": "plain_english",
+  "text": "Very high \"Hook-enforced gates\" adoption among: Linear, Jira users."
+ },
+ {
+  "set": "r6_matrix_false_positive",
+  "kind": "plain_english",
+  "text": "Throughput \"Workflow composition\" notes: Sweep the backlog weekly."
+ },
+ {
+  "set": "r6_matrix_false_positive",
+  "kind": "plain_english",
+  "text": "Critical \"Parent/child agent delegation\" caveat: Conductor, the orchestra term, is unrelated."
+ },
+ {
+  "set": "r6_matrix_false_positive",
+  "kind": "plain_english",
+  "text": "Brownfield \"Zero-infra bootstrap\" checklist: Codex of rules, Factory floor."
+ },
+ {
+  "set": "r6_matrix_false_positive",
+  "kind": "plain_english",
+  "text": "Free tier ✔ for students; Silver Bullet thinking aside."
+ },
+ {
+  "set": "r6_matrix_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix - Free tier: Director's approval required."
+ },
+ {
+  "set": "r6_matrix_false_positive",
+  "kind": "plain_english",
+  "text": "Escrow \"Free tier\" terms: Linear, monthly."
+ },
+ {
+  "set": "r6_qualified_false_positive",
+  "kind": "plain_english",
+  "text": "Augment Code (Augment Cosmos) is a phrase in my notes."
+ },
+ {
+  "set": "r6_qualified_false_positive",
+  "kind": "plain_english",
+  "text": "Many agents copy the SDLC category."
  }
 ]
