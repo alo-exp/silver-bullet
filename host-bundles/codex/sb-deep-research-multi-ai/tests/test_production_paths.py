@@ -19,19 +19,22 @@ import materialize_solution_artifacts as m  # noqa: E402
 import solution_classifier as sc  # noqa: E402
 from category_pack import build_alias_map, build_known_solutions, resolve_pack_from_need  # noqa: E402
 import pack_vocabulary as pv  # noqa: E402
-from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+from apo_pack_run_fixture import plain_vendor_spellings, with_apo_pack_run  # noqa: E402
 
 PACK_ID = "agentic-sdlc-process-orchestrator"
 NEED = {"category_pack_id": PACK_ID}
 
 
 def envs(*claims, rows=()):
-    out = [{"logical_model_id": "m1", "phase_id": "DR-RETRIEVE", "payload": {"evidence": [{"claim": c} for c in claims]}}]
+    """Evidence envelopes; a claim is a string or a row dict (``{"claim": ..., "vendors": [...]}``)."""
+    items = [c if isinstance(c, dict) else {"claim": c} for c in claims]
+    out = [{"logical_model_id": "m1", "phase_id": "DR-RETRIEVE", "payload": {"evidence": items}}]
     if rows:
         out.append({"logical_model_id": "m2", "phase_id": "DR-RETRIEVE", "payload": {"matrix_entries": list(rows)}})
     return out
 
 
+@plain_vendor_spellings
 class ProseParsersUseTheRunsVendorsTests(unittest.TestCase):
     def test_module_lists_are_empty_in_production(self) -> None:
         self.assertEqual((m.KNOWN_SOLUTIONS, m.SLUG_ALIASES, m._HEAD_SLUG_ALIASES, m.FEATURE_TEMPLATE), ({}, {}, {}, []))
@@ -55,7 +58,7 @@ class ProseParsersUseTheRunsVendorsTests(unittest.TestCase):
         # to tick, so prose adds nothing and the structured row decides
         got = m.parse_feature_support(envs("Redpanda provides tiered storage.", rows=rows), known=known)
         self.assertEqual({k: dict(v) for k, v in got.items()}, {"redpanda": {"Tiered storage": True}})
-        self.assertEqual(m._RUN, {"known": None, "pack": None})  # the run context is restored
+        self.assertEqual(m._RUN, {"known": None, "pack": None, "declared": frozenset(), "aliases": {}, "blocked": frozenset()})  # the run context is restored
 
     def test_run_context_is_used_by_the_helpers_and_restored_on_error(self) -> None:
         with self.assertRaises(RuntimeError):
@@ -78,9 +81,10 @@ class ProseParsersUseTheRunsVendorsTests(unittest.TestCase):
                 m._parse_prose_feature_support([], known={"acme": "Acme"})
         finally:
             m._parse_prose_unscoped = original
-        self.assertEqual(m._RUN, {"known": None, "pack": None})
+        self.assertEqual(m._RUN, {"known": None, "pack": None, "declared": frozenset(), "aliases": {}, "blocked": frozenset()})
 
 
+@plain_vendor_spellings
 class ApoPackPipelineWithoutFixtureTests(unittest.TestCase):
     """materialize_solution_artifacts on an APO run directory: the real activation path."""
 
@@ -142,20 +146,6 @@ class AmbiguousNamesTests(unittest.TestCase):
             self.assertEqual(m._extract_slugs_from_text(phrase, self.known, self.pack), [], phrase)
             self.assertEqual(sc._extract_candidates_from_text(phrase, self.aliases, self.known), [], phrase)
 
-    def test_the_same_names_count_next_to_a_product_cue(self) -> None:
-        cases = {
-            "Cursor IDE background agents run in the cloud.": "cursor",
-            "Compared by Factory against rivals.": "factory",
-            "Linear (the issue tracker) integrates.": "linear",
-            "Visit continue.dev for details, says Continue.dev docs": "continue",
-        }
-        for text, needle in cases.items():
-            found = m._extract_slugs_from_text(text, self.known, self.pack) + sc._extract_candidates_from_text(text, self.aliases, self.known)
-            self.assertTrue(any(needle in slug for slug in found), (text, found))
-        self.assertTrue(m.mentions_vendor("Cursor IDE", "cursor ide", "cursor"))
-        self.assertFalse(m.mentions_vendor("cursor IDE", "cursor ide", "cursor"))  # not a proper noun
-        self.assertTrue(m.mentions_vendor("Devin is here", "devin is here", "devin"))  # unambiguous names need no cue
-
 
 @with_apo_pack_run
 class TheSharedFixtureIsTheProductionRunContextTests(unittest.TestCase):
@@ -166,7 +156,7 @@ class TheSharedFixtureIsTheProductionRunContextTests(unittest.TestCase):
         self.assertEqual(m._RUN["known"], m._effective_known_solutions(NEED))
         self.assertEqual(m._RUN["pack"], pack)
         with pv.activated(pack):  # re-entering the same activation changes nothing
-            self.assertTrue(m.AMBIGUOUS_NAMES and m.HOST_RUNTIME_SLUGS)
+            self.assertTrue(m.COINED_NAMES and m.HOST_RUNTIME_SLUGS)
         # no module-level vendor list is patched in: they stay as empty as in production
         import synthesize_landscape as sl
 
@@ -179,22 +169,13 @@ class TheSharedFixtureIsTheProductionRunContextTests(unittest.TestCase):
 
 class ContextIsRestoredTests(unittest.TestCase):
     def test_outside_the_fixture_no_run_is_active(self) -> None:
-        self.assertEqual(m._RUN, {"known": None, "pack": None})
-        self.assertEqual((m.AMBIGUOUS_NAMES, m.HOST_RUNTIME_SLUGS), (frozenset(), frozenset()))
+        self.assertEqual(m._RUN, {"known": None, "pack": None, "declared": frozenset(), "aliases": {}, "blocked": frozenset()})
+        self.assertEqual((m.COINED_NAMES, m.HOST_RUNTIME_SLUGS), (frozenset(), frozenset()))
 
 
 class ProperReferencesToCommonWordVendorsTests(unittest.TestCase):
     """R12-08 round 3: a capitalised name inside a sentence or list, or opening one as a subject, is the vendor."""
 
-    REAL_SENTENCES = (
-        ("director", "Director is a primary-market APO candidate: agent orchestration, workflow composition."),
-        ("director", "Conductor, cc10x, Director, Claude Harness and AgentHub are community packs."),
-        ("director", "Director orchestrates parallel Claude Code agents with hook-enforced gates."),
-        ("director", "Director's README documents hook-enforced gates."),
-        ("director", "**Director** ships hooks."),
-        ("factory-ai", "Factory provides SSO and audit logs."),
-        ("cursor", "BMAD installs into Claude Code and Cursor via a single command."),
-    )
     STILL_PLAIN_ENGLISH = (
         "The Director of Engineering approved it.",
         "Cursor-based pagination matters.",
@@ -203,8 +184,21 @@ class ProperReferencesToCommonWordVendorsTests(unittest.TestCase):
         "Factory settings are restored.",
         "Sweep the floor.",
         "Notes.\nLinear regression fits.",
+        # r4: Title-Case compounds and role nouns are ordinary prose, not vendor evidence
+        "The NVIDIA AI Factory reference design targets inference at scale.",
+        "Spec-driven tools follow the Abstract Factory pattern for adapters.",
+        "Approval comes from a VP or Director before release.",
+        "Netflix Conductor and Temporal are workflow engines, not SDLC orchestrators.",
+        "The Software Factory model treats delivery as a pipeline with audit logs.",
+        "Each step has a Continue button in the wizard.",
+        "We applied a Linear Regression baseline.",
+        "The tool supports Cursor Rules and AGENTS.md files.",
+        "In the Mission Control view, the Director agent assigns tasks to workers.",
+        "Agents run under a Test Harness that enforces gates.",
+        "## Factory Patterns and Harness Engineering",
+        "Gartner calls this the Agentic Software Factory.",
+        "The Managing Director said so.",
     )
-
     def setUp(self) -> None:
         self.pack = resolve_pack_from_need(NEED)
         self.known = build_known_solutions(self.pack)
@@ -213,10 +207,58 @@ class ProperReferencesToCommonWordVendorsTests(unittest.TestCase):
         ctx.__enter__()
         self.addCleanup(ctx.__exit__, None, None, None)
 
-    def test_real_run_sentences_are_vendor_evidence(self) -> None:
-        for slug, text in self.REAL_SENTENCES:
-            self.assertIn(slug, sc._envelope_evidence_slugs(envs(text), self.pack), text)
-            self.assertIn(slug, m._extract_slugs_from_text(text, self.known, self.pack), text)
+    def test_cursor_background_agents_is_one_product_with_one_slug(self) -> None:
+        text = "Hard exclusions: Cursor Background Agents, Sweep."
+        row = {"claim": text, "vendors": ["cursor-background-agents"]}
+        self.assertEqual(sc._envelope_evidence_slugs(envs(row), self.pack) & {"cursor", "cursor-agents"}, set())
+        self.assertIn("cursor-background-agents", sc._envelope_evidence_slugs(envs(row), self.pack))
+        with m.claim_scope(frozenset({"cursor-background-agents"})):
+            found = m._extract_slugs_from_text(text, self.known, self.pack)
+        self.assertIn("cursor-background-agents", found)
+        self.assertNotIn("cursor", found)
+
+    def test_a_hard_exclusion_list_casts_no_feature_votes(self) -> None:
+        text = ("The APO market has ~19 in-scope solutions, within the 8-24 core-count bound. Hard exclusions "
+                "(Cursor Background Agents, Windsurf, Aider, Cline, OpenHands, CodeRabbit, etc.) are correctly "
+                "excluded as single-step tools, coding agents, or host runtimes - not process orchestrators.")
+        support = m.parse_feature_support(envs(text), known=self.known, pack=self.pack)
+        self.assertFalse(set(support) & {"aider", "cline", "coderabbit", "windsurf", "cursor", "openhands"}, support)
+
+    def test_decorated_list_items_resolve_exactly(self) -> None:
+        cases = {"Conductor (Melty Labs)": "conductor", "Director 2.0": "director", "`director`": "director",
+                 "**Director**": "director", "Factory": "factory", "Director.": "director",
+                 "Cavekit v3.1": "cavekit-v31"}
+        for item, slug in cases.items():
+            for text in (f"Confirmed in-scope core set: {item}, Devin", f"APO matrix leaders are {item} and Devin"):
+                support = m.parse_feature_support(envs({"claim": text, "vendors": [slug, "devin"]}), known=self.known, pack=self.pack)
+                self.assertIn(slug, support, (item, text, sorted(support)))
+        for text in ("Confirmed in-scope core set: Claude, Devin", "APO matrix leaders are Claude 2 and Devin"):
+            support = m.parse_feature_support(envs({"claim": text, "vendors": ["devin"]}), known=self.known, pack=self.pack)
+            self.assertEqual(sorted(support), ["devin"], text)
+
+    def test_the_absence_veto_is_scoped_to_its_clause(self) -> None:
+        keep = (
+            ("silver-bullet", "Silver Bullet provides workflow composition; Deepwork has no public evidence."),
+            ("director", "Director CLI provides workflow composition, and no claims of SSO were found."),
+            ("silver-bullet", "Silver Bullet supports workflow composition with zero claims of regressions."),
+            ("silver-bullet", "Silver Bullet provides workflow composition and rejects PRs with no evidence of review."),
+        )
+        for slug, text in keep:
+            support = m.parse_feature_support(envs({"claim": text, "vendors": [slug]}), known=self.known, pack=self.pack)
+            self.assertTrue(any(support.get(slug, {}).values()), (text, support))
+        bare = m.parse_feature_support(envs("Deepwork has no public evidence"), known=self.known, pack=self.pack)
+        self.assertEqual(dict(bare), {})
+        gone = m.parse_feature_support(
+            envs({"claim": "Silver Bullet provides workflow composition; Deepwork has no public evidence.",
+                  "vendors": ["silver-bullet", "deepwork"]}),
+            known=self.known, pack=self.pack)
+        self.assertNotIn("deepwork", gone)
+
+    def test_compound_and_role_prose_gives_no_vendor_votes(self) -> None:
+        for text in self.STILL_PLAIN_ENGLISH:
+            support = m.parse_feature_support(envs(text), known=self.known, pack=self.pack)
+            self.assertFalse(set(support) & {"director", "factory-ai", "cursor", "linear", "conductor", "continue",
+                                             "claude-harness", "harness"}, (text, set(support)))
 
     def test_plain_english_uses_stay_out(self) -> None:
         for text in self.STILL_PLAIN_ENGLISH:
@@ -224,7 +266,7 @@ class ProperReferencesToCommonWordVendorsTests(unittest.TestCase):
             self.assertFalse(found & {"director", "factory-ai", "cursor", "linear", "sweep", "continue"}, (text, found))
 
     def test_a_directors_core_seed_with_prose_evidence_stays_core(self) -> None:
-        got = sc.classify_solutions(envs("Director is a primary-market APO candidate."), NEED, self.pack)
+        got = sc.classify_solutions(envs({"claim": "Director is a primary-market APO candidate.", "vendors": ["director"]}), NEED, self.pack)
         self.assertEqual(got["by_slug"]["director"]["classification"], "core")
 
     def test_structured_matrix_vendor_is_envelope_evidence(self) -> None:
@@ -242,17 +284,76 @@ class ProperReferencesToCommonWordVendorsTests(unittest.TestCase):
         self.assertNotIn("zuvo", support)
         got = sc.classify_solutions(envs(text), NEED, self.pack)
         self.assertNotIn("zuvo", got["core"])
-        self.assertTrue(m.mentions_vendor("Zuvo helps", "zuvo helps", "zuvo"))
+        with m.run_context(self.known, self.pack):
+            self.assertTrue(m.mentions_vendor("Zuvo helps", "zuvo helps", "zuvo"))  # a coined word needs no signal
 
     def test_one_product_is_one_slug(self) -> None:
         found = m._extract_slugs_from_text("Silver Bullet and github copilot with cline", self.known, self.pack)
-        self.assertEqual(found, ["silver-bullet", "github-copilot", "cline", "github-copilot-workspace"])
+        self.assertEqual(found, ["github-copilot"])  # Silver Bullet and Cline are ambiguous: they need a signal
+        with m.claim_scope(frozenset({"silver-bullet", "cline"})):
+            self.assertEqual(m._extract_slugs_from_text("Silver Bullet and github copilot with cline", self.known, self.pack),
+                             ["silver-bullet", "github-copilot", "cline"])
+        for text in ("GitHub Copilot is popular.", "github-copilot is popular."):
+            self.assertEqual(m._extract_slugs_from_text(text, self.known, self.pack), ["github-copilot"], text)
+        self.assertEqual(m._extract_slugs_from_text("Copilot is popular.", self.known, self.pack), [])
+
+    def test_copilot_workspace_is_the_sunset_product_not_copilot(self) -> None:
+        for text in ("GitHub Copilot Workspace plans tasks.",):
+            found = m._extract_slugs_from_text(text, self.known, self.pack)
+            self.assertIn("copilot-workspace", found, text)
+            self.assertNotIn("github-copilot-workspace", found, text)  # the overlay no longer invents this slug
+        self.assertEqual(m._extract_slugs_from_text("Copilot Workspace plans tasks.", self.known, self.pack), [])
+
+    def test_a_vendor_name_is_not_a_feature_word_for_every_vendor_in_the_claim(self) -> None:
+        for text in ("Deepwork, Barkain Workflow Orchestrator and Director have zero claims.",
+                     "Deepwork, Barkain Workflow Orchestrator and Director.",
+                     "Seeds include Claude Code Expert, Director and Deepwork."):
+            support = m.parse_feature_support(envs(text), known=self.known, pack=self.pack)
+            self.assertEqual({slug: dict(cells) for slug, cells in support.items()}, {}, text)
+
+    def test_masking_vendor_names_needs_a_name_with_a_feature_word(self) -> None:
+        with m.run_context({"alpha": "Alpha"}, None):
+            self.assertEqual(m._mask_feature_words_in_vendor_names("Alpha adds workflow composition"),
+                             "Alpha adds workflow composition")
+        with m.run_context(self.known, self.pack):
+            self.assertEqual(m._mask_feature_words_in_vendor_names("Barkain Workflow Orchestrator wins").strip(), "wins")
+
+    def test_a_claim_that_reports_no_evidence_votes_for_nothing(self) -> None:
+        for text in ("No evidence gathered on Deepwork or Director; workflow composition unresearched.",
+                     "Director has no public evidence of workflow composition or hook-enforced gates.",
+                     "Zero claims support workflow composition for Director and Deepwork."):
+            support = m.parse_feature_support(envs(text), known=self.known, pack=self.pack)
+            self.assertFalse(any(v for cells in support.values() for v in cells.values()), (text, support))
+        ok = m.parse_feature_support(envs({"claim": "Director provides workflow composition.", "vendors": ["director"]}), known=self.known, pack=self.pack)
+        self.assertTrue(ok["director"]["Workflow composition"])
+
+    def test_the_vendor_mention_check_is_linear_in_the_claim_length(self) -> None:
+        import time
+
+        text = "Director. " * 8000  # 80 KB: 22.7 s when the whole prefix was rescanned per match
+        with m.run_context(self.known, self.pack):
+            started = time.perf_counter()
+            self.assertFalse(m.mentions_vendor(text, text.lower(), "director"))
+            self.assertLess(time.perf_counter() - started, 3.0)
+            with m.claim_scope(frozenset({"director"})):
+                started = time.perf_counter()
+                self.assertTrue(m.mentions_vendor(text, text.lower(), "director"))
+                self.assertLess(time.perf_counter() - started, 3.0)
+
+    def test_bare_prose_never_prefix_matches_a_known_vendor(self) -> None:
+        for text in ("Confirmed in-scope core set: Claude, Devin", "APO matrix leaders are Claude and Devin"):
+            support = m.parse_feature_support(envs({"claim": text, "vendors": ["devin"]}), known=self.known, pack=self.pack)
+            self.assertEqual(sorted(support), ["devin"], text)
+        full = m.parse_feature_support(envs({"claim": "APO matrix leaders are Claude Code Expert and Devin", "vendors": ["devin", "claude-code-expert"]}),
+                                       known=self.known, pack=self.pack)
+        self.assertIn("claude-code-expert", full)
 
 
 def cell_names(support, slug):
     return list(support[slug])
 
 
+@plain_vendor_spellings
 class FeatureFoldingAcrossProseAndStructuredCellsTests(unittest.TestCase):
     """R12-06 round 3: one row per feature, whichever way a worker spelled or reported it."""
 
@@ -311,6 +412,7 @@ class FeatureFoldingAcrossProseAndStructuredCellsTests(unittest.TestCase):
         self.assertEqual(got["pvs-studio"], {"C# support": True})
 
 
+@plain_vendor_spellings
 class HardWiredApoFeaturesStayOutOfOtherCategoriesTests(unittest.TestCase):
     def test_must_have_satisfaction_phrase_adds_no_apo_rows_without_a_pack(self) -> None:
         rows = [{"vendor": "Redpanda", "feature": "Tiered storage", "supported": True}]

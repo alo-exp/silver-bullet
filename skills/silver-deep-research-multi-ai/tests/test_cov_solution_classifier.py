@@ -12,6 +12,7 @@ SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 import solution_classifier as sc  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run, plain_vendor_spellings  # noqa: E402
 
 
 def pack() -> dict:
@@ -128,6 +129,7 @@ class MarketClassificationTests(unittest.TestCase):
         self.assertEqual(out, ("adjacent", "mx adjacent_seed"))
 
 
+@plain_vendor_spellings
 class ExtractionTests(unittest.TestCase):
     def test_extract_candidates_from_text(self) -> None:
         aliases = {"corea": "core-a", "x": "tiny", "core-a": "core-a", "core-b": "core-b"}
@@ -151,7 +153,8 @@ class ExtractionTests(unittest.TestCase):
         ]
         out = sc.discover_candidate_slugs(envs, pack())
         # best-scored slugs first: evidence-backed seeds outrank seeds only scored by the pack
-        self.assertEqual(out[:2], ["core-a", "core-b"])
+        # (a bare "CoreB" token no longer credits core-b by itself: only the claim text's vendor spellings do)
+        self.assertEqual(out[:2], ["core-a", "core-m2"])
         for slug in ("core-a", "core-b", "silver-bullet", "core-m2", "adj-plain"):
             self.assertIn(slug, out)
         # seeds from every market are scored once, evidence adds more
@@ -160,7 +163,6 @@ class ExtractionTests(unittest.TestCase):
         self.assertEqual(len(out), len(set(out)))
 
 
-from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
 @with_apo_pack_run
@@ -206,6 +208,7 @@ class ClassifySlugTests(unittest.TestCase):
         self.assertEqual(self.go("CoreA", envelope_slugs={"core-a"}), ("core", "pack core_seed"))
 
 
+@plain_vendor_spellings
 class ClassifySolutionsTests(unittest.TestCase):
     def envs(self, *claims):
         return [{"payload": {"evidence": [{"claim": c} for c in claims]}}]
