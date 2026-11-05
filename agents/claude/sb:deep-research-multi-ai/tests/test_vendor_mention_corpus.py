@@ -186,6 +186,16 @@ class VendorMentionCorpusTests(unittest.TestCase):
         self.support("Silver Bullet provides workflow composition. " * 2000, row)
         self.assertLess(time.monotonic() - started, budget)
 
+    def test_a_source_ref_needs_a_capitalised_spelling_and_a_negated_vendor_earns_no_inferred_features(self) -> None:
+        row = {"source_ref": "https://cursor.com/blog/compare"}
+        self.assertNotIn("cursor", sc._envelope_evidence_slugs(envs("Windsurf lets the cursor jump between edits.", row), self.pack))
+        self.assertIn("cursor", sc._envelope_evidence_slugs(envs("Windsurf lets Cursor jump between edits.", row), self.pack))
+        self.assertIn("gsd", sc._envelope_evidence_slugs(envs("GSD ships plans.", {"source_ref": "GSD (Get Shit Done) — Claude Plugin"}), self.pack))
+        claim = "Silver Bullet provides workflow composition; Barkain Workflow Orchestrator does not."
+        support = self.support(claim, {"vendors": ["silver-bullet", "barkain-workflow-orchestrator"]})
+        self.assertTrue(support["silver-bullet"]["Workflow composition"])
+        self.assertNotIn("barkain-workflow-orchestrator", {a for a, c in support.items() if any(c.values())})
+
     def test_the_classification_of_a_vendor_needs_a_declaration_too(self) -> None:
         self.assertNotIn("sweep", sc._envelope_evidence_slugs(envs("Sweep provides workflow composition."), self.pack))
         self.assertIn("sweep", sc._envelope_evidence_slugs(envs("The row names it.", {"vendors": ["sweep"]}), self.pack))
