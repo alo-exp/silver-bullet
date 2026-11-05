@@ -87,7 +87,7 @@ hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"')
 tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
 case "$tool_name" in
   Edit|Write|MultiEdit|NotebookEdit|apply_patch) ;;
-  *) sb_tool_is_shell_like "$tool_name" || exit 0 ;;
+  *) sb_tool_is_shell_like "$tool_name" || sb_pf_mcp_write_tool "$tool_name" || exit 0 ;;
 esac
 
 if declare -f sb_project_gate_or_exit >/dev/null 2>&1; then
@@ -286,6 +286,14 @@ if ! sb_tool_input_ok; then
     cmd="$raw_command"
     sb_pf_plain_read_only "$cmd" && exit 0
     emit_block "$(sb_pf_unanalysable_message)"
+    exit 0
+  fi
+fi
+
+if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]]; then
+  unseen_why="$(sb_pf_unseen_reason)"
+  if [[ -n "$unseen_why" ]]; then
+    emit_block "$(sb_pf_unseen_message "$unseen_why")"
     exit 0
   fi
 fi

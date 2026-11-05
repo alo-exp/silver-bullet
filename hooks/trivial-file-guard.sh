@@ -49,10 +49,17 @@ if ! sb_tool_input_ok; then
   [[ "${SB_TI_STATUS:-}" == "empty" ]] && exit 0
   # The shell command cannot be analysed: refuse only what names the marker.
   [[ "$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')" == *trivial* ]] || exit 0
-  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null)"
+  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null || true)"
   sb_pf_plain_read_only "$cmd" && exit 0
   emit_block "$(sb_pf_unanalysable_message)"
   exit 0
+fi
+if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]]; then
+  unseen_why="$(sb_pf_unseen_reason)"
+  if [[ -n "$unseen_why" ]]; then
+    emit_block "$(sb_pf_unseen_message "$unseen_why")"
+    exit 0
+  fi
 fi
 
 # The default marker, and the one the project config names (it is not honoured by the gates,
@@ -65,6 +72,11 @@ if [[ -n "$cfg_trivial" ]]; then
   guarded="$guarded"$'\n'"$(sb_pf_canon "$cfg_trivial")"
 fi
 
+guard_args=()
+while IFS= read -r g; do
+  guard_args+=("$g")
+done <<<"$guarded"
+
 while IFS=$'\t' read -r via target; do
   # Removing the marker only disarms the bypass.
   case "$via" in rm | rmdir | unlink | "git rm") continue ;; esac
@@ -72,7 +84,7 @@ while IFS=$'\t' read -r via target; do
     emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Agents must not write or arm the trivial marker file. Use /sb:fast for trivial work instead."
     exit 0
   fi
-done < <(sb_pf_write_records "$input")
+done < <(sb_pf_expand_ancestors "$(sb_pf_write_records "$input")" "${guard_args[@]}")
 
 if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]] && sb_pf_opaque_mentions silver-bullet/trivial; then
   emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Agents must not write or arm the trivial marker file. Use /sb:fast for trivial work instead."

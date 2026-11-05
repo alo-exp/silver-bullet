@@ -73,8 +73,17 @@ main() {
   input=$(cat)
 
   # Detect hook event type (PreToolUse vs PostToolUse)
-  hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PostToolUse"' 2>/dev/null)
+  payload_invalid=false
+  hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PostToolUse"' 2>/dev/null) || payload_invalid=true
   [[ -n "$hook_event" ]] || hook_event="PostToolUse"
+
+  # PostToolUse only drops the fresh-test-run record: with no record there is nothing to do, so the
+  # call costs no analysis at all.
+  if [[ "$hook_event" != "PreToolUse" && "$payload_invalid" != true ]]; then
+    marker_early="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-${SB_RUNTIME_STATE_DIR}/verify-tests-state}"
+    sb_runtime_path_is_state_scoped "$marker_early" || marker_early="${SB_RUNTIME_STATE_DIR}/verify-tests-state"
+    [[ -e "$marker_early" ]] || exit 0
+  fi
 
   # Advisory-only output: collected, emitted once with the verdict (or alone at exit)
   emit_advisory() {
@@ -113,10 +122,7 @@ main() {
       if [[ "$is_shell" != true ]]; then
         # An MCP tool counts only when its name says it writes (a read tool carries paths too).
         [[ "$tool_kind" == mcp ]] || exit 0
-        case "$(printf '%s' "$tool_name" | tr '[:upper:]' '[:lower:]')" in
-          *write* | *edit* | *create* | *move* | *rename* | *patch* | *replace* | *delete* | *append* | *save*) ;;
-          *) exit 0 ;;
-        esac
+        sb_pf_mcp_write_tool "$tool_name" || exit 0
       fi
       ;;
   esac
@@ -146,17 +152,32 @@ main() {
     fi
   fi
 
+  # A command the analyser reports as code it cannot read (an exceeded budget, eval of computed
+  # text, a shell fed by a pipe...) may write anything: refuse it inside an SB project unless it is
+  # plainly read-only (R1-06, review blocker 1).
+  if [[ "$is_shell" == true && "$hook_event" == "PreToolUse" ]]; then
+    unseen_why="$(sb_pf_unseen_reason)"
+    if [[ -n "$unseen_why" ]] && [[ -n "$(sb_find_project_config_walk_only 2>/dev/null)" ]]; then
+      emit_block "$(sb_pf_unseen_message "$unseen_why")"
+      exit 0
+    fi
+  fi
+
   # Everything this call writes: "via<TAB>canonical path"
   records="$(sb_pf_write_records "$input")"
   opaque_records=""
   runs_recorder=false
   opaque_state=false
+  opaque_contract=false
   script_records=""
   if [[ "$is_shell" == true ]]; then
     opaque_records="$(sb_pf_opaque_records)"
     if [[ "$parse_failed_shell" == true ]]; then opaque_records="$(sb_pf_opaque_records all)"; fi
+    state_tail="${SB_RUNTIME_STATE_DIR#"$HOME"/}"
+    state_tail="$(printf '%s' "$state_tail" | tr '[:upper:]' '[:lower:]')"
     if sb_pf_runs_sb_recorder; then runs_recorder=true; fi
-    if sb_pf_opaque_mentions ".silver-bullet/" "silver-bullet/state"; then opaque_state=true; fi
+    if sb_pf_opaque_mentions "$state_tail" "silver-bullet/state" || sb_pf_script_mentions "$state_tail"; then opaque_state=true; fi
+    if sb_pf_opaque_mentions silver-bullet.md .silver-bullet.json .silver-bullet.prompt.json || sb_pf_script_mentions silver-bullet.md .silver-bullet.json .silver-bullet.prompt.json; then opaque_contract=true; fi
     skill_adapter="${SB_SA_SKILL_ADAPTER:-false}"
     shell_command="${SB_TI_COMMAND:-}"
     invoked_script="${SB_SA_INVOKED_SCRIPT:-}"
@@ -188,6 +209,9 @@ main() {
     sb_plugin_root="${SB_PLUGIN_ROOT:-$(cd "${_sb_hooks_script}/.." && pwd)}"
     sb_plugin_root="$(sb_pf_canon "$sb_plugin_root")"
     runtime_root="$(sb_pf_canon "${SB_RUNTIME_HOME_ROOT}")"
+    # A directory-capable write (cp -r, rsync, tar -x, unzip, mv, git checkout) into a directory
+    # that contains something protected writes it just the same.
+    records="$(sb_pf_expand_ancestors "$records" "$state_dir_canon" "$registry_canon" "$(sb_pf_canon "$plugin_cache")")"
     # A source checkout can live inside a host runtime worktree, so runtime-root ancestry alone is
     # not proof that this is an installed plugin copy. A direct .git marker identifies the source
     # checkout while preserving protection for packaged installations.
@@ -263,12 +287,15 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
     done <<<"$records"
 
     if [[ "$is_shell" == true ]]; then
-      if [[ "$runs_recorder" == true ]]; then
-        emit_block "🚫 STATE TAMPER BLOCKED — Running a Silver Bullet recorder hook (record-*.sh) from the shell forges workflow state. Skills are recorded when the host invokes them through its skill channel."
+      hooks_guard=""
+      [[ "$installed_copy" == true ]] && hooks_guard="${sb_plugin_root}/hooks"
+      if [[ "$runs_recorder" == true ]] || sb_pf_names_sb_recorder "$hooks_guard" \
+        || { [[ "$installed_copy" == true ]] && sb_pf_text_names_recorder; }; then
+        emit_block "🚫 STATE TAMPER BLOCKED — Running, naming or copying a Silver Bullet recorder hook (record-*.sh) from the shell forges workflow state, whichever interpreter launches it. Skills are recorded when the host invokes them through its skill channel."
         exit 0
       fi
-      if [[ "$opaque_state" == true ]]; then
-        emit_block "🚫 STATE TAMPER BLOCKED — This command runs inline code that names the Silver Bullet state directory; its writes cannot be inspected and state files must only be written by hooks."
+      if [[ "$opaque_state" == true ]] || sb_pf_argv_touches_dir "$state_dir_canon" ${hooks_guard:+"$hooks_guard"}; then
+        emit_block "🚫 STATE TAMPER BLOCKED — This command names the Silver Bullet state directory in code or arguments Silver Bullet cannot inspect (inline interpreter code, a script file, ln, find -exec); state files are written only by hooks. To read them, use cat, grep or jq."
         exit 0
       fi
       if [[ ${#cache_targets[@]} -gt 0 ]]; then
@@ -309,6 +336,8 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
   while IFS=$'\t' read -r via target; do
     [[ -n "$target" ]] || continue
     tdir="$(dirname "$target")"
+    # A directory a tree-writing command fills is looked up as itself: it may BE a project root.
+    if [[ -d "$target" ]] && sb_pf_covering_via "$via"; then tdir="$target"; fi
     if [[ "$tdir" == "$last_cfg_dir" ]]; then
       cfg="$last_cfg"
     else
@@ -318,9 +347,12 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
     fi
     [[ -n "$cfg" ]] || continue
     root="$(sb_pf_canon "$(dirname "$cfg")")"
-    # The enforcement contract files: changing them rewrites every gate (R1-07, R2-04).
+    # The enforcement contract files: changing them rewrites every gate (R1-07, R2-04). A
+    # directory-capable write into a directory above them counts.
     while IFS= read -r cf; do
-      if [[ "$target" == "$(sb_pf_canon "$cf")" ]]; then protected_hit="$target"; fi
+      cf="$(sb_pf_canon "$cf")"
+      if [[ "$target" == "$cf" ]]; then protected_hit="$target"; fi
+      if sb_pf_covering_via "$via" && [[ "$cf" == "$target"/* ]]; then protected_hit="$cf"; fi
     done < <(sb_pf_config_files "$root")
     if [[ "$cfg" != "$loaded_cfg" ]]; then
       sb_pf_src_load "$cfg"
@@ -337,13 +369,18 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
     fi
   done <<<"$records$nl$opaque_records"
 
+  cmd_cfg="$(config_for_dir "$PWD")"
+  if [[ "$opaque_contract" == true && -n "$cmd_cfg" ]]; then
+    protected_hit="$(dirname "$cmd_cfg")/silver-bullet.md"
+  fi
   if [[ -n "$protected_hit" && "$hook_event" == "PreToolUse" ]]; then
-    # sb:init / sb:update own these files; nobody else changes them.
-    if ! sb_pf_state_has_skill silver-init silver-update; then
+    # The skills that legitimately rewrite these files (sb:init, sb:update, sb:add, sb:devops,
+    # sb:migrate: SB_PF_CONTRACT_WRITER_SKILLS) unlock them; nobody else changes them.
+    if ! sb_pf_contract_unlocked; then
       audit_target="$protected_hit"
       emit_block "🚫 ENFORCEMENT CONTRACT PROTECTED — $(basename "$protected_hit") defines which gates run and what they require; rewriting, moving or deleting it disables process compliance.
 
-Change it through /sb:init or /sb:update, or have the user edit it directly in their own terminal."
+Change it through the owning skill (/sb:init, /sb:update, /sb:add, /sb:devops, /sb:migrate), or have the user edit it directly in their own terminal. To read it, use cat, grep or jq."
       exit 0
     fi
   fi
@@ -494,10 +531,8 @@ Change it through /sb:init or /sb:update, or have the user edit it directly in t
   fi
 
   # --- Read state file and determine stage -------------------------------------------------
-  completed_skills=""
-  if [[ -f "$state_file" ]]; then
-    completed_skills=$(cat "$state_file")
-  fi
+  # Only what the hooks recorded counts: lines appended by anything else are not sealed.
+  completed_skills="$(sb_state_seal_trusted "$state_file")"
 
   # Helper: check if a skill is in the completed list
   has_skill() {

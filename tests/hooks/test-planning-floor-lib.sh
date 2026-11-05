@@ -184,4 +184,117 @@ if sb_pf_state_has_skill silver-undo; then tl_fail "state skill: other skill"; e
 SILVER_BULLET_STATE_FILE=/etc/outside
 if sb_pf_state_has_skill silver-phase; then tl_pass "state skill: a state path outside the root falls back to the default"; else tl_fail "state skill fallback"; fi
 
+# ── review repair helpers ───────────────────────────────────────────────────────────────────
+cd "$P"
+load "ls src"
+SB_SA_UNSEEN_REASONS="" assert_eq "no unseen reason for a normal command" "" "$(sb_pf_unseen_reason)"
+SB_SA_UNSEEN_REASONS=$'command too large to analyze\nmore' SB_SA_READ_ONLY=false
+assert_eq "the unseen reasons are listed" "command too large to analyze;more" "$(sb_pf_unseen_reason)"
+SB_SA_READ_ONLY=true
+assert_eq "a plainly read-only command is not refused for being unseen" "" "$(sb_pf_unseen_reason)"
+SB_SA_READ_ONLY=false SB_SA_UNSEEN_REASONS=""
+assert_contains "the unseen message names the reason and the way forward" "$(sb_pf_unseen_message "boom")" "cannot inspect this command: boom"
+assert_contains "and offers a split" "$(sb_pf_unseen_message "boom")" "Split it into smaller commands"
+
+mkdir -p "$P/d"
+load "cp -r /tmp/a $P/d"
+if sb_pf_dir_capable_via cp; then tl_pass "cp -r is directory-capable"; else tl_fail "cp -r is directory-capable"; fi
+load "cp -a /tmp/a $P/d"
+if sb_pf_dir_capable_via cp; then tl_pass "cp -a is directory-capable"; else tl_fail "cp -a"; fi
+load "cp notes.md $P/d"
+if sb_pf_dir_capable_via cp; then tl_fail "cp of a plain file"; else tl_pass "cp of a plain file is not"; fi
+load "cp silver-bullet.md $P/d"
+if sb_pf_dir_capable_via cp; then tl_pass "cp of a protected name is"; else tl_fail "cp of a protected name"; fi
+load "mv $P/d /tmp/dd"
+if sb_pf_dir_capable_via mv; then tl_pass "mv of a directory is"; else tl_fail "mv of a directory"; fi
+load "mv a.txt b.txt"
+if sb_pf_dir_capable_via mv; then tl_fail "mv of a plain file"; else tl_pass "mv of a plain file is not"; fi
+load "install -m 644 notes.md $P/d"
+if sb_pf_dir_capable_via install; then tl_fail "install of a plain file"; else tl_pass "install of a plain file is not"; fi
+for v in rsync "tar -x" unzip "unzip -d" "git checkout" "git restore"; do
+  if sb_pf_dir_capable_via "$v"; then tl_pass "$v is directory-capable"; else tl_fail "$v"; fi
+done
+for v in redirect tee touch mkdir rm edit "sed -i"; do
+  if sb_pf_dir_capable_via "$v"; then tl_fail "$v is not"; else tl_pass "$v is not directory-capable"; fi
+done
+rec=$'rsync\t/h\nredirect\t/h/x\ncp\t/elsewhere'
+load "rsync -a /tmp/a /h"
+exp="$(sb_pf_expand_ancestors "$rec" /h/.sb/state /h/.sb/trivial /other)"
+assert_contains "an rsync into /h covers /h/.sb/state" "$exp" $'rsync\t/h/.sb/state'
+assert_contains "and /h/.sb/trivial" "$exp" $'rsync\t/h/.sb/trivial'
+assert_not_contains "but not an unrelated path" "$exp" "/other"
+assert_not_contains "a plain redirect covers nothing" "$exp" $'redirect\t/h/.sb'
+assert_contains "the records themselves are kept" "$exp" $'cp\t/elsewhere'
+assert_eq "no path under a file target" "" "$(sb_pf_expand_ancestors $'rsync\t/h/.sb/state' /h/.sb/state | tail -n +2 | grep -v '^$' || true)"
+
+load "ln -s /h/sd /tmp/l"
+if sb_pf_argv_touches_dir /h/sd; then tl_pass "ln of the protected dir"; else tl_fail "ln of the protected dir"; fi
+if sb_pf_argv_touches_dir /h/other; then tl_fail "a sibling directory is not named"; else tl_pass "ln source in a sibling"; fi
+load "ln -s /h /tmp/l"
+if sb_pf_argv_touches_dir /h/sd; then tl_pass "ln of a directory above the protected dir"; else tl_fail "ln above"; fi
+load "find /h/sd -name x -exec sh -c 'echo {}' \;"
+if sb_pf_argv_touches_dir /h/sd; then tl_pass "find -exec rooted in the protected dir"; else tl_fail "find -exec"; fi
+load "find /h/sd -name x"
+if sb_pf_argv_touches_dir /h/sd; then tl_fail "find without -exec"; else tl_pass "find without -exec reads only"; fi
+load "find src -name x -exec ls {} \;"
+if sb_pf_argv_touches_dir /h/sd; then tl_fail "find elsewhere"; else tl_pass "find -exec elsewhere"; fi
+if sb_pf_argv_touches_dir; then tl_fail "no dir given"; else tl_pass "no dir given"; fi
+
+printf "print('x')\n" >"$P/ok.py"
+printf "open('/h/.claude/.silver-bullet/state')\n" >"$P/bad.py"
+load "python3 ok.py"
+if sb_pf_script_mentions ".claude/.silver-bullet"; then tl_fail "script mentions"; else tl_pass "a script that names nothing"; fi
+load "python3 bad.py"
+if sb_pf_script_mentions ".claude/.silver-bullet"; then tl_pass "a script that names the state dir"; else tl_fail "script mentions state dir"; fi
+load "python3 missing.py"
+if sb_pf_script_mentions "x"; then tl_fail "missing script"; else tl_pass "a missing script file"; fi
+load "ls bad.py"
+if sb_pf_script_mentions ".claude/.silver-bullet"; then tl_fail "ls is no interpreter"; else tl_pass "ls is no interpreter"; fi
+
+for n in mcp__fs__write_file mcp__fs__edit_file mcp__fs__create_directory mcp__fs__move_file mcp__fs__fs_mv mcp__x__save_note mcp__x__apply_patch mcp__x__copy_file mcp__x__rename; do
+  if sb_pf_mcp_write_tool "$n"; then tl_pass "$n writes"; else tl_fail "$n writes"; fi
+done
+for n in mcp__fs__read_file mcp__fs__list_directory mcp__x__search Read Bash; do
+  if sb_pf_mcp_write_tool "$n"; then tl_fail "$n does not write"; else tl_pass "$n does not write"; fi
+done
+
+load "python3 -c 'import subprocess;subprocess.run([\"bash\",\"/i/hooks/record-skill.sh\"])'"
+if sb_pf_text_names_recorder; then tl_pass "inline code spelling a recorder path"; else tl_fail "inline recorder path"; fi
+load "cat /i/hooks/record-skill.sh"
+if sb_pf_text_names_recorder; then tl_fail "reading a recorder"; else tl_pass "reading a recorder is fine"; fi
+load "python3 /i/hooks/record-skill.sh"
+if sb_pf_names_sb_recorder; then tl_pass "an interpreter given a recorder"; else tl_fail "interpreter recorder"; fi
+load "python3 /i/hooks/record-skill"
+if sb_pf_names_sb_recorder; then tl_pass "a recorder without .sh"; else tl_fail "recorder without .sh"; fi
+load "cat /i/hooks/record-skill.sh"
+if sb_pf_names_sb_recorder; then tl_fail "cat names a recorder"; else tl_pass "cat is a reader"; fi
+load "git add hooks/record-skill.sh"
+if sb_pf_names_sb_recorder; then tl_fail "git add"; else tl_pass "git add is a reader"; fi
+load "cp -r /i/hooks /tmp/hh"
+if sb_pf_names_sb_recorder /i/hooks; then tl_pass "copying the hooks dir out (installed copy)"; else tl_fail "cp hooks dir"; fi
+if sb_pf_names_sb_recorder; then tl_fail "cp hooks dir without a hooks guard"; else tl_pass "no hooks guard in a source checkout"; fi
+load "ls /i/hooks"
+if sb_pf_names_sb_recorder /i/hooks; then tl_fail "ls hooks dir"; else tl_pass "ls of the hooks dir"; fi
+
+# the unlock list: every skill that rewrites the contract files through the agent is on it
+for sk in silver-init silver-update silver-add silver-devops silver-migrate; do
+  case " $SB_PF_CONTRACT_WRITER_SKILLS " in *" $sk "*) tl_pass "$sk may rewrite the contract";; *) tl_fail "$sk missing from the unlock list";; esac
+done
+export SILVER_BULLET_STATE_FILE="$SB_RUNTIME_STATE_DIR/state"
+printf 'silver-plan\n' >"$SILVER_BULLET_STATE_FILE"
+if sb_pf_contract_unlocked; then tl_fail "silver-plan unlocks"; else tl_pass "an unrelated skill does not unlock"; fi
+printf 'silver-add\n' >"$SILVER_BULLET_STATE_FILE"
+if sb_pf_contract_unlocked; then tl_pass "silver-add unlocks"; else tl_fail "silver-add unlocks"; fi
+# drift: a skill that rewrites .silver-bullet.json with jq and mv must be on the list
+while IFS= read -r f; do
+  name="$(basename "$(dirname "$f")")"
+  case " $SB_PF_CONTRACT_WRITER_SKILLS " in *" $name "*) tl_pass "$name rewrites the config and is listed";; *) tl_fail "$name rewrites .silver-bullet.json but is not on SB_PF_CONTRACT_WRITER_SKILLS";; esac
+done < <(grep -lE 'mv "?\$[A-Za-z_]+"? \.silver-bullet\.json|> *\.silver-bullet\.json|Write `?\.silver-bullet\.json|set `\.silver-bullet\.json` ' "$TL_REPO_ROOT"/skills/*/SKILL.md 2>/dev/null || true)
+
+# hooks.json: the guards see MCP file-write tools too
+for h in planning-file-guard instruction-file-guard workflow-chain-guard dev-cycle-check; do
+  n="$(jq -r --arg h "$h.sh" '[.hooks.PreToolUse[] | select(.matcher | test("mcp__")) | .hooks[] | select(.command | endswith($h + "\""))] | length' "$TL_REPO_ROOT/hooks/hooks.json")"
+  assert_eq "$h is registered for MCP write tools" 1 "$n"
+done
+
 tl_results

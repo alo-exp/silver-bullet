@@ -253,6 +253,46 @@ dg_run "$P" "$H" "$(patch "*** Begin Patch
 assert_eq "several overridden files: still one JSON document" 1 "$(jq -s length <<<"$TL_OUT")"
 assert_contains "and it names both notices" "$(jq -r .systemMessage <<<"$TL_OUT")" "ROADMAP.md"
 
+# --- review repair: unseen commands, ancestor writes, MCP tools, truncated payloads -----------
+rm -f "$ST/state" "$ST/roadmap-edit-override" "$ST/planning-edit-override"
+PADF="$TL_TMP/pad.txt"; head -c 600000 /dev/zero | tr '\0' 'a' >"$PADF"
+big="$(jq -cn --rawfile pad "$PADF" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:("echo x >> .planning/ROADMAP.md; # " + $pad)}}')"
+dg_run "$P" "$H" "$big"
+assert_eq "an over-budget command is refused, not silently allowed" "deny" "$(dec)"
+assert_contains "the message says it cannot inspect, with the way forward" "$(reason)" "cannot inspect this command"
+dg_run "$P" "$H" "$(sh 'eval "$X"')"
+assert_eq "eval of computed text is refused" "deny" "$(dec)"
+dg_run "$P" "$H" "$(sh 'ls -la; git status')"
+assert_eq "an ordinary command passes" "none" "$(dec)"
+dg_run "$P" "$H" "$(sh 'npm test')"
+assert_eq "running tests passes" "none" "$(dec)"
+FK="$TL_TMP/fakeplan"; mkdir -p "$FK/.planning"; echo x >"$FK/.planning/ROADMAP.md"
+for c in "cp -r $FK/.planning ." "cp -a $FK/.planning/. .planning/" "rsync -a $FK/.planning/ .planning/" "tar -xf p.tar -C .planning" "mv $FK/.planning ." "git checkout HEAD -- .planning" "tar -xf p.tar" "unzip -o p.zip"; do
+  dg_run "$P" "$H" "$(sh "$c")"
+  assert_eq "a write over the planning directory is refused: $c" "deny" "$(dec)"
+done
+for c in "cp -r src/. dist/" "cp notes.md .planning/NOTES.md" "rsync -a build/ out/" "tar -xf v.tar -C vendor" "mv a.txt b.txt"; do
+  dg_run "$P" "$H" "$(sh "$c")"
+  assert_eq "an honest copy passes: $c" "none" "$(dec)"
+done
+dg_run "$P" "$H" "$(sh 'mv .planning /tmp/pl')"
+assert_eq "moving the planning directory away is refused" "deny" "$(dec)"
+mcp() { jq -cn --arg t "$1" --arg p "$2" '{hook_event_name:"PreToolUse",tool_name:$t,tool_input:{path:$p,content:"x"}}'; }
+dg_run "$P" "$H" "$(mcp mcp__filesystem__write_file "$P/.planning/ROADMAP.md")"
+assert_eq "an MCP write tool is judged like Write" "deny" "$(dec)"
+dg_run "$P" "$H" "$(mcp mcp__filesystem__edit_file "$P/.planning/STATE.md")"
+assert_eq "an MCP edit tool is judged" "deny" "$(dec)"
+dg_run "$P" "$H" "$(mcp mcp__filesystem__read_file "$P/.planning/ROADMAP.md")"
+assert_eq "an MCP read tool is not a write" "none" "$(dec)"
+dg_run "$P" "$H" "$(jq -cn --arg p "$P/.planning/ROADMAP.md" '{hook_event_name:"PreToolUse",tool_name:"Read",tool_input:{file_path:$p}}')"
+assert_eq "the Read tool is not a write" "none" "$(dec)"
+dg_run "$P" "$H" "$(mcp mcp__filesystem__write_file "$P/.planning/NOTES.md")"
+assert_eq "an MCP write to an unlisted planning file passes" "none" "$(dec)"
+dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"echo x >> .planning/ROADMAP.md'
+assert_eq "a truncated payload that names .planning fails closed" "deny" "$(dec)"
+dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls'
+assert_eq "a truncated payload that names nothing protected passes" "" "$TL_OUT"
+
 # --- python3 missing: the analysis helper is unavailable ----------------------------------------
 NOPY="$(tl_path_without python3)"
 dg_run "$P" "$H" "$(sh "sed -i s/a/b/ .planning/ROADMAP.md")" PATH="$NOPY"

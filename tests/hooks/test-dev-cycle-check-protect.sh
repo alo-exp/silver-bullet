@@ -367,10 +367,11 @@ assert_eq "no python3, apply_patch on PostToolUse: ignored" "none" "$(decision)"
 RUN_DIR="$NOCFG" run_dc "$(jq -cn --arg p "$PATCH_SRC" '{hook_event_name:"PreToolUse",tool_name:"apply_patch",tool_input:{input:$p}}')" PATH="$(tl_path_without python3)"
 assert_eq "no python3, apply_patch outside an SB project: ignored" "none" "$(decision)"
 dc_cmd "python3 -c \"import os; os.system('echo x >> ' + os.path.expanduser('~/.${SB_RUNTIME_NAME}/.silver-bullet/') + 'state')\""
-assert_eq "string-built inline code that names the state dir is refused" "deny" "$(decision)"
-assert_contains "and the message says why" "$(message)" "inline code that names the Silver Bullet state directory"
-inst "$(bash_json "python3 -c \"import os; os.system('rm ' + '$HOOKS_DIR' + '/x')\"")"
-assert_contains "string-built inline code that names the installed hooks is refused" "$(message)" "NEVER modifies its own enforcement hooks"
+assert_contains "string-built inline code is refused as unreadable code" "$(message)" "cannot inspect this command"
+dc_cmd "python3 -c \"import shutil; shutil.copy('a', '$HOME/.${SB_RUNTIME_NAME}/.silver-bullet/state')\""
+assert_contains "readable inline code that names the state dir is refused" "$(message)" "names the Silver Bullet state directory"
+inst "$(bash_json "python3 -c \"import shutil; shutil.copy('a', '$HOOKS_DIR/x')\"")"
+assert_contains "inline code that names the installed hooks is refused" "$(message)" "NEVER modifies its own enforcement hooks"
 mkproj multi
 state inst-a
 dc_cmd 'rm -rf /tmp/g2-scratch && echo x > src/a.js'
@@ -416,14 +417,12 @@ assert_contains "no python3: a patch cannot be read and is refused with the fix"
 RUN_DIR="$NOCFG" dc_cmd 'echo x > src/app.js' PreToolUse PATH="$NOPY"
 assert_eq "no python3 outside an SB project: nothing is refused" "none" "$(decision)"
 dc_cmd "echo 'unterminated > src/app.js"
-assert_eq "an unparsable write into src is judged by the planning floor" "deny" "$(decision)"
+assert_eq "an unparsable write into src is refused" "deny" "$(decision)"
 state inst-a
 dc_cmd "echo 'unterminated > src/app.js"
-assert_eq "an unparsable write into src passes once planning is done" "allow" "$(decision)"
-dc_cmd "echo 'unterminated > notes/out.txt"
-assert_eq "an unparsable command writing elsewhere is ignored" "none" "$(decision)"
+assert_contains "an unparsable command is refused as unreadable even with planning done" "$(message)" "cannot inspect this command"
 dc_cmd 'cat x <<<'
-assert_eq "a parse failure on a read does not block honest work" "none" "$(decision)"
+assert_eq "a syntax error is refused too (the shell would reject it anyway)" "deny" "$(decision)"
 
 # ── remaining shell/config/state paths ───────────────────────────────────────
 mkproj misc

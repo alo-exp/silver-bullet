@@ -162,6 +162,17 @@ dg_run "$P" "$H" "$(bash_json "$CLEAR")"
 assert_contains "files only plus an archive: nothing new to copy" "$TL_OUT" "already preserved"
 fresh
 
+# moving the whole phases directory away is a clear too
+fresh
+dg_run "$P" "$H" "$(bash_json 'mv .planning/phases /tmp/g2-moved-phases')"
+assert_contains "mv .planning/phases is archived first" "$TL_OUT" "copied phases"
+fresh
+dg_run "$P" "$H" "$(bash_json 'mv .planning /tmp/g2-moved-planning')"
+assert_contains "mv .planning is archived first" "$TL_OUT" "copied phases"
+fresh
+dg_run "$P" "$H" "$(bash_json 'mv .planning/phases/001-a /tmp/g2-one-phase')"
+assert_eq "moving a single phase is not a clear" "" "$TL_OUT"
+
 # python3 missing / unparsable command
 dg_run "$P" "$H" "$(bash_json "$CLEAR")" PATH="$(tl_path_without python3)"
 assert_eq "no python3: deny" deny "$(jq -r .hookSpecificOutput.permissionDecision <<<"$TL_OUT")"
