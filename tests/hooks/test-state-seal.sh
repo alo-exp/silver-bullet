@@ -184,4 +184,37 @@ sb_state_seal_write "$S"
 assert_file_absent "a symlinked state is never sealed" "$S.seal"
 rm -f "$S"
 
+# the log and key directory default to the state's own when the runtime has none
+assert_eq "without a runtime state directory the state's own is used" "/x/y" "$(unset SB_RUNTIME_STATE_DIR; _sb_state_seal_dir /x/y/state)"
+
+# a key that cannot be made
+fresh
+REALPY="$(command -v python3)"
+tl_stub python3 "case \"\$*\" in *urandom*) exit 1 ;; esac; exec \"$REALPY\" \"\$@\""
+printf 'a\n' >"$S"
+sb_state_seal_write "$S"
+rm -f "$TL_BIN/python3"
+assert_eq "no key could be made: a plain checksum" "cksum" "$(sed -n 2p "$S.seal")"
+assert_file_absent "and no key file is left" "$SD/seal.key"
+assert_file_absent "nor a temporary one" "$SD/seal.key.$$"
+
+# counters: a damaged seal, and a counter that fell behind the seal
+fresh
+printf 'a\n' >"$S"
+printf 'v2\nhmac\nXX\n1\n-\nd\n' >"$S.seal"
+sb_state_seal_write "$S"
+assert_eq "a damaged seal counts from the stored maximum" "1" "$(sed -n 3p "$S.seal")"
+printf '0\n' >"$S.hwm"
+sb_state_seal_write "$S"
+assert_eq "a counter behind the seal is overtaken, not reused" "2" "$(sed -n 3p "$S.seal")"
+
+# nothing to judge
+fresh
+sb_state_seal_enforce "$S"
+assert_file_absent "enforce on a missing state creates nothing" "$S"
+ln -s "$TL_TMP/real2" "$S"
+sb_state_seal_enforce "$S"
+assert_file_absent "enforce through a symlinked state does nothing" "$TL_TMP/real2"
+rm -f "$S"
+
 tl_results

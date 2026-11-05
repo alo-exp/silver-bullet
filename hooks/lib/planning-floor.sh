@@ -175,6 +175,7 @@ _sb_pf_pattern_expand() {
 # RAW is $VAR / ${VAR} assigned from mktemp in this command, or a $(mktemp ...) itself.
 _sb_pf_bare_var_is_mktemp() {
   local raw="$1" name cmd="${SB_TI_COMMAND:-}"
+  # shellcheck disable=SC2016  # the text is matched literally
   case "$raw" in '$(mktemp'* | '`mktemp'*) return 0 ;; esac
   name="${raw#\$}"
   name="${name#\{}"
@@ -190,10 +191,10 @@ _sb_pf_bare_var_is_mktemp() {
 _sb_pf_pattern_records() {
   local via pat dyn raw
   while IFS=$'\t' read -r via pat dyn raw; do
-    [[ -n "$pat" ]] || continue
     if [[ "$dyn" == true ]]; then
       # A path that starts with a variable may be absolute: it is not joined to the directory.
       case "$raw" in '$'*) pat="$raw" ;; esac
+      # shellcheck disable=SC2016  # a sed expression, not shell
       pat="$(printf '%s' "$pat" | sed -E 's/\$\{[^}]*\}|\$\([^)]*\)|\$[A-Za-z_][A-Za-z0-9_]*|`[^`]*`|\$[0-9@*#?!$-]/*/g')"
       # A target that is nothing but a variable could be anything. Scripts (whose variables are
       # their own business) and temp files made by mktemp in the same command are the honest cases.
@@ -475,7 +476,6 @@ sb_pf_unreadable_script() {
   local records="${1:-}" prog abs
   [[ "${SB_SA_READ_ONLY:-false}" != "true" ]] || return 1
   while IFS= read -r prog; do
-    [[ -n "$prog" ]] || continue
     abs="$(sb_pf_canon "$prog")"
     if [[ -e "$abs" ]]; then
       [[ -f "$abs" && -r "$abs" ]] || { printf '%s' "$prog"; return 0; }
@@ -498,7 +498,7 @@ sb_pf_tool_input_load() {
   tn="$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null)" || tn=""
   case "$tn" in
     Edit | Write | MultiEdit)
-      fp="$(printf '%s' "$input" | jq -r '.tool_input | objects | .file_path | strings' 2>/dev/null)" || fp=""
+      fp="$(printf '%s' "$input" | jq -r '.tool_input | objects | .file_path | strings' 2>/dev/null)"
       if [[ -n "$fp" ]]; then
         SB_TI_STATUS=ok SB_TI_ERROR="" SB_TI_TOOL_NAME="$tn" SB_TI_TOOL_KIND=edit SB_TI_COMMAND=""
         SB_TI_FILE_PATH="$fp" SB_TI_PATCH_PATHS="" SB_SA_JSON="{}" SB_SA_READ_ONLY=false

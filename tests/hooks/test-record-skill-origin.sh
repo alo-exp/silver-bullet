@@ -66,4 +66,9 @@ assert_contains "a contract writer records its unlock" "$(cat "$SB_RUNTIME_STATE
 rs "$(skill_input silver-add)"
 assert_contains "and again when it is invoked a second time" "$(cat "$SB_RUNTIME_STATE_DIR/contract-unlock")" "silver-add "
 
+# a registry that is not JSON names no install
+reset; printf 'not json' >"$REG"
+copy_rs "$(skill_input silver-context)"
+assert_in "an unreadable registry names nothing: the copy records" "$STATE" silver-context
+
 tl_results

@@ -24,9 +24,9 @@ sb_contract_unlock_write() {
   case " $SB_PF_CONTRACT_WRITER_SKILLS " in *" $skill "*) ;; *) return 0 ;; esac
   file="$(sb_contract_unlock_file)"
   [[ ! -L "$file" ]] || return 0
-  mkdir -p "$(dirname "$file")" 2>/dev/null || return 0
   tmp="${file}.$$"
-  printf '%s %s\n' "$skill" "$(date +%s)" >"$tmp" 2>/dev/null && mv -f -- "$tmp" "$file" 2>/dev/null || rm -f -- "$tmp" 2>/dev/null
+  if printf '%s %s\n' "$skill" "$(date +%s)" 2>/dev/null >"$tmp"; then mv -f -- "$tmp" "$file"; fi
+  rm -f -- "$tmp"
   return 0
 }
 

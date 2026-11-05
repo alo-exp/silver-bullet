@@ -33,10 +33,9 @@ _sb_state_seal_log() { # STATE MESSAGE
   local log
   log="$(_sb_state_seal_dir "$1")/seal-events.log"
   [[ ! -L "$log" ]] || return 0
-  mkdir -p "$(dirname "$log")" 2>/dev/null || return 0
   # One line per distinct event: the gates read the state on every call.
   [[ "$(tail -n 1 "$log" 2>/dev/null | cut -d' ' -f2-)" != "$2" ]] || return 0
-  printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$2" >>"$log" 2>/dev/null || true
+  if printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$2" 2>/dev/null >>"$log"; then :; fi
 }
 
 _sb_state_seal_key_file() { printf '%s/seal.key' "$(_sb_state_seal_dir "$1")"; }
@@ -48,10 +47,9 @@ _sb_state_seal_ensure_key() {
   [[ ! -L "$key" ]] || return 1
   [[ -f "$key" ]] && return 0
   command -v python3 >/dev/null 2>&1 || return 1
-  mkdir -p "$(dirname "$key")" 2>/dev/null || return 1
   tmp="${key}.$$"
   (umask 077 && python3 -c 'import os,sys;sys.stdout.write(os.urandom(32).hex())' >"$tmp") 2>/dev/null || { rm -f -- "$tmp"; return 1; }
-  ln "$tmp" "$key" 2>/dev/null || true
+  if ln "$tmp" "$key" 2>/dev/null; then :; fi
   rm -f -- "$tmp"
   [[ -f "$key" ]]
 }
@@ -97,7 +95,7 @@ sb_state_seal_write() {
   [[ "$prev" =~ ^[0-9]+$ ]] || prev=0
   [[ "$prev" -le "$c" ]] || c="$prev"
   c=$((c + 1))
-  kind=cksum
+  kind='cksum'
   if _sb_state_seal_ensure_key "$state"; then
     kind=hmac
   else
@@ -106,9 +104,11 @@ sb_state_seal_write() {
   bsum="$(_sb_state_seal_branch_sum "$state")"
   digest="$(_sb_state_seal_message "$state" "$n" "$c" "$bsum" | _sb_state_seal_digest "$kind" "$state")" || return 0
   tmp="${seal}.$$"
-  printf 'v2\n%s\n%s\n%s\n%s\n%s\n' "$kind" "$c" "$n" "$bsum" "$digest" >"$tmp" && mv -f -- "$tmp" "$seal" || { rm -f -- "$tmp"; return 0; }
+  if printf 'v2\n%s\n%s\n%s\n%s\n%s\n' "$kind" "$c" "$n" "$bsum" "$digest" 2>/dev/null >"$tmp"; then mv -f -- "$tmp" "$seal"; fi
+  rm -f -- "$tmp"
   tmp="${hwm}.$$"
-  printf '%s\n' "$c" >"$tmp" && mv -f -- "$tmp" "$hwm" || rm -f -- "$tmp"
+  if printf '%s\n' "$c" 2>/dev/null >"$tmp"; then mv -f -- "$tmp" "$hwm"; fi
+  rm -f -- "$tmp"
   return 0
 }
 

@@ -298,7 +298,7 @@ fi
 # A copy of the plugin made to run the recorder elsewhere is refused: the host sets
 # CLAUDE_PLUGIN_ROOT to the root of the hook it runs, and the host's registry names the installs
 # of this plugin. A source checkout (.git) is its own authority.
-_self_root="$(cd "${_repo_dir:-.}" 2>/dev/null && pwd -P)" || _self_root=""
+_self_root="$(cd "${_repo_dir:-.}" && pwd -P)"
 _origin_ok=true
 if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && "$(cd "$CLAUDE_PLUGIN_ROOT" 2>/dev/null && pwd -P)" != "$_self_root" ]]; then
   _origin_ok=false
