@@ -177,6 +177,10 @@ therefore does not guess from the words around a name. Identity is declared (`sc
   person's name (Director, Cursor, Linear, Continue, Silver Bullet, Devin, GSD, Barkain, ...) is credited only by:
   a `vendors` tag on the claim row (at most 12 per row, each an exact vendor slug; a category alias such as
   `sdlc` is not one); a `source_ref` that names it (the text must also spell it in capitals); or its pack URL.
+  A URL is parsed, not pattern-matched: only a token that starts with `http://`, `https://` or `www.` counts, its
+  host (userinfo, port and Markdown link text ignored) must be a lower-case ASCII pack domain or a subdomain of
+  it. A scheme-less `cursor.com/x` or `devin.ai/2` credits nothing (an accepted recall cost); the same parser
+  reads `source_ref`.
   Nothing else credits it: not lists, matrix lines, qualified displays such as `Devin (Cognition)`, acronym
   expansions, head nouns, versions, makers, capitals or headings. No parser can tick a feature cell for it from
   free text.
