@@ -1364,6 +1364,9 @@ RUNTIME_CLAUDE_ALLOWED_GLOBS=(
   # (validate-host-agnostic-core.sh's forbidden-pattern list).
   -g '!**/scripts/render-agent-bundle.py'
   -g '!**/scripts/validate-host-agnostic-core.sh'
+  # Repository invariants: the graphify skill-lock check names .claude/skills (where the
+  # graphify tool installs its skill) to hash it; it is repo tooling, not a Codex runtime path.
+  -g '!**/scripts/lib/repo_invariants.py'
   # Claude-host maintenance and operator-only Claude live harnesses; none of
   # them runs inside a Codex session.
   -g '!**/scripts/lib/plugin-cache-version.sh'
