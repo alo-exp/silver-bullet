@@ -336,7 +336,7 @@ class ProseInferenceTests(unittest.TestCase):
             self.assertFalse(m._parse_solution_led_matrix_entry(support, "???", "body"))
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class ListParsingTests(unittest.TestCase):
     def test_extract_slugs_from_list(self) -> None:
         self.assertEqual(m._extract_slugs_from_list("Devin, Aider (oss), cline only among peers"), ["devin", "aider", "cline"])
@@ -536,7 +536,7 @@ class SlugScopedProseTests(unittest.TestCase):
         self.assertEqual(support, {"github-copilot": {"Hook-enforced gates": True}})
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class BulkClaimTests(unittest.TestCase):
     def test_extract_bulk_solution_list(self) -> None:
         f = m._extract_bulk_solution_list
@@ -586,7 +586,7 @@ class BulkClaimTests(unittest.TestCase):
         self.assertEqual(support, {"cursor": {"IDE-native integration": True}, "claude-code": {"IDE-native integration": True}})
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class ParseFeatureSupportTests(unittest.TestCase):
     def test_dispatch_order(self) -> None:
         envelopes = env(

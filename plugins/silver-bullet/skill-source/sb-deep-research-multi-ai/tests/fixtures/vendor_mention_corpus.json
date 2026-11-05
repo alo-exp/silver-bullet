@@ -230,7 +230,7 @@
   "slug": "cursor",
   "text": "Unlike Cursor, Silver Bullet enforces gates.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -238,7 +238,7 @@
   "slug": "cursor",
   "text": "Install Cursor and enable the plugin.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -246,13 +246,15 @@
   "slug": "cursor",
   "text": "Like Cursor, Windsurf ships an IDE.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Unlike Director, cc10x has no hooks."
+  "text": "Unlike Director, cc10x has no hooks.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -260,7 +262,7 @@
   "slug": "director",
   "text": "Besides Director, few tools enforce gates.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -268,19 +270,23 @@
   "slug": "director",
   "text": "Notably Director enforces review gates.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "factory-ai",
-  "text": "Factory Droids ship PRs from tickets."
+  "text": "Factory Droids ship PRs from tickets.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "Cursor Composer edits many files."
+  "text": "Cursor Composer edits many files.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -288,7 +294,7 @@
   "slug": "cursor",
   "text": "Teams run Cursor agents in the cloud.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -296,7 +302,7 @@
   "slug": "director",
   "text": "Director agents enforce review gates.",
   "known_miss": true,
-  "note": "a name that opens a sentence needs a verb of its own right after it"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -304,7 +310,7 @@
   "slug": "cursor",
   "text": "The Cursor model picker offers GPT and Claude.",
   "known_miss": true,
-  "note": "accepted: a name after an article is a common noun (\"Hover the Cursor\"); only a product cue after it rescues it"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -312,7 +318,7 @@
   "slug": "linear",
   "text": "Silver Bullet reads Linear Issues and GitHub PRs.",
   "known_miss": true,
-  "note": "a name that opens a sentence needs a verb of its own right after it"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -320,13 +326,15 @@
   "slug": "director",
   "text": "Conductor or Director can enforce the gates.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "Claude Code and Cursor support hooks."
+  "text": "Claude Code and Cursor support hooks.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -334,7 +342,7 @@
   "slug": "director",
   "text": "Director and Conductor enforce gates.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -342,13 +350,15 @@
   "slug": "director",
   "text": "Anthropic engineers praised Director for gates.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "conductor",
-  "text": "Melty Conductor runs parallel Claude Code agents."
+  "text": "Melty Conductor runs parallel Claude Code agents.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -356,7 +366,7 @@
   "slug": "conductor",
   "text": "Conductor runs parallel Claude Code agents.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -364,7 +374,7 @@
   "slug": "director",
   "text": "Director ships hook-enforced gates.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -372,7 +382,7 @@
   "slug": "director",
   "text": "Director's hooks enforce gates.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -380,13 +390,15 @@
   "slug": "director",
   "text": "Using Director, teams enforce gates.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "Most teams pair Codex with Cursor IDE."
+  "text": "Most teams pair Codex with Cursor IDE.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -394,7 +406,7 @@
   "slug": "cursor",
   "text": "Most teams adopt Cursor Pro.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -402,13 +414,15 @@
   "slug": "director",
   "text": "Tools such as Director Pro enforce gates.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Compare Director and cc10x."
+  "text": "Compare Director and cc10x.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "round1_recall",
@@ -416,87 +430,124 @@
   "slug": "director",
   "text": "Lead or Director roles are not products, but Director the tool enforces gates.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Silver Bullet provides workflow composition; Deepwork has no public evidence.",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Silver Bullet provides workflow composition, and Deepwork has no public evidence.",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Silver Bullet provides workflow composition, but Deepwork has no public evidence.",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Silver Bullet provides workflow composition, while Deepwork has no public evidence.",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Silver Bullet provides workflow composition (Deepwork: no public evidence).",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Silver Bullet provides workflow composition. Deepwork has no public evidence.",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Silver Bullet provides workflow composition - Deepwork has no public evidence.",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Silver Bullet provides workflow composition: Deepwork has no public evidence.",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Director provides workflow composition, and no claims of SSO were found.",
   "slug": "director",
-  "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "vendors": [
+   "director"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Silver Bullet provides hook-enforced gates and blocks PR creation without evidence of review.",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Silver Bullet provides hook-enforced gates that reject PRs with no evidence of review.",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Silver Bullet provides hook-enforced gates and is not on the hard-exclusion list.",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Unlike the hard exclusions, Silver Bullet provides workflow composition.",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
@@ -510,13 +561,19 @@
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Hard exclusions: Sweep, Windsurf. Silver Bullet provides workflow composition.",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Silver Bullet provides workflow composition, Deepwork has no evidence.",
-  "slug": "silver-bullet"
+  "slug": "silver-bullet",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_drop",
@@ -588,37 +645,55 @@
   "set": "absence_keep",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides hook-enforced gates that refuse delivery on missing evidence files."
+  "text": "Silver Bullet provides hook-enforced gates that refuse delivery on missing evidence files.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet supports workflow composition with zero claims of regressions."
+  "text": "Silver Bullet supports workflow composition with zero claims of regressions.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition and rejects PRs with no evidence of review."
+  "text": "Silver Bullet provides workflow composition and rejects PRs with no evidence of review.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition, and the gate blocks merges without evidence of review."
+  "text": "Silver Bullet provides workflow composition, and the gate blocks merges without evidence of review.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition; Barkain Workflow Orchestrator does not."
+  "text": "Silver Bullet provides workflow composition; Barkain Workflow Orchestrator does not.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_keep",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Deepwork has no public evidence of workflow composition; Silver Bullet provides workflow composition."
+  "text": "Deepwork has no public evidence of workflow composition; Silver Bullet provides workflow composition.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "absence_drop",
@@ -642,7 +717,10 @@
   "set": "absence_keep",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition and, unlike Sweep, is not a hard exclusion."
+  "text": "Silver Bullet provides workflow composition and, unlike Sweep, is not a hard exclusion.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "r3_false_positive",
@@ -842,26 +920,17 @@
  {
   "set": "r3_false_positive",
   "kind": "plain_english",
-  "text": "Devin from accounting approved the invoice.",
-  "residual": [
-   "devin"
-  ]
+  "text": "Devin from accounting approved the invoice."
  },
  {
   "set": "r3_false_positive",
   "kind": "plain_english",
-  "text": "Ask Devin to review the slides before Friday.",
-  "residual": [
-   "devin"
-  ]
+  "text": "Ask Devin to review the slides before Friday."
  },
  {
   "set": "r3_false_positive",
   "kind": "plain_english",
-  "text": "My colleague Devin Smith runs the meetup.",
-  "residual": [
-   "devin"
-  ]
+  "text": "My colleague Devin Smith runs the meetup."
  },
  {
   "set": "r3_false_positive",
@@ -1044,7 +1113,7 @@
   "slug": "cursor",
   "text": "Cursor ships a background agent for long tasks.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1052,7 +1121,7 @@
   "slug": "cursor",
   "text": "Many teams moved from VS Code to Cursor last year.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1060,7 +1129,7 @@
   "slug": "cursor",
   "text": "Anysphere, the maker of Cursor, raised a new round.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1068,7 +1137,7 @@
   "slug": "cursor",
   "text": "Rules files in Cursor shape agent behaviour.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1076,13 +1145,15 @@
   "slug": "director",
   "text": "Director orchestrates Claude Code subagents with review gates.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "We compared Director, Deepwork and GSD."
+  "text": "We compared Director, Deepwork and GSD.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1090,7 +1161,7 @@
   "slug": "director",
   "text": "In Director, every phase ends with a gate.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1098,7 +1169,7 @@
   "slug": "conductor",
   "text": "Conductor lets you run several Claude Code agents in parallel worktrees.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1106,7 +1177,7 @@
   "slug": "conductor",
   "text": "Melty Labs builds Conductor for macOS.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1120,7 +1191,7 @@
   "slug": "factory-ai",
   "text": "Factory raised funding to expand its Droids platform.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1128,7 +1199,7 @@
   "slug": "linear",
   "text": "Issues sync from Linear into the agent queue.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1136,7 +1207,7 @@
   "slug": "linear",
   "text": "Linear tickets trigger the Factory Droids.",
   "known_miss": true,
-  "note": "a name that opens a sentence needs a verb; 'tickets' is not one"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1144,7 +1215,7 @@
   "slug": "continue",
   "text": "Continue is an open-source IDE extension for custom assistants.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1152,7 +1223,7 @@
   "slug": "continue",
   "text": "Teams configure Continue with local models.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1166,19 +1237,23 @@
   "slug": "github-copilot",
   "text": "Copilot reviews pull requests on GitHub.",
   "known_miss": true,
-  "note": "'reviews' is not a subject verb (it is also a plural noun: 'Director reviews'); precision first"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "devin",
-  "text": "Devin by Cognition opens PRs autonomously."
+  "text": "Devin by Cognition opens PRs autonomously.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "devin",
-  "text": "Teams assign Jira tickets to Devin."
+  "text": "Teams assign Jira tickets to Devin.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1186,7 +1261,7 @@
   "slug": "aider",
   "text": "Aider commits every edit to git automatically.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1194,13 +1269,15 @@
   "slug": "aider",
   "text": "Paul Gauthier maintains Aider as open source.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "sweep",
-  "text": "Sweep AI turns GitHub issues into PRs."
+  "text": "Sweep AI turns GitHub issues into PRs.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
@@ -1208,55 +1285,78 @@
   "slug": "cursor",
   "text": "Compared with Cursor, Windsurf has fewer rules options.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Unlike GSD, Director enforces gates through hooks."
+  "text": "Unlike GSD, Director enforces gates through hooks.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r3_absence",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition, whereas Deepwork has no public evidence."
+  "text": "Silver Bullet provides workflow composition, whereas Deepwork has no public evidence.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "r3_absence",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition — Deepwork has no public evidence."
+  "text": "Silver Bullet provides workflow composition — Deepwork has no public evidence.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "r3_absence",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Deepwork has no public evidence, but Silver Bullet provides workflow composition."
+  "text": "Deepwork has no public evidence, but Silver Bullet provides workflow composition.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "r3_absence",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "No public evidence exists for Deepwork. Silver Bullet provides workflow composition."
+  "text": "No public evidence exists for Deepwork. Silver Bullet provides workflow composition.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "r3_absence",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition and denies merges without evidence of review."
+  "text": "Silver Bullet provides workflow composition and denies merges without evidence of review.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "r3_absence",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides hook-enforced gates that stop delivery with missing evidence of tests."
+  "text": "Silver Bullet provides hook-enforced gates that stop delivery with missing evidence of tests.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "r3_absence",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition, not on the hard exclusion list."
+  "text": "Silver Bullet provides workflow composition, not on the hard exclusion list.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "r3_absence",
@@ -1270,13 +1370,19 @@
   "set": "r3_absence",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition (unlike the hard exclusions)."
+  "text": "Silver Bullet provides workflow composition (unlike the hard exclusions).",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "r3_absence",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition; Sweep and Windsurf are hard exclusions."
+  "text": "Silver Bullet provides workflow composition; Sweep and Windsurf are hard exclusions.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "r3_absence",
@@ -1391,8 +1497,9 @@
   "kind": "absence_keep",
   "slug": "director",
   "text": "Director, which is in scope, provides workflow composition.",
-  "known_miss": true,
-  "note": "the feature parser does not read '<Vendor>, which ..., provides' or 'is not X and provides' as a positive; nothing is blanked by the absence pass"
+  "vendors": [
+   "director"
+  ]
  },
  {
   "set": "r3_absence",
@@ -1471,14 +1578,18 @@
   "kind": "absence_keep",
   "slug": "workflow-manager",
   "text": "Workflow Manager provides workflow composition.",
-  "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "vendors": [
+   "workflow-manager"
+  ]
  },
  {
   "set": "r1_absence",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition."
+  "text": "Silver Bullet provides workflow composition.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "copilot",
@@ -1490,7 +1601,9 @@
   "set": "copilot",
   "kind": "vendor",
   "slug": "copilot-workspace",
-  "text": "Copilot Workspace plans tasks."
+  "text": "Copilot Workspace plans tasks.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "copilot",
@@ -1502,7 +1615,9 @@
   "set": "copilot",
   "kind": "vendor",
   "slug": "github-copilot",
-  "text": "Copilot coding agent opens PRs."
+  "text": "Copilot coding agent opens PRs.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "copilot",
@@ -1514,7 +1629,9 @@
   "set": "copilot",
   "kind": "vendor",
   "slug": "github-copilot",
-  "text": "The Copilot SDK exposes hooks."
+  "text": "The Copilot SDK exposes hooks.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "copilot",
@@ -1937,7 +2054,7 @@
   "slug": "cursor",
   "text": "Cursor ships background agents that open pull requests.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -1945,7 +2062,7 @@
   "slug": "cursor",
   "text": "Teams that use Cursor report faster refactors.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -1953,7 +2070,7 @@
   "slug": "cursor",
   "text": "We compared Cursor with Windsurf on a large monorepo.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -1961,7 +2078,7 @@
   "slug": "windsurf",
   "text": "Windsurf provides a Cascade agent for multi-file edits.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -1969,7 +2086,7 @@
   "slug": "director",
   "text": "Director enforces a planning gate before code changes.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -1977,7 +2094,7 @@
   "slug": "director",
   "text": "In our tests, Director blocked the merge until review finished.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -1985,13 +2102,15 @@
   "slug": "conductor",
   "text": "Conductor runs several Claude Code agents in parallel worktrees.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
   "kind": "vendor",
   "slug": "conductor",
-  "text": "Melty Conductor orchestrates parallel agents."
+  "text": "Melty Conductor orchestrates parallel agents.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -1999,7 +2118,7 @@
   "slug": "factory-ai",
   "text": "Factory's Droids automate code review and migrations.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -2013,7 +2132,7 @@
   "slug": "linear",
   "text": "Linear integrates agents that pick up issues automatically.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -2021,7 +2140,7 @@
   "slug": "linear",
   "text": "The team tracks work in Linear and syncs it to GitHub.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -2029,13 +2148,15 @@
   "slug": "continue",
   "text": "Continue is an open-source IDE extension for custom assistants.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
   "kind": "vendor",
   "slug": "continue",
-  "text": "Continue.dev supports local models."
+  "text": "Continue.dev supports local models.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -2049,13 +2170,15 @@
   "slug": "github-copilot",
   "text": "Copilot generates unit tests from the editor.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
   "kind": "vendor",
   "slug": "devin",
-  "text": "Cognition launched Devin as an autonomous software engineer."
+  "text": "Cognition launched Devin as an autonomous software engineer.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -2063,7 +2186,7 @@
   "slug": "aider",
   "text": "Aider commits each change to git with a descriptive message.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -2071,7 +2194,7 @@
   "slug": "aider",
   "text": "We paired with Aider in the terminal.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -2079,7 +2202,7 @@
   "slug": "poolside",
   "text": "Poolside raised funding to train coding models.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -2087,7 +2210,7 @@
   "slug": "superpowers",
   "text": "Superpowers adds TDD and brainstorming skills to Claude Code.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -2095,13 +2218,15 @@
   "slug": "superpowers",
   "text": "Teams install Superpowers as a Claude Code plugin.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
   "kind": "vendor",
   "slug": "devin",
-  "text": "Devin opens pull requests from Slack requests."
+  "text": "Devin opens pull requests from Slack requests.",
+  "known_miss": true,
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -2109,7 +2234,7 @@
   "slug": "cline",
   "text": "Cline runs inside VS Code and asks before each command.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_recall",
@@ -2117,7 +2242,7 @@
   "slug": "codex",
   "text": "Codex executes tasks in a cloud sandbox.",
   "known_miss": true,
-  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+  "note": "ambiguous vendor with no explicit signal: its name is also an ordinary word, so only a vendors tag, a source_ref, its pack URL, a qualified display or a matrix slot credits it (recall is the price of zero false credits)"
  },
  {
   "set": "r4_absence",
@@ -2249,19 +2374,28 @@
   "set": "r4_absence",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition and refuses merges with no evidence of review."
+  "text": "Silver Bullet provides workflow composition and refuses merges with no evidence of review.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "r4_absence",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition; Deepwork does not."
+  "text": "Silver Bullet provides workflow composition; Deepwork does not.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "r4_absence",
   "kind": "absence_keep",
   "slug": "silver-bullet",
-  "text": "Silver Bullet provides workflow composition, and it blocks delivery without evidence of tests."
+  "text": "Silver Bullet provides workflow composition, and it blocks delivery without evidence of tests.",
+  "vendors": [
+   "silver-bullet"
+  ]
  },
  {
   "set": "r4_absence_plain",
@@ -2364,5 +2498,485 @@
   "kind": "absence_drop",
   "slug": "agentsys",
   "text": "AgentSys lacks workflow composition."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "The Director of the IDE team approved the budget."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Cursor, the blinking line, is an agent of the shell."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "She works as Director Assistant to the CEO."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Ask the Director app on your smart TV for showtimes."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Open the Factory settings app to reset the router."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Factory app settings were wiped by the update."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "The Conductor app on the train shows the timetable."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Restore the Factory Tool kit to its drawer."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Pick the Cursor tool in Photoshop to select layers."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "A copilot extension of the plane's autopilot was tested."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "The Codex editor at the abbey corrected the manuscript."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "The museum's Codex Assistant curator gave a tour."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Our Linear Algebra Assistant tutor helps students."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "The Continue button opens the next page of the survey wizard app."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Superpowers Editor Stan Lee wrote the foreword."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "The Sweep tool cleaned the chimney."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Windsurf Editor magazine reviewed new boards."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "The Factory Code requires hard hats on site."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "A Linear Code is a subspace of a vector space."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Linear Code theory underpins error correction."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Factory AI improves predictive maintenance on assembly lines."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Every Factory Platform needs a forklift."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Linear v2 algebra is taught in the second year."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Factory 4.0 initiatives automate assembly lines."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Continue 2.5 miles to the next exit."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Continue 1.5 km past the bridge."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Cursor 1.5 lines down in the document."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Chapter 3: Linear 2.1 Equations"
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Industry and Factory 4.0 trends are reshaping logistics."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "The candidates are Smith, Jones and Cline."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "The rivals in the film are Director and Conductor."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Common solutions include Linear Regression and Decision Trees."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Solutions: Linear equations, quadratic equations and inequalities."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "The players are Devlin, Aider, and Cline."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Our competitors, like Factory workers elsewhere, earn more."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Candidates for the award include Patsy Cline and Johnny Cash."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Products like Superpowers action figures sold out."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "The alternatives are Windsurf or kitesurfing."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Players: Copilot, Captain, Navigator."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Seeds of Cognition and memory were planted early."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Open Claude Code or Continue reading the manual."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Learn GSD and Linear algebra in one weekend."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "I tried Claude Code and Superpowers like flight in my dreams."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "We use BMAD, Sweep the floors, and lock up."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Devika, Cognition and memory were the course topics."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Install LangChain, then Continue with step two."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Our stack: Claude Code, a Cursor, and a keyboard."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "CrewAI and Factory workers both need managers."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Silver Bullet thinking rarely survives contact with legacy code."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Silver Bullet solutions do not exist in software."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Open Interpreter mode lets the Python shell evaluate lines."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Spec Kit cars race at the county fair."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Magic Dev tricks amazed the crowd."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Augment Code reviews with a checklist, the guide says."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "We welcomed them with Open Hands."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Open Hands make friends, said the poster."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Anysphere Cursor movement was smooth."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "We sweep dev environments every night."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Every SWE agent needs a sandbox."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "We model each bidder as a linear agent."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "A cursor cloud of points appeared on the plot."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Silver Bullet is an SDLC plugin for teams."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "An SDLC plugin is a common category."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Our AI team ships weekly."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Oh my pi day was fun."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "The ai dlc acronym means nothing here."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Visit director.com for film news."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "See linear.io for a maths blog."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "The factory.io simulator teaches PLC programming."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Read continue.dev? No, we meant the verb."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Codex 2.0 of the law was ratified."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Windsurf 2.0 boards are lighter."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Aider v2 was the second accomplice in the trial."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Poolside Platform bar opens at noon."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Superpowers Cloud is a comic-book anthology."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Cognition AI research in neuroscience is booming."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Tembo Plugins? Tembo means elephant in Swahili."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Tembo is the Swahili word for elephant."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Deepwork App reviews: a focus timer."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Harness CLI for horse tack makers."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Scout App lets scouts log badges."
+ },
+ {
+  "set": "r5_false_positive",
+  "kind": "plain_english",
+  "text": "Devin from finance approved it."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "Many plants pilot factory ai for predictive maintenance."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "Every swe agent benchmark needs a sandbox."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "Pick an sdlc plugin that fits your host."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "We model each bidder as a linear agent."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "Two cursor agents moved across the shared document."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "A cursor cloud of points appeared on the plot."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "The pilot opened the copilot workspace in the cockpit."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "Gather the a-team for the offsite."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "Our ai-team ships weekly."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "Oh my pi day was fun."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "Get shit done: GSD is a productivity mantra."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "The bmad method of paint mixing."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "Devika from accounting approved the invoice."
+ },
+ {
+  "set": "r5_audit",
+  "kind": "plain_english",
+  "text": "Claude from accounting approved the invoice."
  }
 ]

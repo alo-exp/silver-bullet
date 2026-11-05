@@ -1226,40 +1226,6 @@
       "C6 Enf",
       "C7 Proc"
     ],
-    "materialize_solution_artifacts.NON_VENDOR_TERMS": [
-      "sdlc"
-    ],
-    "materialize_solution_artifacts.AMBIGUOUS_NAMES": [
-      "director",
-      "factory",
-      "cursor",
-      "continue",
-      "linear",
-      "conductor",
-      "scout",
-      "harness",
-      "sweep",
-      "copilot",
-      "cognition",
-      "aider",
-      "all hands",
-      "poolside",
-      "superpowers",
-      "workflow manager",
-      "cognition scout",
-      "windsurf",
-      "codex",
-      "silver bullet",
-      "augment code",
-      "open interpreter",
-      "cline",
-      "deepwork",
-      "tembo",
-      "magic dev",
-      "spec kit",
-      "open hands",
-      "omp"
-    ],
     "synthesize_landscape.SOLO_HOST_MARKER": "claude",
     "synthesize_landscape.PRESENCE_REQUIRES_FEATURE": "Managed hosting",
     "synthesize_landscape.KCF_FALLBACK_EXCLUDE": [
@@ -1282,25 +1248,16 @@
     "vendor_link_labels.SLUG_LINK_LABEL_OVERRIDES": {
       "sdlc-plugin": "SDLC Plugin"
     },
-    "materialize_solution_artifacts.PRODUCT_MAKERS": {
-      "conductor": [
-        "Melty"
-      ],
-      "cursor": [
-        "Anysphere"
-      ],
-      "scout": [
-        "Cognition"
-      ]
-    },
-    "materialize_solution_artifacts.PROPER_PHRASES": [
-      "silver bullet",
-      "augment code",
-      "open interpreter",
-      "open hands",
-      "spec kit",
-      "magic dev"
-    ]
+    "materialize_solution_artifacts.COINED_NAMES": {
+      "zuvo": "invented word (no English word, given name or surname)",
+      "turboshovel": "invented compound, no English word",
+      "barkain": "rare surname used as a brand, not a common word; the full product is Barkain Workflow Orchestrator",
+      "ruflo": "invented word",
+      "cavekit": "invented compound (cave + kit)",
+      "replit": "invented word (REPL + it)",
+      "sourcegraph": "invented compound of two words that never co-occur as one",
+      "coderabbit": "invented compound (code + rabbit)"
+    }
   },
   "market_chart_notes": {
     "apo": [

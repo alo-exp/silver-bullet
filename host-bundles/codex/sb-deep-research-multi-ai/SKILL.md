@@ -167,16 +167,23 @@ Skip steps with `--skip-compare`, `--skip-xlsx`, or `--skip-spa`.
 
 ## Vendor mentions in prose
 
-Precision comes first: a false vendor tick puts fabricated evidence in the comparison matrix. A pack lists
-the product names that are also ordinary words or surnames (`AMBIGUOUS_NAMES`: "Director", "Cursor",
-"Copilot", "Cline", "Codex", "Windsurf", ...). That is an allowlist: such a name is credited only when it is
-capitalised AND an explicit product cue stands beside it: a product head noun after it (IDE, editor, extension,
-CLI, app, plugin, tool, assistant, ...), a domain or version, its maker, the full known product name, or a list of
-vendors ("The leaders are ..." or a list that holds a product that is not an ambiguous word). Without a cue it is
-a common word, so some genuine mentions are missed ("Teams that use Cursor ..."); the pinned corpus
-(`tests/fixtures/vendor_mention_corpus.json`) lists them. A few Title-Case multi-word names (`PROPER_PHRASES`,
-"Silver Bullet") need no cue. Residual risk: a person's first name that is also a product ("Devin from
-accounting") cannot be told apart lexically and is credited.
+Precision comes first: a false vendor tick puts fabricated evidence in the comparison matrix. The detector
+therefore does not guess from the words around a name. Identity is declared (`scripts/vendor_identity.py`):
+
+- **Distinctive names count in prose.** A vendor whose display name has a distinctive token (a digit, a dot
+  between letters, an inner capital such as `GitHub`/`OpenHands`/`CrewAI`, or a coined word listed in the pack
+  vocabulary `COINED_NAMES`) is credited wherever a spelling that carries that token appears.
+- **Ambiguous names need a signal.** A vendor whose name is also an ordinary word, phrase or person's name
+  (Director, Cursor, Linear, Continue, Silver Bullet, Devin, GSD, ...) is credited only by a `vendors` tag on the
+  claim row, a `source_ref` that names it (when the text names it too), its pack URL, a qualified display such as
+  `Devin (Cognition)` in exact case, or a whole item of a matrix line (`Matrix entry - X: A, B`). Lists, head
+  nouns, versions, makers, capitals and headings never credit a name.
+- **Tagging is part of the research contract.** The brief asks every evidence, claim_candidates, critiques and
+  gaps row to carry `vendors` (slugs copied from the `[CATEGORY_PACK]` block); `matrix_entries.vendor` remains
+  the structured channel. Untagged prose about an ambiguous vendor credits nothing, so recall depends on tags.
+- **Audit.** `tests/fixtures/vendor_spelling_audit.json` is generated from the pack (distinctive tokens and prose
+  spellings per vendor); a pack change shows up there as a diff. `tests/test_vendor_identity_generative.py`
+  exhausts the sentence grammar for every ambiguous spelling. There is no lexical residual.
 
 ## GLM-5.2 routing
 
