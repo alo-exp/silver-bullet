@@ -121,7 +121,7 @@ main() {
     *)
       if [[ "$is_shell" != true ]]; then
         # An MCP tool counts only when its name says it writes (a read tool carries paths too).
-        [[ "$tool_kind" == mcp ]] || exit 0
+        [[ "$tool_kind" == mcp || "$tool_name" == mcp__* ]] || exit 0
         sb_pf_mcp_write_tool "$tool_name" || exit 0
       fi
       ;;

@@ -302,4 +302,21 @@ for h in planning-file-guard instruction-file-guard workflow-chain-guard dev-cyc
   assert_eq "$h is registered for MCP write tools" 1 "$n"
 done
 
+# round 2: the unlock record, inline-code reasons, tree writes outside the runtime home
+UL="$SB_RUNTIME_STATE_DIR/contract-unlock"
+rm -f "$UL"
+ln -s "$TL_TMP/elsewhere-unlock" "$UL"
+sb_contract_unlock_write silver-init
+assert_file_absent "an unlock is never written through a symlink" "$TL_TMP/elsewhere-unlock"
+rm -f "$UL"
+: >"$UL"
+if sb_pf_contract_unlocked; then tl_fail "an empty record unlocks"; else tl_pass "an empty unlock record unlocks nothing"; fi
+rm -f "$UL"
+assert_eq "an unreadable analysis names no inline code" "" "$(SB_SA_JSON='not json' SB_SA_READ_ONLY=false sb_pf_inline_code_reason)"
+OUT_HOME="$TL_TMP/outside-home"
+ex="$(sb_pf_expand_ancestors "$(printf 'patch\t%s\n' "$TL_TMP")" "$OUT_HOME/x" "$SB_RUNTIME_HOME_ROOT/.silver-bullet" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/state")"
+assert_not_contains "a patch tree does not cover a path outside the runtime home" "$ex" "$OUT_HOME/x"
+ex2="$(sb_pf_expand_ancestors "$(printf 'patch\t%s\n' "$SB_RUNTIME_HOME_ROOT")" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/state")"
+assert_contains "but covers one inside it" "$ex2" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/state"
+
 tl_results

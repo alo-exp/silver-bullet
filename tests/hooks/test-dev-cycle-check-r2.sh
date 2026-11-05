@@ -238,4 +238,22 @@ state ""
 dc_cmd "cd src && patch -p1 < /tmp/p.diff"
 assert_contains "and needs the planning floor without it" "$(message)" "Planning incomplete"
 
+# ── the remaining branches: huge globs, odd variables, odd braces, no interpreter ────────────────
+mkproj odd
+state inst-a
+mkdir -p "$PROJ/many"
+for i in $(seq 1 210); do : >"$PROJ/many/f$i.o"; done
+dc_cmd 'rm -f many/f*.o'
+assert_eq "a pattern with hundreds of matches is capped, not refused" "none" "$(decision)"
+dc_cmd 'echo x > $1'
+assert_contains "a positional parameter as a target could be anything" "$(message)" "STATE TAMPER"
+for c in '(echo build/{a,b})' 'echo ${HOME}x{a,b}' 'touch {,}'; do
+  dc_cmd "$c"
+  assert_eq "odd brace words are handled: $c" "none" "$(decision)"
+done
+state ""
+NOPY2="$(tl_path_without python3)"
+run_dc "$(jq -cn '{hook_event_name:"PreToolUse",tool_name:"mcp__x__write_file",tool_input:{path:"src/app.js"}}')" PATH="$NOPY2"
+assert_contains "an MCP write needs no interpreter to be judged" "$(message)" "Planning incomplete"
+
 tl_results
