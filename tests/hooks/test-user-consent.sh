@@ -344,6 +344,7 @@ reset_store
 _sb_consent_write_owner() { return 1; }   # the owner record cannot be written
 rc=0; sb_consent_set granted rtk enforce machine test >/dev/null 2>&1 || rc=$?
 unset -f _sb_consent_write_owner
+# shellcheck source=../../hooks/lib/user-consent.sh
 source "$LIB"
 assert_eq "grant succeeds although the lock's pid file cannot be written" "0" "$rc"
 assert_eq "and is recorded" "granted" "$(sb_consent_decision rtk enforce)"
