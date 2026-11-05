@@ -24,6 +24,10 @@
       {
         "glob": "*/tests/*",
         "reason": "Test code is not measured as application code."
+      },
+      {
+        "glob": "scripts/lib/agent-adapters/*",
+        "reason": "Host adapters that drive the real claude/codex/opencode/pi CLIs and TUIs (expect, PTY, transcript capture). They were tests/live/agents/*/agent.sh, which this scope excluded as test code, and moved to scripts/lib only so installed packages ship them (R10b-05); stub CLIs cannot reproduce the live TUI paths. Their security-relevant argv (sandbox, hook trust) is asserted by tests/scripts/test-agent-codex-adapter-trust.sh."
       }
     ]
   },

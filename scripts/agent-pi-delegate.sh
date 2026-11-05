@@ -59,7 +59,7 @@ done
 agent_delegate_validate_work_dir "$WORK_DIR" || exit 2
 if [[ -z "$MODE" ]]; then
   MODE="$(agent_delegate_default_mode "$WORK_DIR")"
-  agent_mode_note_permission_mode "$MODE" || exit 2
+  agent_mode_note_permission_mode "$MODE"
 fi
 agent_delegate_clear_matrix_env
 

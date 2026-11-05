@@ -12,6 +12,7 @@ keys, "Bearer <token>" and KEY=value assignments. A bare keyword ("password: fie
 feature description) is not a secret.
 """
 
+import contextlib
 import math
 import os
 import re
@@ -103,7 +104,7 @@ def redact_file(path):
         os.chmod(tmp, os.stat(path).st_mode & 0o7777)
         os.replace(tmp, path)
     except BaseException:
-        if os.path.exists(tmp):
+        with contextlib.suppress(FileNotFoundError):
             os.unlink(tmp)
         raise
     return True

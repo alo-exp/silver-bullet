@@ -162,6 +162,8 @@ bash -c '
   echo "mode=$stat_mode"' _ "$ST" "$TL_TMP" >/dev/null 2>&1 || true
 assert_eq "guard_log: interrupted delegate leaves a redacted log" "key=\"x\" token=[REDACTED]" "$(cat "$TL_TMP/guarded/run.log")"
 assert_eq "guard_log: log is 0600" "0o600" "$(python3 -c 'import os,sys;print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$TL_TMP/guarded/run.log")"
+mkdir -p "$TL_TMP/chmodfail"; printf '#!/bin/sh\nexit 1\n' >"$TL_TMP/chmodfail/chmod"; chmod +x "$TL_TMP/chmodfail/chmod"
+PATH="$TL_TMP/chmodfail:$PATH" bash -c 'source "$1/scripts/lib/agent-delegate-common.sh"; agent_delegate_guard_log "$2/guarded2/run.log"; echo survived' _ "$ST" "$TL_TMP" | grep -q survived && tl_pass "guard_log: a failing chmod is tolerated" || tl_fail "guard_log: a failing chmod is tolerated"
 bash -c 'source "$1/scripts/lib/agent-delegate-common.sh"; agent_delegate_guard_log ""; echo noop' _ "$ST" | grep -q noop && tl_pass "guard_log: empty log path is a no-op" || tl_fail "guard_log: empty log path is a no-op"
 
 # ---------------- resolve_prompt ----------------
@@ -391,6 +393,12 @@ assert_eq "fingerprint: non-repo is unknown" "unknown" "$(agent_delegate_workdir
 assert_eq "fingerprint: stable for an untouched repo" "$FP" "$(agent_delegate_workdir_fingerprint "$QD_REPO")"
 rc=0; agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>/dev/null || rc=$?
 assert_eq "retry decision: untouched repo retries" 0 "$rc"
+# git failing on status/diff must not break the fingerprint (pipefail-safe)
+mkdir -p "$TL_TMP/gitfail"
+REAL_GIT="$(command -v git)"
+printf '#!/usr/bin/env bash\nfor a in "$@"; do [[ "$a" == status || "$a" == diff ]] && exit 128; done\nexec "%s" "$@"\n' "$REAL_GIT" >"$TL_TMP/gitfail/git"
+chmod +x "$TL_TMP/gitfail/git"
+assert_eq "fingerprint survives failing git status/diff" 0 "$(PATH="$TL_TMP/gitfail:$PATH" agent_delegate_workdir_fingerprint "$QD_REPO" >/dev/null; echo $?)"
 echo changed >"$QD_REPO/new.txt"
 rc=0; err="$(agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>&1 >/dev/null)" || rc=$?
 assert_eq "retry decision: changed repo stops" 1 "$rc"
