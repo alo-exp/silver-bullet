@@ -131,7 +131,7 @@ assert_eq "sb_cert_run_bypass exits inside a sandbox" "" "$TL_OUT"
 tl_run bash -c 'source "$1"; SB_RUNTIME_STATE_DIR="/home/u/.claude/.silver-bullet"; SB_AGENT_CERT_RUN=1; sb_cert_run_bypass; echo continued' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
 assert_eq "sb_cert_run_bypass continues outside a sandbox" "continued" "$TL_OUT"
 for t in / "$HOME" /home; do
-  tl_run env TMPDIR="$t" bash -c 'source "$1"; SB_RUNTIME_STATE_DIR="/home/fake/.claude/.silver-bullet"; SB_AGENT_CERT_RUN=1; sb_cert_run_bypass_active && echo yes || echo no' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
+  tl_run env TMPDIR="$t" bash -c 'source "$1"; SB_RUNTIME_STATE_DIR="/home/u/.claude/.silver-bullet"; SB_AGENT_CERT_RUN=1; sb_cert_run_bypass_active && echo yes || echo no' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
   assert_eq "TMPDIR=$t does not make a real-home state dir a sandbox (R4-01)" "no" "$TL_OUT"
 done
 tl_run bash -c 'source "$1"; SB_RUNTIME_STATE_DIR="/opt/scratch/h/.claude/.silver-bullet"; TMPDIR=/opt/scratch; sb_runtime_in_test_sandbox && echo yes || echo no' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
