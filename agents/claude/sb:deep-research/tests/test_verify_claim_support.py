@@ -39,16 +39,18 @@ class TestVerifySupported(unittest.TestCase):
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
+        with open(os.path.join(self.tmpdir, "research_report.md"), "w") as f:
+            f.write("# Report\n")
         # Sources
         write_jsonl(os.path.join(self.tmpdir, 'sources.jsonl'), [
             {'source_id': 'src_quantum_001', 'title': 'Quantum Computing 2024'},
         ])
-        # Evidence with clear overlap to the claim
+        # Evidence that the claim repeats: only case, articles and inflection differ
         write_jsonl(os.path.join(self.tmpdir, 'evidence.jsonl'), [
             {
                 'evidence_id': 'ev_shor_001',
                 'source_id': 'src_quantum_001',
-                'quote': "Shor's algorithm can factor large integers exponentially faster than any known classical algorithm, threatening RSA-2048 encryption.",
+                'quote': "Shor's algorithm can factor large numbers exponentially faster than classical methods, threatening RSA-2048.",
                 'evidence_type': 'direct_quote',
             },
         ])
@@ -86,6 +88,8 @@ class TestVerifyUnsupported(unittest.TestCase):
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
+        with open(os.path.join(self.tmpdir, "research_report.md"), "w") as f:
+            f.write("# Report\n")
         write_jsonl(os.path.join(self.tmpdir, 'sources.jsonl'), [])
         write_jsonl(os.path.join(self.tmpdir, 'evidence.jsonl'), [])
         write_jsonl(os.path.join(self.tmpdir, 'claims.jsonl'), [
@@ -118,6 +122,8 @@ class TestVerifyMixed(unittest.TestCase):
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
+        with open(os.path.join(self.tmpdir, "research_report.md"), "w") as f:
+            f.write("# Report\n")
         write_jsonl(os.path.join(self.tmpdir, 'sources.jsonl'), [])
         write_jsonl(os.path.join(self.tmpdir, 'evidence.jsonl'), [])
         write_jsonl(os.path.join(self.tmpdir, 'claims.jsonl'), [
@@ -152,7 +158,9 @@ class TestVerifyMixed(unittest.TestCase):
             for line in f:
                 claims.append(json.loads(line))
         spec = [c for c in claims if c['claim_type'] == 'speculation'][0]
-        self.assertEqual(spec['support_status'], 'supported')
+        # Labelled speculation needs no evidence, but it is not "supported" either.
+        self.assertEqual(spec['support_status'], 'not_applicable')
+        self.assertEqual(out['status'], 'pass')
 
 
 class TestVerifyPartial(unittest.TestCase):
@@ -160,6 +168,8 @@ class TestVerifyPartial(unittest.TestCase):
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
+        with open(os.path.join(self.tmpdir, "research_report.md"), "w") as f:
+            f.write("# Report\n")
         write_jsonl(os.path.join(self.tmpdir, 'sources.jsonl'), [
             {'source_id': 'src_nist_001', 'title': 'NIST PQC Standards'},
         ])
@@ -167,7 +177,7 @@ class TestVerifyPartial(unittest.TestCase):
             {
                 'evidence_id': 'ev_nist_001',
                 'source_id': 'src_nist_001',
-                'quote': 'NIST announced the standardization of CRYSTALS-Kyber for key encapsulation.',
+                'quote': 'NIST standardized four lattice-based algorithms in 2024.',
                 'evidence_type': 'direct_quote',
             },
         ])
@@ -193,8 +203,9 @@ class TestVerifyPartial(unittest.TestCase):
         with open(os.path.join(self.tmpdir, 'claims.jsonl')) as f:
             for line in f:
                 claims.append(json.loads(line))
-        # Should be partial or needs_review (not fully supported due to number/detail mismatch)
-        self.assertIn(claims[0]['support_status'], ('partial', 'needs_review', 'supported'))
+        # The claim adds detail the quote lacks: a reader must check it, it is never supported.
+        self.assertEqual(claims[0]['support_status'], 'needs_review')
+        self.assertIn('more than the source', claims[0]['_support_notes'])
 
 
 class TestSupportScore(unittest.TestCase):
@@ -211,8 +222,7 @@ class TestSupportScore(unittest.TestCase):
             'RSA-2048 uses 2048-bit keys for encryption.',
             ['RSA-2048 uses 2048-bit keys for encryption.'],
         )
-        self.assertEqual(status, 'supported')
-        self.assertGreater(score, 0.8)
+        self.assertEqual((status, score), ('supported', 1.0))
 
     def test_no_evidence(self):
         status, score, _ = self.score('Any claim text.', [])
@@ -224,8 +234,8 @@ class TestSupportScore(unittest.TestCase):
             'The moon landing occurred in 1969.',
             ['Bananas are a good source of potassium and fiber.'],
         )
-        self.assertIn(status, ('needs_review', 'unsupported'))
-        self.assertLess(score, 0.35)
+        self.assertEqual(status, 'unsupported')
+        self.assertLess(score, 0.3)
 
 
 if __name__ == '__main__':

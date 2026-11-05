@@ -33,7 +33,7 @@
 mkdir -p "$SB_RESEARCH_OUT_DIR"
 
 # Initialize markdown file with frontmatter
-# Path: [folder]/research_report_[YYYYMMDD]_[slug].md
+# Path: $SB_RESEARCH_OUT_DIR/research_report.md (the run manifest's artifact_paths.report)
 ```
 
 ### Phase 8.2: Section Generation Loop
@@ -50,11 +50,17 @@ python scripts/citation_manager.py init-run --out-dir [folder] --query "[questio
 
 **Register each source as you encounter it:**
 ```bash
-python scripts/citation_manager.py register-source \
-  --json '{"raw_url": "...", "title": "...", "source_type": "academic", "year": "2024"}' \
-  --dir [folder]
+python3 scripts/citation_manager.py register-source --dir [folder] --json - <<'EOF'
+{"raw_url": "...", "title": "...", "source_type": "academic", "year": "2024"}
+EOF
 # Returns stable source_id (sha256-based, survives renumbering and continuation)
 ```
+Titles come from retrieved pages, so the JSON goes through a quoted heredoc on stdin
+(or `--json-file PATH`), never inside a single-quoted shell argument.
+
+**Quote one sentence per claim:** each `evidence_store.py add` stores exactly the one sentence that backs one
+claim, verbatim, and the report sentence repeats it (see `reference/quality-gates.md`, "Writing claims that
+can be `supported`").
 
 **Assign display numbers after all sources registered:**
 ```bash
@@ -107,16 +113,16 @@ Source identity is stable across edits and continuation. Display numbers are der
 ## File Organization
 
 **1. Create dedicated folder:**
-- Location: `.planning/research/<date>-<slug>/`
-- Clean topic name (remove special chars, use underscores)
+- Location: `research/<date>-<slug>/` (`$SB_RESEARCH_OUT_DIR`)
+- Clean topic name (remove special chars, use hyphens)
 
 **2. File naming convention:**
-All files use same base name:
-- `research_report_20251104_topic_slug.md`
-- `research_report_20251104_topic_slug.html`
-- `research_report_20251104_topic_slug.pdf`
+All files use the same base name, `research_report`:
+- `research_report.md` (the report every validator reads)
+- `research_report.html`
+- `research_report.pdf`
 
-**3. Also save copy to:** `.codex/research_output/` (internal tracking on Codex; optional elsewhere)
+Keep every artifact inside the run folder; do not copy reports elsewhere.
 
 ---
 

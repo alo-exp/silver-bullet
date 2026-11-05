@@ -24,6 +24,8 @@ import sys
 from datetime import datetime, timezone
 from urllib.parse import urlparse, urlunparse
 
+from jsonl_store import add_json_input_args, append_jsonl, append_unique, load_json_input, read_jsonl  # noqa: F401
+
 
 # ---------------------------------------------------------------------------
 # Canonical locator normalization
@@ -78,27 +80,6 @@ def compute_source_id(canonical_locator: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# JSONL helpers
-# ---------------------------------------------------------------------------
-
-def append_jsonl(path: str, obj: dict) -> None:
-    with open(path, 'a') as f:
-        f.write(json.dumps(obj, ensure_ascii=False) + '\n')
-
-
-def read_jsonl(path: str) -> list[dict]:
-    rows = []
-    if not os.path.exists(path):
-        return rows
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                rows.append(json.loads(line))
-    return rows
-
-
-# ---------------------------------------------------------------------------
 # Subcommands
 # ---------------------------------------------------------------------------
 
@@ -107,11 +88,12 @@ def cmd_init_run(args: argparse.Namespace) -> None:
     out_dir = os.path.abspath(args.out_dir)
     os.makedirs(out_dir, exist_ok=True)
 
+    # One report path for every tool (SKILL.md, verify_claim_support, validators).
     artifact_paths = {
         'sources': 'sources.jsonl',
         'evidence': 'evidence.jsonl',
         'claims': 'claims.jsonl',
-        'report': 'report.md',
+        'report': 'research_report.md',
     }
 
     manifest = {
@@ -125,7 +107,8 @@ def cmd_init_run(args: argparse.Namespace) -> None:
             'primary': 'search-cli',
             'scholarly': None,
         },
-        'report_dir': out_dir,
+        # Paths are relative to this manifest: research/ is committed, so no local paths.
+        'report_dir': '.',
         'artifact_paths': artifact_paths,
         'continuation': None,
     }
@@ -146,7 +129,7 @@ def cmd_init_run(args: argparse.Namespace) -> None:
 
 def cmd_register_source(args: argparse.Namespace) -> None:
     """Register a source, append to sources.jsonl, print source_id."""
-    data = json.loads(args.json)
+    data = load_json_input(args)
     raw_url = data.get('raw_url', data.get('url', ''))
     if not raw_url:
         print(json.dumps({'error': 'raw_url is required'}), file=sys.stderr)
@@ -156,17 +139,6 @@ def cmd_register_source(args: argparse.Namespace) -> None:
     source_id = compute_source_id(canonical)
 
     sources_path = os.path.join(args.dir, 'sources.jsonl')
-
-    # Check for duplicate
-    existing = read_jsonl(sources_path)
-    for row in existing:
-        if row.get('source_id') == source_id:
-            print(json.dumps({
-                'status': 'duplicate',
-                'source_id': source_id,
-                'canonical_locator': canonical,
-            }))
-            return
 
     source = {
         'source_id': source_id,
@@ -179,7 +151,14 @@ def cmd_register_source(args: argparse.Namespace) -> None:
         'metadata_status': data.get('metadata_status', 'unverified'),
         'registered_at': datetime.now(timezone.utc).isoformat(),
     }
-    append_jsonl(sources_path, source)
+    # Read-check-append under the store lock: parallel retrieval agents never duplicate a row.
+    if append_unique(sources_path, source, 'source_id') is not None:
+        print(json.dumps({
+            'status': 'duplicate',
+            'source_id': source_id,
+            'canonical_locator': canonical,
+        }))
+        return
     print(json.dumps({
         'status': 'registered',
         'source_id': source_id,
@@ -192,11 +171,12 @@ def cmd_assign_display_numbers(args: argparse.Namespace) -> None:
     sources_path = os.path.join(args.dir, 'sources.jsonl')
     sources = read_jsonl(sources_path)
 
+    # Number unique source_ids in first-registration order, exactly as export-bibliography does.
     mapping = {}
-    for i, src in enumerate(sources, 1):
+    for src in sources:
         sid = src['source_id']
         if sid not in mapping:
-            mapping[sid] = i
+            mapping[sid] = len(mapping) + 1
 
     print(json.dumps(mapping, indent=2))
 
@@ -273,7 +253,7 @@ def main() -> None:
 
     # register-source
     p_reg = sub.add_parser('register-source', help='Register a source and return its stable ID')
-    p_reg.add_argument('--json', required=True, help='JSON object with at least raw_url and title')
+    add_json_input_args(p_reg, 'JSON object with at least raw_url and title')
     p_reg.add_argument('--dir', required=True, help='Run directory containing sources.jsonl')
 
     # assign-display-numbers

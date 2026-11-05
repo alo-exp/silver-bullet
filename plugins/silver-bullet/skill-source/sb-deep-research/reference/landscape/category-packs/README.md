@@ -14,7 +14,7 @@ Pluggable **category market contracts** for `solution-landscape` and `solution-c
 
 1. **Interview** (`reference/need-profile-interview.md`) — confirm category and set `category_pack_id`.
 2. **Auto / live demos** — `dr_live_runner.write_need_profile()` loads defaults from the APO pack when the category matches agentic SDLC orchestration.
-3. **Runtime** — `category_pack.resolve_pack_from_need_profile(need_profile)` returns the merged contract (pack defaults + profile overrides).
+3. **Runtime** — `dr_category_pack.resolve_pack_from_need_profile(need_profile)` returns the merged contract (pack defaults + profile overrides).
 
 Pack files live here: `category-packs/{category_pack_id}.json`.
 
@@ -35,12 +35,20 @@ Pack files live here: `category-packs/{category_pack_id}.json`.
 
 ## Authoring a new pack
 
-1. Copy `schema.json` constraints — validate with `test_category_pack.py` patterns.
+1. Copy `schema.json` constraints — validate with `test_dr_category_pack.py` patterns.
 2. Name file `{category_id}.json` where `category_id` matches the `category_id` field.
 3. Lock **core_seeds** from prior analyst reports or stakeholder interviews — not from model suggestions.
 4. List **hard_exclusions** explicitly (coding agents, PM tools, sunset products).
 5. Set realistic `min_core_count` / `max_core_count` for the market size.
 6. Document provenance in `notes`.
+
+## Project-local packs
+
+A pack for a market other than the bundled one lives with the run, not in the plugin:
+`research/<run>/category-packs/<category_id>.json` (same schema, `category_id` equal to the filename).
+`phase_gate.py`, `compare_solutions.py` and `shortlist_candidates.py` look there first, then in this
+directory, and fail closed when `category_pack_id` is set but no pack resolves. The bundled
+Silver Bullet pack is an example for its own market; do not use it for other categories.
 
 ## Overrides from need_profile
 
@@ -56,7 +64,7 @@ Pack files live here: `category-packs/{category_pack_id}.json`.
 
 | Module | Uses pack for |
 |--------|----------------|
-| `category_pack.py` | Load, resolve, expose seeds/exclusions/aliases |
+| `dr_category_pack.py` | Load, resolve, expose seeds/exclusions/aliases |
 | `solution_classifier.py` | core / adjacent / excluded / sunset classification |
 | `synthesize_landscape.py` | Pack-driven Sections 5–6, charts, matrix |
 | `validate_landscape_content.py` | Forbidden membership, must-research gaps |

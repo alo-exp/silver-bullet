@@ -45,7 +45,7 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
-from matrix_core import TICK, TICK_CRITERION, WEIGHTS
+from matrix_core import TICK, TICK_CRITERION, WEIGHTS, _sanitize_cell_value
 
 openpyxl = None
 get_column_letter = None
@@ -182,19 +182,6 @@ def _init_styles() -> None:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-_FORMULA_PREFIXES = ("=", "+", "-", "@")
-
-
-def _sanitize_cell_value(value: Any) -> Any:
-    """Neutralize spreadsheet formula injection for user-controlled strings."""
-    if not isinstance(value, str) or not value:
-        return value
-    lead = value.lstrip("\t\r\n ")
-    if lead and lead[0] in _FORMULA_PREFIXES:
-        return "'" + value
-    return value
-
 
 def _countif(col_letter: str) -> str:
     return f'=COUNTIF({col_letter}{DATA_START}:{col_letter}1048576,"{TICK_CRITERION}")'

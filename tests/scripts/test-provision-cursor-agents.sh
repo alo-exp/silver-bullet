@@ -103,19 +103,48 @@ t_exists "$HOME/.cursor/agents/sb-dr-composer-2-5.md" "agent written under the s
 CURSOR_HOME="$TL_TMP/custom-cursor" tl_run bash "$SCRIPT"
 t_exists "$TL_TMP/custom-cursor/agents/sb-dr-composer-2-5.md" "CURSOR_HOME relocates the agents dir"
 
-# --- project scope writes under the repo root (a mirror tree here) ------------------
-make_tree "$TL_TMP/proj" "$(cat "$REGISTRY")"
-tl_run bash "$TL_TMP/proj/skills/silver-multi-ai-task/scripts/provision-cursor-agents.sh" --scope project
+# --- project scope writes into the user's project, never the SB tree (R11-30) -------
+make_tree "$TL_TMP/sbtree" "$(cat "$REGISTRY")"
+SB_TREE_SCRIPT="$TL_TMP/sbtree/skills/silver-multi-ai-task/scripts/provision-cursor-agents.sh"
+mkdir -p "$TL_TMP/userproj/src/deep"
+git -C "$TL_TMP/userproj" init -q
+pushd "$TL_TMP/userproj/src/deep" >/dev/null
+tl_run bash "$SB_TREE_SCRIPT" --scope project
+popd >/dev/null
 t_eq "0" "$TL_STATUS" "project scope exits 0"
 summary="$(tail -n1 <<<"$TL_OUT")"
 t_eq "project" "$(jq -r .scope <<<"$summary")" "scope reported"
-t_eq "$TL_TMP/proj/.cursor/agents" "$(jq -r .agents_dir <<<"$summary")" "project agents dir under the repo root"
-t_exists "$TL_TMP/proj/.cursor/agents/sb-dr-claude-opus-4-8-medium.md" "project agent written"
-t_eq "$TL_TMP/proj/skills/silver-multi-ai-task/reference/model-family-registry-v1.json" "$(jq -r .registry <<<"$summary")" "registry taken from the mirror root"
+proj_real="$(cd "$TL_TMP/userproj" && pwd)"
+t_eq "$proj_real/.cursor/agents" "$(jq -r .agents_dir <<<"$summary")" "project agents dir at the git top level of the cwd"
+t_exists "$TL_TMP/userproj/.cursor/agents/sb-dr-claude-opus-4-8-medium.md" "project agent written in the user's project"
+t_absent "$TL_TMP/sbtree/.cursor" "the Silver Bullet tree is never written"
+t_eq "$TL_TMP/sbtree/skills/silver-multi-ai-task/reference/model-family-registry-v1.json" "$(jq -r .registry <<<"$summary")" "registry taken from the script's own skill dir"
+
+# --project-dir wins over the cwd; a directory outside git works too.
+mkdir -p "$TL_TMP/plainproj"
+tl_run bash "$SB_TREE_SCRIPT" --scope project --project-dir "$TL_TMP/plainproj"
+t_eq "0" "$TL_STATUS" "explicit --project-dir exits 0"
+t_exists "$TL_TMP/plainproj/.cursor/agents/sb-dr-composer-2-5.md" "agents written under --project-dir"
+mkdir -p "$TL_TMP/nogit"
+pushd "$TL_TMP/nogit" >/dev/null
+tl_run bash "$SB_TREE_SCRIPT" --scope project --dry-run
+popd >/dev/null
+t_has "$TL_OUT" "would create: $(cd "$TL_TMP/nogit" && pwd)/.cursor/agents/" "outside git the cwd is the project"
+tl_run bash "$SB_TREE_SCRIPT" --scope project --project-dir "$TL_TMP/does-not-exist"
+t_eq "2" "$TL_STATUS" "missing --project-dir exits 2"
+t_has "$TL_ERR" "ERROR: project directory not found: $TL_TMP/does-not-exist" "missing project dir reported"
 
 # CURSOR_AGENTS_DIR is ignored by project scope.
-CURSOR_AGENTS_DIR="$TL_TMP/ignored" tl_run bash "$TL_TMP/proj/skills/silver-multi-ai-task/scripts/provision-cursor-agents.sh" --scope project --dry-run
+CURSOR_AGENTS_DIR="$TL_TMP/ignored" tl_run bash "$SB_TREE_SCRIPT" --scope project --project-dir "$TL_TMP/plainproj" --dry-run
 t_absent "$TL_TMP/ignored" "project scope ignores CURSOR_AGENTS_DIR"
+
+# --- packaged plugin layout: skill-source/sb-multi-ai-task (R11-31) -----------------
+mkdir -p "$TL_TMP/plugin/skill-source/sb-multi-ai-task/scripts" "$TL_TMP/plugin/skill-source/sb-multi-ai-task/reference"
+ln -s "$SCRIPT" "$TL_TMP/plugin/skill-source/sb-multi-ai-task/scripts/provision-cursor-agents.sh"
+cp "$REGISTRY" "$TL_TMP/plugin/skill-source/sb-multi-ai-task/reference/"
+CURSOR_AGENTS_DIR="$TL_TMP/plugin-agents" tl_run bash "$TL_TMP/plugin/skill-source/sb-multi-ai-task/scripts/provision-cursor-agents.sh"
+t_eq "0" "$TL_STATUS" "plugin layout provisions"
+t_exists "$TL_TMP/plugin-agents/sb-dr-grok-4-5.md" "plugin layout agent written"
 
 # --- fail-fast paths -----------------------------------------------------------------
 make_tree "$TL_TMP/empty" '{"cursor_default_pool": ["", "x.y"]}'
@@ -143,8 +172,8 @@ t_eq "" "$(ls -A "$TL_TMP/bad-agents")" "malformed registry provisions nothing"
 
 make_tree "$TL_TMP/noroot" -
 tl_run bash "$TL_TMP/noroot/skills/silver-multi-ai-task/scripts/provision-cursor-agents.sh"
-t_eq "1" "$TL_STATUS" "repo root not found exits 1"
-t_has "$TL_ERR" "ERROR: cannot locate Silver Bullet repo root from" "root lookup failure reported"
-t_eq "" "$TL_OUT" "no JSON summary without a repo root"
+t_eq "1" "$TL_STATUS" "missing registry exits 1"
+t_has "$TL_ERR" "ERROR: model family registry not found at $TL_TMP/noroot/skills/silver-multi-ai-task/reference/model-family-registry-v1.json" "missing registry reported"
+t_eq "" "$TL_OUT" "no JSON summary without a registry"
 
 tl_results
