@@ -11,6 +11,7 @@ from typing import Any
 from pack_vocabulary import for_research_dir
 from category_pack import (
     build_known_solutions,
+    feature_key,
     get_hard_exclusion_slugs,
     get_must_research_slugs,
     get_sunset_registry,
@@ -32,8 +33,7 @@ def _load_json(path: Path) -> dict[str, Any] | None:
     return data if isinstance(data, dict) else None
 
 
-def _fold(name: str) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", name.casefold()).strip()
+_fold = feature_key  # the packager's fold: "C++ support", "C# support" and "C support" stay distinct
 
 
 def _resolve_must_have_features(must_have: str) -> list[str]:

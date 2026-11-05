@@ -77,7 +77,7 @@ class MarkdownEdgeTests(unittest.TestCase):
         self.assertIn("<td>1</td>", out2)
 
 
-from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run, with_apo_pack_run_plain_names# noqa: E402
 
 
 @with_apo_pack_run
@@ -97,7 +97,7 @@ class OverviewFocusTests(unittest.TestCase):
         self.assertTrue(mat.is_unusable_overview_claim(self.CROWD))
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class MatrixEntryHeadTests(unittest.TestCase):
     def test_feature_aliases_and_features_with_a_trailing_product_stay_feature_rows(self) -> None:
         for head in ("ci/cd devin", "hook gates devin", "audit log devin", "self-serve signup devin"):
@@ -107,7 +107,7 @@ class MatrixEntryHeadTests(unittest.TestCase):
         self.assertTrue(mat._matrix_entry_head_is_solution("the devin platform"))
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class ProseNegationTests(unittest.TestCase):
     def test_features_in_a_but_clause_are_negative_with_or_without_lack_words(self) -> None:
         support: dict = {}

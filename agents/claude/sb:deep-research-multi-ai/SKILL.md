@@ -164,6 +164,36 @@ For `solution-landscape` / `solution-compare`, packaging **always** re-runs
 and `validate_landscape_content` gate. Host-written files are preserved, not replaced.
 Skip steps with `--skip-compare`, `--skip-xlsx`, or `--skip-spa`.
 
+## Vendor mentions in prose
+
+Precision comes first: a false vendor tick puts fabricated evidence in the comparison matrix. The detector
+therefore does not guess from the words around a name. Identity is declared (`scripts/vendor_identity.py`):
+
+- **Distinctive names count in prose.** A vendor whose display name has a distinctive token (a digit, a dot
+  between letters, an inner capital such as `GitHub`/`OpenHands`/`CrewAI`, or a coined word listed in the pack
+  vocabulary `COINED_NAMES`) is credited wherever a spelling that carries that token appears. Matrix lines
+  (`Matrix entry - <feature>: A, B`, `<feature> ✔ for A, B`, the pack's leader lists) still tick cells for these.
+- **Ambiguous names need a declaration.** A vendor whose name is also an ordinary word, phrase, surname or
+  person's name (Director, Cursor, Linear, Continue, Silver Bullet, Devin, GSD, Barkain, ...) is credited only by:
+  a `vendors` tag on the claim row (at most 12 per row, each an exact vendor slug; a category alias such as
+  `sdlc` is not one); a `source_ref` that names it (the text must also spell it in capitals); or its pack URL.
+  A pack URL counts only as the WHOLE value of a source field (`source_ref`, `source_url`, `url`, `source`, or one
+  item of `supporting_sources`): one URL starting with `http://`, `https://` or `www.`, no other text, a lower-case
+  ASCII host that is a pack domain or one of its subdomains, no userinfo, `%`, backslash, bad port or `..`/empty
+  path segment. A URL inside running prose (`text`, `claim`, links, HTML, code spans) credits nothing, and a
+  scheme-less `cursor.com/x` credits nothing: agents put the source URL alone in `source_ref` and tag vendors with
+  `vendors` (the research brief says so).
+- **Tagging is part of the research contract.** The brief asks every evidence, claim_candidates, critiques and
+  gaps row to carry `vendors` (slugs copied from the `[CATEGORY_PACK]` block); `matrix_entries.vendor` remains
+  the structured channel. Untagged prose about an ambiguous vendor credits nothing, so recall depends on tags.
+- **Audit.** `tests/fixtures/vendor_spelling_audit.json` is generated from the pack (distinctive tokens and prose
+  spellings per vendor); a pack change shows up there as a diff. `tests/test_vendor_identity_generative.py`
+  exhausts the sentence grammar for every ambiguous spelling.
+- **Trust residuals (accepted).** Declared identity is trusted. A `source_ref` that names a vendor plus a
+  capitalised use of the same word in the text credits it (a cursor.com page cited for a Windsurf claim that says
+  "Cursor ..."). A research agent that tags the wrong vendor credits it, as it would in `matrix_entries`. A person
+  or place named like a distinctive coined word would credit that product.
+
 ## GLM-5.2 routing
 
 Subscription-gated: Cursor pool if subscribed; OCG pool otherwise. `unknown` blocks dispatch.
