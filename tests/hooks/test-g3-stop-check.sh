@@ -196,9 +196,10 @@ reset
 
 # ---- R3-02 hand-off helpers (shared with the delivery gates) ------------------------------------------
 source "$TL_REPO_ROOT/hooks/lib/trivial-bypass.sh"
+# shellcheck disable=SC2088  # the literal tilde is the input under test
 assert_eq "state config path: ~ expands" "$HOME/x/trivial" "$(sb_expand_state_config_path '~/x/trivial')"
 assert_eq "state config path: \${SB_RUNTIME_HOME_ROOT} expands" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/trivial" "$(sb_expand_state_config_path '${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial')"
 assert_eq "state config path: \$SB_RUNTIME_HOME_ROOT expands" "$SB_RUNTIME_HOME_ROOT/t" "$(sb_expand_state_config_path '$SB_RUNTIME_HOME_ROOT/t')"
-assert_eq "state config path: no root leaves it alone" '${SB_RUNTIME_HOME_ROOT}/t' "$(SB_RUNTIME_HOME_ROOT= sb_expand_state_config_path '${SB_RUNTIME_HOME_ROOT}/t')"
+assert_eq "state config path: no root leaves it alone" '${SB_RUNTIME_HOME_ROOT}/t' "$(SB_RUNTIME_HOME_ROOT='' sb_expand_state_config_path '${SB_RUNTIME_HOME_ROOT}/t')"
 
 tl_results
