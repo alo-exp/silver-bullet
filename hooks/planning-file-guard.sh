@@ -105,7 +105,7 @@ case "$tool_name" in
   *) sb_tool_is_shell_like "$tool_name" || sb_pf_mcp_write_tool "$tool_name" || exit 0 ;;
 esac
 
-sb_tool_input_load "$input" "$PWD"
+sb_pf_tool_input_load "$input"
 if ! sb_tool_input_ok; then
   [[ "${SB_TI_STATUS:-}" == "empty" ]] && exit 0
   # The call cannot be analysed: refuse only what names the planning directory.

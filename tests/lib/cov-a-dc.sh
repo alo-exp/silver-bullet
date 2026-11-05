@@ -35,8 +35,10 @@ mkproj() {
       skills:{required_planning:[\"inst-a\"], required_deploy:[\"inst-a\",\"inst-b\"]}} | ${2:-.}" >"$PROJ/.silver-bullet.json"
   : >"$STATE"
   printf 'feature/test\n' >"$BRANCHF"
-  rm -f "$SILVER_BULLET_VERIFY_TESTS_STATE_FILE" "$SB_RUNTIME_STATE_DIR/small-edit-budget"
+  rm -f "$SILVER_BULLET_VERIFY_TESTS_STATE_FILE" "$SB_RUNTIME_STATE_DIR/small-edit-budget" "$SB_RUNTIME_STATE_DIR/contract-unlock" "${STATE}.seal" "${STATE}.hwm"
 }
+# unlock SKILL [EPOCH]: the record the recorder leaves when a contract-writing skill runs.
+unlock() { printf '%s %s\n' "$1" "${2:-$(date +%s)}" >"$SB_RUNTIME_STATE_DIR/contract-unlock"; }
 state() { printf '%s\n' "$@" >"$STATE"; }
 
 # run_dc <json> [env...]: run the hook in $PROJ.

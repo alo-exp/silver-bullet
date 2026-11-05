@@ -186,14 +186,16 @@ dc_cmd "cp .silver-bullet.json /tmp/backup.json"
 assert_eq "copying the config out is fine" "none" "$(decision)"
 run_dc "$(edit_json "$PROJ/docs/silver-bullet.md" Write)"
 assert_eq "a file of the same name elsewhere is not the contract" "none" "$(decision)"
-state inst-a silver-init
+state inst-a
+unlock silver-init
 run_dc "$(edit_json "$PROJ/.silver-bullet.json" Write)"
 assert_eq "with sb:init recorded the config may be rewritten" "none" "$(decision)"
 dc_cmd "mv silver-bullet.md silver-bullet.md.bak"
 assert_eq "sb:init may move the instruction file" "none" "$(decision)"
-state inst-a silver-update
+unlock silver-update
 run_dc "$(edit_json "$PROJ/silver-bullet.md" Write)"
 assert_eq "with sb:update recorded silver-bullet.md may be rewritten" "none" "$(decision)"
+rm -f "$SD/contract-unlock"
 state inst-a
 # a configured trivial file never arms the bypass
 mkproj trivcfg ".state={trivial_file:\"$SD/branch-test\"}"
@@ -387,7 +389,7 @@ dc_cmd 'git status --short && ls src'
 assert_eq "a read-only command costs one python3 start" 1 "$(wc -l <"$TL_TMP/py-calls" | tr -d ' ')"
 : >"$TL_TMP/py-calls"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
-assert_eq "a file edit costs one python3 start" 1 "$(wc -l <"$TL_TMP/py-calls" | tr -d ' ')"
+assert_eq "a file edit starts no interpreter" 0 "$(wc -l <"$TL_TMP/py-calls" | tr -d ' ')"
 rm -f "$TL_BIN/python3"
 
 # ── the payload travels on stdin: a 300 KB command is analysed, not dropped (R2-03) ───────────

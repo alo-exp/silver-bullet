@@ -74,7 +74,7 @@ deny() {
   exit 0
 }
 
-sb_tool_input_load "$input" "$PWD"
+sb_pf_tool_input_load "$input"
 if ! sb_tool_input_ok; then
   [[ "${SB_TI_STATUS:-}" == "empty" ]] && exit 0
   # The shell command cannot be analysed: refuse only what names an instruction file.

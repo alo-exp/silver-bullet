@@ -41,7 +41,7 @@ setup() {
   TMPBRANCH_FILE="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   TMPFILE="${TMPDIR_TEST}/src/app.js"
-  rm -f "$TMPSTATE"
+  rm -f "$TMPSTATE" "$TMPSTATE.seal" "$TMPSTATE.hwm" "${SB_TEST_DIR}/contract-unlock"
   rm -f "$TMPBRANCH_FILE"
   rm -f "$VERIFY_TESTS_FILE"
   cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
@@ -386,7 +386,7 @@ teardown
 # Test 4ab: Stage A — scaffold/config write with /src/ literal stays outside source gate
 setup
 # sb:init owns the config files: with it recorded the write is its own business (R2-04)
-echo "silver-init" > "$TMPSTATE"
+echo "silver-init" > "$TMPSTATE"; printf 'silver-init %s\n' "$(date +%s)" > "${SB_TEST_DIR}/contract-unlock"
 out=$(run_hook_bash "PreToolUse" "cat > .silver-bullet.json <<'EOF'
 {\"project\":{\"src_pattern\":\"/src/\"}}
 EOF")
@@ -852,7 +852,7 @@ teardown
 
 # Test 19c: cp from plugin cache template into project workspace is ALLOWED (#227)
 setup
-echo "silver-init" > "$TMPSTATE"
+echo "silver-init" > "$TMPSTATE"; printf 'silver-init %s\n' "$(date +%s)" > "${SB_TEST_DIR}/contract-unlock"
 out=$(run_hook_bash "PreToolUse" "cp ${PLUGIN_CACHE_PATH}/some-plugin/template.md ${TMPDIR_TEST}/silver-bullet.md")
 assert_passes "F-07: cp from plugin cache into project workspace is allowed (sb:init copies the template)" "$out"
 teardown

@@ -280,11 +280,16 @@ if sb_pf_names_sb_recorder /i/hooks; then tl_fail "ls hooks dir"; else tl_pass "
 for sk in silver-init silver-update silver-add silver-devops silver-migrate; do
   case " $SB_PF_CONTRACT_WRITER_SKILLS " in *" $sk "*) tl_pass "$sk may rewrite the contract";; *) tl_fail "$sk missing from the unlock list";; esac
 done
-export SILVER_BULLET_STATE_FILE="$SB_RUNTIME_STATE_DIR/state"
-printf 'silver-plan\n' >"$SILVER_BULLET_STATE_FILE"
+rm -f "$SB_RUNTIME_STATE_DIR/contract-unlock"
+if sb_pf_contract_unlocked; then tl_fail "no record unlocks"; else tl_pass "without a record nothing unlocks"; fi
+sb_contract_unlock_write silver-plan
 if sb_pf_contract_unlocked; then tl_fail "silver-plan unlocks"; else tl_pass "an unrelated skill does not unlock"; fi
-printf 'silver-add\n' >"$SILVER_BULLET_STATE_FILE"
-if sb_pf_contract_unlocked; then tl_pass "silver-add unlocks"; else tl_fail "silver-add unlocks"; fi
+sb_contract_unlock_write silver-add
+if sb_pf_contract_unlocked json; then tl_pass "silver-add unlocks the JSON configuration"; else tl_fail "silver-add unlocks"; fi
+if sb_pf_contract_unlocked md; then tl_fail "silver-add unlocks silver-bullet.md"; else tl_pass "silver-add leaves silver-bullet.md locked"; fi
+sb_contract_unlock_write silver-init
+if sb_pf_contract_unlocked md; then tl_pass "silver-init unlocks silver-bullet.md"; else tl_fail "silver-init unlocks md"; fi
+rm -f "$SB_RUNTIME_STATE_DIR/contract-unlock"
 # drift: a skill that rewrites .silver-bullet.json with jq and mv must be on the list
 while IFS= read -r f; do
   name="$(basename "$(dirname "$f")")"

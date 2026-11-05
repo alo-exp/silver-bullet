@@ -142,4 +142,11 @@ assert_contains "an unparsable command naming the marker fails closed" "$(reason
 tl_run_stdin "$(write_in "$TRIVIAL")" bash -c 'sb_project_active() { return 1; }; export -f sb_project_active; cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$HOOK"
 assert_eq "a project reported inactive: the guard stands down" "" "$TL_OUT"
 
+# --- round 2: glob, brace and variable targets, patch appliers --------------------------------------
+for c in "cp /tmp/x $SD/trivia[l]" "cp /tmp/x $SD/triv?al" "touch ${SD%?}?/trivial" "touch $SD/{trivial,x}" 'touch $DIR/trivial' "patch -d $(dirname "$SD") -p1 < /tmp/p.diff" "git -C $(dirname "$SD") apply /tmp/p.diff"; do
+  run_tg "$(bash_in "$c")"
+  assert_contains "refused: $c" "$(reason)" "LEGACY TRIVIAL BYPASS BLOCKED"
+done
+run_tg "$(bash_in "cp /tmp/x build/*.o")"
+assert_eq "an honest pattern passes" "" "$TL_OUT"
 tl_results
