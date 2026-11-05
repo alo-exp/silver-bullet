@@ -149,9 +149,17 @@ parse_orchestrator_pre_exec() {
       ;;
   esac
 
+  # The queue also carries the planning-floor skills (required_planning) that dev-cycle-check and
+  # completion-audit demand but this chain guard does not (R10-02). Those extras are checked by
+  # test-orchestrator-queue-order.sh; here only floor tokens the guard lacks are set aside.
+  local floor_extra="" f
+  for f in $(sb_orchestrator_planning_floor_csv "$composer" | tr ',' ' '); do
+    case ",${GUARD_SET_FOR_FILTER}," in *",$(normalize_token "$f"),"*) ;; *) floor_extra="$floor_extra $(normalize_token "$f")" ;; esac
+  done
   IFS=',' read -ra parts <<< "$queue"
   for token in "${parts[@]}"; do
     [[ "$token" == "silver-execute" ]] && break
+    case " $floor_extra " in *" $(normalize_token "$token") "*) continue ;; esac
     pre+=("$token")
   done
   to_sorted_csv "${pre[@]}"
@@ -182,6 +190,7 @@ echo "=== composition triple alignment ==="
 for composer in "${COMPOSERS[@]}"; do
   skill_set="$(parse_skill_pre_exec "$composer" || true)"
   guard_set="$(parse_guard_pre_exec "$composer" || true)"
+  GUARD_SET_FOR_FILTER="$guard_set"
   orch_set="$(parse_orchestrator_pre_exec "$composer")"
 
   assert_sets_equal "${composer}: SKILL pre-exec == guard markers" "$skill_set" "$guard_set"

@@ -208,8 +208,9 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 - Type: `precomposed`
 - Final intent gate: `INTENT-GATE-DEFAULT`
 
-- atomic_flow: `AF-ORIENT` optional
 - atomic_flow: `AF-DEBUG`
+- atomic_flow: `AF-QUALITY-GATE` (pre-plan)
+- atomic_flow: `AF-ORIENT`
 - atomic_flow: `AF-PLAN`
 - atomic_flow: `AF-EXECUTE`
 - workflow: `WF-POST-EXEC-GATES`
@@ -269,6 +270,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 
 - atomic_flow: `AF-FAST-PATH`
 - atomic_flow: `AF-QUALITY-GATE`
+- atomic_flow: `AF-ORIENT`
 - atomic_flow: `AF-PLAN`
 - atomic_flow: `AF-VALIDATE`
 - atomic_flow: `AF-EXECUTE`
