@@ -123,6 +123,12 @@ SB_DEBUG_DUMP_TTL_SECONDS=bogus tl_run_stdin "$PAY" bash "$DD"
 assert_file_exists "a bad TTL falls back to the default" "$OUT"
 rm -f "$OUT" "$SD/debug-dump"
 
+# ---- skill gates need jq: without it nothing is denied here (the record hook still gates) -------------
+# shellcheck source=../../hooks/lib/skill-gates.sh
+source "$LIB/skill-gates.sh"
+rc=0; PATH="$(tl_path_without jq)" sb_skill_gates_denial sb:plan "$TL_REPO_ROOT/hooks" || rc=$?
+assert_eq "no jq: the gate lookup allows" 1 "$rc"
+
 # ---- phase-lock-claim: JSON stays valid for a hostile plugin path (R3-26) ---------------------------
 ec_project "$TL_TMP/proj"
 mkdir -p "$EC_PROJ/.planning/phases/001-x"

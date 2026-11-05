@@ -84,9 +84,7 @@ phase=$(_resolve_phase_from_path "$file_path" || true)
 
 # ── Helper-exists check (graceful degrade for non-SB-initialized projects) ──
 # The helper is Silver Bullet's own, resolved from the plugin root, never from the project (R3-03).
-_hook_dir="${BASH_SOURCE[0]%/*}"
-[[ "$_hook_dir" != "${BASH_SOURCE[0]}" ]] || _hook_dir="."
-helper="${_hook_dir}/../scripts/phase-lock.sh"
+helper="$(dirname "${BASH_SOURCE[0]}")/../scripts/phase-lock.sh"
 if [[ ! -x "$helper" ]]; then
   # jq builds the JSON: the project path may contain quotes or backslashes (R3-26).
   jq -nc --arg m "⚠️ phase-lock-claim.sh: ${helper} not executable — skipping" \
@@ -156,7 +154,7 @@ case "$helper_rc" in
     printf 'Attempted intent: %s\n' "$intent" >&2
     [[ -n "$helper_stderr" ]] && printf '%s\n' "$helper_stderr" >&2
     # shellcheck disable=SC2016  # backticks are literal markdown, not command substitution
-    printf 'Hint: run `scripts/phase-lock.sh (plugin root) peek %s` for details.\n' "$phase" >&2
+    printf 'Hint: run `%s peek %s` for details.\n' "$helper" "$phase" >&2
     exit 2
     ;;
   *)

@@ -46,9 +46,7 @@ fi
 
 # ── Helper-exists check (graceful degrade) ──────────────────────────────────
 # The helper is Silver Bullet's own, resolved from the plugin root, never from the project (R3-03).
-_hook_dir="${BASH_SOURCE[0]%/*}"
-[[ "$_hook_dir" != "${BASH_SOURCE[0]}" ]] || _hook_dir="."
-helper="${_hook_dir}/../scripts/phase-lock.sh"
+helper="$(dirname "${BASH_SOURCE[0]}")/../scripts/phase-lock.sh"
 [[ -x "$helper" ]] || exit 0
 
 # ── Read stdin and resolve session id ───────────────────────────────────────
