@@ -3439,5 +3439,300 @@
   "set": "r6_qualified_false_positive",
   "kind": "plain_english",
   "text": "Many agents copy the SDLC category."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix - Director: Lana and Lilly Wachowski."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix — Director: the Wachowskis (1999)."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "- Matrix – Cursor: blinking caret settings for the terminal."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix entry — Linear: y = mx + b, the simplest model."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Row \"Continue\": press Enter to continue the installer."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Row 'Cursor' of the keyboard shortcuts table: arrow keys."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix \"Linear\" maps: rotation and scaling."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "| Row 'Director' | approves budget: yes |"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "1. Row \"Conductor\" in the wiring sheet: copper."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "> Matrix — Devin: guard, Phoenix Suns."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "### Matrix - Windsurf: lessons for beginners"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix row 'Tembo': elephant in Swahili."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Row \"Codex\" in the manuscript catalogue: Sinaiticus."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix — Superpowers: flight, strength, invisibility."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix - Silver Bullet: werewolf lore."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix — GSD: get stuff done, a productivity habit."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix - Deepwork: Cal Newport's book on focus."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "* Matrix — Aider: someone who aids a crime."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix — Sweep: a broom technique."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Row 'Poolside': bar seating near the water."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix — RBAC: Director, Editor, Viewer."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix entry — RBAC: Director, Editor, Viewer roles."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "- Row 'Audit log': Director, Auditor."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "RBAC ✔ for Director and Admin."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "RBAC ✔ for Director, Editor and Viewer roles."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "SSO ✔ for Director, Manager"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Audit log ✔ for Director"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Delegation ✔ for Director, Producer"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix — Delegation: Director, Producer, Editor."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "| Matrix — SSO: Director, Admin |"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "> RBAC ✔ for Director, Admin"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "We compared roles in the permission sheet.\nMatrix — RBAC: Director, Editor."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Notes from the call:\n- RBAC ✔ for Director, Manager\n- SSO pending"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix - Audit log: Director, Controller, Auditor."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix row 'SSO': Director login, Manager login."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix - Open-source: Continue reading, Linear notes."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix — CI/CD: Linear pipeline, Conductor rails."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix — Quick onboarding: Director, Mentor."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Self-serve signup ✔ for Director and Guest"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Managed hosting ✔ for Tembo, Elephant"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix leaders are Director and Producer of the film."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Matrix leaders are: Director, Producer."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Commercial-weighted peer: Director, Editor."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Startup-weighted core: Linear, Continue."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Confirmed in-scope core set: Director, Editor, Writer."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "- APO matrix leaders: Cursor, Linear."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Students were split by track: Alice (Memory), Devin (Cognition), Sam (Perception)."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Team leads: Devin (Cognition), Maria (Language)."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "| Devin (Cognition) | 3.9 GPA |"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Augment Cosmos (Augment Code) is written on the poster, the rest is blank."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "Cognition (Devin) and Memory (Alice) were the panels."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "DEVIN (COGNITION) is the label on the file."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "devin (cognition) lowercase note."
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "## Matrix — Director: notes"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "**Matrix — Director:** the Wachowskis"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "| Feature | Director | Producer |\n|---|---|---|\n| RBAC | ✔ | ✔ |"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "`Matrix entry — Linear: y = mx + b`"
+ },
+ {
+  "set": "r7_false_positive",
+  "kind": "plain_english",
+  "text": "\"Matrix — Director: Lana Wachowski,\" said the trivia card."
+ },
+ {
+  "set": "r6_qualified_false_positive",
+  "kind": "plain_english",
+  "text": "He typed \"Devin (Cognition)\" into a search box and found nothing about it."
  }
 ]

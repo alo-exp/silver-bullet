@@ -208,7 +208,7 @@ def _mentions(lower_text: str, name: str) -> bool:
 # Vendor identity (vendor_identity.py has the rule). A vendor whose display name has no distinctive token is
 # AMBIGUOUS ("Director", "Cursor", "Silver Bullet", "Devin"): its name is also an ordinary word or surname, so it is
 # credited only by an explicit signal: a ``vendors`` tag on the claim row, a ``source_ref`` that names it, its pack
-# URL, a qualified display ("Devin (Cognition)") or a whole matrix slot. The words around a name never credit it.
+# URL. The words around a name, a matrix line and a qualified display never credit it.
 # COINED_NAMES (pack vocabulary): invented single words that are distinctive on their own (name -> why).
 COINED_NAMES: frozenset[str] = frozenset()
 _NEVER = re.compile(r"(?!x)x")
@@ -293,63 +293,17 @@ def vendor_registry() -> Any:
     return _REGISTRY[key]
 
 
-_SLOT_CLEAN = re.compile(
-    r"[✔✓✗✖✘*_`#]|\([^)]*\)|\bv?\d+(?:\.\d+)*\b|\b(?:only|also|pass|fail|scores?|true|yes|no|not|do|does|partially|are|is)\b",
-    re.IGNORECASE,
-)
-_SLOT_SPLIT = re.compile(r"[,;/]|\s+and\s+")
 _SIGNALS: dict[tuple[Any, ...], frozenset[str]] = {}
 
 
-def _line_start(text: str, at: int) -> bool:
-    start = text.rfind("\n", 0, at) + 1
-    return not text[start:at].strip(" \t-*•>|")
-
-
-def _is_feature_name(text: str) -> bool:
-    """The whole text is one of the rubric's features (or an alias of one): "Workflow composition", not "Throughput: Workflow composition"."""
-    key = text.strip(" \t:*_`").lower()
-    return bool(key) and (key in {f.lower() for f in _all_template_features()} or key in _FEATURE_ALIASES)
-
-
-def _slot_vendors(text: str, registry: Any) -> set[str]:
-    """Vendors that are a whole item of a recognised matrix line ("Matrix entry - X: A, B", "X ✔ for A, B", the pack's leader lists).
-
-    The line formats are anchored at a line start. The items of a list count only when the feature is a known
-    one and every item is a known vendor, so a sentence that merely starts like a matrix line credits nothing; the
-    head of a solution-led line ("Matrix entry - Director: ...") is an item of its own.
-    """
-    groups: list[list[str]] = []
-    for rx in (_MATRIX_ENTRY_RE, _MATRIX_DASH_RE, _MATRIX_ROW_RE):
-        match = rx.search(text)
-        if match:
-            groups.append([match.group("feature")])
-            if _is_feature_name(match.group("feature")):
-                groups.append(_SLOT_SPLIT.split(match.group("body")))
-    check = _CHECKMARK_FOR_RE.search(text) if _CHECK_THEN_FOR.search(text) else None
-    if check and _is_feature_name(check.group("feature")):
-        groups.append(_SLOT_SPLIT.split(check.group("body")))
-    for rx in (_MATRIX_LEADERS_RE, _CORE_SET_CLAIM_RE):
-        match = rx.search(text)
-        if match and _line_start(text, match.start()):
-            groups.append(_SLOT_SPLIT.split(text[match.end():]))
-    found: set[str] = set()
-    for group in groups:
-        keys = [key for slot in group if (key := " ".join(_SLOT_CLEAN.sub(" ", slot).split()))]
-        resolved = [registry.slugs_of(key) for key in keys]
-        if any(resolved) and all(slugs or len(key.split()) <= 2 for key, slugs in zip(keys, resolved)):
-            found |= set().union(*resolved)  # a name-like leftover ("Claude") is fine; a phrase ("GSD in our maths class") is prose
-    return found
-
-
 def _text_signals(text: str, registry: Any) -> frozenset[str]:
-    """Vendors a text names by an explicit form (pack URL, qualified display, whole matrix slot); memoised per text."""
+    """Vendors a text names by their pack URL; memoised per text."""
     key = (text, id(registry))
     hit = _SIGNALS.get(key)
     if hit is None:
         if len(_SIGNALS) >= 2048:
             _SIGNALS.clear()
-        hit = _SIGNALS[key] = frozenset(registry.signals(text) | _slot_vendors(text, registry))
+        hit = _SIGNALS[key] = registry.signals(text)
     return hit
 
 
@@ -472,7 +426,7 @@ def _source_segments(item: dict[str, Any]) -> list[str]:
     for field in ("source_ref", "url", "source", "supporting_sources"):
         value = item.get(field)
         values += [value] if isinstance(value, str) else [str(v) for v in value if isinstance(v, str)] if isinstance(value, list) else []
-    return [seg.strip() for value in values for seg in re.split(r";| \+ | [—–] ", value) if seg.strip()]
+    return [seg.strip() for value in values for seg in re.split(r";| \+ ", value) if seg.strip()]
 
 
 _MAX_TAGS = 12  # per row, as in the schema

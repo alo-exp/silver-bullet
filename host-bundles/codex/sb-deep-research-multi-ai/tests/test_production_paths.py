@@ -230,10 +230,10 @@ class ProperReferencesToCommonWordVendorsTests(unittest.TestCase):
                  "Cavekit v3.1": "cavekit-v31"}
         for item, slug in cases.items():
             for text in (f"Confirmed in-scope core set: {item}, Devin", f"APO matrix leaders are {item} and Devin"):
-                support = m.parse_feature_support(envs(text), known=self.known, pack=self.pack)
+                support = m.parse_feature_support(envs({"claim": text, "vendors": [slug, "devin"]}), known=self.known, pack=self.pack)
                 self.assertIn(slug, support, (item, text, sorted(support)))
         for text in ("Confirmed in-scope core set: Claude, Devin", "APO matrix leaders are Claude 2 and Devin"):
-            support = m.parse_feature_support(envs(text), known=self.known, pack=self.pack)
+            support = m.parse_feature_support(envs({"claim": text, "vendors": ["devin"]}), known=self.known, pack=self.pack)
             self.assertEqual(sorted(support), ["devin"], text)
 
     def test_the_absence_veto_is_scoped_to_its_clause(self) -> None:
@@ -342,9 +342,9 @@ class ProperReferencesToCommonWordVendorsTests(unittest.TestCase):
 
     def test_bare_prose_never_prefix_matches_a_known_vendor(self) -> None:
         for text in ("Confirmed in-scope core set: Claude, Devin", "APO matrix leaders are Claude and Devin"):
-            support = m.parse_feature_support(envs(text), known=self.known, pack=self.pack)
+            support = m.parse_feature_support(envs({"claim": text, "vendors": ["devin"]}), known=self.known, pack=self.pack)
             self.assertEqual(sorted(support), ["devin"], text)
-        full = m.parse_feature_support(envs("APO matrix leaders are Claude Code Expert and Devin"),
+        full = m.parse_feature_support(envs({"claim": "APO matrix leaders are Claude Code Expert and Devin", "vendors": ["devin", "claude-code-expert"]}),
                                        known=self.known, pack=self.pack)
         self.assertIn("claude-code-expert", full)
 
