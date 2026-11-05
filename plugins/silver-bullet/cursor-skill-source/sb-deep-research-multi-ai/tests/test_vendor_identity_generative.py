@@ -141,8 +141,6 @@ class GenerativeVendorIdentityTests(unittest.TestCase):
                 signals.append(("vendors tag, no mention", "The row is about the product named in the tag.", {"vendors": [slug]}))
             if slug in self.homes:
                 signals.append(("source_ref pack URL", text, {"source_ref": self.homes[slug]}))
-                signals.append(("pack URL in the text", f"{display} ({self.homes[slug]}) provides workflow composition.", None))
-                signals.append(("pack URL as a link target", f"[{display}]({self.homes[slug]}) provides workflow composition.", None))
             for label, sentence, row in signals:
                 checked += 1
                 if slug not in {self.registry.canonical(s) for s in self.credited(sentence, row)}:

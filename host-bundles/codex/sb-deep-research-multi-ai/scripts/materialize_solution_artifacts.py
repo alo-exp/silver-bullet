@@ -293,26 +293,12 @@ def vendor_registry() -> Any:
     return _REGISTRY[key]
 
 
-_SIGNALS: dict[tuple[Any, ...], frozenset[str]] = {}
-
-
-def _text_signals(text: str, registry: Any) -> frozenset[str]:
-    """Vendors a text names by their pack URL; memoised per text."""
-    key = (text, id(registry))
-    hit = _SIGNALS.get(key)
-    if hit is None:
-        if len(_SIGNALS) >= 2048:
-            _SIGNALS.clear()
-        hit = _SIGNALS[key] = registry.signals(text)
-    return hit
-
-
 def mentions_vendor(text: str, lower: str, name: str) -> bool:
     """Whole-word vendor mention: does `text` credit the vendor `name` spells?
 
-    Credited when the claim row declares the vendor, when `name` is a prose spelling (it carries a distinctive
-    token of the vendor's own display: "GitHub Copilot", "Cc10x"), or when the text names the vendor by an
-    explicit form. Everything else is a common word. The words around a name never decide.
+    Credited when the claim row declares the vendor (a tag, a source field) or when `name` is a prose spelling (it
+    carries a distinctive token of the vendor's own display: "GitHub Copilot", "Cc10x"). Everything else is a common
+    word. The words around a name and any URL in the prose never decide.
     """
     if not _mentions(lower, name):
         return False
@@ -320,9 +306,7 @@ def mentions_vendor(text: str, lower: str, name: str) -> bool:
     vendors = registry.slugs_of(name)
     if not vendors:
         return False
-    if vendors & _RUN["declared"] or registry.is_prose_spelling(name):
-        return True
-    return bool(vendors & _text_signals(text, registry))
+    return bool(vendors & _RUN["declared"]) or registry.is_prose_spelling(name)
 
 
 _EXTRACTED: dict[tuple[Any, ...], tuple[Any, list[str]]] = {}
@@ -421,12 +405,13 @@ def _iter_claim_texts(envelopes: list[dict[str, Any]]) -> list[str]:
     return [text for text, _item in _claim_items(envelopes)]
 
 
-def _source_segments(item: dict[str, Any]) -> list[str]:
+def _source_values(item: dict[str, Any]) -> list[str]:
+    """The claim row's source fields as whole values (a list field contributes each string)."""
     values: list[str] = []
-    for field in ("source_ref", "url", "source", "supporting_sources"):
+    for field in ("source_ref", "source_url", "url", "source", "supporting_sources"):
         value = item.get(field)
-        values += [value] if isinstance(value, str) else [str(v) for v in value if isinstance(v, str)] if isinstance(value, list) else []
-    return [seg.strip() for value in values for seg in re.split(r";| \+ ", value) if seg.strip()]
+        values += [value] if isinstance(value, str) else [v for v in value if isinstance(v, str)] if isinstance(value, list) else []
+    return values
 
 
 _MAX_TAGS = 12  # per row, as in the schema
@@ -464,8 +449,8 @@ def _declared_for_row(item: dict[str, Any], known: dict[str, str] | None = None,
     """
     effective, pack = _known_or_run(known), pack or _RUN["pack"]
     text = str(item.get("text") or item.get("claim") or item.get("finding") or item.get("description") or "")
-    segments = _source_segments(item)[:_MAX_SOURCES]
-    key = (text, tuple(segments), repr(item.get("vendors")), _run_key(effective, pack))
+    values = _source_values(item)[:_MAX_SOURCES]
+    key = (text, tuple(values), repr(item.get("vendors")), _run_key(effective, pack))
     hit = _DECLARED.get(key)
     if hit is None:
         if len(_DECLARED) >= 2048:
@@ -474,12 +459,13 @@ def _declared_for_row(item: dict[str, Any], known: dict[str, str] | None = None,
             registry = vendor_registry()
             declared = _tagged_vendors(item, effective, pack)
             lower = text.lower()
-            for segment in segments:
-                vendor = registry.url_slug(segment)
-                vendor = registry.canonical(vendor or resolve_structured_vendor(segment, effective, pack) or "")
-                if vendor in registry.spellings_of and any(_mentions(lower, spelling) for spelling in registry.spellings_of[vendor]):
-                    if vendor not in registry.ambiguous_vendors() or _names_in_case(text, vendor, registry):
-                        declared.add(vendor)
+            for value in values:
+                named = [resolve_structured_vendor(seg, effective, pack) for seg in re.split(r";| \+ ", value) if seg.strip()]
+                for vendor in [registry.url_slug(value), *named]:  # a URL counts only as the whole field value
+                    vendor = registry.canonical(vendor or "")
+                    if vendor in registry.spellings_of and any(_mentions(lower, spelling) for spelling in registry.spellings_of[vendor]):
+                        if vendor not in registry.ambiguous_vendors() or _names_in_case(text, vendor, registry):
+                            declared.add(vendor)
         hit = _DECLARED[key] = frozenset(declared)
     return hit
 
