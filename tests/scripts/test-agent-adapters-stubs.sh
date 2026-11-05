@@ -79,6 +79,15 @@ stub_cli opencode "$TL_TMP/bins/oc-fail" "echo oc-failing; exit 5"
 ad opencode 'agent_invoke permissive "do it"; echo rc=$?' OPENCODE_BIN="$TL_TMP/bins/oc-fail/opencode" OPENCODE_RUN_TAIL_IDLE_TIMEOUT=2
 assert_contains "opencode: a failing CLI is tolerated and its output kept" "$TL_OUT" "oc-failing"
 
+# --- the CLI's last chunk must never be lost to the exit race (select timeout, write, exit)
+stub_cli opencode "$TL_TMP/bins/oc-race" "sleep 0.19; echo race-out"
+lost=0
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12; do
+  ad opencode 'agent_invoke permissive x' OPENCODE_BIN="$TL_TMP/bins/oc-race/opencode" OPENCODE_RUN_TAIL_IDLE_TIMEOUT=2
+  [[ "$TL_OUT" == *race-out* ]] || lost=$((lost + 1))
+done
+assert_eq "opencode: no output lost across 12 exit-race runs" "0" "$lost"
+
 # ============================================================ Pi
 PB="$TL_TMP/bins/pi"
 stub_cli pi "$PB" "printf '%s\n' \"\$*\" >>'$TL_TMP/pi.argv'; echo pi-out"
@@ -88,6 +97,13 @@ ad pi 'agent_cli_path' PI_BIN="$PB/pi"
 assert_eq "pi: cli path" "$PB/pi" "$TL_OUT"
 ad pi 'agent_cli_path; echo rc=$?' PATH="$(tl_path_without pi)" PI_BIN="" HOME="$TL_TMP/nohome"
 assert_contains "pi: missing cli explained" "$TL_ERR" "Pi CLI not found"
+stub_cli pi "$TL_TMP/bins/pi-race" "sleep 0.19; echo race-out"
+lost=0
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12; do
+  ad pi 'agent_invoke permissive x' PI_BIN="$TL_TMP/bins/pi-race/pi" PI_RUN_TAIL_IDLE_TIMEOUT=2
+  [[ "$TL_OUT" == *race-out* ]] || lost=$((lost + 1))
+done
+assert_eq "pi: no output lost across 12 exit-race runs" "0" "$lost"
 ad pi 'agent_preflight; echo rc=$?' PI_BIN="$PB/pi"
 assert_contains "pi: preflight ok" "$TL_OUT" "rc=0"
 stub_cli pi "$TL_TMP/bins/pi-broken" "exit 0"; printf '#!/usr/bin/env bash\nexit 3\n' >"$TL_TMP/bins/pi-broken/pi"
@@ -183,6 +199,47 @@ assert_eq "codex: transcript dir is 0700" "0o700" "$(python3 -c 'import os,sys;p
 assert_eq "codex: transcript file is 0600" "0o600" "$(python3 -c 'import os,sys;print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$TDIR/latest.jsonl")"
 assert_eq "codex: nothing written under SB_ROOT" "0" "$(find "$FSB" -newer "$FSB/scripts/codex-interactive-invoke.py" -type f | wc -l | tr -d ' ')"
 assert_file_exists "codex: log written" "$TL_TMP/codex-tui.log"
+# --- transcript directory hardening (R4-31 r2): unpredictable, private, never through planted links
+VICTIM="$TL_TMP/victim-dir"; mkdir -p "$VICTIM"; printf 'precious\n' >"$TL_TMP/victim-file"
+printf '{"a":1}\n' >"$TL_TMP/src2.jsonl"
+SHARED="$TL_TMP/shared-tmp"; mkdir -p "$SHARED"; chmod 1777 "$SHARED"
+for n in 1 2 3; do ln -s "$VICTIM" "$SHARED/sb-codex-transcripts.$(id -u).$n"; done
+ln -s "$TL_TMP/victim-file" "$SHARED/latest.jsonl"
+ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"' TMPDIR="$SHARED"
+assert_eq "transcript: planted look-alike links in a shared TMPDIR are never written through" "0" "$(find "$VICTIM" -type f | wc -l | tr -d ' ')"
+assert_eq "transcript: victim file untouched" "precious" "$(cat "$TL_TMP/victim-file")"
+NEWDIR="$(find "$SHARED" -maxdepth 1 -type d -name 'sb-codex-transcripts.??????' | head -1)"
+assert_file_exists "transcript: a fresh mktemp directory was used" "$NEWDIR/latest.jsonl"
+assert_eq "transcript: fresh directory is 0700" "0o700" "$(python3 -c 'import os,sys;print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$NEWDIR")"
+# a named directory that is a symlink is refused (fail closed, nothing written)
+ln -s "$VICTIM" "$TL_TMP/linkdir"
+ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="$TL_TMP/linkdir"
+assert_contains "transcript: symlinked named directory refused" "$TL_ERR" "refusing transcript directory"
+assert_contains "transcript: refusal is a failure" "$TL_OUT" "rc=1"
+assert_eq "transcript: nothing written through the symlinked directory" "0" "$(find "$VICTIM" -type f | wc -l | tr -d ' ')"
+# a named directory holding a planted latest.jsonl link is refused as well
+mkdir -p "$TL_TMP/planted"; ln -s "$TL_TMP/victim-file" "$TL_TMP/planted/latest.jsonl"
+ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="$TL_TMP/planted"
+assert_contains "transcript: planted file link refused" "$TL_ERR" "transcript target is a symlink"
+assert_eq "transcript: planted link target untouched" "precious" "$(cat "$TL_TMP/victim-file")"
+# uncreatable directories fail closed
+ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="/proc/no/such/dir"
+assert_contains "transcript: uncreatable named directory fails" "$TL_OUT" "rc=1"
+ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' TMPDIR="$TL_TMP/no-such-tmp"
+assert_contains "transcript: mktemp failure fails" "$TL_OUT" "rc=1"
+# old private directories are swept, recent ones kept
+mkdir -p "$SHARED/sb-codex-transcripts.OLDAAA" "$SHARED/sb-codex-transcripts.NEWBBB"
+touch -d '3 days ago' "$SHARED/sb-codex-transcripts.OLDAAA"
+ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"' TMPDIR="$SHARED"
+assert_file_absent "transcript: stale private directory swept" "$SHARED/sb-codex-transcripts.OLDAAA"
+assert_file_exists "transcript: recent directory kept" "$SHARED/sb-codex-transcripts.NEWBBB"
+ad codex 'agent_transcript_dir; echo rc=$?'
+assert_contains "transcript: no fixed location without CODEX_TRANSCRIPT_DIR" "$TL_OUT" "rc=1"
+ad codex 'agent_transcript_dir' CODEX_TRANSCRIPT_DIR="$TL_TMP/named"
+assert_eq "transcript: named location reported" "$TL_TMP/named" "$TL_OUT"
+# the launcher cannot start from a missing plugin root
+ad codex 'agent_invoke permissive "p"; echo rc=$?' CODEX_BIN="$CB/codex" SB_ROOT="$TL_TMP/no-plugin-root" CODEX_TRANSCRIPT_DIR="$TL_TMP/tdir9"
+assert_contains "codex: TUI launcher fails closed without the plugin root" "$TL_OUT" "rc=0"
 # a failing launcher is tolerated
 cp "$FSB/scripts/codex-interactive-invoke.py" "$FSB/scripts/launcher.ok"
 printf 'import sys\nprint("launcher failed")\nsys.exit(3)\n' >"$FSB/scripts/codex-interactive-invoke.py"

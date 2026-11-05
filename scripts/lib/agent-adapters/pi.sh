@@ -135,6 +135,17 @@ while True:
         if chunk.strip():
             activity_at = time.monotonic()
     elif proc.poll() is not None:
+        # The CLI may have written its last chunk and exited while select() was timing out:
+        # drain what is left in the pipe (non-blocking, to EOF) before leaving the loop.
+        os.set_blocking(fd, False)
+        while True:
+            try:
+                data = os.read(fd, 65536)
+            except BlockingIOError:
+                break
+            if not data:
+                break
+            stdout_parts.append(data.decode(errors="replace"))
         break
 
 if eof and proc.poll() is None:
