@@ -57,11 +57,52 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
             "async": false,
             "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
+            "async": false,
+            "timeout": 10
           }
         ]
       },
       {
         "matcher": "Edit|Write|MultiEdit|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/agent-delegation-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-claim.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*",
         "hooks": [
           {
             "type": "command",
@@ -78,24 +119,6 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/workflow-chain-guard.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/agent-delegation-guard.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-claim.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -148,23 +171,6 @@
         ]
       },
       {
-        "matcher": "Bash|exec_command",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
-            "async": false,
-            "timeout": 10
-          }
-        ]
-      },
-      {
         "matcher": "Edit|Write|MultiEdit|Bash|apply_patch|exec_command",
         "hooks": [
           {
@@ -202,12 +208,6 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/trivial-file-guard.sh\"",
             "async": false,
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
-            "async": false,
-            "timeout": 15
           },
           {
             "type": "command",
@@ -260,6 +260,17 @@
         ]
       },
       {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
+            "async": false,
+            "timeout": 15
+          }
+        ]
+      },
+      {
         "matcher": "Read|Grep",
         "hooks": [
           {
@@ -303,19 +314,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dependency-skill-check.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -353,12 +352,6 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
             "async": false,
             "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
-            "async": false,
-            "timeout": 10
           },
           {
             "type": "command",
@@ -454,15 +447,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
-            "async": false,
-            "timeout": 15
-          },
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-heartbeat.sh\"",
             "async": false,
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
+            "async": false,
+            "timeout": 15
           }
         ]
       },
