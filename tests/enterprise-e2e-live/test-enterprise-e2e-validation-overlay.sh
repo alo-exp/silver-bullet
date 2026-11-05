@@ -74,11 +74,22 @@ else
   pass "validation registry parse skipped (jq missing)"
 fi
 
-if RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/run-enterprise-e2e-validation-overlay.sh" --dry-run >/tmp/sb-validation-overlay-test.log 2>&1; then
+# Telemetry goes to a temp root so the run leaves the checkout untouched.
+TELEMETRY_TMP="$(mktemp -d)"
+trap 'rm -rf "$TELEMETRY_TMP"' EXIT
+tracked_before="$(git -C "$REPO_ROOT" status --porcelain -- docs/testing/telemetry .planning/enterprise-e2e/token-telemetry.jsonl)"
+if SB_E2E_TELEMETRY_ROOT="$TELEMETRY_TMP" RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/run-enterprise-e2e-validation-overlay.sh" --dry-run >/tmp/sb-validation-overlay-test.log 2>&1; then
   pass "validation overlay dry-run executes"
 else
   fail "validation overlay dry-run failed — see /tmp/sb-validation-overlay-test.log"
 fi
+tracked_after="$(git -C "$REPO_ROOT" status --porcelain -- docs/testing/telemetry .planning/enterprise-e2e/token-telemetry.jsonl)"
+if [[ "$tracked_before" == "$tracked_after" ]]; then
+  pass "overlay dry-run leaves repo telemetry files untouched"
+else
+  fail "overlay dry-run changed repo telemetry files: ${tracked_after}"
+fi
+assert_file_exists "$TELEMETRY_TMP/.planning/enterprise-e2e/token-telemetry.jsonl" "overlay telemetry written under the override root"
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

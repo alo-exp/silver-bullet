@@ -1,111 +1,32 @@
 #!/usr/bin/env bash
 # Codex install module — auto-split from install-codex.sh
+# Both edit ~/.codex/config.toml structurally through _sb_codex_edit_config (plugin.sh):
+# comments and other tables stay, and the source path is written as an escaped TOML string.
 remove_marketplace_if_present() {
   local marketplace_name="$1"
   local config_file
   config_file="$(resolve_codex_config_file)"
 
   [[ -f "$config_file" ]] || return 0
-
-  python3 - "$config_file" "$marketplace_name" <<'PY'
-import pathlib
-import sys
-
-config_path = pathlib.Path(sys.argv[1])
-marketplace_name = sys.argv[2]
-text = config_path.read_text() if config_path.exists() else ''
-lines = text.splitlines()
-output = []
-i = 0
-removed = False
-header = f'[marketplaces.{marketplace_name}]'
-
-while i < len(lines):
-    line = lines[i]
-    if line.strip() == header:
-        removed = True
-        i += 1
-        while i < len(lines) and not lines[i].startswith('['):
-            i += 1
-        continue
-    output.append(line)
-    i += 1
-
-if removed:
-    new_text = '\n'.join(output)
-    if text.endswith('\n'):
-        new_text += '\n'
-    config_path.write_text(new_text)
-PY
+  _sb_codex_edit_config "$config_file" remove marketplaces "$marketplace_name"
 }
 
 
 ensure_marketplace_registered() {
   local source_spec="$1"
   local marketplace_name="${2:-}"
+  local source_type=git
   local config_file
+
+  if [[ -z "$marketplace_name" ]]; then
+    marketplace_name=alo-labs-codex
+    [[ "$source_spec" == *superpowers* ]] && marketplace_name=superpowers-marketplace
+  fi
+  [[ "$source_spec" == /* ]] && source_type=local
   config_file="$(resolve_codex_config_file)"
-
-  python3 - "$config_file" "$source_spec" "$marketplace_name" <<'PY'
-import pathlib
-import sys
-
-config_path = pathlib.Path(sys.argv[1])
-source_spec = sys.argv[2]
-marketplace_name = sys.argv[3] or ('superpowers-marketplace' if 'superpowers' in source_spec else 'alo-labs-codex')
-source_type = 'local' if source_spec.startswith('/') else 'git'
-config_path.parent.mkdir(parents=True, exist_ok=True)
-text = config_path.read_text() if config_path.exists() else ''
-lines = text.splitlines()
-output = []
-i = 0
-found = False
-header = f'[marketplaces.{marketplace_name}]'
-
-while i < len(lines):
-    line = lines[i]
-    if line.strip() == header:
-        found = True
-        output.append(line)
-        i += 1
-
-        section_lines = []
-        source_type_seen = False
-        source_seen = False
-        while i < len(lines) and not lines[i].startswith('['):
-            section_line = lines[i]
-            stripped = section_line.strip()
-            if stripped.startswith('source_type ='):
-                section_lines.append(f'source_type = "{source_type}"')
-                source_type_seen = True
-            elif stripped.startswith('source ='):
-                section_lines.append(f'source = "{source_spec}"')
-                source_seen = True
-            else:
-                section_lines.append(section_line)
-            i += 1
-
-        if not source_type_seen:
-            output.append(f'source_type = "{source_type}"')
-        if not source_seen:
-            output.append(f'source = "{source_spec}"')
-        output.extend(section_lines)
-        continue
-
-    output.append(line)
-    i += 1
-
-if found:
-    new_text = '\n'.join(output)
-    if text.endswith('\n'):
-        new_text += '\n'
-    config_path.write_text(new_text)
-else:
-    if text and not text.endswith('\n'):
-        text += '\n'
-    text += f'\n{header}\nsource_type = "{source_type}"\nsource = "{source_spec}"\n'
-    config_path.write_text(text)
-PY
+  # Each key is inserted right after the table header, so set source first.
+  _sb_codex_edit_config "$config_file" set-string marketplaces "$marketplace_name" source "$source_spec"
+  _sb_codex_edit_config "$config_file" set-string marketplaces "$marketplace_name" source_type "$source_type"
 }
 
 
@@ -322,8 +243,6 @@ PY
     LICENSE \
     README.md \
     SECURITY.md \
-    SENTINEL-audit-silver-bullet-v0.15.1.md \
-    SENTINEL-audit-silver-init.md \
     .silver-bullet.json \
     silver-bullet.md; do
     if [[ -e "${REPO_ROOT}/${file}" ]]; then

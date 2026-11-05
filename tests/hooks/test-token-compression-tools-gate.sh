@@ -16,6 +16,7 @@ pass() { echo "  PASS: $1"; PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+mkdir -p "$SB_RUNTIME_STATE_DIR"
 TMPDIR_TEST="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR_TEST"' EXIT
 
@@ -35,7 +36,7 @@ cat >"$TMPCFG" <<EOF
       "enabled_by_user": true,
       "install_status": "installed",
       "cli_command": "rtk",
-      "usage_state_file": "${SB_RUNTIME_STATE_DIR}/rtk-usage-test-$$"
+      "usage_state_file": "${SB_RUNTIME_STATE_DIR}/ttest-$$-rtk-usage"
     }
   },
   "state": { "state_file": "${SB_RUNTIME_STATE_DIR}/state-test-$$" }

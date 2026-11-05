@@ -34,13 +34,9 @@ plugin_version="$(jq -r '.version' "$ROOT_MANIFEST")"
 
 # Do not ship agents/cursor in the Cursor plugin package — cursor-agent TUI
 # auto-discovers agents/<host>/*/SKILL.md for the / picker even without
-# plugin.json skills. Internal workflows resolve from skill-source/ instead.
+# plugin.json skills. Internal workflows resolve from cursor-skill-source/ instead.
+# commands/ is generated in place by generate-plugin-commands.sh.
 rm -rf "${DEST_DIR}/agents/cursor" "${DEST_DIR}/agents"
-
-if [[ -d "${REPO_ROOT}/plugins/silver-bullet/commands" ]]; then
-  mkdir -p "${DEST_DIR}/commands"
-  rsync -a --delete "${REPO_ROOT}/plugins/silver-bullet/commands/" "${DEST_DIR}/commands/"
-fi
 
 python3 "${REPO_ROOT}/scripts/generate-cursor-hooks.py" >/dev/null
 install -m 644 "${REPO_ROOT}/hooks/cursor-hooks.json" "${DEST_DIR}/cursor-hooks.json"
@@ -61,5 +57,7 @@ else
   ' "$ROOT_MANIFEST" > "$tmp"
 fi
 mv "$tmp" "$DEST_DIR/.cursor-plugin/plugin.json"
+# mktemp creates 0600; keep the tracked manifest readable like the rest of the package.
+chmod 644 "$DEST_DIR/.cursor-plugin/plugin.json"
 
 log "Cursor package manifest synchronized to ${DEST_DIR}"

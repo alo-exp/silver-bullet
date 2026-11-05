@@ -17,7 +17,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 echo "=== sb-optimize-stack tests ==="
 
-[[ -x "$SCRIPT" ]] && pass "script executable" || { chmod +x "$SCRIPT"; pass "script made executable"; }
+[[ -x "$SCRIPT" ]] && pass "script executable" || fail "script executable (tracked mode must be 755)"
 
 # shellcheck source=../../hooks/lib/stack-optimizer.sh
 source "$LIB"
@@ -32,10 +32,17 @@ jq -e '.recommended_tools.agentmemory.optimization.profile == "synergy_max"' "$T
   && pass "agentmemory optimization profile" || fail "agentmemory optimization profile"
 
 # Dry-run apply should not fail
-if SB_STACK_SKIP_HOST_HOOKS=1 bash "$SCRIPT" --apply --dry-run >/dev/null 2>&1; then
-  pass "dry-run --apply exits 0"
+# The exit status follows the score's critical gaps (fails=N): 0 only when N is 0.
+dry_apply_ok() {
+  local out rc=0
+  out="$("$@" 2>&1)" || rc=$?
+  [[ "$out" == *"Optimization score:"* ]] || return 1
+  if [[ "$out" == *"fails=0 "* ]]; then [[ "$rc" -eq 0 ]]; else [[ "$rc" -eq 1 ]]; fi
+}
+if SB_STACK_SKIP_HOST_HOOKS=1 dry_apply_ok bash "$SCRIPT" --apply --dry-run; then
+  pass "dry-run --apply exit status matches the score"
 else
-  fail "dry-run --apply exits 0"
+  fail "dry-run --apply exit status matches the score"
 fi
 
 # Score on template config
@@ -81,7 +88,7 @@ grep -q "AGENTMEMORY_EXPORT_ROOT=.*/.agentmemory" "$TMP/amhome/.env" && pass "en
 grep -q 'sb-optimize-stack' "$REPO_ROOT/docs/STACK-OPTIMIZATION.md" && pass "STACK-OPTIMIZATION.md exists" || fail "STACK-OPTIMIZATION.md"
 
 grep -q '\-\-host HOST' "$SCRIPT" && pass "script supports --host" || fail "script supports --host"
-SILVER_BULLET_RUNTIME=hermes bash "$SCRIPT" --apply --dry-run --host hermes >/dev/null 2>&1 \
+SILVER_BULLET_RUNTIME=hermes dry_apply_ok bash "$SCRIPT" --apply --dry-run --host hermes \
   && pass "dry-run --host hermes" || fail "dry-run --host hermes"
 
 echo "Results: ${PASS} passed, ${FAIL} failed"

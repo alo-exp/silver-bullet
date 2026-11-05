@@ -437,31 +437,6 @@ def replace_block(html: str, tag: str, replacement: str) -> str:
     return pattern.sub(replacement.strip(), html, count=1)
 
 
-_HELP_CONTENT_START = (
-    r'<(?:section class="hero"|div class="page-hero"|div id="search-results)'
-)
-_HELP_LEAD = rf'(?:<!--[^>]*-->\s*\n\s*)?{_HELP_CONTENT_START}'
-
-
-def repair_unclosed_help_subnav(html: str) -> str:
-    """Close .help-subnav when page content was accidentally nested inside it."""
-    if 'id="help-subnav"' not in html:
-        return html
-
-    def repl(match: re.Match[str]) -> str:
-        if match.group(2):
-            return match.group(0)
-        return f"{match.group(1)}\n</div>\n\n{match.group(3)}"
-
-    return re.sub(
-        rf'(<div class="help-subnav"[^>]*>\s*<div class="help-subnav-inner">[\s\S]*?</div>)\s*\n'
-        rf'(</div>\s*\n\s*)?(\s*{_HELP_LEAD})',
-        repl,
-        html,
-        count=1,
-    )
-
-
 def _find_div_block_end(html: str, start: int) -> int:
     """Return index after the closing </div> for the <div> at start."""
     depth = 0

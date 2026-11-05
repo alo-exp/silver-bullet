@@ -20,8 +20,8 @@ I hashed raw bytes with Python `hashlib.sha256`. For the Git copy, the bytes sup
 
 | Freeze copy | SHA-256 | Bytes | Expected match |
 |---|---|---:|---|
-| Repo working tree: `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | yes |
-| Cursor plan: `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | yes |
+| Repo working tree: `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | yes |
+| Cursor plan: `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | yes |
 | Git HEAD blob: `HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | yes |
 
 All three copies are byte-identical and match the required post-APPLY identity of `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` / **644327 bytes**.

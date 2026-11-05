@@ -15,6 +15,20 @@ from typing import List, Tuple, Dict, Any, Optional
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PROFILE_PATH = SKILL_ROOT / "reference" / "report_profiles.json"
 
+# Citation numbers are bounded to 4 digits: an ID such as [20240101] or a long digit run in
+# body text is not a citation, and the gap checks stay small whatever the report contains.
+CITATION_RE = re.compile(r'\[(\d{1,4})\]')
+MAX_LISTED = 20
+
+
+def section_match(content: str, label: str) -> Optional[re.Match]:
+    """The body of the level-2 section ``label``, up to the next level-1/2 heading.
+
+    Level-3 sub-headings (``### Primary sources``) stay inside the section.
+    """
+    pattern = rf'^##(?!#)[ \t]*{re.escape(label)}[^\n]*\n?(.*?)(?=^#{{1,2}}(?!#)|\Z)'
+    return re.search(pattern, content, re.DOTALL | re.IGNORECASE | re.MULTILINE)
+
 
 def load_report_profile(lang: str) -> dict[str, Any]:
     path = DEFAULT_PROFILE_PATH
@@ -85,9 +99,7 @@ class ReportValidator:
 
     def _check_executive_summary(self) -> bool:
         """Check executive summary exists and is 200-400 words"""
-        label = re.escape(self._executive_summary_label())
-        pattern = rf'##\s*{label}(.*?)(?=##|\Z)'
-        match = re.search(pattern, self.content, re.DOTALL | re.IGNORECASE)
+        match = section_match(self.content, self._executive_summary_label())
 
         if not match:
             self.errors.append(f"Missing '{self._executive_summary_label()}' section")
@@ -215,7 +227,7 @@ class ReportValidator:
     def _check_citations(self) -> bool:
         """Check citation format and presence"""
         # Find all citation references [1], [2], etc.
-        citations = re.findall(r'\[(\d+)\]', self.content)
+        citations = CITATION_RE.findall(self.content)
 
         if not citations:
             self.errors.append("No citations found in report")
@@ -228,21 +240,21 @@ class ReportValidator:
 
         # Check for consecutive citation numbers
         citation_nums = sorted([int(c) for c in unique_citations])
-        if citation_nums:
-            max_citation = max(citation_nums)
-            expected = set(range(1, max_citation + 1))
-            missing = expected - set(citation_nums)
+        max_citation = max(citation_nums)
+        expected = set(range(1, max_citation + 1))
+        missing = expected - set(citation_nums)
 
-            if missing:
-                self.warnings.append(f"Non-consecutive citation numbers, missing: {sorted(missing)}")
+        if missing:
+            listed = sorted(missing)
+            more = f" (+{len(listed) - MAX_LISTED} more)" if len(listed) > MAX_LISTED else ""
+            self.warnings.append(f"Non-consecutive citation numbers, missing: {listed[:MAX_LISTED]}{more}")
 
         return True
 
     def _check_bibliography(self) -> bool:
         """Check bibliography exists, matches citations, and has no truncation placeholders"""
         bib_label = self.profile.get("section_labels", {}).get("bibliography", "Bibliography")
-        pattern = rf'##\s*{re.escape(bib_label)}(.*?)(?=##|\Z)'
-        match = re.search(pattern, self.content, re.DOTALL | re.IGNORECASE)
+        match = section_match(self.content, bib_label)
 
         if not match:
             self.errors.append(f"Missing '{bib_label}' section")
@@ -268,24 +280,22 @@ class ReportValidator:
                 return False
 
         # Count bibliography entries [1], [2], etc.
-        bib_entries = re.findall(r'^\[(\d+)\]', bib_section, re.MULTILINE)
+        bib_entries = re.findall(r'^\[(\d{1,4})\]', bib_section, re.MULTILINE)
 
         if not bib_entries:
             self.errors.append("Bibliography has no entries")
             return False
 
-        # Check citation number continuity (no gaps)
-        bib_nums = sorted([int(n) for n in bib_entries])
-        if bib_nums:
-            expected = list(range(1, bib_nums[-1] + 1))
-            actual = bib_nums
-            missing = [n for n in expected if n not in actual]
-            if missing:
-                self.errors.append(f"Bibliography has gaps in numbering: missing {missing}")
-                return False
+        # Check citation number continuity (no gaps), by set difference
+        bib_nums = {int(n) for n in bib_entries}
+        missing = sorted(set(range(1, max(bib_nums) + 1)) - bib_nums)
+        if missing:
+            self.errors.append(f"Bibliography has gaps in numbering: missing {missing[:MAX_LISTED]}")
+            return False
 
-        # Find citations in text
-        text_citations = set(re.findall(r'\[(\d+)\]', self.content))
+        # Find citations in the body text (the bibliography's own entries are not citations)
+        body_text = self.content[:match.start()] + self.content[match.end():]
+        text_citations = set(CITATION_RE.findall(body_text))
         bib_citations = set(bib_entries)
 
         # Check all citations have bibliography entries
@@ -352,14 +362,13 @@ class ReportValidator:
     def _check_source_count(self) -> bool:
         """Check minimum source count"""
         bib_label = self.profile.get("section_labels", {}).get("bibliography", "Bibliography")
-        pattern = rf'##\s*{re.escape(bib_label)}(.*?)(?=##|\Z)'
-        match = re.search(pattern, self.content, re.DOTALL | re.IGNORECASE)
+        match = section_match(self.content, bib_label)
 
         if not match:
             return True  # Already caught in bibliography check
 
         bib_section = match.group(1)
-        bib_entries = re.findall(r'^\[(\d+)\]', bib_section, re.MULTILINE)
+        bib_entries = re.findall(r'^\[(\d{1,4})\]', bib_section, re.MULTILINE)
 
         source_count = len(set(bib_entries))
 

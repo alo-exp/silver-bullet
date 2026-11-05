@@ -41,7 +41,6 @@ assert_contains "matrix calls branch preflight" \
   "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" \
   "enterprise_e2e_assert_test_app_branch"
 
-HARNESS_CONFIG="${REPO_ROOT}/scripts/enterprise-e2e/config/hosts.json"
 HARNESS_CORE="${REPO_ROOT}/scripts/enterprise-e2e/lib/core.sh"
 METHODOLOGY="${REPO_ROOT}/docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md"
 
@@ -219,7 +218,7 @@ elif [[ -d "${FIXTURE_ROOT}/.git" ]]; then
   else
     fail "round-9-codex must contain baseline $baseline_sha (Codex-3 REAL seed — see ROUND-CODEX-3-LEDGER.md)"
   fi
-  if git -C "$FIXTURE_ROOT" rev-parse enterprise-e2e/round-9-codex 2>/dev/null | grep -q .; then
+  if grep -q . < <(git -C "$FIXTURE_ROOT" rev-parse enterprise-e2e/round-9-codex 2>/dev/null); then
     head_sha="$(git -C "$FIXTURE_ROOT" rev-parse --short enterprise-e2e/round-9-codex 2>/dev/null || true)"
     if git -C "$FIXTURE_ROOT" merge-base --is-ancestor 826cb5c enterprise-e2e/round-9-codex 2>/dev/null; then
       fail "round-9-codex must not include pre-seed 826cb5c (got HEAD $head_sha)"

@@ -4,7 +4,7 @@ Silver Bullet uses [agentmemory](https://github.com/rohitg00/agentmemory) as an 
 
 ## Opt-In Policy
 
-agentmemory is a **recommended tool**, not a hard prerequisite like `jq`. SB asks for explicit permission at `/sb:init`, `/sb:update`, and session start. Consent is stored in `.silver-bullet.json`:
+agentmemory is a **recommended tool**, not a hard prerequisite like `jq`. SB asks for explicit permission at `/sb:init`, `/sb:update`, and session start. Your consent is recorded per user, outside the repository (`scripts/sb-consent.sh`; see [CONSENT.md](CONSENT.md)). `.silver-bullet.json` can only recommend the tool or turn it off:
 
 ```json
 "recommended_tools": {
@@ -20,9 +20,9 @@ agentmemory is a **recommended tool**, not a hard prerequisite like `jq`. SB ask
 
 | `enabled_by_user` | Behavior |
 |-------------------|----------|
-| `null` | Consent pending — SB prompts; no hook enforcement |
-| `true` | Mandatory — hooks block substantive edits until CLI, server, MCP, and export root are ready |
-| `false` | Opted out — no enforcement |
+| `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project .`) |
+| `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 **Install failure after opt-in:** SB sets `enforcement_suspended: true` and preserves `enabled_by_user: true`. Hooks treat suspended agentmemory like opted-out until the next `/sb:init` or `/sb:update` retry succeeds.
 
@@ -67,7 +67,7 @@ CLAUDE_MEMORY_BRIDGE=true
 AGENTMEMORY_EXPORT_ROOT=/absolute/path/to/project/.agentmemory
 ```
 
-**launchd (macOS):** `com.agentmemory.server` with `KeepAlive` and absolute export root in plist env (see `SETUP_REPORT.md` deviations). **Bridge:** `com.agentmemory.bridge` watches `.agentmemory/` when `~/.agentmemory/bridge.py` exists. The bridge plist includes `GITLEAKS_PATH` and `PATH` so the second-line gitleaks scan runs reliably.
+**launchd (macOS):** `com.agentmemory.server` with `KeepAlive` and absolute export root in plist env (see the locally generated setup report (`sb-verify-synergy.sh --write-setup-report`, not committed) deviations). **Bridge:** `com.agentmemory.bridge` watches `.agentmemory/` when `~/.agentmemory/bridge.py` exists. The bridge plist includes `GITLEAKS_PATH` and `PATH` so the second-line gitleaks scan runs reliably.
 
 ### gitleaks (required with bridge)
 

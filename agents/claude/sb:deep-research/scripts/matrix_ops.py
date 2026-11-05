@@ -49,7 +49,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
-from matrix_core import TICK, TICK_CRITERION, WEIGHTS, priority_weight
+from matrix_core import TICK, TICK_CRITERION, WEIGHTS, _sanitize_cell_value, priority_weight
 
 openpyxl = None
 get_column_letter = None
@@ -164,7 +164,7 @@ def _platform_cols(ws: Worksheet, L: _Layout) -> dict[str, int]:
     col = PLAT_START
     while True:
         v = ws.cell(L.header_row, col).value
-        if not v or not str(v).strip():  # pragma: no cover
+        if not v or not str(v).strip():
             break
         result[str(v).strip()] = col
         col += 1
@@ -369,25 +369,17 @@ def add_platform(
             if rd["row_type"] == RowType.CATEGORY:
                 # Flush pending inserts for previous category
                 for nr in pending_inserts:
-                    feat_name = nr["feature"]
-                    prio = nr.get("priority", "Medium")
+                    feat_name = _sanitize_cell_value(nr["feature"])
+                    prio = _sanitize_cell_value(nr.get("priority", "Medium"))
                     is_ticked = nr.get("ticked", True)
                     vals = [feat_name, prio] + [None] * (last_col - 2)
                     # Clone style from last row in expanded
-                    if expanded:
-                        new_rd = {
-                            "values": vals,
-                            "styles": [copy.copy(s) for s in expanded[-1]["styles"]],
-                            "row_type": RowType.FEATURE,
-                            "_new_ticked": is_ticked,
-                        }
-                    else:  # pragma: no cover
-                        new_rd = {
-                            "values": vals,
-                            "styles": [{} for _ in range(last_col)],
-                            "row_type": RowType.FEATURE,
-                            "_new_ticked": is_ticked,
-                        }
+                    new_rd = {
+                        "values": vals,
+                        "styles": [copy.copy(s) for s in expanded[-1]["styles"]],
+                        "row_type": RowType.FEATURE,
+                        "_new_ticked": is_ticked,
+                    }
                     expanded.append(new_rd)
                     features[feat_name] = is_ticked
                     rows_added += 1
@@ -400,24 +392,16 @@ def add_platform(
 
         # Flush remaining inserts for last category
         for nr in pending_inserts:
-            feat_name = nr["feature"]
-            prio = nr.get("priority", "Medium")
+            feat_name = _sanitize_cell_value(nr["feature"])
+            prio = _sanitize_cell_value(nr.get("priority", "Medium"))
             is_ticked = nr.get("ticked", True)
             vals = [feat_name, prio] + [None] * (last_col - 2)
-            if expanded:
-                new_rd = {
-                    "values": vals,
-                    "styles": [copy.copy(s) for s in expanded[-1]["styles"]],
-                    "row_type": RowType.FEATURE,
-                    "_new_ticked": is_ticked,
-                }
-            else:  # pragma: no cover
-                new_rd = {
-                    "values": vals,
-                    "styles": [{} for _ in range(last_col)],
-                    "row_type": RowType.FEATURE,
-                    "_new_ticked": is_ticked,
-                }
+            new_rd = {
+                "values": vals,
+                "styles": [copy.copy(s) for s in expanded[-1]["styles"]],
+                "row_type": RowType.FEATURE,
+                "_new_ticked": is_ticked,
+            }
             expanded.append(new_rd)
             features[feat_name] = is_ticked
             rows_added += 1
@@ -426,15 +410,10 @@ def add_platform(
         for idx, rd in enumerate(expanded):
             _write_row_data(ws, L.data_start + idx, rd)
 
-        # Clear any leftover rows beyond the expanded data
-        for r in range(L.data_start + len(expanded), ws.max_row + 1):  # pragma: no cover
-            for c in range(1, last_col + 1):
-                ws.cell(r, c).value = None
-
     # --- Add new platform column ---
     # Header
     hdr = ws.cell(L.header_row, new_col)
-    hdr.value = platform_name
+    hdr.value = _sanitize_cell_value(platform_name)
     _clone_style(ws.cell(L.header_row, last_col), hdr)
 
     # COUNTIF (total row) and score row
@@ -576,7 +555,7 @@ def create_combo_column(
 
     # Header
     hdr = ws.cell(L.header_row, new_col)
-    hdr.value = combo_name
+    hdr.value = _sanitize_cell_value(combo_name)
     _clone_style(ws.cell(L.header_row, last_col), hdr)
 
     # Formulas
@@ -945,7 +924,7 @@ def main():
     elif args.command == "scores":
         _json_out(ranked_scores(args.src))
 
-    elif args.command == "info":
+    else:
         _json_out(info(args.src))
 
 

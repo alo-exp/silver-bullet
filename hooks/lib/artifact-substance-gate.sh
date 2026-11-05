@@ -44,8 +44,8 @@ sb_artifact_substance_gate_enforce() {
   # Only validate REVIEW when review skill was recorded this session
   local check_review=false check_verify=false
   if [[ -n "$state_contents" ]]; then
-    printf '%s\n' "$state_contents" | grep -Fqx 'silver-review' 2>/dev/null && check_review=true
-    printf '%s\n' "$state_contents" | grep -Fqx 'silver-verify' 2>/dev/null && check_verify=true
+    grep -Fqx 'silver-review' <<<"$state_contents" 2>/dev/null && check_review=true
+    grep -Fqx 'silver-verify' <<<"$state_contents" 2>/dev/null && check_verify=true
   else
     check_review=true
     check_verify=true
@@ -74,7 +74,11 @@ sb_artifact_substance_gate_enforce() {
       local rounds_file="${repo_root}/.planning/REVIEW-ROUNDS.md"
       if [[ -f "$rounds_file" && ! -L "$rounds_file" ]]; then
         local round_count
-        round_count=$(grep -cE '^## Round [0-9]+' "$rounds_file" 2>/dev/null || echo 0)
+        # grep -c prints 0 AND exits 1 when nothing matches; `|| echo 0` would append a
+        # second 0 ("0\n0"), which makes the numeric comparison below error out and
+        # silently pass a rounds file with no rounds at all.
+        round_count=$(grep -cE '^## Round [0-9]+' "$rounds_file" 2>/dev/null || true)
+        round_count="${round_count:-0}"
         if [[ "$round_count" -lt 2 ]]; then
           issues="${issues}  ❌ REVIEW-ROUNDS.md has ${round_count} round(s) — two consecutive clean passes required (see hooks/core-rules.md §3a) ($rounds_file)"$'\n'
         fi
@@ -84,7 +88,7 @@ sb_artifact_substance_gate_enforce() {
     fi
   fi
 
-  if printf '%s\n' "$state_contents" | grep -Fqx 'silver-plan' 2>/dev/null; then
+  if grep -Fqx 'silver-plan' <<<"$state_contents" 2>/dev/null; then
     pfile="$(_sb_substance_find_artifact "$repo_root" "PLAN.md" 2>/dev/null || true)"
     if [[ -n "$pfile" ]]; then
       if _sb_substance_is_stub "$pfile"; then

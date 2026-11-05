@@ -19,7 +19,12 @@ DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-q
 emit_block_jq_missing() {
   local reason="$1"
   local json_reason
-  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  # This runs only when jq is missing, so encode the reason without it.
+  if command -v python3 >/dev/null 2>&1; then
+    json_reason=$(python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' <<<"$reason")
+  else
+    json_reason='"jq is required for Silver Bullet enforcement"'
+  fi
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
 }
 
@@ -125,7 +130,6 @@ main() {
     local payload="$1"
     local base_dir="$2"
     local target_path
-    [[ -n "$payload" ]] || return 0
     if ! declare -f sb_shell_candidate_write_paths >/dev/null 2>&1; then
       return 0
     fi
@@ -221,8 +225,8 @@ See CLAUDE.md §8 for details."
       fi
     elif [[ -n "$command_str" ]]; then
       if shell_writes_under_prefix "$sb_hooks_dir" || shell_writes_to_exact_path "${sb_plugin_root}/hooks.json" || \
-         { printf '%s' "$command_str" | grep -qE "(${sb_hooks_dir}/|${sb_plugin_root}/hooks\.json)" && \
-           printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; }; then
+         { grep -qE "(${sb_hooks_dir}/|${sb_plugin_root}/hooks\.json)" <<<"$command_str" && \
+           grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)' <<<"$command_str"; }; then
         emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /sb:init."
         exit 0
       fi
@@ -234,15 +238,15 @@ See CLAUDE.md §8 for details."
   # plugin location). Do NOT use a repo-name pattern — that would also match the silver-
   # bullet source repo's own hooks/ directory and prevent legitimate source edits.
   # Check both file_path (Edit/Write) and command_str (Bash) for hooks path pattern
-  if [[ "$sb_source_checkout" != true && -n "$file_path" ]] && [[ "$file_path" == "${SB_RUNTIME_HOME_ROOT}/"* ]] &&        printf '%s' "$file_path" | grep -qE '/hooks/'; then
+  if [[ "$sb_source_checkout" != true && -n "$file_path" ]] && [[ "$file_path" == "${SB_RUNTIME_HOME_ROOT}/"* ]] &&        grep -qE '/hooks/' <<<"$file_path"; then
     emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /sb:init."
     exit 0
   fi
   if [[ "$sb_source_checkout" != true && -n "$command_str" ]] && { \
     { shell_writes_under_prefix "${SB_RUNTIME_HOME_ROOT}" && \
-      printf '%s\n%s' "$command_str" "$shell_script_body" | grep -qE '/hooks/'; } || \
-    { printf '%s' "$command_str" | grep -qE "${SB_RUNTIME_HOME_ROOT}/[^ ]*/hooks/" && \
-      printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; }; \
+      grep -qE '/hooks/' <<<"${command_str}"$'\n'"${shell_script_body}"; } || \
+    { grep -qE "${SB_RUNTIME_HOME_ROOT}/[^ ]*/hooks/" <<<"$command_str" && \
+      grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)' <<<"$command_str"; }; \
   }; then
     emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /sb:init."
     exit 0
@@ -272,7 +276,7 @@ See CLAUDE.md §8 for details."
   sb_bash_touches_state_sentinel_only() {
     local cmd="$1"
     local target
-    if ! printf '%s' "$cmd" | grep -qE '(^|[[:space:]])touch([[:space:]]|$)'; then
+    if ! grep -qE '(^|[[:space:]])touch([[:space:]]|$)' <<<"$cmd"; then
       return 1
     fi
     target=$(printf '%s' "$cmd" | sed -nE 's/.*\btouch\b[[:space:]]+([^;&|]+).*/\1/p' | head -1 | tr -d "'\"")
@@ -299,9 +303,9 @@ To reset the workflow state, remove the file from your terminal (not from Claude
     cmd_first_line_tamper=$(printf '%s' "$command_str" | head -1)
     state_path="${SB_STATE_DIR_EARLY}/state"
     if ! sb_bash_touches_state_sentinel_only "$command_str" && \
-       ! printf '%s' "$cmd_first_line_tamper" | grep -qE '^\s*(git\s|gh\s)' && \
-       { { printf '%s' "$cmd_first_line_tamper" | grep -qE '(>>|\s>[^>&=]|\btee\b)' && \
-           printf '%s' "$cmd_first_line_tamper" | grep -qF "$state_path"; } || \
+       ! grep -qE '^\s*(git\s|gh\s)' <<<"$cmd_first_line_tamper" && \
+       { { grep -qE '(>>|\s>[^>&=]|\btee\b)' <<<"$cmd_first_line_tamper" && \
+           grep -qF "$state_path" <<<"$cmd_first_line_tamper"; } || \
          shell_writes_to_exact_path "$state_path"; }; then
       emit_block "🚫 STATE TAMPER BLOCKED — Writing to Silver Bullet state files bypasses workflow enforcement.
 
@@ -356,11 +360,11 @@ To reset workflow state intentionally, run in your terminal:
   if [[ -n "$config_file" ]]; then
     src_pattern=$(jq -r '.project.src_pattern // "/src/"' "$config_file")
     # Validate src_pattern: only allow safe path-segment patterns (prevents regex injection)
-    if ! printf '%s' "$src_pattern" | grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$'; then
+    if ! grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$' <<<"$src_pattern"; then
       src_pattern="/src/"
     fi
     # Reject overly permissive patterns (SENTINEL-3.1)
-    if printf '%s' "$src_pattern" | grep -qE '^\.\*$|^\.\+$|^/$|^$'; then
+    if grep -qE '^\.\*$|^\.\+$|^/$|^$' <<<"$src_pattern"; then
       src_pattern="/src/"
     fi
     src_exclude_pattern=$(jq -r '.project.src_exclude_pattern // "__tests__|\\.test\\."' "$config_file")
@@ -369,7 +373,7 @@ To reset workflow state intentionally, run in your terminal:
       src_exclude_pattern='__tests__|\.test\.'
     fi
     # Validate exclude pattern: only allow safe characters (prevents regex injection)
-    if ! printf '%s' "$src_exclude_pattern" | grep -qE '^[a-zA-Z0-9/_.\-|()\^$+?*]+$'; then
+    if ! grep -qE '^[a-zA-Z0-9/_.\-|()\^$+?*]+$' <<<"$src_exclude_pattern"; then
       src_exclude_pattern='__tests__|\.test\.'
     fi
     active_workflow=$(jq -r '.project.active_workflow // "full-dev-cycle"' "$config_file")
@@ -391,14 +395,14 @@ To reset workflow state intentionally, run in your terminal:
   matches_src_scope() {
     local candidate="$1"
     local pattern="$2"
-    if printf '%s' "$candidate" | grep -qE "$pattern"; then
+    if grep -qE "$pattern" <<<"$candidate"; then
       return 0
     fi
 
     local relaxed_pattern
     relaxed_pattern=$(printf '%s' "$pattern" | sed -E 's#(^|\|)/#\1#g; s#/$##')
     if [[ -n "$relaxed_pattern" && "$relaxed_pattern" != "$pattern" ]]; then
-      if printf '%s' "$candidate" | grep -qE "(^|[[:space:][:punct:]])(${relaxed_pattern})(/|[[:space:][:punct:]]|$)"; then
+      if grep -qE "(^|[[:space:][:punct:]])(${relaxed_pattern})(/|[[:space:][:punct:]]|$)" <<<"$candidate"; then
         return 0
       fi
     fi
@@ -413,7 +417,7 @@ To reset workflow state intentionally, run in your terminal:
       if ! matches_src_scope "$target_path" "$src_pattern"; then
         continue
       fi
-      if printf '%s' "$target_path" | grep -qE "$src_exclude_pattern"; then
+      if grep -qE "$src_exclude_pattern" <<<"$target_path"; then
         continue
       fi
       shell_in_scope_targets+=("$target_path")
@@ -428,11 +432,7 @@ To reset workflow state intentionally, run in your terminal:
 
   shell_command_shows_write_intent() {
     local payload="${1:-}"
-    [[ -n "$payload" ]] || return 1
-    if [[ ${#shell_write_targets[@]} -gt 0 ]]; then
-      return 0
-    fi
-    if printf '%s' "$payload" | grep -qE '(>>|[[:space:]]>[^>&=]|\btee\b|\bcp\b|\bmv\b|\binstall\b|\bsed\b[[:space:]]+-[^[:space:];|&]*i|\bperl\b[[:space:]]+-[^[:space:];|&]*i|\btouch\b|\bchmod\b)'; then
+    if grep -qE '(>>|[[:space:]]>[^>&=]|\btee\b|\bcp\b|\bmv\b|\binstall\b|\bsed\b[[:space:]]+-[^[:space:];|&]*i|\bperl\b[[:space:]]+-[^[:space:];|&]*i|\btouch\b|\bchmod\b)' <<<"$payload"; then
       return 0
     fi
     return 1
@@ -440,7 +440,6 @@ To reset workflow state intentionally, run in your terminal:
 
   shell_payload_is_sb_skill_adapter_invocation() {
     local payload="$1"
-    [[ -n "$payload" ]] || return 1
     # Codex invokes SB skills through the package-local adapter. The adapter is
     # the workflow continuation channel, not a source edit; concrete redirects
     # and writes are still handled by shell_write_targets before this check.
@@ -552,8 +551,8 @@ PY
 
   # --- Destructive command warning (F-04) ---
   if [[ -n "$command_str" ]] && [[ ! -f "$trivial_file" || -L "$trivial_file" ]]; then
-    if printf '%s' "$command_str" | grep -qE '\b(rm|mv)\b' && \
-       ! printf '%s' "$command_str" | grep -qE "(${plugin_cache}|\.silver-bullet/|/tmp/|\.${SB_RUNTIME_NAME}/)"; then
+    if grep -qE '\b(rm|mv)\b' <<<"$command_str" && \
+       ! grep -qE "(${plugin_cache}|\.silver-bullet/|/tmp/|\.${SB_RUNTIME_NAME}/)" <<<"$command_str"; then
       emit_advisory "Warning: Destructive command detected (rm/mv on project files). Verify this is intentional before proceeding."
       # Warning only -- do not block
     fi
@@ -563,7 +562,7 @@ PY
   if [[ ${#patch_file_paths[@]} -gt 0 ]]; then
     patch_in_scope=false
     for patch_path in "${patch_file_paths[@]}"; do
-      if matches_src_scope "$patch_path" "$src_pattern" && ! printf '%s' "$patch_path" | grep -qE "$src_exclude_pattern"; then
+      if matches_src_scope "$patch_path" "$src_pattern" && ! grep -qE "$src_exclude_pattern" <<<"$patch_path"; then
         file_path="$patch_path"
         patch_in_scope=true
         break
@@ -576,7 +575,7 @@ PY
       exit 0
     fi
     # Check exclude pattern (test files)
-    if printf '%s' "$file_path" | grep -qE "$src_exclude_pattern"; then
+    if grep -qE "$src_exclude_pattern" <<<"$file_path"; then
       exit 0
     fi
   else
@@ -599,7 +598,7 @@ PY
         exit 0
       fi
       # Check exclude pattern for Bash commands too
-      if printf '%s' "$command_str" | grep -qE "$src_exclude_pattern"; then
+      if grep -qE "$src_exclude_pattern" <<<"$command_str"; then
         exit 0
       fi
       shell_target_scope_fallback=true
@@ -626,7 +625,7 @@ PY
       if [[ ${#shell_in_scope_targets[@]} -gt 0 ]]; then
         invalidate_verify_tests=true
       elif [[ "$shell_target_scope_fallback" == true ]] && \
-           printf '%s' "$command_str" | grep -qE '(>>|[[:space:]]>[^>&=]|\btee\b|\bcp\b|\bmv\b|\binstall\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i)'; then
+           grep -qE '(>>|[[:space:]]>[^>&=]|\btee\b|\bcp\b|\bmv\b|\binstall\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i)' <<<"$command_str"; then
         invalidate_verify_tests=true
       fi
     fi
@@ -768,7 +767,7 @@ PY
       sb_required_skill_is_recorded "$completed_skills" "$1"
       return $?
     fi
-    printf '%s\n' "$completed_skills" | grep -Fqx -- "$1" 2>/dev/null
+    grep -Fqx -- "$1" <<<"$completed_skills" 2>/dev/null
   }
 
   # --- Check required planning skills ---

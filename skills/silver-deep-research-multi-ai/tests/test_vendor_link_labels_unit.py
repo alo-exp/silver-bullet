@@ -1,0 +1,579 @@
+"""Offline unit tests for vendor_link_labels: rewrites, scrubbing, health probes, linkify."""
+
+from __future__ import annotations
+
+import os
+import socket
+import sys
+import unittest
+import urllib.error
+from pathlib import Path
+from unittest import mock
+
+SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
+sys.path.insert(0, str(SCRIPTS))
+
+import vendor_link_labels as vll  # noqa: E402
+
+
+class _Resp:
+    """Context-manager stand-in for the object urllib.request.urlopen returns."""
+
+    def __init__(self, status=200, url="https://final.example/"):
+        self.status = status
+        self._url = url
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def geturl(self):
+        return self._url
+
+
+class _NoStatusResp(_Resp):
+    def __init__(self, url):
+        super().__init__(0, url)
+        del self.status  # getattr(resp, "status", 200) default path
+
+
+def _http_error(code):
+    return urllib.error.HTTPError("https://x.example/", code, "msg", {}, None)
+
+
+class _NoNetwork(unittest.TestCase):
+    """Fail the test if any socket connection is attempted."""
+
+    def setUp(self):
+        self._saved = {k: os.environ.get(k) for k in (
+            "SB_SKIP_VENDOR_URL_HEALTH", "SB_VENDOR_URL_HEALTH_STRICT",
+            "HTTPS_PROXY", "HTTP_PROXY")}
+        os.environ.pop("SB_SKIP_VENDOR_URL_HEALTH", None)
+        os.environ.pop("SB_VENDOR_URL_HEALTH_STRICT", None)
+        os.environ["HTTPS_PROXY"] = os.environ["HTTP_PROXY"] = "http://127.0.0.1:9"
+        spy = mock.patch.object(
+            socket.socket, "connect", side_effect=AssertionError("network used"))
+        spy.start()
+        self.addCleanup(spy.stop)
+        # fake hosts resolve to a public address; the SSRF guard is tested on its own below
+        dns = mock.patch.object(vll, "_resolve_host", return_value=["93.184.216.34"])
+        dns.start()
+        self.addCleanup(dns.stop)
+        vll.reset_health_state()
+        self.addCleanup(vll.reset_health_state)
+        self.addCleanup(self._restore)
+
+    def _restore(self):
+        for k, v in self._saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+
+
+@with_apo_pack_run
+class RewriteTests(unittest.TestCase):
+    def test_normalize_key(self):
+        self.assertEqual(vll.normalize_vendor_url_key(" https://a.b/ "), "https://a.b")
+        self.assertEqual(vll.normalize_vendor_url_key(None), "")
+
+    def test_rewrite_branches(self):
+        r = vll.rewrite_vendor_url
+        self.assertIsNone(r(""))
+        self.assertIsNone(r(None))
+        self.assertEqual(r("https://agentsys.ai"), "https://github.com/agent-sh/agentsys")
+        self.assertIsNone(r("https://deepwork.ai/"))
+        # normalized key match (trailing slash form not literally present)
+        self.assertEqual(
+            r("https://github.com/ai-dlc/ai-dlc/"), "https://github.com/awslabs/aidlc-workflows")
+        # only the pack's exact rewrite table applies: no hard-coded substring rules
+        self.assertEqual(r("https://WWW.AgentSys.ai/docs"), "https://WWW.AgentSys.ai/docs")
+        self.assertEqual(r("https://aws.amazon.com/ai-dlc/getting-started"), "https://aws.amazon.com/ai-dlc/getting-started")
+        self.assertEqual(r("https://github.com/Zuvo-AI/zuvo/"), "https://github.com/Zuvo-AI/zuvo/")
+        self.assertEqual(r("https://github.com/agent-sh/agentsys.ai"),
+                         "https://github.com/agent-sh/agentsys.ai")
+        self.assertEqual(r(" https://example.com/ok "), "https://example.com/ok")
+        # developer.ibm.com without the article keyword is left alone
+        self.assertEqual(r("https://developer.ibm.com/other"), "https://developer.ibm.com/other")
+
+
+@with_apo_pack_run
+class LabelTests(unittest.TestCase):
+    def test_generic_labels(self):
+        g = vll.is_generic_link_label
+        self.assertTrue(g(""))
+        self.assertTrue(g(None))
+        self.assertTrue(g("SDLC"))
+        self.assertTrue(g("ABC"))  # bare short uppercase tokens (AWS, API) are not auto-linked...
+        self.assertFalse(g("NATS"))  # ...but a 4-letter product name is (it was 'Nats' before)
+        self.assertFalse(g("BMAD"))
+        self.assertFalse(g("ABCDE"))
+        with mock.patch.object(vll, "ALLOWED_SHORT_ACRONYM_LABELS", frozenset({"AWS"})):
+            self.assertFalse(g("AWS"))
+        self.assertFalse(g("Cursor"))
+
+    def test_resolve(self):
+        r = vll.resolve_vendor_link_label
+        self.assertEqual(r("sdlc-plugin", "x"), "SDLC Plugin")
+        self.assertEqual(r("my-tool", "API"), "My Tool")
+        self.assertEqual(r("ai", "API"), "API")  # derived "Ai" ... generic? stays resolved
+        self.assertEqual(r("", "API"), "API")
+        self.assertEqual(r("x", " Real Name "), "Real Name")
+        self.assertEqual(r(None, "CLI"), "CLI")
+
+    def test_resolve_derived_generic(self):
+        # derived label "Ci" lower-cases into the blocked set -> keep the original
+        self.assertEqual(vll.resolve_vendor_link_label("ci", "API"), "API")
+
+
+class HealthTests(_NoNetwork):
+    def probe(self, url="https://x.example/", **kw):
+        return vll.check_url_health(url, **kw)
+
+    def test_not_http(self):
+        r = self.probe("ftp://x")
+        self.assertEqual((r["ok"], r["error"], r["transport_error"]), (False, "not-http", False))
+        self.assertEqual(self.probe(None)["final_url"], "")
+
+    def test_skip_env(self):
+        for val in ("1", "true", "yes"):
+            with mock.patch.dict(os.environ, {"SB_SKIP_VENDOR_URL_HEALTH": val}):
+                with mock.patch("urllib.request.urlopen") as uo:
+                    r = self.probe()
+                uo.assert_not_called()
+                self.assertEqual((r["ok"], r["status"], r["error"]), (True, 0, "skipped"))
+        with mock.patch.dict(os.environ, {"SB_SKIP_VENDOR_URL_HEALTH": "0"}):
+            with mock.patch("urllib.request.urlopen", return_value=_Resp(200)) as uo:
+                self.assertTrue(self.probe()["ok"])
+            uo.assert_called_once()
+
+    def test_head_ok_and_request_shape(self):
+        with mock.patch("urllib.request.Request", wraps=vll.urllib.request.Request) as rq, \
+                mock.patch("urllib.request.urlopen", return_value=_Resp(200, "https://f/")) as uo:
+            r = self.probe(timeout=3)
+        self.assertEqual(r, {"ok": True, "status": 200, "final_url": "https://f/",
+                             "error": None, "transport_error": False})
+        self.assertEqual(rq.call_args.kwargs["method"], "HEAD")
+        self.assertEqual(uo.call_args.kwargs["timeout"], 3)
+
+    def test_non_ok_status_without_exception(self):
+        with mock.patch("urllib.request.urlopen", return_value=_Resp(206)):
+            r = self.probe()
+        self.assertEqual((r["ok"], r["status"], r["error"]), (False, 206, "http-206"))
+
+    def test_missing_status_and_blank_geturl(self):
+        with mock.patch("urllib.request.urlopen", return_value=_NoStatusResp("")):
+            r = self.probe("https://t.example/")
+        self.assertEqual((r["ok"], r["status"], r["final_url"]), (True, 200, "https://t.example/"))
+
+    def test_head_http_error_non_retry(self):
+        with mock.patch("urllib.request.urlopen", side_effect=_http_error(404)) as uo:
+            r = self.probe()
+        self.assertEqual((r["ok"], r["status"], r["error"], r["transport_error"]),
+                         (False, 404, "http-404", False))
+        self.assertEqual(uo.call_count, 1)
+
+    def test_retry_get_after_405_succeeds(self):
+        calls = []
+
+        def fake(req, **kw):
+            calls.append(req.get_method())
+            if len(calls) == 1:
+                raise _http_error(405)
+            return _Resp(200)
+
+        with mock.patch("urllib.request.urlopen", side_effect=fake):
+            r = self.probe()
+        self.assertEqual(calls, ["HEAD", "GET"])
+        self.assertTrue(r["ok"])
+
+    def test_retry_get_http_error(self):
+        for first in (401, 403, 405):
+            seq = [_http_error(first), _http_error(404)]
+            with mock.patch("urllib.request.urlopen", side_effect=seq):
+                r = self.probe()
+            self.assertEqual((r["ok"], r["status"], r["error"], r["transport_error"]),
+                             (False, 404, "http-404", False))
+
+    def test_retry_get_transport_error(self):
+        seq = [_http_error(403), urllib.error.URLError("boom")]
+        with mock.patch("urllib.request.urlopen", side_effect=seq):
+            r = self.probe()
+        self.assertIsNone(r["status"])
+        self.assertTrue(r["transport_error"])
+        self.assertTrue(r["error"].startswith("URLError"))
+
+    def test_head_transport_errors(self):
+        for exc in (urllib.error.URLError("dns"), TimeoutError("slow"), OSError("ssl")):
+            with mock.patch("urllib.request.urlopen", side_effect=exc):
+                r = self.probe()
+            self.assertEqual((r["ok"], r["status"], r["transport_error"]), (False, None, True))
+            self.assertIn(type(exc).__name__, r["error"])
+
+
+@with_apo_pack_run
+class AutoLinkTests(unittest.TestCase):
+    def test_english_word_labels_are_never_prose_links(self):
+        for word in ("Continue", "Linear", "Sweep", "Factory", "Director", "Conductor", "Scout", "Harness"):
+            self.assertTrue(vll.is_generic_link_label(word), word)
+        self.assertFalse(vll.is_generic_link_label("Linear Agent Integrations"))
+
+    def test_vendor_is_linked_at_first_prose_mention_but_every_table_row(self):
+        import synthesize_landscape as sl
+
+        pairs = [["Tembo", "https://tembo.example/"], ["Continue", "https://continue.example/"]]
+        md = ("Continue the evaluation. Tembo is one option.\nTembo again, and Tembo once more.\n"
+              "| Tembo | yes |\n| Tembo | no |\n")
+        out = sl._linkify_markdown_vendors(md, pairs)
+        self.assertEqual(out.count("[Tembo](https://tembo.example/)"), 1 + 2)  # first mention + both table rows
+        self.assertIn("Continue the evaluation.", out)  # "Continue" starts a sentence, it is not a link target
+        self.assertNotIn("[Continue]", out)
+
+
+class SsrfGuardTests(unittest.TestCase):
+    """Model-supplied URLs are never requested when they point at non-public addresses."""
+
+    def setUp(self):
+        # the test runner sets SB_SKIP_VENDOR_URL_HEALTH=1 for hermetic runs; these tests need the real path
+        patcher = mock.patch.dict(os.environ)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        os.environ.pop("SB_SKIP_VENDOR_URL_HEALTH", None)
+
+    def reason(self, url, resolved=None):
+        with mock.patch.object(vll, "_resolve_host", return_value=resolved or []):
+            return vll.unsafe_target_reason(url)
+
+    def test_literal_and_resolved_addresses(self):
+        for url in ("http://127.0.0.1/", "http://localhost:8080/x", "http://169.254.169.254/latest/meta-data/",
+                    "http://10.0.0.5/", "http://192.168.1.1/", "http://[::1]/", "http://0.0.0.0/",
+                    "http://224.0.0.1/", "http://[fd00::1]/"):
+            resolved = ["127.0.0.1"] if url.startswith("http://localhost") else None
+            self.assertTrue(str(self.reason(url, resolved)).startswith("non-public-address:"), url)
+        # a public name that resolves to an internal address (DNS pointing inward) is refused too
+        self.assertEqual(self.reason("https://evil.example/", ["93.184.216.34", "10.1.2.3"]), "non-public-address:10.1.2.3")
+        self.assertIsNone(self.reason("https://vendor.example/", ["93.184.216.34"]))
+        # shared address space (tailnets, Alibaba metadata) and IPv4-mapped IPv6 are not public
+        for url in ("http://100.64.0.1/", "http://100.100.100.200/latest/meta-data/", "http://[::ffff:10.0.0.1]/"):
+            self.assertTrue(str(self.reason(url)).startswith("non-public-address:"), url)
+        self.assertIsNone(self.reason("https://mapped.example/", ["::ffff:93.184.216.34"]))
+        # NAT64 / IPv4-compatible / site-local IPv6 forms reach private IPv4 or internal networks
+        for url in ("http://[64:ff9b::a00:1]/", "http://[64:ff9b::a9fe:a9fe]/", "http://[64:ff9b:1::c0a8:101]/",
+                    "http://[::a00:1]/", "http://[fec0::1]/"):
+            self.assertTrue(str(self.reason(url)).startswith("non-public-address:"), url)
+        self.assertIsNone(self.reason("https://nat64.example/", ["64:ff9b::5db8:d822"]))  # embeds 93.184.216.34
+        self.assertIsNone(self.reason("http://93.184.216.34/"))
+
+    def test_scheme_credentials_and_unresolvable(self):
+        self.assertEqual(self.reason("file:///etc/passwd"), "not-http")
+        self.assertEqual(self.reason("ftp://x.example/"), "not-http")
+        self.assertEqual(self.reason("http:///nohost"), "not-http")
+        self.assertEqual(self.reason("https://user:pw@vendor.example/", ["93.184.216.34"]), "credentials-in-url")
+        self.assertEqual(self.reason("https://vendor.example/", []), "unresolvable-host")
+        self.assertEqual(self.reason("http://[bad/"), "unparseable-url")
+
+    def test_resolver_returns_sorted_unique_addresses_or_nothing(self):
+        infos = [(0, 0, 0, "", ("2.2.2.2", 0)), (0, 0, 0, "", ("1.1.1.1", 0)), (0, 0, 0, "", ("2.2.2.2", 0))]
+        with mock.patch("socket.getaddrinfo", return_value=infos):
+            self.assertEqual(vll._resolve_host("h"), ["1.1.1.1", "2.2.2.2"])
+        with mock.patch("socket.getaddrinfo", side_effect=OSError("no dns")):
+            self.assertEqual(vll._resolve_host("h"), [])
+
+    def test_probe_never_connects_to_a_blocked_target(self):
+        with mock.patch("urllib.request.urlopen") as uo:
+            r = vll.check_url_health("http://169.254.169.254/latest/meta-data/")
+        uo.assert_not_called()
+        self.assertEqual((r["ok"], r["status"], r["transport_error"]), (False, None, False))
+        self.assertEqual(r["error"], "blocked:non-public-address:169.254.169.254")
+        with mock.patch.object(vll, "_resolve_host", return_value=[]), mock.patch("urllib.request.urlopen") as uo:
+            r = vll.check_url_health("https://gone.example/")
+        uo.assert_not_called()
+        self.assertTrue(r["transport_error"])  # unresolvable: soft failure, link kept by the filter
+
+    def test_redirect_to_an_internal_address_is_refused(self):
+        handler = vll._CheckedRedirects()
+        req = urllib.request.Request("https://vendor.example/")
+        with self.assertRaises(urllib.error.URLError) as ctx:
+            handler.redirect_request(req, None, 302, "Found", {}, "http://169.254.169.254/latest/meta-data/")
+        self.assertIn("redirect-blocked:non-public-address:169.254.169.254", str(ctx.exception))
+        with mock.patch.object(vll, "_resolve_host", return_value=["93.184.216.34"]):
+            nxt = handler.redirect_request(req, None, 302, "Found", {}, "https://www.vendor.example/home")
+        self.assertEqual(nxt.full_url, "https://www.vendor.example/home")
+        self.assertEqual(handler.max_redirections, 3)
+
+    def test_real_opener_blocks_a_redirect_into_loopback(self):
+        # A local server answers with a redirect to a loopback metadata-style URL; the guard
+        # refuses it, so the redirect target is never requested.
+        import http.server
+        import threading
+
+        hits = []
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_HEAD(self):  # noqa: N802
+                hits.append(self.path)
+                self.send_response(302)
+                self.send_header("Location", "http://127.0.0.1:1/internal")
+                self.end_headers()
+
+            def log_message(self, *a):  # noqa: D401
+                pass
+
+        server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            # the first hop is allowed only because the test patches the resolver to a public IP
+            # for the name; the connection itself is made to the loopback server via the proxy-less opener
+            url = f"http://public.example:{server.server_port}/start"
+            real_open = urllib.request.OpenerDirector.open
+
+            def route(self, fullurl, *a, **kw):
+                req = fullurl if isinstance(fullurl, urllib.request.Request) else urllib.request.Request(fullurl)
+                if req.full_url.startswith("http://public.example"):
+                    req = urllib.request.Request(
+                        req.full_url.replace("public.example", "127.0.0.1"), method=req.get_method(), headers=req.headers)
+                return real_open(self, req, *a, **kw)
+
+            with mock.patch.object(vll, "_resolve_host", return_value=["93.184.216.34"]), \
+                    mock.patch.object(urllib.request.OpenerDirector, "open", route), \
+                    mock.patch.dict(os.environ, {"HTTP_PROXY": "", "HTTPS_PROXY": "", "NO_PROXY": "*"}):
+                result = vll.check_url_health(url)
+        finally:
+            server.shutdown()
+            server.server_close()
+        self.assertEqual(hits, ["/start"])
+        self.assertFalse(result["ok"])
+        self.assertIn("redirect-blocked", result["error"])
+
+
+class HealthBudgetTests(_NoNetwork):
+    def test_same_url_is_probed_once_and_the_budget_caps_the_rest(self):
+        calls = []
+
+        def fake(url, *, timeout):
+            calls.append(url)
+            return {"ok": True, "status": 200, "final_url": url, "error": None, "transport_error": False}
+
+        urls = {f"V{i}": f"https://v{i % 70}.example" for i in range(140)}
+        with mock.patch.object(vll, "check_url_health", side_effect=fake):
+            kept, dropped = vll.filter_healthy_vendor_urls(urls)
+        self.assertEqual(len(calls), 60)  # at most 60 distinct URLs probed
+        self.assertEqual(len(set(calls)), 60)
+        self.assertEqual(len(kept), 140)  # unverified links stay, nothing is dropped for budget
+        self.assertEqual(dropped, [])
+
+    def test_results_are_cached_across_calls_and_the_budget_is_process_wide(self):
+        calls = []
+
+        def fake(url, *, timeout):
+            calls.append(url)
+            return {"ok": True, "status": 200, "final_url": url, "error": None, "transport_error": False}
+
+        with mock.patch.object(vll, "check_url_health", side_effect=fake):
+            vll.filter_healthy_vendor_urls({"A": "https://a.example", "B": "https://b.example"})
+            vll.filter_healthy_vendor_urls({"A": "https://a.example", "C": "https://c.example"})
+            self.assertEqual(calls, ["https://a.example", "https://b.example", "https://c.example"])
+            vll.reset_health_state()
+            vll.filter_healthy_vendor_urls({"A": "https://a.example"})
+        self.assertEqual(calls[-1], "https://a.example")  # reset forgets the cache
+
+    def test_wall_clock_budget_keeps_remaining_links_unverified(self):
+        calls = []
+        with mock.patch.object(vll, "check_url_health", side_effect=lambda u, timeout: calls.append(u) or
+                               {"ok": True, "status": 200, "final_url": u, "error": None, "transport_error": False}), \
+                mock.patch("time.monotonic", side_effect=[0.0, 10_000.0]):
+            kept, _ = vll.filter_healthy_vendor_urls({"A": "https://a.example", "B": "https://b.example"})
+        self.assertEqual(calls, ["https://a.example"])
+        self.assertEqual(set(kept), {"A", "B"})
+
+
+class FilterTests(_NoNetwork):
+    def health(self, mapping):
+        def fake(url, *, timeout):
+            return mapping[url]
+        return mock.patch.object(vll, "check_url_health", side_effect=fake)
+
+    def test_filter_urls_decisions(self):
+        mapping = {
+            "https://ok": {"ok": True},
+            "https://dead": {"ok": False, "status": 404, "error": "http-404", "final_url": "https://dead"},
+            "https://net": {"ok": False, "status": None, "transport_error": True, "error": "e"},
+            "https://busy": {"ok": False, "status": 503, "error": "http-503"},
+        }
+        urls = {" OK ": "https://ok", "Dead": " https://dead ", "Net": "https://net",
+                "Busy": "https://busy", "": "https://ok", "NoHttp": "ftp://x", "None": None}
+        with self.health(mapping):
+            kept, dropped = vll.filter_healthy_vendor_urls(urls, timeout=1)
+        self.assertEqual(kept, {"OK": "https://ok", "Net": "https://net", "Busy": "https://busy"})
+        self.assertEqual(len(dropped), 1)
+        self.assertEqual(dropped[0]["label"], "Dead")
+        self.assertEqual(dropped[0]["status"], 404)
+        self.assertFalse(dropped[0]["transport_error"])
+
+    def test_filter_urls_none_input(self):
+        self.assertEqual(vll.filter_healthy_vendor_urls(None), ({}, []))
+
+    def test_strict_drops_transport_and_transient(self):
+        mapping = {
+            "https://net": {"ok": False, "status": None, "transport_error": True, "error": "e"},
+            "https://busy": {"ok": False, "status": 429, "error": "http-429"},
+        }
+        for val in ("1", "true", "yes"):
+            with mock.patch.dict(os.environ, {"SB_VENDOR_URL_HEALTH_STRICT": val}), self.health(mapping):
+                kept, dropped = vll.filter_healthy_vendor_urls(
+                    {"Net": "https://net", "Busy": "https://busy"})
+            self.assertEqual(kept, {})
+            self.assertEqual({d["label"]: d["transport_error"] for d in dropped},
+                             {"Net": True, "Busy": False})
+
+    def test_filter_urls_end_to_end_through_urlopen(self):
+        def fake(req, **kw):
+            if "dead" in req.full_url:
+                raise _http_error(404)
+            if "net" in req.full_url:
+                raise urllib.error.URLError("x")
+            return _Resp(200)
+
+        with mock.patch("urllib.request.urlopen", side_effect=fake):
+            kept, dropped = vll.filter_healthy_vendor_urls(
+                {"A": "https://a.example", "D": "https://dead.example", "N": "https://net.example"})
+        self.assertEqual(set(kept), {"A", "N"})
+        self.assertEqual([d["label"] for d in dropped], ["D"])
+
+    def test_filter_pairs(self):
+        mapping = {"https://ok": {"ok": True},
+                   "https://dead": {"ok": False, "status": 404, "error": "x"}}
+        pairs = [["A", "https://ok"], ["B", "https://dead"], ["short"], "junk", ("C", "https://ok", "x")]
+        with self.health(mapping):
+            kept, dropped = vll.filter_healthy_link_pairs(pairs)
+        self.assertEqual(kept, [["A", "https://ok"], ["C", "https://ok"]])
+        self.assertEqual([d["label"] for d in dropped], ["B"])
+
+
+@with_apo_pack_run
+class PairTests(unittest.TestCase):
+    def test_token_score(self):
+        self.assertEqual(vll._url_label_token_score("Claude Plugins Pack", "https://claude.com/plugins"), 2)
+        self.assertEqual(vll._url_label_token_score(None, None), 0)
+
+    def test_drop_ambiguous(self):
+        d = vll.drop_ambiguous_shared_homepage_urls
+        # invalid shapes never take part in collision detection and are not echoed back
+        self.assertEqual(d([["A"], "junk"]), [])
+        # empty label / non-http rows are skipped by the collision pass but pass through
+        self.assertEqual(d([["", "https://a"], ["B", "ftp://b"]]),
+                         [["", "https://a"], ["B", "ftp://b"]])
+        # aliases sharing one homepage are kept
+        alias = [["Devin", "https://devin.ai"], ["Devin (Cognition)", "https://devin.ai"],
+                 ["Devin Pro", "https://devin.ai"]]
+        self.assertEqual(d(alias), alias)
+        # same label repeated -> single unique, kept
+        rep = [["Foo", "https://foo.io"], ["Foo", "https://foo.io"]]
+        self.assertEqual(d(rep), rep)
+        # no token match -> drop all colliders, keep unrelated
+        got = d([["Alpha", "https://m.example/x"], ["Beta", "https://m.example/x"], ["Gamma", "https://g"]])
+        self.assertEqual(got, [["Gamma", "https://g"]])
+        # tie on best score -> longest label kept
+        got = d([["Plug", "https://plug.example/plug"], ["Plug Pro Max", "https://plug.example/plug"],
+                 ["Other Plug", "https://plug.example/plug"]])
+        self.assertEqual(got, [["Plug Pro Max", "https://plug.example/plug"]])
+        # unique best score keeps only the leader
+        got = d([["Zeta Tool", "https://zeta.example"], ["Other", "https://zeta.example"]])
+        self.assertEqual(got, [["Zeta Tool", "https://zeta.example"]])
+        # paren alias form
+        par = [["Dev", "https://d.io"], ["Dev(X)", "https://d.io"]]
+        self.assertEqual(d(par), par)
+
+    def test_drop_ambiguous_equal_length_tie_is_deterministic(self):
+        # Two colliding labels with the same score and the same length: the survivor must
+        # not depend on set iteration order (PYTHONHASHSEED).
+        import subprocess
+
+        code = (
+            "import sys; sys.path.insert(0, %r); import vendor_link_labels as v;"
+            "print(v.drop_ambiguous_shared_homepage_urls("
+            "[['Plugx Plug','https://plug.example/plug'],['Other Plug','https://plug.example/plug']]))"
+        ) % str(SCRIPTS)
+        outs = set()
+        for seed in range(8):
+            env = dict(os.environ, PYTHONHASHSEED=str(seed))
+            res = subprocess.run([sys.executable, "-c", code], env=env,
+                                 capture_output=True, text=True, check=True)
+            outs.add(res.stdout.strip())
+        self.assertEqual(outs, {"[['Plugx Plug', 'https://plug.example/plug']]"})
+
+    def test_filter_vendor_link_pairs(self):
+        f = vll.filter_vendor_link_pairs
+        got = f([
+            ["SDLC", "https://a.example"],
+            ["Good Tool", "https://good.example"],
+            ["Good Tool", "https://good2.example"],
+            ["Dropped", "https://deepwork.ai"],
+            ["Empty", ""],
+            ["NoScheme", "ftp://x"],
+            ["", "https://e.example"],
+            ["Claude Harness", "https://github.com/anthropics/claude-code"],
+            ["Claude  Harness2", "https://harness.example"],
+            ["short"],
+            "junk",
+        ])
+        self.assertEqual(got, [["Claude  Harness2", "https://harness.example"],
+                               ["Good Tool", "https://good.example"]])
+        self.assertEqual(f([["Claude Harness", "https://harness.dev"]]),
+                         [["Claude Harness", "https://harness.dev"]])
+
+
+class LinkifyTests(unittest.TestCase):
+    def test_split_trailing(self):
+        sp = vll.split_url_trailing_punct
+        self.assertEqual(sp(None), ("", ""))
+        self.assertEqual(sp("https://a.b/x.,"), ("https://a.b/x", ".,"))
+        self.assertEqual(sp("https://a.b/(x)"), ("https://a.b/(x)", ""))
+        self.assertEqual(sp("https://a.b/x)"), ("https://a.b/x", ")"))
+        self.assertEqual(sp("https://a.b/x]"), ("https://a.b/x", "]"))
+        self.assertEqual(sp("https://a.b/x>"), ("https://a.b/x", ">"))
+        self.assertEqual(sp("https://a.b/[x]"), ("https://a.b/[x]", ""))
+        self.assertEqual(sp("https://a.b/<x>"), ("https://a.b/<x>", ""))
+        self.assertEqual(sp("..."), ("", "..."))
+
+    def test_prose_urls_non_http_branch(self):
+        # BARE_HTTP_URL_RE only matches http(s); force the guard with a stub regex match
+        fake = mock.Mock()
+        fake.sub.side_effect = lambda repl, text: repl(
+            mock.Mock(group=lambda n=0: "ftp://x."))
+        with mock.patch.object(vll, "BARE_HTTP_URL_RE", fake):
+            self.assertEqual(vll._linkify_prose_urls("t"), "ftp://x.")
+
+    def test_code_span(self):
+        c = vll._linkify_code_span_url
+        self.assertEqual(c("`"), "`")
+        self.assertEqual(c("xx`"), "xx`")
+        self.assertEqual(c("`https://a.b`"), "[`https://a.b`](https://a.b)")
+        self.assertEqual(c("`  https://a.b. `"), "[`https://a.b`](https://a.b).")
+        self.assertEqual(c("`ls -la`"), "`ls -la`")
+        self.assertEqual(c("`https://a.b and more`"), "`https://a.b and more`")
+        self.assertEqual(c("`HTTP://A.B`"), "[`HTTP://A.B`](HTTP://A.B)")
+
+    def test_linkify(self):
+        lk = vll.linkify_bare_http_urls
+        self.assertEqual(lk(""), "")
+        self.assertIsNone(lk(None))
+        md = ("see https://a.b/x, and [t](https://c.d) and <https://e.f> "
+              "and `https://g.h` and `code` done.")
+        out = lk(md)
+        self.assertIn("[https://a.b/x](https://a.b/x),", out)
+        self.assertIn("[t](https://c.d)", out)
+        self.assertIn("<https://e.f>", out)
+        self.assertIn("[`https://g.h`](https://g.h)", out)
+        self.assertIn("`code`", out)
+        self.assertEqual(lk("no urls here"), "no urls here")
+
+
+if __name__ == "__main__":
+    unittest.main()

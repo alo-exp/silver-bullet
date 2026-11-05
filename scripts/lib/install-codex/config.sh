@@ -43,34 +43,26 @@ codex_marketplace_root() {
 
   if [[ -f "$config_file" ]]; then
     local resolved
-    resolved="$(python3 - "$config_file" <<'PY'
-import pathlib
+    resolved="$(python3 - "$config_file" "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" <<'PY'
 import sys
 
-config_path = pathlib.Path(sys.argv[1])
-text = config_path.read_text()
-section = None
-source_type = None
-source = None
+sys.path.insert(0, sys.argv[2])
+from sb_host_config import ConfigError, read_toml, toml_parser  # noqa: E402
 
-for raw_line in text.splitlines():
-    line = raw_line.strip()
-    if line == "[marketplaces.alo-labs-codex]":
-        section = "alo-labs-codex"
-        source_type = None
-        source = None
-        continue
-    if section != "alo-labs-codex":
-        continue
-    if line.startswith("[") and line.endswith("]"):
-        break
-    if line.startswith("source_type ="):
-        source_type = line.split("=", 1)[1].strip().strip('"')
-    elif line.startswith("source ="):
-        source = line.split("=", 1)[1].strip().strip('"')
-
-if source_type == "local" and source:
-    print(source)
+try:
+    loads = toml_parser()
+    if loads is not None:
+        with open(sys.argv[1], encoding="utf-8") as handle:
+            section = loads(handle.read()).get("marketplaces", {})
+        table = section.get("alo-labs-codex", {}) if isinstance(section, dict) else None
+        if not isinstance(table, dict):
+            raise ConfigError("marketplaces.alo-labs-codex is not a table")
+    else:  # no TOML parser installed: the statement-level reader finds the same two strings
+        table = read_toml(sys.argv[1]).string_values(("marketplaces", "alo-labs-codex"))
+    if table.get("source_type") == "local" and isinstance(table.get("source"), str):
+        print(table["source"])
+except (OSError, ValueError, ConfigError) as exc:
+    print(f"WARN: cannot read the Codex marketplace registration in {sys.argv[1]} ({exc}); using the default marketplace root", file=sys.stderr)
 PY
 )"
     if [[ -n "$resolved" && -d "$resolved" ]]; then

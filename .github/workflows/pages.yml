@@ -16,19 +16,29 @@ concurrency:
   # Latest site push wins; avoids serial deploys when main gets rapid site/** commits.
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - uses: actions/configure-pages@v5
+      # Publish only the public site: local preview/asset tooling stays in the repo.
+      - name: Stage public site
+        run: |
+          rsync -a --delete \
+            --exclude '*.py' --exclude '*.sh' --exclude '*.plist' --exclude '.claude/' \
+            site/ _site/
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

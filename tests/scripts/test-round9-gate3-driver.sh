@@ -46,6 +46,28 @@ else
   fail "round9-gate3-driver --help"
 fi
 
+# Default fixture path: with SB_TEST_ENTERPRISE_APP_ROOT unset it is <MAIN/../..>/enterprise-grade-test-app-round9-claude.
+# A temp copy of the harness is nested two levels down so MAIN/../.. is a directory this test controls.
+LAYOUT="$(mktemp -d)"
+trap 'rm -rf "$LAYOUT"' EXIT
+H="$LAYOUT/outer/inner/harness"
+mkdir -p "$H/scripts/enterprise-e2e" "$H/scripts/lib" "$H/tests/live" "$H/hooks" "$H/.git" "$H/.planning/enterprise-e2e"
+cp -R "$REPO_ROOT"/scripts/enterprise-e2e/. "$H/scripts/enterprise-e2e/"
+cp "$REPO_ROOT"/scripts/lib/*.sh "$H/scripts/lib/"
+ln -s "$REPO_ROOT/tests/live/lib" "$H/tests/live/lib"
+ln -s "$REPO_ROOT/hooks/lib" "$H/hooks/lib"
+touch "$H/scripts/run-enterprise-e2e-live-test.sh" "$H/.planning/enterprise-e2e/ROUND-9-LEDGER.md"
+want_fixture="$LAYOUT/outer/enterprise-grade-test-app-round9-claude"
+rc=0
+out="$(env -u SB_TEST_ENTERPRISE_APP_ROOT -u SB_ROOT -u SB_E2E_MAIN_REPO -u SB_E2E_SB_ROOT_CANDIDATES RTK_DISABLED=1 \
+  bash "$H/scripts/enterprise-e2e/round9-gate3-driver.sh" --preflight-only 2>&1)" || rc=$?
+if [[ "$rc" -ne 0 ]] && grep -qxF "  fixture=${want_fixture}" <<<"$out" \
+  && grep -qF "PREFLIGHT FAIL: fixture missing: ${want_fixture} " <<<"$out"; then
+  pass "default fixture resolves to <MAIN/../..>/enterprise-grade-test-app-round9-claude"
+else
+  fail "default fixture expected ${want_fixture} (rc=$rc): $out"
+fi
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

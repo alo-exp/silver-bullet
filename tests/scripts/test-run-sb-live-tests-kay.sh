@@ -65,6 +65,19 @@ assert_file_contains "kay agent enables isolated hook auto-trust" "$REPO_ROOT/te
 assert_file_contains "kay agent points subprocess KAY_HOME at the isolated config dir" "$REPO_ROOT/tests/live/agents/kay/agent.sh" 'CODEX_KAY_HOME="${KAY_HOME}/.kay"'
 assert_file_contains "live helpers source Kay isolation library in child shells" "$REPO_ROOT/tests/live/helpers.sh" 'source "$SB_ROOT/tests/live/lib/kay-codex-isolation.sh"'
 
+# procps-ng 4.0.4 kill(1) reads "kill -TERM -1234" as group 123 (the last digit is dropped), so the
+# launcher's timeout signalled an unrelated process group: on CI the runner, which then shut down.
+# A negative pid must follow "--".
+if grep -nE 'exec kill -[A-Z0-9]+ -[$0-9]' "$REPO_ROOT/scripts/codex-interactive-invoke.expect" >/dev/null; then
+  echo "FAIL: interactive launcher passes a negative pid to kill(1) without -- ($(grep -nE 'exec kill -[A-Z0-9]+ -[$0-9]' "$REPO_ROOT/scripts/codex-interactive-invoke.expect" | cut -d: -f1 | tr '\n' ' '))"
+  (( FAIL++ )) || true
+else
+  echo "PASS: interactive launcher passes negative pids to kill(1) after --"
+  (( PASS++ )) || true
+fi
+assert_file_contains "interactive launcher TERMs the child's process group" "$REPO_ROOT/scripts/codex-interactive-invoke.expect" 'exec kill -TERM -- -$child_pid'
+assert_file_contains "interactive launcher KILLs the child's process group" "$REPO_ROOT/scripts/codex-interactive-invoke.expect" 'exec kill -KILL -- -$child_pid'
+
 if ! command -v expect >/dev/null 2>&1; then
   echo "SKIP: interactive launcher timeout probe requires expect"
 else

@@ -123,7 +123,7 @@ agent_host_build_argv() {
             --no-context-files
             --no-skills
             --no-extensions
-            --tools read,bash,edit,write
+            --tools "read,bash,edit,write"
             --append-system-prompt "NON-INTERACTIVE: write the COMPLETE deliverable to the named output file in your first or second tool call. Never end on a plan ('I will', 'Next I will', 'I'll'). Do not read AGENTS.md or graphify skills. If the user named an output file, call write before stopping. A text-only plan is a failed task."
           )
         fi
@@ -157,6 +157,7 @@ agent_host_build_argv() {
   return 0
 }
 
+# shellcheck disable=SC2120  # optional path; callers rely on SB_AGENT_HOST_ARGV_FILE
 agent_host_dump_argv() {
   local path="${1:-${SB_AGENT_HOST_ARGV_FILE:-}}"
   [[ -n "$path" ]] || return 0
@@ -224,7 +225,8 @@ agent_host_pi_surface_auth_hint() {
 agent_host_pi_continue_prompt() {
   local expect_file="$1"
   local hop="${2:-1}"
-  local rel="./$(basename "$expect_file")"
+  local rel
+  rel="./$(basename "$expect_file")"
   if [[ "$hop" -le 1 && -n "${PI_CONTINUE:-}" ]]; then
     printf '%s' "$PI_CONTINUE"
     return 0
@@ -247,7 +249,8 @@ agent_host_pi_continue_prompt() {
 agent_host_pi_fresh_rewrite_prompt() {
   local expect_file="$1"
   local original_prompt="${2:-}"
-  local rel="./$(basename "$expect_file")"
+  local rel
+  rel="./$(basename "$expect_file")"
   local demand
   demand="FRESH SESSION (not --continue). ${rel} is still missing, too small, or an IN_PROGRESS stub (also ${expect_file}). Your first or second tool call must be write to that path. Never end on a plan. Forbidden phrases: I will, I'll, Next I will. A sentence without a write tool call is a failed task."
   if [[ -n "$original_prompt" ]]; then
@@ -255,6 +258,15 @@ agent_host_pi_fresh_rewrite_prompt() {
   else
     printf '%s' "$demand"
   fi
+}
+
+# Run the zero-byte guard with a replacement argv. Callers invoke this inside a
+# subshell so their own AGENT_HOST_ARGV is left untouched.
+agent_host_pi_run_guard_with_argv() {
+  local expect_file="$1"
+  shift
+  AGENT_HOST_ARGV=("$@")
+  agent_host_pi_run_argv_zero_byte_guard "$expect_file"
 }
 
 agent_host_pi_fresh_rewrite_for_file() {
@@ -273,7 +285,7 @@ agent_host_pi_fresh_rewrite_for_file() {
   prompt="$(agent_host_pi_fresh_rewrite_prompt "$expect_file" "$original_prompt")"
   # New session store in the rewrite dir — cwd alone is not enough if Pi looks
   # up ~/.pi/agent/sessions by project. Never --continue on the plan-only session.
-  fresh=("$cli" -p --provider "$provider" --model "$model" --session-dir "$rewrite_dir" --tools write,edit,read,bash)
+  fresh=("$cli" -p --provider "$provider" --model "$model" --session-dir "$rewrite_dir" --tools "write,edit,read,bash")
   if agent_host_pi_ni_write_rails_needed "$model"; then
     fresh+=(
       --thinking off
@@ -289,8 +301,7 @@ agent_host_pi_fresh_rewrite_for_file() {
   rc=0
   (
     cd "$rewrite_dir" || exit 1
-    AGENT_HOST_ARGV=("${fresh[@]}")
-    agent_host_pi_run_argv_zero_byte_guard "$expect_file"
+    agent_host_pi_run_guard_with_argv "$expect_file" "${fresh[@]}"
   ) >"$cap" 2>&1 || rc=$?
   cat "$cap" || true
   captured="$(cat "$cap" 2>/dev/null || true)"
@@ -339,7 +350,7 @@ agent_host_pi_continue_for_file() {
     if [[ -z "$prompt" || "$hop" -gt 1 ]]; then
       prompt="$(agent_host_pi_continue_prompt "$expect_file" "$hop")"
     fi
-    cont=("$cli" -p --continue --provider "$provider" --model "$model" --tools write,edit)
+    cont=("$cli" -p --continue --provider "$provider" --model "$model" --tools "write,edit")
     if agent_host_pi_ni_write_rails_needed "$model"; then
       cont+=(
         --thinking off

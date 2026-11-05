@@ -149,14 +149,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -n "$HOST_ARG" ]]; then
-    read -r ROUND1 < <(enterprise_e2e_consecutive_rounds_resolve_host_defaults "$HOST_ARG" "$SB_ROOT" | sed -n '1p')
-    read -r ROUND2 < <(enterprise_e2e_consecutive_rounds_resolve_host_defaults "$HOST_ARG" "$SB_ROOT" | sed -n '2p')
+  defaults="$(enterprise_e2e_consecutive_rounds_resolve_host_defaults "$HOST_ARG" "$SB_ROOT")" || exit 2
+  ROUND1="$(sed -n '1p' <<<"$defaults")"
+  ROUND2="$(sed -n '2p' <<<"$defaults")"
 elif [[ -z "$ROUND1" || -z "$ROUND2" ]]; then
   host="${SB_E2E_LIVE_RUNTIME:-${SILVER_BULLET_RUNTIME:-claude}}"
-    read -r _default1 < <(enterprise_e2e_consecutive_rounds_resolve_host_defaults "$host" "$SB_ROOT" | sed -n '1p')
-    read -r _default2 < <(enterprise_e2e_consecutive_rounds_resolve_host_defaults "$host" "$SB_ROOT" | sed -n '2p')
-    ROUND1="${ROUND1:-$_default1}"
-    ROUND2="${ROUND2:-$_default2}"
+  defaults="$(enterprise_e2e_consecutive_rounds_resolve_host_defaults "$host" "$SB_ROOT")" || exit 2
+  ROUND1="${ROUND1:-$(sed -n '1p' <<<"$defaults")}"
+  ROUND2="${ROUND2:-$(sed -n '2p' <<<"$defaults")}"
 fi
 
 # Resolve relative paths against SB_ROOT

@@ -193,9 +193,11 @@ if ((${#REQUESTED_ROWS[@]} > 0)); then
   MATRIX_ARGS=("${REQUESTED_ROWS[@]}")
 else
   enterprise_e2e_ensure_matrix_log "$MATRIX_LOG"
-  if [[ "$RESUME" == "1" ]] || enterprise_e2e_incomplete_rows "$MATRIX_LOG" "$LEDGER_FILE" | grep -q .; then
-    inc=()
-    enterprise_e2e_read_lines_to_array inc enterprise_e2e_incomplete_rows "$MATRIX_LOG" "$LEDGER_FILE"
+  # Read all rows first: `incomplete_rows | grep -q .` lets grep exit early and the producer die
+  # of SIGPIPE under pipefail, which silently skipped the resume.
+  inc=()
+  enterprise_e2e_read_lines_to_array inc enterprise_e2e_incomplete_rows "$MATRIX_LOG" "$LEDGER_FILE"
+  if [[ "$RESUME" == "1" ]] || ((${#inc[@]} > 0)); then
     if ((${#inc[@]} == 0)); then
       echo "All rows Pass in ledger — nothing to resume."
       echo "Set SB_E2E_MATRIX_FORCE=1 or pass explicit row numbers to re-run."

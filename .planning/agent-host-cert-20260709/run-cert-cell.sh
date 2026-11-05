@@ -2,7 +2,7 @@
 # Run one 5×3 agent-host cert cell and write result.md
 set -euo pipefail
 
-SB_ROOT="${SB_ROOT:-/Users/shafqat/projects/silver-bullet/repo}"
+SB_ROOT="${SB_ROOT:-/Users/<user>/projects/silver-bullet/repo}"
 BASELINE=8482e60cdea0f8d4a8a5c37f1e93cd527ff412fa
 export PATH="${HOME}/.opencode/bin:${PATH}"
 
@@ -50,7 +50,7 @@ case "$CELL" in
   *) printf 'Unknown cell: %s\n' "$CELL" >&2; exit 2 ;;
 esac
 
-WORK_DIR="/Users/shafqat/projects/enterprise-grade-test-app-${APP}"
+WORK_DIR="/Users/<user>/projects/enterprise-grade-test-app-${APP}"
 ART_DIR="${SB_ROOT}/.planning/${AGENT}/cert-20260709/${PARENT}-parent-${CELL}"
 BRANCH="agent-${WORKER}-cert-20260709-${PARENT}"
 MARKER="Agent-${WORKER} cert ${CELL}: ${PARENT} parent (2026-07-09)."

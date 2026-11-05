@@ -71,11 +71,13 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def normalize_mcp_config(data: dict[str, Any]) -> dict[str, Any]:
-    """Canonical form for idempotent comparison (empty mcpServers ≡ missing key)."""
+    """Canonical form for idempotent comparison (empty mcpServers/mcp ≡ missing key)."""
     normalized = json.loads(json.dumps(data))
-    servers = normalized.get("mcpServers")
-    if isinstance(servers, dict) and not servers:
-        normalized.pop("mcpServers", None)
+    # "mcpServers" is the Cursor/Claude key, "mcp" the OpenCode one.
+    for key in ("mcpServers", "mcp"):
+        servers = normalized.get(key)
+        if isinstance(servers, dict) and not servers:
+            normalized.pop(key, None)
     return normalized
 
 

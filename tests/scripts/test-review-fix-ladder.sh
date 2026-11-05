@@ -31,7 +31,7 @@ assert_json_eq() {
 
 assert_jq_true() {
   local desc="$1" filter="$2" json="$3"
-  if jq -e "$filter" >/dev/null <<<"$json"; then
+  if jq -e "$filter" <<<"$json" >/dev/null; then
     pass "$desc"
   else
     fail "$desc"
@@ -41,7 +41,7 @@ assert_jq_true() {
 
 assert_jq_false() {
   local desc="$1" filter="$2" json="$3"
-  if jq -e "$filter" >/dev/null <<<"$json"; then
+  if jq -e "$filter" <<<"$json" >/dev/null; then
     fail "$desc"
     printf '%s\n' "$json"
   else
@@ -154,7 +154,7 @@ if grep -qF 'Forbidden reject reasons' "$SKILL" && grep -qE 'advisory|doc-only|n
 else
   fail "SKILL forbids advisory/doc-only reject reasons"
 fi
-if grep -qF 'After each rung’s review, the agent that launched the RFL applies ACCEPT fixes' "$SKILL" \
+if grep -qF "After each rung’s review, the agent that launched the RFL applies ACCEPT fixes" "$SKILL" \
   || grep -qF "After each rung's review, the agent that launched the RFL applies ACCEPT fixes" "$SKILL"; then
   pass "SKILL Policy B: launcher applies ACCEPT fixes"
 else

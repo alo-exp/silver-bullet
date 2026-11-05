@@ -36,6 +36,8 @@ Silver Bullet **may delegate** to global setup during `/sb:init` Step 3f, then r
 | Synergy audit | `bash scripts/sb-verify-synergy.sh [--write-setup-report]` |
 | Diagnostics | `bash scripts/sb-diagnostics.sh` (`optimize-*` checks) |
 
+**Exit codes.** `--apply` and `--verify` exit 1 when the score has critical gaps (an opted-in CLI missing, no index, no `.agentmemory` refs); the score line and, for `--verify`, the failing checks explain which. Run `--apply` then `--verify` as separate steps: a non-zero `--apply` does not stop the follow-up `--verify`. `optimize-five-tool-stack.sh` reports a non-zero `--apply` as a warning and still finishes its remaining steps. `sb-verify-synergy.sh` also exits 1 with critical gaps; `--report` always exits 0.
+
 ## synergy_max profile
 
 Configured in `.silver-bullet.json` under `optimization_profiles.synergy_max`:
@@ -51,7 +53,7 @@ Configured in `.silver-bullet.json` under `optimization_profiles.synergy_max`:
 
 ## Consent and safety
 
-- Optimization runs only when `recommended_tools.graphify.enabled_by_user` and/or `recommended_tools.agentmemory.enabled_by_user` is `true`.
+- Optimization runs only for tools you consented to (`sb-consent.sh`, see [CONSENT.md](CONSENT.md)); machine-wide changes (`~/.agentmemory/.env`, LaunchAgents, host hooks) need the `wire` capability and package installs the `install` capability. Commands come only from built-in tables; nothing in `.silver-bullet.json` is executed.
 - `.env` merge preserves user keys outside the SB managed block; backs up to `.env.bak`.
 - Host-level hooks and launchd are **skipped** when `CI=true`.
 - `INJECT_CONTEXT=true` increases token usage — document tradeoff; use future `cost_minimized` profile to reduce.
@@ -99,7 +101,7 @@ Phase checks from `agentmemory-graphify-synergy-audit.md` map to optimizer score
 
 ## Research traceability
 
-Every optimization step traces to `docs/research/graphify-agentmemory-optimization.md` (ultradeep digest) and dogfood evidence in `SETUP_REPORT.md`.
+Every optimization step traces to `docs/research/graphify-agentmemory-optimization.md` (ultradeep digest) and dogfood evidence in the locally generated setup report (`sb-verify-synergy.sh --write-setup-report`, not committed).
 
 ## Related
 

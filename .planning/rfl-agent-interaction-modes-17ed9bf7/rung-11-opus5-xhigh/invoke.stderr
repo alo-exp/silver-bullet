@@ -1,6 +1,0 @@
-[agent-delegate] WARN: missing enterprise preflight lib at /Users/shafqat/projects/silver-bullet/repo/scripts/enterprise-e2e/lib/core.sh
-[agent-claude] seeded folder trust for /Users/shafqat/projects/silver-bullet/repo in /var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T//agent-claude-config-uMzw0M/.claude.json
-[agent-claude] seeded folder trust for /Users/shafqat/projects/silver-bullet/repo in /Users/shafqat/.codex.json
-[agent-claude] lightweight CLAUDE_CONFIG_DIR: /var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T//agent-claude-config-uMzw0M
-/Users/shafqat/projects/silver-bullet/repo/tests/live/agents/claude/agent.sh: line 75: /Users/shafqat/projects/silver-bullet/repo/scripts/lib/claude-matrix-auth.sh: No such file or directory
-[agent-claude] log: /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-11-opus5-xhigh/claude-run.log (11265 B)

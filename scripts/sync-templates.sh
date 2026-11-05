@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 # Copy canonical templates/ into plugins/silver-bullet/templates/ (physical mirror).
+#
+# The mirror is byte-identical and host-neutral: plugins/silver-bullet is both
+# the Codex package and the Cursor plugin root, so its templates keep the
+# ${SB_RUNTIME_*} placeholders like templates/ itself (what Claude and the
+# Cursor installer ship). The Codex installer expands them for Codex in the
+# copy it installs (scripts/lib/install-codex/cache.sh).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -18,14 +24,5 @@ fi
 
 mkdir -p "$DST"
 rsync -a --delete "${SRC}/" "${DST}/"
-
-# Codex plugin mirror expands runtime placeholders for packaged installs.
-SANITIZER="${REPO_ROOT}/scripts/codex-sanitize-package.sh"
-if [[ -x "$SANITIZER" ]]; then
-  "$SANITIZER" "$DST"
-else
-  printf 'ERROR: missing Codex sanitizer at %s\n' "$SANITIZER" >&2
-  exit 1
-fi
 
 printf 'Synced %s -> %s (%s files)\n' "$SRC" "$DST" "$(find "$SRC" -type f | wc -l | tr -d ' ')"

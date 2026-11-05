@@ -2,6 +2,7 @@
 # Graphify + agentmemory global setup — SB-independent synergy_max apply/verify.
 # Sourced by: scripts/graphify-am-global-setup.sh
 
+_ga_lib_dir="${BASH_SOURCE[0]%/*}"
 GA_SUPPORTED_HOSTS="claude codex opencode goose hermes"
 GA_DEFAULT_PROFILE="synergy_max"
 GA_DEFAULT_EXPORT_FALLBACK="${HOME}/.agentmemory/default-export"
@@ -177,28 +178,17 @@ AGENTMEMORY_EXPORT_ROOT=${export_abs}
   chmod 600 "$env_file" 2>/dev/null || true
 }
 
+# The OpenCode agentmemory entry comes from the shared five-tool manifest (the same writer
+# `sb-doctor --fix` and patch-mcp.py use), so every writer produces one identical entry.
 ga_opencode_merge_agentmemory_mcp() {
-  local cfg="${HOME}/.config/opencode/opencode.json"
-  mkdir -p "$(dirname "$cfg")"
+  local cfg="${HOME}/.config/opencode/opencode.json" patch
+  patch="${_ga_lib_dir}/../../scripts/lib/global-toolstack/patch-mcp.py"
   if ga_dry_run; then
     printf 'DRY-RUN: merge agentmemory MCP into %s\n' "$cfg"
     return 0
   fi
-  if [[ ! -f "$cfg" ]]; then
-    cat >"$cfg" <<'JSON'
-{"$schema":"https://opencode.ai/config.json","mcp":{"agentmemory":{"type":"stdio","command":"npx","args":["-y","@agentmemory/mcp"],"env":{"AGENTMEMORY_URL":"http://localhost:3111"}}}}
-JSON
-    return 0
-  fi
-  command -v jq >/dev/null 2>&1 || return 1
-  local tmp
-  tmp="$(mktemp)"
-  jq '.mcp.agentmemory = {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "@agentmemory/mcp"],
-    "env": { "AGENTMEMORY_URL": "http://localhost:3111" }
-  }' "$cfg" >"$tmp" && mv "$tmp" "$cfg"
+  command -v python3 >/dev/null 2>&1 && [[ -f "$patch" ]] || return 1
+  RT_HOST=opencode RT_PATCH_AGENTMEMORY=1 python3 "$patch" >/dev/null
 }
 
 ga_launchd_server_plist() {
@@ -332,7 +322,8 @@ ga_bridge_path_env() {
 }
 
 ga_ensure_gitleaks() {
-  if ga_gitleaks_path >/dev/null; then
+  # ga_gitleaks_path always exits 0 (prints nothing when absent), so test its output.
+  if [[ -n "$(ga_gitleaks_path)" ]]; then
     return 0
   fi
   if ga_dry_run; then
@@ -355,12 +346,12 @@ ga_ensure_gitleaks() {
     printf 'WARN: gitleaks not installed — brew install gitleaks (macOS) or see docs/AGENTMEMORY.md\n'
     return 1
   fi
-  ga_gitleaks_path >/dev/null
+  [[ -n "$(ga_gitleaks_path)" ]]
 }
 
 ga_graphify_hooks_installed() {
   command -v graphify >/dev/null 2>&1 || return 1
-  graphify hook status 2>/dev/null | grep -qiE 'installed|active|enabled'
+  grep -qiE 'installed|active|enabled' < <(graphify hook status 2>/dev/null)
 }
 
 ga_run_cmd() {
@@ -381,7 +372,8 @@ ga_apply_shared_agentmemory() {
     ga_run_cmd 'agentmemory init'
   fi
   ga_merge_agentmemory_env "$export_abs"
-  ga_ensure_gitleaks
+  # A missing gitleaks is a warning (bridge falls back to regex scan), never fatal under set -e.
+  ga_ensure_gitleaks || true
   if ! ga_skip_host_hooks && command -v launchctl >/dev/null 2>&1; then
     ga_launchd_server_plist "$export_abs"
     ga_launchd_bridge_plist "$repo"
@@ -497,7 +489,7 @@ ga_verify_host() {
     _ga_check warn graphify-hooks "run graphify hook install"
   fi
 
-  if ga_gitleaks_path >/dev/null; then
+  if [[ -n "$(ga_gitleaks_path)" ]]; then
     _ga_check pass gitleaks "installed ($(ga_gitleaks_path))"
   else
     _ga_check warn gitleaks "required for bridge second-line scan — brew install gitleaks"

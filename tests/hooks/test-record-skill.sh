@@ -459,7 +459,8 @@ path.write_text(json.dumps(data, indent=2) + "\n")
 PY
 }
 unset SILVER_BULLET_STATE_FILE KAY_HOME KAY_SB_TEST_HOME SB_LIVE_CODEX_ISOLATION_DIR
-export SB_RUNTIME_EXTRA_STATE_ROOTS="$(dirname "$KAY_STATE_A"):$(dirname "$KAY_STATE_B")"
+SB_RUNTIME_EXTRA_STATE_ROOTS="$(dirname "$KAY_STATE_A"):$(dirname "$KAY_STATE_B")"
+export SB_RUNTIME_EXTRA_STATE_ROOTS
 write_state_path "$KAY_STATE_A"
 run_hook "silver-quality-gates" >/dev/null
 write_state_path "$KAY_STATE_B"

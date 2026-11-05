@@ -54,8 +54,34 @@ CM_OVERLAP_TOOLS = [
 def load_json(path: pathlib.Path, default: dict | None = None) -> dict:
     if path.is_file():
         with path.open(encoding="utf-8") as handle:
-            return json.load(handle)
+            data = json.load(handle)
+        if not isinstance(data, dict):
+            raise ValueError(f"{path}: expected a JSON object at the top level")
+        return data
     return default or {}
+
+
+def json_member(data: dict, key: str, kind: type, path: pathlib.Path):
+    """Return ``data[key]`` as ``kind`` (dict or list).
+
+    Missing, null or empty ({} / []) values are replaced by a fresh ``kind()``.
+    Any other wrong-typed value is user data: raise before anything is written.
+    """
+    value = data.get(key)
+    if isinstance(value, kind):
+        return value
+    if value is None or value == {} or value == []:
+        value = kind()
+        data[key] = value
+        return value
+    label = "object" if kind is dict else "array"
+    raise ValueError(f"{path}: {key} must be a JSON {label}")
+
+
+def server_map(data: dict, key: str) -> dict:
+    """Return ``data[key]`` when it is an object, else an empty mapping."""
+    value = data.get(key)
+    return value if isinstance(value, dict) else {}
 
 
 def save_json(path: pathlib.Path, data: dict, dry_run: bool) -> None:
@@ -71,20 +97,18 @@ def save_json(path: pathlib.Path, data: dict, dry_run: bool) -> None:
 
 
 def context_mode_present_cursor(mcp_path: pathlib.Path) -> bool:
-    data = load_json(mcp_path)
-    servers = data.get("mcpServers", {})
+    servers = server_map(load_json(mcp_path), "mcpServers")
     return "context-mode" in servers
 
 
 def context_mode_present_claude(claude_json: pathlib.Path) -> bool:
-    data = load_json(claude_json)
-    servers = data.get("mcpServers", {})
+    servers = server_map(load_json(claude_json), "mcpServers")
     return "context-mode" in servers or "user-context-mode" in servers
 
 
 def context_mode_present_opencode(cfg_path: pathlib.Path) -> bool:
     data = load_json(cfg_path)
-    mcp = data.get("mcp", {})
+    mcp = server_map(data, "mcp")
     return (
         opencode_context_mode_plugin_present(data)
         or "context-mode" in mcp
@@ -160,11 +184,11 @@ def remove_upstream_lean_ctx_duplicate(servers: dict) -> bool:
 def merge_cursor_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dict:
     cm_active = context_mode_present_cursor(target)
     data = load_json(target, {"mcpServers": {}})
-    servers = data.setdefault("mcpServers", {})
+    servers = json_member(data, "mcpServers", dict, target)
     changed = False
     if remove_upstream_lean_ctx_duplicate(servers):
         changed = True
-    if "leanctx" not in servers:
+    if not isinstance(servers.get("leanctx"), dict):
         servers["leanctx"] = leanctx_cursor_server(cm_active, manifest)
         changed = True
     else:
@@ -175,7 +199,7 @@ def merge_cursor_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dic
                 existing[key] = desired[key]
                 changed = True
         desired_env = leanctx_server_env(cm_active)
-        merged_env = dict(existing.get("env", {}))
+        merged_env = dict(json_member(existing, "env", dict, target))
         for key, val in desired_env.items():
             if merged_env.get(key) != val:
                 merged_env[key] = val
@@ -184,7 +208,7 @@ def merge_cursor_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dic
             existing["env"] = merged_env
             servers["leanctx"] = existing
         if cm_active:
-            disabled = list(existing.get("disabledTools", []))
+            disabled = list(json_member(existing, "disabledTools", list, target))
             for tool in CM_OVERLAP_TOOLS:
                 if tool not in disabled:
                     disabled.append(tool)
@@ -199,7 +223,7 @@ def merge_cursor_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dic
 def merge_claude_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dict:
     cm_active = context_mode_present_claude(target)
     data = load_json(target, {"mcpServers": {}})
-    servers = data.setdefault("mcpServers", {})
+    servers = json_member(data, "mcpServers", dict, target)
     changed = False
     if remove_upstream_lean_ctx_duplicate(servers):
         changed = True
@@ -222,10 +246,7 @@ def merge_opencode_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> d
         },
     )
     data.setdefault("$schema", "https://opencode.ai/config.json")
-    mcp = data.setdefault("mcp", {})
-    if not isinstance(mcp, dict):
-        mcp = {}
-        data["mcp"] = mcp
+    mcp = json_member(data, "mcp", dict, target)
     changed = False
     cm_plugin_active = opencode_context_mode_plugin_present(data)
     plugins = data.get("plugin")
@@ -279,9 +300,10 @@ def normalize_codex_root(text: str, server: str, manifest: dict) -> str:
     if bounds is None:
         return text
     start, end = bounds
+    if "\n" not in text[start:end]:  # header is the last line of the file
+        text += "\n"
+        start, end = toml_section_bounds(text, header)
     header_end = text.find("\n", start, end)
-    if header_end < 0:
-        header_end = end
     body = text[header_end + 1 : end]
     for key, value in (
         ("command", f"command = {json.dumps(spec['command'])}"),
@@ -307,9 +329,10 @@ def normalize_codex_env(text: str, env: dict[str, str]) -> str:
         text += "\n".join(f"{key} = {json.dumps(value)}" for key, value in env.items()) + "\n"
         return text
     start, end = bounds
+    if "\n" not in text[start:end]:  # header is the last line of the file
+        text += "\n"
+        start, end = toml_section_bounds(text, header)
     header_end = text.find("\n", start, end)
-    if header_end < 0:
-        header_end = end
     body = text[header_end + 1 : end]
     for key, value in env.items():
         line = f"{key} = {json.dumps(value)}"
@@ -371,13 +394,11 @@ def strip_unprefixed_leanctx_collision(mcp_path: pathlib.Path, dry_run: bool) ->
     if not mcp_path.is_file():
         return False
     data = load_json(mcp_path)
-    servers = data.get("mcpServers", {})
+    servers = json_member(data, "mcpServers", dict, mcp_path)
     lean = servers.get("leanctx")
     if not isinstance(lean, dict):
         return False
-    disabled = lean.get("disabledTools")
-    if not isinstance(disabled, list):
-        disabled = []
+    disabled = json_member(lean, "disabledTools", list, mcp_path)
     cm_overlap = [
         "ctx_execute",
         "ctx_execute_file",

@@ -40,7 +40,9 @@ assert_eq() {
   fi
 }
 
+# shellcheck source=hooks/lib/orchestrator-directive.sh
 source "$LIB_OD"
+# shellcheck source=hooks/lib/orchestrator-parent.sh
 source "$LIB_PARENT"
 
 sb_orchestrator_directive_write "silver-execute" "build feature" "handoff test" true
@@ -68,7 +70,7 @@ assert_eq "flow review request token" "$(sb_orchestrator_flow_to_skill 'FLOW-REV
 assert_eq "no silver-FLOW prefix fallback" "$(sb_orchestrator_flow_to_skill 'FLOW-VERIFY' | grep -c 'silver-FLOW-' || true)" "0"
 
 ctx="$(sb_orchestrator_directive_context_block)"
-if printf '%s' "$ctx" | grep -qF 'next_worker_template: EXECUTE.md'; then
+if grep -qF 'next_worker_template: EXECUTE.md' <<<"$ctx"; then
   echo "PASS: context includes worker template"
   PASS=$((PASS + 1))
 else

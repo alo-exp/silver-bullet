@@ -41,7 +41,7 @@ jq -e '.mcpServers.leanctx.env.LEANCTX_MCP_TOOL_PREFIX == "lctx_"' "$MCP" >/dev/
 
 disabled="$(jq -r '.mcpServers.leanctx.disabledTools // [] | join(",")' "$MCP")"
 for tool in ctx_execute ctx_search ctx_fetch_and_index; do
-  if printf '%s' "$disabled" | grep -qF "$tool"; then
+  if grep -qF "$tool" <<<"$disabled"; then
     pass "disabledTools includes $tool"
   else
     fail "disabledTools includes $tool"

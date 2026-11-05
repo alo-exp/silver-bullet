@@ -94,8 +94,20 @@ def sanitize_model(model: str) -> str:
     return model.replace(".", "-").replace("_", "-")
 
 
+# A generated agent is <agents_dir>/<prefix>-<model>-<effort>.md. With --fix the parts come
+# from a project's .silver-bullet.json, which may be untrusted, so the name must be one plain
+# file name (no separator, no leading dot): the same rule sb_managed_agent recognizes.
+AGENT_NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._ -]*")
+
+
 def agent_name(base_model: str, effort: str, prefix: str = "sb") -> str:
-    return f"{prefix}-{sanitize_model(base_model)}-{effort}"
+    name = f"{prefix}-{sanitize_model(base_model)}-{effort}"
+    if not AGENT_NAME_RE.fullmatch(name):
+        raise ValueError(
+            f"refusing Cursor agent name {name!r}: agent_name_prefix, model and effort "
+            "must be plain names (letters, digits, '.', '_', ' ', '-')"
+        )
+    return name
 
 
 def is_fast_id(model_id: str) -> bool:
@@ -260,9 +272,6 @@ def base_model_from_slug(model_id: str) -> str:
         suffix = f"-{effort}"
         if model_id.endswith(suffix):
             return model_id[: -len(suffix)]
-        fast_suffix = f"-fast{suffix}"
-        if model_id.endswith(fast_suffix):
-            return model_id[: -len(fast_suffix)]
     if "[" in model_id:
         return model_id.split("[", 1)[0]
     return model_id
@@ -589,6 +598,23 @@ def fetch_and_cache_catalog(
     agent_entries, cli = run_agent_models()
     catalog = build_catalog(docs_pricing, agent_entries)
     catalog["agent_cli"] = cli or catalog.get("agent_cli")
+
+    # Offline with no agent CLI, the refresh finds no models at all. Keep a
+    # cached catalog that has models instead of overwriting it with an empty one.
+    if not catalog.get("models"):
+        for cached_path in (global_cache, project_cache):
+            if cached_path is None:
+                continue
+            try:
+                cached = load_json(cached_path)
+            except (OSError, ValueError):
+                continue
+            if isinstance(cached, dict) and cached.get("models"):
+                print(
+                    f"WARN: catalog refresh found no models; keeping cached catalog {cached_path}",
+                    file=sys.stderr,
+                )
+                return cached
 
     write_json(global_cache, catalog)
     if project_cache:

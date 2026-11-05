@@ -1,117 +1,68 @@
 #!/usr/bin/env bash
 # Codex install module — auto-split from install-codex.sh
+
+# Point Silver Bullet's record in Codex's installed_plugins.json at the stable
+# cache/alo-labs-codex/silver-bullet/current alias, at the version just installed (the one
+# `current` resolves to; the newest version directory when there is no alias yet). Only
+# silver-bullet@alo-labs-codex is touched: other plugins' records, versions and cache
+# directories belong to Codex and their authors (R7-08). An unparseable registry is refused.
 sync_codex_installed_plugin_registry_paths() {
   local registry_file="${CODEX_HOME_ROOT}/.codex/plugins/installed_plugins.json"
-  local updated_at
-  local plugin_id
-  local plugin_name
-  local marketplace
-  local current_path
-  local stable_path
-  local updates=()
-  updated_at="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
 
   [[ -f "$registry_file" ]] || return 0
 
-  updates=()
-  while IFS= read -r plugin_id; do
-    [[ -n "$plugin_id" ]] || continue
-    [[ "$plugin_id" == *"@"* ]] || continue
-
-    plugin_name="${plugin_id%@*}"
-    marketplace="${plugin_id#*@}"
-    current_path=""
-    stable_path=""
-
-    local cache_root="${CODEX_HOME_ROOT}/.codex/plugins/cache"
-    if [[ -d "${cache_root}/${marketplace}/${plugin_name}" ]]; then
-      current_path="$(find "${cache_root}/${marketplace}/${plugin_name}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
-    fi
-
-    [[ -n "$current_path" ]] || continue
-    python3 - "$current_path" "$marketplace" "$plugin_name" "$CODEX_HOME_ROOT" <<'PY'
+  python3 - "$registry_file" "$CODEX_HOME_ROOT" "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" <<'PY'
 import pathlib
+import re
 import shutil
 import sys
 
-current_path = pathlib.Path(sys.argv[1])
-marketplace = sys.argv[2]
-plugin_name = sys.argv[3]
-home_root = pathlib.Path(sys.argv[4]).expanduser()
-
-alias_roots = [
-    home_root / ".codex" / "plugins" / "cache" / marketplace / plugin_name / "current",
-]
-
-def refresh_alias(alias_path: pathlib.Path, target_path: pathlib.Path) -> None:
-    alias_path.parent.mkdir(parents=True, exist_ok=True)
-    if alias_path.exists() or alias_path.is_symlink():
-        if alias_path.is_dir() and not alias_path.is_symlink():
-            shutil.rmtree(alias_path)
-        else:
-            alias_path.unlink()
-    alias_path.symlink_to(target_path)
-
-target_path = current_path.resolve()
-for alias_path in alias_roots:
-    refresh_alias(alias_path, target_path)
-PY
-      stable_path="${CODEX_HOME_ROOT}/.codex/plugins/cache/${marketplace}/${plugin_name}/current"
-      updates+=("${plugin_id}=${stable_path}|${current_path##*/}")
-    done < <(python3 - "$registry_file" <<'PY'
-import json
-import pathlib
-import sys
-
 registry_path = pathlib.Path(sys.argv[1])
-if not registry_path.is_file():
+home_root = pathlib.Path(sys.argv[2]).expanduser()
+updated_at = sys.argv[3]
+sys.path.insert(0, sys.argv[4])
+from sb_host_config import ConfigError, read_json, write_json  # noqa: E402
+
+plugin_id = "silver-bullet@alo-labs-codex"
+plugin_root = home_root / ".codex" / "plugins" / "cache" / "alo-labs-codex" / "silver-bullet"
+alias = plugin_root / "current"
+
+try:
+    data = read_json(registry_path, default={})
+except ConfigError as exc:
+    sys.exit(f"ERROR: {exc}")
+plugins = data.get("plugins")
+entries = plugins.get(plugin_id) if isinstance(plugins, dict) else None
+if not isinstance(entries, list) or not plugin_root.is_dir():
     sys.exit(0)
 
-data = json.loads(registry_path.read_text())
-for plugin_id in data.get("plugins", {}):
-    print(plugin_id)
-PY
+
+def version_key(path: pathlib.Path):
+    return tuple(int(part) if part.isdigit() else part for part in re.split(r"([0-9]+)", path.name))
+
+
+installed = alias.resolve() if alias.is_symlink() else None
+if installed is None or not installed.is_dir() or installed.parent != plugin_root.resolve():
+    versions = sorted(
+        (path for path in plugin_root.iterdir()
+         if path.name != "current" and path.is_dir() and not path.is_symlink()),
+        key=version_key,
     )
+    if not versions:
+        sys.exit(0)
+    installed = versions[-1]
+    if alias.is_symlink() or alias.is_file():
+        alias.unlink()
+    elif alias.is_dir():
+        shutil.rmtree(alias)  # a real directory left by an older Silver Bullet layout
+    alias.symlink_to(installed)
 
-    [[ "${#updates[@]}" -gt 0 ]] || return 0
-
-    python3 - "$registry_file" "$updated_at" "${updates[@]}" <<'PY'
-import json
-import pathlib
-import sys
-
-registry_path = pathlib.Path(sys.argv[1])
-updated_at = sys.argv[2]
-updates = {}
-
-for item in sys.argv[3:]:
-    if "=" not in item:
-        continue
-    plugin_id, new_path = item.split("=", 1)
-    updates[plugin_id] = new_path
-
-data = json.loads(registry_path.read_text())
-changed = False
-
-for plugin_id, entries in data.get("plugins", {}).items():
-    update = updates.get(plugin_id)
-    if update is None:
-        continue
-
-    path_value, version = update.split("|", 1)
-    new_path = pathlib.Path(path_value)
-    if not new_path.is_dir():
-        continue
-
-    for entry in entries:
-        entry["installPath"] = str(new_path)
-        entry["version"] = version
+for entry in entries:
+    if isinstance(entry, dict):
+        entry["installPath"] = str(alias)
+        entry["version"] = installed.name
         entry["lastUpdated"] = updated_at
-        changed = True
-
-if changed:
-    registry_path.write_text(json.dumps(data, indent=2) + "\n")
+write_json(registry_path, data)
 PY
 }
-
-

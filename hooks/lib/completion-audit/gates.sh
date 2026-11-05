@@ -16,6 +16,7 @@ run_workflow_strict_gate() {
 
   local id="${SB_WORKFLOW_ID:-}"
   if [[ -z "$id" ]]; then
+    # shellcheck disable=SC2154  # cmd is set by completion-audit.sh before this function runs
     id="$(workflow_id_from_shell_assignment "$cmd" 2>/dev/null || true)"
   fi
   if [[ -z "$id" ]]; then
@@ -44,6 +45,10 @@ run_workflow_strict_gate() {
   local total complete
   total=$(count_flow_log_rows "$wf_file")
   complete=$(count_complete_flow_rows "$wf_file")
+  # count_* print "0" and then echo "0" again when grep -c matches nothing; keep the first line
+  # so a Flow Log with zero rows reaches the explicit block below instead of failing open.
+  total=${total%%$'\n'*}
+  complete=${complete%%$'\n'*}
   total=${total:-0}
   complete=${complete:-0}
 
@@ -163,7 +168,7 @@ build_doc_scheme_checklist_keys() {
         continue
       fi
       DOC_SCHEME_CHECKLIST_KEYS+=("$rel")
-    done < <(cd "$repo_root" && find docs -type f -print | LC_ALL=C sort)
+    done < <(cd "$repo_root" && find docs -type f -print | env LC_ALL=C sort)
   fi
 
   if [[ -f "$repo_root/README.md" && ! -L "$repo_root/README.md" ]]; then
@@ -174,7 +179,6 @@ build_doc_scheme_checklist_keys() {
   fi
 
   for key in "${DOC_SCHEME_CHECKLIST_KEYS[@]}"; do
-    [[ -n "$key" ]] || continue
     if [[ "$seen" == *$'\n'"$key"$'\n'* ]]; then
       continue
     fi
@@ -206,19 +210,21 @@ run_doc_scheme_delivery_gate() {
 # ── Evidence schema delivery gate (warn-first) ───────────────────────────────
 run_evidence_schema_delivery_gate() {
   local repo_root="$1"
+  # shellcheck disable=SC2034  # read by completion-audit.sh and deploy-tier.sh
   EVIDENCE_SCHEMA_WARN=""
   local strict="${SILVER_BULLET_EVIDENCE_SCHEMA_STRICT:-}"
   if [[ -z "$strict" && -n "${config_file:-}" && -f "$config_file" ]]; then
+    # shellcheck disable=SC2154  # _lib_dir is set by completion-audit.sh
     if [[ -f "${_lib_dir}/enterprise-policy.sh" ]]; then
       # shellcheck source=lib/enterprise-policy.sh
       source "${_lib_dir}/enterprise-policy.sh"
       if sb_enterprise_policy_evidence_schema_strict "$config_file"; then
         strict="1"
       else
-        strict=$(jq -r '.hooks.evidence_schema.strict // "true"' "$config_file" 2>/dev/null || echo "true")
+        strict=$(jq -r '.hooks.evidence_schema.strict | if . == null then "true" else tostring end' "$config_file" 2>/dev/null || echo "true")
       fi
     else
-      strict=$(jq -r '.hooks.evidence_schema.strict // "true"' "$config_file" 2>/dev/null || echo "true")
+      strict=$(jq -r '.hooks.evidence_schema.strict | if . == null then "true" else tostring end' "$config_file" 2>/dev/null || echo "true")
     fi
   fi
   if [[ -z "$strict" ]]; then

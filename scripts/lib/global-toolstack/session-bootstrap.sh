@@ -22,7 +22,7 @@ lock="${state_dir}/graphify-bootstrap.lock"
 timeout_s="$(ts_jq '.worktree.bootstrap_timeout_seconds // 120')" || timeout_s="120"
 [[ "$timeout_s" =~ ^[0-9]+$ ]] || timeout_s=120
 if [[ -f "$lock" ]]; then
-  lock_age=$(( $(date +%s) - $(stat -f %m "$lock" 2>/dev/null || stat -c %Y "$lock" 2>/dev/null || echo 0) ))
+  lock_age=$(( $(date +%s) - $(stat -c %Y "$lock" 2>/dev/null || stat -f %m "$lock" 2>/dev/null || echo 0) ))
   [[ "$lock_age" -lt "$timeout_s" ]] && exit 0
 fi
 touch "$lock" 2>/dev/null || true

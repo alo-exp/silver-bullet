@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Append-only token/cost telemetry for enterprise E2E (V-02 analysis — no pass/fail gate).
+# SB_E2E_TELEMETRY_ROOT redirects the written files (tests use a temp dir).
 # Sourced by overlay and matrix harness; does not touch matrix PIDs.
 set -euo pipefail
 
@@ -18,7 +19,7 @@ enterprise_e2e_telemetry_extract_row_log_tokens() {
   local max_tokens
   max_tokens="$(grep -oE '[0-9]{1,9}[[:space:]]+tokens' "$log_file" 2>/dev/null \
     | grep -oE '^[0-9]+' | sort -n | tail -1 || true)"
-  [[ -n "$max_tokens" ]] && printf '%s\n' "$max_tokens"
+  [[ -z "$max_tokens" ]] || printf '%s\n' "$max_tokens"
 }
 
 enterprise_e2e_telemetry_rtk_snapshot() {
@@ -47,7 +48,7 @@ enterprise_e2e_telemetry_append() {
   local overlay_mode overlay_pass overlay_fail overlay_skip
   local tokens_max rtk_snapshot driver_pid ts record mirror_file
 
-  telemetry_file="$(enterprise_e2e_telemetry_file "$root")"
+  telemetry_file="$(enterprise_e2e_telemetry_file "${SB_E2E_TELEMETRY_ROOT:-$root}")"
   ts="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   row_num="${SB_E2E_TELEMETRY_ROW:-}"
   row_slug="${SB_E2E_TELEMETRY_ROW_SLUG:-}"
@@ -60,7 +61,7 @@ enterprise_e2e_telemetry_append() {
   overlay_fail="${VALIDATION_OVERLAY_FAIL:-}"
   overlay_skip="${VALIDATION_OVERLAY_SKIP:-}"
   tokens_max="$(enterprise_e2e_telemetry_extract_row_log_tokens "$row_log")"
-  rtk_snapshot="$(enterprise_e2e_telemetry_rtk_snapshot || true)"
+  rtk_snapshot="$(enterprise_e2e_telemetry_rtk_snapshot)"
   driver_pid="$(enterprise_e2e_telemetry_matrix_driver_pid)"
 
   if ! command -v jq >/dev/null 2>&1; then
@@ -110,6 +111,6 @@ enterprise_e2e_telemetry_append() {
 
   printf '%s\n' "$record" >>"$telemetry_file"
 
-  mirror_file="${root}/docs/testing/telemetry/token-telemetry.jsonl"
+  mirror_file="${SB_E2E_TELEMETRY_ROOT:-$root}/docs/testing/telemetry/token-telemetry.jsonl"
   printf '%s\n' "$record" >>"$mirror_file"
 }

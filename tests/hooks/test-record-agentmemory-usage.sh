@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Tests for hooks/record-agentmemory-usage.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -26,7 +30,7 @@ mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 
 cleanup_all() {
-  rm -rf "$TMPDIR_TEST" "${SB_TEST_DIR}/agentmemory-usage-${TEST_RUN_ID}"
+  rm -rf "$TMPDIR_TEST" "${SB_TEST_DIR}/t${TEST_RUN_ID}-agentmemory-usage"
 }
 trap cleanup_all EXIT
 
@@ -35,7 +39,7 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 setup() {
   TMPDIR_TEST="$(mktemp -d)"
-  AM_STATE="${SB_TEST_DIR}/agentmemory-usage-${TEST_RUN_ID}"
+  AM_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-agentmemory-usage"
   rm -f "$AM_STATE"
   cat >"$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
@@ -108,7 +112,8 @@ else
   fail "enabled_by_user false skips recording"
 fi
 
-# #276: MCP CallMcpTool / memory_* clears the gate
+# #276: an MCP retrieval clears the gate (recorded by record-recommended-mcp.sh)
+RECORD_HOOK="$REPO_ROOT/hooks/record-recommended-mcp.sh"
 setup
 run_mcp_hook() {
   local input

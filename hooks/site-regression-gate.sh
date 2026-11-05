@@ -74,7 +74,7 @@ elif [[ "$hook_event" == "PreToolUse" ]]; then
     *) exit 0 ;;
   esac
   cmd="$(sb_tool_command_string "$input" 2>/dev/null || true)"
-  if printf '%s' "$cmd" | grep -qE '\bgit push\b'; then
+  if grep -qE '\bgit push\b' <<<"$cmd"; then
     sb_site_session_mark_push_intent 2>/dev/null || true
     sb_site_session_gates_apply && should_check=true
   else

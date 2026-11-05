@@ -1,6 +1,6 @@
 # RFL Round 4 — Rung 1 Review (glm-5.2-high)
 
-- **Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+- **Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 - **SHA-256:** `6859761f6d6886e97942ea50ccab4ae37fe02d9784e73139a15159ed40d007be` (verified)
 - **Phase:** REVIEW-ONLY (rung_1_review)
 - **Issue ledger:** empty (none) — residual-only review

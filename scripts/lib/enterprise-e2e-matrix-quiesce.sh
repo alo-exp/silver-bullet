@@ -42,7 +42,7 @@ matrix_quiesce_active_workflows() {
   done
   for f in "$wf_dir"/*.md; do
     base="$(basename "$f")"
-    [[ "$base" =~ ^202[0-9]{6}T ]] && continue
+    [[ "$base" =~ ^[0-9]{8}T ]] && continue
     mv -f "$f" "$archive_dir/$base" 2>/dev/null || true
   done
   shopt -u nullglob

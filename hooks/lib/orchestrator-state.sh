@@ -190,7 +190,7 @@ sb_orchestrator_queue_index_for_atom() {
 # Detect full-software intent for cross-session queue seeding (Wave 0.7).
 sb_orchestrator_detect_full_software_intent() {
   local text="$1"
-  printf '%s' "$text" | grep -qiE \
+  grep -qiE <<<"$text" \
     'build (me |an |a )?(full |complete |entire )?(app|application|product|platform|system|software)|entire software|full software|from scratch|greenfield|new product|new app' \
     && return 0
   return 1
@@ -461,7 +461,9 @@ sb_orchestrator_advance_on_atom() {
     catalog_file="$(sb_scheduler_catalog_file "$repo_root" 2>/dev/null || true)"
     if [[ -n "$catalog_file" ]]; then
       atom_id="$(sb_scheduler_resolve_atom_id "$catalog_file" "$atom_skill" 2>/dev/null || true)"
-      [[ -n "$atom_id" ]] && sb_scheduler_refresh_join_gate "$repo_root" "$atom_id" >/dev/null 2>&1 || true
+      if [[ -n "$atom_id" ]]; then
+        sb_scheduler_refresh_join_gate "$repo_root" "$atom_id" >/dev/null 2>&1 || true
+      fi
     fi
     if sb_scheduler_active_batch_has_pending_joins 2>/dev/null; then
       hold_for_batch=true

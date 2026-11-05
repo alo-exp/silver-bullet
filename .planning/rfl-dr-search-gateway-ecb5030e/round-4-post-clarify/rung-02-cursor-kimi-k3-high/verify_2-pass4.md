@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 (`rung_2_verify_2`, post ACCEPT-apply of R2P4-1–R2P4-3 / I-58–I-60)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `44bf064c33810669bf945f91a4e05afa24e5c82fef36a43dabe499f159d28fc4` (independent `shasum -a 256` in this pass)  
 **Graphify:** `graphify query "dr search gateway plan R2P4 I-58 I-59 I-60 signup_automation site:x.com"` (558 nodes; oriented R2P4 residuals + gateway)  
 **Apply ref:** [APPLY.md](APPLY.md) (Pass 4 section) · **Review ref:** [review-pass-4.md](review-pass-4.md) · **Sibling verify:** [verify_1-pass4.md](verify_1-pass4.md) (not used as evidence — independent re-read)
@@ -15,7 +15,7 @@ model: composer-2.5
 
 | Check | Status | Evidence |
 |-------|--------|----------|
-| Plan SHA-256 matches charter | PASS | `shasum -a 256 /Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md` → `44bf064c33810669bf945f91a4e05afa24e5c82fef36a43dabe499f159d28fc4` (matches APPLY.md Pass 4 `New SHA`) |
+| Plan SHA-256 matches charter | PASS | `shasum -a 256 /Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md` → `44bf064c33810669bf945f91a4e05afa24e5c82fef36a43dabe499f159d28fc4` (matches APPLY.md Pass 4 `New SHA`) |
 
 ## R2P4-1 / I-58 APPLY — §6.3 / §6.9 Locked X complement exception (2026-08-31)
 

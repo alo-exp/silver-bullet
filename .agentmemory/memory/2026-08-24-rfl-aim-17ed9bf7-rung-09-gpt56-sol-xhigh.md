@@ -1,6 +1,6 @@
 # RFL rung 9 — GPT-5.6 Sol Extra High review-complete
 
-**Plan:** [.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 - Method: `/silver:agent-codex` NI `codex exec -m gpt-5.6-sol -c model_reasoning_effort=xhigh`
 - Status: review-complete

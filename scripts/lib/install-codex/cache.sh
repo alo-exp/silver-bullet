@@ -29,6 +29,10 @@ sanitize_codex_package_surface() {
   fi
 
   [[ -d "$package_root" ]] || return 0
+  # plugins/silver-bullet in the source checkout is shared with the Cursor
+  # plugin and committed host-neutral: never rewrite it. The cache copy made
+  # from it is sanitized in sync_codex_cache_package_surface.
+  codex_package_is_repo_checkout "$package_root" && return 0
 
   if [[ -x "${SCRIPT_DIR}/codex-sanitize-package.sh" ]]; then
     "${SCRIPT_DIR}/codex-sanitize-package.sh" "$package_root"
@@ -39,6 +43,14 @@ sanitize_codex_package_surface() {
 
   # Codex sanitizer rewrites hooks/core-rules.md for runtime wording; refresh L-02 pin.
   regenerate_core_rules_pin "${package_root}/hooks"
+}
+
+
+# sanitize_codex_cache_copy <dir>: rewrite an installed copy for Codex and
+# re-pin hooks/core-rules.md, which the sanitizer rewrites.
+sanitize_codex_cache_copy() {
+  "${SCRIPT_DIR}/codex-sanitize-package.sh" "$1"
+  regenerate_core_rules_pin "$1/hooks"
 }
 
 
@@ -55,8 +67,6 @@ sync_codex_cache_package_surface() {
     return 0
   fi
 
-  [[ -d "${marketplace_root}/plugins/silver-bullet" ]] || return 0
-
   local cache_root="${CODEX_HOME_ROOT}/.codex/plugins/cache"
   local marketplace_package_root="${marketplace_root}/plugins/silver-bullet"
   local package_root="${cache_root}/alo-labs-codex/silver-bullet"
@@ -70,7 +80,7 @@ sync_codex_cache_package_surface() {
   # Cache entries must be self-contained even when the local checkout package
   # uses relative symlinks for its generated source surface.
   rsync -aL --delete "${marketplace_package_root}/" "${package_root}/${package_version}/"
-  regenerate_core_rules_pin "${package_root}/${package_version}/hooks"
+  sanitize_codex_cache_copy "${package_root}/${package_version}"
   validate_silver_bullet_skill_surface "installed package" "${package_root}/${package_version}"
 
   shopt -s nullglob
@@ -78,6 +88,7 @@ sync_codex_cache_package_surface() {
     [[ -d "$version_dir" ]] || continue
     [[ "$(basename "$version_dir")" == "current" ]] && continue
     rsync -aL --delete "${marketplace_root}/plugins/silver-bullet/" "${version_dir}/"
+    sanitize_codex_cache_copy "$version_dir"
   done
   shopt -u nullglob
 }

@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
@@ -28,6 +30,23 @@ Agentic SDLC orchestration Market Landscape Report
 ... [lean-ctx: omitted 3 lines]
 - Consensus claim with [Archived] marker
 """
+
+
+_OFFLINE_ENV = None
+
+
+def setUpModule() -> None:
+    # Hermetic by default: no vendor-URL health checks over HTTP and no Playwright PDF rendering.
+    global _OFFLINE_ENV
+    _OFFLINE_ENV = mock.patch.dict(
+        os.environ,
+        {"SB_SKIP_VENDOR_URL_HEALTH": "1", "SB_SKIP_LANDSCAPE_PDF": "1", "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1"},
+    )
+    _OFFLINE_ENV.start()
+
+
+def tearDownModule() -> None:
+    _OFFLINE_ENV.stop()
 
 
 class CompressionMarkerTests(unittest.TestCase):
@@ -62,6 +81,26 @@ class CompressionMarkerTests(unittest.TestCase):
         )
         self.assertFalse(contains_compression_markers(md))
         self.assertIn("real consensus", md)
+
+    def test_build_report_markdown_reports_what_the_sanitiser_removed(self) -> None:
+        import io
+        from contextlib import redirect_stderr
+        from unittest import mock as _mock
+
+        def fake(markdown, removed=None):
+            if removed is not None:
+                removed.append("  stray [lean-ctx: omitted 9 lines] artifact line  ")
+            return markdown
+
+        err = io.StringIO()
+        with _mock.patch("synthesize_landscape.sanitize_compression_markers", side_effect=fake), redirect_stderr(err):
+            build_report_markdown(
+                category="Cat", platform_list="p", scope_text="Scope", need={},
+                comparison={"rows": [], "rankings": []}, consolidation={"consensus": [], "divergence": []},
+                envelopes=[], claims=[], root=Path("/tmp/unused"), report_date="July 19, 2026",
+            )
+        self.assertIn("removed 1 compression-marker line(s)", err.getvalue())
+        self.assertIn("stray [lean-ctx: omitted 9 lines] artifact line", err.getvalue())
 
     def test_collect_landscape_payload_sanitizes_marked_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -42,7 +42,7 @@ strongest. The table below shows Silver Bullet's implementation status for each 
 |------|-----------|-----------|-------------------|
 | 1 | CLAUDE.md / system prompt | Implemented | `silver-bullet.md` (sections 0–9) injected into every project via `/sb:init` |
 | 2 | `.claude/rules/` scoped rules | Deferred | Hooks compensate; scoped rules add marginal value for SB's flat structure |
-| 3 | Hooks (PreToolUse, PostToolUse, Stop, UserPromptSubmit, SessionStart) | Implemented | 11 hooks registered in `hooks/hooks.json` across 5 event types |
+| 3 | Hooks (PreToolUse, PostToolUse, Stop, UserPromptSubmit, SessionStart) | Implemented | Registered in `hooks/hooks.json` across seven event types; `docs/HOOKS.md` lists them |
 | 4 | Recursive rule echo (self-reinforcing CLAUDE.md) | Deferred | Hooks fire on every relevant tool use, compensating adequately |
 | 5 | Redundant encoding (multiple files state same rules) | Implemented | `silver-bullet.md` + `CLAUDE.md` + workflow files all enforce the same constraints |
 | 6 | Separate instruction file (CLAUDE.local.md) | N/A | `silver-bullet.md` achieves the same separation from project-specific CLAUDE.md |
@@ -88,7 +88,7 @@ before reaching Claude's execution.
 │  │  │  │  • completion-audit.sh  (Bash)                    │ │  │  │
 │  │  │  │    Commit gate / PR+deploy gate                   │ │  │  │
 │  │  │  │  • ci-status-check.sh  (Bash)                     │ │  │  │
-│  │  │  │    Blocks commits when CI is failing              │ │  │  │
+│  │  │  │    Blocks push/PR/release while CI is red         │ │  │  │
 │  │  │  │                                                   │ │  │  │
 │  │  │  │  ╔══════════════════════════════════════════════╗ │ │  │  │
 │  │  │  │  ║       the runtime executes tool             ║ │ │  │  │
@@ -108,8 +108,8 @@ before reaching Claude's execution.
 │  └─────────────────────────────────────────────────────────────┘  │
 │                                                                   │
 │  [Stop]  stop-check.sh                                            │
-│  Final completion gate. Blocks final response if required         │
-│  deploy skills are not all recorded in the state file.            │
+│  Final completion gate. Blocks the final response while           │
+│  required_planning skills are missing from the state file.        │
 └───────────────────────────────────────────────────────────────────┘
 ```
 
@@ -117,9 +117,11 @@ before reaching Claude's execution.
 
 ## 4. Detailed Mechanism Reference
 
-> **Source of truth for hook count:** `hooks/hooks.json` registers 11 hooks across
-> 5 event types (SessionStart, PreToolUse, PostToolUse, Stop, UserPromptSubmit).
-> Hook scripts are in `hooks/`. The `run-hook.cmd` file is a Windows test runner, not a hook.
+> **Source of truth for hooks:** `hooks/hooks.json`, across seven event types (SessionStart,
+> PreToolUse, PostToolUse, SubagentStart, Stop, SubagentStop, UserPromptSubmit). This section
+> covers the core mechanisms; [`docs/HOOKS.md`](../HOOKS.md) (generated) lists every registered
+> hook. Hook scripts are in `hooks/`. `run-hook.cmd` is a Windows wrapper that runs a hook
+> through Git Bash, not a hook.
 
 ### 4.1 session-start (SessionStart hook)
 

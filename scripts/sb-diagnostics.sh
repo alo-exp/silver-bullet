@@ -5,13 +5,23 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FORMAT="${SB_DIAG_FORMAT:-text}"
+
+# REPO_ROOT is the plugin (libraries, version). Every project-scoped check reads the
+# user's project: the first argument, else SB_DIAG_PROJECT_ROOT, else the working
+# directory, walking up to the nearest .silver-bullet.json (R8-21).
+PROJECT_ROOT="${1:-${SB_DIAG_PROJECT_ROOT:-$PWD}}"
+PROJECT_ROOT="$(cd "$PROJECT_ROOT" 2>/dev/null && pwd -P || printf '%s' "$PROJECT_ROOT")"
+_sb_diag_dir="$PROJECT_ROOT"
+# The walk stops at the enclosing repository (.git), like the hooks: a repository
+# nested inside an opted-in project is its own project.
+while [[ "$_sb_diag_dir" != "/" && ! -f "${_sb_diag_dir}/.silver-bullet.json" && ! -e "${_sb_diag_dir}/.git" ]]; do
+  _sb_diag_dir="$(dirname "$_sb_diag_dir")"
+done
+[[ -f "${_sb_diag_dir}/.silver-bullet.json" ]] && PROJECT_ROOT="$_sb_diag_dir"
+unset _sb_diag_dir
 PASS=0
 FAIL=0
 WARN=0
-
-json_escape() {
-  python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' <<<"$1"
-}
 
 record() {
   local level="$1" check="$2" detail="$3"
@@ -138,7 +148,7 @@ main() {
     source "${REPO_ROOT}/hooks/lib/stack-optimizer.sh"
   fi
 
-  local sb_config="${REPO_ROOT}/.silver-bullet.json"
+  local sb_config="${PROJECT_ROOT}/.silver-bullet.json"
   local graphify_consent="pending"
   local graphify_suspended="false"
   local agentmemory="no"
@@ -157,21 +167,21 @@ main() {
     graphify="yes"
     if [[ "$graphify_consent" == "enabled" && "$graphify_suspended" != "true" ]]; then
       record pass "graphify-cli" "CLI available (opted in)"
-      graph_path="${REPO_ROOT}/graphify-out/graph.json"
+      graph_path="${PROJECT_ROOT}/graphify-out/graph.json"
       if [[ -f "$sb_config" ]] && declare -f sb_graphify_abs_graph_path >/dev/null 2>&1; then
-        graph_path="$(sb_graphify_abs_graph_path "$REPO_ROOT" "$sb_config")"
+        graph_path="$(sb_graphify_abs_graph_path "$PROJECT_ROOT" "$sb_config")"
       fi
       if [[ -f "$graph_path" && ! -L "$graph_path" ]]; then
-        record pass "graphify-index" "index present at ${graph_path#"${REPO_ROOT}"/}"
+        record pass "graphify-index" "index present at ${graph_path#"${PROJECT_ROOT}"/}"
       else
         record fail "graphify-index" "index missing — run: graphify update . --no-cluster"
       fi
       if declare -f sb_runtime_host >/dev/null 2>&1 && declare -f sb_graphify_platform_artifact_present >/dev/null 2>&1; then
         local gf_host artifact_path
         gf_host="$(sb_runtime_host)"
-        artifact_path="$(sb_graphify_platform_artifact_path "$REPO_ROOT" "$gf_host")"
-        if sb_graphify_platform_artifact_present "$REPO_ROOT" "$gf_host"; then
-          record pass "graphify-platform" "platform artifact present (${artifact_path#"${REPO_ROOT}"/}, host=${gf_host})"
+        artifact_path="$(sb_graphify_platform_artifact_path "$PROJECT_ROOT" "$gf_host")"
+        if sb_graphify_platform_artifact_present "$PROJECT_ROOT" "$gf_host"; then
+          record pass "graphify-platform" "platform artifact present (${artifact_path#"${PROJECT_ROOT}"/}, host=${gf_host})"
         else
           record warn "graphify-platform" "platform artifact missing for ${gf_host} — run post-index install (see docs/GRAPHIFY.md)"
         fi
@@ -210,7 +220,7 @@ main() {
         fi
       fi
       if declare -f sb_agentmemory_export_exists >/dev/null 2>&1; then
-        if sb_agentmemory_export_exists "$REPO_ROOT" "$sb_config"; then
+        if sb_agentmemory_export_exists "$PROJECT_ROOT" "$sb_config"; then
           record pass "agentmemory-export" ".agentmemory/ export root present"
         else
           record fail "agentmemory-export" "export root missing — mkdir -p .agentmemory/memory"
@@ -219,8 +229,8 @@ main() {
       if declare -f sb_runtime_host >/dev/null 2>&1 && declare -f sb_agentmemory_platform_artifact_present >/dev/null 2>&1; then
         local am_host am_artifact
         am_host="$(sb_runtime_host)"
-        am_artifact="$(sb_agentmemory_platform_artifact_path "$REPO_ROOT" "$am_host")"
-        if sb_agentmemory_platform_artifact_present "$REPO_ROOT" "$am_host"; then
+        am_artifact="$(sb_agentmemory_platform_artifact_path "$PROJECT_ROOT" "$am_host")"
+        if sb_agentmemory_platform_artifact_present "$PROJECT_ROOT" "$am_host"; then
           record pass "agentmemory-platform" "MCP wired (${am_artifact}, host=${am_host})"
         else
           record warn "agentmemory-platform" "MCP not wired for ${am_host} — see docs/AGENTMEMORY.md"
@@ -242,7 +252,9 @@ main() {
   if declare -f sb_optimization_score >/dev/null 2>&1 && [[ -f "$sb_config" ]]; then
     if [[ "$graphify_consent" == "enabled" || "$agentmemory_consent" == "enabled" ]]; then
       local opt_score opt_fails
-      opt_score="$(sb_optimization_score "$REPO_ROOT" "$sb_config")"
+      # Run in this shell (not $(...)) so the SB_STACK_SCORE_* exports survive.
+      sb_optimization_score "$PROJECT_ROOT" "$sb_config" >/dev/null
+      opt_score="${SB_STACK_SCORE:-0}"
       opt_fails="${SB_STACK_SCORE_FAILS:-0}"
       if [[ "$opt_fails" -eq 0 && "$opt_score" -ge 60 ]]; then
         record pass "optimize-score" "stack optimization ${opt_score}/100"
@@ -252,7 +264,7 @@ main() {
         record fail "optimize-score" "stack optimization ${opt_score}/100 with ${opt_fails} critical gap(s)"
       fi
       if [[ "$graphify_consent" == "enabled" && "$graphify_suspended" != "true" ]]; then
-        if declare -f sb_stack_graphify_hooks_installed >/dev/null 2>&1 && sb_stack_graphify_hooks_installed "$REPO_ROOT"; then
+        if declare -f sb_stack_graphify_hooks_installed >/dev/null 2>&1 && sb_stack_graphify_hooks_installed "$PROJECT_ROOT"; then
           record pass "optimize-graphify-hooks" "git hooks installed"
         else
           record warn "optimize-graphify-hooks" "git hooks missing"
@@ -272,7 +284,8 @@ main() {
         if declare -f sb_stack_gitleaks_required >/dev/null 2>&1 \
           && sb_stack_gitleaks_required "$sb_config" \
           && declare -f sb_stack_gitleaks_path >/dev/null 2>&1; then
-          if sb_stack_gitleaks_path >/dev/null; then
+          # sb_stack_gitleaks_path always exits 0 (empty output when absent): test the output.
+          if [[ -n "$(sb_stack_gitleaks_path)" ]]; then
             record pass "optimize-gitleaks" "gitleaks installed ($(sb_stack_gitleaks_path))"
           else
             record warn "optimize-gitleaks" "gitleaks required but missing — brew install gitleaks"
@@ -280,7 +293,7 @@ main() {
         fi
       fi
       if [[ "$graphify_consent" == "enabled" && "$agentmemory_consent" == "enabled" ]]; then
-        if declare -f sb_stack_graph_has_agentmemory_refs >/dev/null 2>&1 && sb_stack_graph_has_agentmemory_refs "$REPO_ROOT" "$sb_config"; then
+        if declare -f sb_stack_graph_has_agentmemory_refs >/dev/null 2>&1 && sb_stack_graph_has_agentmemory_refs "$PROJECT_ROOT" "$sb_config"; then
           record pass "optimize-synergy-index" "graph indexes .agentmemory"
         else
           record fail "optimize-synergy-index" "graph missing .agentmemory refs — run sb-optimize-stack.sh --apply"
@@ -313,7 +326,7 @@ main() {
         fi
         local rtk_host
         rtk_host="$(sb_runtime_host)"
-        if sb_rtk_platform_hook_present "$REPO_ROOT" "$rtk_host" 2>/dev/null; then
+        if sb_rtk_platform_hook_present "$PROJECT_ROOT" "$rtk_host" 2>/dev/null; then
           record pass "rtk-hook" "host hook wired (host=${rtk_host})"
         else
           record fail "rtk-hook" "host hook missing — run rtk init for ${rtk_host}"
@@ -342,12 +355,12 @@ main() {
         record pass "context-mode-cli" "CLI or plugin present (opted in)"
         local cm_host
         cm_host="$(sb_runtime_host)"
-        if sb_context_mode_platform_artifact_present "$REPO_ROOT" "$cm_host" 2>/dev/null; then
+        if sb_context_mode_platform_artifact_present "$PROJECT_ROOT" "$cm_host" 2>/dev/null; then
           record pass "context-mode-mcp" "platform wired (host=${cm_host})"
         else
           record fail "context-mode-mcp" "MCP/plugin not wired — see docs/CONTEXT-MODE.md"
         fi
-        if sb_context_mode_instruction_fragment_present "$REPO_ROOT" 2>/dev/null; then
+        if sb_context_mode_instruction_fragment_present "$PROJECT_ROOT" 2>/dev/null; then
           record pass "context-mode-fragment" "instruction fragment present"
         else
           record warn "context-mode-fragment" "hint fragment missing — run init scaffold"
@@ -371,7 +384,7 @@ main() {
     local command_filename_colon_count marketplace_version marketplace_sha
     expected_version="$(jq -r '.version // empty' "${REPO_ROOT}/package.json" 2>/dev/null || true)"
     if [[ -L "$cache_current" ]]; then
-      resolved_current="$(cd "$cache_current" && pwd -P 2>/dev/null || true)"
+      resolved_current="$(cd "$cache_current" && pwd -P 2>/dev/null)" || true
       if [[ -f "${resolved_current}/commands/sb.md" ]] && \
          [[ "$(python3 - "${resolved_current}/commands/sb.md" <<'PY'
 import re, sys

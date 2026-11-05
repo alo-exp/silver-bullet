@@ -144,7 +144,7 @@
           "field": "path",
           "wrapped_at": "2026-07-07T16:03:23.528Z"
         },
-        "value": "{\"path\":\"/Users/shafqat/projects/silver-bullet/repo/skills/silver-deep-research/SKILL.md\"}"
+        "value": "{\"path\":\"/Users/<user>/projects/silver-bullet/repo/skills/silver-deep-research/SKILL.md\"}"
       }
     },
     {
@@ -163,7 +163,7 @@
           "field": "path",
           "wrapped_at": "2026-07-07T16:03:23.584Z"
         },
-        "value": "{\"path\":\"/Users/shafqat/.codex/skills/silver-deep-research/SKILL.md\"}"
+        "value": "{\"path\":\"/Users/<user>/.codex/skills/silver-deep-research/SKILL.md\"}"
       }
     },
     {
@@ -182,7 +182,7 @@
           "field": "path",
           "wrapped_at": "2026-07-07T16:03:23.623Z"
         },
-        "value": "{\"path\":\"/Users/shafqat/.codex/skills/research/SKILL.md\"}"
+        "value": "{\"path\":\"/Users/<user>/.codex/skills/research/SKILL.md\"}"
       }
     },
     {
@@ -201,7 +201,7 @@
           "field": "path",
           "wrapped_at": "2026-07-07T16:03:23.627Z"
         },
-        "value": "{\"path\":\"/Users/shafqat/.codex/skills/deep-research/SKILL.md\"}"
+        "value": "{\"path\":\"/Users/<user>/.codex/skills/deep-research/SKILL.md\"}"
       }
     },
     {

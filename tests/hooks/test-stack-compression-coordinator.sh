@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Unit tests for hooks/lib/stack-compression-coordinator.sh — surface routing and double-wrap guards
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -21,9 +25,8 @@ STATE_DIR=""
 
 cleanup() {
   rm -rf "$TMP" "$STATE_DIR"
-  rm -f "${SB_RUNTIME_STATE_DIR}/stack-compression-coordinator" \
-    "${SB_RUNTIME_STATE_DIR}/stack-compression-mutex" \
-    "${SB_RUNTIME_STATE_DIR}/stack-compression-lifecycle" 2>/dev/null || true
+  rm -rf "${SB_RUNTIME_STATE_DIR}/stack-compression-coordinator.d" \
+    "${SB_RUNTIME_STATE_DIR}/stack-compression-mutex.d" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -90,6 +93,12 @@ python3 - <<PY
 with open("${LARGE_FILE}", "w", encoding="utf-8") as handle:
     handle.write("x" * 7000)
 PY
+# Context Mode installed and wired, so its ctx_* tools exist and the read nudge applies.
+mkdir -p "$TMP/bin"; printf '#!/bin/sh\nexit 0\n' >"$TMP/bin/context-mode"; chmod +x "$TMP/bin/context-mode"
+printf '{"mcpServers":{"context-mode":{}}}' >"$TMP/cm-mcp.json"
+printf '#!/bin/sh\nexit 0\n' >"$TMP/bin/lean-ctx"; chmod +x "$TMP/bin/lean-ctx"
+printf '{"mcpServers":{"lean-ctx":{}}}' >"$TMP/lc-mcp.json"
+export SB_CONTEXT_MODE_MCP_ARTIFACT="$TMP/cm-mcp.json" SB_LEANCTX_MCP_ARTIFACT="$TMP/lc-mcp.json" PATH="$TMP/bin:$PATH"
 grep_input=$(jq -n --arg p "$LARGE_FILE" \
   '{hook_event_name:"PreToolUse", tool_name:"Grep", tool_input:{pattern:"x", path:$p}}')
 if sb_context_mode_should_deny_read "$grep_input" "$CFG" "$TMP" >/dev/null 2>&1; then
@@ -107,7 +116,7 @@ else
 fi
 
 # Bash double-wrap: RTK rewritten command + LeanCTX shell marker → deny.
-sb_stack_should_deny_bash_double_wrap "$CFG" "rtk git status && lean-ctx shell" && pass "RTK+LeanCTX shell double-wrap denied" \
+sb_stack_should_deny_bash_double_wrap "$CFG" "rtk lean-ctx shell ls" && pass "RTK+LeanCTX shell double-wrap denied" \
   || fail "RTK+LeanCTX shell double-wrap denied"
 sb_stack_should_deny_bash_double_wrap "$CFG" "rtk git status" && fail "RTK-only bash allowed" || pass "RTK-only bash allowed"
 
@@ -136,14 +145,6 @@ else
   fail "coordinator hook denies lctx_remember — got: $hook_out"
 fi
 
-# Lifecycle ordering markers.
-sb_stack_lifecycle_mark "context_mode_precompact"
-sleep 1
-sb_stack_lifecycle_mark "agentmemory_snapshot"
-sleep 1
-sb_stack_lifecycle_mark "leanctx_compact"
-sb_stack_lifecycle_order_ok && pass "lifecycle order CM→AM→LeanCTX" || fail "lifecycle order CM→AM→LeanCTX"
-
 # RED-1: mutex violation → compliant ctx_search clears → subsequent Read allowed.
 sb_stack_record_double_compression "$CFG" "sb_shell" "leanctx" "rtk"
 sb_stack_mutual_exclusion_is_clean "$CFG" && fail "RED-1: mutex dirty after seeded violation" \
@@ -166,7 +167,7 @@ read_after=$(jq -n \
 read_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
   printf '%s' "$read_after" | bash "$COORD_HOOK" 2>/dev/null || true)"
 if printf '%s' "$read_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1 \
-  && printf '%s' "$read_out" | grep -q 'sb_stack_double_compression'; then
+  && grep -q 'sb_stack_double_compression' <<<"$read_out"; then
   fail "RED-1: Read denied after recovery — got: $read_out"
 else
   pass "RED-1: Read allowed after recovery MCP"

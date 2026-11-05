@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Tests for hooks/context-mode-gate.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then

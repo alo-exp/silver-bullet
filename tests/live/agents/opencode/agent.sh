@@ -37,7 +37,7 @@ agent_preflight() {
 agent_invoke() {
   local mode="$1"
   local prompt="$2"
-  local cli work_dir model run_model output log_file timeout tail_idle
+  local cli work_dir run_model output log_file timeout tail_idle
   local use_interactive=0 invoke_rc=0
   local -a args=()
 

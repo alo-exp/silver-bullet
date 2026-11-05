@@ -115,15 +115,15 @@ find_skill_file() {
     while IFS= read -r alias; do
       [[ -n "$alias" ]] && candidate_names+=("$alias")
     done < <(
-      sb_required_skill_aliases "$canonical_skill"
-      sb_required_skill_aliases "$raw_skill"
+      for name in "$canonical_skill" "$raw_skill"; do
+        sb_required_skill_aliases "$name"
+      done
     )
   fi
 
   for root in "${SKILL_ROOTS[@]}"; do
     [[ -d "$root" ]] || continue
     for name in "${candidate_names[@]}"; do
-      [[ -n "$name" ]] || continue
       for candidate in "${root}/${name}/SKILL.md" "${root}/${name}/SILVER_SOURCE"; do
         if [[ -f "$candidate" ]]; then
           printf '%s\n' "$candidate"
@@ -205,7 +205,7 @@ invoke_skill() {
       return 2
       ;;
   esac
-  shift || true
+  shift
   skill_arguments="$*"
 
   canonical_skill="$(canonical_skill_name "$raw_skill")"
@@ -221,12 +221,14 @@ invoke_skill() {
   printf 'Canonical: %s\n' "$canonical_skill"
   printf 'Source: %s\n\n' "$skill_file"
   if [[ -n "$skill_arguments" ]]; then
+    # shellcheck disable=SC2016  # $ARGUMENTS is printed literally for the agent
     printf 'Runtime arguments for this skill ($ARGUMENTS):\n%s\n\n' "$skill_arguments"
   fi
   printf '%s\n' "----- BEGIN SKILL ${canonical_skill} -----"
   cat "$skill_file"
   printf '\n%s\n' "----- END SKILL ${canonical_skill} -----"
   if [[ -n "$skill_arguments" ]]; then
+    # shellcheck disable=SC2016  # $ARGUMENTS is printed literally for the agent
     printf '\nUse the runtime arguments above wherever the skill refers to `$ARGUMENTS`.\n'
   fi
   printf 'Follow the skill instructions above. Silver Bullet hooks will record this invocation through the SB-owned Codex adapter receipt.\n'

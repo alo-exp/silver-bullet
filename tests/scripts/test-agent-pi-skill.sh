@@ -210,7 +210,7 @@ EOF
 cat >"$FAKE_PI" <<EOF
 #!/usr/bin/env bash
 printf '%s\n' "\$*" >>"${PI_ARGV_LOG}"
-if printf '%s' "\$*" | grep -qE '(^|[[:space:]])--continue([[:space:]]|$)'; then
+if grep -qE '(^|[[:space:]])--continue([[:space:]]|$)' <<<"\$*"; then
   printf 'ok\n' >"${EXPECT_OUT}"
 fi
 exit 0
@@ -254,7 +254,7 @@ printf '0\n' >"$CONT_COUNT_FILE"
 cat >"$FAKE_PI" <<EOF
 #!/usr/bin/env bash
 printf '%s\\n' "\$*" >>"${PI_ARGV_LOG}"
-if printf '%s' "\$*" | grep -qE '(^|[[:space:]])--continue([[:space:]]|$)'; then
+if grep -qE '(^|[[:space:]])--continue([[:space:]]|$)' <<<"\$*"; then
   n=\$(cat "${CONT_COUNT_FILE}")
   n=\$((n + 1))
   printf '%s\\n' "\$n" >"${CONT_COUNT_FILE}"
@@ -296,7 +296,7 @@ printf '0\n' >"$CONT_COUNT_FILE"
 cat >"$FAKE_PI" <<EOF
 #!/usr/bin/env bash
 printf '%s\\n' "\$*" >>"${PI_ARGV_LOG}"
-if printf '%s' "\$*" | grep -qE '(^|[[:space:]])--continue([[:space:]]|$)'; then
+if grep -qE '(^|[[:space:]])--continue([[:space:]]|$)' <<<"\$*"; then
   n=\$(cat "${CONT_COUNT_FILE}")
   n=\$((n + 1))
   printf '%s\\n' "\$n" >"${CONT_COUNT_FILE}"
@@ -336,7 +336,7 @@ printf '0\n' >"$CONT_COUNT_FILE"
 cat >"$FAKE_PI" <<EOF
 #!/usr/bin/env bash
 printf '%s\\n' "\$*" >>"${PI_ARGV_LOG}"
-if printf '%s' "\$*" | grep -qE '(^|[[:space:]])--continue([[:space:]]|$)'; then
+if grep -qE '(^|[[:space:]])--continue([[:space:]]|$)' <<<"\$*"; then
   n=\$(cat "${CONT_COUNT_FILE}")
   n=\$((n + 1))
   printf '%s\\n' "\$n" >"${CONT_COUNT_FILE}"
@@ -407,7 +407,7 @@ rm -f "$EXPECT_OUT" "${TMP_PI}/work/review.md"
 cat >"$FAKE_PI" <<EOF
 #!/usr/bin/env bash
 printf '%s\\n' "\$*" >>"${PI_ARGV_LOG}"
-if printf '%s' "\$*" | grep -qE '(^|[[:space:]])--continue([[:space:]]|$)'; then
+if grep -qE '(^|[[:space:]])--continue([[:space:]]|$)' <<<"\$*"; then
   printf 'ok\\n' >"${TMP_PI}/work/review.md"
 fi
 exit 0
@@ -490,6 +490,7 @@ printf 'ok\n' >"${TMP_PI}/work/tiny-ok.md"
 ) && check "default min 2500 rejects 3-byte non-stub file" pass \
   || check "default min 2500 rejects 3-byte non-stub file" fail
 (
+  # shellcheck disable=SC2034  # read by the sourced agent-host-exec.sh
   PI_EXPECT_FILE_MIN_BYTES=1
   agent_host_pi_file_ok "${TMP_PI}/work/tiny-ok.md"
 ) && check "PI_EXPECT_FILE_MIN_BYTES=1 still accepts 3-byte non-stub" pass \
@@ -517,7 +518,7 @@ chmod +x "$FAKE_DELEGATE"
 cat >"$FAKE_PI" <<EOF
 #!/usr/bin/env bash
 printf '%s\\n' "\$*" >>"${PI_ARGV_LOG}"
-if printf '%s' "\$*" | grep -qE '(^|[[:space:]])--continue([[:space:]]|$)'; then
+if grep -qE '(^|[[:space:]])--continue([[:space:]]|$)' <<<"\$*"; then
   python3 - "${STUB_EXPECT}" <<'PY'
 import sys
 open(sys.argv[1], "w", encoding="utf-8").write(

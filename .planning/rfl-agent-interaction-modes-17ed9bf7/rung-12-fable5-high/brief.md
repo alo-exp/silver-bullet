@@ -8,7 +8,7 @@ This is a **retry**: the previous wave (archived under `prior-blocked-20260824/`
 
 `.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`
 
-Plan markdown link: [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+Plan markdown link: [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 SHA256 at parent launch: `5192423a986d602beb4170d3cdf474e7e573974d14666afc2d9da577b894501e` (415 lines). Re-hash before citing.
 

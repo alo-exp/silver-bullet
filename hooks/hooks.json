@@ -18,12 +18,6 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stack-compression-lifecycle.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-quota-retry-due.sh\"",
             "async": false,
             "timeout": 10
@@ -282,6 +276,17 @@
         ]
       },
       {
+        "matcher": "mcp__.*lean-?ctx.*|mcp__.*context[-_]mode.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stack-compression-coordinator.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Skill",
         "hooks": [
           {
@@ -511,12 +516,6 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-site-visual-evidence.sh\"",
             "async": false,
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
-            "async": false,
-            "timeout": 10
           }
         ]
       },
@@ -534,10 +533,21 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
             "async": false,
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*agentmemory.*|mcp__.*graphify.*|mcp__.*lean-?ctx.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-leanctx-usage.sh\"",
+            "async": false,
+            "timeout": 10
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-agentmemory-usage.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
             "async": false,
             "timeout": 10
           }

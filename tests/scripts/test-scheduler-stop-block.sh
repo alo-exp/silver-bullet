@@ -76,7 +76,7 @@ sb_scheduler_refresh_active_batch_dispatch "$repo_root"
 
 # stop-check.sh blocks parent Stop while batch pending
 stop_out="$(cd "$repo_root" && printf '{"hook_event_name":"Stop"}' | \
-  SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_TEST_HOOK_ENFORCED=1 SB_RUNTIME_PRESERVE_STATE_DIR=1 \
+  env SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_TEST_HOOK_ENFORCED=1 SB_RUNTIME_PRESERVE_STATE_DIR=1 \
   SB_RUNTIME_STATE_DIR="$SB_RUNTIME_STATE_DIR" \
   SILVER_BULLET_STATE_FILE="$SB_RUNTIME_STATE_DIR/state" \
   bash "$STOP_HOOK" 2>/dev/null || true)"

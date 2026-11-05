@@ -90,7 +90,7 @@ run_hook_apply_patch() {
 
 is_denied() {
   local output="$1"
-  [[ -n "$output" ]] && printf '%s' "$output" | grep -qE '"permissionDecision"\s*:\s*"deny"|"decision"\s*:\s*"block"'
+  [[ -n "$output" ]] && grep -qE '"permissionDecision"\s*:\s*"deny"|"decision"\s*:\s*"block"' <<<"$output"
 }
 
 assert_blocks() {
@@ -174,7 +174,7 @@ teardown
 setup
 touch "$TMPDIR_TEST/src/app.js"
 wf_a=$( cd "$TMPDIR_TEST" && bash "$WORKFLOWS_SCRIPT" start "/sb:feature" "wf-a" "plan,execute" )
-wf_b=$( cd "$TMPDIR_TEST" && bash "$WORKFLOWS_SCRIPT" start "/sb:bugfix" "wf-b" "debug,plan" )
+( cd "$TMPDIR_TEST" && bash "$WORKFLOWS_SCRIPT" start "/sb:bugfix" "wf-b" "debug,plan" ) >/dev/null
 write_state_markers silver-quality-gates silver-context silver-plan silver-spec silver-validate
 input=$(jq -n --arg f "$TMPDIR_TEST/src/app.js" '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"old", new_string:"new"}}')
 out=$( cd "$TMPDIR_TEST" && export SB_WORKFLOW_ID="$wf_a" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )

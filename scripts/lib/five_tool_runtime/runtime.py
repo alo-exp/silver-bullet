@@ -238,7 +238,7 @@ def _select_command(
         resolved = _resolve_candidate(candidate)
         if resolved and _expected_entrypoint(tool, resolved):
             return resolved
-    for candidate in candidates:
+    for candidate in candidates[:2]:
         if candidate and _expected_entrypoint(tool, candidate):
             return candidate
     return str(definition["executable"])

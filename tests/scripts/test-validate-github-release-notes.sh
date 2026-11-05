@@ -53,10 +53,47 @@ cat > "$TMP/empty-sections.md" <<'EOF'
 This release includes important fixes.
 EOF
 
+# The 0.51.7 CHANGELOG entry carries only a '### Fixes' section (R13-18): notes copied from
+# the CHANGELOG must validate.
+cat > "$TMP/fixes-only.md" <<'EOF'
+## [0.51.7] — 2026-07-30
+
+### Fixes
+- `fix(hooks)`: keep the review ladder state across a session restart (`3f1a2b4c`)
+EOF
+
+cat > "$TMP/docs-only.md" <<'EOF'
+### Docs
+- `docs(release)`: describe the release order and the marketplace publish step
+EOF
+
+cat > "$TMP/keep-a-changelog.md" <<'EOF'
+### Added
+- A publish step for the unified marketplace.
+
+### Fixed
+- The release sync now pushes what it commits.
+EOF
+
+cat > "$TMP/lowercase.md" <<'EOF'
+## bug fixes
+- `fix(ci)`: lint every site page, not only the second-level ones
+EOF
+
+cat > "$TMP/not-a-category.md" <<'EOF'
+### Headline
+This release is mostly about the marketplace publish step.
+EOF
+
 echo "=== validate-github-release-notes.sh ==="
 assert_pass "accepts categorized release notes" "$TMP/good.md"
+assert_pass "accepts a CHANGELOG body with only '### Fixes'" "$TMP/fixes-only.md"
+assert_pass "accepts '### Docs'" "$TMP/docs-only.md"
+assert_pass "accepts Keep a Changelog sections (Added, Fixed)" "$TMP/keep-a-changelog.md"
+assert_pass "accepts a category heading in any case" "$TMP/lowercase.md"
 assert_fail "rejects generic CHANGELOG-only body" "$TMP/generic.md"
 assert_fail "rejects body without categorized sections" "$TMP/empty-sections.md"
+assert_fail "rejects a body whose only heading is not a category" "$TMP/not-a-category.md"
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

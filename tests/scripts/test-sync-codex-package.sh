@@ -49,7 +49,7 @@ assert_contains() {
 
 assert_not_contains() {
   local desc="$1" needle="$2" path="$3"
-  if rg -n --hidden -S -- "$needle" "$path" >/dev/null 2>&1; then
+  if sb_tree_contains "$needle" "$path"; then
     echo "FAIL: $desc — found [$needle] under $path"
     (( FAIL++ )) || true
   else
@@ -188,7 +188,16 @@ PY
   fi
 }
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SOURCE_REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=tests/lib/tree-search.sh
+source "$SOURCE_REPO_ROOT/tests/lib/tree-search.sh"
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "$SOURCE_REPO_ROOT/tests/lib/repo-snapshot.sh"
+# sync-codex-package.sh rewrites plugins/silver-bullet, agents/ and
+# host-bundles/ in the checkout it runs from: sync a snapshot instead.
+SNAPSHOT_TMP="$(mktemp -d)"
+trap 'rm -rf "$SNAPSHOT_TMP"' EXIT
+REPO_ROOT="$(sb_repo_snapshot "$SOURCE_REPO_ROOT" "$SNAPSHOT_TMP/repo")"
 export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
@@ -295,8 +304,41 @@ assert_not_contains "Codex package does not contain auto-routing wording" "auto-
 assert_not_contains "Codex package does not contain manual routing wording" "Handled automatically via \`model_profile: \"balanced\"\`" "$PACKAGE_ROOT"
 assert_not_contains "Source release skill avoids unsupported gh release --json capture" "--json url" "$REPO_ROOT/skills/silver-create-release/SKILL.md"
 assert_not_contains "Codex package release skill avoids unsupported gh release --json capture" "--json url" "$(skill_file sb-create-release)"
-assert_contains "Codex package uses HOME-expanded state paths" '$HOME/.codex/.silver-bullet/state' "$PACKAGE_ROOT/templates/silver-bullet.md.base"
-assert_contains "Codex package uses HOME-expanded plugin cache paths" '$HOME/.codex/plugins/installed_plugins.json' "$PACKAGE_ROOT/templates/silver-bullet.md.base"
+assert_contains "Codex skill source uses HOME-expanded state paths" '$HOME/.codex/.silver-bullet/session-init' "$(skill_file sb-init)"
+assert_contains "Codex skill source uses HOME-expanded plugin cache paths" '$HOME/.codex/plugins/installed_plugins.json' "$(skill_file sb-init)"
+# R8-02: plugins/silver-bullet is also the Cursor plugin root. Its shared
+# templates stay host-neutral (the Codex installer expands them in the copy it
+# installs), and Cursor reads its own render, never the Codex one.
+if diff -r "$REPO_ROOT/templates" "$PACKAGE_ROOT/templates" >/dev/null; then
+  pass "Package templates are a byte-identical host-neutral mirror of templates/"
+else
+  fail "Package templates are a byte-identical host-neutral mirror of templates/"
+fi
+assert_contains "Package templates keep runtime placeholders" '${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state' "$PACKAGE_ROOT/templates/silver-bullet.md.base"
+CURSOR_SKILL_ROOT="$PACKAGE_ROOT/cursor-skill-source"
+assert_file_exists "Cursor hidden source tree renders the init route" "$CURSOR_SKILL_ROOT/sb-init/SILVER_SOURCE"
+assert_file_exists "Cursor hidden source keeps command-covered routes" "$CURSOR_SKILL_ROOT/sb-feature/SILVER_SOURCE"
+assert_contains "Cursor init source uses the Cursor state dir" '$HOME/.cursor/.silver-bullet/session-init' "$CURSOR_SKILL_ROOT/sb-init/SILVER_SOURCE"
+for cursor_surface in commands cursor-skill-source templates; do
+  assert_not_contains "Cursor surface $cursor_surface has no Codex home paths" '$HOME/.codex' "$PACKAGE_ROOT/$cursor_surface"
+  assert_not_contains "Cursor surface $cursor_surface has no Codex marketplace key" "alo-labs-codex" "$PACKAGE_ROOT/$cursor_surface"
+done
+if grep -l '^title:' "$PACKAGE_ROOT"/commands/*.md >/dev/null 2>&1; then
+  fail "Cursor command stubs carry no Codex picker title"
+else
+  pass "Cursor command stubs carry no Codex picker title"
+fi
+assert_contains "Cursor stubs point at the Cursor source tree" 'cursor-skill-source/sb-feature/SILVER_SOURCE' "$PACKAGE_ROOT/commands/sb-feature.md"
+if [[ -n "$(find "$CURSOR_SKILL_ROOT" "$PACKAGE_SKILL_ROOT" -name 'SKILL.md')" ]]; then
+  fail "Hidden source trees hold no picker-discoverable SKILL.md"
+else
+  pass "Hidden source trees hold no picker-discoverable SKILL.md"
+fi
+if [[ -n "$(find "$PACKAGE_ROOT" "$REPO_ROOT/agents" "$REPO_ROOT/host-bundles" -maxdepth 1 -name '.*.staging-*')" ]]; then
+  fail "Sync leaves no render staging tree behind"
+else
+  pass "Sync leaves no render staging tree behind"
+fi
 assert_contains "Codex generated snippets use quoted HOME paths" '"$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/skill-source"' "$(skill_file sb-quality-gates)"
 assert_contains "Codex package tracks SB lifecycle markers in config" '"silver-context"' "$PACKAGE_ROOT/templates/silver-bullet.config.json.default"
 assert_contains "TDD skill hidden from picker" "user-invocable: false" "$(skill_file tdd)"
@@ -318,7 +360,7 @@ done
 assert_not_contains "Codex package does not contain AskUserQuestion" "AskUserQuestion" "$PACKAGE_ROOT"
 
 _retired_ns=$'gs'"d"
-if find "$PACKAGE_ROOT/.generated-skills" -maxdepth 1 -name "${_retired_ns}-*" 2>/dev/null | grep -q .; then
+if grep -q . < <(find "$PACKAGE_ROOT/.generated-skills" -maxdepth 1 -name "${_retired_ns}-*" 2>/dev/null); then
   FAIL=$((FAIL + 1))
   echo "  FAIL: Legacy retired wrappers still present under .generated-skills"
 else

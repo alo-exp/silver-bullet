@@ -113,6 +113,52 @@ assert_file_unchanged() {
   fi
 }
 
+# Kay's fallback blocker for writes that bypass the command shims (python
+# open(), shell redirects, git through an absolute path) is the permission
+# lock in hooks/kay-project-hook-bridge.sh apply_permission_block: it clears
+# the write bits (plus `chflags uchg` where chflags exists). uid 0 ignores
+# permission bits, so as root those writes still land. The lock itself is
+# asserted for every uid; that the write then fails is asserted only for
+# non-root runs (CI runs unprivileged).
+IS_ROOT=0
+[[ "$(id -u)" -eq 0 ]] && IS_ROOT=1
+
+skip_as_root() {
+  echo "SKIP: $1 — uid 0 bypasses the permission-bit write lock"
+}
+
+# mode_bits_match <octal-mask> <clear|set> <path...>: compare permission bits,
+# independent of the caller's uid (unlike test -w).
+mode_bits_match() {
+  local mask="$1" expect="$2"
+  shift 2
+  python3 - "$mask" "$expect" "$@" <<'PY'
+import os
+import stat
+import sys
+
+mask = int(sys.argv[1], 8)
+want_clear = sys.argv[2] == "clear"
+ok = all(
+    ((stat.S_IMODE(os.stat(path).st_mode) & mask) == 0) == want_clear
+    for path in sys.argv[3:]
+)
+raise SystemExit(0 if ok else 1)
+PY
+}
+
+assert_write_locked() {
+  local desc="$1"
+  shift
+  if mode_bits_match 222 clear "$@"; then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc — write bits still set on: $*"
+    (( FAIL++ )) || true
+  fi
+}
+
 TEST_RUN_ID="${TEST_RUN_ID:-$$}"
 export TEST_RUN_ID
 # Keep mktemp under a slash-normalized root so pathlib prefix rewrites match
@@ -120,6 +166,17 @@ export TEST_RUN_ID
 _SB_KAY_TMP_ROOT="${TMPDIR:-/tmp}"
 _SB_KAY_TMP_ROOT="${_SB_KAY_TMP_ROOT%/}"
 TMP="$(mktemp -d "${_SB_KAY_TMP_ROOT}/sb-kay-codex-isolation-${TEST_RUN_ID}.XXXXXX")"
+# The harness keeps isolated Kay homes under <workspace>/.tmp, by default the
+# checkout's parent directory. Give it a private workspace instead; it must stay
+# outside macOS's symlinked /var temp tree (asserted below), so use /tmp there.
+KAY_WORKSPACE_ROOT="$(cd "$(mktemp -d "${_SB_KAY_TMP_ROOT}/sb-kay-workspace.XXXXXX")" && pwd -P)"
+case "$KAY_WORKSPACE_ROOT" in
+  /var/*|/private/var/*)
+    rmdir "$KAY_WORKSPACE_ROOT"
+    KAY_WORKSPACE_ROOT="$(mktemp -d /tmp/sb-kay-workspace.XXXXXX)"
+    ;;
+esac
+export SB_LIVE_KAY_WORKSPACE_ROOT="$KAY_WORKSPACE_ROOT"
 cleanup_tmp_dir() {
   if [[ -n "${BRIDGE_WORKSPACE:-}" && -d "${BRIDGE_WORKSPACE:-}" ]]; then
     chmod -R u+w "$BRIDGE_WORKSPACE" 2>/dev/null || true
@@ -127,11 +184,18 @@ cleanup_tmp_dir() {
       chflags -R nouchg "$BRIDGE_WORKSPACE" 2>/dev/null || true
     fi
   fi
-  rm -rf "$TMP"
+  rm -rf "$TMP" "$KAY_WORKSPACE_ROOT"
 }
 trap cleanup_tmp_dir EXIT
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# setup_kay_codex_isolation regenerates the Codex package by running
+# scripts/sync-codex-package.sh inside SB_ROOT. Point SB_ROOT at a snapshot so
+# the test never rewrites the checkout.
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "$REPO_ROOT/tests/lib/repo-snapshot.sh"
+SB_ROOT="$(sb_repo_snapshot "$REPO_ROOT" "$TMP/sb-root")"
+export SB_ROOT
 ORIGINAL_HOME="$TMP/original-home"
 FAKE_BIN="$TMP/bin/kay"
 # Portable trusted-project fixture path (avoid machine-specific absolute paths).
@@ -267,12 +331,6 @@ PATHLESS_RESOLVED="$(
     CODEX_BIN="" \
     bash -lc 'source "'"$REPO_ROOT"'/tests/live/lib/kay-cli.sh"; resolve_kay_cli_path'
 )"
-NORMALIZED_KAY_HOME="$(python3 - "$KAY_HOME" <<'PY'
-import pathlib
-import sys
-print(pathlib.Path(sys.argv[1]))
-PY
-)"
 
 assert_eq "KAY_HOME is redirected to isolated test root" "$SB_LIVE_CODEX_ISOLATION_DIR" "$KAY_HOME"
 assert_eq "KAY_SB_TEST_HOME mirrors KAY_HOME" "$KAY_HOME" "$KAY_SB_TEST_HOME"
@@ -393,7 +451,7 @@ run_bridge_event() {
   local event="$1" call_id="$2" payload="$3"
   (
     cd "$BRIDGE_WORKSPACE"
-    HOME="$KAY_HOME" \
+    env HOME="$KAY_HOME" \
     KAY_HOME="$KAY_HOME" \
     SILVER_BULLET_RUNTIME=codex \
     CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
@@ -438,7 +496,7 @@ assert_file_exists "Kay bridge writes fallback shell shims into the active prepe
 chmod_status=0
 set +e
 chmod_output="$(
-  cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" bash -lc "$chmod_probe_command" 2>&1
+  cd "$BRIDGE_WORKSPACE" && env HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" bash -lc "$chmod_probe_command" 2>&1
 )"
 chmod_status=$?
 set -e
@@ -463,21 +521,27 @@ bridge_status=$?
 set -e
 assert_eq "Kay bridge direct-write fallback returns native deny status" "2" "$bridge_status"
 assert_contains "Kay bridge direct-write fallback surfaces planning denial" "$bridge_output" "Planning incomplete"
+assert_write_locked "Kay bridge write-locks the target before direct python writes" "$BRIDGE_TARGET"
 python_status=0
 set +e
 python_output="$(
-  cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" python3 -c "$python_probe_script" 2>&1
+  cd "$BRIDGE_WORKSPACE" && env HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" python3 -c "$python_probe_script" 2>&1
 )"
 python_status=$?
 set -e
 run_bridge_event "tool.after" "call-python-probe" "$(jq -nc --arg script "$python_probe_script" --arg stderr "$python_output" --argjson exit_code "$python_status" '{command:["python3","-c",$script], exit_code:$exit_code, stdout:"", stderr:$stderr}')"
-assert_file_unchanged "Kay bridge immutable block stops direct python file writes" "$BRIDGE_TARGET" "$target_digest"
-if [[ $python_status -ne 0 ]]; then
-  echo "PASS: Kay bridge makes direct python writes fail while blocked"
-  (( PASS++ )) || true
+if [[ "$IS_ROOT" -eq 1 ]]; then
+  skip_as_root "Kay bridge immutable block stops direct python file writes"
+  skip_as_root "Kay bridge makes direct python writes fail while blocked"
 else
-  echo "FAIL: Kay bridge allowed direct python write while blocked"
-  (( FAIL++ )) || true
+  assert_file_unchanged "Kay bridge immutable block stops direct python file writes" "$BRIDGE_TARGET" "$target_digest"
+  if [[ $python_status -ne 0 ]]; then
+    echo "PASS: Kay bridge makes direct python writes fail while blocked"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: Kay bridge allowed direct python write while blocked"
+    (( FAIL++ )) || true
+  fi
 fi
 
 shell_probe_command=$'printf \'\\n// shell bridge probe\\n\' >> src/routes/todos.js'
@@ -491,21 +555,27 @@ bridge_status=$?
 set -e
 assert_eq "Kay bridge shell fallback returns native deny status" "2" "$bridge_status"
 assert_contains "Kay bridge shell fallback surfaces planning denial" "$bridge_output" "Planning incomplete"
+assert_write_locked "Kay bridge write-locks the target before direct shell redirects" "$BRIDGE_TARGET"
 shell_status=0
 set +e
 shell_output="$(
-  cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" bash -lc "$shell_probe_command" 2>&1
+  cd "$BRIDGE_WORKSPACE" && env HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" bash -lc "$shell_probe_command" 2>&1
 )"
 shell_status=$?
 set -e
 run_bridge_event "tool.after" "call-shell-probe" "$(jq -nc --argjson command '["bash","-lc"]' --arg script "$shell_probe_command" --arg stderr "$shell_output" --argjson exit_code "$shell_status" '{command:($command + [$script]), exit_code:$exit_code, stdout:"", stderr:$stderr}')"
-assert_file_unchanged "Kay bridge immutable block stops direct shell redirects from command arrays" "$BRIDGE_TARGET" "$target_digest"
-if [[ $shell_status -ne 0 ]]; then
-  echo "PASS: Kay bridge makes direct shell redirects fail while blocked"
-  (( PASS++ )) || true
+if [[ "$IS_ROOT" -eq 1 ]]; then
+  skip_as_root "Kay bridge immutable block stops direct shell redirects from command arrays"
+  skip_as_root "Kay bridge makes direct shell redirects fail while blocked"
 else
-  echo "FAIL: Kay bridge allowed direct shell redirect while blocked"
-  (( FAIL++ )) || true
+  assert_file_unchanged "Kay bridge immutable block stops direct shell redirects from command arrays" "$BRIDGE_TARGET" "$target_digest"
+  if [[ $shell_status -ne 0 ]]; then
+    echo "PASS: Kay bridge makes direct shell redirects fail while blocked"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: Kay bridge allowed direct shell redirect while blocked"
+    (( FAIL++ )) || true
+  fi
 fi
 
 reset_bridge_denial_state
@@ -543,24 +613,31 @@ set -e
 assert_eq "Kay bridge direct-git fallback returns native deny status" "2" "$bridge_status"
 assert_contains "Kay bridge direct-git fallback surfaces planning denial" "$bridge_output" "Planning incomplete"
 assert_file_exists "Kay bridge writes git shim into the active prepend root" "$ACTIVE_SHIM_DIR/git"
+assert_write_locked "Kay bridge write-locks repository refs and objects" "$BRIDGE_WORKSPACE/.git/refs" "$BRIDGE_WORKSPACE/.git/objects"
 hash -r 2>/dev/null || true
 git_status=0
 set +e
 git_output="$(
-  cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" "$REAL_GIT_BIN" commit -am "blocked direct git probe" 2>&1
+  cd "$BRIDGE_WORKSPACE" && env HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" "$REAL_GIT_BIN" commit -am "blocked direct git probe" 2>&1
 )"
 git_status=$?
 set -e
 run_bridge_event "tool.after" "call-git-probe_hook_tool_after_1" "$(jq -nc --arg stderr "$git_output" --argjson exit_code "$git_status" '{command:["git","commit","-am","blocked direct git probe"], exit_code:$exit_code, stdout:"", stderr:$stderr}')"
-assert_eq "Kay bridge direct-git fallback keeps HEAD unchanged" "$head_before" "$(git -C "$BRIDGE_WORKSPACE" rev-parse HEAD)"
-if [[ $git_status -ne 0 ]]; then
-  echo "PASS: Kay bridge blocks direct git through repository write lock"
-  (( PASS++ )) || true
+if [[ "$IS_ROOT" -eq 1 ]]; then
+  skip_as_root "Kay bridge direct-git fallback keeps HEAD unchanged"
+  skip_as_root "Kay bridge blocks direct git through repository write lock"
 else
-  echo "FAIL: Kay bridge did not block direct git through repository write lock"
-  (( FAIL++ )) || true
+  assert_eq "Kay bridge direct-git fallback keeps HEAD unchanged" "$head_before" "$(git -C "$BRIDGE_WORKSPACE" rev-parse HEAD)"
+  if [[ $git_status -ne 0 ]]; then
+    echo "PASS: Kay bridge blocks direct git through repository write lock"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: Kay bridge did not block direct git through repository write lock"
+    (( FAIL++ )) || true
+  fi
 fi
-if [[ -w "$BRIDGE_WORKSPACE/.git/refs" && -w "$BRIDGE_WORKSPACE/.git/objects" ]]; then
+# Owner write bits, not test -w: uid 0 passes -w on a write-locked directory.
+if mode_bits_match 200 set "$BRIDGE_WORKSPACE/.git/refs" "$BRIDGE_WORKSPACE/.git/objects"; then
   echo "PASS: Kay bridge restores repository write locks after Kay-style after hook"
   (( PASS++ )) || true
 else

@@ -22,6 +22,7 @@ STATE_DIR="$(mktemp -d "${TMPDIR}/sb-matrix-evidence.XXXXXX")"
 # shellcheck source=tests/scripts/lib/enterprise-e2e-fixture.sh
 source "${REPO_ROOT}/tests/scripts/lib/enterprise-e2e-fixture.sh"
 enterprise_e2e_test_fixture_init "$REPO_ROOT"
+# shellcheck disable=SC2154  # set by enterprise_e2e_test_fixture_init (sourced fixture lib)
 trap 'rm -rf "$STATE_DIR" ${enterprise_e2e_test_fixture_temp:+"$enterprise_e2e_test_fixture_temp"}' EXIT
 
 export HOME="$STATE_DIR/home"

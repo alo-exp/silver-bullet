@@ -29,6 +29,15 @@ SB_ROOT="${SB_ROOT:-$REPO_ROOT}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --work-dir|--prompt|--prompt-file|--brief-file|--log|--mode|--sb-root)
+      if [[ $# -lt 2 ]]; then
+        printf 'ERROR: %s requires a value\n' "$1" >&2
+        usage >&2
+        exit 2
+      fi
+      ;;
+  esac
+  case "$1" in
     --work-dir) WORK_DIR="$2"; shift 2 ;;
     --prompt) PROMPT_TEXT="$2"; shift 2 ;;
     --prompt-file) PROMPT_FILE="$2"; shift 2 ;;
@@ -41,6 +50,11 @@ while [[ $# -gt 0 ]]; do
     --sb-root) SB_ROOT="$2"; shift 2 ;;
     --interaction-mode|--interactive|--non-interactive|--attach|--no-escalate|--allow-mode-fallback|--auto-policy|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id|--use-print|--use-exec|--use-interactive|--quota-retry|--skip-preflight)
       agent_mode_handle_flag "$1" "${2:-}" || exit 2
+      if [[ "$SB_AM_SHIFT" -gt $# ]]; then
+        printf 'ERROR: %s requires a value\n' "$1" >&2
+        usage >&2
+        exit 2
+      fi
       shift "$SB_AM_SHIFT"
       ;;
     -h|--help) usage; exit 0 ;;
@@ -144,7 +158,15 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
       "model=${CURSOR_AGENT_MODEL:-composer-2.5}"
   fi
 
-  final_output="$(agent_cursor_invoke_once)" && final_exit=0 || final_exit=$?
+  if final_output="$(agent_cursor_invoke_once)"; then
+
+    final_exit=0
+
+  else
+
+    final_exit=$?
+
+  fi
 
   if [[ -n "$LOG_FILE" && -f "$LOG_FILE" ]]; then
     agent_delegate_redact_log_file "$LOG_FILE"
@@ -176,7 +198,11 @@ if [[ "$final_exit" -ne 0 ]]; then
   agent_mode_normalize_incomplete_result "$SB_AM_TASK_DIR" "$missing"
   if agent_mode_maybe_escalate "cursor" "$SB_AM_TASK_DIR" "${LOG_FILE:-}"; then
     agent_mode_apply_host_launch_env "cursor"
-    final_output="$(agent_cursor_invoke_once)" && final_exit=0 || final_exit=$?
+    if final_output="$(agent_cursor_invoke_once)"; then
+      final_exit=0
+    else
+      final_exit=$?
+    fi
   fi
 fi
 

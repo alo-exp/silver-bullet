@@ -70,7 +70,7 @@ run_hook_apply_patch() {
 
 is_blocked() {
   local output="$1"
-  [[ -n "$output" ]] && printf '%s' "$output" | grep -qE '"permissionDecision"\s*:\s*"deny"'
+  [[ -n "$output" ]] && grep -qE '"permissionDecision"\s*:\s*"deny"' <<<"$output"
 }
 
 assert_blocks() {

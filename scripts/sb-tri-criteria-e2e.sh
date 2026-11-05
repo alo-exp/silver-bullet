@@ -67,36 +67,7 @@ track_dir_for() {
   esac
 }
 
-utc_now() { date -u '+%Y-%m-%dT%H:%M:%SZ'; }
 run_id_new() { date -u '+%Y%m%dT%H%M%SZ'; }
-
-matrix_json_for_track() {
-  local track_id="$1"
-  local tdir
-  tdir="$(track_dir_for "$track_id")" || return 1
-  printf '%s/MATRIX.json' "$tdir"
-}
-
-matrix_row_field() {
-  local matrix_json="$1" row_id="$2" field="$3"
-  python3 - "$matrix_json" "$row_id" "$field" <<'PY'
-import json, sys
-path, row_id, field = sys.argv[1:4]
-with open(path, encoding="utf-8") as f:
-    doc = json.load(f)
-for row in doc.get("rows", []):
-    if row.get("id") == row_id:
-        val = row.get(field)
-        if val is None:
-            sys.exit(2)
-        if isinstance(val, (list, dict)):
-            print(json.dumps(val))
-        else:
-            print(val)
-        sys.exit(0)
-sys.exit(1)
-PY
-}
 
 default_work_dir() {
   python3 - "$UMBRELLA_MATRIX" <<'PY'
@@ -233,9 +204,14 @@ cmd_preflight() {
   local tid tdir
   for tid in TC-01 TC-02 TC-03; do
     [[ -n "$track_filter" && "$track_filter" != "$tid" ]] && continue
-    tdir="$(track_dir_for "$tid")" || continue
+    tdir="$(track_dir_for "$tid")"
     for f in RUNBOOK.md CRITERIA.md MATRIX.json; do
-      [[ -f "${tdir}/${f}" ]] && echo "OK: ${tid}/${f}" || { echo "ERROR: missing ${tdir}/${f}" >&2; dry_ok=0; }
+      if [[ -f "${tdir}/${f}" ]]; then
+        echo "OK: ${tid}/${f}"
+      else
+        echo "ERROR: missing ${tdir}/${f}" >&2
+        dry_ok=0
+      fi
     done
   done
 
@@ -254,14 +230,21 @@ cmd_preflight() {
   fi
 
   for hook in orchestrator-directive.sh orchestrator-scheduler.sh orchestrator-state.sh orchestrator-event-log.sh; do
-    [[ -f "${REPO_ROOT}/hooks/lib/${hook}" ]] && echo "OK: hooks/lib/${hook}" || echo "WARN: missing hooks/lib/${hook}" >&2
+    if [[ -f "${REPO_ROOT}/hooks/lib/${hook}" ]]; then
+      echo "OK: hooks/lib/${hook}"
+    else
+      echo "WARN: missing hooks/lib/${hook}" >&2
+    fi
   done
 
   if command -v jq >/dev/null 2>&1; then
-    jq -e '.criteria[] | select(.id=="OUT-MULTIWF-01")' \
-      "${REPO_ROOT}/docs/testing/outcome-criteria-registry.json" >/dev/null 2>&1 \
-      && echo "OK: OUT-MULTIWF-01 in outcome registry" \
-      || { echo "ERROR: OUT-MULTIWF-01 missing from registry" >&2; dry_ok=0; }
+    if jq -e '.criteria[] | select(.id=="OUT-MULTIWF-01")' \
+      "${REPO_ROOT}/docs/testing/outcome-criteria-registry.json" >/dev/null 2>&1; then
+      echo "OK: OUT-MULTIWF-01 in outcome registry"
+    else
+      echo "ERROR: OUT-MULTIWF-01 missing from registry" >&2
+      dry_ok=0
+    fi
   fi
 
   [[ "$dry_ok" -eq 1 ]] || exit 1
@@ -421,7 +404,6 @@ PY
   [[ "$detail" == pass ]] || verdict=FAIL
 
   for outcome in $(row_advisory_outcomes "$matrix_json" "$row_id" 2>/dev/null || true); do
-    [[ -z "$outcome" ]] && continue
     detail="$(enterprise_e2e_outcome_score_criterion "$outcome" "$work_dir" "$state_dir" "$log_path" "$row_id" "$ledger" "$evidence_path" 2>/dev/null || true)"
     echo "  $outcome: ${detail:-n/a} (advisory)"
   done
@@ -615,7 +597,7 @@ cmd_status() {
 
   echo "=== sb-tri-criteria runs ==="
   local d
-  for d in "${PLANNING_DIR}"/runs/*/ledger.json; do
+  for d in "${RUNS_DIR}"/*/ledger.json; do
     [[ -f "$d" ]] || continue
     python3 - "$d" <<'PY'
 import json, sys

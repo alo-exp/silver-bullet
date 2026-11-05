@@ -23,9 +23,24 @@ assert_contains() {
   fi
 }
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SOURCE_REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TMP_HOME="$(mktemp -d "${TMPDIR:-/tmp}/sb-install-cursor.XXXXXX")"
-trap 'rm -rf "$TMP_HOME"' EXIT
+REPO_TMP="$(mktemp -d "${TMPDIR:-/tmp}/sb-install-cursor-repo.XXXXXX")"
+trap 'rm -rf "$TMP_HOME" "$REPO_TMP"' EXIT
+
+# install-cursor.sh regenerates package trees and records install state inside
+# the checkout it runs from, and clones that checkout for the marketplace
+# gitPath (keyed on its HEAD commit). Run it from a snapshot that is its own
+# one-commit repository: nothing touches the real checkout, the gitPath commit
+# always exists locally, and no clone reaches GitHub.
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "$SOURCE_REPO_ROOT/tests/lib/repo-snapshot.sh"
+# shellcheck source=tests/lib/offline-tools.sh
+source "$SOURCE_REPO_ROOT/tests/lib/offline-tools.sh"
+REPO_ROOT="$(sb_repo_snapshot --git "$SOURCE_REPO_ROOT" "$REPO_TMP/silver-bullet")"
+# No package installs or network: installers fail fast and git may only
+# clone local repositories.
+sb_offline_tools_install "$REPO_TMP/offline-bin"
 
 export HOME="$TMP_HOME"
 export CURSOR_HOME="${TMP_HOME}/.cursor"
@@ -38,6 +53,12 @@ export RT_SKIP_VENDOR_DOCTOR=1
 # checkout's own config.
 export CSBA_REPO_ROOT="${TMP_HOME}/project"
 mkdir -p "$CSBA_REPO_ROOT"
+# The subagent installer refreshes its model catalog from cursor.com unless it
+# runs offline with a cached catalog; seed the committed fixture.
+export SB_CURSOR_SB_AGENTS_OFFLINE=1
+mkdir -p "${TMP_HOME}/.config/silver-bullet"
+cp "${SOURCE_REPO_ROOT}/tests/fixtures/cursor-models-catalog.json" \
+  "${TMP_HOME}/.config/silver-bullet/cursor-models-catalog.json"
 export CURSOR_MARKETPLACE_ROOT="${CURSOR_HOME}/plugins/marketplaces/alo-labs-cursor"
 # Keep this fake-home test hermetic: the installer normally defaults to the
 # public marketplace and GitHub reachability probes, neither of which belongs
@@ -47,11 +68,11 @@ export CURSOR_AGENT_PLUGINS_REPO_URL="$REPO_ROOT"
 export CURSOR_GITHUB_REPO_URL="$REPO_ROOT"
 
 mkdir -p \
-  "${CURSOR_HOME}/agents/subagent-sb:init" \
+  "${CURSOR_HOME}/agents/sb:add" \
   "${CURSOR_HOME}/agents/full-conversation" \
   "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/skills/silver-ui" \
   "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/host-bundles/cursor/subagent-tdd"
-printf '%s\n' '---' 'name: subagent-sb:init' '---' > "${CURSOR_HOME}/agents/subagent-sb:init/SKILL.md"
+printf '%s\n' '---' 'name: sb:add' '---' > "${CURSOR_HOME}/agents/sb:add/SKILL.md"
 printf '%s\n' '---' 'name: full-conversation' '---' > "${CURSOR_HOME}/agents/full-conversation/SKILL.md"
 printf '%s\n' '---' 'name: silver-ui' '---' > "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/skills/silver-ui/SKILL.md"
 printf '%s\n' '---' 'name: subagent-tdd' '---' > "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/host-bundles/cursor/subagent-tdd/SKILL.md"
@@ -65,11 +86,18 @@ else
   fail "install-cursor creates current symlink"
 fi
 
-if [[ ! -e "${CURSOR_HOME}/agents/subagent-sb:init" ]] && [[ ! -e "${CURSOR_HOME}/agents/full-conversation" ]] && \
+if [[ ! -e "${CURSOR_HOME}/agents/sb:add" ]] && \
    compgen -G "${CURSOR_HOME}/.silver-bullet-quarantine/cursor-agents/*/user/*" >/dev/null; then
   pass "install-cursor quarantines stale SB custom agents"
 else
   fail "install-cursor quarantines stale SB custom agents"
+fi
+
+# A generic legacy name whose content is not Silver Bullet's is the user's (R7-11).
+if [[ -f "${CURSOR_HOME}/agents/full-conversation/SKILL.md" ]]; then
+  pass "install-cursor leaves an unverifiable legacy-named agent in place"
+else
+  fail "install-cursor leaves an unverifiable legacy-named agent in place"
 fi
 
 if [[ ! -e "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/skills" ]] && \
@@ -98,6 +126,29 @@ else
   fail "install-cursor installs Cursor plugin manifest"
 fi
 
+# R7-26: hooks reach Cursor once, through ~/.cursor/hooks.json. Every plugin root the
+# installer wrote names a hook manifest that declares no hooks, so no plugin-rooted copy
+# runs a second time or fails with 127 in a commands-only root.
+plugin_roots_checked=0
+plugin_roots_with_hooks=""
+for manifest in \
+  "${CURSOR_HOME}"/plugins/cache/*/silver-bullet/*/.cursor-plugin/plugin.json \
+  "${CURSOR_HOME}"/plugins/local/silver-bullet/.cursor-plugin/plugin.json \
+  "${CURSOR_HOME}"/plugins/marketplaces/github.com/alo-exp/silver-bullet/*/.cursor-plugin/plugin.json; do
+  [[ -f "$manifest" ]] || continue
+  plugin_roots_checked=$((plugin_roots_checked + 1))
+  root="$(dirname "$(dirname "$manifest")")"
+  hooks_rel="$(jq -r '.hooks // empty' "$manifest")"
+  if [[ -z "$hooks_rel" ]] || [[ "$(jq '[.hooks // {} | .[][]?] | length' "${root}/${hooks_rel#./}" 2>/dev/null || echo missing)" != 0 ]]; then
+    plugin_roots_with_hooks+="${root} "
+  fi
+done
+if [[ "$plugin_roots_checked" -ge 3 && -z "$plugin_roots_with_hooks" ]]; then
+  pass "installer-written plugin roots declare no plugin-rooted hooks (${plugin_roots_checked} roots)"
+else
+  fail "installer-written plugin roots declare no plugin-rooted hooks (${plugin_roots_checked} roots): ${plugin_roots_with_hooks}"
+fi
+
 source_manifest="${REPO_ROOT}/.cursor-plugin/plugin.json"
 source_skills="$(jq -r '.skills // ""' "$source_manifest" | sed 's|^\./||')"
 source_hooks="$(jq -r '.hooks // ""' "$source_manifest" | sed 's|^\./||')"
@@ -113,16 +164,41 @@ else
 fi
 
 cursorignore="${REPO_ROOT}/.cursorignore"
+indexingignore="${REPO_ROOT}/.cursorindexingignore"
+# R13-26: .cursorignore blocks the agent's file tools, so it lists generated mirrors only; the
+# editable sources are hidden from indexing and the "/" picker by .cursorindexingignore.
 cursorignore_missing=0
-for pattern in 'skills/' 'host-bundles/' 'agents/' '.agents/' '.cursor/agents/' 'plugins/silver-bullet/skill-source/' 'plugins/silver-bullet/agents/' 'plugins/silver-bullet/skills/' 'plugins/silver-bullet/templates/' 'templates/orchestrator-workers/' 'templates/workflows/'; do
+for pattern in 'host-bundles/' 'agents/' '.agents/' '.cursor/agents/' 'plugins/silver-bullet/skill-source/' 'plugins/silver-bullet/agents/' 'plugins/silver-bullet/skills/' 'plugins/silver-bullet/templates/' 'templates/orchestrator-workers/'; do
   if ! grep -qxF "$pattern" "$cursorignore" 2>/dev/null; then
     (( cursorignore_missing++ )) || true
   fi
 done
 if [[ "$cursorignore_missing" -eq 0 ]]; then
-  pass "source .cursorignore excludes workspace SB skill surfaces"
+  pass "source .cursorignore excludes generated workspace SB skill surfaces"
 else
-  fail "source .cursorignore excludes workspace SB skill surfaces — missing ${cursorignore_missing}"
+  fail "source .cursorignore excludes generated workspace SB skill surfaces — missing ${cursorignore_missing}"
+fi
+indexingignore_missing=0
+for pattern in 'skills/' 'templates/workflows/'; do
+  if ! grep -qxF "$pattern" "$indexingignore" 2>/dev/null; then
+    (( indexingignore_missing++ )) || true
+  fi
+done
+if [[ "$indexingignore_missing" -eq 0 ]]; then
+  pass "source .cursorindexingignore hides skills/ and templates/workflows/ from the picker"
+else
+  fail "source .cursorindexingignore hides skills/ and templates/workflows/ from the picker — missing ${indexingignore_missing}"
+fi
+source_dirs_in_cursorignore=0
+for pattern in 'skills/' 'templates/workflows/'; do
+  if grep -qxF "$pattern" "$cursorignore" 2>/dev/null; then
+    (( source_dirs_in_cursorignore++ )) || true
+  fi
+done
+if [[ "$source_dirs_in_cursorignore" -eq 0 ]]; then
+  pass "source .cursorignore keeps skills/ and templates/workflows/ readable by the agent"
+else
+  fail "source .cursorignore keeps skills/ and templates/workflows/ readable by the agent — ${source_dirs_in_cursorignore} listed"
 fi
 
 registry_path="${CURSOR_HOME}/plugins/installed_plugins.json"
@@ -222,7 +298,6 @@ repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 market_cache_link="${CURSOR_HOME}/plugins/cache/alo-labs-cursor/silver-bullet/${repo_sha}"
 backend_cache_link="${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/${repo_sha}"
 market_cache_target="$(cd "$market_cache_link" 2>/dev/null && pwd -P || true)"
-backend_cache_target="$(cd "$backend_cache_link" 2>/dev/null && pwd -P || true)"
 if [[ -L "$market_cache_link" ]] && [[ "$market_cache_target" == "$resolved_current" ]]; then
   pass "install-cursor seeds alo-labs-cursor marketplace cache symlink"
 else
@@ -363,11 +438,18 @@ for bad_route in '/silver-ui' '/silver-add' '/silver-plan' '/subagent-sb:init' '
     fail "enumerate-cursor-slash-picker reports screenshot bad route ${bad_route}"
   fi
 done
-printf '%s\n'   'skills/'   'host-bundles/'   'plugins/silver-bullet/skill-source/'   'plugins/silver-bullet/agents/'   '.cursor/agents/' > "${workspace_fixture}/.cursorignore"
+# Only the mirrors are in .cursorignore: skills/ is still reported until .cursorindexingignore hides it.
+printf '%s\n'   'host-bundles/'   'plugins/silver-bullet/skill-source/'   'plugins/silver-bullet/agents/'   '.cursor/agents/' > "${workspace_fixture}/.cursorignore"
 if bash "${REPO_ROOT}/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$CURSOR_HOME" --workspace "$workspace_fixture" >/dev/null 2>&1; then
-  pass "enumerate-cursor-slash-picker honors .cursorignore for workspace skill surfaces"
+  fail ".cursorignore alone (without skills/) leaves the source skills unignored"
 else
-  fail "enumerate-cursor-slash-picker honors .cursorignore for workspace skill surfaces"
+  pass ".cursorignore alone (without skills/) leaves the source skills unignored"
+fi
+printf '%s\n'   'skills/' > "${workspace_fixture}/.cursorindexingignore"
+if bash "${REPO_ROOT}/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$CURSOR_HOME" --workspace "$workspace_fixture" >/dev/null 2>&1; then
+  pass "enumerate-cursor-slash-picker honors .cursorignore plus .cursorindexingignore for workspace skill surfaces"
+else
+  fail "enumerate-cursor-slash-picker honors .cursorignore plus .cursorindexingignore for workspace skill surfaces"
 fi
 
 if [[ ! -f "${resolved_current}/skills/silver-feature/SKILL.md" ]] && \

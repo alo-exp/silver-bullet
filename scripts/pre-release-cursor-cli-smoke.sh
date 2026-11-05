@@ -6,9 +6,16 @@
 #   - CURSOR_CONFIG_DIR → isolated cli-config.json
 #   - --workspace throwaway dir; --plugin-dir loads repo plugin (no ~/.cursor install)
 #
-# Credential store: CURSOR_API_KEY env var only, passed via --api-key to cursor-agent.
+# Credential: CURSOR_API_KEY reaches cursor-agent through its environment only,
+# never on the command line (argv is world-readable through ps and /proc).
 # Optional file fallback: ${SB_PRE_RELEASE_SMOKE_ROOT}/.cursor-api-key (gitignored temp).
 # Sets AGENT_CLI_CREDENTIAL_STORE=memory so cursor-agent never touches macOS Keychain.
+# Only cursor-agent (or an explicit CURSOR_AGENT_BIN) receives the key; a bare
+# `agent` binary on PATH is never trusted with it.
+#
+# Smoke root: one root for the whole run. A root given in
+# SB_PRE_RELEASE_SMOKE_ROOT (operator or parent smoke) is reused and kept;
+# otherwise a private temp root is created and removed on exit.
 #
 # Never calls: cursor-agent login, cursor-agent status, security(1).
 #
@@ -24,13 +31,12 @@ export SB_PRE_RELEASE_REPO_ROOT="$REPO_ROOT"
 
 # shellcheck source=scripts/lib/pre-release-host-isolation.sh
 source "${SCRIPT_DIR}/lib/pre-release-host-isolation.sh"
+sb_smoke_init_root
+trap sb_smoke_cleanup EXIT
 
-cli="$(command -v cursor-agent 2>/dev/null || true)"
+cli="${CURSOR_AGENT_BIN:-$(command -v cursor-agent 2>/dev/null || true)}"
 if [[ -z "$cli" ]]; then
-  cli="$(command -v agent 2>/dev/null || true)"
-fi
-if [[ -z "$cli" ]]; then
-  printf 'ERROR: cursor-agent CLI not found on PATH\n' >&2
+  printf 'ERROR: cursor-agent CLI not found on PATH (set CURSOR_AGENT_BIN to its path)\n' >&2
   exit 1
 fi
 if ! "$cli" --version >/dev/null 2>&1; then
@@ -47,7 +53,7 @@ fi
 
 sb_smoke_begin_cursor
 workspace="$(sb_smoke_cursor_workspace)"
-plugin_dir="$(sb_smoke_cursor_plugin_dir)"
+plugin_dir="$(sb_smoke_cursor_plugin_dir)" || plugin_dir=""
 config_dir="$(sb_smoke_cursor_config_dir)"
 mkdir -p "$workspace"
 
@@ -76,7 +82,6 @@ import subprocess
 import sys
 
 cli = os.environ["CURSOR_AGENT_CLI"]
-api_key = os.environ["CURSOR_API_KEY"]
 prompt = os.environ["CURSOR_AGENT_PROMPT"]
 timeout = int(os.environ.get("CURSOR_AGENT_TIMEOUT") or "300")
 model = os.environ.get("CURSOR_AGENT_MODEL") or ""
@@ -89,7 +94,6 @@ args = [
     "--print",
     "--trust",
     "--force",
-    "--api-key", api_key,
     "--workspace", workspace,
     "--plugin-dir", plugin_dir,
     "--output-format", "text",
@@ -98,9 +102,8 @@ if model:
     args.extend(["--model", model])
 args.append(prompt)
 
-env = os.environ.copy()
+env = os.environ.copy()  # carries CURSOR_API_KEY; the key is never put in argv
 env["AGENT_CLI_CREDENTIAL_STORE"] = "memory"
-env["CURSOR_API_KEY"] = api_key
 if config_dir:
     env["CURSOR_CONFIG_DIR"] = config_dir
 
@@ -126,7 +129,7 @@ except subprocess.TimeoutExpired as exc:
 PY
 )" || true
 
-if printf '%s' "$out" | grep -qi 'SB_ROUTING_OK'; then
+if grep -qi 'SB_ROUTING_OK' <<<"$out"; then
   printf 'pre-release-cursor-cli-smoke: PASS\n'
   exit 0
 fi

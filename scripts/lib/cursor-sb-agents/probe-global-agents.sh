@@ -15,6 +15,14 @@ REPO_ROOT="${CSBA_REPO_ROOT}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --config-json|--agents-dir|--repo-root)
+      if [[ $# -lt 2 ]]; then
+        echo "$1 requires a value" >&2
+        exit 2
+      fi
+      ;;
+  esac
+  case "$1" in
     --config-json) CONFIG_JSON="$2"; shift 2 ;;
     --agents-dir) AGENTS_DIR="$2"; shift 2 ;;
     --repo-root) REPO_ROOT="$2"; shift 2 ;;
@@ -63,7 +71,7 @@ csba_expected_names "$CONFIG_JSON" >"$EXPECTED_NAMES"
 MANAGED_FILES=()
 while IFS= read -r f; do
   [[ -n "$f" ]] && MANAGED_FILES+=("$f")
-done < <(csba_collect_managed_agents "$AGENTS_DIR" || true)
+done < <(csba_collect_managed_agents "$AGENTS_DIR")
 ACTUAL_COUNT="${#MANAGED_FILES[@]}"
 
 : >"$ACTUAL_NAMES"
@@ -80,15 +88,15 @@ emit_json() {
     --argjson actual_count "$ACTUAL_COUNT" \
     --arg agents_dir "$AGENTS_DIR" \
     --arg reason "$reason" \
-    --slurpfile expected "$EXPECTED_NAMES" \
-    --slurpfile actual "$ACTUAL_NAMES" \
+    --rawfile expected "$EXPECTED_NAMES" \
+    --rawfile actual "$ACTUAL_NAMES" \
     '{
       ok: $ok,
       expected_count: $expected_count,
       actual_count: $actual_count,
       agents_dir: $agents_dir,
-      expected_names: ($expected[0] | split("\n") | map(select(length > 0))),
-      found_names: ($actual[0] | split("\n") | map(select(length > 0))),
+      expected_names: ($expected | split("\n") | map(select(length > 0))),
+      found_names: ($actual | split("\n") | map(select(length > 0))),
       reason: (if $reason == "" then null else $reason end)
     }'
 }

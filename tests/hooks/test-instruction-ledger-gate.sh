@@ -72,7 +72,7 @@ run_stop() {
 }
 
 blocks() {
-  printf '%s' "$1" | grep -q '"decision":"block"'
+  grep -q '"decision":"block"' <<<"$1"
 }
 
 echo "--- instruction-ledger-gate ---"
@@ -80,7 +80,7 @@ echo "--- instruction-ledger-gate ---"
 # ── Library-level: all_resolved must be a COUNT, not a generator map ─────────
 # The gate always runs auto_resolve_parents first (it rolls a parent up to
 # "done" once every child is resolved), so mirror that ordering here.
-write_ledger done done done
+write_ledger "done" "done" "done"
 sb_instruction_ledger_auto_resolve_parents
 if sb_instruction_ledger_all_resolved; then
   check "all_resolved returns 0 when zero nodes are pending" pass
@@ -88,7 +88,7 @@ else
   check "all_resolved returns 0 when zero nodes are pending" fail
 fi
 
-write_ledger done deferred done
+write_ledger "done" deferred "done"
 sb_instruction_ledger_auto_resolve_parents
 if sb_instruction_ledger_all_resolved; then
   check "all_resolved treats deferred as resolved" pass
@@ -96,7 +96,7 @@ else
   check "all_resolved treats deferred as resolved" fail
 fi
 
-write_ledger done pending done
+write_ledger "done" pending "done"
 sb_instruction_ledger_auto_resolve_parents
 if sb_instruction_ledger_all_resolved; then
   check "all_resolved returns non-zero when one node is pending" fail
@@ -105,7 +105,7 @@ else
 fi
 
 # ── Gate-level: Stop must NOT block once every item is resolved ──────────────
-write_ledger done done done
+write_ledger "done" "done" "done"
 out=$(run_stop)
 if blocks "$out"; then
   check "Stop is allowed when all ledger items are done" fail
@@ -113,7 +113,7 @@ else
   check "Stop is allowed when all ledger items are done" pass
 fi
 
-write_ledger done deferred deferred
+write_ledger "done" deferred deferred
 out=$(run_stop)
 if blocks "$out"; then
   check "Stop is allowed when items are done/deferred" fail
@@ -122,14 +122,14 @@ else
 fi
 
 # ── Gate-level: Stop MUST still block on a genuinely pending item ────────────
-write_ledger done pending done
+write_ledger "done" pending "done"
 out=$(run_stop)
 if blocks "$out"; then
   check "Stop blocks when one ledger item is pending" pass
 else
   check "Stop blocks when one ledger item is pending" fail
 fi
-if printf '%s' "$out" | grep -q 'fix the bug'; then
+if grep -q 'fix the bug' <<<"$out"; then
   check "block reason names the pending item" pass
 else
   check "block reason names the pending item" fail
@@ -162,7 +162,7 @@ sb_instruction_ledger_seed_from_prompt 'Please do the following work:
 - refactor the parser module
 - add a regression test for the fence case
 - update the changelog'
-if [[ -f "$LEDGER" ]] && seeded_labels | grep -q 'refactor the parser module'; then
+if [[ -f "$LEDGER" ]] && grep -q 'refactor the parser module' < <(seeded_labels); then
   check "genuine 3-bullet user request still seeds the ledger" pass
 else
   check "genuine 3-bullet user request still seeds the ledger" fail
@@ -301,11 +301,11 @@ fi
 write_ledger pending pending pending
 RESOLVE="${REPO_ROOT}/scripts/resolve-instruction-ledger.sh"
 if SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" \
-    bash "$RESOLVE" done i1 --evidence "cli path" >/dev/null \
+    bash "$RESOLVE" "done" i1 --evidence "cli path" >/dev/null \
   && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" \
     bash "$RESOLVE" deferred i2 --evidence "later" >/dev/null \
   && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" \
-    bash "$RESOLVE" done i3 --evidence "cli path" >/dev/null; then
+    bash "$RESOLVE" "done" i3 --evidence "cli path" >/dev/null; then
   check "resolve-instruction-ledger.sh CLI resolves all leaves" pass
 else
   check "resolve-instruction-ledger.sh CLI resolves all leaves" fail
@@ -318,9 +318,9 @@ else
 fi
 
 # Block reason must name the sanctioned resolve procedure.
-write_ledger done pending done
+write_ledger "done" pending "done"
 out=$(run_stop)
-if blocks "$out" && printf '%s' "$out" | grep -q 'resolve-instruction-ledger.sh'; then
+if blocks "$out" && grep -q 'resolve-instruction-ledger.sh' <<<"$out"; then
   check "block reason documents sanctioned resolve procedure" pass
 else
   check "block reason documents sanctioned resolve procedure" fail

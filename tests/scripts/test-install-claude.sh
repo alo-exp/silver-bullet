@@ -49,7 +49,14 @@ assert_not_contains() {
   fi
 }
 
-CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "/Users/shafqat/.local/bin/claude")}"
+# Live test: it drives the real claude CLI, which adds marketplaces and
+# installs plugins from GitHub. Suite tests must not need the network or
+# depend on whether claude happens to be installed, so this runs on request.
+if [[ "${SB_LIVE_CLAUDE_INSTALL_TEST:-0}" != "1" ]]; then
+  echo "SKIP: live Claude install test (real claude CLI + network); set SB_LIVE_CLAUDE_INSTALL_TEST=1 to run"
+  exit 0
+fi
+CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "${HOME}/.local/bin/claude")}"
 if [[ -z "$CLAUDE_BIN" ]] || [[ ! -x "$CLAUDE_BIN" ]]; then
   echo "SKIP: claude CLI not available in PATH"
   exit 0
@@ -125,11 +132,11 @@ EOF
 
 HOME="$HOME_DIR" bash "$SCRIPT" --purge-legacy-plugins >/dev/null
 
-if grep -qF 'git@github.com:' "$HOME_DIR/.gitconfig" && grep -qF 'ssh://git@github.com/' "$HOME_DIR/.gitconfig"; then
-  echo "PASS: git HTTPS rewrite configured"
+if ! grep -qsF 'insteadOf' "$HOME_DIR/.gitconfig"; then
+  echo "PASS: global git config left alone (no HTTPS rewrite, R7-13)"
   (( PASS++ )) || true
 else
-  echo "FAIL: git HTTPS rewrite configured"
+  echo "FAIL: global git config left alone (no HTTPS rewrite, R7-13)"
   (( FAIL++ )) || true
 fi
 

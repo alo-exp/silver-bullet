@@ -135,25 +135,25 @@ bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 opencode "simulate
 
 json=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":".planning/phases/099-test/y.md"},"session_id":"test2-%s"}' "$TEST_RUN_ID")
 set +e
-stderr_capture=$(printf '%s' "$json" | bash "$HOOK" 2> >(cat) 1>/tmp/claim-stdout.$$)
+stderr_capture=$(printf '%s' "$json" | bash "$HOOK" 2> >(cat) 1>"$TMPDIR_TEST/claim-stdout")
 rc=$?
-stdout_capture=$(cat /tmp/claim-stdout.$$ 2>/dev/null)
-rm -f /tmp/claim-stdout.$$
+stdout_capture=$(cat "$TMPDIR_TEST/claim-stdout" 2>/dev/null)
+rm -f "$TMPDIR_TEST/claim-stdout"
 set -e
 
 [[ "$rc" == "2" ]] && ok "T5: rc == 2 (PreToolUse block via exit-2)" || nope "T5: rc" "got $rc, expected 2"
-if printf '%s' "$stderr_capture" | grep -q '099 is locked by'; then
+if grep -q '099 is locked by' <<<"$stderr_capture"; then
   ok "T5: stderr contains 'phase 099 is locked by'"
 else
   nope "T5: stderr conflict phrasing" "got: $stderr_capture"
 fi
-printf '%s' "$stderr_capture" | grep -q 'opencode' \
+grep -q 'opencode' <<<"$stderr_capture" \
   && ok "T5: stderr names owner runtime opencode" \
   || nope "T5: opencode" "stderr did not mention opencode"
-printf '%s' "$stderr_capture" | grep -q 'peek' \
+grep -q 'peek' <<<"$stderr_capture" \
   && ok "T5: stderr suggests peek hint" \
   || nope "T5: peek hint" "stderr did not mention peek"
-if printf '%s' "$stdout_capture" | grep -q 'permissionDecision'; then
+if grep -q 'permissionDecision' <<<"$stdout_capture"; then
   nope "T5: no permissionDecision JSON" "stdout contained it"
 else
   ok "T5: stdout does NOT contain permissionDecision (CONTEXT.md locks exit-2 path)"

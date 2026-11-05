@@ -21,15 +21,30 @@ from landscape_independent_pdf import (  # noqa: E402
     SPA_CHROME_NEEDLES,
     SPA_FONT_FAMILY,
     assert_print_html_independent,
-    assert_section_bodies_in_text,
     build_independent_print_html,
     comparison_matrix_html,
     markdown_to_html,
-    notable_divergence_bullets,
-    quadrant_divergences,
-    sync_canonical_payload_files,
     write_independent_landscape_pdf,
 )
+
+
+def setUpModule() -> None:
+    # Keep the suite offline: an empty cached font CSS stops build_independent_print_html
+    # from fetching Google Fonts over HTTP on every fresh interpreter.
+    import landscape_independent_pdf
+
+    global _SAVED_FONT_CACHE
+    _SAVED_FONT_CACHE = landscape_independent_pdf._FONT_CSS_CACHE
+    landscape_independent_pdf._FONT_CSS_CACHE = ""
+
+
+def tearDownModule() -> None:
+    import landscape_independent_pdf
+
+    landscape_independent_pdf._FONT_CSS_CACHE = _SAVED_FONT_CACHE
+
+
+_SAVED_FONT_CACHE = None
 
 
 def _minimal_chart() -> dict:
@@ -199,7 +214,8 @@ class IndependentPrintHtmlTests(unittest.TestCase):
             _write_fixture(root)
             print_html = build_independent_print_html(root)
             self.assertIn(SPA_FONT_FAMILY, print_html)
-            self.assertIn(GOOGLE_FONTS_HREF, print_html)
+            # Font stack only: a PDF build fetches nothing unless web fonts are opted into.
+            self.assertNotIn(GOOGLE_FONTS_HREF, print_html)
             self.assertIn("font-weight: 300", print_html)
             self.assertNotIn("Palatino", print_html)
             self.assertNotIn("Georgia, serif", print_html)
@@ -292,29 +308,6 @@ class IndependentPrintHtmlTests(unittest.TestCase):
             r'<code><a href="https://github.com/greglas75/zuvo" target="_blank" rel="noopener noreferrer">https://github.com/greglas75/zuvo</a></code>',
         )
 
-    def test_mq_gmq_quadrant_disagreement_is_listed(self) -> None:
-        diffs = quadrant_divergences(_minimal_chart())
-        pairs = {(d["slug"], d["mq"], d["gmq"]) for d in diffs}
-        self.assertIn(("alpha", "Leaders", "Challengers"), pairs)
-        self.assertIn(("beta", "Challengers", "Visionaries"), pairs)
-
-    def test_section_body_assert_rejects_headings_only(self) -> None:
-        markdown = (
-            "## 1. Market Definition & Scope\n\n"
-            "Unique inclusion sentence about seven process gates for this fixture.\n\n"
-            "## 5. Vendors\n\n"
-            "Alpha orchestrates gated SDLC workflows for the fixture body check.\n"
-        )
-        with self.assertRaises(AssertionError):
-            assert_section_bodies_in_text(
-                markdown,
-                "1. Market Definition & Scope\n5. Vendors\n",
-            )
-        assert_section_bodies_in_text(
-            markdown,
-            "Unique inclusion sentence about seven process gates for this fixture. "
-            "Alpha orchestrates gated SDLC workflows for the fixture body check.",
-        )
 
     def test_print_html_includes_full_comparison_matrix(self) -> None:
         html = comparison_matrix_html(
@@ -349,32 +342,6 @@ class IndependentPrintHtmlTests(unittest.TestCase):
         self.assertIn("40", html)
         self.assertIn("22", html)
 
-    def test_sync_canonical_payload_matches_report_data(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            payload = {
-                "markdown": "# SPA canonical\n\n## 1. Market Definition & Scope\n\nLockstep body.\n",
-                "chart_data": {"primary_market_id": "apo", "markets": {}},
-                "comparison": {
-                    "winner": "alpha",
-                    "rows": [{"type": "feature", "name": "Audit log"}],
-                },
-            }
-            (root / "landscape-report.html").write_text(
-                '<html><script type="application/json" id="report-data">'
-                + json.dumps(payload)
-                + "</script></html>",
-                encoding="utf-8",
-            )
-            written = sync_canonical_payload_files(root)
-            self.assertTrue(written["markdown"].endswith("landscape-report.md"))
-            self.assertEqual(
-                (root / "landscape" / "landscape-report.md").read_text(encoding="utf-8"),
-                payload["markdown"] if payload["markdown"].endswith("\n") else payload["markdown"] + "\n",
-            )
-            disk_cmp = json.loads((root / "comparison" / "comparison.json").read_text(encoding="utf-8"))
-            self.assertEqual(disk_cmp["winner"], "alpha")
-            self.assertEqual(disk_cmp["rows"][0]["name"], "Audit log")
 
     def test_print_html_prefers_canonical_markdown_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -405,22 +372,6 @@ class IndependentPrintHtmlTests(unittest.TestCase):
             self.assertNotIn("SPA markdown", print_html)
             self.assertNotIn("claude-opus-4.8-medium", print_html)
 
-    def test_notable_bullets_fallback_to_consolidation(self) -> None:
-        bullets = notable_divergence_bullets(
-            "# No divergences heading\n",
-            {
-                "divergence": [
-                    {
-                        "text": "Conductor is complementary not substitutive.",
-                        "supporting_agents": ["claude-opus-4.8-medium", "ocg-mimo-v2.5"],
-                    }
-                ]
-            },
-        )
-        joined = " ".join(bullets)
-        self.assertTrue(any("claude-opus-4.8-medium" in b for b in bullets), joined)
-        self.assertTrue(any("ocg-mimo-v2.5" in b for b in bullets), joined)
-
 
 class IndependentPdfWriteTests(unittest.TestCase):
     def test_write_does_not_pass_spa_html_to_playwright(self) -> None:
@@ -431,9 +382,9 @@ class IndependentPdfWriteTests(unittest.TestCase):
             pdf_path = html_path.with_name("landscape-report.pdf")
             captured: dict = {}
 
-            def _fake_run(cmd, check):
+            def _fake_run(cmd, check, timeout=None, env=None):
                 captured["cmd"] = list(cmd)
-                pdf_path.write_bytes(b"%PDF-1.4 independent")
+                Path(cmd[3]).write_bytes(b"%PDF-1.4 independent")
                 class _R:
                     returncode = 0
                 return _R()
@@ -442,9 +393,10 @@ class IndependentPdfWriteTests(unittest.TestCase):
                 info = write_sibling_landscape_pdf(html_path)
             self.assertTrue(mocked.called)
             argv = captured["cmd"]
-            self.assertIn("pdf", argv)
-            self.assertEqual(Path(argv[-1]).resolve(), pdf_path.resolve())
-            source = str(argv[-2])
+            self.assertNotIn("--no-sandbox", argv)
+            self.assertEqual(Path(argv[3]).parent.resolve(), pdf_path.parent.resolve())
+            self.assertEqual(pdf_path.read_bytes(), b"%PDF-1.4 independent")
+            source = str(argv[2])
             self.assertTrue(source.startswith("file:"))
             self.assertNotIn("landscape-report.html", source)
             self.assertIn(".print.html", source)
@@ -459,8 +411,8 @@ class IndependentPdfWriteTests(unittest.TestCase):
             _write_fixture(root)
             pdf_path = root / "landscape-report.pdf"
 
-            def _fake_run(cmd, check):
-                pdf_path.write_bytes(b"%PDF-1.4 exportBar pdfExportBtn")
+            def _fake_run(cmd, check, timeout=None, env=None):
+                Path(cmd[3]).write_bytes(b"%PDF-1.4 exportBar pdfExportBtn")
                 class _R:
                     returncode = 0
                 return _R()
@@ -531,7 +483,7 @@ class IndependentPdfWriteTests(unittest.TestCase):
                 self.assertFalse(overlap, msg=f"label overlap {i}/{j}")
 
     def test_html_regen_writes_sibling_pdf_by_default(self) -> None:
-        from landscape_preview_render import render_landscape_preview_file
+        from landscape_preview_render import render_landscape_outputs
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -559,12 +511,12 @@ class IndependentPdfWriteTests(unittest.TestCase):
                                 "bytes": 12,
                             },
                         ) as writer:
-                            result = render_landscape_preview_file(root, out=html_path)
+                            result = render_landscape_outputs(root, out=html_path)
             writer.assert_called_once()
             self.assertNotEqual(result.get("pdf"), "skipped")
 
     def test_html_regen_skip_requires_allow_flag(self) -> None:
-        from landscape_preview_render import render_landscape_preview_file
+        from landscape_preview_render import render_landscape_outputs
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -585,12 +537,12 @@ class IndependentPdfWriteTests(unittest.TestCase):
                             "landscape_preview_render.write_sibling_landscape_pdf",
                             return_value={"pdf": "x", "bytes": 1},
                         ) as writer:
-                            result = render_landscape_preview_file(root, out=html_path)
+                            result = render_landscape_outputs(root, out=html_path)
             writer.assert_not_called()
             self.assertEqual(result.get("pdf"), "skipped")
 
     def test_html_regen_ignores_bare_skip_outside_tests(self) -> None:
-        from landscape_preview_render import render_landscape_preview_file
+        from landscape_preview_render import render_landscape_outputs
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -618,7 +570,7 @@ class IndependentPdfWriteTests(unittest.TestCase):
                                 "bytes": 12,
                             },
                         ) as writer:
-                            result = render_landscape_preview_file(root, out=html_path)
+                            result = render_landscape_outputs(root, out=html_path)
             writer.assert_called_once()
             self.assertNotEqual(result.get("pdf"), "skipped")
 

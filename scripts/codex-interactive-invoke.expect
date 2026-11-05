@@ -156,10 +156,10 @@ if {$launch_mode eq "interactive"} {
     }
     timeout {
       puts stderr "ERROR: timed out waiting for Codex exec to complete"
-      catch {exec kill -TERM -$child_pid}
+      catch {exec kill -TERM -- -$child_pid}
       catch {exec kill -TERM $child_pid}
       after 1000
-      catch {exec kill -KILL -$child_pid}
+      catch {exec kill -KILL -- -$child_pid}
       catch {exec kill -KILL $child_pid}
       catch {close}
       catch {wait}

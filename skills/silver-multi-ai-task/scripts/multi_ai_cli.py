@@ -12,21 +12,40 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from live_dispatch import run_multi_ai_live, stub_mode  # noqa: E402
-from multi_ai_core import PoolSelection, dry_run_report, host_gate  # noqa: E402
+from multi_ai_core import (  # noqa: E402
+    DEFAULT_CONCURRENCY,
+    DEFAULT_MAX_AGENTS,
+    BudgetPolicy,
+    PoolSelection,
+    dry_run_report,
+    host_gate,
+)
+
+
+def positive_int(value: str) -> int:
+    number = int(value)
+    if number < 1:
+        raise argparse.ArgumentTypeError(f"must be a positive integer, got {value}")
+    return number
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Silver Bullet multi-ai-task v2 primitive")
     parser.add_argument("--output-root", help="Output root directory (required for live dispatch)")
     parser.add_argument("--task-prompt", default="", help="Task prompt for live workers")
-    parser.add_argument("--phase-id", choices=["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"], help="Optional DR phase scope")
+    parser.add_argument(
+        "--phase-id",
+        choices=["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"],
+        help="Optional DR prompt preset (default: neutral TASK instructions)",
+    )
     parser.add_argument("--ocg-pool", choices=["none", "lite", "regular"], default="lite")
     parser.add_argument("--cursor-pool", choices=["none", "default"], default="default")
     parser.add_argument("--include-only", action="append", default=[])
     parser.add_argument("--exclude", action="append", default=[])
-    parser.add_argument("--max-agents", type=int, default=11)
+    parser.add_argument("--max-agents", type=positive_int, default=DEFAULT_MAX_AGENTS)
+    parser.add_argument("--concurrency", type=positive_int, default=DEFAULT_CONCURRENCY)
     parser.add_argument("--cursor-subscription", choices=["auto", "subscribed", "unsubscribed"], default="auto")
-    parser.add_argument("--timeout-sec", type=int, default=600)
+    parser.add_argument("--timeout-sec", type=positive_int, default=600)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args(argv)
 
@@ -34,7 +53,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     if not args.dry_run and not args.output_root:
-        print(json.dumps({"ok": False, "error_code": "OUTPUT_ROOT_REQUIRED", "message": "--output-root required for live dispatch"}), indent=2)
+        print(json.dumps({"ok": False, "error_code": "OUTPUT_ROOT_REQUIRED", "message": "--output-root required for live dispatch"}, indent=2))
         return 2
 
     if not args.dry_run:
@@ -68,6 +87,7 @@ def main(argv: list[str] | None = None) -> int:
     result = run_multi_ai_live(
         output_root=Path(args.output_root),
         selection=selection,
+        budget=BudgetPolicy(max_agents=args.max_agents, concurrency=args.concurrency),
         task_prompt=args.task_prompt,
         phase_id=args.phase_id,
         timeout_sec=args.timeout_sec,

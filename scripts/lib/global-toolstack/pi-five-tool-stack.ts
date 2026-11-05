@@ -18,6 +18,13 @@ type ToolSpec = {
   env?: Record<string, string>
 }
 
+// A manifest entry after toolSpec() has validated it: args and env always present.
+type ResolvedToolSpec = {
+  command: string
+  args: string[]
+  env: Record<string, string>
+}
+
 type ToolManifest = {
   schema?: string
   scope?: string
@@ -60,7 +67,7 @@ function loadStack(): { config: PiStackConfig; manifest: ToolManifest; manifestP
   return { config, manifest: readJson(manifestPath) as ToolManifest, manifestPath }
 }
 
-function toolSpec(manifest: ToolManifest, name: string): ToolSpec | undefined {
+function toolSpec(manifest: ToolManifest, name: string): ResolvedToolSpec | undefined {
   const spec = manifest.tools?.[name]
   if (!spec || typeof spec.command !== "string" || !spec.command) return undefined
   return {
@@ -154,25 +161,32 @@ class LineMcpClient {
   private connected = false
   private lastError = ""
 
-  constructor(private readonly name: string, private readonly spec: ToolSpec) {}
+  private readonly name: string
+  private readonly spec: ResolvedToolSpec
+
+  constructor(name: string, spec: ResolvedToolSpec) {
+    this.name = name
+    this.spec = spec
+  }
 
   async start(): Promise<McpTool[]> {
-    this.child = spawn(this.spec.command, this.spec.args || [], {
+    this.child = spawn(this.spec.command, this.spec.args, {
       stdio: ["pipe", "pipe", "pipe"],
-      env: { ...process.env, ...(this.spec.env || {}) },
+      env: { ...process.env, ...this.spec.env },
     })
     this.child.stdout.on("data", (chunk: Buffer) => this.consume(chunk))
     this.child.stderr.on("data", (chunk: Buffer) => {
       const text = chunk.toString("utf8").trim()
       if (text) this.lastError = text.slice(-500)
     })
+    this.child.stdin.on("error", (error) => this.failPending(error))
     this.child.on("error", (error) => this.failPending(error))
     this.child.on("exit", (code, signal) => {
       this.connected = false
       this.failPending(new Error(`${this.name} MCP exited (${code ?? "signal"}${signal ? `/${signal}` : ""})`))
     })
 
-    const initialized = await withTimeout(
+    await withTimeout(
       this.request("initialize", {
         protocolVersion: "2024-11-05",
         capabilities: {},
@@ -181,7 +195,6 @@ class LineMcpClient {
       START_TIMEOUT_MS,
       `${this.name} MCP initialize`,
     )
-    if (initialized.error) throw new Error(`${this.name} MCP initialize failed`)
     this.notify("notifications/initialized", {})
     const listing = await withTimeout(this.request("tools/list", {}), START_TIMEOUT_MS, `${this.name} MCP tools/list`)
     this.connected = true
@@ -195,7 +208,8 @@ class LineMcpClient {
     const abort = new Promise<JsonObject>((_, reject) => {
       signal?.addEventListener("abort", () => reject(new Error(`${this.name} MCP call aborted`)), { once: true })
     })
-    return withTimeout(Promise.race([request, abort]), CALL_TIMEOUT_MS, `${this.name} MCP ${name}`)
+    const response = await withTimeout(Promise.race([request, abort]), CALL_TIMEOUT_MS, `${this.name} MCP ${name}`)
+    return (response.result ?? {}) as JsonObject
   }
 
   async close(): Promise<void> {
@@ -283,16 +297,16 @@ function alreadyRtkRewritten(command: string, rtkCommand: string): boolean {
     || basename(trimmed.split(/\s+/)[0] || "") === "rtk"
 }
 
-async function rewriteWithRtk(command: string, spec: ToolSpec, cwd: string): Promise<string | undefined> {
+async function rewriteWithRtk(command: string, spec: ResolvedToolSpec, cwd: string): Promise<string | undefined> {
   if (alreadyRtkRewritten(command, spec.command)) return undefined
   try {
     const result = await new Promise<{ stdout: string }>((resolvePromise, rejectPromise) => {
       execFile(
         spec.command,
-        [...(spec.args || []), "rewrite", command],
+        [...spec.args, "rewrite", command],
         {
           cwd,
-          env: { ...process.env, ...(spec.env || {}) },
+          env: { ...process.env, ...spec.env },
           timeout: 15_000,
           maxBuffer: 1024 * 1024,
         },
@@ -379,7 +393,7 @@ export default async function silverBulletFiveToolStack(pi: ExtensionAPI): Promi
   }
 
   const clients: LineMcpClient[] = []
-  const startServer = async (name: string, spec: ToolSpec | undefined, prefix: string) => {
+  const startServer = async (name: string, spec: ResolvedToolSpec | undefined, prefix: string) => {
     if (!spec || config.servers?.[name]?.enabled === false) return
     const client = new LineMcpClient(name, spec)
     try {

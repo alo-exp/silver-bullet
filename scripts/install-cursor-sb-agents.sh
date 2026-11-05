@@ -45,6 +45,15 @@ script provides a numbered CLI fallback with pricing columns.
 USAGE
 }
 
+# flag_json 0|1 -> false|true (for jq --argjson)
+flag_json() {
+  if [[ "$1" -eq 1 ]]; then
+    echo true
+  else
+    echo false
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --global) SCOPE="global"; shift ;;
@@ -53,19 +62,26 @@ while [[ $# -gt 0 ]]; do
     --fix) FIX_MODE=1; NON_INTERACTIVE=1; shift ;;
     --include-fast) INCLUDE_FAST=1; shift ;;
     --include-max) INCLUDE_MAX=1; shift ;;
-    --select-models) SELECT_MODELS="$2"; shift 2 ;;
-    --effort-levels) EFFORT_LEVELS="$2"; shift 2 ;;
+    --select-models|--effort-levels)
+      if [[ $# -lt 2 ]]; then
+        echo "$1 requires a value" >&2
+        usage >&2
+        exit 2
+      fi
+      if [[ "$1" == "--select-models" ]]; then
+        SELECT_MODELS="$2"
+      else
+        EFFORT_LEVELS="$2"
+      fi
+      shift 2
+      ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
 
 if [[ -z "$SCOPE" ]]; then
-  if [[ -t 0 && -t 1 && "$NON_INTERACTIVE" -eq 0 && "$FIX_MODE" -eq 0 ]]; then
-    SCOPE="global"
-  else
-    SCOPE="global"
-  fi
+  SCOPE="global"
 fi
 
 if [[ "$FIX_MODE" -eq 1 ]]; then
@@ -73,34 +89,33 @@ if [[ "$FIX_MODE" -eq 1 ]]; then
   SCOPE="$(printf '%s' "$CONFIG_JSON" | jq -r '.agents_install_scope // "global"')"
   INCLUDE_FAST="$(printf '%s' "$CONFIG_JSON" | jq -r '.include_fast // false')"
   INCLUDE_MAX="$(printf '%s' "$CONFIG_JSON" | jq -r '.include_max // false')"
-  [[ "$INCLUDE_FAST" == "true" ]] && INCLUDE_FAST=1 || INCLUDE_FAST=0
-  [[ "$INCLUDE_MAX" == "true" ]] && INCLUDE_MAX=1 || INCLUDE_MAX=0
+  if [[ "$INCLUDE_FAST" == "true" ]]; then
+    INCLUDE_FAST=1
+  else
+    INCLUDE_FAST=0
+  fi
+  if [[ "$INCLUDE_MAX" == "true" ]]; then
+    INCLUDE_MAX=1
+  else
+    INCLUDE_MAX=0
+  fi
 fi
 
 csba_refresh_catalog "$PROJECT_ROOT" >/dev/null
 
+# Only called in interactive mode (see the guard below); the answer defaults to no.
 prompt_yes_no() {
   local prompt="$1"
-  local default_no="${2:-1}"
-  if [[ "$NON_INTERACTIVE" -eq 1 ]]; then
-    return 1
-  fi
-  local hint="y/N"
-  [[ "$default_no" -eq 0 ]] && hint="Y/n"
-  read -r -p "${prompt} [${hint}]: " ans || true
+  read -r -p "${prompt} [y/N]: " ans || true
   ans="${ans:-}"
-  if [[ "$default_no" -eq 1 ]]; then
-    [[ "$ans" =~ ^[Yy] ]]
-  else
-    [[ ! "$ans" =~ ^[Nn] ]]
-  fi
+  [[ "$ans" =~ ^[Yy] ]]
 }
 
 if [[ "$FIX_MODE" -eq 0 && "$NON_INTERACTIVE" -eq 0 ]]; then
-  if prompt_yes_no "Include Fast variants?" 1; then
+  if prompt_yes_no "Include Fast variants?"; then
     INCLUDE_FAST=1
   fi
-  if prompt_yes_no "Include Max / Max Mode models?" 1; then
+  if prompt_yes_no "Include Max / Max Mode models?"; then
     INCLUDE_MAX=1
   fi
 fi
@@ -117,32 +132,29 @@ if [[ -z "$CONFIG_JSON" ]]; then
         '.effort_levels = ($e | split(",") | map(gsub("^\\s+|\\s+$"; "")))')"
     fi
     CONFIG_JSON="$(printf '%s' "$CONFIG_JSON" | jq \
-      --argjson fast "$([[ "$INCLUDE_FAST" -eq 1 ]] && echo true || echo false)" \
-      --argjson max "$([[ "$INCLUDE_MAX" -eq 1 ]] && echo true || echo false)" \
+      --argjson fast "$(flag_json "$INCLUDE_FAST")" \
+      --argjson max "$(flag_json "$INCLUDE_MAX")" \
       '.include_fast = $fast | .include_max = $max')"
   else
     echo ""
     echo "Eligible models (pricing per 1M tokens):"
     echo " #  Model ID              Display name                     Pricing"
     echo " -- --------------------- -------------------------------- --------------------------------"
-    FAST_ARGS=()
-    MAX_ARGS=()
-    [[ "$INCLUDE_FAST" -eq 1 ]] && FAST_ARGS+=(--include-fast)
-    [[ "$INCLUDE_MAX" -eq 1 ]] && MAX_ARGS+=(--include-max)
-    ROWS=()
-    while IFS= read -r row; do
-      [[ -n "$row" ]] && ROWS+=("$row")
-    done < <("${CSBA_PYTHON}" "$CSBA_FETCH" --list-selectable \
-      "${FAST_ARGS[@]}" "${MAX_ARGS[@]}" \
-      --repo-root "$PROJECT_ROOT" 2>/dev/null || true)
+    # Bash before 4.4 (macOS /bin/bash 3.2) treats "${empty[@]}" as unbound under set -u, so
+    # the argument array always holds at least --list-selectable and rows are read by index.
+    LIST_ARGS=(--list-selectable)
+    [[ "$INCLUDE_FAST" -eq 1 ]] && LIST_ARGS+=(--include-fast)
+    [[ "$INCLUDE_MAX" -eq 1 ]] && LIST_ARGS+=(--include-max)
+    [[ "${SB_CURSOR_SB_AGENTS_OFFLINE:-}" == "1" ]] && LIST_ARGS+=(--no-fetch)
+    LISTING="$("${CSBA_PYTHON}" "$CSBA_FETCH" "${LIST_ARGS[@]}" --repo-root "$PROJECT_ROOT" 2>/dev/null)" || LISTING=""
     declare -a IDS=()
     local_i=1
-    for row in "${ROWS[@]:-}"; do
-      IFS=$'\t' read -r mid display pricing <<<"$row"
+    while IFS=$'\t' read -r mid display pricing; do
+      [[ -n "$mid" ]] || continue
       IDS+=("$mid")
       printf " %2d %-21s %-32s %s\n" "$local_i" "$mid" "$display" "$pricing"
-      ((local_i++)) || true
-    done
+      local_i=$((local_i + 1))
+    done <<<"$LISTING"
     echo ""
     echo "Select models (comma-separated numbers or ids; default: composer-2.5,grok-4.5):"
     read -r -p "> " selection || true
@@ -168,8 +180,8 @@ if [[ -z "$CONFIG_JSON" ]]; then
     effort_json="$(printf '%s' "$effort_in" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | jq -R . | jq -s .)"
     CONFIG_JSON="$(printf '%s' "$CONFIG_JSON" | jq --argjson e "$effort_json" '.effort_levels = $e')"
     CONFIG_JSON="$(printf '%s' "$CONFIG_JSON" | jq \
-      --argjson fast "$([[ "$INCLUDE_FAST" -eq 1 ]] && echo true || echo false)" \
-      --argjson max "$([[ "$INCLUDE_MAX" -eq 1 ]] && echo true || echo false)" \
+      --argjson fast "$(flag_json "$INCLUDE_FAST")" \
+      --argjson max "$(flag_json "$INCLUDE_MAX")" \
       '.include_fast = $fast | .include_max = $max')"
   fi
 fi
@@ -201,12 +213,12 @@ import json, os, sys
 from pathlib import Path
 
 sys.path.insert(0, os.environ["CSBA_LIB_DIR"])
+from sb_managed_agent import is_installer_managed_agent
 from cursor_sb_agents_lib import (
     MANAGED_MARKER,
     agent_name,
     expected_agent_names,
     expected_model_params,
-    has_managed_marker,
     load_json,
     render_agent_markdown,
 )
@@ -230,18 +242,14 @@ for model in cfg.get("selected_models", []):
         written.append(str(path))
 
 pruned = []
-for path in sorted(agents_dir.glob("sb-*.md")):
-    if not has_managed_marker(path):
+prefix = cfg.get("agent_name_prefix", "sb")
+# List the agents directory itself: a prefix from project config never becomes a glob path.
+for path in sorted(p for p in agents_dir.glob("*.md") if p.name.startswith(f"{prefix}-")):
+    # Only files this installer generated are ever pruned; a user file that merely
+    # contains the marker text is left alone.
+    if not is_installer_managed_agent(path, agents_dir):
         continue
-    name = None
-    text = path.read_text(encoding="utf-8")
-    if text.startswith("---"):
-        end = text.find("\n---", 3)
-        block = text[3:end] if end != -1 else ""
-        for line in block.splitlines():
-            if line.startswith("name:"):
-                name = line.split(":", 1)[1].strip()
-                break
+    name = path.stem
     if name and name not in expected:
         path.unlink()
         pruned.append(str(path))

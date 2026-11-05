@@ -40,7 +40,7 @@ else
   fail "zip missing manifest.json"
 fi
 
-if unzip -l "$OUT_ZIP" 2>/dev/null | grep -q 'apo-audit-entities.json'; then
+if grep -q 'apo-audit-entities.json' < <(unzip -l "$OUT_ZIP" 2>/dev/null); then
   pass "zip contains apo-audit-entities.json"
 else
   fail "zip missing apo-audit-entities.json"

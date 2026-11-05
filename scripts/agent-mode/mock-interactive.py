@@ -87,7 +87,7 @@ def main() -> int:
                         emit(events, "prompt_submitted", text)
                         emit(events, "question", "Which file should we edit?")
                         state = "await_answer"
-                    elif state == "await_answer":
+                    else:
                         emit(events, "assistant", "editing as requested")
                         with open(result, "w", encoding="utf-8") as fh:
                             fh.write("## STATUS\npass\n\n## TASK\nmock interactive\n\n")

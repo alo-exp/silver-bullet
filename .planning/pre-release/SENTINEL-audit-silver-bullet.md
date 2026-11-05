@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-25
 **Auditor:** SENTINEL v2.3
-**Target:** Silver Bullet plugin — /Users/shafqat/Documents/Projects/silver-bullet
+**Target:** Silver Bullet plugin — /Users/<user>/Documents/Projects/silver-bullet
 **Mode:** PATCH PLAN (default)
 **ASVS Level:** 2
 

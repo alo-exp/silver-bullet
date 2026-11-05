@@ -28,13 +28,8 @@ fi
 emit_block() {
   local reason="$1"
   local json_reason
-  if command -v jq >/dev/null 2>&1; then
-    json_reason=$(printf '%s' "$reason" | jq -Rs '.')
-  elif command -v python3 >/dev/null 2>&1; then
-    json_reason=$(python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' <<<"$reason")
-  else
-    json_reason='"enforcement blocked"'
-  fi
+  # Only reached with jq present: without jq the hook exits through jq-gate.sh below.
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
   sb_hook_audit_record "completion-audit" "$hook_event" "deny" "$reason" "${cmd:-}"
   if [[ "$hook_event" == "PreToolUse" ]]; then
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
@@ -44,35 +39,15 @@ emit_block() {
 }
 
 if ! command -v jq >/dev/null 2>&1; then
-  _ca_config=""
-  _ca_search="$PWD"
-  while true; do
-    if [[ -f "$_ca_search/.silver-bullet.json" && -f "$_ca_search/silver-bullet.md" ]]; then
-      _ca_config="$_ca_search/.silver-bullet.json"
-      break
-    fi
-    if [[ -d "$_ca_search/.git" ]] || [[ "$_ca_search" == "/" ]]; then
-      break
-    fi
-    _ca_search=$(dirname "$_ca_search")
-  done
-  if [[ -n "$_ca_config" ]] && declare -f sb_project_is_initiated >/dev/null 2>&1 && sb_project_is_initiated "$_ca_config"; then
-    sb_jq_enforcement_block "completion-audit" "emit_block"
-    exit 0
-  fi
-  if printf '%s' "$input" | grep -qE 'git commit|git push|gh pr create|gh release create|\bdeploy\b'; then
-    sb_jq_enforcement_block "completion-audit" "emit_block"
-  fi
-  printf '{"hookSpecificOutput":{"message":"⚠️  ENFORCEMENT INACTIVE — jq not installed. Install: brew install jq (macOS) / apt install jq (Linux). All Silver Bullet enforcement hooks are disabled until jq is available."}}'
+  # jq-gate.sh (R1-29): in an SB project, block only commands this hook's own classifier
+  # calls delivery (it emits the deny for the payload's event and exits); jq installs,
+  # other commands, other tools and non-SB repositories pass.
+  sb_jq_missing_delivery_gate "completion-audit" "" "$input" ca_classify_command
   exit 0
 fi
 
-emit_warn() {
-  local reason="$1"
-  jq -n --arg m "$reason" '{"hookSpecificOutput":{"message":$m}}'
-}
-
 capture_evidence_warn() {
+  # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
   EVIDENCE_SCHEMA_WARN="$1"
 }
 
@@ -156,15 +131,23 @@ state_file=$(printf '%s' "$config_vals" | sed -n '1p')
 state_file="${state_file/#\~/$HOME}"
 trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
 trivial_file="${trivial_file/#\~/$HOME}"
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/planning-tier.sh
 required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/planning-tier.sh
 required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '4p')
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '5p')
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 required_deploy_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/*-tier.sh
 active_workflow=$(printf '%s' "$config_vals" | sed -n '7p')
 cfg_quality_gate_state_file=$(printf '%s' "$config_vals" | sed -n '8p')
 [[ -n "$cfg_quality_gate_state_file" ]] && quality_gate_state_file="${cfg_quality_gate_state_file/#\~/$HOME}"
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 release_require_plugin_runtime_matrix=$(printf '%s' "$config_vals" | sed -n '9p')
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 release_require_pre_release_quality_gate=$(printf '%s' "$config_vals" | sed -n '10p')
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 release_require_rc_matrix=$(printf '%s' "$config_vals" | sed -n '11p')
 
 # Env var override for state file
@@ -196,21 +179,24 @@ fi
 current_branch=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
 # Validate branch name: only allow safe characters
-if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+if [[ -n "$current_branch" ]] && ! grep -qE '^[a-zA-Z0-9/_.-]+$' <<<"$current_branch"; then
   current_branch=""
 fi
 on_main=false
 if [[ "$current_branch" == "main" || "$current_branch" == "master" ]]; then
+  # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
   on_main=true
 fi
 
 # ── Read state file ───────────────────────────────────────────────────────────
 state_contents=""
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/*.sh
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
 
+# shellcheck disable=SC2154  # is_intermediate is set by ca_classify in lib/completion-audit/classify.sh
 if [[ "$is_intermediate" == true ]]; then
+  # Contract: ca_run_planning_tier_gate always ends the hook with exit 0.
   ca_run_planning_tier_gate
-  exit 0
 fi
 
 ca_run_deploy_tier_gate

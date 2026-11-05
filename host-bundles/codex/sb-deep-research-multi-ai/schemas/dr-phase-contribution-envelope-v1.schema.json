@@ -41,7 +41,35 @@
       "type": "string"
     },
     "payload": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "matrix_entries": {
+          "type": "array",
+          "description": "Optional structured capability votes: one row per vendor and feature.",
+          "items": {
+            "type": "object",
+            "required": [
+              "vendor",
+              "feature",
+              "supported"
+            ],
+            "properties": {
+              "vendor": {
+                "type": "string"
+              },
+              "feature": {
+                "type": "string"
+              },
+              "supported": {
+                "type": "boolean"
+              },
+              "source_ref": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     },
     "model_family_id": {
       "type": "string"
@@ -66,7 +94,21 @@
                 "type": "array"
               },
               "evidence": {
-                "type": "array"
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "vendors": {
+                      "type": "array",
+                      "description": "Optional: the exact vendor slugs (from the [CATEGORY_PACK] list or the names used in matrix_entries) this row's statement is about; [] when none. An ambiguous product name (Director, Cursor, Linear, Devin, ...) is credited only through this field or a source that names it.",
+                      "maxItems": 12,
+                      "items": {
+                        "type": "string",
+                        "maxLength": 80
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -87,7 +129,21 @@
             "type": "object",
             "properties": {
               "claim_candidates": {
-                "type": "array"
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "vendors": {
+                      "type": "array",
+                      "description": "Optional: the exact vendor slugs (from the [CATEGORY_PACK] list or the names used in matrix_entries) this row's statement is about; [] when none. An ambiguous product name (Director, Cursor, Linear, Devin, ...) is credited only through this field or a source that names it.",
+                      "maxItems": 12,
+                      "items": {
+                        "type": "string",
+                        "maxLength": 80
+                      }
+                    }
+                  }
+                }
               },
               "cross_checks": {
                 "type": "array"
@@ -111,10 +167,38 @@
             "type": "object",
             "properties": {
               "critiques": {
-                "type": "array"
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "vendors": {
+                      "type": "array",
+                      "description": "Optional: the exact vendor slugs (from the [CATEGORY_PACK] list or the names used in matrix_entries) this row's statement is about; [] when none. An ambiguous product name (Director, Cursor, Linear, Devin, ...) is credited only through this field or a source that names it.",
+                      "maxItems": 12,
+                      "items": {
+                        "type": "string",
+                        "maxLength": 80
+                      }
+                    }
+                  }
+                }
               },
               "gaps": {
-                "type": "array"
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "vendors": {
+                      "type": "array",
+                      "description": "Optional: the exact vendor slugs (from the [CATEGORY_PACK] list or the names used in matrix_entries) this row's statement is about; [] when none. An ambiguous product name (Director, Cursor, Linear, Devin, ...) is credited only through this field or a source that names it.",
+                      "maxItems": 12,
+                      "items": {
+                        "type": "string",
+                        "maxLength": 80
+                      }
+                    }
+                  }
+                }
               }
             }
           }

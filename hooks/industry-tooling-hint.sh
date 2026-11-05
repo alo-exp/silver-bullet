@@ -42,15 +42,16 @@ cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null || t
 [[ -n "$cmd" ]] || exit 0
 
 hints=()
-if [[ -f "$PWD/package.json" ]] && printf '%s' "$cmd" | grep -qE 'npm (install|ci|run build)'; then
-  if ! printf '%s' "$cmd" | grep -q 'npm audit'; then
+if [[ -f "$PWD/package.json" ]] && grep -qE 'npm (install|ci|run build)' <<<"$cmd"; then
+  if ! grep -q 'npm audit' <<<"$cmd"; then
     hints+=("Consider: npm audit (industry_tooling hint — config-driven)")
   fi
 fi
 
-if find "$PWD" -maxdepth 3 -name '*.tf' -print -quit 2>/dev/null | grep -q .; then
-  if printf '%s' "$cmd" | grep -qE 'terraform (apply|plan)'; then
-    if ! printf '%s' "$cmd" | grep -q 'terraform validate'; then
+# Process substitution, not a pipe: grep -q exits at the first line and the producer's SIGPIPE would fail a pipeline under pipefail.
+if grep -q . < <(find "$PWD" -maxdepth 3 -name '*.tf' -print -quit 2>/dev/null); then
+  if grep -qE 'terraform (apply|plan)' <<<"$cmd"; then
+    if ! grep -q 'terraform validate' <<<"$cmd"; then
       hints+=("Consider: terraform validate before apply/plan (industry_tooling)")
     fi
   fi

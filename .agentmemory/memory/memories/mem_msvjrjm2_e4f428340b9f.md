@@ -6,7 +6,7 @@ updated: "2026-08-16T08:32:44.774Z"
 strength: 7
 version: 1
 concepts: ["RFL", "rung9", "verify_1", "DR search gateway", "cache", "single-flight", "quiesce", "token bucket"]
-files: ["/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md", "/Users/shafqat/projects/silver-bullet/repo/.planning/PLAN-dr-search-gateway-search-cli-fork.md", "/Users/shafqat/projects/silver-bullet/repo/.planning/dr_search_gateway_prd_ecb5030e-CLARIFY-260815-20260815T140745Z.md", "/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-dr-search-gateway-ecb5030e/SEARCH-CLI-OVERVIEW-FOR-REVIEWERS.md"]
+files: ["/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md", "/Users/<user>/projects/silver-bullet/repo/.planning/PLAN-dr-search-gateway-search-cli-fork.md", "/Users/<user>/projects/silver-bullet/repo/.planning/dr_search_gateway_prd_ecb5030e-CLARIFY-260815-20260815T140745Z.md", "/Users/<user>/projects/silver-bullet/repo/.planning/rfl-dr-search-gateway-ecb5030e/SEARCH-CLI-OVERVIEW-FOR-REVIEWERS.md"]
 ---
 
 # RFL DR search gateway ecb5030e rung 9 GPT-5.6 Sol High verify_1 analysis: all si

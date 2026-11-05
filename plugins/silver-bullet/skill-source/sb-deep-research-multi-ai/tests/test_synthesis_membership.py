@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 from materialize_solution_artifacts import materialize_solution_artifacts  # noqa: E402
 from synthesize_landscape import build_report_markdown, synthesize_landscape  # noqa: E402
+from apo_pack_run_fixture import plain_vendor_spellings  # noqa: E402
 
 
 APO_NEED = {
@@ -42,6 +45,24 @@ ENVELOPES = [
 ]
 
 
+_OFFLINE_ENV = None
+
+
+def setUpModule() -> None:
+    # Hermetic by default: no vendor-URL health checks over HTTP and no Playwright PDF rendering.
+    global _OFFLINE_ENV
+    _OFFLINE_ENV = mock.patch.dict(
+        os.environ,
+        {"SB_SKIP_VENDOR_URL_HEALTH": "1", "SB_SKIP_LANDSCAPE_PDF": "1", "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1"},
+    )
+    _OFFLINE_ENV.start()
+
+
+def tearDownModule() -> None:
+    _OFFLINE_ENV.stop()
+
+
+@plain_vendor_spellings
 class SynthesisMembershipTests(unittest.TestCase):
     def test_core_matrix_excludes_coding_agents(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -105,7 +126,8 @@ class SynthesisMembershipTests(unittest.TestCase):
             self.assertIn("Explicitly Excluded", md)
             self.assertIn("Consensus Patterns", md)
             self.assertIn("Scoring methodology", md)
-            self.assertIn("Lean startup / spec-first packs", md)
+            self.assertIn("Buying Guidance", md)
+            self.assertNotIn("Lean startup / spec-first packs", md)
             self.assertNotIn("Prioritise Silver Bullet and OSS core orchestrators", md)
             self.assertNotRegex(md, r"### Cline \(OSS")
             self.assertNotRegex(md, r"### Aider \(OSS")

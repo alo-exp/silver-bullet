@@ -337,7 +337,7 @@ sb_orchestrator_parent_delegate_bash_allowed() {
   local command_str="$1"
   [[ -n "$command_str" ]] || return 1
 
-  if ! printf '%s' "$command_str" | grep -qE '(^|[[:space:]/])(\./)?scripts/agent-(codex|cursor|claude|opencode|pi)-delegate\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-codex/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-claude/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-opencode/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-pi/invoke\.sh([[:space:]]|$)'; then
+  if ! grep -qE '(^|[[:space:]/])(\./)?scripts/agent-(codex|cursor|claude|opencode|pi)-delegate\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-codex/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-claude/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-opencode/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-pi/invoke\.sh([[:space:]]|$)' <<<"$command_str"; then
     return 1
   fi
 
@@ -351,7 +351,7 @@ sb_orchestrator_parent_resolve_ledger_bash_allowed() {
   local command_str="$1"
   [[ -n "$command_str" ]] || return 1
   # Allow scripts/resolve-instruction-ledger.sh (and bash/sh wrappers) for list/done/deferred/help.
-  if ! printf '%s' "$command_str" | grep -qE '(^|[[:space:]/"'"'"'])(\./)?scripts/resolve-instruction-ledger\.sh([[:space:]"'"'"']|$)'; then
+  if ! grep -qE '(^|[[:space:]/"'"'"'])(\./)?scripts/resolve-instruction-ledger\.sh([[:space:]"'"'"']|$)' <<<"$command_str"; then
     return 1
   fi
   return 0

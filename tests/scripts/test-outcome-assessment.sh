@@ -18,6 +18,7 @@ OUT_DIR="$(mktemp -d "${TMPDIR}/sb-outcome-out.XXXXXX")"
 # shellcheck source=tests/scripts/lib/enterprise-e2e-fixture.sh
 source "${REPO_ROOT}/tests/scripts/lib/enterprise-e2e-fixture.sh"
 enterprise_e2e_test_fixture_init "$REPO_ROOT"
+# shellcheck disable=SC2154  # set by enterprise_e2e_test_fixture_init (sourced fixture lib)
 trap 'rm -rf "$STATE_DIR" "$OUT_DIR" ${enterprise_e2e_test_fixture_temp:+"$enterprise_e2e_test_fixture_temp"}' EXIT
 
 # shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh
@@ -135,12 +136,12 @@ Flow Log
 EOF
 
 row_scores="$(enterprise_e2e_outcome_assess_workflow_row 3 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R3" "" "api/")"
-if printf '%s\n' "$row_scores" | grep -q 'OUT-GATES-01 pass'; then
+if grep -q 'OUT-GATES-01 pass' <<<"$row_scores"; then
   pass "fixture row 3 OUT-GATES-01 pass"
 else
   fail "fixture row 3 OUT-GATES-01 expected pass — got [$row_scores]"
 fi
-if printf '%s\n' "$row_scores" | grep -q 'OUT-VLOOP-01 pass'; then
+if grep -q 'OUT-VLOOP-01 pass' <<<"$row_scores"; then
   pass "fixture row 3 OUT-VLOOP-01 pass"
 else
   fail "fixture row 3 OUT-VLOOP-01 expected pass"
@@ -241,7 +242,7 @@ score_rel_r15="$(enterprise_e2e_outcome_score_release "$FIXTURE" 15 "")"
 rm -f "$FIXTURE_REVIEWS/triad-currency.md"
 
 session_scores_r3="$(enterprise_e2e_outcome_assess_session "$SESSION_LOG_R3" "$STATE_DIR" "$FIXTURE" "" 3)"
-if printf '%s\n' "$session_scores_r3" | grep -q 'OUT-SKILL-01 pass'; then
+if grep -q 'OUT-SKILL-01 pass' <<<"$session_scores_r3"; then
   pass "fixture row 3 session OUT-SKILL-01 pass"
 else
   fail "fixture row 3 session OUT-SKILL-01 expected pass"
@@ -314,12 +315,12 @@ score_orch6="$(enterprise_e2e_outcome_score_criterion OUT-ORCH-01 "$FIXTURE" "$S
 SESSION_LOG="$(mktemp)"
 printf 'graphify query silver-feature routes hooks\nTask worker spawned\n' >"$SESSION_LOG"
 session_scores="$(enterprise_e2e_outcome_assess_session "$SESSION_LOG" "$STATE_DIR" "$FIXTURE")"
-if printf '%s\n' "$session_scores" | grep -qE 'OUT-CODEINT-01 (pass|partial)'; then
+if grep -qE 'OUT-CODEINT-01 (pass|partial)' <<<"$session_scores"; then
   pass "session OUT-CODEINT-01 scored from log"
 else
   fail "session OUT-CODEINT-01 not scored"
 fi
-if printf '%s\n' "$session_scores" | grep -qE 'OUT-SKILL-01 pass'; then
+if grep -qE 'OUT-SKILL-01 pass' <<<"$session_scores"; then
   pass "session OUT-SKILL-01 pass"
 else
   fail "session OUT-SKILL-01 expected pass"

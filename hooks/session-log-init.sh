@@ -58,7 +58,7 @@ fi
 [[ -z "$cmd" ]] && exit 0
 
 # Only fire when command touches the session mode file
-printf '%s' "$cmd" | grep -qE '\.silver-bullet(/mode|-mode)' || exit 0
+grep -qE '\.silver-bullet(/mode|-mode)' <<<"$cmd" || exit 0
 
 # --- Locate project root (allow override for testing) ---
 project_root="${PROJECT_ROOT_OVERRIDE:-}"
@@ -98,7 +98,7 @@ if [[ -f "$SB_DIR"/sentinel-pid && ! -L "$SB_DIR"/sentinel-pid ]]; then
   old_token="${_sent_line#*:}"
   [[ "$old_token" == "$old_pid" ]] && old_token=""   # no colon → legacy format
   if [[ -n "$old_pid" ]] && kill -0 "$old_pid" 2>/dev/null \
-     && ps -p "$old_pid" -o user= 2>/dev/null | grep -q "^$(whoami)$"; then
+     && grep -q "^$(whoami)$" < <(ps -p "$old_pid" -o user= 2>/dev/null); then
     if [[ -n "$old_token" ]]; then
       # UUID token file: only kill if lock file exists — proves it is the same process instance
       _old_lock="$SB_DIR/sentinel-lock-$old_token"
@@ -186,7 +186,10 @@ if [[ -n "$existing" ]]; then
     #       writing the timeout marker.
     # This is an intentional bounded timeout guard for autonomous session enforcement.
     # The PID is tracked in sentinel-pid for cleanup; kill is called on lock failure.
-    (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
+    # The sleep runs as a child the subshell waits on, so stopping the sentinel (TERM on the
+    # recorded pid) stops the sleep too instead of orphaning it until the timeout.
+    # shellcheck disable=SC2016
+    (trap 'kill "$!" 2>/dev/null; exit 0' TERM; sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" & wait "$!" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
     sentinel_pid=$!
     _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
     sb_guard_nofollow "$SB_DIR/sentinel-lock-$_uuid"
@@ -207,11 +210,13 @@ if [[ -n "$existing" ]]; then
   fi
 
   sb_guard_nofollow "$SB_DIR"/session-log-path; printf '%s' "$existing" > "$SB_DIR"/session-log-path
-  basename "$existing" | jq -Rs '{"hookSpecificOutput":{"message":("ℹ️ Session log already exists: " + .)}}' | tr -d '\n'
+  # Pretty JSON from jq with every newline stripped (single line, no trailing newline).
+  existing_msg="$(basename "$existing" | jq -Rs '{"hookSpecificOutput":{"message":("ℹ️ Session log already exists: " + .)}}')"
+  printf '%s' "${existing_msg//$'\n'/}"
   exit 0
 fi
 
-# No existing log — read mode from mode file (ground truth)
+# No existing log - read mode from mode file (ground truth)
 mode_file="${SB_DIR}/mode"
 if [[ -f "$mode_file" && ! -L "$mode_file" ]]; then
   mode=$(cat "$mode_file" 2>/dev/null || echo "interactive")
@@ -308,7 +313,10 @@ date +%s > "$SB_DIR"/session-start-time
 if [[ "$mode" == "autonomous" ]]; then
   sb_guard_nofollow "$SB_DIR"/timeout
   sb_guard_nofollow "$SB_DIR"/sentinel-pid
-  (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
+  # The sleep runs as a child the subshell waits on, so stopping the sentinel (TERM on the
+  # recorded pid) stops the sleep too instead of orphaning it until the timeout.
+  # shellcheck disable=SC2016
+  (trap 'kill "$!" 2>/dev/null; exit 0' TERM; sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" & wait "$!" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
   sentinel_pid=$!
   _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
   sb_guard_nofollow "$SB_DIR/sentinel-lock-$_uuid"

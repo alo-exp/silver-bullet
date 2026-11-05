@@ -1,6 +1,6 @@
 ## Review
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 **Hash re-verified at review time:** `061467c46de70f3ed4cda326fcaca0c013b12b39c8430e9a7ec7bc99e58bc257` — matches parent launch. `wc -l` = 413 (no trailing newline; last content line is 414). Line numbers below are read-tool/1-indexed and align with the anchors in the brief (D2 L74, D8 L87, §4 L130, §6.2 L278/L284, §6.3 L306, §11 L379, §12 L410–411). Detached at `1569b060`; no edits, no commit, no branch move. Plan file is still untracked (`?? .cursor/plans/…`).
 

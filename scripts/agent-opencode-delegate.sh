@@ -41,6 +41,11 @@ COHORT_OUTPUT=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --work-dir|--prompt|--prompt-file|--brief-file|--log|--mode|--sb-root|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id|--delegation-mode|--multi-ai-profile|--multi-ai-pool|--cohort-request|--cohort-output)
+      [[ $# -ge 2 ]] || { printf 'ERROR: %s requires a value\n' "$1" >&2; exit 2; }
+      ;;
+  esac
+  case "$1" in
     --work-dir) WORK_DIR="$2"; shift 2 ;;
     --prompt) PROMPT_TEXT="$2"; shift 2 ;;
     --prompt-file) PROMPT_FILE="$2"; shift 2 ;;
@@ -163,7 +168,8 @@ agent_opencode_invoke_pool_cohort() {
   agent_opencode_apply_delegation_mode || return $?
   agent_opencode_apply_lightweight_env || return $?
   agent_opencode_apply_runtime_env
-  local cohort_script="${SB_ROOT}/skills/silver-multi-ai-task/scripts/ocg_pool_cohort.py"
+  local cohort_script
+  cohort_script="$(agent_opencode_multi_ai_skill_dir "$SB_ROOT")/scripts/ocg_pool_cohort.py"
   [[ -f "$cohort_script" ]] || {
     printf 'ERROR: missing OCG cohort script at %s\n' "$cohort_script" >&2
     return 1
@@ -221,9 +227,11 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
   fi
 
   if [[ "$DELEGATION_MODE" == "multi-ai-pool-v1" ]]; then
-    final_output="$(agent_opencode_invoke_pool_cohort)" && final_exit=0 || final_exit=$?
+    final_exit=0
+    final_output="$(agent_opencode_invoke_pool_cohort)" || final_exit=$?
   else
-    final_output="$(agent_opencode_invoke_once)" && final_exit=0 || final_exit=$?
+    final_exit=0
+    final_output="$(agent_opencode_invoke_once)" || final_exit=$?
   fi
 
   if [[ -n "$LOG_FILE" ]]; then
@@ -265,7 +273,8 @@ if [[ "$final_exit" -ne 0 ]]; then
   if agent_mode_maybe_escalate "opencode" "$SB_AM_TASK_DIR" "${LOG_FILE:-}"; then
     agent_mode_apply_host_launch_env "opencode"
     USE_INTERACTIVE=1
-    final_output="$(agent_opencode_invoke_once)" && final_exit=0 || final_exit=$?
+    final_exit=0
+    final_output="$(agent_opencode_invoke_once)" || final_exit=$?
   fi
 fi
 

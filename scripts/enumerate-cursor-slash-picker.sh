@@ -21,15 +21,18 @@ WORKSPACE=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --cursor-home)
-      CURSOR_HOME="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'enumerate-cursor-slash-picker: --cursor-home requires a value\n' >&2; exit 2; }
+      CURSOR_HOME="$2"
       shift 2
       ;;
     --surface)
-      SURFACE="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'enumerate-cursor-slash-picker: --surface requires a value\n' >&2; exit 2; }
+      SURFACE="$2"
       shift 2
       ;;
     --workspace)
-      WORKSPACE="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'enumerate-cursor-slash-picker: --workspace requires a value\n' >&2; exit 2; }
+      WORKSPACE="$2"
       shift 2
       ;;
     -h|--help)
@@ -57,15 +60,22 @@ surface_arg = sys.argv[3]
 workspace_arg = sys.argv[4]
 
 
+# Cursor keeps two ignore lists: .cursorignore (AI access: agent file tools and @-references,
+# so it holds only generated mirrors) and .cursorindexingignore (indexing and the "/" picker,
+# which is where the source skills/ and templates/workflows/ are hidden, R13-26).
+CURSOR_IGNORE_FILES = (".cursorignore", ".cursorindexingignore")
+
+
 def load_cursorignore(root: Path) -> list[str]:
-    path = root / ".cursorignore"
-    if not path.is_file():
-        return []
     patterns: list[str] = []
-    for raw in path.read_text(errors="ignore").splitlines():
-        line = raw.strip()
-        if line and not line.startswith("#"):
-            patterns.append(line.lstrip("/"))
+    for name in CURSOR_IGNORE_FILES:
+        path = root / name
+        if not path.is_file():
+            continue
+        for raw in path.read_text(errors="ignore").splitlines():
+            line = raw.strip()
+            if line and not line.startswith("#"):
+                patterns.append(line.lstrip("/"))
     return patterns
 
 
@@ -238,6 +248,10 @@ def enumerate_workspace(root: Path) -> dict[str, object]:
     }
 
 
+sys.path.insert(0, str(repo_root / "scripts" / "lib" / "cursor-sb-agents"))
+from sb_managed_agent import is_installer_managed_agent  # noqa: E402
+
+
 def enumerate_global_custom_agents(root: Path) -> list[dict[str, str]]:
     if not root.is_dir():
         return []
@@ -252,6 +266,9 @@ def enumerate_global_custom_agents(root: Path) -> list[dict[str, str]]:
         if path.suffix.lower() not in {".md", ".json", ".yaml", ".yml"}:
             continue
         text = path.read_text(errors="ignore")
+        if is_installer_managed_agent(path, root):
+            # Subagents written by install-cursor-sb-agents.sh are intentional.
+            continue
         meta = parse_frontmatter(path)
         name = meta.get("name") or meta.get("title") or path.stem
         if name.startswith("sb:") or name.startswith("silver-") or "Silver Bullet" in text[:2000]:
@@ -276,6 +293,11 @@ print(f"manifest.skills={result['manifest_skills']!r}")
 print(f"agents/cursor on disk={result['agents_cursor_present']}")
 print(f"commands={len(commands)} subagents={len(subagents)} overlap={len(overlap)}")
 print()
+
+if not commands:
+    print("NO COMMANDS: the manifest declares no commands path or its commands directory holds no .md file")
+    print("(an empty / picker)")
+    print()
 
 if bad_colon:
     print("COLON/FILENAME VIOLATIONS:")
@@ -312,13 +334,15 @@ if overlap:
     failures += 1
 if bad_colon:
     failures += 1
+if not commands:
+    failures += 1
 
 print()
 if failures:
     print(f"RESULT: FAIL — {failures} picker policy violation(s)")
     raise SystemExit(1)
 
-print("RESULT: OK — commands-only slash picker with colon routes")
+print("RESULT: OK — commands-only slash picker with kebab-case routes")
 
 workspace_root = Path(workspace_arg) if workspace_arg else repo_root
 if workspace_root.is_dir():
@@ -331,7 +355,7 @@ if workspace_root.is_dir():
     print("Workspace slash-picker exposure (dev checkout)")
     print(f"workspace={workspace['root']}")
     print(f"manifest.skills={workspace['manifest_skills']!r}")
-    print(f".cursorignore patterns={workspace['ignore_patterns']!r}")
+    print(f".cursorignore + .cursorindexingignore patterns={workspace['ignore_patterns']!r}")
     print(f"workspace_subagents={len(ws_subagents)} ignored_workspace_entries={len(ws_ignored)}")
     print(f"workspace_bad_colon={len(ws_bad_colon)} global_custom_agents={len(global_custom)}")
     if workspace["manifest_skills"] or ws_subagents or ws_bad_colon or global_custom:

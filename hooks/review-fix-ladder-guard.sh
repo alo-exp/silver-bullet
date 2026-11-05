@@ -110,7 +110,7 @@ case "$tool_name" in
     cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null || true)"
     phase="$(sb_rfl_read_field phase "")"
   if [[ "$phase" == orchestrator_grep_1 || "$phase" == orchestrator_grep_2 ]]; then
-    if printf '%s' "$cmd" | grep -qiE 'grep |rg |git diff|charter'; then
+    if grep -qiE 'grep |rg |git diff|charter' <<<"$cmd"; then
       sb_rfl_mark_orchestrator_grep
     fi
   fi

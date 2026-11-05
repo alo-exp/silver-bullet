@@ -22,7 +22,7 @@ enterprise_e2e_sb_root_is_valid() {
 
 # Emit absolute path to harness repo root (SB_ROOT).
 enterprise_e2e_resolve_sb_root() {
-  local candidate repo_root script_root
+  local candidate script_root
   if [[ -n "${SB_ROOT:-}" ]] && enterprise_e2e_sb_root_is_valid "$SB_ROOT"; then
     printf '%s\n' "$(cd "$SB_ROOT" && pwd)"
     return 0

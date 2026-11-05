@@ -94,15 +94,15 @@ sb_outcomes_auto_evaluate() {
   command -v jq >/dev/null 2>&1 || return 0
 
   # route: composer or router skill recorded (not merely planning-floor skills)
-  if printf '%s\n' "$state_contents" | grep -qE '^(silver|silver-feature|silver-ui|silver-devops|silver-bugfix|silver-fast|silver-deep-research|silver-release|silver-migrate|silver-init)$' 2>/dev/null; then
+  if grep -qE '^(silver|silver-feature|silver-ui|silver-devops|silver-bugfix|silver-fast|silver-deep-research|silver-release|silver-migrate|silver-init)$' <<<"$state_contents" 2>/dev/null; then
     sb_outcomes_jq_update "$outfile" \
       '(.outcomes[] | select(.id=="route") | .status) = "done"
         | (.outcomes[] | select(.id=="route") | .evidence) = "workflow composer or /sb router recorded"'
   fi
 
   # verify: verify-tests marker or silver-verify recorded
-  if printf '%s\n' "$state_contents" | grep -Fqx 'verify-tests' 2>/dev/null \
-     || printf '%s\n' "$state_contents" | grep -Fqx 'silver-verify' 2>/dev/null; then
+  if grep -Fqx 'verify-tests' <<<"$state_contents" 2>/dev/null \
+     || grep -Fqx 'silver-verify' <<<"$state_contents" 2>/dev/null; then
     sb_outcomes_jq_update "$outfile" \
       '(.outcomes[] | select(.id=="verify") | .status) = "done"
         | (.outcomes[] | select(.id=="verify") | .evidence) = "verification skill or verify-tests recorded"'
@@ -110,7 +110,7 @@ sb_outcomes_auto_evaluate() {
 
   # scope: active workflow with composer metadata OR PLAN.md with substantive body
   local scope_done=false
-  if printf '%s\n' "$state_contents" | grep -Fqx 'silver-execute' 2>/dev/null; then
+  if grep -Fqx 'silver-execute' <<<"$state_contents" 2>/dev/null; then
     scope_done=true
   fi
   if [[ "$scope_done" != true && -d ".planning/workflows" ]]; then

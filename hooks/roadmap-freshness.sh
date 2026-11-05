@@ -58,7 +58,7 @@ fi
 [[ -z "$cmd" ]] && exit 0
 
 # Only trigger on git commit commands
-if ! printf '%s' "$cmd" | grep -qE '\bgit commit\b'; then
+if ! grep -qE '\bgit commit\b' <<<"$cmd"; then
   exit 0
 fi
 

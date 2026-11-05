@@ -17,20 +17,43 @@ cursor_cursor_logs_root() {
   printf '%s/.config/Cursor/logs\n' "$HOME"
 }
 
+# Is a commit reachable? Prints nothing; the status says it:
+#   0  known to exist (in the local checkout, a remote ref tip, or fetchable)
+#   1  definitely not (malformed id, or the reachable remote says "not our ref")
+#   2  unknown (remote unreachable or the answer is unknowable) — never delete on 2
 cursor_github_commit_reachable() {
   local sha="$1"
   local source_root="${2:-${REPO_ROOT:-.}}"
+  local refs tmp err
 
-  [[ -n "$sha" ]] || return 1
+  [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || return 1
   if git -C "$source_root" cat-file -e "${sha}^{commit}" >/dev/null 2>&1; then
     return 0
   fi
-  git ls-remote --exit-code "$CURSOR_GITHUB_REPO_URL" "$sha" >/dev/null 2>&1
+  refs="$(git ls-remote -- "$CURSOR_GITHUB_REPO_URL" 2>/dev/null)" || return 2
+  if awk -v s="$sha" '$1==s{f=1} END{exit !f}' <<<"$refs"; then
+    return 0
+  fi
+  # Not a ref tip: ask the remote for the commit itself, in a scratch repository
+  # that is removed on every path out of this function.
+  local rc=2
+  tmp="$(mktemp -d "${TMPDIR:-/tmp}/sb-reach.XXXXXX")" || return 2
+  if git init -q --bare "$tmp" >/dev/null 2>&1; then
+    if err="$(git -C "$tmp" fetch --depth 1 -- "$CURSOR_GITHUB_REPO_URL" "$sha" 2>&1 >/dev/null)"; then
+      rc=0
+    else
+      case "$err" in
+        *"not our ref"* | *"couldn't find remote ref"*) rc=1 ;;
+      esac
+    fi
+  fi
+  rm -rf -- "$tmp"
+  return "$rc"
 }
 
 prune_stale_cursor_marketplace_cache_links() {
   local keep_sha="${1:-}"
-  local cache_root entry name
+  local cache_root entry name reach
 
   cache_root="$(cursor_marketplace_plugin_cache_root)"
   [[ -d "$cache_root" ]] || return 0
@@ -42,7 +65,9 @@ prune_stale_cursor_marketplace_cache_links() {
     if [[ -n "$keep_sha" && "$name" == "$keep_sha" ]]; then
       continue
     fi
-    if cursor_github_commit_reachable "$name"; then
+    reach=0
+    cursor_github_commit_reachable "$name" || reach=$?
+    if [[ "$reach" -ne 1 ]]; then
       continue
     fi
     rm -f "$entry"
@@ -52,7 +77,7 @@ prune_stale_cursor_marketplace_cache_links() {
 
 prune_stale_cursor_marketplace_gitpaths() {
   local keep_sha="${1:-}"
-  local base_root entry name
+  local base_root entry name reach
 
   if declare -F cursor_github_marketplace_gitpath_root >/dev/null 2>&1; then
     base_root="$(cursor_github_marketplace_gitpath_root)"
@@ -68,7 +93,9 @@ prune_stale_cursor_marketplace_gitpaths() {
     if [[ -n "$keep_sha" && "$name" == "$keep_sha" ]]; then
       continue
     fi
-    if cursor_github_commit_reachable "$name"; then
+    reach=0
+    cursor_github_commit_reachable "$name" || reach=$?
+    if [[ "$reach" -ne 1 ]]; then
       continue
     fi
     rm -rf "$entry"
@@ -88,17 +115,16 @@ discover_cursor_backend_plugin_shas() {
       | xargs -0 grep -h 'Adding enabled plugin: silver-bullet from ' 2>/dev/null \
       | sed -n 's/.*silver-bullet from \([0-9a-f]\{40\}\).*/\1/p' \
       | tail -1
-  )"
+  )" || latest_sha=""
   [[ -n "$latest_sha" ]] && printf '%s\n' "$latest_sha"
   find "$log_root" -name 'Cursor Plugins*.log' -type f -print0 2>/dev/null \
     | xargs -0 grep -h 'Adding enabled plugin: silver-bullet from ' 2>/dev/null \
     | sed -n 's/.*silver-bullet from \([0-9a-f]\{40\}\).*/\1/p' \
-    | sort -u
+    | sort -u || true
 }
 
 collect_cursor_plugin_required_shas() {
   while IFS= read -r sha; do
-    [[ -n "$sha" ]] || continue
     if cursor_github_commit_reachable "$sha"; then
       printf '%s\n' "$sha"
     fi
@@ -121,7 +147,6 @@ collect_cursor_plugin_verify_shas() {
 
   registry_sha="$(read_installed_plugins_git_sha)"
   while IFS= read -r sha; do
-    [[ -n "$sha" ]] || continue
     if cursor_github_commit_reachable "$sha"; then
       printf '%s\n' "$sha"
     fi
@@ -142,12 +167,14 @@ prune_cursor_picker_surfaces_from_cache_dir() {
     agents \
     skills \
     skill-source \
+    cursor-skill-source \
     host-bundles \
     .agents \
     .cursor/agents \
     plugins/silver-bullet/agents \
     plugins/silver-bullet/skills \
     plugins/silver-bullet/skill-source \
+    plugins/silver-bullet/cursor-skill-source \
     plugins/silver-bullet/templates
   do
     if [[ -e "${entry}/${surface}" ]]; then
@@ -167,99 +194,122 @@ prune_agents_from_all_cursor_backend_caches() {
   done
 }
 
+# Quarantine (move, never delete) Cursor custom agents an older Silver Bullet left in
+# ~/.cursor/agents or the project's .cursor/agents. Only top-level entries are considered,
+# symlinks are never followed or moved, and an entry moves only with proof that Silver
+# Bullet wrote it: an exact colon name on scripts/lib/install-cursor/shipped-agent-names.txt
+# (every name Silver Bullet has shipped; never a prefix, so a user's sb:my-agent stays), a
+# silver-* name Silver Bullet ships today, or a legacy generic name (tdd, full-conversation,
+# ...) whose content is byte-identical to the bundle Silver Bullet ships under
+# host-bundles/cursor. A file the project commits to git is never moved. Agents
+# install-cursor-sb-agents.sh generates are always kept. Anything else stays; a name that
+# looks like Silver Bullet's but cannot be verified is reported, not moved.
 cleanup_cursor_custom_agents() {
   local project_root="${1:-${REPO_ROOT:-}}"
-  python3 - "$CURSOR_HOME" "$project_root" <<'INNERPY'
+  python3 - "$CURSOR_HOME" "$project_root" "$(cd "$(dirname "${BASH_SOURCE[0]}")/../cursor-sb-agents" && pwd)" \
+    "${REPO_ROOT:+${REPO_ROOT}/host-bundles/cursor}" "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/shipped-agent-names.txt" <<'INNERPY'
 from __future__ import annotations
 
-import json
 import re
 import shutil
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 cursor_home = Path(sys.argv[1]).expanduser()
 project_root = Path(sys.argv[2]).expanduser() if sys.argv[2] else None
+sys.path.insert(0, sys.argv[3])
+bundle_root = Path(sys.argv[4]) if sys.argv[4] else None
+from sb_managed_agent import is_installer_managed_agent  # noqa: E402
+
+SHIPPED_COLON_NAMES = {
+    line.strip()
+    for line in Path(sys.argv[5]).read_text(encoding="utf-8").splitlines()
+    if line.strip() and not line.startswith("#")
+}
+
 roots: list[tuple[str, Path]] = [("user", cursor_home / "agents")]
 if project_root:
     roots.append(("project", project_root / ".cursor" / "agents"))
 
-bad_exact = {
-    "subagent-tdd",
-    "tdd",
-    "full-conversation",
-    "ai-llm-safety",
-    "artifact-reviewer",
-    "devops-skill-router",
-}
-bad_prefixes = ("silver", "subagent-silver", "subagent-sb", "subagent-devops", "principle-sequence")
+SB_NAMESPACE = re.compile(r"^(?:silver[-:]|sb:|subagent-(?:sb[:-]|silver[:-]))", re.I)
+LEGACY_GENERIC = {"subagent-tdd", "tdd", "full-conversation", "ai-llm-safety", "artifact-reviewer", "devops-skill-router"}
+AGENT_SUFFIXES = {".md", ".json", ".yaml", ".yml"}
 
 
-def parse_frontmatter(path: Path) -> dict[str, str]:
+def shipped_name(name: str) -> bool:
+    """True when Silver Bullet ships a bundle called ``name`` (the namespace alone proves nothing)."""
+    return bundle_root is not None and (bundle_root / name).is_dir()
+
+
+def shipped_copy(name: str, item: Path) -> bool:
+    """True when ``item`` is byte-identical to the bundle Silver Bullet ships as ``name``."""
+    if bundle_root is None:
+        return False
+    reference = bundle_root / name / "SKILL.md"
+    candidate = item / "SKILL.md" if item.is_dir() else item
     try:
-        text = path.read_text(errors="ignore")[:4000]
-    except Exception:
-        return {}
-    match = re.match(r"^---\n(.*?)\n---", text, re.S)
-    meta: dict[str, str] = {}
-    if match:
-        for line in match.group(1).splitlines():
-            if ":" in line:
-                key, value = line.split(":", 1)
-                meta[key.strip()] = value.strip().strip('"')
-    if path.suffix == ".json":
-        try:
-            data = json.loads(path.read_text(errors="ignore"))
-            for key in ("name", "title"):
-                if isinstance(data.get(key), str):
-                    meta[key] = data[key]
-        except Exception:
-            pass
-    return meta
+        return reference.is_file() and candidate.read_bytes() == reference.read_bytes()
+    except OSError:
+        return False
 
 
-def should_quarantine(path: Path) -> bool:
-    meta = parse_frontmatter(path)
-    name = meta.get("name") or meta.get("title") or path.stem
-    lowered = name.strip().lower()
-    if lowered in bad_exact or lowered.startswith(bad_prefixes):
-        return True
-    try:
-        text = path.read_text(errors="ignore")[:4000]
-    except Exception:
-        text = ""
-    return "Silver Bullet" in text or "silver-bullet" in text
+def committed(path: Path) -> bool:
+    """True when ``path`` is tracked by the git repository around it (a project's own file)."""
+    done = subprocess.run(
+        ["git", "-C", str(path.parent), "ls-files", "--", path.name],
+        capture_output=True, text=True, check=False,
+    )
+    return done.returncode == 0 and bool(done.stdout.strip())
 
 
-def quarantine_path(scope: str, root: Path, path: Path, bucket: Path) -> None:
-    try:
-        rel = path.relative_to(root)
-    except ValueError:
-        rel = Path(path.name)
-    target = bucket / scope / rel
+def quarantine_path(scope: str, path: Path, bucket: Path) -> None:
+    target = bucket / scope / path.name
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists():
         target = target.with_name(target.name + ".duplicate")
     shutil.move(str(path), str(target))
     print(f"Note: quarantined Cursor custom agent {path} -> {target}", file=sys.stderr)
 
+
 bucket = cursor_home / ".silver-bullet-quarantine" / "cursor-agents" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 for scope, root in roots:
     if not root.is_dir():
         continue
-    candidates: list[Path] = []
-    for item in sorted(root.glob("**/*"), key=lambda p: len(p.parts), reverse=True):
-        if item.is_file() and item.suffix.lower() in {".md", ".json", ".yaml", ".yml"} and should_quarantine(item):
-            candidates.append(item)
-    for item in candidates:
-        if not item.exists():
+    for item in sorted(root.iterdir()):
+        if item.is_symlink():
             continue
-        parent = item.parent
-        if item.name == "SKILL.md" and parent != root:
-            quarantine_path(scope, root, parent, bucket)
+        if item.is_dir():
+            if not (item / "SKILL.md").is_file():
+                continue
+            name = item.name
+        elif item.suffix.lower() in AGENT_SUFFIXES and not is_installer_managed_agent(item, root):
+            name = item.stem
         else:
-            quarantine_path(scope, root, item, bucket)
+            continue
+        key = name.lower()
+        provable = (
+            name in SHIPPED_COLON_NAMES
+            or (SB_NAMESPACE.match(key) and shipped_name(name))
+            or (key in LEGACY_GENERIC and shipped_copy(name, item))
+        )
+        if provable and scope == "project" and committed(item):
+            print(f"Note: left {item} in place: the project commits it to git.", file=sys.stderr)
+        elif provable:
+            quarantine_path(scope, item, bucket)
+        elif SB_NAMESPACE.match(key):
+            print(
+                f"Note: left {item} in place: its name is in Silver Bullet's namespace, "
+                "but Silver Bullet does not ship it. Remove it yourself if it is stale.",
+                file=sys.stderr,
+            )
+        elif key in LEGACY_GENERIC:
+            print(
+                f"Note: left {item} in place: its name matches a legacy Silver Bullet agent, "
+                "but its content is not Silver Bullet's. Remove it yourself if it is stale.",
+                file=sys.stderr,
+            )
 INNERPY
 }
 
@@ -275,7 +325,6 @@ collect_cursor_plugin_seed_shas() {
   cleanup_cursor_custom_agents "${REPO_ROOT:-}"
 
   while IFS= read -r sha; do
-    [[ -n "$sha" ]] || continue
     if cursor_github_commit_reachable "$sha"; then
       printf '%s\n' "$sha"
     fi
@@ -289,9 +338,8 @@ collect_cursor_plugin_seed_shas() {
 }
 
 resolve_cursor_backend_plugin_sha() {
-  local discovered manifest_sha install_sha
+  local discovered manifest_sha
   while IFS= read -r discovered; do
-    [[ -n "$discovered" ]] || continue
     if cursor_github_commit_reachable "$discovered"; then
       printf '%s\n' "$discovered"
       return 0
@@ -473,7 +521,8 @@ cursor_backend_plugin_cache_ready() {
 ensure_agent_plugins_marketplace_clone() {
   local head_sha dest_root tmp
 
-  head_sha="$(git ls-remote "$CURSOR_AGENT_PLUGINS_REPO_URL" HEAD 2>/dev/null | awk 'NR==1 {print $1}')"
+  # An unreachable remote (offline) must skip the clone, not abort the installer.
+  head_sha="$(git ls-remote "$CURSOR_AGENT_PLUGINS_REPO_URL" HEAD 2>/dev/null | awk 'NR==1 {print $1}')" || head_sha=""
   [[ -n "$head_sha" ]] || return 0
 
   dest_root="${CURSOR_AGENT_PLUGINS_GITPATH_ROOT}/${head_sha}"

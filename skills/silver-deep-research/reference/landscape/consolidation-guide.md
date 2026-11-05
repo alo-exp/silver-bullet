@@ -13,7 +13,7 @@ When a **category market contract** (`category_pack_id` in `need_profile.json`) 
 - Resolved category pack from `reference/landscape/category-packs/{id}.json`
 - Optional domain knowledge file (`domains/{domain}.md`)
 
-Inject the pack block into consolidator context via `category_pack.pack_prompt_block()`.
+Inject the pack block into consolidator context via `dr_category_pack.pack_prompt_block()`.
 
 ---
 

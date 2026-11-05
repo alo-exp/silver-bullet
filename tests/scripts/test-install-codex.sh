@@ -47,7 +47,7 @@ assert_no_packaged_skill_md() {
 
 assert_no_packaged_markdown_skill_sources() {
   local desc="$1" path="$2"
-  if find "$path/skill-source" -type f -name 'SILVER_SOURCE.md' -print -quit 2>/dev/null | grep -q .; then
+  if grep -q . < <(find "$path/skill-source" -type f -name 'SILVER_SOURCE.md' -print -quit 2>/dev/null); then
     echo "FAIL: $desc — packaged Markdown skill source found under $path/skill-source"
     find "$path/skill-source" -type f -name 'SILVER_SOURCE.md' -print 2>/dev/null | head -20
     (( FAIL++ )) || true
@@ -482,7 +482,7 @@ assert_contains() {
 assert_not_contains() {
   local desc="$1" needle="$2" path="$3"
   if [[ -d "$path" ]]; then
-    if rg -n --hidden -S -- "$needle" "$path" >/dev/null 2>&1; then
+    if sb_tree_contains "$needle" "$path"; then
       echo "FAIL: $desc — unexpected [$needle] in $path"
       (( FAIL++ )) || true
     else
@@ -528,7 +528,20 @@ assert_command_fails() {
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SOURCE_REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=tests/lib/tree-search.sh
+source "$SOURCE_REPO_ROOT/tests/lib/tree-search.sh"
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "$SOURCE_REPO_ROOT/tests/lib/repo-snapshot.sh"
+# shellcheck source=tests/lib/offline-tools.sh
+source "$SOURCE_REPO_ROOT/tests/lib/offline-tools.sh"
+# install-codex.sh and sync-codex-package.sh regenerate plugins/silver-bullet,
+# agents/ and host-bundles/ inside the checkout they run from. Run everything
+# from a snapshot so the test never rewrites the repository (parallel test
+# files would race on those trees) and works from a read-only checkout.
+REPO_ROOT="$(sb_repo_snapshot "$SOURCE_REPO_ROOT" "$TMP/repo")"
+# No package installs or network access: every source here is local.
+sb_offline_tools_install "$TMP/offline-bin"
 bash "$REPO_ROOT/scripts/sync-codex-package.sh" >/dev/null
 export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -1008,6 +1021,8 @@ assert_not_contains "superpowers plugin not enabled by default" '[plugins."super
 assert_not_contains "legacy plugin not enabled by default" "[plugins.\"${_LEGACY_VENDOR_ID}@get-shit-done-marketplace\"]" "$HOME_DIR/.codex/config.toml"
 assert_file_absent "legacy SB skill removed" "$HOME_DIR/.agents/skills/silver-feature"
 assert_file_absent "legacy using-silver-bullet skill removed" "$HOME_DIR/.agents/skills/using-silver-bullet"
+assert_command_succeeds "unmarked legacy SB skills are backed up, not deleted (R7-06)" \
+  compgen -G "$HOME_DIR/.codex/.silver-bullet-backup/skills/*/agents/using-silver-bullet/SKILL.md"
 assert_file_exists "unrelated skill preserved" "$HOME_DIR/.agents/skills/unrelated-skill/SKILL.md"
 assert_contains "SB hooks plugin enabled" '[plugins."silver-bullet@alo-labs-codex"]' "$HOME_DIR/.codex/config.toml"
 assert_not_contains "stale SB local plugin removed from config" 'silver-bullet@alo-labs-codex-local' "$HOME_DIR/.codex/config.toml"
@@ -1064,12 +1079,14 @@ assert_file_absent "temporary marketplace backup SB picker skill removed" "$FAKE
 assert_file_absent "temporary marketplace backup SB agent skill removed" "$FAKE_TMP_MARKETPLACE_BACKUP_AGENT_SKILL"
 assert_file_absent "temporary SB live-command picker skill removed" "$FAKE_TMP_SB_LIVE_COMMAND_SKILL"
 assert_file_absent "temporary SB live-command agent skill removed" "$FAKE_TMP_SB_LIVE_COMMAND_AGENT_SKILL"
-assert_command_succeeds "Existing optional Superpowers cache alias preserved" test -L "$FAKE_SUPERPOWERS_ALIAS"
-assert_command_succeeds "Existing optional GSD cache alias preserved" test -L "$FAKE_LEGACY_ALIAS"
-assert_command_succeeds "Sidekick cache alias created" test -L "$FAKE_SIDEKICK_ALIAS"
-assert_command_succeeds "Engineering cache alias created" test -L "$FAKE_ENGINEERING_ALIAS"
-assert_command_succeeds "Design cache alias created" test -L "$FAKE_DESIGN_ALIAS"
-assert_command_succeeds "Product-management cache alias created" test -L "$FAKE_PRODUCT_ALIAS"
+# R7-08: Silver Bullet's installer leaves every other plugin's cache alone: no alias is
+# created or replaced in a foreign plugin cache.
+assert_command_fails "Superpowers cache gets no alias from Silver Bullet" test -e "$FAKE_SUPERPOWERS_ALIAS"
+assert_command_fails "GSD cache gets no alias from Silver Bullet" test -e "$FAKE_LEGACY_ALIAS"
+assert_command_fails "Sidekick cache gets no alias from Silver Bullet" test -e "$FAKE_SIDEKICK_ALIAS"
+assert_command_fails "Engineering cache gets no alias from Silver Bullet" test -e "$FAKE_ENGINEERING_ALIAS"
+assert_command_fails "Design cache gets no alias from Silver Bullet" test -e "$FAKE_DESIGN_ALIAS"
+assert_command_fails "Product-management cache gets no alias from Silver Bullet" test -e "$FAKE_PRODUCT_ALIAS"
 assert_file_exists "Marketplace root hooks config materialized" "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
 assert_no_async_true "Marketplace root hooks config normalized for Codex package" "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
 assert_file_exists "Marketplace root Codex hook adapter materialized" "$FAKE_MARKETPLACE_ROOT/hooks/codex-hook-adapter.sh"
@@ -1257,7 +1274,7 @@ assert_contains "TDD skill is SB-owned in installed package" "SB owns this TDD" 
 assert_not_contains "TDD skill does not delegate to Superpowers in installed package" "superpowers:test-driven-development" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" tdd)"
 
 _retired_ns=$'gs'"d"
-if find "$FAKE_CACHE_ROOT/.generated-skills" -maxdepth 1 -name "${_retired_ns}-*" 2>/dev/null | grep -q .; then
+if grep -q . < <(find "$FAKE_CACHE_ROOT/.generated-skills" -maxdepth 1 -name "${_retired_ns}-*" 2>/dev/null); then
   FAIL=$((FAIL + 1))
   echo "  FAIL: Legacy retired wrappers still present in installed SB cache"
 else
@@ -1302,16 +1319,14 @@ else
   (( FAIL++ )) || true
 fi
 assert_not_contains "Silver Bullet versioned install path removed" "$FAKE_SB_INSTALL_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_contains "Sidekick registry install path refreshed" "$FAKE_SIDEKICK_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_not_contains "Sidekick stale install path removed" "$FAKE_SIDEKICK_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_contains "Engineering registry install path refreshed" "$FAKE_ENGINEERING_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_not_contains "Engineering stale install path removed" "$FAKE_ENGINEERING_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
+# R7-08: other plugins' registry records are not rewritten: their install paths stay as Codex left them.
+assert_contains "Sidekick registry install path untouched" "$FAKE_SIDEKICK_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
+assert_not_contains "Sidekick registry not pointed at an SB-made alias" "$FAKE_SIDEKICK_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
+assert_contains "Engineering registry install path untouched" "$FAKE_ENGINEERING_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_file_absent "Engineering helper skill not hydrated from knowledge-work marketplace source by default" "$FAKE_ENGINEERING_ROOT/upstream/skills/documentation/SKILL.md"
-assert_contains "Design registry install path refreshed" "$FAKE_DESIGN_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_not_contains "Design stale install path removed" "$FAKE_DESIGN_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
+assert_contains "Design registry install path untouched" "$FAKE_DESIGN_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_file_absent "Design helper skill not hydrated from knowledge-work marketplace source by default" "$FAKE_DESIGN_ROOT/upstream/skills/design-system/SKILL.md"
-assert_contains "Product-management registry install path refreshed" "$FAKE_PRODUCT_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_not_contains "Product-management stale install path removed" "$FAKE_PRODUCT_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
+assert_contains "Product-management registry install path untouched" "$FAKE_PRODUCT_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_file_absent "Product-management helper skill not hydrated from knowledge-work marketplace source by default" "$FAKE_PRODUCT_ROOT/upstream/skills/write-spec/SKILL.md"
 assert_not_contains "legacy SB hooks removed from Codex user config" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "legacy SB hooks removed from Codex user config mirror" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
@@ -1324,36 +1339,55 @@ assert_contains "legacy hook preserved in Codex user config" 'legacy-check-updat
 assert_contains "legacy hook preserved in Codex user config mirror" 'legacy-check-update.js' "$HOME_DIR/.codex/hooks.json"
 assert_no_combined_tool_matchers "Codex user hooks avoid combined command-tool matchers" "$HOME_DIR/.codex/hooks.json"
 RUNTIME_CLAUDE_REPORT="$TMP/codex-runtime-claude-reference-report.txt"
-RUNTIME_CLAUDE_SHARED_HOST_GLOBS=(
+# Files that legitimately name ~/.claude paths in a Codex install. Each entry
+# says why; anything else that references a Claude runtime path is a leak.
+RUNTIME_CLAUDE_ALLOWED_GLOBS=(
+  # Not runtime code.
+  -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err'
+  # Cursor-only bundles.
+  -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/.cursor-plugin/**'
+  # Shared multi-host tooling: per-host path tables or host branches with a
+  # Claude entry next to the Codex one.
   -g '!**/scripts/sb-doctor.sh'
   -g '!**/scripts/optimize-rtk-context-mode.sh'
   -g '!**/scripts/install-leanctx-sb.sh'
+  -g '!**/scripts/install-recommended-tools-global.sh'
+  -g '!**/scripts/lib/rtk-cm-hosts.json'
   -g '!**/hooks/lib/rtk-gate.sh'
   -g '!**/hooks/lib/leanctx-gate.sh'
+  -g '!**/hooks/lib/context-mode-gate.sh'
+  -g '!**/hooks/lib/graphify-am-global.sh'
   -g '!**/hooks/lib/recommended-tools.sh'
   -g '!**/scripts/lib/recommended-tools/probe-rtk.sh'
+  # Host translators and validators: they name Claude paths in order to rewrite
+  # them (render-agent-bundle.py's Claude -> Codex/Cursor table) or to flag them
+  # (validate-host-agnostic-core.sh's forbidden-pattern list).
+  -g '!**/scripts/render-agent-bundle.py'
+  -g '!**/scripts/validate-host-agnostic-core.sh'
+  # Repository invariants: the graphify skill-lock check names .claude/skills (where the
+  # graphify tool installs its skill) to hash it; it is repo tooling, not a Codex runtime path.
+  -g '!**/scripts/lib/repo_invariants.py'
+  # Claude-host maintenance and operator-only Claude live harnesses; none of
+  # them runs inside a Codex session.
+  -g '!**/scripts/lib/plugin-cache-version.sh'
+  -g '!**/scripts/prune-stale-claude-user-hooks.sh'
+  -g '!**/scripts/agent-claude/**'
+  -g '!**/scripts/claude-interactive-invoke.expect'
+  -g '!**/scripts/lib/claude-matrix-auth.sh'
+  -g '!**/scripts/enterprise-e2e/**'
+  -g '!**/scripts/lib/enterprise-e2e-matrix-quiesce.sh'
+  -g '!**/scripts/monitor-enterprise-e2e-matrix.sh'
+  -g '!**/scripts/sb-tri-criteria-e2e.sh'
 )
-rg() {
-  local -a filtered=()
-  local arg
-  for arg in "$@"; do
-    if [[ "$arg" == "$FAKE_SB_INSTALL_ROOT" && ! -e "$arg" ]]; then
-      continue
-    fi
-    filtered+=("$arg")
-  done
-  command rg "${RUNTIME_CLAUDE_SHARED_HOST_GLOBS[@]}" "${filtered[@]}"
-}
 {
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/.cursor-plugin/**' -g '!**/scripts/install-leanctx-sb.sh' -g '!**/hooks/lib/recommended-tools.sh' -g '!**/hooks/lib/rtk-gate.sh' -g '!**/hooks/lib/leanctx-gate.sh' '/\\.claude(/|$)' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/scripts/install-leanctx-sb.sh' -g '!**/hooks/lib/recommended-tools.sh' -g '!**/hooks/lib/rtk-gate.sh' -g '!**/hooks/lib/leanctx-gate.sh' 'os\\.homedir\\(\\).*\\.claude' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/scripts/install-leanctx-sb.sh' -g '!**/hooks/lib/recommended-tools.sh' -g '!**/hooks/lib/rtk-gate.sh' -g '!**/hooks/lib/leanctx-gate.sh' -F '.claude/' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-} > "$RUNTIME_CLAUDE_REPORT"
-unset -f rg
+  sb_tree_grep "${RUNTIME_CLAUDE_ALLOWED_GLOBS[@]}" '/\.claude(/|$)' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT"
+  sb_tree_grep "${RUNTIME_CLAUDE_ALLOWED_GLOBS[@]}" 'os\.homedir\(\).*\.claude' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT"
+  sb_tree_grep "${RUNTIME_CLAUDE_ALLOWED_GLOBS[@]}" -F '.claude/' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT"
+} | sort -u > "$RUNTIME_CLAUDE_REPORT"
 assert_file_exists "Codex runtime Claude reference audit report generated" "$RUNTIME_CLAUDE_REPORT"
 if [[ -s "$RUNTIME_CLAUDE_REPORT" ]]; then
   echo "FAIL: Runtime Claude path references detected in Codex installation:"
-  sed -n '1,20p' "$RUNTIME_CLAUDE_REPORT"
+  sed -n '1,40p' "$RUNTIME_CLAUDE_REPORT"
   (( FAIL++ )) || true
 else
   echo "PASS: Codex runtime Claude reference audit is clean"
@@ -1361,13 +1395,11 @@ else
 fi
 
 CLAUDE_REFERENCE_REPORT="$TMP/codex-claude-reference-report.txt"
-{
-  rg -n -i -g '!skills/**' -g '!hooks/**' -g '!**/.git/**' 'claude' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-} > "$CLAUDE_REFERENCE_REPORT"
+sb_tree_grep -i -g '!skills/**' -g '!hooks/**' -g '!**/.git/**' 'claude' \
+  "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" > "$CLAUDE_REFERENCE_REPORT"
 assert_file_exists "Codex claude reference audit report generated" "$CLAUDE_REFERENCE_REPORT"
 if [[ -s "$CLAUDE_REFERENCE_REPORT" ]]; then
-  echo "INFO: Non-skill/hook claude references detected in Codex installation:"
-  sed -n '1,20p' "$CLAUDE_REFERENCE_REPORT"
+  echo "INFO: Non-skill/hook claude references detected in Codex installation ($(wc -l < "$CLAUDE_REFERENCE_REPORT" | tr -d ' ') lines)"
 fi
 
 DEFAULT_GSD_TMP="$(mktemp -d)"

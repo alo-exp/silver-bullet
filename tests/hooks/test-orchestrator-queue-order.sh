@@ -38,7 +38,7 @@ assert_order() {
 
 feature_q="$(sb_orchestrator_default_queue_for_composer silver-feature)"
 assert_order "silver-feature" "$feature_q" "silver-execute"
-if printf '%s' "$feature_q" | grep -q 'silver-verify,silver-review'; then
+if grep -q 'silver-verify,silver-review' <<<"$feature_q"; then
   echo "FAIL: silver-feature has verify before review"
   FAIL=$((FAIL + 1))
 else
@@ -47,14 +47,14 @@ else
 fi
 
 bugfix_q="$(sb_orchestrator_default_queue_for_composer silver-bugfix)"
-if printf '%s' "$bugfix_q" | grep -q 'silver-quality-gates,silver-context'; then
+if grep -q 'silver-quality-gates,silver-context' <<<"$bugfix_q"; then
   echo "FAIL: silver-bugfix queue still includes pre-plan quality-gates/context"
   FAIL=$((FAIL + 1))
 else
   echo "PASS: silver-bugfix diagnosis-first pre-chain"
   PASS=$((PASS + 1))
 fi
-if printf '%s' "$bugfix_q" | grep -q 'silver-debug,silver-plan,silver-execute'; then
+if grep -q 'silver-debug,silver-plan,silver-execute' <<<"$bugfix_q"; then
   echo "PASS: silver-bugfix opens with debug → plan → execute"
   PASS=$((PASS + 1))
 else
@@ -66,14 +66,14 @@ devops_q="$(sb_orchestrator_default_queue_for_composer silver-devops)"
 assert_order "silver-devops" "$devops_q" "silver-execute"
 
 ui_q="$(sb_orchestrator_default_queue_for_composer silver-ui)"
-if printf '%s' "$ui_q" | grep -q 'silver-execute,silver-ui-review,silver-review-request'; then
+if grep -q 'silver-execute,silver-ui-review,silver-review-request' <<<"$ui_q"; then
   echo "PASS: silver-ui post-exec opens with execute → ui-review → review triad"
   PASS=$((PASS + 1))
 else
   echo "FAIL: silver-ui missing execute → ui-review → review triad prefix (got: $ui_q)"
   FAIL=$((FAIL + 1))
 fi
-if printf '%s' "$ui_q" | grep -q 'silver-ui-review,silver-review-request'; then
+if grep -q 'silver-ui-review,silver-review-request' <<<"$ui_q"; then
   echo "PASS: silver-ui ui-review before review triad"
   PASS=$((PASS + 1))
 else
@@ -81,14 +81,14 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-if printf '%s' "$ui_q" | grep -q 'silver-plan,silver-ui-contract,silver-validate,silver-execute'; then
+if grep -q 'silver-plan,silver-ui-contract,silver-validate,silver-execute' <<<"$ui_q"; then
   echo "PASS: silver-ui pre-exec includes plan → ui-contract → validate → execute"
   PASS=$((PASS + 1))
 else
   echo "FAIL: silver-ui missing plan → ui-contract → validate → execute prefix (got: $ui_q)"
   FAIL=$((FAIL + 1))
 fi
-if printf '%s' "$devops_q" | grep -q 'silver-plan,silver-validate,silver-execute'; then
+if grep -q 'silver-plan,silver-validate,silver-execute' <<<"$devops_q"; then
   echo "PASS: silver-devops pre-exec includes validate before execute"
   PASS=$((PASS + 1))
 else
@@ -97,7 +97,7 @@ else
 fi
 
 release_q="$(sb_orchestrator_default_queue_for_composer silver-release)"
-if printf '%s' "$release_q" | grep -q 'silver-branch-finish,silver-completion-audit,silver-ship,silver-create-release'; then
+if grep -q 'silver-branch-finish,silver-completion-audit,silver-ship,silver-create-release' <<<"$release_q"; then
   echo "PASS: silver-release ship prep before ship and create-release"
   PASS=$((PASS + 1))
 else
@@ -121,7 +121,7 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-if printf '%s' "$devops_q" | grep -q 'devops-skill-router,devops-quality-gates,security,silver-context'; then
+if grep -q 'devops-skill-router,devops-quality-gates,security,silver-context' <<<"$devops_q"; then
   echo "PASS: silver-devops pre-exec includes router, devops-qg, and pre-plan security"
   PASS=$((PASS + 1))
 else
@@ -130,7 +130,7 @@ else
 fi
 
 fast_q="$(sb_orchestrator_default_queue_for_composer silver-fast)"
-if printf '%s' "$fast_q" | grep -q 'FLOW-QUALITY-GATE,silver-plan,silver-validate,silver-execute,silver-verify'; then
+if grep -q 'FLOW-QUALITY-GATE,silver-plan,silver-validate,silver-execute,silver-verify' <<<"$fast_q"; then
   echo "PASS: silver-fast Tier 2 orchestrator queue"
   PASS=$((PASS + 1))
 else
@@ -142,7 +142,7 @@ tmp_no_spec=$(mktemp -d)
 mkdir -p "$tmp_no_spec/.planning"
 feature_no_spec="$(sb_orchestrator_queue_for_composer silver-feature "$tmp_no_spec")"
 rm -rf "$tmp_no_spec"
-if printf '%s' "$feature_no_spec" | grep -q 'FLOW-QUALITY-GATE,silver-clarify,silver-spec,silver-context'; then
+if grep -q 'FLOW-QUALITY-GATE,silver-clarify,silver-spec,silver-context' <<<"$feature_no_spec"; then
   echo "PASS: silver-feature queue inserts silver-clarify then silver-spec when SPEC.md absent"
   PASS=$((PASS + 1))
 else
@@ -154,7 +154,7 @@ tmp_no_spec_ui=$(mktemp -d)
 mkdir -p "$tmp_no_spec_ui/.planning"
 ui_no_spec="$(sb_orchestrator_queue_for_composer silver-ui "$tmp_no_spec_ui")"
 rm -rf "$tmp_no_spec_ui"
-if printf '%s' "$ui_no_spec" | grep -q 'FLOW-QUALITY-GATE,silver-clarify,silver-spec,silver-context'; then
+if grep -q 'FLOW-QUALITY-GATE,silver-clarify,silver-spec,silver-context' <<<"$ui_no_spec"; then
   echo "PASS: silver-ui queue inserts silver-clarify then silver-spec when SPEC.md absent"
   PASS=$((PASS + 1))
 else
@@ -178,7 +178,7 @@ else
   echo "FAIL: silver-deep-research queue incorrect (got: $research_q)"
   FAIL=$((FAIL + 1))
 fi
-if printf '%s' "$research_q" | grep -q 'silver-execute'; then
+if grep -q 'silver-execute' <<<"$research_q"; then
   echo "FAIL: silver-deep-research queue must not include silver-execute"
   FAIL=$((FAIL + 1))
 else
@@ -201,14 +201,14 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-if printf '%s' "$release_q" | grep -q 'silver-execute'; then
+if grep -q 'silver-execute' <<<"$release_q"; then
   echo "FAIL: silver-release queue must not include silver-execute"
   FAIL=$((FAIL + 1))
 else
   echo "PASS: silver-release excludes silver-execute"
   PASS=$((PASS + 1))
 fi
-if printf '%s' "$release_q" | grep -q 'silver-create-release'; then
+if grep -q 'silver-create-release' <<<"$release_q"; then
   echo "PASS: silver-release ends with silver-create-release"
   PASS=$((PASS + 1))
 else
@@ -220,7 +220,8 @@ fi
 orch_test="${SB_RUNTIME_STATE_DIR:-/tmp}/orchestrator-queue-index-$$.json"
 mkdir -p "$(dirname "$orch_test")"
 printf '{"flow_queue":["FLOW-QUALITY-GATE-PRESHIP","silver-plan","silver-execute"],"last_completed_index":-1}' >"$orch_test"
-export SB_RUNTIME_STATE_DIR="$(dirname "$orch_test")"
+SB_RUNTIME_STATE_DIR="$(dirname "$orch_test")"
+export SB_RUNTIME_STATE_DIR
 mv "$orch_test" "${SB_RUNTIME_STATE_DIR}/orchestrator.json"
 idx="$(sb_orchestrator_queue_index_for_atom silver-quality-gates "${SB_RUNTIME_STATE_DIR}/orchestrator.json" 0 2>/dev/null || true)"
 if [[ "$idx" == "0" ]]; then

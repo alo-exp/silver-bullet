@@ -16,7 +16,7 @@ assert_eq() {
 
 assert_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  if printf '%s' "$haystack" | grep -q "$needle"; then echo "PASS: $desc"; (( PASS++ )) || true
+  if grep -q "$needle" <<<"$haystack"; then echo "PASS: $desc"; (( PASS++ )) || true
   else echo "FAIL: $desc — looking for: [$needle]"; echo "  in: [$haystack]"; (( FAIL++ )) || true; fi
 }
 

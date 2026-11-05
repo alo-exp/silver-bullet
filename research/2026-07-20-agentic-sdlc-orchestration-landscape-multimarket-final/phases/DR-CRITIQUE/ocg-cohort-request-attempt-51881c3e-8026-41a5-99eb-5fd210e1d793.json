@@ -10,7 +10,7 @@
     "ocg-mimo-v2.5"
   ],
   "pool": "lite",
-  "work_dir": "/Users/shafqat/.cursor/worktrees/repo/r41j/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-CRITIQUE",
+  "work_dir": "/Users/<user>/.cursor/worktrees/repo/r41j/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-CRITIQUE",
   "timeout_sec": 240,
   "attempt_id": "attempt-51881c3e-8026-41a5-99eb-5fd210e1d793",
   "run_id": "run-57f38dfa25d83cc50d224e283d4692f3",

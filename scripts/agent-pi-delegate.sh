@@ -32,6 +32,11 @@ SB_ROOT="${SB_ROOT:-$REPO_ROOT}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --work-dir|--prompt|--prompt-file|--brief-file|--log|--mode|--sb-root|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id)
+      [[ $# -ge 2 ]] || { printf 'ERROR: %s requires a value\n' "$1" >&2; exit 2; }
+      ;;
+  esac
+  case "$1" in
     --work-dir) WORK_DIR="$2"; shift 2 ;;
     --prompt) PROMPT_TEXT="$2"; shift 2 ;;
     --prompt-file) PROMPT_FILE="$2"; shift 2 ;;
@@ -134,7 +139,8 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
       "provider=opencode-go model=mimo-v2.5"
   fi
 
-  final_output="$(agent_pi_invoke_once)" && final_exit=0 || final_exit=$?
+  final_exit=0
+  final_output="$(agent_pi_invoke_once)" || final_exit=$?
 
   if [[ -n "$LOG_FILE" ]]; then
     agent_delegate_append_invoke_output "$LOG_FILE" "$final_output"
@@ -174,7 +180,8 @@ if [[ "$final_exit" -ne 0 ]]; then
   agent_mode_normalize_incomplete_result "$SB_AM_TASK_DIR" "$missing"
   if agent_mode_maybe_escalate "pi" "$SB_AM_TASK_DIR" "${LOG_FILE:-}"; then
     agent_mode_apply_host_launch_env "pi"
-    final_output="$(agent_pi_invoke_once)" && final_exit=0 || final_exit=$?
+    final_exit=0
+    final_output="$(agent_pi_invoke_once)" || final_exit=$?
   fi
 fi
 

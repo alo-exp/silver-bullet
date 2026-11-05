@@ -14,22 +14,22 @@ assert_exit() {
   local desc="$1" want="$2"
   shift 2
   local rc=0
-  "$@" >/tmp/rfl-policy-c-out.$$ 2>/tmp/rfl-policy-c-err.$$ || rc=$?
+  "$@" >"${TMPDIR:-/tmp}/rfl-policy-c-out.$$" 2>"${TMPDIR:-/tmp}/rfl-policy-c-err.$$" || rc=$?
   if [[ "$rc" -eq "$want" ]]; then
     pass "$desc"
   else
     fail "$desc (exit $rc want $want)"
-    sed -n '1,40p' /tmp/rfl-policy-c-out.$$
-    sed -n '1,20p' /tmp/rfl-policy-c-err.$$
+    sed -n '1,40p' "${TMPDIR:-/tmp}/rfl-policy-c-out.$$"
+    sed -n '1,20p' "${TMPDIR:-/tmp}/rfl-policy-c-err.$$"
   fi
 }
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/rfl-policy-c.XXXXXX")"
-trap 'rm -rf "$WORKDIR" /tmp/rfl-policy-c-out.$$ /tmp/rfl-policy-c-err.$$' EXIT
+trap 'rm -rf "$WORKDIR" "${TMPDIR:-/tmp}/rfl-policy-c-out.$$" "${TMPDIR:-/tmp}/rfl-policy-c-err.$$"' EXIT
 
 HELP_OUT="$(python3 "$RESOLVER" --help 2>&1 || true)"
 for flag in --assert-policy-c --write-policy-c --assert-rfl-advance --assert-consecutive-clean --record-rung-review-outcome; do
-  if grep -- "$flag" >/dev/null <<<"$HELP_OUT"; then
+  if grep -- "$flag" <<<"$HELP_OUT" >/dev/null; then
     pass "review-fix-ladder.py --help lists $flag"
   else
     fail "review-fix-ladder.py --help missing $flag"

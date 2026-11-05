@@ -19,7 +19,7 @@ fail() { echo "FAIL: $1"; (( FAIL++ )) || true; }
 
 assert_jq_true() {
   local desc="$1" filter="$2" json="$3"
-  if jq -e "$filter" >/dev/null <<<"$json"; then
+  if jq -e "$filter" <<<"$json" >/dev/null; then
     pass "$desc"
   else
     fail "$desc"
@@ -70,7 +70,6 @@ WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/agent-pi-quota.XXXXXX")"
 RUN_DIR="${WORKDIR}/rfl-demo"
 mkdir -p "$RUN_DIR"
 NOW="2026-08-28T13:09:00Z"
-WAKE="2026-08-28T15:41:00Z"
 BLOB='Claude 5-hour quota has been exhausted. Resets in 2hr 32min'
 sched="$(python3 "$RESOLVER" --schedule-quota-retry --run-dir "$RUN_DIR" \
   --run-id rfl-demo --rung-id rung-10 --model claude/claude-opus-5-high \

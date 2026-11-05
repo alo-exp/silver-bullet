@@ -54,15 +54,15 @@ EOF
 
 review_fix_ladder_phase_from_prompt() {
   local prompt="$1"
-  if printf '%s' "$prompt" | grep -qiE 'rung_[0-9]+_review|review-only|raw findings only'; then
+  if grep -qiE 'rung_[0-9]+_review|review-only|raw findings only' <<<"$prompt"; then
     printf 'review\n'
-  elif printf '%s' "$prompt" | grep -qiE '/sb:triage|sb:triage|rung_[0-9]+_triage|triage subagent'; then
+  elif grep -qiE '/sb:triage|sb:triage|rung_[0-9]+_triage|triage subagent' <<<"$prompt"; then
     printf 'triage\n'
-  elif printf '%s' "$prompt" | grep -qiE 'rung_[0-9]+_fix|fix subagent|APPLY ACCEPT|launcher apply accept'; then
+  elif grep -qiE 'rung_[0-9]+_fix|fix subagent|APPLY ACCEPT|launcher apply accept' <<<"$prompt"; then
     printf 'fix\n'
-  elif printf '%s' "$prompt" | grep -qiE 'verify-only|verify_1|verify_2|readonly: true'; then
+  elif grep -qiE 'verify-only|verify_1|verify_2|readonly: true' <<<"$prompt"; then
     printf 'verify\n'
-  elif printf '%s' "$prompt" | grep -qiE 'LADDER_PASS'; then
+  elif grep -qiE 'LADDER_PASS' <<<"$prompt"; then
     printf 'verify\n'
   else
     printf 'unknown\n'
@@ -150,13 +150,13 @@ review_fix_ladder_assert_phase_response() {
   local response="$2"
   case "$phase" in
     review)
-      printf '%s' "$response" | grep -qiE 'REVIEW_RAW:|ZeroDivisionError|zero check|BUG: no zero'
+      grep -qiE 'REVIEW_RAW:|ZeroDivisionError|zero check|BUG: no zero' <<<"$response"
       ;;
     triage)
-      printf '%s' "$response" | grep -qiE 'TRIAGE_PASS:|VALID-NONBLOCKER|/sb:triage|sb:triage'
+      grep -qiE 'TRIAGE_PASS:|VALID-NONBLOCKER|/sb:triage|sb:triage' <<<"$response"
       ;;
     fix)
-      printf '%s' "$response" | grep -qiE 'FIX_PASS:|b == 0|!= 0|ValueError|ZeroDivisionError'
+      grep -qiE 'FIX_PASS:|b == 0|!= 0|ValueError|ZeroDivisionError' <<<"$response"
       ;;
     verify)
       review_fix_ladder_response_passes "$response"
@@ -170,10 +170,10 @@ review_fix_ladder_assert_phase_response() {
 review_fix_ladder_assert_review_triage_separation() {
   local review_response="$1"
   local triage_response="$2"
-  if printf '%s' "$review_response" | grep -qiE 'VALID-BLOCKER|VALID-NONBLOCKER|TRIAGE_PASS'; then
+  if grep -qiE 'VALID-BLOCKER|VALID-NONBLOCKER|TRIAGE_PASS' <<<"$review_response"; then
     return 1
   fi
-  if ! printf '%s' "$triage_response" | grep -qiE 'TRIAGE_PASS:|VALID-'; then
+  if ! grep -qiE 'TRIAGE_PASS:|VALID-' <<<"$triage_response"; then
     return 1
   fi
   return 0

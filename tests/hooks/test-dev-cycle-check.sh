@@ -155,7 +155,7 @@ run_hook_exec_array() {
 is_blocked() {
   local output="$1"
   [[ -z "$output" ]] && return 1
-  printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"'
+  grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"' <<<"$output"
 }
 
 assert_blocks() {
@@ -205,7 +205,7 @@ assert_decoded_message_real_newlines() {
     FAIL=$((FAIL + 1))
     return
   fi
-  if printf '%s' "$decoded" | grep -qF '\n'; then
+  if grep -qF '\n' <<<"$decoded"; then
     echo "  FAIL: $label — decoded text still contains literal backslash-n"
     FAIL=$((FAIL + 1))
     return
@@ -218,7 +218,7 @@ assert_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -231,7 +231,7 @@ assert_not_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if ! printf '%s' "$output" | grep -q "$needle"; then
+  if ! grep -q "$needle" <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -460,7 +460,7 @@ setup
 out=$(run_hook_bash "PreToolUse" "touch src/new-file.js")
 assert_blocks "touch inside src still blocked without planning" "$out"
 reason=$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecisionReason // empty' 2>/dev/null || true)
-if printf '%s' "$reason" | grep -q $'silver-quality-gates\n'; then
+if grep -q $'silver-quality-gates\n' <<<"$reason"; then
   echo "  ✅ planning block uses real newlines in skill list"
   PASS=$((PASS + 1))
 else

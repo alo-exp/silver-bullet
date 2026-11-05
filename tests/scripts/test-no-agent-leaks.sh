@@ -17,6 +17,7 @@ CANONICAL_ROOTS=(
 EXCLUDE_PATH_REGEX='(/skills/silver-init/scripts/|/hooks/lib/runtime-paths\.sh$)'
 
 # pattern|human label
+# shellcheck disable=SC2088  # literal ~ entries are leak patterns, not paths to expand
 BANNED_PATTERNS=(
   'AskUserQuestion|AskUserQuestion'
   'Claude Skill events|Claude Skill events'

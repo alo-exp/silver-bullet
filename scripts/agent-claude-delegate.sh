@@ -33,6 +33,11 @@ USE_PRINT=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --work-dir|--prompt|--prompt-file|--brief-file|--log|--mode|--sb-root|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id)
+      [[ $# -ge 2 ]] || { printf 'ERROR: %s requires a value\n' "$1" >&2; exit 2; }
+      ;;
+  esac
+  case "$1" in
     --work-dir) WORK_DIR="$2"; shift 2 ;;
     --prompt) PROMPT_TEXT="$2"; shift 2 ;;
     --prompt-file) PROMPT_FILE="$2"; shift 2 ;;
@@ -55,7 +60,7 @@ done
 agent_delegate_validate_work_dir "$WORK_DIR" || exit 2
 agent_delegate_clear_matrix_env
 
-if [[ "${SB_AGENT_CERT_RUN:-0}" == "1" && -z "${CLAUDE_PERMISSION_MODE:-}" ]]; then
+if [[ "${SB_AGENT_CERT_RUN:-}" == "1" || "${SB_AGENT_CERT_RUN:-}" == "true" ]] && [[ -z "${CLAUDE_PERMISSION_MODE:-}" ]]; then
   export CLAUDE_PERMISSION_MODE=bypassPermissions
 fi
 
@@ -126,7 +131,9 @@ agent_claude_apply_lightweight_env() {
 agent_claude_invoke_once() {
   agent_claude_apply_runtime_env
   agent_claude_apply_lightweight_env
-  trap agent_claude_cleanup_lightweight_config_dir RETURN
+  # This runs in a command-substitution subshell: the EXIT trap also fires when the adapter
+  # is terminated (SIGTERM/SIGINT) or calls exit, so the ephemeral config dir never leaks.
+  trap agent_claude_cleanup_lightweight_config_dir EXIT
   export SB_ROOT
   export WORK_DIR="$WORK_DIR"
   export CLAUDE_WORK_DIR="$WORK_DIR"
@@ -134,7 +141,12 @@ agent_claude_invoke_once() {
   # shellcheck source=tests/live/agents/claude/agent.sh
   source "$AGENT_SH"
   agent_preflight
-  agent_invoke "$MODE" "$PROMPT_TEXT"
+  # Clean up explicitly after the invoke: a RETURN trap would also fire when the sourced
+  # adapter finishes loading, removing the ephemeral config dir before the CLI starts.
+  local invoke_rc=0
+  agent_invoke "$MODE" "$PROMPT_TEXT" || invoke_rc=$?
+  agent_claude_cleanup_lightweight_config_dir
+  return "$invoke_rc"
 }
 
 final_output=""
@@ -156,7 +168,8 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
     fi
   fi
 
-  final_output="$(agent_claude_invoke_once)" && final_exit=0 || final_exit=$?
+  final_exit=0
+  final_output="$(agent_claude_invoke_once)" || final_exit=$?
 
   if [[ -n "$LOG_FILE" && "$USE_PRINT" -eq 1 ]]; then
     agent_delegate_append_invoke_output "$LOG_FILE" "$final_output"
@@ -199,7 +212,8 @@ if [[ "$final_exit" -ne 0 ]]; then
   if agent_mode_maybe_escalate "claude" "$SB_AM_TASK_DIR" "${LOG_FILE:-}"; then
     agent_mode_apply_host_launch_env "claude"
     USE_PRINT=0
-    final_output="$(agent_claude_invoke_once)" && final_exit=0 || final_exit=$?
+    final_exit=0
+    final_output="$(agent_claude_invoke_once)" || final_exit=$?
   fi
 fi
 

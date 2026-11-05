@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Unit tests for hooks/lib/leanctx-gate.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export SILVER_BULLET_RUNTIME=cursor
@@ -38,7 +42,7 @@ chmod +x "$MOCK_BIN/lean-ctx"
 export PATH="$MOCK_BIN:/usr/bin:/bin"
 
 sb_leanctx_cli_available && pass "mock lean-ctx cli available" || fail "mock lean-ctx cli available"
-sb_leanctx_cli_path | grep -q 'lean-ctx' && pass "cli path resolves" || fail "cli path resolves"
+grep -q 'lean-ctx' < <(sb_leanctx_cli_path) && pass "cli path resolves" || fail "cli path resolves"
 
 TEST_HOME="$(mktemp -d)"
 TMP="$(mktemp -d)"
@@ -46,7 +50,7 @@ mkdir -p "${TEST_HOME}/.cursor"
 printf '{"mcpServers":{"leanctx":{"command":"lean-ctx","args":["mcp"]}}}\n' >"${TEST_HOME}/.cursor/mcp.json"
 export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor SB_LEANCTX_MCP_ARTIFACT="${TEST_HOME}/.cursor/mcp.json"
 
-USAGE_STATE="${SB_RUNTIME_STATE_DIR}/leanctx-usage-lib-test-$$"
+USAGE_STATE="${SB_RUNTIME_STATE_DIR}/tlib-test-$$-leanctx-usage"
 cat >"$TMP/.silver-bullet.json" <<EOF
 {
   "config_version": "${CURRENT_CONFIG_VERSION}",
@@ -61,7 +65,7 @@ cat >"$TMP/.silver-bullet.json" <<EOF
 EOF
 
 sb_leanctx_platform_artifact_present "$TMP" cursor && pass "cursor mcp artifact present" || fail "cursor mcp artifact present"
-sb_leanctx_usage_ttl_seconds "$TMP/.silver-bullet.json" | grep -q '^1800$' && pass "ttl from config" || fail "ttl from config"
+grep -q '^1800$' < <(sb_leanctx_usage_ttl_seconds "$TMP/.silver-bullet.json") && pass "ttl from config" || fail "ttl from config"
 
 sb_leanctx_clear_usage_state "$TMP/.silver-bullet.json"
 sb_leanctx_usage_is_fresh "$TMP/.silver-bullet.json" && fail "missing usage is stale" || pass "missing usage is stale"
@@ -80,39 +84,11 @@ sb_leanctx_command_is_usage 'lean-ctx status' "$TMP/.silver-bullet.json" && pass
 sb_leanctx_mcp_tool_is_usage 'lctx_read_ast' && pass "lctx_read_ast is usage" || fail "lctx_read_ast is usage"
 sb_leanctx_mcp_tool_is_usage 'memory_save' && fail "memory_save not leanctx usage" || pass "memory_save not leanctx usage"
 
-# ── sb_leanctx_hooks_present: per-host wiring verification ───────────────────
-# Regression coverage: the case had arms for cursor and codex only, so every
-# other host fell through to an unconditional `return 0` and the hooks-wiring
-# check was a silent no-op. Uses a throwaway HOME — never the real settings.
-HOOKS_HOME="$(mktemp -d)"
-trap 'rm -rf "$MOCK_BIN" "$TEST_HOME" "$TMP" "$HOOKS_HOME"' EXIT
-mkdir -p "${HOOKS_HOME}/.claude"
-
-(
-  export HOME="$HOOKS_HOME"
-  printf '{"hooks":{"PreToolUse":[{"command":"lean-ctx hook"}]}}\n' >"${HOME}/.claude/settings.json"
-  sb_leanctx_hooks_present claude
-) && pass "claude host with lean-ctx in settings.json passes" \
-  || fail "claude host with lean-ctx in settings.json passes"
-
-(
-  export HOME="$HOOKS_HOME"
-  printf '{"hooks":{"PreToolUse":[{"command":"something-else"}]}}\n' >"${HOME}/.claude/settings.json"
-  sb_leanctx_hooks_present claude
-) && fail "claude host without lean-ctx fails" \
-  || pass "claude host without lean-ctx fails"
-
-(
-  export HOME="$HOOKS_HOME"
-  rm -f "${HOME}/.claude/settings.json"
-  sb_leanctx_hooks_present claude
-) && fail "claude host with no settings.json fails" \
-  || pass "claude host with no settings.json fails"
-
-# Genuinely unknown hosts stay intentionally permissive.
-sb_leanctx_hooks_present some-unknown-host \
-  && pass "unknown host remains permissive" \
-  || fail "unknown host remains permissive"
+# The hooks-wiring check was never called and is gone (R5-19): MCP wiring is checked through
+# the platform artifact, covered in test-leanctx-gate-lib-coverage.sh.
+declare -f sb_leanctx_hooks_present >/dev/null 2>&1 \
+  && fail "the unused hooks-present helper is removed" \
+  || pass "the unused hooks-present helper is removed"
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

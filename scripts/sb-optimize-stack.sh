@@ -36,8 +36,10 @@ while [[ $# -gt 0 ]]; do
     --report) MODE="report" ;;
     --dry-run) DRY_RUN=1; export SB_STACK_OPTIMIZER_DRY_RUN=1 ;;
     --host)
+      # A trailing --host has no value; a bare `shift` would abort under set -e.
+      if [[ $# -lt 2 ]]; then echo "--host requires a value" >&2; usage >&2; exit 2; fi
       shift
-      HOST_OVERRIDE="${1:-}"
+      HOST_OVERRIDE="$1"
       ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
@@ -63,7 +65,9 @@ run_apply() {
   sb_optimize_agentmemory "$REPO_ROOT" "$CONFIG" "$HOST"
   sb_optimize_synergy "$REPO_ROOT" "$CONFIG"
   local score
-  score="$(sb_optimization_score "$REPO_ROOT" "$CONFIG")"
+  # Run in this shell (not a command substitution) so the SB_STACK_SCORE_* exports survive.
+  sb_optimization_score "$REPO_ROOT" "$CONFIG" >/dev/null
+  score="$SB_STACK_SCORE"
   if [[ "$DRY_RUN" -eq 0 ]]; then
     sb_stack_update_config_timestamps "$CONFIG" apply "$score"
   fi
@@ -73,7 +77,9 @@ run_apply() {
 
 run_verify() {
   local score
-  score="$(sb_optimization_score "$REPO_ROOT" "$CONFIG")"
+  # Run in this shell (not a command substitution) so the SB_STACK_SCORE_* exports survive.
+  sb_optimization_score "$REPO_ROOT" "$CONFIG" >/dev/null
+  score="$SB_STACK_SCORE"
   if [[ "$DRY_RUN" -eq 0 && -f "${REPO_ROOT}/.silver-bullet.json" ]]; then
     sb_stack_update_config_timestamps "${REPO_ROOT}/.silver-bullet.json" verify "$score"
   fi
@@ -89,7 +95,9 @@ run_verify() {
 
 run_report() {
   local score verdict
-  score="$(sb_optimization_score "$REPO_ROOT" "$CONFIG")"
+  # Run in this shell (not a command substitution) so the SB_STACK_SCORE_* exports survive.
+  sb_optimization_score "$REPO_ROOT" "$CONFIG" >/dev/null
+  score="$SB_STACK_SCORE"
   if [[ "$score" -ge 85 && "${SB_STACK_SCORE_FAILS:-0}" -eq 0 ]]; then
     verdict="OPTIMAL"
   elif [[ "$score" -ge 60 && "${SB_STACK_SCORE_FAILS:-0}" -eq 0 ]]; then

@@ -38,8 +38,6 @@ fi
 if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
   # shellcheck source=lib/nofollow-guard.sh disable=SC1091
   source "$_lib_dir/nofollow-guard.sh"
-else
-  sb_safe_write() { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
 fi
 if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh

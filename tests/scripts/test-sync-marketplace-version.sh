@@ -1,44 +1,31 @@
 #!/usr/bin/env bash
+# sync-marketplace-version.sh against the real manifests, run from a disposable
+# snapshot of the checkout (the script rewrites the in-repo marketplace.json, so
+# it must never run from the repository under test).
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
+tl_init
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "$TL_REPO_ROOT/tests/lib/repo-snapshot.sh"
+SNAP="$(sb_repo_snapshot --git "$TL_REPO_ROOT" "$TL_TMP/repo")"
+SCRIPT="$SNAP/scripts/sync-marketplace-version.sh"
+# CI is green for the tagged commit (the real gate queries GitHub).
+printf '#!/usr/bin/env bash\nexit 0\n' >"$SNAP/scripts/verify-release-commit-ci.sh"
+cd "$TL_TMP"
 
-PASS=0
-FAIL=0
-
-assert_file_exists() {
-  local desc="$1" path="$2"
-  if [[ -f "$path" ]]; then
-    echo "PASS: $desc"
-    (( PASS++ )) || true
-  else
-    echo "FAIL: $desc — missing: $path"
-    (( FAIL++ )) || true
-  fi
+sb_version() { jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$1"; }
+stale() {
+  jq '(.plugins[] | select(.name=="silver-bullet") | .version) = "0.0.1"' "$1" >"$TL_TMP/stale.json"
+  cp "$TL_TMP/stale.json" "$1"
 }
 
-assert_equal() {
-  local desc="$1" expected="$2" actual="$3"
-  if [[ "$expected" == "$actual" ]]; then
-    echo "PASS: $desc"
-    (( PASS++ )) || true
-  else
-    echo "FAIL: $desc — expected $expected, got $actual"
-    (( FAIL++ )) || true
-  fi
-}
-
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT="$REPO_ROOT/scripts/sync-marketplace-version.sh"
-TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
-
-REMOTE="$TMP/remote.git"
-MARKETPLACE="$TMP/marketplace"
+REMOTE="$TL_TMP/remote.git"
+MARKETPLACE="$TL_TMP/marketplace"
 mkdir -p "$MARKETPLACE/.claude-plugin"
-
-cp "$REPO_ROOT/.claude-plugin/marketplace.json" "$MARKETPLACE/.claude-plugin/marketplace.json"
-jq '.plugins[] |= if .name == "silver-bullet" then .version = "0.0.1" else . end' \
-  "$MARKETPLACE/.claude-plugin/marketplace.json" > "$TMP/marketplace.json"
-mv "$TMP/marketplace.json" "$MARKETPLACE/.claude-plugin/marketplace.json"
+cp "$SNAP/.claude-plugin/marketplace.json" "$MARKETPLACE/.claude-plugin/marketplace.json"
+stale "$MARKETPLACE/.claude-plugin/marketplace.json"
+# The in-repo manifest is stale too: the sync must repair the snapshot's copy.
+stale "$SNAP/.claude-plugin/marketplace.json"
 
 git -C "$MARKETPLACE" init -q
 git -C "$MARKETPLACE" checkout -q -b main
@@ -46,19 +33,38 @@ git -C "$MARKETPLACE" config user.email "tests@example.invalid"
 git -C "$MARKETPLACE" config user.name "Tests"
 git -C "$MARKETPLACE" add .
 git -C "$MARKETPLACE" commit -q -m "seed stale marketplace"
-git -C "$TMP" init --bare -q "$REMOTE"
+git -C "$TL_TMP" init --bare -q "$REMOTE"
 git -C "$MARKETPLACE" remote add origin "$REMOTE"
 git -C "$MARKETPLACE" push -q -u origin HEAD:main
 
-plugin_v="$(jq -r '.version' "$REPO_ROOT/.claude-plugin/plugin.json")"
-AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" "$plugin_v" >/dev/null
+REAL_BEFORE="$(git -C "$TL_REPO_ROOT" status --porcelain --untracked-files=all -- .claude-plugin)"
+plugin_v="$(jq -r '.version' "$SNAP/.claude-plugin/plugin.json")"
+snap_git() { git -C "$SNAP" -c user.name=Tests -c user.email=tests@example.invalid -c commit.gpgsign=false -c tag.gpgsign=false "$@"; }
 
-remote_v="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$MARKETPLACE/.claude-plugin/marketplace.json")"
-in_repo_v="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$REPO_ROOT/.claude-plugin/marketplace.json")"
+# Release step 1: align this repository's manifest; nothing is published yet.
+remote_seed="$(git -C "$REMOTE" rev-parse main)"
+tl_run env AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" timeout 60 bash "$SCRIPT" "$plugin_v"
+assert_eq "in-repo sync exits 0" 0 "$TL_STATUS"
+assert_eq "snapshot Claude marketplace version matches plugin.json" "$plugin_v" "$(sb_version "$SNAP/.claude-plugin/marketplace.json")"
+assert_eq "in-repo sync publishes nothing" "$remote_seed" "$(git -C "$REMOTE" rev-parse main)"
 
-assert_equal "remote Claude marketplace version bumped" "$plugin_v" "$remote_v"
-assert_equal "in-repo Claude marketplace version matches plugin.json" "$plugin_v" "$in_repo_v"
+# Release step 2, after the release commit is tagged: publish.
+snap_git commit -q --allow-empty -am "chore(release): $plugin_v"
+snap_git tag -a "v$plugin_v" -m "Release $plugin_v"
 
-echo
-echo "Results: $PASS passed, $FAIL failed"
-[[ $FAIL -eq 0 ]]
+# The release tag must exist on origin too: a local-only tag is refused, then pushed to a fake origin.
+FAKE_ORIGIN="$TL_TMP/release-origin.git"
+git init -q --bare "$FAKE_ORIGIN"
+snap_git remote remove origin 2>/dev/null || true
+snap_git remote add origin "$FAKE_ORIGIN"
+tl_run env AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" timeout 120 bash "$SCRIPT" --publish "$plugin_v"
+assert_eq "publish with a local-only tag exits 1" 1 "$TL_STATUS"
+assert_contains "local-only tag explained" "$TL_ERR" "is not on origin"
+snap_git push -q origin "v$plugin_v"
+tl_run env AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" timeout 60 bash "$SCRIPT" --publish "$plugin_v"
+assert_eq "publish exits 0" 0 "$TL_STATUS"
+assert_eq "remote Claude marketplace version bumped" "$plugin_v" "$(sb_version "$MARKETPLACE/.claude-plugin/marketplace.json")"
+assert_eq "bump pushed to the remote" "$plugin_v" "$(git -C "$REMOTE" show main:.claude-plugin/marketplace.json | jq -r '.plugins[] | select(.name=="silver-bullet") | .version')"
+assert_eq "the real checkout is untouched" "$REAL_BEFORE" "$(git -C "$TL_REPO_ROOT" status --porcelain --untracked-files=all -- .claude-plugin)"
+
+tl_results

@@ -17,21 +17,32 @@ cache_root=""
 host_filter="all"
 max_claude_tokens=14000
 
+need_value() {
+  if [[ "$1" -lt 2 ]]; then
+    printf 'validate-host-install-surface: %s requires a value\n' "$2" >&2
+    exit 2
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --repo-root)
+      need_value "$#" "$1"
       repo_root="${2:-}"
       shift 2
       ;;
     --cache-root)
+      need_value "$#" "$1"
       cache_root="${2:-}"
       shift 2
       ;;
     --host)
+      need_value "$#" "$1"
       host_filter="${2:-}"
       shift 2
       ;;
     --max-claude-tokens)
+      need_value "$#" "$1"
       max_claude_tokens="${2:-}"
       shift 2
       ;;
@@ -393,17 +404,25 @@ else
     exit 2
   fi
 
-  if [[ -x "$skill_surface_script" ]]; then
+  # Sub-validators run through bash, so a checkout or archive that dropped the
+  # exec bits still runs them; a missing one is a failure, never a silent skip.
+  if [[ -f "$skill_surface_script" ]]; then
     if ! bash "$skill_surface_script" --repo-root "$repo_root"; then
       exit_code=1
     fi
+  else
+    printf 'validate-host-install-surface: missing sub-validator %s\n' "$skill_surface_script" >&2
+    exit_code=1
   fi
 
   if [[ "$host_filter" == "all" || "$host_filter" == "claude" ]]; then
-    if [[ -x "$token_budget_script" ]]; then
+    if [[ -f "$token_budget_script" ]]; then
       if ! bash "$token_budget_script" --repo-root "$repo_root" --max-tokens "$max_claude_tokens"; then
         exit_code=1
       fi
+    else
+      printf 'validate-host-install-surface: missing sub-validator %s\n' "$token_budget_script" >&2
+      exit_code=1
     fi
   fi
 fi

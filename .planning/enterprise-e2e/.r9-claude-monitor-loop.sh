@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-MAIN=/Users/shafqat/projects/silver-bullet/repo
+MAIN=/Users/<user>/projects/silver-bullet/repo
 SB_ROOT=/private/tmp/sb-main-row11-fp
 TIMELINE="$MAIN/.e2e-r9-claude-timeline.md"
 REG="$SB_ROOT/.planning/enterprise-e2e/.row-pass-registry.json"
 FP=claude@89e2ab8f96a1+724a435c9991
-TEST_APP=/Users/shafqat/projects/enterprise-grade-test-app-round9-claude
+TEST_APP=/Users/<user>/projects/enterprise-grade-test-app-round9-claude
 BASELINE=8482e60
 LOG="$SB_ROOT/.e2e-r9-claude-matrix-live.log"
 while kill -0 "$(cat "$MAIN/.e2e-r9-claude-driver.pid" 2>/dev/null)" 2>/dev/null; do

@@ -1,6 +1,6 @@
 # Rung 4 review — GLM 5.3 Max (OpenCode)
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 **Method:** direct review session (parent agent = `opencode-go/glm-5.3`, rung label GLM 5.3 Max). Full-plan read (407 lines) plus `grep -n` verification of every quoted phrase/line citation below; RFL ledger, rung 1–3 reviews, and rung-1 triage read for dedup; repo file-existence re-check. No plan edits.
 

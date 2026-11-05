@@ -1,6 +1,6 @@
 # `/silver:deep-research-multi-ai` — Clarification Brief
 
-**Source plan:** [multi_ai_deep_research_b3d9881b.plan.md](/Users/shafqat/.cursor/plans/multi_ai_deep_research_b3d9881b.plan.md)  
+**Source plan:** [multi_ai_deep_research_b3d9881b.plan.md](/Users/<user>/.cursor/plans/multi_ai_deep_research_b3d9881b.plan.md)  
 **Clarify run:** 2026-07-15 (AF-CLARIFY on updated workflow implementation plan)  
 **Scope:** Catalog-backed multi-model orchestration layer on the existing SB deep-research engine — with a **new DR-native orchestration spine that replaces `/silver:multi-ai-task`**.
 
@@ -151,6 +151,6 @@ Wire existing multi-ai-task dispatch/consolidation into DR by translating phase 
 | Artifact | Path |
 |----------|------|
 | Clarify brief (this file) | [.planning/multi_ai_deep_research_b3d9881b-CLARIFY-260715-20260715T152255Z.md](.planning/multi_ai_deep_research_b3d9881b-CLARIFY-260715-20260715T152255Z.md) |
-| Source implementation plan | [multi_ai_deep_research_b3d9881b.plan.md](/Users/shafqat/.cursor/plans/multi_ai_deep_research_b3d9881b.plan.md) |
+| Source implementation plan | [multi_ai_deep_research_b3d9881b.plan.md](/Users/<user>/.cursor/plans/multi_ai_deep_research_b3d9881b.plan.md) |
 | Clarify path helper | [scripts/lib/planning-clarify-path.sh](scripts/lib/planning-clarify-path.sh) |
 | Parent DR contract | [research/README.md](research/README.md) |

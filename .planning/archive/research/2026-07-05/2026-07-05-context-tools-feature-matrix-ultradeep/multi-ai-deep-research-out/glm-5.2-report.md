@@ -550,7 +550,7 @@ Externally referenced but not directly fetched in this analysis:
 - Added explicit compositional-asymmetry observation (production pattern is LeanCTX-as-core + persona-conditional addons, not rip-and-replace).
 
 ### Phase 8 — PACKAGE
-- Output written to `/Users/shafqat/projects/silver-bullet/repo/.planning/archive/research/2026-07-05/2026-07-05-context-tools-feature-matrix-ultradeep/multi-ai-deep-research-out/glm-5.2-report.md`.
+- Output written to `/Users/<user>/projects/silver-bullet/repo/.planning/archive/research/2026-07-05/2026-07-05-context-tools-feature-matrix-ultradeep/multi-ai-deep-research-out/glm-5.2-report.md`.
 - Format: Executive Summary → Introduction → Main Analysis (sections 2–7 above) → Synthesis & Insights → Limitations & Caveats → Recommendations → Bibliography → Methodology Appendix.
 - Primary input: gist-leanctx-capability-analysis.md (641 lines, 200-row matrix).
 - Primary corroboration: 10 re-fetched sources (LeanCTX site/arch/compat/compare/GitHub/catalog/ledger + RTK + CM + AM + GF READMEs).

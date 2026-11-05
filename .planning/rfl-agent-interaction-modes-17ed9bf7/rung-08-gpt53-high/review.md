@@ -1,6 +1,6 @@
 # Rung 8 review — GPT-5.3 High (Codex NI)
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 ```
 RUNG: 8
@@ -19,8 +19,8 @@ BLOCKERS: ChatGPT-account pin-lock — gpt-5.3 and gpt-5.3-codex return HTTP 400
 Read `skills/silver-agent-codex/SKILL.md`. Graphify CLI before plan/source reads. Attempted skill NI:
 
 ```
-HOME=/Users/shafqat CODEX_HOME=/Users/shafqat/.codex \
-  /Users/shafqat/.local/bin/codex exec --skip-git-repo-check \
+HOME=/Users/<user> CODEX_HOME=/Users/<user>/.codex \
+  /Users/<user>/.local/bin/codex exec --skip-git-repo-check \
     -m gpt-5.3 -c model_reasoning_effort=high …
 ```
 

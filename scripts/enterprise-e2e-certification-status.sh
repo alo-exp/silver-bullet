@@ -41,7 +41,6 @@ EOF
 done
 
 SOURCES="${SB_ROOT}/docs/testing/host-certification-sources.json"
-BASELINE="${SB_ROOT}/docs/testing/autonomous-enterprise-proof-baseline.json"
 # SB_CERT_ARTIFACT redirects --write to an alternate path so callers (tests)
 # can exercise the writer without mutating the tracked repo artifact.
 ARTIFACT="${SB_CERT_ARTIFACT:-${SB_ROOT}/.planning/enterprise-e2e/CERTIFICATION-STATUS.json}"
@@ -140,10 +139,6 @@ classify_proof_level() {
     printf '%s\n' "live_e2e_partial"
     return 0
   fi
-  if [[ "$reconcile" == "COMPLETE" && "$pass_count" -ge 22 && "$strict_clean" != "yes" ]]; then
-    printf '%s\n' "live_e2e_partial"
-    return 0
-  fi
   printf '%s\n' "not_started"
 }
 
@@ -164,7 +159,6 @@ product_audit_status() {
 # Legacy ledgers (e.g. Cursor-3 REAL) may lack graphify/agentmemory matrix columns.
 ledger_narrative_matrix_complete() {
   local ledger="$1"
-  [[ -f "$ledger" ]] || return 1
   grep -qiE 'Full matrix 22/22.*\*\*PASS\*\*|Matrix 22/22 live.*\*\*PASS\*\*|22/22 strict-clean' "$ledger" 2>/dev/null
 }
 
@@ -176,7 +170,6 @@ ledger_narrative_strict_clean() {
 
 ledger_narrative_reconcile_complete() {
   local ledger="$1"
-  [[ -f "$ledger" ]] || return 1
   grep -qiE 'ledger reconcile.*\*\*COMPLETE\*\*.*22/22|Ledger reconcile.*\*\*COMPLETE\*\*' "$ledger" 2>/dev/null
 }
 
@@ -238,7 +231,9 @@ for host in cursor codex claude; do
     esac
   fi
 
-  reg_fp="" reg_rows=0 reg_at=""
+  reg_fp=""
+  reg_rows=0
+  reg_at=""
   reg_lines="$(registry_best_install "$host" 2>/dev/null || true)"
   if [[ -n "$reg_lines" ]]; then
     reg_fp="$(printf '%s\n' "$reg_lines" | sed -n '1p')"
@@ -372,7 +367,7 @@ echo "Tri-host live_e2e_proven: $(jq -r '.conservative_summary.tri_host_live_e2e
 echo "Public autonomous enterprise claim ready: $(jq -r '.conservative_summary.public_autonomous_enterprise_claim_ready' <<<"$DOC")"
 if [[ "$WRITE_ARTIFACT" -eq 0 ]]; then
   echo ""
-  echo "Run with --write to persist ${ARTIFACT#${SB_ROOT}/}"
+  echo "Run with --write to persist ${ARTIFACT#"${SB_ROOT}"/}"
 fi
 
 printf '%s\n' "$DOC"

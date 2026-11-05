@@ -45,7 +45,7 @@ trap cleanup EXIT
 
 assert_contains() {
   local name="$1" hay="$2" needle="$3"
-  if printf '%s' "$hay" | grep -qF "$needle"; then
+  if grep -qF "$needle" <<<"$hay"; then
     echo "PASS: $name"
     PASS=$((PASS + 1))
   else
@@ -163,7 +163,7 @@ jq -n --arg at "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" '{skill:"silver-plan",template
   >"${SB_TEST_DIR}/orchestrator-worker-active.json"
 out_worker=$(cd "$WORK2" && printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{}}' | env -u SB_ORCHESTRATOR_PARENT -u SB_ORCHESTRATOR_WORKER \
   SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
-if printf '%s' "$out_worker" | grep -qF 'ORCHESTRATOR PARENT'; then
+if grep -qF 'ORCHESTRATOR PARENT' <<<"$out_worker"; then
   echo "FAIL: worker marker without env should not get parent block"
   FAIL=$((FAIL + 1))
 else
@@ -173,7 +173,7 @@ fi
 
 out_worker_bash=$(cd "$WORK2" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"gh issue create"}}' | env -u SB_ORCHESTRATOR_PARENT -u SB_ORCHESTRATOR_WORKER \
   SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
-if printf '%s' "$out_worker_bash" | grep -qF 'ORCHESTRATOR DIRECTIVE'; then
+if grep -qF 'ORCHESTRATOR DIRECTIVE' <<<"$out_worker_bash"; then
   echo "FAIL: worker marker should allow Bash without directive skill recorded"
   FAIL=$((FAIL + 1))
 else

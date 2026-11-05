@@ -72,7 +72,7 @@ sb_rfl_resolver_json() {
 sb_rfl_total_rungs_from_resolver() {
   local resolver_json="$1"
   if command -v jq >/dev/null 2>&1; then
-    jq -r '(.total_rungs // (.rungs | length) // 6)' <<<"$resolver_json"
+    jq -r '(.total_rungs // (if ((.rungs // []) | length) > 0 then (.rungs | length) else empty end) // 6)' <<<"$resolver_json"
   else
     printf '6'
   fi
@@ -91,7 +91,9 @@ sb_rfl_sync_rung_metadata() {
   local rung="${1:-1}"
   local project_root resolver_json rung_json subagent_name model_param
   project_root="$(sb_rfl_project_root)"
-  resolver_json="$(sb_rfl_resolver_json "$project_root")"
+  # A project without scripts/review-fix-ladder.py makes the resolver return 1 after
+  # printing the "{}" default; do not let errexit abort on that.
+  resolver_json="$(sb_rfl_resolver_json "$project_root")" || true
   rung_json="$(sb_rfl_rung_from_resolver "$resolver_json" "$rung")"
   command -v jq >/dev/null 2>&1 || return 0
   subagent_name="$(jq -r '.subagent_name // empty' <<<"$rung_json")"
@@ -99,13 +101,14 @@ sb_rfl_sync_rung_metadata() {
   [[ -n "$subagent_name" ]] && sb_rfl_set_field subagent_name "$subagent_name"
   [[ -n "$model_param" ]] && sb_rfl_set_field model_param "$model_param"
   [[ -n "$model_param" ]] && sb_rfl_set_field rung_model "$model_param"
+  return 0
 }
 
 sb_rfl_activate() {
   local rung="${1:-1}" rung_model="${2:-}" host_model="${3:-composer-2.5}"
   local project_root resolver_json total_rungs rung_json subagent_name model_param state_json
   project_root="$(sb_rfl_project_root)"
-  resolver_json="$(sb_rfl_resolver_json "$project_root")"
+  resolver_json="$(sb_rfl_resolver_json "$project_root")" || true
   total_rungs="$(sb_rfl_total_rungs_from_resolver "$resolver_json")"
   rung_json="$(sb_rfl_rung_from_resolver "$resolver_json" "$rung")"
   if command -v jq >/dev/null 2>&1; then
@@ -220,15 +223,15 @@ sb_rfl_prompt_phase_hint() {
   local prompt="$1"
   local lower
   lower="$(sb_rfl_prompt_lower "$prompt")"
-  if printf '%s' "$lower" | grep -qiE 'rung_[0-9]+_review|review-only|raw findings only|review_raw'; then
+  if grep -qiE 'rung_[0-9]+_review|review-only|raw findings only|review_raw' <<<"$lower"; then
     printf 'review'
-  elif printf '%s' "$lower" | grep -qiE '/sb:triage|sb:triage|rung_[0-9]+_triage|triage_pass|classify'; then
+  elif grep -qiE '/sb:triage|sb:triage|rung_[0-9]+_triage|triage_pass|classify' <<<"$lower"; then
     printf 'triage'
-  elif printf '%s' "$lower" | grep -qiE 'rung_[0-9]+_fix|fix subagent|fix_pass|apply accept'; then
+  elif grep -qiE 'rung_[0-9]+_fix|fix subagent|fix_pass|apply accept' <<<"$lower"; then
     printf 'fix'
-  elif printf '%s' "$lower" | grep -qiE 'verify_2|second verify|verify pass 2'; then
+  elif grep -qiE 'verify_2|second verify|verify pass 2' <<<"$lower"; then
     printf 'verify_2'
-  elif printf '%s' "$lower" | grep -qiE 'verify-only|verify_1|readonly:\s*true|ladder_pass'; then
+  elif grep -qiE 'verify-only|verify_1|readonly:\s*true|ladder_pass' <<<"$lower"; then
     printf 'verify_1'
   else
     printf 'unknown'
@@ -239,7 +242,7 @@ sb_rfl_prompt_has_combined_verify() {
   local prompt="$1"
   local lower
   lower="$(sb_rfl_prompt_lower "$prompt")"
-  printf '%s' "$lower" | grep -qiE 'verify_1.*verify_2|two consecutive verify|2 verify pass|both verify pass|do 2 passes|two passes in one'
+  grep -qiE 'verify_1.*verify_2|two consecutive verify|2 verify pass|both verify pass|do 2 passes|two passes in one' <<<"$lower"
 }
 
 sb_rfl_prompt_has_review_triage_mix() {
@@ -247,8 +250,8 @@ sb_rfl_prompt_has_review_triage_mix() {
   local lower
   lower="$(sb_rfl_prompt_lower "$prompt")"
   local has_review=0 has_triage=0
-  printf '%s' "$lower" | grep -qiE 'review-only|raw findings' && has_review=1
-  printf '%s' "$lower" | grep -qiE 'sb:triage|/sb:triage|valid-blocker|valid-nonblocker|triage_pass' && has_triage=1
+  grep -qiE 'review-only|raw findings' <<<"$lower" && has_review=1
+  grep -qiE 'sb:triage|/sb:triage|valid-blocker|valid-nonblocker|triage_pass' <<<"$lower" && has_triage=1
   [[ "$has_review" -eq 1 && "$has_triage" -eq 1 ]]
 }
 
@@ -454,7 +457,7 @@ sb_rfl_advance_after_task() {
 
 sb_rfl_detect_pm_filing_command() {
   local cmd="$1"
-  printf '%s' "$cmd" | grep -qiE 'silver-add\.sh|adapter-create|gh issue create|/sb:add|sb:add'
+  grep -qiE 'silver-add\.sh|adapter-create|gh issue create|/sb:add|sb:add' <<<"$cmd"
 }
 
 sb_rfl_on_skill_invoke() {

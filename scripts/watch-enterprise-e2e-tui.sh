@@ -97,13 +97,13 @@ append_ledger_ux() {
   if [[ "${SB_E2E_LEDGER_NO_UX_APPEND:-}" == "1" ]]; then
     return 0
   fi
-  local marker="tui-watch|row${row}|${component}|${quote:0:40}"
+  local marker="tui-watch row${row} ${component}: ${quote:0:40}"
   if grep -qF "$marker" "$LEDGER" 2>/dev/null; then
     return 0
   fi
   {
-    printf '| %s | %s | %s | %s | tui-watch %s |\n' \
-      "$row" "$severity" "$component" "${quote:0:80}" "$(utc_now)"
+    printf '| %s | %s | %s | %s | %s %s |\n' \
+      "$row" "$severity" "$component" "${quote:0:80}" "$marker" "$(utc_now)"
   } >>"$LEDGER"
   log "ledger UX: row=$row $severity $component"
 }

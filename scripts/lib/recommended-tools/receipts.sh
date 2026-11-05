@@ -90,7 +90,7 @@ rt_receipt_expected_tools_json() {
 rt_receipt_list_paths() {
   local host="${1:-cursor}" project_id="${2:-}" worktree_id="${3:-}" scope="${4:-project}"
   local dir
-  dir="$(rt_reload_receipt_scope_dir "$host" "$project_id" "$worktree_id" "$scope" 2>/dev/null || true)"
+  dir="$(rt_reload_receipt_scope_dir "$host" "$project_id" "$worktree_id" "$scope" 2>/dev/null)"
   [[ -d "$dir" ]] || return 0
   find "$dir" -maxdepth 1 -name '*.json' -type f ! -name '.*' 2>/dev/null | sort
 }
@@ -114,7 +114,6 @@ rt_receipt_find_active() {
   local host="${1:-cursor}" project_id="${2:-}" worktree_id="${3:-}" scope="${4:-project}"
   local path receipt newest="" newest_ts=""
   while IFS= read -r path; do
-    [[ -n "$path" ]] || continue
     receipt="$(rt_receipt_read "$path" 2>/dev/null || true)"
     [[ -n "$receipt" ]] || continue
     jq -e '.consumed_at == null and (.superseded_at == null or .superseded_at == "")' <<<"$receipt" >/dev/null 2>&1 || continue
@@ -134,7 +133,6 @@ rt_receipt_supersede_same_lineage() {
   local change_set_id="${5:-}" predecessor="${6:-}"
   local path receipt
   while IFS= read -r path; do
-    [[ -n "$path" ]] || continue
     receipt="$(rt_receipt_read "$path" 2>/dev/null || true)"
     [[ -n "$receipt" ]] || continue
     jq -e '.consumed_at == null and (.superseded_at == null or .superseded_at == "")' <<<"$receipt" >/dev/null 2>&1 || continue
@@ -175,7 +173,7 @@ rt_receipt_create() {
 
   path="$(rt_reload_receipt_path "$host" "$project_id" "$worktree_id" "$receipt_id" "$scope")"
   lock_dir="$(rt_reload_receipt_lock_dir "$host" "$project_id" "$worktree_id" "$scope")"
-  rt_receipt_supersede_same_lineage "$host" "$project_id" "$worktree_id" "$scope" "$change_set_id" "" || true
+  rt_receipt_supersede_same_lineage "$host" "$project_id" "$worktree_id" "$scope" "$change_set_id" ""
 
   payload="$(jq -n \
     --arg schema "$RT_RECEIPT_SCHEMA" \
@@ -220,7 +218,7 @@ rt_receipt_create() {
     superseded_at: null
   }')"
 
-  rt_with_lock "$lock_dir" 15 rt_atomic_write_json "$path" "$payload"
+  rt_with_lock "$lock_dir" 15 rt_atomic_write_json "$path" "$payload" || return 1
   printf '%s' "$payload"
 }
 
@@ -236,13 +234,8 @@ rt_host_evidence_read_stdin() {
     return 1
   fi
   if ! printf '%s' "$raw" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then
+    # shellcheck disable=SC2034  # read by scripts/reconcile-recommended-tools.sh
     RT_HOST_EVIDENCE_ERROR="host_evidence_invalid_json"
-    return 1
-  fi
-  local trailing
-  trailing="$(cat 2>/dev/null || true)"
-  if [[ -n "$trailing" && "$trailing" != $'\n' ]]; then
-    RT_HOST_EVIDENCE_ERROR="host_evidence_trailing_data"
     return 1
   fi
   RT_HOST_EVIDENCE_JSON="$(printf '%s' "$raw" | jq -c '.')"
@@ -375,7 +368,7 @@ rt_attestation_validate() {
   if [[ ${#errors[@]} -eq 0 ]]; then
     valid=true
   elif [[ "$activation" == "partial" || "$activation" == "none" ]] \
-     && printf '%s\n' "${errors[@]}" | grep -qvE '^(missing_tool:|missing_server:)'; then
+     && grep -qvE '^(missing_tool:|missing_server:)' <<<"$(printf '%s\n' "${errors[@]}")"; then
     valid=false
   elif [[ "$activation" == "partial" ]]; then
     valid=true
@@ -396,16 +389,13 @@ rt_receipt_find_by_id() {
   local project_id="${4:-}" worktree_id="${5:-}"
   [[ -n "$receipt_id" ]] || return 1
   local path receipt
-  path="$(rt_reload_receipt_path "$host" "$project_id" "$worktree_id" "$receipt_id" "$scope" 2>/dev/null || true)"
-  if [[ -n "$path" ]]; then
-    receipt="$(rt_receipt_read "$path" 2>/dev/null || true)"
-    if [[ -n "$receipt" ]]; then
-      printf '%s' "$receipt"
-      return 0
-    fi
+  path="$(rt_reload_receipt_path "$host" "$project_id" "$worktree_id" "$receipt_id" "$scope" 2>/dev/null)"
+  receipt="$(rt_receipt_read "$path" 2>/dev/null || true)"
+  if [[ -n "$receipt" ]]; then
+    printf '%s' "$receipt"
+    return 0
   fi
   while IFS= read -r path; do
-    [[ -n "$path" ]] || continue
     receipt="$(rt_receipt_read "$path" 2>/dev/null || true)"
     [[ -n "$receipt" ]] || continue
     jq -e --arg rid "$receipt_id" '.receipt_id == $rid' <<<"$receipt" >/dev/null 2>&1 || continue
@@ -503,7 +493,7 @@ rt_reconcile_receipt_state() {
   result="$(jq -n \
     --argjson has_receipt "$([[ -n "$receipt" ]] && echo true || echo false)" \
     --arg canonical "$( [[ -n "$receipt" ]] && echo reload_required || echo ready)" \
-    --arg activation "$(jq -r '.activation_status // "none"' <<<"${receipt:-{}}")" \
+    --arg activation "$(jq -r '.activation_status // "none"' <<<"${receipt:-"{}"}")" \
     --argjson clear_eligible false \
     '{has_receipt:$has_receipt,canonical_state:$canonical,activation_status:$activation,clear_eligible:$clear_eligible,errors:[]}')"
 
@@ -610,35 +600,43 @@ rt_apply_host_convergence_batches() {
 
 rt_apply_host_hooks_batch() {
   local repo="${RT_REPO_ROOT:-}" actions=() failures=() changed=0 patch_any=0
-  local hooks_pre hooks_post patch_out fix_out
+  local hooks_pre hooks_post patch_out
   # Claude and Codex own their hook formats and lifecycle; their installers
   # wire RTK/Context Mode directly. Never invoke the Cursor JSON patcher for a
   # different host, because that silently creates a foreign-host config.
   if [[ "${RT_HOST:-cursor}" == "opencode" ]]; then
     local merge_py="${repo}/scripts/lib/merge-token-compression-config.py"
+    local errors=() merge_err_file merge_err_line
     if [[ -f "$merge_py" ]]; then
+      merge_err_file="$(mktemp)"
       if rt_mutation_allowed rtk; then
-        if python3 "$merge_py" --host opencode --repo-root "$repo" --rtk-only >/dev/null 2>&1; then
+        if python3 "$merge_py" --host opencode --repo-root "$repo" --rtk-only >/dev/null 2>"$merge_err_file"; then
           actions+=("opencode_rtk_plugin")
           changed=1
         else
           failures+=("opencode_rtk_plugin_failed")
+          merge_err_line="$(tail -n 1 "$merge_err_file")"
+          [[ -z "$merge_err_line" ]] || errors+=("opencode_rtk_plugin: ${merge_err_line}")
         fi
       fi
       if rt_mutation_allowed context_mode; then
-        if python3 "$merge_py" --host opencode --repo-root "$repo" --context-mode-only >/dev/null 2>&1; then
+        if python3 "$merge_py" --host opencode --repo-root "$repo" --context-mode-only >/dev/null 2>"$merge_err_file"; then
           actions+=("opencode_context_mode_plugin")
           changed=1
         else
           failures+=("opencode_context_mode_plugin_failed")
+          merge_err_line="$(tail -n 1 "$merge_err_file")"
+          [[ -z "$merge_err_line" ]] || errors+=("opencode_context_mode_plugin: ${merge_err_line}")
         fi
       fi
+      rm -f "$merge_err_file"
     fi
     jq -n \
       --argjson actions "$(rt_json_string_array ${actions[@]+"${actions[@]}"})" \
       --argjson failures "$(rt_json_string_array ${failures[@]+"${failures[@]}"})" \
+      --argjson errors "$(rt_json_string_array ${errors[@]+"${errors[@]}"})" \
       --argjson changed "$([[ $changed -eq 1 ]] && echo true || echo false)" \
-      '{actions:$actions,failures:$failures,changed:$changed}'
+      '{actions:$actions,failures:$failures,changed:$changed} + (if ($errors | length) > 0 then {errors:$errors} else {} end)'
     return 0
   fi
   if [[ "${RT_HOST:-cursor}" == "pi" ]]; then

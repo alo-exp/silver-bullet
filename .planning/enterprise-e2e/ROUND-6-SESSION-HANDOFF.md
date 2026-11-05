@@ -10,7 +10,7 @@
 
 `6485ec34` — `enterprise-e2e/multi-host` (+ pending harness commit: archive evidence + rows 21–22 internal fallback)
 
-**Test app HEAD:** `8482e60` @ `/Users/shafqat/projects/enterprise-grade-test-app`
+**Test app HEAD:** `8482e60` @ `/Users/<user>/projects/enterprise-grade-test-app`
 
 ## Active work (recovery CHECKPOINT)
 
@@ -59,9 +59,9 @@ echo $! > .e2e-matrix-monitor.pid
 ## Env
 
 ```bash
-export SB_E2E_LEDGER_FILE=/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-6-LEDGER.md
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_E2E_LEDGER_FILE=/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-6-LEDGER.md
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 export SB_E2E_MATRIX_LOG="$SB_ROOT/.e2e-matrix-round6-force.log"
 export SB_E2E_MATRIX_FORCE=1
 export SB_E2E_MONITOR_AUTO_RESTART=0

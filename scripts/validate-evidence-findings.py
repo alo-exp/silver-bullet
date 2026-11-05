@@ -71,16 +71,6 @@ ARTIFACT_GLOBS = [
     ".planning/**/TEST-ENGINEERING.md",
 ]
 
-FINDING_SECTION_MARKERS = (
-    "## findings",
-    "## finding",
-    "## quality findings",
-    "## threat findings",
-    "## gap findings",
-    "## anti-pattern findings",
-)
-
-
 @dataclass
 class Issue:
     level: str  # warn | error
@@ -148,15 +138,6 @@ def looks_like_finding_table(headers: list[str]) -> bool:
     canon = {canonical_header(h) for h in headers}
     canon.discard(None)
     return {"severity", "finding", "evidence"}.issubset(canon)
-
-
-def in_findings_section(text: str, offset: int) -> bool:
-    before = text[:offset].lower()
-    for marker in FINDING_SECTION_MARKERS:
-        if marker in before:
-            # Only tables after the last findings marker count.
-            return before.rfind(marker) > before.rfind("\n## ", 0, before.rfind(marker))
-    return False
 
 
 def discover_artifacts(root: Path) -> list[Path]:
@@ -265,10 +246,7 @@ def validate_file(root: Path, path: Path, strict: bool, result: ValidationResult
             idx += 1
             continue
         headers, rows, next_idx = parsed
-        offset = sum(len(l) + 1 for l in lines[:idx])
-        if looks_like_finding_table(headers) and (
-            in_findings_section(text, offset) or looks_like_finding_table(headers)
-        ):
+        if looks_like_finding_table(headers):
             validate_table(result, rel, headers, rows, strict)
         idx = next_idx
 

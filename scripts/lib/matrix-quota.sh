@@ -4,7 +4,7 @@
 is_quota_failure() {
   local output="$1"
   local log_file="${2:-}"
-  if printf '%s\n' "$output" | grep -qiE '429|token[[:space:]]+plan|usage[[:space:]]+limit|rate[[:space:]]+limit'; then
+  if grep -qiE '429|token[[:space:]]+plan|usage[[:space:]]+limit|rate[[:space:]]+limit' <<<"$output"; then
     return 0
   fi
   if [[ -n "$log_file" && -f "$log_file" ]] \

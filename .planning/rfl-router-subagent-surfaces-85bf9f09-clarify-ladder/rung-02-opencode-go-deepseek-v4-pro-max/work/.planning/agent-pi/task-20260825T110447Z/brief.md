@@ -2,7 +2,7 @@
 
 Autonomous `/silver:clarify --auto` against the freeze plan only (not product implementation):
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 This is ladder rung 2 (`opencode-go/deepseek-v4-pro-max`). Prior rung applied **no** freeze edits (SHA `cca61544e25d60e8f645910b55f456db35663a76440349c12de19895cfa726f2`). Independently re-read the freeze. Resolve only items the skill allows without the human. Do not reopen KEEP REJECT. Do not implement product.
 

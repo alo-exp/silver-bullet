@@ -14,6 +14,9 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
 fi
 export SILVER_BULLET_TEST_HOOK_ENFORCED=1
+# session-start also checks GitHub for a newer release (curl to
+# api.github.com); that is covered offline by test-session-start-update-check.
+export SILVER_BULLET_UPDATE_CHECK_DISABLED=1
 
 # shellcheck source=../../hooks/lib/enterprise-policy.sh
 source "$LIB"
@@ -31,7 +34,7 @@ assert_eq() {
 
 assert_contains() {
   local desc="$1" haystack="$2" needle="$3"
-  if printf '%s' "$haystack" | grep -qF "$needle"; then
+  if grep -qF "$needle" <<<"$haystack"; then
     echo "PASS: $desc"
     PASS=$((PASS + 1))
   else

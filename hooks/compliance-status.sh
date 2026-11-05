@@ -11,22 +11,14 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/workflow-utils.sh" ]]; then
   source "$_lib_dir/workflow-utils.sh"
 fi
 if ! declare -f count_flow_log_rows >/dev/null 2>&1; then
-  count_flow_log_rows() { grep -cE '^\| [0-9]+ \|' "$1" 2>/dev/null || echo 0; }
-  count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' "$1" 2>/dev/null || echo 0; }
+  count_flow_log_rows() { grep -cE '^\| [0-9]+ \|' "$1" 2>/dev/null || true; }
+  count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' "$1" 2>/dev/null || true; }
 fi
 
 # PostToolUse hook (matcher: .*)
 # Shows a compact compliance progress score on every tool use.
 # PERFORMANCE CRITICAL: must complete in <100ms. Minimal I/O.
 
-# Source symlink-write guard (SEC-02)
-if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
-  # shellcheck source=lib/nofollow-guard.sh
-  source "$_lib_dir/nofollow-guard.sh"
-else
-  sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
-  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
-fi
 if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
@@ -51,7 +43,6 @@ DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-q
 command -v jq >/dev/null 2>&1 || exit 0
 
 debug_hook_events() {
-  [[ "${SILVER_BULLET_DEBUG_HOOK_EVENTS:-0}" == "1" ]] || return 0
   local payload="$1"
   local dbg_dir="${SB_RUNTIME_STATE_DIR}"
   mkdir -p "$dbg_dir" 2>/dev/null || true
@@ -64,7 +55,7 @@ debug_hook_events() {
     printf 'pwd=%s\n' "$PWD"
     printf 'hook_event=%s\n' "$hook_event"
     printf 'tool_name=%s\n' "$tool_name"
-  } >>"$dbg_file" 2>/dev/null || true
+  } 2>/dev/null >>"$dbg_file" || true
 }
 
 # Consume stdin (required by hook protocol). Keep the fast path fast: only
@@ -244,7 +235,7 @@ has_skill() {
     sb_required_skill_is_recorded "$state_contents" "$1"
     return $?
   fi
-  printf '%s\n' "$state_contents" | grep -Fqx -- "$1" 2>/dev/null
+  grep -Fqx -- "$1" <<<"$state_contents" 2>/dev/null
 }
 
 # --- PLANNING phase ---

@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# Behavior tests for hooks/alumnium-gate.sh (PreToolUse). npx/npm are stubs.
+set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
+tl_init claude
+unset SB_ALUMNIUM_MCP_ARTIFACT SB_AGENT_CERT_RUN SB_KAY_HOOK_BRIDGE_INVOKED
+source "$TL_REPO_ROOT/tests/lib/c-toolgates-1-helpers.sh"
+gh_init_project
+mkdir -p "$TL_TMP/outside"
+HOOK=hooks/alumnium-gate.sh
+ART="$TL_TMP/alum-art.json"; export SB_ALUMNIUM_MCP_ARTIFACT="$ART"
+BROWSER_EDIT="$GH_PROJ/e2e/login.spec.ts"
+
+base_cfg() { jq -n "{config_version:\"1\", sb_initiated:true, recommended_tools:{alumnium:{enabled_by_user:true}}} | ${1:-.}" >"$GH_CFG"; }
+npx_ok() { tl_stub npx 'exit 0'; tl_stub npm 'exit "${NPM_RC:-0}"'; hash -r; }
+npx_none() { rm -f "$TL_BIN/npx" "$TL_BIN/npm"; hash -r; }
+
+gh_scenario_block() { base_cfg; npx_none; rm -f "$ART"; }
+
+gh_prelude_suite "$HOOK" alumnium-gate alumnium "$GH_PROJ/.silver-bullet/state" "npm test" "$BROWSER_EDIT" "ALUMNIUM REQUIRED" "sed -i s/a/b/ e2e/login.spec.ts"
+
+gh_scenario_block
+# edits that are not browser/visual-testing artifacts are never gated
+gh_run "$HOOK" "$(gh_edit_input "$GH_PROJ/src/app.js")"
+assert_gate_allows "non-browser edit allows"
+# browser/visual artifacts are gated
+for p in "$GH_PROJ/e2e/a.ts" "$GH_PROJ/playwright/a.js" "$GH_PROJ/src/Panel.canvas.tsx" "$GH_PROJ/tests/login.cy.js" "$GH_PROJ/docs/screenshots/a.png"; do
+  gh_run "$HOOK" "$(gh_edit_input "$p")"
+  assert_gate_denies "browser artifact is gated: ${p#"$GH_PROJ"/}" "ALUMNIUM REQUIRED"
+done
+# generic unit tests named *.spec.* are not browser tests
+gh_run "$HOOK" "$(gh_edit_input "$GH_PROJ/tests/unit.spec.js")"
+assert_gate_allows "unit spec edit is not browser work"
+# shell: commits and ordinary writes are out of scope; browser tooling and browser-test writes are gated
+gh_run "$HOOK" "$(gh_bash_input "git commit -m x")"
+assert_gate_allows "commit is not browser work"
+gh_run "$HOOK" "$(gh_bash_input "sed -i s/a/b/ src/app.js")"
+assert_gate_allows "ordinary in-place sed is not browser work"
+gh_run "$HOOK" "$(gh_bash_input "npx playwright test")"
+assert_gate_denies "playwright run is gated" "ALUMNIUM REQUIRED"
+gh_run "$HOOK" "$(gh_bash_input "git status")"
+assert_gate_allows "read-only command is never gated"
+# exempt paths are allowed even when they look like browser artifacts
+gh_run "$HOOK" "$(gh_edit_input "$GH_PROJ/e2e/silver-bullet.md")"
+assert_gate_allows "silver-bullet.md under e2e is exempt"
+gh_run "$HOOK" "$(gh_edit_input "$GH_PROJ/e2e/.silver-bullet/x.spec.ts")"
+assert_gate_allows "state dir under e2e is exempt"
+
+# npx reachable: the npm registry is never queried (offline work must not be blocked or slowed)
+npx_ok
+gh_run "$HOOK" "$(gh_edit_input "$BROWSER_EDIT")" NPM_RC=1
+assert_gate_denies "an unreachable registry is irrelevant; the missing wiring is reported" "MCP server not wired"
+# npx available, MCP artifact missing
+gh_run "$HOOK" "$(gh_edit_input "$BROWSER_EDIT")"
+assert_gate_denies "mcp artifact missing is denied" "ALUMNIUM REQUIRED"
+assert_contains "message names provider key" "$(gh_reason)" "OPENAI_API_KEY"
+# Codex apply_patch sends project-relative paths: a top-level e2e/ edit is a browser test too.
+REL_PATCH="$(jq -cn --arg c $'*** Begin Patch\n*** Add File: e2e/checkout.spec.ts\n+test\n*** End Patch' '{hook_event_name:"PreToolUse", tool_name:"apply_patch", tool_input:{input:$c}}')"
+gh_run "$HOOK" "$REL_PATCH"
+assert_gate_denies "a relative apply_patch path under e2e/ is gated" "ALUMNIUM REQUIRED"
+REL_SRC_PATCH="$(jq -cn --arg c $'*** Begin Patch\n*** Add File: src/util.ts\n+test\n*** End Patch' '{hook_event_name:"PreToolUse", tool_name:"apply_patch", tool_input:{input:$c}}')"
+gh_run "$HOOK" "$REL_SRC_PATCH"
+assert_gate_allows "a relative apply_patch path outside browser tests is not gated"
+# wired
+printf '{"mcpServers":{"alumnium":{}}}' >"$ART"
+gh_run "$HOOK" "$(gh_edit_input "$BROWSER_EDIT")"
+assert_gate_allows "wired alumnium allows browser edits"
+gh_run "$HOOK" "$(gh_bash_input "git commit -m x")"
+assert_gate_allows "wired alumnium allows commits"
+# artifact referencing a custom mcp server name
+printf '{"mcpServers":{"my-browser":{}}}' >"$ART"
+gh_run "$HOOK" "$(gh_edit_input "$BROWSER_EDIT")"
+assert_gate_denies "custom server name not in artifact is denied" "ALUMNIUM REQUIRED"
+base_cfg '.recommended_tools.alumnium.mcp_server_name = "my-browser"'
+gh_run "$HOOK" "$(gh_edit_input "$BROWSER_EDIT")"
+assert_gate_allows "custom mcp_server_name found in artifact allows"
+# cursor host reads the cursor MCP config
+rm -f "$ART"
+mkdir -p "$HOME/.cursor"; printf '{"mcpServers":{"alumnium":{}}}' >"$HOME/.cursor/mcp.json"
+unset SB_ALUMNIUM_MCP_ARTIFACT
+base_cfg
+gh_run "$HOOK" "$(gh_edit_input "$BROWSER_EDIT")" SILVER_BULLET_RUNTIME=cursor
+assert_gate_allows "cursor host artifact path is honored"
+rm -rf "$HOME/.cursor"
+
+tl_results

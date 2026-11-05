@@ -22,7 +22,11 @@ resolve_omniroute() {
     readlink -f "${bin}" 2>/dev/null || realpath "${bin}" 2>/dev/null || {
       local target
       target="$(readlink "${bin}")"
-      [[ "${target}" = /* ]] && printf '%s\n' "${target}" || printf '%s\n' "$(cd "$(dirname "${bin}")" && pwd)/${target}"
+      if [[ "${target}" = /* ]]; then
+        printf '%s\n' "${target}"
+      else
+        printf '%s\n' "$(cd "$(dirname "${bin}")" && pwd)/${target}"
+      fi
     }
   else
     printf '%s\n' "${bin}"

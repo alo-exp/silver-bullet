@@ -1,122 +1,200 @@
 #!/usr/bin/env bash
 # Generate plugins/silver-bullet/commands/*.md stubs from composer skill frontmatter.
 # The source tree keeps historical silver-* authoring names; public command
-# routes are emitted under the sb namespace.
+# routes are emitted under the sb namespace. The stubs are Cursor's slash
+# commands and this script's output is final: no later packaging step
+# rewrites them, so the committed stubs are exactly what it writes.
+#
+# Usage:
+#   bash scripts/generate-plugin-commands.sh           # regenerate in place
+#   bash scripts/generate-plugin-commands.sh --check   # exit 1 when the committed stubs drift
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SKILLS_DIR="${REPO_ROOT}/skills"
 OUT_DIR="${REPO_ROOT}/plugins/silver-bullet/commands"
 
+CHECK=0
+case "${1:-}" in
+  "") ;;
+  --check) CHECK=1 ;;
+  *)
+    printf 'Usage: %s [--check]\n' "${0##*/}" >&2
+    exit 2
+    ;;
+esac
+
 # Composer routes with command stubs (extend as new top-level routes ship).
 COMPOSERS=(silver silver-init silver-feature silver-ui silver-devops silver-bugfix silver-deep-research silver-deep-research-multi-ai silver-multi-ai-task silver-compare silver-release silver-fast silver-new-workflow silver-orchestrator silver-orient silver-execute silver-ship)
 
-mkdir -p "$OUT_DIR"
-
-# Codex may have materialized command stubs under this internal name during
-# an older plugin migration. They are not source commands and must never be
-# committed or copied into a refreshed package.
-for migrated in "$OUT_DIR"/source-command-*.md; do
-  [[ -e "$migrated" ]] && rm -f -- "$migrated"
-done
-
-# Cursor desktop derives command routes from plain-Markdown filenames.
-# Migrate older colon-named stubs before regenerating so stale files cannot
-# keep shadowing the safe names.
-shopt -s nullglob
-for legacy in "$OUT_DIR"/*.md; do
-  legacy_name="$(basename "$legacy")"
-  [[ "$legacy_name" == *:* ]] || continue
-  safe_name="${legacy_name//:/-}"
-  safe="${OUT_DIR}/${safe_name}"
-  if [[ -e "$safe" ]]; then
-    rm -f -- "$legacy"
-  else
-    mv -- "$legacy" "$safe"
-  fi
-done
-
-for skill in "${COMPOSERS[@]}"; do
-  src="${SKILLS_DIR}/${skill}/SKILL.md"
-  if [[ ! -f "$src" ]]; then
-    printf 'WARN: missing %s\n' "$src" >&2
-    continue
-  fi
-
-  name_line="$(awk '/^---$/{f++;next} f==1 && /^name:/{print; exit}' "$src")"
-  skill_name="${name_line#name: }"
-  skill_name="${skill_name#\"}"
-  skill_name="${skill_name%\"}"
-  skill_name="${skill_name#silver-}"
-  [[ "$skill_name" == "silver" ]] && cmd_name="sb" || cmd_name="$skill_name"
-
-  desc_line="$(awk '/^---$/{f++;next} f==1 && /^description:/{print; exit}' "$src")"
-  hint_line="$(awk '/^---$/{f++;next} f==1 && /^argument-hint:/{print; exit}' "$src")"
-  description="${desc_line#description: }"
-  description="${description#> }"
-  description="${description%\"}"
-  description="${description#\"}"
-  argument_hint="${hint_line#argument-hint: }"
-  argument_hint="${argument_hint%\"}"
-  argument_hint="${argument_hint#\"}"
-  [[ -z "$argument_hint" ]] && argument_hint="<task description>"
-
-  codex_name="sb:${cmd_name}"
-  [[ "$cmd_name" == "sb" ]] && codex_name="sb"
-
-  # Cursor plugin commands require kebab-case frontmatter names and
-  # filesystem-safe command filenames.
-  safe_file_stem="${codex_name//:/-}"
-  [[ -z "$description" || "$description" == ">" ]] && \
-    description="Silver Bullet ${safe_file_stem} workflow"
-  out="${OUT_DIR}/${safe_file_stem}.md"
-  cat > "$out" <<EOF
----
-name: "${safe_file_stem}"
-description: ${description}
-argument-hint: ${argument_hint}
----
-
-Invoke the Silver Bullet \`${codex_name}\` workflow for this request. Follow the composable flow contracts in \`docs/composable-flows-contracts.md\` and record required skill markers through the host Skill tool. If the Skill tool cannot resolve this route by name, read the full instructions from \`skill-source/${safe_file_stem}/SILVER_SOURCE\` under the Silver Bullet plugin install root.
-EOF
-  printf 'Wrote %s\n' "$out"
-  # Drop legacy Silver, bare-route, colon-named, and Codex-migrated command
-  # stubs left by older generators.
-  for legacy in \
-    "${OUT_DIR}/${cmd_name}.md" \
-    "${OUT_DIR}/${codex_name}.md" \
-    "${OUT_DIR}/silver.md" \
-    "${OUT_DIR}/silver-${cmd_name}.md" \
-    "${OUT_DIR}/source-command-${cmd_name}.md"; do
-    if [[ "$legacy" != "$out" && -f "$legacy" ]]; then
-      rm -f -- "$legacy"
-    fi
-  done
-done
-for legacy in "$OUT_DIR"/silver*.md; do
-  [[ -e "$legacy" ]] && rm -f -- "$legacy"
-done
-
-# Add the same Cursor metadata to retained routes that are not in the
-# composer list, preserving their existing prompt bodies.
-python3 - "$OUT_DIR" <<'PY'
+# generate <out-dir>: write the stubs into <out-dir>, migrating or removing
+# stubs left by older generators. Routes that are not composers (for example
+# the hand-written sb-doctor.md) keep their bodies.
+generate() {
+  python3 - "$SKILLS_DIR" "$1" "${COMPOSERS[@]}" <<'PY'
+import json
+import re
 import sys
 from pathlib import Path
 
-for path in sorted(Path(sys.argv[1]).glob("*.md")):
+skills_dir = Path(sys.argv[1])
+out_dir = Path(sys.argv[2])
+composers = sys.argv[3:]
+BLOCK = {">", ">-", ">+", "|", "|-", "|+"}
+
+
+def frontmatter(path: Path) -> dict[str, str]:
+    """Top-level scalar keys, with quoted values and block scalars (folded
+    `>` or literal `|`) read in full and folded onto one line."""
     lines = path.read_text(encoding="utf-8").splitlines()
-    if lines and lines[0].strip() == "---":
+    if not lines or lines[0].strip() != "---":
+        return {}
+    meta: dict[str, str] = {}
+    i = 1
+    while i < len(lines) and lines[i].strip() != "---":
+        match = re.match(r"^([A-Za-z0-9_-]+):[ \t]*(.*)$", lines[i])
+        i += 1
+        if not match:
+            continue
+        key, value = match.group(1), match.group(2).strip()
+        if value in BLOCK:
+            parts = []
+            while i < len(lines) and (not lines[i].strip() or lines[i][0] in " \t"):
+                parts.append(lines[i].strip())
+                i += 1
+            value = " ".join(part for part in parts if part)
+        elif len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        meta[key] = value
+    return meta
+
+
+def quote(value: str) -> str:
+    # A JSON string is a valid YAML double-quoted scalar.
+    return json.dumps(value, ensure_ascii=False)
+
+
+def remove(path: Path) -> None:
+    if path.is_file():
+        path.unlink()
+
+
+out_dir.mkdir(parents=True, exist_ok=True)
+
+# Codex may have materialized command stubs under this internal name during an
+# older plugin migration; they are not source commands.
+for path in sorted(out_dir.glob("source-command-*.md")):
+    path.unlink()
+
+# Cursor desktop derives command routes from plain-Markdown filenames and
+# rejects colons: migrate older colon-named stubs so stale files cannot keep
+# shadowing the safe names.
+for legacy in sorted(out_dir.glob("*:*.md")):
+    safe = legacy.with_name(legacy.name.replace(":", "-"))
+    if safe.exists():
+        legacy.unlink()
+    else:
+        legacy.rename(safe)
+
+written = 0
+missing = 0
+generated: set[str] = set()
+for skill in composers:
+    src = skills_dir / skill / "SKILL.md"
+    if not src.is_file():
+        print(f"ERROR: missing composer skill {src}: its command stub cannot be generated", file=sys.stderr)
+        missing += 1
         continue
-    body = "\n".join(lines).strip()
-    metadata = (
+    meta = frontmatter(src)
+    raw_name = meta.get("name") or skill
+    route = raw_name.removeprefix("silver-")
+    cmd_name = "sb" if route == "silver" else route
+    codex_name = "sb" if cmd_name == "sb" else f"sb:{cmd_name}"
+    stem = codex_name.replace(":", "-")
+    description = meta.get("description") or f"Silver Bullet {stem} workflow"
+    argument_hint = meta.get("argument-hint") or "<task description>"
+    out = out_dir / f"{stem}.md"
+    out.write_text(
         "---\n"
-        f'name: "{path.stem}"\n'
-        f"description: Silver Bullet {path.stem} workflow\n"
-        "argument-hint: <task description>\n"
-        "---\n\n"
+        f"name: {quote(stem)}\n"
+        f"description: {quote(description)}\n"
+        f"argument-hint: {quote(argument_hint)}\n"
+        "---\n"
+        "\n"
+        f"Invoke the Silver Bullet `{codex_name}` workflow for this request. Follow the composable flow "
+        "contracts in `docs/composable-flows-contracts.md` and record required skill markers through the "
+        "host Skill tool. If the Skill tool cannot resolve this route by name, read the full instructions "
+        f"from `cursor-skill-source/{stem}/SILVER_SOURCE` under the Silver Bullet plugin install root.\n",
+        encoding="utf-8",
     )
-    path.write_text(metadata + body + "\n", encoding="utf-8")
+    written += 1
+    generated.add(out.name)
+    print(f"Wrote {out}")
+    # Drop legacy Silver, bare-route, colon-named and Codex-migrated stubs.
+    for legacy_name in (f"{cmd_name}.md", f"{codex_name}.md", "silver.md", f"silver-{cmd_name}.md"):
+        if out_dir / legacy_name != out:
+            remove(out_dir / legacy_name)
 
+for legacy in sorted(out_dir.glob("silver*.md")):
+    legacy.unlink()
+
+# Stubs written by hand (not generated from a composer skill). Every other stub
+# that no composer produced is an orphan -- its skill was removed -- and is
+# deleted, so Cursor never lists a command whose source is gone.
+HAND_WRITTEN = {"sb-doctor.md"}
+for path in sorted(out_dir.glob("*.md")):
+    if path.name in generated:
+        continue
+    if path.name not in HAND_WRITTEN:
+        path.unlink()
+        continue
+    text = path.read_text(encoding="utf-8")
+    if text.split("\n", 1)[0].strip() == "---":
+        continue
+    path.write_text(
+        "---\n"
+        f"name: {quote(path.stem)}\n"
+        f"description: {quote(f'Silver Bullet {path.stem} workflow')}\n"
+        f"argument-hint: {quote('<task description>')}\n"
+        "---\n\n" + text.strip() + "\n",
+        encoding="utf-8",
+    )
+sys.exit(1 if missing else 0)
 PY
+}
 
-printf 'Generated %s composer command stubs in %s\n' "${#COMPOSERS[@]}" "$OUT_DIR"
+if [[ "$CHECK" -eq 0 ]]; then
+  generate "$OUT_DIR"
+  printf 'Generated %s composer command stubs in %s\n' "${#COMPOSERS[@]}" "$OUT_DIR"
+  exit 0
+fi
+
+# list_stubs <dir>: the stub file names under <dir> (nothing when it is absent)
+list_stubs() {
+  if [[ -d "$1" ]]; then
+    (cd "$1" && find . -type f)
+  fi
+}
+
+# --check: regenerate a copy of the committed stubs and compare both ways.
+work="$(mktemp -d "${TMPDIR:-/tmp}/sb-commands-check.XXXXXX")"
+trap 'rm -rf "$work"' EXIT
+mkdir -p "$work/commands"
+[[ ! -d "$OUT_DIR" ]] || cp -R "$OUT_DIR/." "$work/commands/"
+generate "$work/commands" >/dev/null
+drift=0
+while IFS= read -r name; do
+  printf 'DRIFT: plugins/silver-bullet/commands/%s\n' "$name" >&2
+  drift=$((drift + 1))
+done < <(
+  { list_stubs "$OUT_DIR"; list_stubs "$work/commands"; } |
+    sed 's|^\./||' | sort -u |
+    while IFS= read -r name; do
+      cmp -s "$OUT_DIR/$name" "$work/commands/$name" || printf '%s\n' "$name"
+    done
+)
+if [[ "$drift" -gt 0 ]]; then
+  printf 'Command stubs drift: %d file(s) — run: bash scripts/generate-plugin-commands.sh\n' "$drift" >&2
+  exit 1
+fi
+printf 'Command stubs fresh (%s composer routes)\n' "${#COMPOSERS[@]}"

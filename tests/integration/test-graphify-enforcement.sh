@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Integration: graphify gate + record + prompt-reminder + session-start branch reset
 set -euo pipefail
+# The opt-in tools act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 GATE="$REPO_ROOT/hooks/graphify-gate.sh"
@@ -21,9 +25,15 @@ mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 MOCK_BIN=""
 
+# session-start's prerequisite probe (hooks/lib/prerequisite-probe.sh) stops the
+# hook before the branch-scoped reset unless a Silver Bullet plugin cache exists.
+# Stage a minimal one instead of relying on an install left in the home directory.
+PLUGIN_CACHE_STUB="${SB_RUNTIME_PLUGIN_CACHE_ROOT}/alo-labs/silver-bullet/test-graphify-${TEST_RUN_ID}"
+mkdir -p "$PLUGIN_CACHE_STUB"
+
 cleanup() {
-  rm -rf "$TMP" "$MOCK_BIN" \
-    "${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}" \
+  rm -rf "$TMP" "$MOCK_BIN" "$PLUGIN_CACHE_STUB" \
+    "${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query" \
     "${SB_TEST_DIR}/branch-${TEST_RUN_ID}"
 }
 trap cleanup EXIT
@@ -32,7 +42,7 @@ pass() { echo "  PASS: $1"; PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 TMP="$(mktemp -d)"
-GRAPHIFY_STATE="${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}"
+GRAPHIFY_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query"
 BRANCH_FILE="${SB_TEST_DIR}/branch-${TEST_RUN_ID}"
 MOCK_BIN="$(mktemp -d)"
 cat >"$MOCK_BIN/graphify" <<'EOF'
@@ -92,7 +102,7 @@ fi
 
 prompt_out="$(cd "$TMP" && export SILVER_BULLET_PROJECT_ROOT="$TMP" && jq -n '{hook_event_name:"UserPromptSubmit",prompt:"ship"}' | bash "$PROMPT" 2>/dev/null)"
 ctx="$(printf '%s' "$prompt_out" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
-if printf '%s' "$ctx" | grep -q 'fresh query recorded'; then
+if grep -q 'fresh query recorded' <<<"$ctx"; then
   pass "integration: prompt-reminder reports fresh query"
 else
   fail "integration: prompt-reminder reports fresh query"

@@ -666,7 +666,7 @@ When harness changes land on `main` from a **sibling agent session** (Cursor, Cl
 ## Appendix B — Quick Tier A copy-paste
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/path/to/silver-bullet   # your Silver Bullet checkout
 export SB_E2E_LIVE_RUNTIME=codex   # or cursor | claude
 cd "$SB_ROOT"
 export RTK_DISABLED=1

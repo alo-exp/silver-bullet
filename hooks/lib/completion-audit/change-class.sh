@@ -32,28 +32,28 @@ ca_classify_path() {
   local src_pattern="${2:-/src/}"
 
   # Release / version / plugin packaging surfaces (host-agnostic: no host plugin literals)
-  if printf '%s' "$path" | grep -qE '(^|/)(package\.json|package-lock\.json|plugins/silver-bullet/|scripts/pre-release-gate\.sh|scripts/sync-release|scripts/verify-release)'; then
+  if grep -qE '(^|/)(package\.json|package-lock\.json|plugins/silver-bullet/|scripts/pre-release-gate\.sh|scripts/sync-release|scripts/verify-release)' <<<"$path"; then
     printf 'release'
     return 0
   fi
   # Marketplace plugin dirs: .*-plugin/ without host-specific literals
-  if printf '%s' "$path" | grep -qE '(^|/)\.[a-z0-9-]+-plugin/'; then
+  if grep -qE '(^|/)\.[a-z0-9-]+-plugin/' <<<"$path"; then
     printf 'release'
     return 0
   fi
-  if printf '%s' "$path" | grep -qE '(^|/)CHANGELOG\.md$|(^|/)plugins/.*/CHANGELOG\.md$'; then
+  if grep -qE '(^|/)CHANGELOG\.md$|(^|/)plugins/.*/CHANGELOG\.md$' <<<"$path"; then
     printf 'release'
     return 0
   fi
 
   # Site
-  if printf '%s' "$path" | grep -qE '(^|/)site/'; then
+  if grep -qE '(^|/)site/' <<<"$path"; then
     printf 'site'
     return 0
   fi
 
   # Config (project + hook wiring; not application src)
-  if printf '%s' "$path" | grep -qE '(^|/)\.silver-bullet\.json$|(^|/)hooks\.json$|(^|/)\.[a-z0-9_-]+/hooks\.json$|(^|/)mcp\.json$|(^|/)templates/silver-bullet\.config'; then
+  if grep -qE '(^|/)\.silver-bullet\.json$|(^|/)hooks\.json$|(^|/)\.[a-z0-9_-]+/hooks\.json$|(^|/)mcp\.json$|(^|/)templates/silver-bullet\.config' <<<"$path"; then
     printf 'config'
     return 0
   fi
@@ -64,17 +64,17 @@ ca_classify_path() {
       printf 'src'
       return 0
     fi
-  elif printf '%s' "$path" | grep -qE "$src_pattern"; then
+  elif grep -qE "$src_pattern" <<<"$path"; then
     printf 'src'
     return 0
   fi
-  if printf '%s' "$path" | grep -qE '(^|/)(hooks|skills|scripts|tests|agents|host-bundles|templates|plugins)/'; then
+  if grep -qE '(^|/)(hooks|skills|scripts|tests|agents|host-bundles|templates|plugins)/' <<<"$path"; then
     printf 'src'
     return 0
   fi
 
   # Docs (docs tree + top-level project markdown — not skill/hook markdown)
-  if printf '%s' "$path" | grep -qE '(^|/)docs/|(^|/)README\.md$|(^|/)AGENTS\.md$|(^|/)silver-bullet\.md$|(^|/)CHANGELOG\.md$'; then
+  if grep -qE '(^|/)docs/|(^|/)README\.md$|(^|/)AGENTS\.md$|(^|/)silver-bullet\.md$|(^|/)CHANGELOG\.md$' <<<"$path"; then
     printf 'docs'
     return 0
   fi
@@ -92,13 +92,13 @@ ca_detect_change_class() {
 
   if [[ -n "$config_file" && -f "$config_file" ]] && command -v jq >/dev/null 2>&1; then
     src_pattern="$(jq -r '.project.src_pattern // "/src/"' "$config_file" 2>/dev/null || echo "/src/")"
-    if ! printf '%s' "$src_pattern" | grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$'; then
+    if ! grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$' <<<"$src_pattern"; then
       src_pattern="/src/"
     fi
   fi
 
   # Release delivery commands always use the full release floor.
-  if printf '%s' "${cmd_first_line:-}" | grep -qE '\bgh release create\b'; then
+  if grep -qE '\bgh release create\b' <<<"${cmd_first_line:-}"; then
     ca_change_class="release"
     return 0
   fi
@@ -136,11 +136,10 @@ ca_detect_change_class() {
     ca_change_class="site"
   elif [[ "$has_config" == true && "$has_docs" == false && "$has_site" == false ]]; then
     ca_change_class="config"
-  elif [[ "$has_docs" == true || "$has_site" == true || "$has_config" == true ]]; then
-    # Pure docs/site/config mix — keep light floor; label by dominant docs.
-    ca_change_class="docs"
   else
-    ca_change_class="mixed"
+    # Every non-empty path sets one flag, so only a pure docs/site/config mix remains here —
+    # keep the light floor; label by dominant docs.
+    ca_change_class="docs"
   fi
 }
 

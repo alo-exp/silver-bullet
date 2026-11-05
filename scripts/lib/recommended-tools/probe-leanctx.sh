@@ -50,8 +50,9 @@ rt_leanctx_mcp_env() {
   f="$(rt_leanctx_mcp_file)"
   [[ -f "$f" && -n "$key" ]] || return 1
   if [[ "$host" == "codex" ]]; then
-    grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null \
-      | grep -m1 -E "^${key}[[:space:]]*=[[:space:]]*\"" \
+    local block
+    block="$(grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null)"
+    grep -m1 -E "^${key}[[:space:]]*=[[:space:]]*\"" <<<"$block" \
       | sed -E 's/^[^=]+=[[:space:]]*"([^"]*)".*$/\1/'
     return 0
   fi
@@ -79,11 +80,12 @@ rt_probe_leanctx_lctx_prefix() {
 rt_probe_leanctx_overlaps_disabled() {
   [[ -f "$(rt_leanctx_mcp_file)" ]] || return 1
   if [[ "${RT_HOST:-cursor}" == "codex" ]]; then
-    local f="$(rt_leanctx_mcp_file)"
+    local f block
+    f="$(rt_leanctx_mcp_file)"
     local key
     for key in LEANCTX_DISABLE_SHELL_MCP LEANCTX_DISABLE_SANDBOX_MCP LEANCTX_DISABLE_FETCH_MCP LEANCTX_DISABLE_FTS; do
-      grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null \
-        | grep -qE "^${key}[[:space:]]*=[[:space:]]*\"1\"" || return 1
+      block="$(grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null)"
+      grep -qE "^${key}[[:space:]]*=[[:space:]]*\"1\"" <<<"$block" || return 1
     done
     return 0
   fi
@@ -125,9 +127,9 @@ rt_probe_leanctx_vendor_doctor() {
   fi
   [[ -n "$bin" ]] || return 2
   rt_vendor_doctor_subcommand_usable "$bin" || return 2
-  if "$bin" doctor --help </dev/null 2>&1 | grep -qiE -- '--non-interactive'; then
+  if grep -qiE -- '--non-interactive' < <("$bin" doctor --help </dev/null 2>&1); then
     extra+=(--non-interactive)
-  elif "$bin" doctor --help </dev/null 2>&1 | grep -qiE -- '--yes'; then
+  elif grep -qiE -- '--yes' < <("$bin" doctor --help </dev/null 2>&1); then
     extra+=(--yes)
   fi
   # Bash 3.2 + set -u: empty extra[@] is unbound and aborts the reconciler.
@@ -154,7 +156,10 @@ rt_probe_leanctx_version_ok() {
   fi
   local cli_path
   cli_path="$(sb_leanctx_cli_path "$cfg" 2>/dev/null || true)"
-  raw="$( [[ -n "$cli_path" ]] && "$cli_path" --version </dev/null 2>/dev/null || true)"
+  raw=""
+  if [[ -n "$cli_path" ]]; then
+    raw="$("$cli_path" --version </dev/null 2>/dev/null)" || true
+  fi
   ver="$(printf '%s' "$raw" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 || true)"
   [[ -n "$ver" ]] || return 1
   [[ "$(rt_leanctx_version_int "$ver")" -ge "$(rt_leanctx_version_int "$min_ver")" ]]

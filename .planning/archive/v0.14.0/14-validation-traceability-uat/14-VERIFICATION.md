@@ -83,7 +83,7 @@ human_verification:
 
 | Behavior | Command | Result | Status |
 |----------|---------|--------|--------|
-| spec-session-record.sh is executable | `ls -l /Users/shafqat/Documents/Projects/silver-bullet/hooks/spec-session-record.sh` | (not run — file confirmed readable and contains correct shebang/bash) | SKIP — confirm executable bit manually |
+| spec-session-record.sh is executable | `ls -l /Users/<user>/Documents/Projects/silver-bullet/hooks/spec-session-record.sh` | (not run — file confirmed readable and contains correct shebang/bash) | SKIP — confirm executable bit manually |
 | pr-traceability.sh triggers only on gh pr create | word-boundary grep pattern at line 26: `\bgh pr create\b` | Pattern confirmed in source | PASS (static analysis) |
 | uat-gate.sh denies via permissionDecision | Line 26: `permissionDecision:deny` in emit_block | Confirmed in source | PASS (static analysis) |
 | All hooks registered in hooks.json | confirmed from hooks.json read | spec-session-record.sh SessionStart, pr-traceability.sh PostToolUse/Bash, uat-gate.sh PreToolUse/Skill | PASS |

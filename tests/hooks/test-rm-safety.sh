@@ -29,7 +29,7 @@ while IFS= read -r -d '' file; do
     trimmed="${line#"${line%%[![:space:]]*}"}"
     [[ "$trimmed" == \#* ]] && continue
     # Find 'rm -f' occurrences where next non-space char isn't '-'
-    if printf '%s' "$line" | grep -qE 'rm -f[[:space:]]+[^-]'; then
+    if grep -qE 'rm -f[[:space:]]+[^-]' <<<"$line"; then
       # Allow 'rm -f -- ' (two dashes together). The regex already rejects this
       # because after 'rm -f ' we look for [^-]; '--' starts with '-' so excluded.
       violations+="$file: $line"$'\n'

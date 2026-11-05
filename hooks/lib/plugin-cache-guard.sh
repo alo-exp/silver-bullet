@@ -73,12 +73,12 @@ sb_plugin_cache_command_is_uninstall_cleanup() {
   [[ -n "$command_str" && -n "$cache_root" ]] || return 1
 
   cache_root_canon="$(sb_canonical_path "$cache_root")"
-  if ! { printf '%s' "$command_str" | grep -qF "$cache_root" || \
-        printf '%s' "$command_str" | grep -qF "$cache_root_canon"; }; then
+  if ! { grep -qF "$cache_root" <<<"$command_str" || \
+        grep -qF "$cache_root_canon" <<<"$command_str"; }; then
     return 1
   fi
 
-  if ! printf '%s' "$command_str" | grep -qE '\b(rm|rmdir)\b'; then
+  if ! grep -qE '\b(rm|rmdir)\b' <<<"$command_str"; then
     return 1
   fi
 

@@ -113,4 +113,4 @@ END {
     printf "%.6f\t%s\t%s\t%s\t%s\n", score, chunks_file[i], chunks_start[i], chunks_end[i], chunks_raw[i]
   }
 }
-' "$TMP_CHUNKS" | sort -t$'\t' -k1 -rn
+' "$TMP_CHUNKS" | LC_ALL=C sort -t$'\t' -k1,1gr -k2,2 -k3,3n

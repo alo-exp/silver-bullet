@@ -77,7 +77,7 @@ run_hook_apply_patch() {
 assert_blocks() {
   local label="$1"
   local output="$2"
-  if printf '%s' "$output" | grep -qE '"permissionDecision"\s*:\s*"deny"'; then
+  if grep -qE '"permissionDecision"\s*:\s*"deny"' <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -89,7 +89,7 @@ assert_blocks() {
 assert_passes() {
   local label="$1"
   local output="$2"
-  if ! printf '%s' "$output" | grep -qE '"permissionDecision"\s*:\s*"deny"'; then
+  if ! grep -qE '"permissionDecision"\s*:\s*"deny"' <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -225,7 +225,7 @@ echo "--- Group 4: Block message contains skill hint ---"
 
 setup
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
-if printf '%s' "$out" | grep -q "sb:phase\|sb:plan\|sb:add\|sb:release"; then
+if grep -q "sb:phase\|sb:plan\|sb:add\|sb:release" <<<"$out"; then
   echo "  ✅ ROADMAP block message mentions owning skills"
   PASS=$((PASS + 1))
 else

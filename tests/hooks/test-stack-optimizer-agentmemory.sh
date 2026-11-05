@@ -40,6 +40,7 @@ cat >"$TMP/.silver-bullet.json" <<'EOF'
 }
 EOF
 
+# shellcheck disable=SC2034  # read by sourced stack-optimizer.sh (sb_stack_agentmemory_home)
 SB_AGENTMEMORY_HOME="$TMP/amhome"
 sb_stack_merge_agentmemory_env "$TMP" "$TMP/.silver-bullet.json" synergy_max
 [[ -f "$TMP/amhome/.env.bak" || -f "$TMP/amhome/.env" ]] && pass "env merge creates files" || fail "env merge"
@@ -50,7 +51,7 @@ export_path="$(sb_agentmemory_abs_export_path "$TMP" "$TMP/.silver-bullet.json")
 # launchd plist generation dry-run
 SB_STACK_OPTIMIZER_DRY_RUN=1 SB_STACK_SKIP_HOST_HOOKS=0 \
   sb_stack_launchd_server_plist "$TMP" "$TMP/.silver-bullet.json" 2>/dev/null || true
-if SB_STACK_OPTIMIZER_DRY_RUN=1 sb_stack_launchd_server_plist "$TMP" "$TMP/.silver-bullet.json" 2>&1 | grep -q 'DRY-RUN'; then
+if grep -q 'DRY-RUN' < <(SB_STACK_OPTIMIZER_DRY_RUN=1 sb_stack_launchd_server_plist "$TMP" "$TMP/.silver-bullet.json" 2>&1); then
   pass "launchd server plist dry-run"
 else
   pass "launchd server plist path optional"
@@ -69,14 +70,14 @@ sb_stack_gitleaks_required "$TMP/.silver-bullet.json" synergy_max \
 if sb_stack_gitleaks_path >/dev/null 2>&1; then
   sb_stack_ensure_gitleaks "$TMP/.silver-bullet.json" synergy_max && pass "ensure_gitleaks when installed"
 else
-  if SB_STACK_OPTIMIZER_DRY_RUN=1 sb_stack_ensure_gitleaks "$TMP/.silver-bullet.json" synergy_max 2>&1 | grep -q 'DRY-RUN.*gitleaks'; then
+  if grep -q 'DRY-RUN.*gitleaks' < <(SB_STACK_OPTIMIZER_DRY_RUN=1 sb_stack_ensure_gitleaks "$TMP/.silver-bullet.json" synergy_max 2>&1); then
     pass "ensure_gitleaks dry-run"
   else
     fail "ensure_gitleaks dry-run"
   fi
 fi
 
-if SB_STACK_OPTIMIZER_DRY_RUN=1 sb_stack_launchd_bridge_plist "$TMP" 2>&1 | grep -q 'DRY-RUN'; then
+if grep -q 'DRY-RUN' < <(SB_STACK_OPTIMIZER_DRY_RUN=1 sb_stack_launchd_bridge_plist "$TMP" 2>&1); then
   pass "bridge plist dry-run mentions write"
 else
   pass "bridge plist dry-run optional"

@@ -61,7 +61,7 @@ run_hook() {
 is_blocked() {
   local output="$1"
   [[ -z "$output" ]] && return 1
-  printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"'
+  grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"' <<<"$output"
 }
 
 assert_passes() {
@@ -80,7 +80,7 @@ assert_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -134,7 +134,7 @@ printf 'spec-version=1.0\njira-id=TEST-123\n' > "$SPEC_SESSION_FILE"
 out=$(run_hook "gh pr create --title 'feat: my feature'" 2>/dev/null || true)
 assert_passes "gh pr create with spec-session exits cleanly" "$out"
 # The hook should output some traceability-related advisory (either no-gh or no-PR-URL message)
-if printf '%s' "$out" | grep -qE 'gh CLI not found|Could not determine PR URL|traceability'; then
+if grep -qE 'gh CLI not found|Could not determine PR URL|traceability' <<<"$out"; then
   echo "  ✅ output contains expected traceability advisory"
   PASS=$((PASS + 1))
 else

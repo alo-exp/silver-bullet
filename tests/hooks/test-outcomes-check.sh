@@ -60,7 +60,7 @@ run_hook() {
 
 assert_contains() {
   local label="$1" output="$2" needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  ok: $label"
     PASS=$((PASS + 1))
   else
@@ -79,7 +79,7 @@ setup
 run_hook "UserPromptSubmit" "add caching layer" >/dev/null
 printf 'silver-quality-gates\n' >"$SILVER_BULLET_STATE_FILE"
 out=$(run_hook "Stop" "")
-if printf '%s' "$out" | grep -q '"decision":"block"'; then
+if grep -q '"decision":"block"' <<<"$out"; then
   echo "  ok: Stop blocks when outcomes incomplete"
   PASS=$((PASS + 1))
 else
@@ -92,7 +92,7 @@ setup
 run_hook "UserPromptSubmit" "ship the feature" >/dev/null
 printf 'silver-feature\nsilver-quality-gates\n' >"$SILVER_BULLET_STATE_FILE"
 out=$(run_hook "Stop" "")
-if printf '%s' "$out" | grep -q '"decision":"block"'; then
+if grep -q '"decision":"block"' <<<"$out"; then
   echo "  ok: route via composer alone does not auto-complete outcomes without scope/verify"
   PASS=$((PASS + 1))
 else
@@ -183,7 +183,7 @@ SH
 chmod +x "$FAKE_BIN/jq"
 out=$(cd "$TMPDIR_TEST" && printf '{"hook_event_name":"Stop","prompt":""}' \
   | env PATH="$FAKE_BIN:$PATH" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" SILVER_BULLET_STATE_FILE="$SILVER_BULLET_STATE_FILE" bash "$HOOK" 2>/dev/null)
-if printf '%s' "$out" | grep -q '"decision":"block"'; then
+if grep -q '"decision":"block"' <<<"$out"; then
   echo "  ok: outcomes-check Stop fails closed without jq when pending"
   PASS=$((PASS + 1))
 else
@@ -225,7 +225,7 @@ teardown
 setup
 run_hook "UserPromptSubmit" "What are the remaining deliverables?" >/dev/null
 out=$(run_hook "Stop" "")
-if printf '%s' "$out" | grep -q '"decision":"block"'; then
+if grep -q '"decision":"block"' <<<"$out"; then
   echo "  FAIL: informational query should not block Stop"
   FAIL=$((FAIL + 1))
 else

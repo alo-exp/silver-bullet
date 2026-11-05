@@ -24,7 +24,10 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --sb-root) SB_ROOT="$2"; shift 2 ;;
+    --sb-root)
+      [[ $# -ge 2 ]] || { printf 'ERROR: --sb-root requires a value\n' >&2; exit 2; }
+      SB_ROOT="$2"; shift 2
+      ;;
     --dry-run) DRY_RUN=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'ERROR: unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
@@ -47,21 +50,17 @@ else
 fi
 
 if [[ "$DRY_RUN" != "1" ]]; then
-  agent_opencode_pin_mimo_model_env || PREFLIGHT_OK=0
-  printf 'OK: model pin opencode-go/mimo-v2.5\n'
+  if agent_opencode_pin_mimo_model_env; then
+    printf 'OK: model pin opencode-go/mimo-v2.5\n'
+  else
+    PREFLIGHT_OK=0
+  fi
 else
   printf 'SKIP (dry-run): model pin\n'
 fi
 
-if [[ -f "${SB_ROOT}/scripts/validate-host-install-surface.sh" ]]; then
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    printf 'SKIP (dry-run): validate-host-install-surface\n'
-  elif bash "${SB_ROOT}/scripts/validate-host-install-surface.sh" --host opencode >/dev/null 2>&1; then
-    printf 'OK: SB-only OpenCode install surface\n'
-  else
-    printf 'WARN: validate-host-install-surface opencode not configured — optional for delegation\n' >&2
-  fi
-fi
+# No install-surface validation: validate-host-install-surface.sh knows claude|codex|cursor only,
+# so an opencode probe could never run (it exited 2 and printed a "not configured" warning).
 
 _agent_opencode_source_common
 agent_delegate_clear_matrix_env

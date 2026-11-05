@@ -4,8 +4,8 @@ Phase: VERIFY-ONLY pass 2/2 (`rung_02_verify_2`)
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not AskQuestion. Do not encode product forks. Do **not** copy `review.md` or `verify-1.md` — re-derive every check from disk independently.
 
 Scope (read-only freeze — FORBIDDEN to Edit/Write either freeze copy):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 **Locked freeze (NEW — not `d5343ac1`, not `0e8510e0`, not `70d44b7d`):**
 - SHA-256: `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e`

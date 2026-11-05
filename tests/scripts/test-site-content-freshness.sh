@@ -28,13 +28,13 @@ assert_contains() {
 
 assert_not_contains() {
   local desc="$1" needle="$2" path="$3"
-  if ! grep -R -n -E "$needle" "$path" >/tmp/sb-site-freshness.$$ 2>/dev/null; then
+  if ! grep -R -n -E "$needle" "$path" >"${TMPDIR:-/tmp}/sb-site-freshness.$$" 2>/dev/null; then
     pass "$desc"
   else
     fail "$desc — unexpected matches:"
-    sed 's/^/  /' /tmp/sb-site-freshness.$$
+    sed 's/^/  /' "${TMPDIR:-/tmp}/sb-site-freshness.$$"
   fi
-  rm -f /tmp/sb-site-freshness.$$
+  rm -f "${TMPDIR:-/tmp}/sb-site-freshness.$$"
 }
 
 assert_contains "homepage displays current package version" "v${CURRENT_VERSION}" "$REPO_ROOT/site/index.html"

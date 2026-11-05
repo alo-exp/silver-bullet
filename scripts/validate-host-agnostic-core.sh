@@ -18,7 +18,8 @@ repo_root="$(cd "${script_dir}/.." && pwd)"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --repo-root)
-      repo_root="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'validate-host-agnostic-core: %s requires a value\n' "$1" >&2; exit 2; }
+      repo_root="$2"
       shift 2
       ;;
     -h|--help)
@@ -90,6 +91,8 @@ STRICT_ALLOWLIST = {
     "templates/silver-bullet.md.base",
     ".silver-bullet/orchestrator-workers/AGENT-DELEGATE.md",
     "templates/orchestrator-workers/AGENT-DELEGATE.md",
+    # Per-host recommended-tool hints keyed by host (config data, not prose).
+    "templates/silver-bullet.config.json.default",
 }
 
 # Ported research engine subtree — host-specific script paths; SKILL.md remains strict.
@@ -194,7 +197,36 @@ SCRIPTS_HOST_TOOLING_PREFIXES = (
     "scripts/lib/post-release-uninstall.sh",
     "scripts/prune-stale-claude",
     "scripts/watch-enterprise-e2e",
+    "scripts/check-repo-invariants.sh",  # CI invariants over the per-host manifests
+    "scripts/validate-plugin-mirror.sh",  # regenerates and diffs the per-host package surfaces
+    "scripts/claude-interactive-invoke.expect",  # per-host interactive invokers
+    "scripts/codex-interactive-invoke.expect",
 )
+
+# Files whose runtime-boundary code still spells a host home as $HOME/.<host>
+# (host case arms, SB_RUNTIME_* defaults, host config probes). Only the $HOME
+# form is allowed in them; every other check still applies, and any other file
+# that adds the form fails. Shrink this list when a file moves to runtime-paths.sh.
+HOME_FORM_ALLOWLIST = {
+    "hooks/lib/agentmemory-gate.sh",
+    "hooks/lib/graphify-am-global.sh",
+    "hooks/lib/rtk-cm-global.sh",
+    "hooks/lib/token-compression-tools-gate.sh",
+    "hooks/review-fix-ladder-guard.sh",
+    "scripts/dogfood-orchestrator-parent-surface.sh",
+    "scripts/lib/recommended-tools/common.sh",
+    "scripts/lib/recommended-tools/installer.sh",
+    "scripts/lib/recommended-tools/probe-alumnium.sh",
+    "scripts/lib/recommended-tools/probe-context-mode.sh",
+    "scripts/lib/recommended-tools/probe-rtk.sh",
+    "scripts/lib/recommended-tools/receipts.sh",
+    "scripts/minimal-intent-autonomous-e2e.sh",
+    "scripts/run-visual-qa-pipeline.sh",
+    "scripts/sb-doctor.sh",
+    "scripts/sb-tri-criteria-e2e.sh",
+    "scripts/silver-bullet",
+}
+HOME_FORM_LABEL = "$HOME/.<host>"
 
 INSTALLER_SCRIPTS = {
     "scripts/install-claude.sh",
@@ -230,6 +262,8 @@ HARD_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("~/.claude", re.compile(r"~/.claude")),
     ("~/.codex", re.compile(r"~/.codex")),
     ("~/.cursor", re.compile(r"~/.cursor")),
+    # The forms shell code actually uses: $HOME/.claude, ${HOME}/.codex, "$HOME"/.cursor.
+    (HOME_FORM_LABEL, re.compile(r'(?:\$HOME|\$\{HOME\}|"\$HOME")/\.(?:claude|codex|cursor)\b')),
     ("CODEX_HOME", re.compile(r"CODEX_HOME")),
     ("CURSOR_", re.compile(r"CURSOR_")),
     (".claude-plugin", re.compile(r"\.claude-plugin")),
@@ -300,8 +334,10 @@ def is_glob_excluded(r: str) -> bool:
     for prefix in GLOBAL_EXCLUDE_PREFIXES:
         if r.startswith(prefix):
             return True
+    # Anchored: a strict-tier path such as skills/x/scripts/agent-helper.sh
+    # must not inherit the exclusion of the top-level scripts/agent-* tooling.
     for prefix in SCRIPTS_HOST_TOOLING_PREFIXES:
-        if r.startswith(prefix) or prefix in r:
+        if r.startswith(prefix):
             return True
     return False
 
@@ -331,11 +367,16 @@ def is_installer_script(r: str) -> bool:
 
 
 def is_scannable_file(path: Path) -> bool:
+    """Every text file, whatever its extension (.js, .toml, .html, ...); binary
+    files (a NUL byte in the first 8 KiB) are skipped."""
     if not path.is_file():
         return False
-    return path.suffix.lower() in {
-        ".md", ".sh", ".json", ".base", ".yaml", ".yml", ".txt", ".mdc", ".py", ""
-    } or path.name in {"session-start", "session-stop"}
+    try:
+        with path.open("rb") as handle:
+            head = handle.read(8192)
+    except OSError:
+        return False
+    return b"\0" not in head
 
 
 def iter_strict_files() -> list[Path]:
@@ -421,6 +462,8 @@ def scan_content(
         runtime_ok = not strict and line_allows_runtime_identifiers(line)
 
         for label, pattern in HARD_PATTERNS:
+            if label == HOME_FORM_LABEL and rel(path) in HOME_FORM_ALLOWLIST:
+                continue
             if pattern.search(line):
                 hits.append((line_no, label, line.strip()[:120]))
                 continue
@@ -463,6 +506,24 @@ def check_file(path: Path, *, tier: str) -> None:
         failures.append(f"[{tier}] {r}:{line_no}: {label} — {snippet}")
 
 
+def code_part(line: str) -> str:
+    """The line without a trailing shell comment (a `#` at the start of a word,
+    outside quotes). Comments are prose: they neither violate the cross-host
+    rule nor carry the skip markers that exempt a line."""
+    quote = ""
+    previous = " "
+    for index, char in enumerate(line):
+        if quote:
+            if char == quote:
+                quote = ""
+        elif char in "'\"":
+            quote = char
+        elif char == "#" and previous in " \t":
+            return line[:index]
+        previous = char
+    return line
+
+
 def check_installer_cross_contamination() -> None:
     skip_line_markers = (
         "render_agent_bundle",
@@ -471,7 +532,6 @@ def check_installer_cross_contamination() -> None:
         "agents/claude",
         "agents/codex",
         "agents/cursor",
-        "validate-host",
         ".replace(",
         "os.homedir(), '.codex'",
         "os.homedir(), \".claude\"",
@@ -490,7 +550,8 @@ def check_installer_cross_contamination() -> None:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         lines = text.splitlines()
-        for line_no, line in enumerate(lines, start=1):
+        for line_no, full_line in enumerate(lines, start=1):
+            line = code_part(full_line)
             if any(marker in line for marker in skip_line_markers):
                 continue
             lower = line.lower()

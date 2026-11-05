@@ -485,9 +485,9 @@ setup_codex_cli_isolation() {
   isolation_parent="${isolation_parent%/}"
   mkdir -p "$isolation_parent"
   export CODEX_SB_TEST_HOME="${CODEX_SB_TEST_HOME:-$(mktemp -d "${isolation_parent}/sb-codex-test.XXXXXX")}"
-  export CODEX_SB_TEST_HOME="$(normalize_codex_path "$CODEX_SB_TEST_HOME")"
+  CODEX_SB_TEST_HOME="$(normalize_codex_path "$CODEX_SB_TEST_HOME")"
   export SB_LIVE_CODEX_ISOLATION_DIR="${SB_LIVE_CODEX_ISOLATION_DIR:-$CODEX_SB_TEST_HOME}"
-  export SB_LIVE_CODEX_ISOLATION_DIR="$(normalize_codex_path "$SB_LIVE_CODEX_ISOLATION_DIR")"
+  SB_LIVE_CODEX_ISOLATION_DIR="$(normalize_codex_path "$SB_LIVE_CODEX_ISOLATION_DIR")"
   export SB_LIVE_CODEX_ISOLATION_ACTIVE=1
   export HOME="$SB_LIVE_CODEX_ISOLATION_DIR"
   export CODEX_HOME="${HOME}/.codex"
@@ -535,9 +535,9 @@ PY
   seed_native_codex_runtime_config
   mkdir -p "$isolated_command_cache_root"
   export SB_LIVE_COMMAND_VERSION_BASE="${SB_LIVE_COMMAND_VERSION_BASE:-$(mktemp -d "${isolated_command_cache_root}/sb-live-version.XXXXXX")}"
-  export SB_LIVE_COMMAND_VERSION_BASE="$(normalize_codex_path "$SB_LIVE_COMMAND_VERSION_BASE")"
+  SB_LIVE_COMMAND_VERSION_BASE="$(normalize_codex_path "$SB_LIVE_COMMAND_VERSION_BASE")"
   export SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT="${SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT:-$SB_LIVE_COMMAND_VERSION_BASE}"
-  export SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT="$(normalize_codex_path "$SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT")"
+  SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT="$(normalize_codex_path "$SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT")"
 
 }
 

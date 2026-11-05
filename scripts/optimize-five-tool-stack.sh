@@ -81,7 +81,7 @@ detect_host() {
     printf '%s' "pi"
     return 0
   fi
-  if [[ -d "${HOME}/.codex" ]]; then
+  if [[ -d "${HOME}/.claude" ]]; then
     printf '%s' "claude"
     return 0
   fi
@@ -172,7 +172,11 @@ optimize_host() {
   fi
 
   if [[ "$h" == "cursor" ]]; then
-    run_cmd bash "$INSTALL_CURSOR_RULES" $([[ "$DRY_RUN" -eq 1 ]] && printf '%s' '--global' || true)
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      run_cmd bash "$INSTALL_CURSOR_RULES" --global
+    else
+      run_cmd bash "$INSTALL_CURSOR_RULES"
+    fi
   fi
 
   if [[ "$SKIP_SYNERGY" -eq 0 || "$SKIP_RTCM" -eq 0 ]]; then
@@ -249,7 +253,13 @@ if [[ "$SKIP_SYNERGY" -eq 0 ]]; then
   synergy_args=(bash "$OPTIMIZE_SYNERGY" --apply)
   [[ "$DRY_RUN" -eq 1 ]] && synergy_args+=(--dry-run)
   [[ "$HOST" != "auto" && "$HOST" != "all" ]] && synergy_args+=(--host "$HOST")
-  run_cmd "${synergy_args[@]}"
+  # --apply exits non-zero when the stack score has critical gaps (a missing opted-in
+  # CLI, no index). That is a report, not a reason to skip the remaining steps.
+  synergy_rc=0
+  run_cmd "${synergy_args[@]}" || synergy_rc=$?
+  if [[ "$synergy_rc" -ne 0 ]]; then
+    warn "sb-optimize-stack.sh --apply reported critical gaps (exit ${synergy_rc}); run: bash scripts/sb-optimize-stack.sh --verify"
+  fi
 else
   log "SKIP: sb-optimize-stack.sh (Graphify + agentmemory)"
 fi

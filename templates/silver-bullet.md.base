@@ -55,18 +55,22 @@ At the very start of any new session, perform these steps automatically:
 Twelve enforcement layers enforce compliance:
 
 1. **Skill tracker** (PostToolUse/Skill or host `silver-bullet invoke-skill`) — Records every supported Silver Bullet skill invocation to the state file
-2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning skills incomplete before source edits
+2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|MultiEdit|Bash, with the workflow chain guard) — HARD STOP if planning skills (or the active composed workflow's pre-execution chain) are incomplete before source edits
 3. **Compliance status** (PostToolUse/all) — Shows workflow progress on every tool use (informational)
 4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — `planning-file-guard.sh` blocks direct edits to SB-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of the owning SB skill or workflow
 5. **Completion audit** (Pre+PostToolUse/Bash) — Blocks intermediate commits until planning is done; blocks PR/deploy/release until full workflow is done
-6. **CI status check** (Pre+PostToolUse/Bash) — Blocks further commits and actions when CI is failing
-7. **Session management** (PostToolUse/Bash) — Session logging, autonomous mode timeout detection, branch-scoped state reset
+6. **CI status check** (Pre+PostToolUse/Bash) — Blocks `git push`, `gh pr create`/`merge` and `gh release create` while the latest CI run failed; after `git commit` it only warns, so a CI fix can still be committed
+7. **Session management** (SessionStart + PostToolUse) — Branch-scoped state reset at session start, session logging, autonomous mode timeout detection
 8. **Stop hook** (Stop/SubagentStop) — Blocks task-complete declaration if required_planning skills are missing (planning floor). The full `required_deploy` list is enforced at delivery (`gh pr create`, deploy, `gh release create`) by completion-audit. Per-prompt outcome checklist is enforced by `outcomes-check.sh` on the same events.
 9. **UserPromptSubmit recorder + reminder** (UserPromptSubmit) — Records requested SB and optional extension routes and re-injects missing skills list before every user message
 10. **Forbidden skill gate** (PreToolUse/Skill) — Blocks deprecated/forbidden skill invocations before they execute
 11. **ROADMAP freshness gate** (PreToolUse/Bash) — `roadmap-freshness.sh` blocks `git commit` if a phase `SUMMARY.md` is staged but the ROADMAP.md checkbox is not ticked; prevents milestone state from diverging from execution reality
 12. **Redundant instructions + anti-rationalization** — Workflow file + silver-bullet.md both enforce;
     explicit rules against skipping, combining, or implicitly covering steps
+
+Further gates run beside these layers: spec floor and UAT gates, phase archive and phase locks,
+orchestrator parent-mode guards, site-session gates, and the opt-in tool gates (§2g-i to §2g-iii). Silver
+Bullet's hook reference (`docs/HOOKS.md` in the plugin) lists every registered hook.
 
 **Enforcement model**: Hooks combine **invocation tracking** with **outcome checks**.
 `record-skill.sh` records that a skill was *called*. Delivery gates and
@@ -316,12 +320,14 @@ Before planning, editing, debugging, reviewing, documenting, or shipping, the ac
 agent MUST retrieve project memory that could affect the action.
 
 **Opt-in policy:** Graphify is a **recommended tool** — SB asks for explicit user consent
-at init, update, and session start (`recommended_tools.graphify.enabled_by_user` in `.silver-bullet.json`).
-`null` = consent pending (no enforcement); `true` = mandatory hooks active when install succeeded;
-`false` = advisory only. If the user opts in but install fails, `enforcement_suspended: true`
+at init, update, and session start. The user's answer is recorded in their own consent store with
+`scripts/sb-consent.sh` (see `docs/CONSENT.md`), never in the repository; `recommended_tools.graphify.enabled_by_user`
+in `.silver-bullet.json` only recommends (`true`) or turns the tool off (`false`). Without a recorded
+grant (including `null`) there is no enforcement; with a grant, mandatory hooks are active when
+install succeeded; `false` = advisory only. If the user opts in but install fails, `enforcement_suspended: true`
 lifts hook blocks until the next init/update retry succeeds.
 
-**When opted in (`enabled_by_user: true`) and not suspended:**
+**When the user has consented (enforce granted in their consent store) and not suspended:**
 
 1. **Graphify query (required when CLI installed).** From the project root, run
    `graphify query "<task, file, feature, bug, or workflow context>" --graph graphify-out/graph.json --budget 2000`.

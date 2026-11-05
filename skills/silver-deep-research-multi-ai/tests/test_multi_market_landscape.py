@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 DR_SKILL = SCRIPTS.parent.parent / "silver-deep-research"
@@ -22,6 +24,24 @@ from category_pack import (  # noqa: E402
 from materialize_solution_artifacts import materialize_solution_artifacts  # noqa: E402
 from solution_classifier import classify_solutions  # noqa: E402
 from synthesize_landscape import build_multi_market_chart_data  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run, plain_vendor_spellings  # noqa: E402
+
+
+_OFFLINE_ENV = None
+
+
+def setUpModule() -> None:
+    # Hermetic by default: no vendor-URL health checks over HTTP and no Playwright PDF rendering.
+    global _OFFLINE_ENV
+    _OFFLINE_ENV = mock.patch.dict(
+        os.environ,
+        {"SB_SKIP_VENDOR_URL_HEALTH": "1", "SB_SKIP_LANDSCAPE_PDF": "1", "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1"},
+    )
+    _OFFLINE_ENV.start()
+
+
+def tearDownModule() -> None:
+    _OFFLINE_ENV.stop()
 
 
 class MultiMarketPackTests(unittest.TestCase):
@@ -68,6 +88,7 @@ class MultiMarketPackTests(unittest.TestCase):
         self.assertIn("spec-kit", plugin_slugs)
 
 
+@plain_vendor_spellings
 class MultiMarketClassifierTests(unittest.TestCase):
     def test_secondary_market_core_includes_bmad_gsd_with_evidence(self) -> None:
         pack = load_category_pack("agentic-sdlc-process-orchestrator")
@@ -156,6 +177,7 @@ class MultiMarketChartTests(unittest.TestCase):
         self.assertNotIn("GSD (Get Shit Done)", saas_oss)
 
 
+@plain_vendor_spellings
 class MultiMarketMaterializeTests(unittest.TestCase):
     def test_bmad_gsd_get_scr_artifacts(self) -> None:
         envelopes = [
@@ -193,6 +215,7 @@ class MultiMarketMaterializeTests(unittest.TestCase):
             self.assertTrue((root / "solutions" / "gsd" / "scr.md").is_file())
 
 
+@plain_vendor_spellings
 class MultiMarketMembershipConsistencyTests(unittest.TestCase):
     """User-critical: multi-set membership, no coord collisions, chart⊆listed."""
 
@@ -353,7 +376,24 @@ class MultiMarketMembershipConsistencyTests(unittest.TestCase):
         self.assertEqual(len({p["x"] for p in fixed}), 3, msg=f"shared vertical: {fixed}")
         self.assertEqual(len({p["y"] for p in fixed}), 3, msg=f"shared horizontal: {fixed}")
 
+    def test_tied_vendors_keep_the_same_quadrant_in_any_order(self) -> None:
+        from synthesize_landscape import avoid_chart_coord_collisions
 
+        for order in ((0, 1), (1, 0)):
+            pts = [{"slug": "ab"[i], "x": 5.5, "y": 5.5, "q": "?"} for i in order]
+            fixed = avoid_chart_coord_collisions(pts)
+            # both sit on the Leader threshold; slotting may move a dot by 0.1 but not its quadrant
+            self.assertEqual({p["q"] for p in fixed}, {"Leaders"}, msg=fixed)
+            self.assertEqual(len({p["x"] for p in fixed}), 2)
+            # the dot is drawn on the Leader side of the line too: it never crosses 5.5 to make room
+            self.assertTrue(all(p["x"] >= 5.5 and p["y"] >= 5.5 for p in fixed), msg=fixed)
+        below = avoid_chart_coord_collisions([{"slug": s, "x": 5.4, "y": 5.4, "q": "?"} for s in "ab"])
+        self.assertTrue(all(p["x"] < 5.5 and p["y"] < 5.5 for p in below), msg=below)
+
+
+
+
+@with_apo_pack_run
 class AnalystGradeMembershipFixes(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -599,41 +639,18 @@ class AnalystGradeMembershipFixes(unittest.TestCase):
         self.assertNotIn("sdlc-plugin", slugs)
         self.assertNotIn("claude-code-expert", filtered["rows"][0]["solutions"])
 
-    def test_scrub_claude_harness_apo_framing(self) -> None:
-        from synthesize_landscape import scrub_membership_framing
 
-        text = (
-            "Claude Harness is a primary-market APO candidate — Claude Code wrapper, "
-            "process enforcement, compliance layer above host."
-        )
-        out = scrub_membership_framing(text, self.pack)
-        self.assertNotIn("primary-market APO candidate", out)
-        self.assertRegex(out, r"(?i)sdlc-plugins|not an APO")
-
-    def test_scrub_claude_harness_apo_framing_markdown_link(self) -> None:
-        """Linked display names must scrub too — bare-name-only regex left SPA profiles dirty."""
-        from synthesize_landscape import scrub_membership_framing
-
-        text = (
-            "* **Overview**: [Claude Harness](https://github.com/anthropics/claude-code) "
-            "is a primary-market APO candidate — Claude Code wrapper, process enforcement."
-        )
-        out = scrub_membership_framing(text, self.pack)
-        self.assertNotIn("primary-market APO candidate", out)
-        self.assertRegex(out, r"(?i)sdlc-plugins|not an APO")
-        self.assertIn("github.com/anthropics/claude-code", out)
 
     def test_rewrite_agentsys_ai_url(self) -> None:
-        from vendor_link_labels import rewrite_vendor_url, scrub_embedded_vendor_urls
+        import vendor_link_labels as vll
+        from vendor_link_labels import rewrite_vendor_url
+
+        self.assertFalse(hasattr(vll, "scrub_embedded_vendor_urls"))  # model data is never rewritten
 
         self.assertEqual(
             rewrite_vendor_url("https://agentsys.ai"),
             "https://github.com/agent-sh/agentsys",
         )
-        payload = scrub_embedded_vendor_urls(
-            {"sources": [{"title": "AgentSys", "url": "https://agentsys.ai"}]}
-        )
-        self.assertEqual(payload["sources"][0]["url"], "https://github.com/agent-sh/agentsys")
 
     def test_multi_market_vendor_dom_ids_must_be_unique(self) -> None:
         """Silver Bullet in APO + sdlc-plugins must emit distinct market-scoped card ids."""
@@ -818,7 +835,7 @@ class AnalystGradeMembershipFixes(unittest.TestCase):
         self.assertIn("Scoring methodology", text)
         self.assertIn("ticks ×", text)
         self.assertIn("Hard-exclusion membership", text)
-        self.assertIn("Magic.dev", text)
+        self.assertNotIn("Magic.dev", text)  # vendor names come from the pack, not the template
         self.assertIn("omitted from Wave", text)
         self.assertNotIn("tiny deterministic jitter", text)
         self.assertNotIn("0.85·jitter", text)

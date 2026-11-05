@@ -17,7 +17,8 @@ ALL_GITPATHS=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --cursor-home)
-      CURSOR_HOME="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'diagnose-cursor-picker-duplicates: --cursor-home requires a value\n' >&2; exit 2; }
+      CURSOR_HOME="$2"
       shift 2
       ;;
     --all-gitpaths)
@@ -62,15 +63,22 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
     return meta
 
 
+# Cursor keeps two ignore lists: .cursorignore (AI access: agent file tools and @-references,
+# so it holds only generated mirrors) and .cursorindexingignore (indexing and the "/" picker,
+# which is where the source skills/ and templates/workflows/ are hidden, R13-26).
+CURSOR_IGNORE_FILES = (".cursorignore", ".cursorindexingignore")
+
+
 def load_cursorignore(root: Path) -> list[str]:
-    path = root / ".cursorignore"
-    if not path.is_file():
-        return []
     patterns: list[str] = []
-    for raw in path.read_text(errors="ignore").splitlines():
-        line = raw.strip()
-        if line and not line.startswith("#"):
-            patterns.append(line.lstrip("/"))
+    for name in CURSOR_IGNORE_FILES:
+        path = root / name
+        if not path.is_file():
+            continue
+        for raw in path.read_text(errors="ignore").splitlines():
+            line = raw.strip()
+            if line and not line.startswith("#"):
+                patterns.append(line.lstrip("/"))
     return patterns
 
 
@@ -89,10 +97,17 @@ def is_cursorignored(root: Path, path: Path, patterns: list[str]) -> bool:
 
 
 def logical_route(name: str) -> str | None:
-    if name == "silver":
+    """Map a command stem or skill name to one logical route.
+
+    Command stubs are kebab-case (sb.md, sb-feature.md; render-agent-bundle.py
+    maps them the same way), skills are silver / silver-<x> / sb:<x>.
+    """
+    if name in {"silver", "sb"}:
         return "silver"
     if name.startswith("sb:"):
         return name
+    if name.startswith("sb-"):
+        return "sb:" + name.removeprefix("sb-")
     if name.startswith("silver-"):
         return "sb:" + name.removeprefix("silver-")
     return None
@@ -315,7 +330,7 @@ if workspace["issues"]:
     failures += 1
     print("[FAIL] dev-workspace-auto-discovery")
     print(f"  path: {repo_root}")
-    print(f"  .cursorignore patterns={workspace['patterns']!r}")
+    print(f"  .cursorignore + .cursorindexingignore patterns={workspace['patterns']!r}")
     print(f"  unignored workspace skill surfaces ({len(workspace['issues'])}):")
     for issue in workspace["issues"][:12]:
         print(f"    - {issue}")
@@ -325,7 +340,7 @@ if workspace["issues"]:
 else:
     print("[OK] dev-workspace-auto-discovery")
     print(f"  path: {repo_root}")
-    print(f"  .cursorignore patterns={workspace['patterns']!r}")
+    print(f"  .cursorignore + .cursorindexingignore patterns={workspace['patterns']!r}")
     print(f"  ignored workspace entries={workspace['ignored']}")
     print()
 

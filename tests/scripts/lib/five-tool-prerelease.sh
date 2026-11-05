@@ -44,10 +44,10 @@ five_tool_cursor_agent_authenticated() {
   fi
   local status_out=""
   status_out="$("$cli" status 2>&1 || true)"
-  if printf '%s' "$status_out" | grep -qiE 'not logged in|authentication required'; then
+  if grep -qiE 'not logged in|authentication required' <<<"$status_out"; then
     return 1
   fi
-  printf '%s' "$status_out" | grep -qiE 'logged in as|email:|account:'
+  grep -qiE 'logged in as|email:|account:' <<<"$status_out"
 }
 
 five_tool_claude_cli_path() {
@@ -66,10 +66,10 @@ five_tool_claude_cli_authenticated() {
     return 0
   fi
   auth_out="$("$cli" auth status 2>&1 || true)"
-  if printf '%s' "$auth_out" | grep -qiE 'not logged in|not authenticated|authentication required'; then
+  if grep -qiE 'not logged in|not authenticated|authentication required' <<<"$auth_out"; then
     return 1
   fi
-  printf '%s' "$auth_out" | grep -qiE 'logged in|authenticated|claude\.ai|api_key|oauth'
+  grep -qiE 'logged in|authenticated|claude\.ai|api_key|oauth' <<<"$auth_out"
 }
 
 five_tool_prerelease_marker_path() {

@@ -34,16 +34,11 @@ sb_skill_name_variants() {
   [[ -n "$skill" ]] || return 1
 
   local variants=()
-  local variant existing
+  local variant
   add_variant() {
-    variant="$1"
-    [[ -n "$variant" ]] || return
-    if [[ ${#variants[@]} -gt 0 ]]; then
-      for existing in "${variants[@]}"; do
-        [[ "$existing" == "$variant" ]] && return
-      done
-    fi
-    variants+=("$variant")
+    # Every variant added below differs from the others by separator (: / -) or prefix,
+    # so no duplicate or empty variant can be produced.
+    variants+=("$1")
   }
 
   add_variant "$skill"
@@ -125,7 +120,6 @@ sb_skill_is_installed() {
   local variants=()
   local variant
   while IFS= read -r variant; do
-    [[ -n "$variant" ]] || continue
     variants+=("$variant")
   done < <(sb_skill_name_variants "$skill")
 

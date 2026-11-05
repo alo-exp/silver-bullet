@@ -4,7 +4,7 @@
 set -euo pipefail
 
 SB_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ENTERPRISE_APP="${1:-/Users/shafqat/projects/enterprise-grade-test-app}"
+ENTERPRISE_APP="${1:-$(cd "${SB_ROOT}/../.." && pwd)/enterprise-grade-test-app}"
 HOST_LABEL="${2:-cursor}"
 STATE_DIR="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}"
 STATE_FILE="${SILVER_BULLET_STATE_FILE:-${STATE_DIR}/state}"
@@ -40,11 +40,14 @@ bash "${SB_ROOT}/tests/hooks/test-orchestrator-directive.sh" | tail -1
 bash "${SB_ROOT}/tests/hooks/test-orchestrator-worker-handoff.sh" | tail -1
 bash "${SB_ROOT}/tests/hooks/test-outcomes-check.sh" | tail -1
 
+# A private log file: a fixed /tmp path collides across users and runs.
+npm_log="$(mktemp "${TMPDIR:-/tmp}/enterprise-app-dogfood-test.XXXXXX")"
+trap 'rm -f -- "$npm_log"' EXIT
 (
   cd "$ENTERPRISE_APP"
-  npm test >/tmp/enterprise-app-dogfood-test.log 2>&1
+  npm test >"$npm_log" 2>&1
 )
-echo "PASS: enterprise-grade-test-app npm test ($(tail -1 /tmp/enterprise-app-dogfood-test.log))"
+echo "PASS: enterprise-grade-test-app npm test ($(tail -1 "$npm_log"))"
 
 for artifact in \
   ".planning/phases/08-v5-full-surface/PLAN.md" \
@@ -52,7 +55,11 @@ for artifact in \
   ".planning/phases/08-v5-full-surface/REVIEW.md" \
   ".planning/phases/08-v5-full-surface/SECURITY.md" \
   ".planning/orchestrator-composition-log.jsonl"; do
-  [[ -f "${ENTERPRISE_APP}/${artifact}" ]] && echo "PASS: artifact ${artifact}" || echo "FAIL: missing ${artifact}"
+  if [[ -f "${ENTERPRISE_APP}/${artifact}" ]]; then
+    echo "PASS: artifact ${artifact}"
+  else
+    echo "FAIL: missing ${artifact}"
+  fi
 done
 
 [[ -d "${ENTERPRISE_APP}/.planning/workflows/.archive" ]] && \
