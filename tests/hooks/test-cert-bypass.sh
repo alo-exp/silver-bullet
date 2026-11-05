@@ -20,8 +20,8 @@ TEST_RUN_ID="$$"
 
 cleanup_all() {
   rm -rf "$TMPDIR_TEST" "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" \
-    "${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}" \
-    "${SB_TEST_DIR}/agentmemory-usage-${TEST_RUN_ID}" \
+    "${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query" \
+    "${SB_TEST_DIR}/t${TEST_RUN_ID}-agentmemory-usage" \
     "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 }
 trap cleanup_all EXIT
@@ -79,8 +79,8 @@ EOF
 setup() {
   TMPDIR_TEST="$(mktemp -d)"
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
-  GRAPHIFY_STATE="${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}"
-  AM_STATE="${SB_TEST_DIR}/agentmemory-usage-${TEST_RUN_ID}"
+  GRAPHIFY_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query"
+  AM_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-agentmemory-usage"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   TMPFILE="${TMPDIR_TEST}/src/app.js"
   rm -f "$TMPSTATE" "$GRAPHIFY_STATE" "$AM_STATE"

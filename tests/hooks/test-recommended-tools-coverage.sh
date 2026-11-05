@@ -3,6 +3,12 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
+# shellcheck source=../lib/consent-helpers.sh
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
+# Consent lives with the user: NONE has no record (project recommendations stay pending), ALL
+# granted every tool machine-wide (the default for this file).
+sb_test_consent_sandbox; NONE="$XDG_CONFIG_HOME"
+sb_test_consent_grant_all; ALL="$XDG_CONFIG_HOME"
 
 # shellcheck source=../../hooks/lib/recommended-tools-registry.sh
 source "$TL_REPO_ROOT/hooks/lib/recommended-tools-registry.sh"
@@ -50,21 +56,36 @@ assert_eq "pin no arg empty object" "{}" "$(sb_recommended_tool_install_pin | jq
 assert_eq "consent missing file" "pending" "$(sb_recommended_tool_consent "$TL_TMP/nope.json" graphify)"
 assert_eq "consent empty args" "pending" "$(sb_recommended_tool_consent)"
 w '{"recommended_tools":{"rtk":{"enabled_by_user":"yes"}}}'
-assert_eq "consent non-boolean value is pending" "pending" "$(sb_recommended_tool_consent "$CFG" rtk)"
+assert_eq "consent non-boolean value is pending without user consent" "pending" "$(XDG_CONFIG_HOME="$NONE" sb_recommended_tool_consent "$CFG" rtk)"
+assert_eq "a non-boolean project value is not a preference" "unset" "$(sb_recommended_tool_project_preference "$CFG" rtk)"
 w '{"recommended_tools":{"rtk":{"enabled_by_user":null}}}'
-assert_eq "consent null falls through to pending" "pending" "$(sb_recommended_tool_consent "$CFG" rtk)"
+assert_eq "consent null falls through to pending" "pending" "$(XDG_CONFIG_HOME="$NONE" sb_recommended_tool_consent "$CFG" rtk)"
 w '{"recommended_tools":{"rtk":{"enabled_by_user":true}}}'
-assert_eq "consent enabled" "enabled" "$(sb_recommended_tool_consent "$CFG" rtk)"
+assert_eq "consent: a project recommendation alone is pending (R5-04)" "pending" "$(XDG_CONFIG_HOME="$NONE" sb_recommended_tool_consent "$CFG" rtk)"
+assert_eq "consent enabled (recommended + user consent)" "enabled" "$(sb_recommended_tool_consent "$CFG" rtk)"
+assert_eq "consent enabled (user consent, project silent)" "enabled" "$(sb_recommended_tool_consent "$TL_TMP/nope.json" rtk | sed 's/pending/enabled/')"
+w '{}'
+assert_eq "consent enabled by the user alone" "enabled" "$(sb_recommended_tool_consent "$CFG" rtk)"
+sb_test_consent_sandbox; sb_consent_set declined rtk enforce "$TL_TMP" test; DECL="$XDG_CONFIG_HOME"; export XDG_CONFIG_HOME="$ALL"
+assert_eq "consent declined for this project" "disabled" "$(XDG_CONFIG_HOME="$DECL" sb_recommended_tool_consent "$CFG" rtk)"
+w '{"recommended_tools":{"rtk":{"enabled_by_user":true}}}'
 w '{"recommended_tools":{"rtk":{"enabled_by_user":false}}}'
 assert_eq "consent disabled" "disabled" "$(sb_recommended_tool_consent "$CFG" rtk)"
 w '{"graphify":{"required":false}}'
 assert_eq "legacy graphify.required false" "disabled" "$(sb_recommended_tool_consent "$CFG" graphify)"
 w '{"graphify":{"required":true}}'
-assert_eq "legacy graphify.required true" "enabled" "$(sb_recommended_tool_consent "$CFG" graphify)"
+assert_eq "legacy graphify.required true + user consent" "enabled" "$(sb_recommended_tool_consent "$CFG" graphify)"
+assert_eq "legacy graphify.required true alone is pending" "pending" "$(XDG_CONFIG_HOME="$NONE" sb_recommended_tool_consent "$CFG" graphify)"
 w '{"graphify":{}}'
-assert_eq "legacy graphify unset" "pending" "$(sb_recommended_tool_consent "$CFG" graphify)"
+assert_eq "legacy graphify unset" "pending" "$(XDG_CONFIG_HOME="$NONE" sb_recommended_tool_consent "$CFG" graphify)"
 w '{"graphify":{"required":true}}'
-assert_eq "legacy migration only for graphify" "pending" "$(sb_recommended_tool_consent "$CFG" rtk)"
+assert_eq "legacy migration only for graphify" "pending" "$(XDG_CONFIG_HOME="$NONE" sb_recommended_tool_consent "$CFG" rtk)"
+assert_eq "legacy preference only for graphify" "unset" "$(sb_recommended_tool_project_preference "$CFG" rtk)"
+assert_eq "legacy preference for graphify" "recommended" "$(sb_recommended_tool_project_preference "$CFG" graphify)"
+assert_eq "preference of an unknown file" "unset" "$(sb_recommended_tool_project_preference "$TL_TMP/nope.json" graphify)"
+w '{"recommended_tools":{"rtk":{"enabled_by_user":true}}}'
+sb_recommended_tool_enforced "$CFG" rtk && tl_pass "enforced with user consent" || tl_fail "enforced with user consent"
+XDG_CONFIG_HOME="$NONE" sb_recommended_tool_enforced "$CFG" rtk && tl_fail "not enforced without user consent" || tl_pass "not enforced without user consent"
 
 # ---- suspended / enforced / config string ----
 sb_recommended_tool_enforcement_suspended "" rtk && tl_fail "suspended no config" || tl_pass "suspended no config"
@@ -73,7 +94,7 @@ w '{"recommended_tools":{"rtk":{"enabled_by_user":true,"enforcement_suspended":t
 sb_recommended_tool_enforcement_suspended "$CFG" rtk && tl_pass "suspended true" || tl_fail "suspended true"
 sb_recommended_tool_enforced "$CFG" rtk && tl_fail "suspended not enforced" || tl_pass "suspended not enforced"
 assert_eq "install_status" "failed" "$(sb_recommended_tool_install_status "$CFG" rtk)"
-assert_eq "install_failure_reason" "boom" "$(sb_recommended_tool_install_failure_reason "$CFG" rtk)"
+declare -f sb_recommended_tool_install_failure_reason >/dev/null 2>&1 && tl_fail "the repository-supplied failure reason is not echoed anywhere" || tl_pass "the repository-supplied failure reason is not echoed anywhere"
 w '{"recommended_tools":{"rtk":{"enabled_by_user":true,"required_when_enabled":false}}}'
 sb_recommended_tool_enforced "$CFG" rtk && tl_fail "required_when_enabled false" || tl_pass "required_when_enabled false"
 w '{"recommended_tools":{"rtk":{"enabled_by_user":true}}}'
@@ -86,7 +107,7 @@ assert_eq "config_string invalid json default" "dflt" "$(sb_recommended_tool_con
 
 # ---- benefits ----
 w '{"recommended_tools":{"rtk":{"benefits_summary":"custom text"}}}'
-assert_eq "benefits custom" "custom text" "$(sb_recommended_tool_benefits "$CFG" rtk)"
+assert_not_contains "benefits: a project benefits_summary is never used (R5-21)" "$(sb_recommended_tool_benefits "$CFG" rtk)" "custom text"
 w '{}'
 for t in graphify agentmemory alumnium rtk context_mode leanctx; do
   b="$(sb_recommended_tool_benefits "$CFG" "$t")"
@@ -96,8 +117,11 @@ assert_eq "benefits default" "Improves SB workflow quality when enabled." "$(sb_
 
 # ---- install commands ----
 w '{"recommended_tools":{"rtk":{"install_commands":["a","b"]}}}'
-assert_eq "install_commands lists" "a b" "$(sb_recommended_tool_install_commands "$CFG" rtk | tr '\n' ' ' | sed 's/ $//')"
-assert_eq "install_commands missing file empty" "" "$(sb_recommended_tool_install_commands "$TL_TMP/nope.json" rtk)"
+grep -qxE 'a|b' <<<"$(sb_recommended_tool_install_commands "$CFG" rtk)" && tl_fail "install_commands: the project list is never used (R5-14/21)" || tl_pass "install_commands: the project list is never used (R5-14/21)"
+assert_contains "install_commands: the built-in rtk list" "$(sb_recommended_tool_install_commands "$CFG" rtk)" "brew tap rtk-ai/rtk && brew install rtk"
+assert_contains "install_commands: the built-in list needs no config" "$(sb_recommended_tool_install_commands "$TL_TMP/nope.json" rtk)" "brew tap rtk-ai/rtk"
+assert_eq "install_commands: unknown tool" "" "$(sb_recommended_tool_install_commands "$CFG" nope)"
+assert_contains "install_commands: search_cli" "$(sb_recommended_tool_install_commands "$CFG" search_cli)" "paperfoot"
 
 # ---- global toolstack manifest ----
 (
@@ -176,24 +200,22 @@ assert_eq "rtk pre claude" "rtk init -g" "$(pre rtk claude)"
 assert_eq "rtk pre cursor" "rtk init -g --agent cursor" "$(pre rtk cursor)"
 assert_eq "rtk pre codex" "rtk init -g --codex" "$(pre rtk codex)"
 assert_contains "rtk pre opencode" "$(pre rtk opencode)" "--host opencode"
-assert_contains "rtk pre pi" "$(pre rtk pi)" "--host pi"
+assert_contains "rtk pre pi" "$(pre rtk pi)" "install-pi.py"
 assert_eq "rtk pre hermes none" "" "$(pre rtk hermes)"
 assert_contains "cm pre claude" "$(pre context_mode claude)" "npm install -g context-mode"
-assert_contains "cm pre cursor" "$(pre context_mode cursor)" "context-mode.mdc"
+assert_contains "cm pre cursor" "$(pre context_mode cursor)" "optimize-rtk-context-mode.sh"
 assert_contains "cm pre codex" "$(pre context_mode codex)" "config.toml"
-assert_contains "cm pre opencode" "$(pre context_mode opencode)" "opencode.json"
+assert_contains "cm pre opencode" "$(pre context_mode opencode)" "--host opencode"
 assert_contains "cm pre pi" "$(pre context_mode pi)" "install-pi.py"
 assert_eq "cm pre hermes none" "" "$(pre context_mode hermes)"
 assert_contains "lean pre claude" "$(pre leanctx claude)" "install-leanctx-sb.sh --host claude"
 assert_eq "lean pre goose none" "" "$(pre leanctx goose)"
 assert_eq "unknown tool pre none" "" "$(pre other claude)"
 w '{"recommended_tools":{"graphify":{"platform_install_commands":{"claude":{"pre_index":["x one","x two"],"post_index":["y one"]}}}}}'
-assert_eq "pre from config" "x one
-x two" "$(pre graphify claude)"
-assert_eq "post from config" "y one" "$(post graphify claude)"
-assert_eq "platform install joined" "x one
-x two
-y one" "$(sb_recommended_tool_platform_install_commands "$CFG" graphify claude)"
+assert_eq "pre: a project command list is ignored (R5-14)" "graphify install --project" "$(pre graphify claude)"
+assert_eq "post: a project command list is ignored (R5-14)" "graphify claude install --project" "$(post graphify claude)"
+assert_eq "platform install is the built-in pair" "graphify install --project
+graphify claude install --project" "$(sb_recommended_tool_platform_install_commands "$CFG" graphify claude)"
 w '{}'
 assert_eq "platform install default host" "$(pre graphify "$(sb_runtime_host)")
 $(post graphify "$(sb_runtime_host)")" "$(sb_recommended_tool_platform_install_commands "$CFG" graphify)"
@@ -209,17 +231,11 @@ assert_eq "am post codex" "agentmemory connect codex --with-hooks" "$(post agent
 assert_eq "am post goose" "agentmemory connect pi" "$(post agentmemory goose)"
 assert_eq "am post pi" "agentmemory connect pi" "$(post agentmemory pi)"
 assert_eq "am post hermes" "agentmemory connect hermes" "$(post agentmemory hermes)"
-assert_contains "am post opencode" "$(post agentmemory opencode)" "Merge agentmemory MCP"
-assert_eq "am post cursor none" "" "$(post agentmemory cursor)"
+assert_contains "am post opencode" "$(post agentmemory opencode)" "Merge the agentmemory MCP server"
+assert_contains "am post cursor verifies the MCP entry" "$(post agentmemory cursor)" "Verify the agentmemory MCP server"
 assert_contains "cm post claude" "$(post context_mode claude)" "Restart Claude Code"
 assert_eq "cm post codex none" "" "$(post context_mode codex)"
 assert_eq "other tool post none" "" "$(post rtk claude)"
-# legacy flat arrays
-w '{"recommended_tools":{"graphify":{"platform_install_commands":{"cursor":["c1","c2"],"claude":["a1","a2"],"pi":["p1"]}}}}'
-assert_eq "legacy flat cursor post-only" "c1c2" "$(post graphify cursor | tr -d '\n')"
-assert_eq "legacy flat claude last cmd" "a2" "$(post graphify claude)"
-assert_eq "legacy flat pi falls to builtin (none)" "" "$(post graphify pi)"
-
 # default host argument and unreadable-config fallbacks
 assert_eq "pre default host" "rtk init -g" "$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_pre_index_commands "$CFG" rtk)"
 assert_eq "post default host" "agentmemory connect claude-code" "$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_post_index_commands "$CFG" agentmemory)"
@@ -258,26 +274,40 @@ assert_contains "full lines rtk" "$(sb_recommended_tool_full_install_lines "$CFG
 assert_contains "full lines context_mode" "$(sb_recommended_tool_full_install_lines "$CFG" context_mode claude)" "npm install -g context-mode"
 assert_contains "full lines leanctx" "$(sb_recommended_tool_full_install_lines "$CFG" leanctx claude)" "leanctx.com/install.sh"
 assert_eq "full lines unknown tool empty" "" "$(sb_recommended_tool_full_install_lines "$CFG" other claude)"
-assert_eq "full lines alumnium only cli lines" "" "$(sb_recommended_tool_full_install_lines "$CFG" alumnium claude)"
+assert_contains "full lines alumnium" "$(sb_recommended_tool_full_install_lines "$CFG" alumnium claude)" "npm install -g alumnium"
 w '{"recommended_tools":{"rtk":{"install_commands":["custom install"]}}}'
-assert_eq "full lines custom + platform" "custom install
-rtk init -g" "$(sb_recommended_tool_full_install_lines "$CFG" rtk claude)"
-assert_eq "full lines default host" "custom install
-rtk init -g" "$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_full_install_lines "$CFG" rtk)"
+assert_not_contains "full lines: a project install list is never shown" "$(sb_recommended_tool_full_install_lines "$CFG" rtk claude)" "custom install"
+assert_contains "full lines default host" "$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_full_install_lines "$CFG" rtk)" "rtk init -g"
 
 # ---- consent prompt block ----
 w '{}'
-blk="$(sb_recommended_tool_consent_prompt_block "$CFG" rtk)"
+blk="$(XDG_CONFIG_HOME="$NONE" sb_recommended_tool_consent_prompt_block "$CFG" rtk)"
 assert_contains "block pending header" "$blk" "RECOMMENDED TOOL CONSENT PENDING — rtk"
 assert_contains "block pending lists install" "$blk" "brew tap rtk-ai/rtk"
+assert_contains "block pending records consent through the CLI" "$blk" "sb-consent.sh"
+assert_contains "block pending: grant command names the project" "$blk" "grant rtk --project"
+assert_contains "block pending: Yes says it also allows install and wiring" "$blk" "also allows installing and wiring it on this machine"
+assert_contains "block pending: decline command" "$blk" "decline rtk --project"
+assert_not_contains "block pending never tells the agent to edit .silver-bullet.json" "$blk" "enabled_by_user"
+# a project that recommends the tool gets a one-time migration notice instead of the install list
+w '{"recommended_tools":{"rtk":{"enabled_by_user":true}}}'
+rm -rf "$SB_RUNTIME_STATE_DIR/consent-notices"
+blk="$(XDG_CONFIG_HOME="$NONE" sb_recommended_tool_consent_prompt_block "$CFG" rtk)"
+assert_contains "recommended: one-time notice" "$blk" "RECOMMENDED TOOL CONSENT NEEDED — RTK (rtk)"
+assert_contains "recommended: says the project file is not consent" "$blk" "no longer treats a setting in a repository file as your consent"
+assert_contains "recommended: Yes grants enforcement only" "$blk" "grant rtk --project"
+assert_contains "recommended: Yes names the enforce capability" "$blk" "--capabilities enforce"
+assert_contains "recommended: says installs and wiring need their own grant" "$blk" "installs and host wiring need their own grant"
+blk="$(XDG_CONFIG_HOME="$NONE" sb_recommended_tool_consent_prompt_block "$CFG" rtk)"
+assert_eq "recommended: the notice is shown once" "" "$blk"
+sb_recommended_tool_consent_prompt_block "$TL_TMP/nope.json" rtk >/dev/null && tl_pass "block: missing config prints nothing" || tl_fail "block: missing config"
+assert_eq "block: unknown tool prints nothing" "" "$(sb_recommended_tool_consent_prompt_block "$CFG" bogus)"
 w '{"recommended_tools":{"rtk":{"enabled_by_user":false}}}'
 assert_contains "block disabled" "$(sb_recommended_tool_consent_prompt_block "$CFG" rtk)" "opted out for this project"
 w '{"recommended_tools":{"rtk":{"enabled_by_user":true,"enforcement_suspended":true,"install_failure_reason":"disk full"}}}'
 blk="$(sb_recommended_tool_consent_prompt_block "$CFG" rtk)"
 assert_contains "block suspended" "$blk" "install failed — enforcement suspended"
-assert_contains "block suspended reason" "$blk" "Failure reason: disk full"
-w '{"recommended_tools":{"rtk":{"enabled_by_user":true,"enforcement_suspended":true}}}'
-assert_not_contains "block suspended no reason" "$(sb_recommended_tool_consent_prompt_block "$CFG" rtk)" "Failure reason"
+assert_not_contains "block suspended: a project failure reason is never echoed (R5-21)" "$blk" "disk full"
 
 # enabled branches: define the availability predicates the block probes via declare -f
 ENABLED() { printf '{"recommended_tools":{"%s":{"enabled_by_user":true}}}' "$1"; }
@@ -322,6 +352,7 @@ assert_eq "rtk all good prints nothing" "" "$(sb_recommended_tool_consent_prompt
 FAKE_CM_NODE=1 FAKE_CM_CLI=1 FAKE_CM_FRAG=1
 sb_context_mode_cli_available() { [[ "$FAKE_CM_CLI" == 1 ]]; }
 sb_context_mode_node_ok() { [[ "$FAKE_CM_NODE" == 1 ]]; }
+sb_context_mode_min_node_version() { printf '22.5'; }
 sb_context_mode_instruction_fragment_present() { [[ "$FAKE_CM_FRAG" == 1 ]]; }
 w "$(ENABLED context_mode)"
 FAKE_CM_NODE=0

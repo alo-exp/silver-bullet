@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Unit tests for hooks/lib/context-mode-read-deny.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 LIB="$REPO_ROOT/hooks/lib/context-mode-read-deny.sh"
@@ -53,9 +57,15 @@ PY
 sb_context_mode_read_path_is_exempt "${TMP}/.silver-bullet.json" "$TMPCFG" && pass "config path exempt" || fail "config path exempt"
 sb_context_mode_read_path_is_exempt "$BIG" "$TMPCFG" && fail "regular file not exempt" || pass "regular file not exempt"
 
+# Context Mode installed and wired: the redirect only applies when its ctx_* tools exist.
+mkdir -p "$TMP/bin"; printf '#!/bin/sh\nexit 0\n' >"$TMP/bin/context-mode"; chmod +x "$TMP/bin/context-mode"
+printf '{"mcpServers":{"context-mode":{}}}' >"$TMP/cm-mcp.json"
+export SB_CONTEXT_MODE_MCP_ARTIFACT="$TMP/cm-mcp.json" PATH="$TMP/bin:$PATH"
+export SB_RUNTIME_STATE_DIR="$TMP/state"
+
 read_input=$(jq -n --arg f "$BIG" '{tool_name:"Read", tool_input:{file_path:$f}}')
 if deny_path="$(sb_context_mode_should_deny_read "$read_input" "$TMPCFG" "$TMP" 2>/dev/null)"; then
-  [[ "$deny_path" == "$(sb_context_mode_resolve_read_path "$BIG" "$TMP")" ]] && pass "deny large read" || fail "deny large read"
+  [[ "$deny_path" == "$BIG" ]] && pass "deny large read" || fail "deny large read"
 else
   fail "deny large read"
 fi

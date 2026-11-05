@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Tests for hooks/context-mode-read-deny.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -84,7 +88,13 @@ setup() {
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   SMALL="${TMPDIR_TEST}/small.txt"
   BIG="${TMPDIR_TEST}/large.txt"
-  export PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+  # Context Mode installed and wired: the redirect only applies when its ctx_* tools exist.
+  CM_BIN="${TMPDIR_TEST}/bin"; mkdir -p "$CM_BIN"
+  printf '#!/bin/sh\nexit 0\n' >"$CM_BIN/context-mode"; chmod +x "$CM_BIN/context-mode"
+  printf '{"mcpServers":{"context-mode":{}}}' >"${TMPDIR_TEST}/cm-mcp.json"
+  export SB_CONTEXT_MODE_MCP_ARTIFACT="${TMPDIR_TEST}/cm-mcp.json"
+  export PATH="$CM_BIN:/usr/bin:/bin:/usr/sbin:/sbin"
+  rm -rf "${SB_RUNTIME_STATE_DIR}/context-mode-read-acks"
   rm -f "${SB_RUNTIME_STATE_DIR}/project-root" 2>/dev/null || true
   git -C "$TMPDIR_TEST" init -q
   printf 'x' >"$SMALL"
@@ -109,7 +119,7 @@ run_grep() {
   local target="$1"
   local input
   input=$(jq -n --arg p "$target" \
-    '{hook_event_name:"PreToolUse", tool_name:"Grep", tool_input:{pattern:"foo", path:$p}}')
+    '{hook_event_name:"PreToolUse", tool_name:"Grep", tool_input:{pattern:"foo", path:$p, output_mode:"content"}}')
   (cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null)
 }
 
@@ -154,8 +164,25 @@ assert_allow "config file exempt" "$out"
 
 setup
 write_cfg true
-out="$(run_grep "$BIG")"
+# Consent for Context Mode only: with LeanCTX consent, Grep is left to LeanCTX.
+GREP_CONSENT="$(mktemp -d)"
+XDG_CONFIG_HOME="$GREP_CONSENT" sb_consent_set granted context_mode enforce machine test
+out="$(XDG_CONFIG_HOME="$GREP_CONSENT" run_grep "$BIG")"
 assert_deny "grep on large file denied" "$out"
+rm -rf "$GREP_CONSENT"
+
+setup
+write_cfg true
+rm -f "$SB_CONTEXT_MODE_MCP_ARTIFACT"
+out="$(run_read "$BIG")"
+assert_allow "no redirect while Context Mode is not wired" "$out"
+
+setup
+write_cfg true
+out="$(run_read "$BIG")"
+assert_deny "first large read is redirected" "$out"
+out="$(run_read "$BIG")"
+assert_allow "the repeated read is allowed (Edit needs exact bytes)" "$out"
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1
