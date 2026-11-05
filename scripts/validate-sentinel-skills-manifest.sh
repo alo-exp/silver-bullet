@@ -5,13 +5,13 @@
 #   scripts/validate-sentinel-skills-manifest.sh [--manifest PATH] [--expected-count N] [--release-tag TAG]
 #
 # Exit 0 when all rows are status=clean, findings_open=0, and count matches the
-# frozen v0.45.0 audit inventory (default 96).
+# frozen v0.45.0 audit inventory minus the retired Cursor delegate (default 95).
 
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 manifest_file="${repo_root}/docs/audits/sentinel-skills/manifest.json"
-expected_count=96
+expected_count=95
 release_tag=""
 
 while [[ $# -gt 0 ]]; do

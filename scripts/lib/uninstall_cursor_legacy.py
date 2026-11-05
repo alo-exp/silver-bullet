@@ -84,6 +84,23 @@ PLUGIN_DIRS = (
     "cache/alo-labs-cursor/silver-bullet",
     "marketplaces/github.com/alo-exp/silver-bullet",
 )
+# Files the global toolstack installers deployed into ~/.cursor/hooks/toolstack (exact names).
+TOOLSTACK_FILES = TOOLSTACK_GATES | frozenset(
+    {
+        "five_tool_instances.py",
+        "patch-hooks.py",
+        "patch-mcp.py",
+        "fix-shell-compression-hook.py",
+        "install-pi.py",
+        "opencode.py",
+        "parity-verify.sh",
+        "verify.sh",
+        "install.sh",
+        "install-body.sh",
+        "global-recommended-tools.mdc",
+        "__pycache__",
+    }
+)
 PLUGIN_ROOT_PLACEHOLDERS = ("${CURSOR_PLUGIN_ROOT}", "$CURSOR_PLUGIN_ROOT")
 
 AGENT_MARKER = "<!-- sb-managed: cursor-sb-agents -->"
@@ -95,9 +112,12 @@ RULES = {
     "agentmemory": "agentmemory session capture and Graphify synergy",
     "leanctx": "LeanCTX routing rules for SB five-tool parallel stack",
     "no-fast-mode": "Never launch parent or Task/subagent work in Fast mode",
-    "recommended-tools": "SB recommended tools — full enforcement in Cursor",
+    "recommended-tools": (
+        "SB recommended tools — full enforcement in Cursor",
+        "Global recommended tools — five_tool_routed stack (always enforced)",
+    ),
     "rfl-verify-composer-2.5": (
-        "RFL verify_1/verify_2 always use native Cursor Composer 2.5 Task — never Pi/Omni or Fast"
+        "RFL verify_1/verify_2 always use native Cursor Composer 2.5 Task — never Pi/Omni or Fast",
     ),
     "rfl-verify-grok-4.5-high": "DEPRECATED — see rfl-verify-composer-2.5.mdc for the current RFL verify model policy",
     "silver-orchestrator": "Silver Bullet parent orchestrator — delegate via Task workers only; never implement directly",
@@ -134,8 +154,20 @@ class Cleanup:
     def note(self, what) -> None:
         print(f"kept: {what}", file=sys.stderr)
 
+    def reachable(self, path: Path) -> bool:
+        """False (and a note) when a parent folder of ``path`` under the Cursor home is a symlink."""
+        current = self.home
+        for part in path.relative_to(self.home).parts[:-1]:
+            current = current / part
+            if current.is_symlink():
+                self.note(f"{path}: symlinked parent folder {current} is not followed")
+                return False
+        return True
+
     def move_away(self, path: Path) -> None:
         """Move ``path`` (a file, a directory or a symlink itself) into the backup bucket."""
+        if not self.reachable(path):
+            return
         self.changes += 1
         self.say("moved", "move", f"{path} -> {self.bucket}")
         if self.dry_run:
@@ -145,6 +177,8 @@ class Cleanup:
         shutil.move(str(path), str(target))
 
     def save_json(self, path: Path, data) -> None:
+        if not self.reachable(path):
+            return
         self.changes += 1
         self.say("updated", "update", path)
         if not self.dry_run:
@@ -269,7 +303,8 @@ class Cleanup:
 
     def clean_rules(self) -> None:
         root = self.home / "rules"
-        for name, description in RULES.items():
+        for name, value in RULES.items():
+            descriptions = (value,) if isinstance(value, str) else value
             path = root / f"{name}.mdc"
             if path.is_symlink() or not path.is_file():
                 continue
@@ -277,7 +312,7 @@ class Cleanup:
                 head = path.read_text(encoding="utf-8").splitlines()[:6]
             except (OSError, UnicodeDecodeError):
                 head = []
-            if f"description: {description}" in head:
+            if any(f"description: {description}" in head for description in descriptions):
                 self.move_away(path)
             else:
                 self.note(f"{path}: named like a Silver Bullet rule but the description differs")
@@ -289,7 +324,7 @@ class Cleanup:
         common = deployed / "lib" / "common.sh"
         if deployed.is_dir() and not deployed.is_symlink():
             if common.is_file() and TOOLSTACK_HEADER in common.read_text(encoding="utf-8", errors="replace"):
-                self.move_away(deployed)
+                self.move_toolstack_files(deployed)
             else:
                 self.note(f"{deployed}: lib/common.sh lacks the Silver Bullet toolstack header")
         config = self.home / "toolstack.json"
@@ -302,6 +337,22 @@ class Cleanup:
             state = self.home / "state" / "toolstack"
             if state.is_dir() and not state.is_symlink():
                 self.move_away(state)
+
+    def move_toolstack_files(self, deployed: Path) -> None:
+        """Move only the files the installers deployed; user scripts stay with their hooks.json entries."""
+        for item in sorted(deployed.iterdir()):
+            if item.name == "lib":
+                common = item / "common.sh"
+                if common.is_file() and not common.is_symlink():
+                    self.move_away(common)
+            elif item.name in TOOLSTACK_FILES and not (item.is_symlink() and item.is_dir()):
+                self.move_away(item)
+        for folder in (deployed / "lib", deployed):
+            if not self.dry_run and folder.is_dir() and not folder.is_symlink() and not any(folder.iterdir()):
+                folder.rmdir()
+        for item in sorted(deployed.rglob("*")) if deployed.is_dir() else ():
+            if item.is_file() or item.is_symlink():
+                self.note(f"{item}: not a Silver Bullet toolstack file, left in place")
 
     # ------------------------------------------------------------------ plugins
 
@@ -349,7 +400,7 @@ class Cleanup:
         ):
             try:
                 step()
-            except ConfigError as exc:
+            except (ConfigError, OSError) as exc:
                 print(f"ERROR: {exc}", file=sys.stderr)
                 failed = True
         if self.changes:
