@@ -155,8 +155,22 @@ sb_enterprise_policy_human_deploy_marker_file() {
 # for a hook message: control characters and newlines removed, capped at 80 characters (R1-33).
 sb_enterprise_policy_untrusted_text() {
   local text
-  text="$(printf '%s' "${1:-}" | tr -d '[:cntrl:]' | cut -c1-80)"
+  text="$(printf '%s' "${1:-}" | tr -d '[:cntrl:]' | cut -c1-"${2:-80}")"
   printf '%s' "$text"
+}
+
+# sb_enterprise_policy_unseen_note: the "cannot inspect: <reason>" paragraph for a command the analysis
+# could not read (empty when the verdict has no unseen reasons). A failed helper is Silver Bullet's problem,
+# not the command's, so it gets repair advice instead of "rewrite the command".
+sb_enterprise_policy_unseen_note() {
+  local reasons
+  [[ -n "${ca_unseen_reasons:-}" ]] || return 0
+  reasons="$(sb_enterprise_policy_untrusted_text "$(printf '%s' "$ca_unseen_reasons" | head -3 | tr '\n' ';')" 240)"
+  if [[ "${ca_analysis_status:-}" == "helper_unavailable" ]]; then
+    printf "cannot inspect: Silver Bullet's shell analysis helper failed (%s).\nThe command itself is not the problem: check that python3 is installed and on the PATH the host gives hooks, or reinstall Silver Bullet, then retry." "$reasons"
+  else
+    printf 'cannot inspect: %s\nThis command runs code Silver Bullet cannot read, so it is held like a delivery. Rewrite it as plain, separate commands (no eval, variable-built command names, pipes into a shell, generated scripts) so it can be inspected.' "$reasons"
+  fi
 }
 
 # Marker must be created by a human operator outside the agent session.
@@ -242,15 +256,15 @@ sb_enterprise_policy_delivery_block_message() {
   marker="$(sb_enterprise_policy_human_deploy_marker_file)"
   if [[ -n "${ca_unseen_reasons:-}" ]]; then
     # the command could not be read: do not present it as a known production delivery
-    local reasons ttl
-    reasons="$(sb_enterprise_policy_untrusted_text "$(printf '%s' "$ca_unseen_reasons" | head -3 | tr '\n' ';')")"
+    local note ttl
+    note="$(sb_enterprise_policy_unseen_note)"
     ttl="$(sb_enterprise_policy_approval_ttl "$config_file")"
     cat <<EOF
-🛑 ENTERPRISE POLICY BLOCK — cannot inspect: ${reasons}
+🛑 ENTERPRISE POLICY BLOCK — ${note}
 
-Profile ${active} (${label}) requires human approval for delivery, and Silver Bullet cannot tell what this command does, so it is held like a delivery.
+Profile ${active} (${label}) requires human approval for delivery.
 
-To proceed: rewrite the command as plain, separate commands (no eval, variable-built command names, pipes into a shell, generated scripts) so it can be inspected, or have the human operator sign off from their own terminal (outside the agent session):
+To proceed, have the human operator sign off from their own terminal (outside the agent session):
   touch ${marker}
 Approval lasts ${ttl} minutes.
 EOF

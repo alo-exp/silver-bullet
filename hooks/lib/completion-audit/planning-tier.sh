@@ -58,7 +58,7 @@ ca_run_planning_tier_gate() {
       emit_block "$(printf '🛑 PLAN SEAL BLOCKED — Plan completion commit detected but /sb:completion-audit has not been recorded this session.\n\nRun /sb:completion-audit to verify completion claims, then retry the plan-seal commit.')"
       exit 0
     fi
-    # VFY-01 extension (P3): require silver-verify + non-stale VERIFICATION.md
+    # VFY-01 extension (P3): require silver-verify + a VERIFICATION.md (existence only; its freshness is not checked)
     if ! has_skill "silver-verify"; then
       emit_block "$(printf '🛑 PLAN SEAL BLOCKED — Phase completion requires /sb:verify recorded this session.\n\nRun /sb:verify and refresh VERIFICATION.md before plan-seal commit.')"
       exit 0

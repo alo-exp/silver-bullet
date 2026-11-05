@@ -401,7 +401,22 @@ rm -f "$TMPSTATE"
 # Create trivial file (not a symlink)
 touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 out=$(run_hook)
-assert_passes "trivial file present -> no block" "$out"
+# R3-02: a config that names any other existing file as the trivial file does not bypass the planning floor
+echo "code-review" >"$TMPSTATE"
+printf 'work-in-progress\n' >"$TMPDIR_TEST/wip.txt"
+git -C "$TMPDIR_TEST" add wip.txt
+out=$(run_hook)
+assert_blocks "config trivial_file naming another file -> still blocks" "$out"
+rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+touch "${SB_TEST_DIR}/trivial"
+out=$(run_hook)
+assert_passes "state directory's own trivial file present -> no block" "$out"
+rm -f "${SB_TEST_DIR}/trivial"
+mkdir -p "${SB_TEST_DIR}/custom"; touch "${SB_TEST_DIR}/custom/trivial"
+jq --arg t "${SB_TEST_DIR}/custom/trivial" '.state.trivial_file = $t' "$TMPCFG" >"$TMPCFG.new" && mv "$TMPCFG.new" "$TMPCFG"
+out=$(run_hook)
+assert_passes "a state-scoped file named trivial named in config -> no block" "$out"
+rm -rf "${SB_TEST_DIR}/custom"
 teardown
 
 # Test 5: On main branch -> finishing-a-development-branch not required

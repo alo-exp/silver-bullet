@@ -197,6 +197,8 @@ fi
 if [[ -f "$lib_dir/trivial-bypass.sh" ]]; then
   # shellcheck disable=SC1090
   source "$lib_dir/trivial-bypass.sh"
+  # only the state directory's own `trivial` file may stand for a trivial session (R3-02)
+  sb_trivial_path_trusted "$trivial_file" "$sb_default_trivial" || trivial_file="$sb_default_trivial"
   sb_trivial_bypass "$trivial_file"
 fi
 

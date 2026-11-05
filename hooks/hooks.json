@@ -44,24 +44,25 @@
         ]
       },
       {
-        "matcher": "Bash|Skill|exec_command",
+        "matcher": "Bash|Skill|exec_command|mcp__.*",
         "hooks": [
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-archive.sh\"",
             "async": false,
             "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|exec_command|mcp__.*",
-        "hooks": [
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
             "async": false,
             "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
+            "async": false,
+            "timeout": 30
           }
         ]
       },
@@ -335,12 +336,6 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
             "async": false,
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
-            "async": false,
-            "timeout": 30
           },
           {
             "type": "command",

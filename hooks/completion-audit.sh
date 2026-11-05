@@ -2,6 +2,14 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
+# Read-only MCP tools (Gmail, Context7, file reads, searches...) cannot deliver: leave before sourcing the
+# libraries, which dominate the cost of a call. Payload is read here so the libraries see it later.
+input=$(cat)
+_ca_prefilter_tool="$(printf '%s' "$input" | sed -n 's/.*"tool_name"[[:space:]]*:[[:space:]]*"\(mcp__[^"]*\)".*/\1/p' | head -1)"
+case "${_ca_prefilter_tool##*__}" in
+  get_* | list_* | search_* | read_* | query* | resolve* | fetch* | find* | describe* | whoami) exit 0 ;;
+esac
+
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 # shellcheck source=lib/hook-bootstrap.sh
 source "${_lib_dir}/hook-bootstrap.sh"
@@ -12,8 +20,6 @@ for _ca_mod in classify gates state-helpers planning-tier change-class deploy-ti
   source "${_lib_dir}/completion-audit/${_ca_mod}.sh"
 done
 
-# Read JSON from stdin
-input=$(cat)
 if declare -f sb_hook_exit_on_cert_run >/dev/null 2>&1; then
   sb_hook_exit_on_cert_run
 elif declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
@@ -86,7 +92,7 @@ ca_classify_command "$cmd" "$mcp_payload" || exit 0
 # (R1-09). On PreToolUse the error becomes a deny that says how to proceed; PostToolUse only warns.
 _ca_internal_error() {
   if [[ "$hook_event" == "PreToolUse" ]]; then
-    emit_block "🛑 COMPLETION AUDIT ERROR — an internal check failed before the delivery gate could finish (line ${1:-?}). Silver Bullet cannot verify this delivery command, so it is blocked. Check that ${SB_RUNTIME_STATE_DIR:-the runtime state directory} is a real directory you own (not a file or a symlink), then retry."
+    emit_block "🛑 COMPLETION AUDIT ERROR — an internal check failed before the delivery gate could finish (completion-audit line ${1:-?}). Silver Bullet cannot verify this delivery command, so it is blocked. Check that the project's .silver-bullet.json is valid JSON and that ${SB_RUNTIME_STATE_DIR:-the runtime state directory} is a real directory you own (not a file or a symlink), then retry."
   else
     printf '{"hookSpecificOutput":{"message":"⚠️  completion-audit.sh: unexpected error — check skipped"}}'
   fi
@@ -152,7 +158,7 @@ config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" 
   ((.release.require_plugin_runtime_matrix // false) | tostring),
   ((.release.require_pre_release_quality_gate // false) | tostring),
   ((.release.require_rc_matrix // false) | tostring),
-  (.project.push_to_default_branch_tier // "intermediate")
+  (.project.push_to_default_branch_tier // "completion")
 ] | join("\n")' "$config_file")
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
@@ -223,10 +229,10 @@ state_contents=""
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/*.sh
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
 
-# project.push_to_default_branch_tier = "completion" treats a push to the default branch (or a release tag)
-# as final delivery instead of an intermediate push (R1-22); the default keeps pushes intermediate.
+# A push to the default branch (or any tag, --all, --mirror) is final delivery in every project (R1-22);
+# project.push_to_default_branch_tier = "intermediate" is the explicit opt-out.
 # shellcheck disable=SC2154  # is_intermediate is set by ca_classify in lib/completion-audit/classify.sh
-if [[ "$is_intermediate" == true && "$push_to_default_branch_tier" == "completion" ]] && ca_push_targets_default_branch; then
+if [[ "$is_intermediate" == true && "$push_to_default_branch_tier" != "intermediate" ]] && ca_push_targets_default_branch; then
   is_intermediate=false
   # shellcheck disable=SC2034  # read by the sourced lib/completion-audit tiers
   is_completion=true
@@ -234,9 +240,12 @@ if [[ "$is_intermediate" == true && "$push_to_default_branch_tier" == "completio
   ca_tier="completion"
 fi
 
+# The tiers run in a subshell: a failure inside a tier function (the ERR trap is not inherited into
+# functions) then ends the subshell non-zero, which trips the ERR trap here and denies on PreToolUse.
 if [[ "$is_intermediate" == true ]]; then
-  # Contract: ca_run_planning_tier_gate always ends the hook with exit 0.
-  ca_run_planning_tier_gate
+  # Contract: ca_run_planning_tier_gate always ends with exit 0 (inside the subshell).
+  (ca_run_planning_tier_gate)
+  exit 0
 fi
 
-ca_run_deploy_tier_gate
+(ca_run_deploy_tier_gate)

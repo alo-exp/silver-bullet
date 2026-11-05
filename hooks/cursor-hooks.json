@@ -32,12 +32,17 @@
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/phase-archive.sh\"",
         "timeout": 10,
-        "matcher": "Shell|Skill"
+        "matcher": "Shell|Skill|mcp__.*"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
         "timeout": 15,
-        "matcher": "Shell|mcp__.*"
+        "matcher": "Shell|Skill|mcp__.*"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
+        "timeout": 30,
+        "matcher": "Shell|Skill|mcp__.*"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/planning-file-guard.sh\"",
@@ -172,11 +177,6 @@
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
         "timeout": 10,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
-        "timeout": 30,
         "matcher": "Shell"
       },
       {

@@ -92,6 +92,38 @@ assert_contains "R3-02: config trivial_file outside the state dir does not bypas
 rm -f "$SD/session-rules-injected"
 ec_cfg '{"sb_initiated":true}'
 
+# ---- command spellings are judged by the shell analysis helper (not by text matching) ----------
+reset
+for c in 'git -C . push origin feature/x' 'git -c x.y=1 push' 'gh pr new --fill' 'gh -R o/r pr create --fill' 'gh pr merge 3' 'gh release create v1' 'eval "$X"'; do
+  GH_STATUS_OVERRIDE="$RED" run_ci "$(pre "$c")"
+  assert_contains "red CI blocks: $c" "$TL_OUT" "CI FAILURE DETECTED"
+done
+for c in 'git status' 'echo git push' 'grep "gh pr create" docs/' 'git log --oneline'; do
+  GH_STATUS_OVERRIDE="$RED" run_ci "$(pre "$c")"
+  assert_eq "red CI does not touch: $c" "" "$TL_OUT"
+done
+for t in mcp__github__create_pull_request mcp__github__merge_pull_request mcp__github__push_files; do
+  GH_STATUS_OVERRIDE="$RED" run_ci "$(jq -cn --arg t "$t" '{hook_event_name:"PreToolUse",tool_name:$t,tool_input:{}}')"
+  assert_contains "red CI blocks MCP $t" "$TL_OUT" "CI FAILURE DETECTED"
+done
+GH_STATUS_OVERRIDE="$RED" run_ci '{"hook_event_name":"PreToolUse","tool_name":"mcp__github__list_issues","tool_input":{}}'
+assert_eq "red CI does not touch an MCP read tool" "" "$TL_OUT"
+GH_STATUS_OVERRIDE="$RED" run_ci '{"hook_event_name":"PreToolUse","tool_name":"Read","tool_input":{"file_path":"x"}}'
+assert_eq "red CI does not touch other tools" "" "$TL_OUT"
+GH_STATUS_OVERRIDE="$RED" run_ci "$(pre 'git commit -m x')"
+assert_eq "a commit is not gated before it happens" "" "$TL_OUT"
+GH_STATUS_OVERRIDE="$RED" run_ci "$(post 'git commit -m x')"
+assert_contains "after a commit CI red is a warning, not a block" "$TL_OUT" "CI FAILURE DETECTED"
+assert_not_contains "after a commit CI red does not block" "$TL_OUT" '"decision"'
+tl_stub python3 'exit 1'
+GH_STATUS_OVERRIDE="$RED" run_ci "$(pre 'git push origin x')"
+assert_contains "helper failing: plain verbs still gate" "$TL_OUT" "CI FAILURE DETECTED"
+GH_STATUS_OVERRIDE="$RED" run_ci "$(pre 'git status')"
+assert_eq "helper failing: an unrelated command is not held" "" "$TL_OUT"
+GH_STATUS_OVERRIDE="$RED" run_ci "$(post 'git commit -m x')"
+assert_contains "helper failing: PostToolUse commit is still checked" "$TL_OUT" "CI FAILURE DETECTED"
+rm -f "$TL_BIN/python3"
+
 # ---- value validation -------------------------------------------------------
 reset
 GH_STATUS_OVERRIDE='{"conclusion":"weird","status":"completed"}' run_ci "$(pre 'git push')"

@@ -121,6 +121,13 @@ None
 ```'
 assert_file_absent "no SPEC.md: none created" "$EC_PROJ/.planning/SPEC.md"
 
+# the SPEC.md file mode survives the update (R1-26 follow-up)
+reset
+printf '# Spec\n<!-- Populated automatically by the hook -->\n' >"$EC_PROJ/.planning/SPEC.md"
+chmod 644 "$EC_PROJ/.planning/SPEC.md"
+run_hook
+assert_eq "SPEC.md keeps its mode (644), not the temp file's 600" "644" "$(stat -c %a "$EC_PROJ/.planning/SPEC.md" 2>/dev/null || stat -f %Lp "$EC_PROJ/.planning/SPEC.md")"
+
 # outside a git work tree `git add` fails and is tolerated
 reset
 printf '# Spec\n<!-- Populated automatically by the hook -->\n' >"$EC_PROJ/.planning/SPEC.md"

@@ -59,21 +59,38 @@ if declare -f sb_tool_name >/dev/null 2>&1; then
 else
   tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""') || true
 fi
-if declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
-  sb_tool_is_shell_like "$tool_name" || exit 0
-fi
-if declare -f sb_tool_command_string >/dev/null 2>&1; then
-  cmd="$(sb_tool_command_string "$input")"
-else
-  cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
-fi
-[[ -z "$cmd" ]] && exit 0
+# Shell tools and MCP tools (the GitHub server's create/merge/push tools) are judged by the shell analysis
+# helper, not by text matching: aliases, global options, wrappers, gh api writes and MCP spellings all count.
+_ci_gate_tool=false
+case "$tool_name" in
+  mcp__* | CallMcpTool | MCP) _ci_gate_tool=true ;;
+  Bash | Shell | shell | exec_command) _ci_gate_tool=true ;;
+esac
+[[ "$_ci_gate_tool" == true ]] || exit 0
+SB_TI_STATUS="helper_unavailable"
+! declare -f sb_tool_input_load >/dev/null 2>&1 || sb_tool_input_load "$input"
+[[ "$SB_TI_STATUS" != "empty" ]] || exit 0
 
-# Trigger scope differs by event (see header comment above):
-if [[ "$hook_event" == "PreToolUse" ]]; then
-  grep -qE '\bgit push\b|\bgh pr (create|merge)\b|\bgh release create\b' <<<"$cmd" || exit 0
+# Trigger scope differs by event (see header comment above). When the helper could not read the payload the
+# call counts as gated: the CI check is the safe default.
+if [[ "$SB_TI_STATUS" == "ok" ]]; then
+  _ci_trigger=false
+  for _ci_action in push pr_create pr_merge release_create remote_write unseen; do
+    ! sb_shell_analysis_may_deliver "$_ci_action" || _ci_trigger=true
+  done
+  [[ "$hook_event" == "PreToolUse" ]] || ! sb_shell_analysis_may_deliver commit || _ci_trigger=true
+  [[ "$_ci_trigger" == true ]] || exit 0
 else
-  grep -qE '\bgit (commit|push)\b|\bgh pr (create|merge)\b|\bgh release create\b' <<<"$cmd" || exit 0
+  # the helper could not read the payload (python3 or the library is missing): fall back to the plain
+  # verbs so unrelated commands are not held, while the common spellings stay covered
+  _ci_cmd=""
+  ! declare -f sb_tool_command_string >/dev/null 2>&1 || _ci_cmd="$(sb_tool_command_string "$input")"
+  [[ -n "$_ci_cmd" ]] || _ci_cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
+  if [[ "$hook_event" == "PreToolUse" ]]; then
+    grep -qE '\bgit push\b|\bgh pr (create|merge)\b|\bgh release create\b' <<<"$_ci_cmd" || exit 0
+  else
+    grep -qE '\bgit (commit|push)\b|\bgh pr (create|merge)\b|\bgh release create\b' <<<"$_ci_cmd" || exit 0
+  fi
 fi
 
 # ── Resolve config file — exit silently if not a Silver Bullet project ───────
@@ -200,7 +217,7 @@ if [[ "$conclusion" == "failure" ]] || [[ "$conclusion" == "cancelled" ]]; then
   # ── CI-fix bypass (issue #95): allow pushes that ARE the fix ─────────────
   # The push may only change CI/test files (every changed path); a commit-message convention is
   # agent-controlled text and no longer waives the block (R1-21a).
-  if grep -qE '\bgit push\b' <<<"$cmd"; then
+  if [[ "${SB_SA_ACTIONS:-}" == "push" && -z "${SB_SA_POSSIBLE_ACTIONS:-}" ]]; then
     if git rev-parse "@{u}" >/dev/null 2>&1; then
       _changed=$(git diff "@{u}..HEAD" --name-only 2>/dev/null || true)
       if [[ -n "$_changed" ]] && ! grep -qvE '^\.github/workflows/|^tests/|^package\.json$' <<<"$_changed"; then
@@ -224,9 +241,7 @@ package.json is allowed. A human can also waive the block for ${_ci_override_ttl
   # decision:block here confuses the model about whether the commit succeeded and
   # can cause deadlock (can't commit the CI fix because PostToolUse blocks it).
   # Push, PR, and release operations are still hard-blocked (remote-state mutations).
-  if [[ "$hook_event" == "PostToolUse" ]] && \
-     grep -qE '\bgit commit\b' <<<"$cmd" && \
-     ! grep -qE '\bgit push\b|\bgh pr\b|\bgh release\b' <<<"$cmd"; then
+  if [[ "$hook_event" == "PostToolUse" && "${SB_SA_ACTIONS:-}" == "commit" && -z "${SB_SA_POSSIBLE_ACTIONS:-}" ]]; then
     json_msg=$(printf '%s' "$msg" | jq -Rs '.')
     printf '{"hookSpecificOutput":{"message":%s}}' "$json_msg"
   else
