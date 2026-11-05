@@ -163,14 +163,14 @@ assert_contains "codex: guard context for an empty state" "$TL_OUT" "(empty)"
 FSB="$TL_TMP/fsb"; mkdir -p "$FSB/scripts" "$FSB/hooks"
 cat >"$FSB/scripts/codex-interactive-invoke.py" <<'PY'
 import os
-print("tui ran; sandbox=%s bypass=%s" % (os.environ.get("CODEX_SANDBOX_MODE"), os.environ.get("CODEX_BYPASS")))
+print("tui ran; sandbox=%s bypass=%s cwd=%s" % (os.environ.get("CODEX_SANDBOX_MODE"), os.environ.get("CODEX_BYPASS"), os.path.basename(os.getcwd())))
 with open(os.environ["CODEX_TRANSCRIPT_FILE"], "w") as fh:
     fh.write('{"line": "Authorization: Bearer abcdefgh12345678"}\n')
 with open(os.environ["CODEX_LAST_MESSAGE_FILE"], "w") as fh:
     fh.write("last message")
 PY
 ad codex 'agent_invoke permissive "tui prompt token=hunter2hunter2"' CODEX_BIN="$CB/codex" SB_ROOT="$FSB" CLAUDE_INTERACTIVE_LOG_FILE="$TL_TMP/codex-tui.log"
-assert_contains "codex: TUI output returned" "$TL_OUT" "tui ran; sandbox=danger-full-access bypass=1"
+assert_contains "codex: TUI output returned, launcher started in SB_ROOT" "$TL_OUT" "tui ran; sandbox=danger-full-access bypass=1 cwd=fsb"
 assert_contains "codex: last message appended" "$TL_OUT" "last message"
 assert_contains "codex: transcript location reported" "$TL_OUT" "[codex transcript archived at "
 TDIR="$(sed -n 's/.*archived at \(.*\/latest.jsonl\)\].*/\1/p' <<<"$TL_OUT" | head -1)"
