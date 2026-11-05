@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 (`rung_1_verify_2`, post ACCEPT-apply of AH1 / I-44)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `916d87f52b25688f7953c76c89b96802d9438eb8da537a8c16b927b98b2ee138` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr search gateway plan §1.2 §4.3 X-union dedup test AH1 I-44"` (321 nodes; oriented AH1 + §4.3 test context)  
 **Apply ref:** AH1 / I-44 (round-4 post-clarify rung 1 pass 20)

@@ -3,7 +3,7 @@ Code-intel preflight OK.
 Reading additional input from stdin...
 OpenAI Codex v0.145.0-alpha.18
 --------
-workdir: /Users/shafqat/.cursor/worktrees/repo/r41j
+workdir: /Users/<user>/.cursor/worktrees/repo/r41j
 model: gpt-5.6-luna
 provider: openai
 approval: never
@@ -263,4 +263,4 @@ hook: PostToolUse Completed
 
 ERROR: timed out waiting for codex exec after 300s
 [agent-codex] lightweight CODEX_HOME (MCP stripped): /var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T//agent-codex-codex-home-UerJk2
-[agent-codex] log: /Users/shafqat/.cursor/worktrees/repo/r41j/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/codex-delegate-attempt-2c5abefe-0016-47b0-bd95-ea4c6b24adf6.log (19345 B)
+[agent-codex] log: /Users/<user>/.cursor/worktrees/repo/r41j/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/codex-delegate-attempt-2c5abefe-0016-47b0-bd95-ea4c6b24adf6.log (19345 B)

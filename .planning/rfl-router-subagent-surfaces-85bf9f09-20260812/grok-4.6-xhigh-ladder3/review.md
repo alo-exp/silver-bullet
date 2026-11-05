@@ -6,7 +6,7 @@
 **Read order:** [SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md](../SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md) (full) → [router_subagent_surfaces_85bf9f09.plan.md](../../router_subagent_surfaces_85bf9f09.plan.md) (full; 668 content lines) → [router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md](../../router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md) (full, including 2026-08-16 supersede banner)
 **Frozen SHA-256 (verified, both copies match):** `baba4a70e17433097727c3321070962c580bf9d0760a0fda2fa02d564bfe6654`
 - [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](../../router_subagent_surfaces_85bf9f09.plan.md)
-- [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) (`cmp` byte-identical)
+- [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) (`cmp` byte-identical)
 **Graphify:** `graphify query "router subagent surfaces plan_val_verified wrapping Workflow POA-01 Authorizer"` (CLI; MCP `user-graphify` was down). Orientation subgraph included the plan, clarify brief, Authorizer-fenced execution, quality-loop nodes, and prior RFL review nodes.
 **agentmemory:** MCP `user-agentmemory` not wired in this subagent session. REST `POST /agentmemory/remember` on `:3111` returned **201**.
 **Mode:** review-only. Plan copies left byte-identical. Nested further: none (this session is the Extra High rung).

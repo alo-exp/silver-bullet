@@ -1,7 +1,7 @@
 # RFL rung 2 — review pass 4 (residual-only, Policy G)
 
 - **Model:** Cursor Kimi K3 High (`kimi-k3-high` / `sb-kimi-k3-high`)
-- **Confirmed SHA-256:** `f7cf259f122f70e28e854d28ea8f620a52640e8eb4b527369e08564fb3c92260` (re-hashed `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`, matches freeze)
+- **Confirmed SHA-256:** `f7cf259f122f70e28e854d28ea8f620a52640e8eb4b527369e08564fb3c92260` (re-hashed `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`, matches freeze)
 - **Encoder brief:** `.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/rung-02-cursor-kimi-k3-high/brief-review-pass-4.md`
 - **Method:** full re-read of the plan at the freeze SHA (all 784 lines, sequential chunked reads), cross-checked against the issue ledger (I-1…I-57 plus aliases R2P3-1 / R2P3-2 — all ACCEPT/resolved at this SHA). Residual-only: no ledger rows re-reported. Verified each ledger fix is actually encoded in the text (spot-confirmed: §2.2 line 120 bucket short-names now include `x`/`xweb` (R2P3-1); §6.8 line 572 xweb envs load via `resolve_keys`, not figment `split("_")` (R2P3-2); §1.2 line 85 rollup carries the pass-1/2/3 ACCEPTs including the pass-3 pair; §2.7 step 3 `site:`→Serper/Brave consent dependency; §2.7 step 2 xweb ban-risk required copy; §4.4 X-credit-0 alert falls back to `-p xweb` / xAI / dedicated `site:x.com`; §4.1/§5/§8.1/§8.4 `clear()` rosters include future `qN_*`, orphaned `last.json.tmp.*`, and query-cache `.gitignore`; §6.12 serper/x/xweb/brave acquire tests, `--allow-private` fingerprint test, human-run `cache_ttl_default_300s` negative test; §7 mermaid quota subgraph has `reddit-oauth-token.json` + `.lock` and providers node includes `x`/`xweb`; §6.3/§6.4 sub-bullets on their own lines).
 

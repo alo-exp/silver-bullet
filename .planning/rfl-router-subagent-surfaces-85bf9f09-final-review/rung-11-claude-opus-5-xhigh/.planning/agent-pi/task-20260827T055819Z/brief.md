@@ -9,8 +9,8 @@ Write the official report to `./review.md` in this work directory (same file as 
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not write clarifications.md. Do not AskQuestion. Do not encode product forks.
 
 Scope (do not exceed — FORBIDDEN to Edit/Write either freeze copy):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Independently re-hash both copies. Disk wins.
 - Charter start SHA: `07b986094e983d39fe3c7d2f1ac215ae730cbd28ccf3957655f5ec4c53d3280a` / 620985 bytes (historical; do not treat as current)
@@ -39,7 +39,7 @@ Tasks:
 2. Report raw leftovers with line references and severity (HIGH / MED / LOW / NIT), **or** CLEAN 0 findings.
 3. Empty severity groups must say **none**.
 4. You MUST **write** the report to `./review.md` in the current working directory (this rung folder). Do **not** reply with a plan-only sentence. The official deliverable is a written file at:
-   `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-opus-5-xhigh/review.md`
+   `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-opus-5-xhigh/review.md`
    Header line MUST include: `Pi claude/claude-opus-5-xhigh via /silver:agent-pi`.
 5. Do NOT classify ACCEPT/REJECT, file issues, or apply fixes.
 6. MUST NOT Edit/Write either freeze copy.

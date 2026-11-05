@@ -74,13 +74,15 @@ def _check_safe_json_escaping(raw_json: str, payload: dict) -> list[str]:
     return errors
 
 
+_DATA_BLOCK = re.compile(
+    r'<script\s+type="application/json"\s+id="report-data">(.*?)</script>',
+    re.DOTALL | re.IGNORECASE,
+)
+
+
 def _extract_json_payload(text: str) -> tuple[str | None, str | None]:
     """Return (raw_json, error) from report-data script tag."""
-    match = re.search(
-        r'<script\s+type="application/json"\s+id="report-data">(.*?)</script>',
-        text,
-        re.DOTALL | re.IGNORECASE,
-    )
+    match = _DATA_BLOCK.search(text)
     if not match:
         return None, "missing type=application/json report-data script block"
     return match.group(1).strip(), None
@@ -92,7 +94,9 @@ def validate(path: Path, profile: str | None = None) -> dict:
         return {"status": "fail", "errors": ["report.html missing"]}
 
     text = path.read_text(encoding="utf-8")
-    if FORBIDDEN.search(text):
+    # The report-data block is research content (an SCR may legitimately say
+    # "runs on localhost:3000"); only the page's own code and markup are checked.
+    if FORBIDDEN.search(_DATA_BLOCK.sub("", text)):
         errors.append("forbidden server/localhost reference in report.html")
 
     if profile == "landscape":

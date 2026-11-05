@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 1/2 (`rung_1_verify_1`, post ACCEPT-apply of U1 / I-17 and U2 / I-18)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `b71a7efdc0b70ea12b74bc485d740a76d927a15bd41fe8e84ea2c5fd62c3ee9f` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "cache-ttl SB_DR_FLEET_SLOTS probe fork ADD" --budget 2000` (217 nodes; oriented probe/fork/TTL contract)  
 **Apply ref:** U1 / I-17 (`--cache-ttl` Phase 1 fork ADD) · U2 / I-18 (`SB_DR_FLEET_SLOTS` orchestrator-only) · **Prior verify:** [verify_1-pass4.md](verify_1-pass4.md)

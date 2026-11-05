@@ -1,0 +1,404 @@
+[
+ {
+  "kind": "F",
+  "claim": "Net margin was 12% in 2023.",
+  "quote": "Net margin was -12% in 2023.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Latency is > 5 ms at p99.",
+  "quote": "Latency is < 5 ms at p99.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Q3 revenue was -5% year over year.",
+  "quote": "Q3 revenue was +5% year over year.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Müller was appointed CEO in 2021.",
+  "quote": "Möller was appointed CEO in 2021.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Выручка выросла на 40% в 2023 году.",
+  "quote": "Выручка упала на 40% в 2023 году.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "营收增长40%",
+  "quote": "营收下降40%",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is €15 million per year.",
+  "quote": "The fee is €1,5 million per year.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The plan costs €350 per month.",
+  "quote": "The plan costs €3,50 per month.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The device ships in 45.",
+  "quote": "The device ships in twenty twenty-five.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The API serves 106 requests per day.",
+  "quote": "The API serves 10⁶ requests per day.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Unemployment fell to 40 in March.",
+  "quote": "Unemployment fell to 40 % in March.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is 50 $ per seat.",
+  "quote": "The fee is 50 € per seat.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue doubled that year.",
+  "quote": "Revenue doubled this year.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The feature is available if you pay.",
+  "quote": "The feature is available only if you pay.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The feature is available.",
+  "quote": "The feature is not yet available.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The feature is available.",
+  "quote": "The feature is available in beta.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "No users can export data.",
+  "quote": "All users can export data.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "All admins can export data.",
+  "quote": "Only admins can export data.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue was $5m per year.",
+  "quote": "Revenue was $5m per month.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The store is open in May.",
+  "quote": "The store is opening in May.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Employee numbers grew 10%.",
+  "quote": "Staff numbers grew 10%.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The customer is Acme.",
+  "quote": "The client is Acme.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme are the largest vendor.",
+  "quote": "Acme is the largest vendor.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The SDK supports Python 312.",
+  "quote": "The SDK supports Python 3.12.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Prices rose 5 percent.",
+  "quote": "Prices rose 5 percentage points.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The tool can export PDFs.",
+  "quote": "The tool can't export PDFs.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Their revenue tripled.",
+  "quote": "Its revenue tripled.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The free tier allows five users.",
+  "quote": "The free tier allows 5 users.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech.",
+  "quote": "Acme did not acquire Initech.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme shipped v2.",
+  "quote": "Acme never shipped v2.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme servers are in the EU.",
+  "quote": "Acme's servers are in the EU.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The vendor is profitable.",
+  "quote": "The vendor is hardly profitable.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Uptime was 99.99%.",
+  "quote": "Uptime was 99.9%.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Uptime was 999%.",
+  "quote": "Uptime was 99.9%.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The limit is 1000 calls.",
+  "quote": "The limit is 1,000 calls.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Version 123 fixed the bug.",
+  "quote": "Version 1.2.3 fixed the bug.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The 35 day delivery window.",
+  "quote": "The 3-5 day delivery window.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The price is $5 user month.",
+  "quote": "The price is $5/user/month.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Temperature can reach 40°C.",
+  "quote": "Temperature can reach −40°C.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Ships in 12 weeks.",
+  "quote": "Ships in 1–2 weeks.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "José Péraz leads the team.",
+  "quote": "José Pérez leads the team.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Throughput is ≤ 10 Gbps.",
+  "quote": "Throughput is ≥ 10 Gbps.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Throughput is 10 Gbps.",
+  "quote": "Throughput is ≈ 10 Gbps.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Sales rose 5.",
+  "quote": "Sales rose 5x.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue was $5m.",
+  "quote": "Revenue was ~$5m.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The study found an effect.",
+  "quote": "The study found no effect.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "The study found X is unsafe.",
+  "quote": "The study found that X is unsafe.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Do use the v1 API.",
+  "quote": "Don't use the v1 API.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "It free for students.",
+  "quote": "It's free for students.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The drug is approved for adults.",
+  "quote": "The drug is approved for adults.",
+  "source": "r7 attack.py (control: identical)"
+ },
+ {
+  "kind": "F",
+  "claim": "The fund returned 7% in 20192020.",
+  "quote": "The fund returned 7% in 2019, 2020.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue: 2023 $7m; 2024 $5m.",
+  "quote": "Revenue: 2023 $5m; 2024 $7m.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "A 10 fold increase.",
+  "quote": "A 10-fold increase.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Accuracy is .95.",
+  "quote": "Accuracy is 0.95.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Accuracy is 95.",
+  "quote": "Accuracy is 0.95.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Accuracy is 95.",
+  "quote": "Accuracy is 95%.",
+  "source": "r7 attack.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Version 3 shipped in May.",
+  "quote": "Version 3.0 shipped in May.",
+  "source": "r7 honest.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The plan costs $5 per month.",
+  "quote": "The plan costs $5.00 per month.",
+  "source": "r7 honest.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Accuracy is .95.",
+  "quote": "Accuracy is 0.95.",
+  "source": "r7 honest.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Uptime was 40% higher.",
+  "quote": "Uptime was 40.0% higher.",
+  "source": "r7 honest.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The format dates from the 90s.",
+  "quote": "The format dates from the 1990s.",
+  "source": "r7 honest.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The model ships in '24.",
+  "quote": "The model ships in 2024.",
+  "source": "r7 honest.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The tool isn't free.",
+  "quote": "The tool is not free.",
+  "source": "r7 honest.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The tool can't export PDFs.",
+  "quote": "The tool cannot export PDFs.",
+  "source": "r7 honest.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme was founded in 2010 in Berlin.",
+  "quote": "Acme was founded in 2010 in Berlin.",
+  "source": "r7 honest.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme was founded in Berlin in 2010.",
+  "quote": "Acme was founded in 2010 in Berlin.",
+  "source": "r7 honest.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Pricing starts at $10 per month for 3 seats.",
+  "quote": "Pricing starts at $10/month for 3 seats.",
+  "source": "r7 honest.py"
+ }
+]

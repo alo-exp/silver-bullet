@@ -10,7 +10,7 @@ This is **not** Round 1–3 and **not** Round 3 MiniMax. Do not resume `missing-
 
 ## Canonical corpus (locked scope)
 
-1. [`/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`](/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md) — **only** reviewer input (clarify/research are not attached)
+1. [`/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`](/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md) — **only** reviewer input (clarify/research are not attached)
 
 Review **the plan**. Do not attach clarify or research notes. Do not audit Silver Bullet plugin source unless the plan cites a broken contract. Do **not** implement `alo-exp/search-cli` / Rust unless a Policy A ACCEPT is a **plan text** patch. Do **not** switch git branches. Do **not** commit unless a planning artifact is required. Do **not** tell reviewers to keep product locks (launcher asks the user before unwinding).
 

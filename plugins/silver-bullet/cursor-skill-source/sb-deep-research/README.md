@@ -53,7 +53,7 @@ Key features:
 
 ## Output
 
-Reports are saved to `.planning/research/<date>-<slug>/`:
+Reports are saved to `research/<date>-<slug>/research_report.md` (plus HTML/PDF renders):
 - Markdown (primary source of truth)
 - HTML (McKinsey-style, auto-opened in browser)
 - PDF (professional print via WeasyPrint)

@@ -2,7 +2,7 @@
 # Recover named-model review.md via /silver:agent-pi. Review-only. No freeze edits.
 # Hang-kill ~9m if no official review.md (do not treat events.jsonl as progress).
 set -u
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
 INVOKE="${SB_ROOT}/scripts/agent-pi/invoke.sh"
 RUNG="${1:?rung dir}"
 PI_MODEL="${2:?PI_MODEL slug}"

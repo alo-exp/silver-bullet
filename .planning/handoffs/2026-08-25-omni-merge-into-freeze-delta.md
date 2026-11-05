@@ -7,7 +7,7 @@ Planning-only. No product code. Stayed on `main`. Both freeze copies byte-identi
 | Path | SHA-256 | Bytes |
 |------|---------|-------|
 | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](../router_subagent_surfaces_85bf9f09.plan.md) | `2c9961350a9799b23a0aab35cfdc20ea58b7e9fae38236c43b88b59fbb937b53` | 626942 |
-| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
+| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
 
 Pre-edit pair (Phase A): `ee19a0fbfb2dcfb0bac23605a4083a8ac9f316e7cf60c42fc62b2dff496fedd5` / 624061 bytes.
 
@@ -15,7 +15,7 @@ Pre-edit pair (Phase A): `ee19a0fbfb2dcfb0bac23605a4083a8ac9f316e7cf60c42fc62b2d
 
 | Path | SHA-256 | Bytes |
 |------|---------|-------|
-| [`/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) | `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` | 7284 |
+| [`/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) | `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` | 7284 |
 
 Implementers do **not** need that file. Public prefix composed `/silver:` → `/sb`. Named slice remains **WS6** (not before WS0/WS0b).
 

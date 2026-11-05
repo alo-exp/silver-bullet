@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # RFL rung 4: GLM 5.3 Max via native OpenCode NI (harness missing / mimo pin).
 set -euo pipefail
-export HOME=/Users/shafqat
-ROOT="/Users/shafqat/projects/silver-bullet/repo"
+export HOME=/Users/<user>
+ROOT="/Users/<user>/projects/silver-bullet/repo"
 LOGDIR="$ROOT/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-04-glm53-max"
 OPENCODE="${OPENCODE_BIN:-$HOME/.opencode/bin/opencode}"
 export RTK_DISABLED=1

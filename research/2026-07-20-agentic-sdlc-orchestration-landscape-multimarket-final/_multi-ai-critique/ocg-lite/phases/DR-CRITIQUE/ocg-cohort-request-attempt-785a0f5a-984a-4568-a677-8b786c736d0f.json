@@ -10,7 +10,7 @@
     "ocg-mimo-v2.5"
   ],
   "pool": "lite",
-  "work_dir": "/Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/phases/DR-CRITIQUE",
+  "work_dir": "/Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/phases/DR-CRITIQUE",
   "timeout_sec": 300,
   "attempt_id": "attempt-785a0f5a-984a-4568-a677-8b786c736d0f",
   "run_id": "run-94ec87317f941258934bd5fe60b61f6b",

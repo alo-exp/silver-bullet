@@ -2,7 +2,7 @@
 
 - model: glm-5.2-high
 - rung: round-4-post-clarify / rung-01-cursor-glm-5.2-high
-- plan: `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+- plan: `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 - Confirmed SHA-256: `146e0ccba885dee360a1874d471b6a8f0276c2626bfcfcc8a6668ea9e2ec3c3e` (matches pinned freeze; `shasum -a 256` verified before review)
 - Encoder brief used: `.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/rung-01-cursor-glm-5.2-high/brief-review-20.md`, emitted by `python3 scripts/review-fix-ladder.py --write-review-brief --run-dir .planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify`
 - Method: **Policy G pack review** — re-read the plan end-to-end (bird then ant); filed **all** valid residuals at the freeze SHA across all severities (HIGH / MED / LOW / NIT); did **not** stop after one class, did not go MED-only, did not skip valid nits. Did not re-file ledger rows I-1…I-43 / AG1; only new residuals beyond the ledger are reported below.

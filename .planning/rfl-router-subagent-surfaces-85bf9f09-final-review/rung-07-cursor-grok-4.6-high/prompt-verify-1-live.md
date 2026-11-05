@@ -4,8 +4,8 @@ Phase: VERIFY-ONLY pass 1/2 (`rung_07_verify_1`)
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not AskQuestion. Do not encode product forks. Do not combine verify_2.
 
 Scope (do not exceed — FORBIDDEN to Edit/Write either freeze copy):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Independently re-hash both copies. Disk wins.
 - Charter start SHA: `07b986094e983d39fe3c7d2f1ac215ae730cbd28ccf3957655f5ec4c53d3280a` / 620985 bytes (historical; do not treat as current)
@@ -21,7 +21,7 @@ Prior ACCEPT HOLD/leftover table (none to apply this rung; closed from rung 3):
 - YAML 33 pending; KEEP REJECT / Q1–Q3 / Part A then Part B closed.
 
 You ARE allowed — and REQUIRED — to Write the verify report to this ABSOLUTE path (must exist when you finish):
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/verify-1.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/verify-1.md`
 
 Charter (same as review):
 - Completeness/consistency; closed locks intact (KEEP REJECT, Q1–Q3, Part A then Part B, no live `/sb:multi-ai-task`, no `sb:agent-wrap` even as alias, FAST not a Job / not a legal compose route, OmniRoute routing-only).

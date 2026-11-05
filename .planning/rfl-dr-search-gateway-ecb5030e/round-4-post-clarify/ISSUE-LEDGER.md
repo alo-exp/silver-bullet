@@ -1,6 +1,6 @@
 # ISSUE-LEDGER — DR search gateway plan (round 4 post-clarify)
 
-**Artifact:** [`dr_search_gateway_prd_ecb5030e.plan.md`](/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md)  
+**Artifact:** [`dr_search_gateway_prd_ecb5030e.plan.md`](/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md)  
 **Current SHA:** `f6ba43bb7d7d4d4ca394333ae5f7c15022059040edac9ec75585654630584cd6`
 
 

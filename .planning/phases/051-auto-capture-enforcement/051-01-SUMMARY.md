@@ -79,8 +79,8 @@ Both tasks were committed atomically in a single required commit:
 
 ## Files Created/Modified
 
-- `/Users/shafqat/Documents/Projects/silver-bullet/silver-bullet.md` — §3b expanded with 3b-i (deferred-item capture) and 3b-ii (knowledge/lessons capture) subsections; +33 lines
-- `/Users/shafqat/Documents/Projects/silver-bullet/templates/silver-bullet.md.base` — identical §3b expansion; +33 lines
+- `/Users/<user>/Documents/Projects/silver-bullet/silver-bullet.md` — §3b expanded with 3b-i (deferred-item capture) and 3b-ii (knowledge/lessons capture) subsections; +33 lines
+- `/Users/<user>/Documents/Projects/silver-bullet/templates/silver-bullet.md.base` — identical §3b expansion; +33 lines
 
 ## Decisions Made
 

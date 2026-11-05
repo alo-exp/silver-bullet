@@ -6,7 +6,7 @@ You are **Claude Opus 5 High**. Method: `/silver:agent-claude` print path. **Not
 
 `.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`
 
-Plan markdown link: [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+Plan markdown link: [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 SHA256 at parent launch: `4d3b3b0954f97527e5f641a401a2a1bc6582e8f599bf435b1bda904d3db0e068` (411 lines). Re-hash before citing.
 
