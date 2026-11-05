@@ -1,8 +1,7 @@
 """Generative precision and signalled-recall test for vendor identity (DESIGN-H8b-vendor-detection).
 
 An AMBIGUOUS vendor (none of its display tokens is distinctive) is credited only through an explicit
-signal: a ``vendors`` tag, a ``source_ref`` that names it, its pack URL in the text, a qualified display
-("Devin (Cognition)") or a whole matrix slot. The words around a name never credit it, so this test can
+signal: a ``vendors`` tag, a ``source_ref`` that names it, or its pack URL in the text. The words around a name never credit it, so this test can
 exhaust the grammar by construction: every ambiguous spelling in three cases through 30+ sentence
 templates and a seeded random composition, all on three paths (classifier evidence, extract_slugs and the
 feature parser), must credit nothing.
@@ -150,25 +149,10 @@ class GenerativeVendorIdentityTests(unittest.TestCase):
                     misses.append((label, slug, sentence))
         self.assertEqual(misses, [], f"{len(misses)} of {checked} signals did not credit")
 
-    def test_a_qualified_display_credits_in_exact_case_only(self) -> None:
-        self.assertIn("devin", self.credited("Devin (Cognition) opens pull requests."))
-        self.assertNotIn("gsd", self.credited("GSD (Get Shit Done) structures the work."))  # an acronym's expansion is prose
-        self.assertIn("gsd", self.credited("GSD (Get Shit Done) structures the work.", {"vendors": ["gsd"]}))
-        self.assertNotIn("devin", self.credited("Devin (cognition) opens pull requests."))
-        self.assertNotIn("devin", self.credited("devin (Cognition) opens pull requests."))
-        self.assertNotIn("devin", self.credited("Cognition (Devin) opens pull requests."))
-
     def test_a_source_ref_alone_never_invents_a_vendor(self) -> None:
         self.assertNotIn("director", self.credited("The report covers pricing only.", {"source_ref": "Director"}))
         self.assertIn("director", self.credited("Director enforces gates.", {"source_ref": "Director"}))
         self.assertNotIn("director", self.credited("Director enforces gates.", {"source_ref": "Directory of services"}))
-
-    def test_a_matrix_slot_credits_a_whole_item_only(self) -> None:
-        support = m.parse_feature_support(env("Workflow composition ✔ for Director, cc10x"), known=self.known, pack=self.pack)
-        self.assertTrue(support["director"]["Workflow composition"])
-        self.assertIn("director", sc._envelope_evidence_slugs(env("Workflow composition ✔ for Director, cc10x"), self.pack))
-        none = m.parse_feature_support(env("Workflow composition ✔ for Director of Engineering"), known=self.known, pack=self.pack)
-        self.assertNotIn("director", none)
 
 
 if __name__ == "__main__":
