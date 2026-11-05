@@ -96,7 +96,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*",
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*(write|edit|create|move|rename|patch|replace|delete|append|save|insert|copy|upload|apply|_mv|mv_|_put|put_)[A-Za-z0-9_]*",
         "hooks": [
           {
             "type": "command",
@@ -254,7 +254,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*",
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*(write|edit|create|move|rename|patch|replace|delete|append|save|insert|copy|upload|apply|_mv|mv_|_put|put_)[A-Za-z0-9_]*",
         "hooks": [
           {
             "type": "command",
@@ -448,7 +448,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*",
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*(write|edit|create|move|rename|patch|replace|delete|append|save|insert|copy|upload|apply|_mv|mv_|_put|put_)[A-Za-z0-9_]*",
         "hooks": [
           {
             "type": "command",

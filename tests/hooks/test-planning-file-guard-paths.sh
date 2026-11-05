@@ -306,4 +306,15 @@ assert_contains "an unparsable command naming .planning fails closed" "$TL_OUT" 
 dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Bash"}'
 assert_eq "an empty payload is ignored" "" "$TL_OUT"
 
+# --- round 2: glob, brace and variable targets, patch appliers ------------------------------------
+: >"$P/.planning/ROADMAP.md"
+sh() { jq -cn --arg c "$1" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}'; }
+for c in 'echo x >> .planning/ROADMA?.md' 'cp /tmp/x .planning/R*.md' 'rm .planning/ROADMAP.m[d]' 'mv /tmp/x .planning/{ROADMAP,x}.md' 'cp /tmp/x .planning/$F' 'for f in .planning/ROADMAP.*; do echo x >> "$f"; done'; do
+  dg_run "$P" "$H" "$(sh "$c")"
+  assert_eq "a pattern that can name the roadmap is refused: $c" "deny" "$(dec)"
+done
+for c in 'ls .planning/ROADMA?.md' 'cat .planning/R*.md' 'rm -f build/*.o' 'echo x > .planning/notes-$(date +%s).txt'; do
+  dg_run "$P" "$H" "$(sh "$c")"
+  assert_eq "honest command passes: $c" "none" "$(dec)"
+done
 tl_results

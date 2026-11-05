@@ -165,4 +165,11 @@ assert_contains "an unparsable command naming CLAUDE.md fails closed" "$TL_OUT" 
 dg_run "$P" "$H" "$(write "$P/CLAUDE.md")" SB_AGENT_CERT_RUN=1
 assert_eq "cert run bypass still applies" "" "$TL_OUT"
 
+# --- round 2: glob, brace and variable targets ------------------------------------------------------
+for c in 'cp /tmp/x CLAUDE.m?' 'cp /tmp/x AGENTS.m[d]' 'cp /tmp/x {CLAUDE,GEMINI}.md' 'cp /tmp/x $DEST/CLAUDE.md'; do
+  dg_run "$P" "$H" "$(sh "$c")"
+  assert_eq "a pattern that can name an instruction file is refused: $c" "deny" "$(dec)"
+done
+dg_run "$P" "$H" "$(sh 'cp /tmp/x docs/*.txt')"
+assert_eq "an honest pattern passes" "" "$TL_OUT"
 tl_results

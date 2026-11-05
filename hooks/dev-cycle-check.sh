@@ -99,7 +99,7 @@ main() {
   }
 
   # --- Analyse the call once --------------------------------------------------
-  sb_tool_input_load "$input" "$PWD"
+  sb_pf_tool_input_load "$input"
   tool_name="${SB_TI_TOOL_NAME:-}"
   [[ -n "$tool_name" ]] || tool_name="$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null)"
   tool_kind="${SB_TI_TOOL_KIND:-}"
@@ -168,7 +168,7 @@ main() {
   opaque_records=""
   runs_recorder=false
   opaque_state=false
-  opaque_contract=false
+  opaque_contract=""
   script_records=""
   if [[ "$is_shell" == true ]]; then
     opaque_records="$(sb_pf_opaque_records)"
@@ -177,7 +177,9 @@ main() {
     state_tail="$(printf '%s' "$state_tail" | tr '[:upper:]' '[:lower:]')"
     if sb_pf_runs_sb_recorder; then runs_recorder=true; fi
     if sb_pf_opaque_mentions "$state_tail" "silver-bullet/state" || sb_pf_script_mentions "$state_tail"; then opaque_state=true; fi
-    if sb_pf_opaque_mentions silver-bullet.md .silver-bullet.json .silver-bullet.prompt.json || sb_pf_script_mentions silver-bullet.md .silver-bullet.json .silver-bullet.prompt.json; then opaque_contract=true; fi
+    for needle in silver-bullet.md .silver-bullet.json .silver-bullet.prompt.json; do
+      if sb_pf_opaque_mentions "$needle" || sb_pf_script_mentions "$needle"; then opaque_contract="$needle"; break; fi
+    done
     skill_adapter="${SB_SA_SKILL_ADAPTER:-false}"
     shell_command="${SB_TI_COMMAND:-}"
     invoked_script="${SB_SA_INVOKED_SCRIPT:-}"
@@ -186,10 +188,10 @@ main() {
       script_body="$(cat "$invoked_script" 2>/dev/null)"
       script_dir="$(dirname "$invoked_script")"
       sb_shell_analysis_load "$script_body" "$script_dir"
-      script_records="$(SB_TI_TOOL_KIND=shell sb_pf_write_records "")"
+      script_records="$(SB_PF_SKIP_BARE_DYNAMIC=1 SB_TI_TOOL_KIND=shell sb_pf_write_records "")"
       if [[ "$script_dir" != "$PWD" ]]; then
         sb_shell_analysis_load "$script_body" "$PWD"
-        script_records="$script_records"$'\n'"$(SB_TI_TOOL_KIND=shell sb_pf_write_records "")"
+        script_records="$script_records"$'\n'"$(SB_PF_SKIP_BARE_DYNAMIC=1 SB_TI_TOOL_KIND=shell sb_pf_write_records "")"
       fi
       records="$records"$'\n'"$script_records"
     fi
@@ -198,6 +200,14 @@ main() {
     shell_command=""
   fi
   records="$(printf '%s\n' "$records" | awk 'NF && !seen[$0]++')"
+  # A script this very command writes, or one that cannot be read, may hold anything.
+  if [[ "$is_shell" == true && "$hook_event" == "PreToolUse" ]]; then
+    unread_script="$(sb_pf_unreadable_script "$records" || true)"
+    if [[ -n "$unread_script" ]] && [[ -n "$(sb_find_project_config_walk_only 2>/dev/null)" ]]; then
+      emit_block "$(sb_pf_unseen_message "the script $unread_script is written by this command or cannot be read")"
+      exit 0
+    fi
+  fi
 
   # --- Third-party plugin boundary (§8) — HARD STOP on upstream plugin edits ---------------
   plugin_cache="${SB_RUNTIME_PLUGIN_CACHE_ROOT}"
@@ -219,6 +229,18 @@ main() {
     [[ -e "${sb_plugin_root}/.git" ]] && sb_source_checkout=true
     installed_copy=false
     if [[ "$_sb_hooks_script" == "${SB_RUNTIME_HOME_ROOT}"* ]] && [[ "$sb_source_checkout" != true ]]; then installed_copy=true; fi
+
+    # The recorder is checked first: a launch by glob or variable would otherwise be reported as an
+    # edit of the plugin's hooks.
+    hooks_guard=""
+    [[ "$installed_copy" == true ]] && hooks_guard="${sb_plugin_root}/hooks"
+    if [[ "$is_shell" == true ]]; then
+      if [[ "$runs_recorder" == true ]] || sb_pf_names_sb_recorder "$hooks_guard" \
+        || { [[ -n "$hooks_guard" ]] && { sb_pf_text_names_recorder || sb_pf_argv_copies_dir "$hooks_guard"; }; }; then
+        emit_block "🚫 STATE TAMPER BLOCKED — Running, naming, copying or moving a Silver Bullet recorder hook (record-*.sh) or the plugin's hooks directory from the shell forges workflow state, whichever interpreter or copy launches it. Skills are recorded when the host invokes them through its skill channel. To read the hooks, use cat or grep."
+        exit 0
+      fi
+    fi
 
     cache_targets=()
     while IFS=$'\t' read -r via target; do
@@ -287,13 +309,6 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
     done <<<"$records"
 
     if [[ "$is_shell" == true ]]; then
-      hooks_guard=""
-      [[ "$installed_copy" == true ]] && hooks_guard="${sb_plugin_root}/hooks"
-      if [[ "$runs_recorder" == true ]] || sb_pf_names_sb_recorder "$hooks_guard" \
-        || { [[ "$installed_copy" == true ]] && sb_pf_text_names_recorder; }; then
-        emit_block "🚫 STATE TAMPER BLOCKED — Running, naming or copying a Silver Bullet recorder hook (record-*.sh) from the shell forges workflow state, whichever interpreter launches it. Skills are recorded when the host invokes them through its skill channel."
-        exit 0
-      fi
       if [[ "$opaque_state" == true ]] || sb_pf_argv_touches_dir "$state_dir_canon" ${hooks_guard:+"$hooks_guard"}; then
         emit_block "🚫 STATE TAMPER BLOCKED — This command names the Silver Bullet state directory in code or arguments Silver Bullet cannot inspect (inline interpreter code, a script file, ln, find -exec); state files are written only by hooks. To read them, use cat, grep or jq."
         exit 0
@@ -337,7 +352,7 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
     [[ -n "$target" ]] || continue
     tdir="$(dirname "$target")"
     # A directory a tree-writing command fills is looked up as itself: it may BE a project root.
-    if [[ -d "$target" ]] && sb_pf_covering_via "$via"; then tdir="$target"; fi
+    if [[ -d "$target" ]] && { sb_pf_covering_via "$via" || sb_pf_tree_via "$via"; }; then tdir="$target"; fi
     if [[ "$tdir" == "$last_cfg_dir" ]]; then
       cfg="$last_cfg"
     else
@@ -358,6 +373,14 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
       sb_pf_src_load "$cfg"
       loaded_cfg="$cfg"
     fi
+    # A tree written at the project root (tar -x, unzip, patch, git apply, git am) is production source.
+    if sb_pf_tree_via "$via" && [[ "$target" == "$root" ]]; then
+      [[ -z "$scope_config" ]] && { scope_config="$cfg"; scope_root="$root"; scope_workflow="$SB_PF_WORKFLOW"; }
+      targets_in_scope="$targets_in_scope"$'\n'"$target"
+      targets_all_non_logic=false
+      logic_edit=true
+      continue
+    fi
     sb_pf_src_in_scope "$target" "$root" || continue
     [[ -z "$scope_config" ]] && { scope_config="$cfg"; scope_root="$root"; scope_workflow="$SB_PF_WORKFLOW"; }
     targets_in_scope="$targets_in_scope"$'\n'"$target"
@@ -370,17 +393,28 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
   done <<<"$records$nl$opaque_records"
 
   cmd_cfg="$(config_for_dir "$PWD")"
-  if [[ "$opaque_contract" == true && -n "$cmd_cfg" ]]; then
-    protected_hit="$(dirname "$cmd_cfg")/silver-bullet.md"
+  if [[ -n "$opaque_contract" && -n "$cmd_cfg" ]]; then
+    protected_hit="$(dirname "$cmd_cfg")/$opaque_contract"
   fi
   if [[ -n "$protected_hit" && "$hook_event" == "PreToolUse" ]]; then
     # The skills that legitimately rewrite these files (sb:init, sb:update, sb:add, sb:devops,
     # sb:migrate: SB_PF_CONTRACT_WRITER_SKILLS) unlock them; nobody else changes them.
-    if ! sb_pf_contract_unlocked; then
+    unlock_kind=md
+    case "$protected_hit" in */.silver-bullet.json) unlock_kind=json ;; esac
+    if ! sb_pf_contract_unlocked "$unlock_kind"; then
       audit_target="$protected_hit"
       emit_block "🚫 ENFORCEMENT CONTRACT PROTECTED — $(basename "$protected_hit") defines which gates run and what they require; rewriting, moving or deleting it disables process compliance.
 
 Change it through the owning skill (/sb:init, /sb:update, /sb:add, /sb:devops, /sb:migrate), or have the user edit it directly in their own terminal. To read it, use cat, grep or jq."
+      exit 0
+    fi
+  fi
+
+  # Code given on the command line builds its paths at run time: nothing says what it writes.
+  if [[ "$is_shell" == true && "$hook_event" == "PreToolUse" && -n "$cmd_cfg" ]]; then
+    inline_why="$(sb_pf_inline_code_reason)"
+    if [[ -n "$inline_why" ]] && ! sb_pf_contract_unlocked json; then
+      emit_block "$(sb_pf_inline_code_message "$inline_why")"
       exit 0
     fi
   fi

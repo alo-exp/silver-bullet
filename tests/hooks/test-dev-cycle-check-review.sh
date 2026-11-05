@@ -106,7 +106,8 @@ jq ".project.x=1" .silver-bullet.json > "$TMP" && mv "$TMP" .silver-bullet.json'
 dc_cmd "$CFGW"
 assert_contains "without an owning skill the jq-and-mv rewrite is refused" "$(message)" "ENFORCEMENT CONTRACT PROTECTED"
 for sk in silver-init silver-update silver-add silver-devops silver-migrate; do
-  state inst-a "$sk"
+  state inst-a
+  unlock "$sk"
   dc_cmd "$CFGW"
   assert_eq "$sk unlocks the config rewrite" "none" "$(decision)"
   run_dc "$(edit_json "$PROJ/.silver-bullet.json" Edit)"
@@ -114,7 +115,8 @@ for sk in silver-init silver-update silver-add silver-devops silver-migrate; do
   dc_cmd "python3 -c \"import os;os.replace('/tmp/x','.silver-bullet.json')\""
   assert_eq "$sk unlocks interpreter edits too" "none" "$(decision)"
 done
-state inst-a silver-plan
+rm -f "$SD/contract-unlock"
+state inst-a silver-plan silver-add
 dc_cmd "$CFGW"
 assert_contains "an unrelated recorded skill does not unlock" "$(message)" "ENFORCEMENT CONTRACT PROTECTED"
 assert_contains "the message names the owning skills" "$(message)" "/sb:add"
@@ -168,11 +170,17 @@ run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
 assert_eq "an in-place edit of sealed lines yields no records" "deny" "$(decision)"
 printf 'inst-a\n' >"$STATE"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
-assert_eq "a reset (fewer lines than sealed) is taken as it is" "deny" "$(decision)"
-rm -f "$STATE.seal"
+assert_eq "a shorter rewrite is not a reset: nothing is trusted" "deny" "$(decision)"
+sb_state_seal_enforce "$STATE"
 printf 'inst-a\ninst-b\n' >"$STATE"
+sb_state_seal_write "$STATE"
+rm -f "$STATE.seal"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
-assert_eq "an unsealed state (older installs, tests) is read as written" "allow" "$(decision)"
+assert_eq "a deleted seal is not trusted" "deny" "$(decision)"
+assert_contains "and the event is logged" "$(cat "$SD/seal-events.log")" "the seal was deleted"
+rm -f "$STATE.seal" "$STATE.hwm"
+run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
+assert_eq "a state that never had a seal (older installs, tests) is read as written" "allow" "$(decision)"
 
 # ── PostToolUse costs nothing without a test record (minor 4) ───────────────────────────────
 mkproj post2
