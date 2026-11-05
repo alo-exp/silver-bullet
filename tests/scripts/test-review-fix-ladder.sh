@@ -119,28 +119,13 @@ assert_jq_true "Claude fallback model chain" '
   ]
 ' "$claude_json"
 
-cursor_json="$(SB_CURSOR_SB_AGENTS_SKIP_PROBE=1 python3 "$RESOLVER" --host cursor --json --project-root "$REPO_ROOT")"
-cursor_rungs="$(python3 -c 'import json,sys; print(len(json.load(sys.stdin)["rungs"]))' <<<"$cursor_json")"
-if [[ "$cursor_rungs" -ge 6 ]]; then
-  pass "Cursor sb_agents ladder has at least 6 rungs"
+override_json="$(python3 "$RESOLVER" --host codex --json --codex-home "$WORKDIR/none")"
+assert_jq_true "Host override without env selects codex" '.host == "codex"' "$override_json"
+if python3 "$RESOLVER" --host cursor --json >/dev/null 2>&1; then
+  fail "the removed cursor host is rejected"
 else
-  fail "Cursor sb_agents ladder has at least 6 rungs — got $cursor_rungs"
+  pass "the removed cursor host is rejected"
 fi
-assert_jq_true "Cursor source cursor_sb_agents" '.source == "cursor_sb_agents"' "$cursor_json"
-assert_jq_true "Cursor rung 1 custom-subagent" '.rungs[0].delegation == "custom-subagent"' "$cursor_json"
-assert_jq_true "Cursor rung 1 subagent_name" '.rungs[0].subagent_name == "sb-composer-2-5-medium"' "$cursor_json"
-assert_jq_false "Cursor zero agent-cursor" '[.rungs[].delegation] | any(. == "agent-cursor")' "$cursor_json"
-
-phase_json="$(SB_CURSOR_SB_AGENTS_SKIP_PROBE=1 python3 "$RESOLVER" --host cursor --json --project-root "$REPO_ROOT" --rung 2 --phase verify_1)"
-assert_jq_true "Phase routing custom-subagent" '.delegation == "custom-subagent"' "$phase_json"
-assert_jq_true "Phase subagent_name rung2" '.subagent_name == "sb-composer-2-5-high"' "$phase_json"
-
-cursor_text="$(SB_CURSOR_SB_AGENTS_SKIP_PROBE=1 python3 "$RESOLVER" --host cursor --project-root "$REPO_ROOT")"
-printf '%s' "$cursor_text" | grep 'custom-subagent' >/dev/null && pass "Cursor text custom-subagent" || fail "Cursor text custom-subagent"
-printf '%s' "$cursor_text" | grep 'agent-cursor' >/dev/null && fail "Cursor text no agent-cursor" || pass "Cursor text no agent-cursor"
-
-override_json="$(python3 "$RESOLVER" --host cursor --json)"
-assert_jq_true "Host override without env selects cursor" '.host == "cursor"' "$override_json"
 
 SKILL="${REPO_ROOT}/skills/silver-review-fix-ladder/SKILL.md"
 assert_file_exists "$SKILL" "review-fix-ladder SKILL.md exists"
@@ -452,48 +437,6 @@ else
 fi
 
 # --- Subscription-first GPT/Claude gate ---
-GATE_ROOT="$WORKDIR/gate-project"
-mkdir -p "$GATE_ROOT"
-cat > "$GATE_ROOT/.silver-bullet.json" <<'EOF'
-{
-  "cursor_sb_agents": {
-    "enabled": true,
-    "selected_models": ["composer-2.5", "grok-4.6", "gpt-5.6-sol", "opus-5", "glm-5.2", "kimi-k3", "gemini-3.7-flash"],
-    "effort_levels": ["high", "xhigh"],
-    "agent_name_prefix": "sb"
-  }
-}
-EOF
-
-gate_json="$(SB_CURSOR_SB_AGENTS_SKIP_PROBE=1 python3 "$RESOLVER" --host cursor --json --project-root "$GATE_ROOT")"
-assert_jq_true "GPT high subscription_first" \
-  '[.rungs[] | select(.model=="gpt-5.6-sol" and .reasoning=="high") | .subscription_first] | .[0] == true' \
-  "$gate_json"
-assert_jq_true "GPT high invoke agent-codex" \
-  '[.rungs[] | select(.model=="gpt-5.6-sol" and .reasoning=="high") | .subscription_invoke] | .[0] == "scripts/agent-codex/invoke.sh"' \
-  "$gate_json"
-assert_jq_true "Opus xhigh subscription_first Claude" \
-  '[.rungs[] | select(.model=="opus-5" and .reasoning=="xhigh") | .subscription_host] | .[0] == "claude"' \
-  "$gate_json"
-assert_jq_true "Opus invoke agent-claude" \
-  '[.rungs[] | select(.model=="opus-5") | .subscription_invoke] | unique | . == ["scripts/agent-claude/invoke.sh"]' \
-  "$gate_json"
-assert_jq_false "Composer skips subscription gate" \
-  '[.rungs[] | select(.model=="composer-2.5") | .subscription_first] | any(. == true)' \
-  "$gate_json"
-assert_jq_false "Grok skips subscription gate" \
-  '[.rungs[] | select(.model=="grok-4.6") | .subscription_first] | any(. == true)' \
-  "$gate_json"
-assert_jq_false "GLM skips subscription gate" \
-  '[.rungs[] | select(.model=="glm-5.2") | .subscription_first] | any(. == true)' \
-  "$gate_json"
-assert_jq_false "Kimi skips subscription gate" \
-  '[.rungs[] | select(.model=="kimi-k3") | .subscription_first] | any(. == true)' \
-  "$gate_json"
-assert_jq_false "Gemini skips subscription gate" \
-  '[.rungs[] | select(.model=="gemini-3.7-flash") | .subscription_first] | any(. == true)' \
-  "$gate_json"
-
 gpt_plan="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high)"
 assert_jq_true "GPT decide-launch tries Codex first" \
   '.action == "invoke_subscription" and .subscription_host == "codex" and .subscription_skill == "silver-agent-codex"' \
@@ -554,8 +497,8 @@ assert_jq_true "Grok decide-launch skips gate" \
   '.action == "cursor_task" and .subscription_first == false' \
   "$grok_plan"
 
-assert_jq_true "Grok decide-launch default host is Cursor" \
-  '.default_agent_route == "/sb:agent-cursor" and .preserves_host_mode == true' \
+assert_jq_true "Grok decide-launch default host is Pi (no dedicated host)" \
+  '.default_agent_route == "/sb:agent-pi" and .preserves_host_mode == true' \
   "$grok_plan"
 assert_jq_true "GPT decide-launch default host is Codex" \
   '.default_agent_host == "codex"' \
@@ -565,7 +508,7 @@ assert_jq_true "GPT decide-launch default host is Codex" \
 if grep -qF 'Subscription-first (GPT / Claude)' "$SKILL" \
   && grep -qF 'scripts/agent-codex/invoke.sh' "$SKILL" \
   && grep -qF 'scripts/agent-claude/invoke.sh' "$SKILL" \
-  && grep -qF 'Cursor `Task` **only** on quota exhaustion' "$SKILL"; then
+  && grep -qF 'try the subsidized host CLI' "$SKILL"; then
   pass "SKILL documents subscription-first GPT/Claude routing"
 else
   fail "SKILL documents subscription-first GPT/Claude routing"

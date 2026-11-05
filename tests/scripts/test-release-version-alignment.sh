@@ -60,14 +60,13 @@ check_pin() {
 }
 for marketplace in \
   "$REPO_ROOT/.claude-plugin/marketplace.json" \
-  "$REPO_ROOT/.cursor-plugin/marketplace.json" \
   "$REPO_ROOT/.agents/plugins/marketplace.json"
 do
   entry='.plugins[] | select(.name=="silver-bullet") | .source'
   check_pin "$(basename "$marketplace") silver-bullet source" \
     "$(jq -r "$entry | .ref" "$marketplace")" "$(jq -r "$entry | .sha" "$marketplace")"
 done
-for runtime in cursor claude codex; do
+for runtime in claude codex; do
   check_eq "agent-plugins catalog $runtime ref pins the release tag" "v$PKG_V" \
     "$(jq -r --arg runtime "$runtime" '.plugins[] | select(.name=="silver-bullet") | .[$runtime].ref' \
       "$REPO_ROOT/scripts/lib/agent-plugins-catalog.json")"
