@@ -52,6 +52,27 @@ assert_eq "jq failing per token: no index" 1 "$rc"
 rm -f "$STATE"
 ( SB_RUNTIME_STATE_DIR="$NOTADIR/state"; sb_orchestrator_write_json '{"a":1}' ) 2>/dev/null && rc=0 || rc=$?
 assert_eq "write_json with an uncreatable dir fails" 1 "$((rc != 0))"
+# Planning floor: unreadable config / template fall back to the built-in lists (R10-02).
+FPROJ="$TL_TMP/floorproj"; mkdir -p "$FPROJ"
+printf '{"project":{"active_workflow":"devops-cycle"},"skills":{"required_planning_devops":["silver-blast-radius","silver-plan"]}}' >"$FPROJ/.silver-bullet.json"
+orch_stub_failing jq 'active_workflow'
+assert_eq "unreadable active_workflow: default floor" "silver-quality-gates,silver-context,silver-plan" "$(sb_orchestrator_planning_floor_csv silver-bugfix "$FPROJ" 2>/dev/null)"
+orch_unstub jq
+orch_stub_failing jq 'skills[$k]'
+assert_eq "unreadable config and template: built-in devops floor" "silver-blast-radius,devops-quality-gates,silver-context,silver-plan" "$(sb_orchestrator_planning_floor_csv silver-bugfix "$FPROJ" 2>/dev/null)"
+orch_unstub jq
+assert_eq "an empty element in the floor list is skipped" "silver-quality-gates,silver-plan,silver-execute" "$(sb_orchestrator_apply_planning_floor "silver-execute" "silver-quality-gates,,silver-plan")"
+# Stop-block counter: a non-numeric count and an unwritable counter restart/continue cleanly (R4-05).
+orch_write_state '{"flow_queue":["a"],"current_flow":"a"}'
+printf '{"stamp":"x","count":"many"}' >"$SB_RUNTIME_STATE_DIR/orchestrator-stop-blocks.json"
+sb_orchestrator_stop_block_released && rc=0 || rc=$?
+assert_eq "non-numeric stored count restarts at one" 1 "$rc"
+rm -f "$SB_RUNTIME_STATE_DIR/orchestrator-stop-blocks.json"
+mkdir "$SB_RUNTIME_STATE_DIR/orchestrator-stop-blocks.json"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=0 sb_orchestrator_stop_block_released && rc=0 || rc=$?
+rmdir "$SB_RUNTIME_STATE_DIR/orchestrator-stop-blocks.json"
+assert_eq "an unwritable counter does not break the decision (limit 0 releases at once)" 0 "$rc"
+rm -f "$STATE"
 # clear_queue with an unusable state helper and undeletable files.
 orch_write_state '{"a":1}'
 ( sb_orchestrator_state_file() { return 1; }; sb_orchestrator_clear_queue )
@@ -219,7 +240,12 @@ sb_orchestrator_advance_on_atom silver-fixture-read-a "$PROJ" >/dev/null
 orch_unstub jq
 assert_eq "join gate refresh failing: handoff still joined" joined "$(orch_state_get '.scheduler.batch_dispatch.handoffs[0].join_status')"
 mkbatch
-orch_stub_failing jq '.last_completed_index = $idx | .updated_at'
+orch_stub_failing jq 'matched:'
+sb_orchestrator_advance_on_atom silver-fixture-read-a "$PROJ" >/dev/null
+orch_unstub jq
+assert_eq "join computation failing: the handoff stays pending, nothing is lost" pending "$(orch_state_get '.scheduler.batch_dispatch.handoffs[0].join_status')"
+mkbatch
+orch_stub_failing jq '.last_completed_index = ([.last_completed_index'
 sb_orchestrator_advance_on_atom silver-fixture-read-a "$PROJ" >/dev/null
 orch_unstub jq
 assert_eq "hold update failing: queue state untouched" silver-fixture-read-a "$(orch_state_get .current_flow)"

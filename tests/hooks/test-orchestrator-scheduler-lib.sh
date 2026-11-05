@@ -329,23 +329,11 @@ assert_eq "hook-enforced tier supports parallel" 0 "$(SILVER_BULLET_TEST_HOOK_EN
 assert_eq "no enforced hooks: sequential" 1 "$(rc_of sb_scheduler_host_supports_parallel_dispatch)"
 assert_eq "missing tier lib: sequential" 1 "$(bash -c 'source "$1"; sb_scheduler_host_supports_parallel_dispatch; echo $?' _ "$stg/hooks/lib/orchestrator-scheduler.sh" 2>/dev/null | tail -1)"
 
-echo "=== worker template / skill for atom ==="
-assert_eq "template from worker_template" PLAN "$(sb_scheduler_worker_template_for_atom "$CAT" AF-PLAN)"
-assert_eq "template falls back to slug" FIXTURE-READ-B "$(sb_scheduler_worker_template_for_atom "$CAT" AF-READ-B)"
-assert_eq "unknown atom has no template" 1 "$(rc_of sb_scheduler_worker_template_for_atom "$CAT" AF-GHOST)"
-assert_eq "template: no catalog" 1 "$(rc_of sb_scheduler_worker_template_for_atom "" AF-PLAN)"
-# Documents current behavior: an AF id is not a flow token, so flow_to_skill derives the name from it.
-assert_eq "skill for atom id goes through flow_to_skill" silver-AF-PLAN "$(sb_scheduler_skill_for_atom "$CAT" AF-PLAN)"
-( unset -f sb_orchestrator_flow_to_skill
-  [[ "$(sb_scheduler_skill_for_atom "$CAT" AF-DEP)" == silver-dep ]] ) && rc=0 || rc=$?
-assert_eq "skill for atom without flow_to_skill: slug" 0 "$rc"
-( unset -f sb_orchestrator_flow_to_skill
-  [[ "$(sb_scheduler_skill_for_atom "$CAT" AF-GHOST)" == AF-GHOST ]] ) && rc=0 || rc=$?
-assert_eq "skill for unknown atom without flow_to_skill: token" 0 "$rc"
-
 echo "=== build handoffs ==="
 assert_eq "handoffs: no catalog" 1 "$(rc_of sb_scheduler_build_handoffs_json "" '[]')"
 assert_eq "handoffs: no python3" 1 "$(PATH="$NOPY" rc_of sb_scheduler_build_handoffs_json "$CAT" '[]')"
+assert_eq "handoffs: no jq" 1 "$(PATH="$NOJQ" rc_of sb_scheduler_build_handoffs_json "$CAT" '[]')"
+assert_eq "handoffs: an empty atom id is skipped" "[]" "$(sb_scheduler_build_handoffs_json "$CAT" '[""]')"
 ho="$(sb_scheduler_build_handoffs_json "$CAT" '["AF-PLAN","AF-READ-B","AF-LATER","AF-SECURE"]')"
 hf() { jq -r ".[$1] | .$2" <<<"$ho"; }
 assert_eq "handoff skill via queue token" silver-plan "$(hf 0 next_skill)"
@@ -353,29 +341,29 @@ assert_eq "handoff template from worker_template" PLAN "$(hf 0 next_worker_templ
 assert_eq "handoff skill via runtime token" silver-fixture-read-b "$(hf 1 next_skill)"
 assert_eq "handoff template falls back to slug" FIXTURE-READ-B "$(hf 1 next_worker_template)"
 assert_eq "handoff for token-less atom" silver-later "$(hf 2 next_skill)"
-assert_eq "handoff for security token" silver-secure "$(hf 3 next_skill)"
+assert_eq "handoff for security token: the security skill, not silver-secure" security "$(hf 3 next_skill)"
 assert_eq "handoff statuses" "pending/pending" "$(hf 0 dispatch_status)/$(hf 0 join_status)"
 cat >"$TL_TMP/cat-map.json" <<'JSON'
 {"atomic_flows":[{"id":"AF-Q","slug":"q"}],
  "migration_map":{"runtime_queue_tokens":{"FLOW-QUX":"AF-Q"},"skill_to_entity":{"x":"y"}}}
 JSON
 ho="$(sb_scheduler_build_handoffs_json "$TL_TMP/cat-map.json" '["AF-Q","AF-NOPE"]')"
-assert_eq "queue token re-mapped through the runtime map" silver-q "$(hf 0 next_skill)"
-assert_eq "unknown atom falls back to its id" silver-nope "$(hf 1 next_skill)"
+assert_eq "FLOW alias token goes through the single flow_to_skill mapping" silver-qux "$(hf 0 next_skill)"
+assert_eq "unknown atom falls back to its slug-style id" silver-af-nope "$(hf 1 next_skill)"
 assert_eq "unknown atom template is its id" AF-NOPE "$(hf 1 next_worker_template)"
 cat >"$TL_TMP/cat-map2.json" <<'JSON'
 {"atomic_flows":[{"id":"AF-Q","slug":"q"},{"id":"AF-Z","slug":"z"},{"id":"AF-R","slug":"r"}],
  "migration_map":{"runtime_queue_tokens":{"FIX-THING":"AF-Z","x":"AF-R"},"skill_to_entity":{"x":"FLOW-MAPPED"}}}
 JSON
 ho="$(sb_scheduler_build_handoffs_json "$TL_TMP/cat-map2.json" '["AF-Z","AF-R"]')"
-assert_eq "PREFIX-token maps to a silver skill" silver-z "$(hf 0 next_skill)"
-assert_eq "second runtime-mapped atom" silver-r "$(hf 1 next_skill)"
+assert_eq "PREFIX-token goes through flow_to_skill" silver-FIX-THING "$(hf 0 next_skill)"
+assert_eq "second runtime-mapped atom" silver-x "$(hf 1 next_skill)"
 cat >"$TL_TMP/cat-map3.json" <<'JSON'
 {"atomic_flows":[{"id":"AF-Q","slug":"q"},{"id":"AF-S","slug":"s"}],
  "migration_map":{"runtime_queue_tokens":{},"skill_to_entity":{"AF-Q":"FLOW-MAPPED","AF-S":"silver-direct"}}}
 JSON
 ho="$(sb_scheduler_build_handoffs_json "$TL_TMP/cat-map3.json" '["AF-Q","AF-S"]')"
-assert_eq "skill_to_entity redirect then FLOW-" silver-mapped "$(hf 0 next_skill)"
+assert_eq "no token for the atom: slug" silver-q "$(hf 0 next_skill)"
 assert_eq "second atom keeps its own redirect" 2 "$(jq length <<<"$ho")"
 
 echo "=== active batch dispatch / batch directive ==="

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Durable orchestration event log — append, tail, resume, saga helpers.
+# Durable orchestration event log — append helpers and the size bound (tail/resume/saga helpers were removed: R4-28).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -31,29 +31,23 @@ else
   fail "event log missing expected entries"
 fi
 
-tail="$(sb_orchestrator_event_tail_json 2)"
-if jq -e 'length == 2' <<<"$tail" >/dev/null 2>&1; then
-  pass "event tail returns last N entries"
+# The log stays bounded (R4-29).
+export SB_ORCHESTRATOR_EVENT_LOG_MAX_BYTES=3000 SB_ORCHESTRATOR_EVENT_LOG_KEEP_LINES=20
+for i in $(seq 1 200); do sb_orchestrator_event_record_advance "silver-$i" "silver-next" false; done
+size="$(wc -c <"$logfile" | tr -d ' ')"
+if [[ "$size" -le 4000 ]]; then
+  pass "event log stays bounded ($size bytes after 200 events)"
 else
-  fail "event tail json invalid"
+  fail "event log grew to $size bytes"
 fi
-
-sb_orchestrator_seed_intent "resume fixture" "silver-feature" "$tmpdir" >/dev/null
-hints="$(sb_orchestrator_event_resume_hints_json)"
-if jq -e '.resumable == true and (.recent_events | length) > 0' <<<"$hints" >/dev/null 2>&1; then
-  pass "resume hints merge orchestrator.json + event tail"
+if [[ "$(tail -1 "$logfile" | jq -r '.payload.completed_skill')" == "silver-200" ]]; then
+  pass "newest event survives the trim"
 else
-  fail "resume hints missing resumable state"
+  fail "newest event lost"
 fi
-
-sb_orchestrator_saga_begin "silver-ship" "ship" '[".planning/STATE.md"]'
-sb_orchestrator_saga_rollback_hint "silver-ship" "worker test failure" >/dev/null
-if [[ -f "$(sb_orchestrator_event_log_saga_file)" ]] \
-  && jq -e '.status == "rollback_required"' "$(sb_orchestrator_event_log_saga_file)" >/dev/null 2>&1; then
-  pass "saga rollback records durable hint"
-else
-  fail "saga rollback state missing"
-fi
+for removed in sb_orchestrator_event_tail_json sb_orchestrator_event_resume_hints_json sb_orchestrator_event_apply_resume_checkpoint sb_orchestrator_saga_begin; do
+  if declare -f "$removed" >/dev/null 2>&1; then fail "dead helper $removed is back"; else pass "dead helper $removed stays removed"; fi
+done
 
 echo
 echo "Results: $PASS passed, $FAIL failed"

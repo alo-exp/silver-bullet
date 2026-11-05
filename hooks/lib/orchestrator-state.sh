@@ -1,6 +1,16 @@
 # shellcheck shell=bash
 # Autonomous orchestrator state — intent, flow queue, workflow binding (Wave 0.3, 0.7).
 
+_sb_orch_state_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${_sb_orch_state_lib_dir}/orchestrator-io.sh" ]]; then
+  # shellcheck source=lib/orchestrator-io.sh
+  source "${_sb_orch_state_lib_dir}/orchestrator-io.sh"
+fi
+if ! declare -f sb_orchestrator_flow_to_skill >/dev/null 2>&1 && [[ -f "${_sb_orch_state_lib_dir}/orchestrator-directive.sh" ]]; then
+  # shellcheck source=lib/orchestrator-directive.sh
+  source "${_sb_orch_state_lib_dir}/orchestrator-directive.sh"
+fi
+
 sb_orchestrator_state_file() {
   printf '%s/orchestrator.json' "${SB_RUNTIME_STATE_DIR:-/tmp}"
 }
@@ -39,7 +49,76 @@ sb_orchestrator_post_exec_queue() {
   printf '%s' "silver-review-request,silver-review,silver-review-triage,silver-verify,security,silver-secure,silver-validate,${preship_qg},silver-branch-finish,silver-completion-audit,silver-ship"
 }
 
+# Planning-floor skills (required_planning) for a composer: the project's configured list when
+# repo_root has one, else the shipped template default, else the built-in three. devops
+# composers (devops, canary, deploy, incident) and projects whose active_workflow is devops-cycle
+# use required_planning_devops.
+# dev-cycle-check and completion-audit refuse source
+# edits and commits until these are recorded, so every queue that reaches silver-execute must
+# contain them (R10-02).
+sb_orchestrator_planning_floor_csv() {
+  local composer="$1" repo_root="${2:-}" key="required_planning" cfg csv="" tpl
+  case "$composer" in silver-devops|silver-canary|silver-deploy|silver-incident) key="required_planning_devops" ;; esac
+  cfg="$repo_root/.silver-bullet.json"
+  # The hooks pick the floor from the project's active workflow, so the queue does the same.
+  if [[ -n "$repo_root" && -f "$cfg" ]] && command -v jq >/dev/null 2>&1 \
+     && [[ "$(jq -r '.project.active_workflow // ""' "$cfg" 2>/dev/null || true)" == "devops-cycle" ]]; then
+    key="required_planning_devops"
+  fi
+  if command -v jq >/dev/null 2>&1; then
+    [[ -n "$repo_root" && -f "$cfg" ]] && csv="$(jq -r --arg k "$key" '(.skills[$k] // []) | join(",")' "$cfg" 2>/dev/null || true)"
+    if [[ -z "$csv" ]]; then
+      tpl="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../templates/silver-bullet.config.json.default"
+      [[ -f "$tpl" ]] && csv="$(jq -r --arg k "$key" '(.skills[$k] // []) | join(",")' "$tpl" 2>/dev/null || true)"
+    fi
+  fi
+  if [[ -z "$csv" ]]; then
+    csv="silver-quality-gates,silver-context,silver-plan"
+    [[ "$key" == "required_planning_devops" ]] && csv="silver-blast-radius,devops-quality-gates,silver-context,silver-plan"
+  fi
+  printf '%s' "$csv"
+}
+
+# Insert the floor skills the queue lacks, in floor order, right before its silver-plan (or, when
+# the queue has no plan step, before its first silver-execute).
+# A queue token counts as present when it maps to the same skill (FLOW-QUALITY-GATE is
+# silver-quality-gates). Queues without an execute step are left alone.
+sb_orchestrator_apply_planning_floor() {
+  local queue="$1" floor_csv="$2" token skill have="" out="" missing="" floor anchor="silver-execute"
+  local IFS=','
+  local -a tokens floor_skills
+  case ",$queue," in *,silver-execute,*) ;; *) printf '%s' "$queue"; return 0 ;; esac
+  case ",$queue," in *,silver-plan,*) anchor="silver-plan" ;; esac
+  read -ra tokens <<< "$queue"
+  read -ra floor_skills <<< "$floor_csv"
+  # Only what runs up to the anchor counts: the pre-ship quality gate comes after execute.
+  for token in "${tokens[@]}"; do
+    skill="$(sb_orchestrator_flow_to_skill "$token" 2>/dev/null || true)"
+    have="$have,$token,$skill"
+    [[ "$token" == "$anchor" ]] && break
+  done
+  for floor in "${floor_skills[@]}"; do
+    [[ -n "$floor" ]] || continue
+    case "$have," in *,"$floor",*) ;; *) missing="${missing:+$missing,}$floor" ;; esac
+  done
+  [[ -n "$missing" ]] || { printf '%s' "$queue"; return 0; }
+  local inserted=false
+  for token in "${tokens[@]}"; do
+    if [[ "$token" == "$anchor" && "$inserted" == false ]]; then
+      out="${out:+$out,}$missing"
+      inserted=true
+    fi
+    out="${out:+$out,}$token"
+  done
+  printf '%s' "$out"
+}
+
 sb_orchestrator_default_queue_for_composer() {
+  local composer="$1"
+  sb_orchestrator_apply_planning_floor "$(_sb_orch_raw_queue_for_composer "$composer")" "$(sb_orchestrator_planning_floor_csv "$composer")"
+}
+
+_sb_orch_raw_queue_for_composer() {
   local composer="$1"
   local post_exec
   case "$composer" in
@@ -117,7 +196,7 @@ sb_orchestrator_queue_for_composer() {
   local composer="$1"
   local repo_root="${2:-}"
   local queue
-  queue="$(sb_orchestrator_default_queue_for_composer "$composer")"
+  queue="$(_sb_orch_raw_queue_for_composer "$composer")"
   case "$composer" in
     silver-feature|silver-ui)
       if [[ -n "$repo_root" && ! -f "$repo_root/.planning/SPEC.md" ]]; then
@@ -125,7 +204,7 @@ sb_orchestrator_queue_for_composer() {
       fi
       ;;
   esac
-  printf '%s' "$queue"
+  sb_orchestrator_apply_planning_floor "$queue" "$(sb_orchestrator_planning_floor_csv "$composer" "$repo_root")"
 }
 
 sb_orchestrator_flow_label_for_token() {
@@ -174,16 +253,33 @@ sb_orchestrator_queue_index_for_atom() {
   for ((i = start; i < queue_len; i++)); do
     token="$(jq -r --argjson i "$i" '.flow_queue[$i] // ""' "$file" 2>/dev/null || true)"
     [[ -z "$token" ]] && continue
-    if [[ "$token" == "$atom_skill" ]]; then
-      printf '%s' "$i"
-      return 0
-    fi
-    skill="$(sb_orchestrator_flow_to_skill "$token" 2>/dev/null || true)"
-    if [[ -n "$skill" && "$skill" == "$atom_skill" ]]; then
+    if [[ "$token" == "$atom_skill" ]] || \
+       { skill="$(sb_orchestrator_flow_to_skill "$token" 2>/dev/null || true)"; [[ -n "$skill" && "$skill" == "$atom_skill" ]]; }; then
+      # Never jump over unfinished positions to a later twin of an atom that already ran
+      # (silver-quality-gates again vs FLOW-QUALITY-GATE-PRESHIP): that is a re-run, and
+      # honouring it skips review, verify and secure (R4-05).
+      if (( i > start )) && _sb_orch_queue_ran_before "$atom_skill" "$file" "$start"; then
+        return 1
+      fi
       printf '%s' "$i"
       return 0
     fi
   done
+  return 1
+}
+
+# True when a queue position before $3 already stands for skill $1 (finished or skipped).
+_sb_orch_queue_ran_before() {
+  local atom_skill="$1" file="$2" before="$3" i=0 token skill
+  while IFS= read -r token; do
+    (( i < before )) || break
+    i=$((i + 1))
+    [[ -n "$token" ]] || continue
+    skill="$(sb_orchestrator_flow_to_skill "$token")"
+    if [[ "$token" == "$atom_skill" || ( -n "$skill" && "$skill" == "$atom_skill" ) ]]; then
+      return 0
+    fi
+  done < <(jq -r '.flow_queue[]?' "$file" 2>/dev/null)
   return 1
 }
 
@@ -210,14 +306,14 @@ sb_orchestrator_read() {
 sb_orchestrator_write_json() {
   local json="$1"
   [[ -n "$json" ]] || return 1
-  local file dir
-  file="$(sb_orchestrator_state_file)"
-  dir="$(dirname "$file")"
-  mkdir -p "$dir" 2>/dev/null || true
-  printf '%s\n' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
+  sb_orchestrator_atomic_write "$(sb_orchestrator_state_file)" "$json"
 }
 
 sb_orchestrator_seed_intent() {
+  sb_orchestrator_with_lock _sb_orchestrator_seed_intent "$@"
+}
+
+_sb_orchestrator_seed_intent() {
   local intent="$1"
   local composer="${2:-}"
   local repo_root="${3:-}"
@@ -277,6 +373,10 @@ sb_orchestrator_seed_intent() {
 }
 
 sb_orchestrator_on_composer_start() {
+  sb_orchestrator_with_lock _sb_orchestrator_on_composer_start "$@"
+}
+
+_sb_orchestrator_on_composer_start() {
   local composer_skill="$1"
   local intent="${2:-}"
   local repo_root="${3:-}"
@@ -359,7 +459,7 @@ sb_orchestrator_on_composer_start() {
 sb_orchestrator_clear_queue() {
   local file
   file="$(sb_orchestrator_state_file 2>/dev/null || printf '%s/orchestrator.json' "${SB_RUNTIME_STATE_DIR:-/tmp}")"
-  rm -f -- "$file" 2>/dev/null || true
+  rm -f -- "$file" "${SB_RUNTIME_STATE_DIR:-/tmp}/orchestrator-stop-blocks.json" 2>/dev/null || true
   if declare -f sb_orchestrator_directive_clear >/dev/null 2>&1; then
     sb_orchestrator_directive_clear
   else
@@ -368,6 +468,36 @@ sb_orchestrator_clear_queue() {
   if declare -f sb_orchestrator_clear_worker_marker >/dev/null 2>&1; then
     sb_orchestrator_clear_worker_marker
   fi
+}
+
+# Parent Stop blocks (queue pending / scheduler work pending) must not trap a session forever
+# when nothing can move (R4-05). Each call counts one block that is about to be issued; the
+# count restarts whenever orchestrator.json changed since the previous block. After
+# SB_ORCHESTRATOR_STOP_BLOCK_LIMIT (default 5) blocks with no progress this returns 0:
+# release the Stop. Otherwise 1: keep blocking.
+sb_orchestrator_stop_block_released() {
+  local file counter stamp prior_stamp prior_count count limit
+  file="$(sb_orchestrator_state_file)"
+  [[ -f "$file" ]] || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+  counter="${SB_RUNTIME_STATE_DIR:-/tmp}/orchestrator-stop-blocks.json"
+  stamp="$(cksum <"$file" 2>/dev/null | cut -d' ' -f1)"
+  prior_stamp=""
+  prior_count=0
+  if [[ -f "$counter" && ! -L "$counter" ]]; then
+    prior_stamp="$(jq -r '.stamp // ""' "$counter" 2>/dev/null || true)"
+    prior_count="$(jq -r '.count // 0' "$counter" 2>/dev/null || echo 0)"
+  fi
+  [[ "$prior_count" =~ ^[0-9]+$ ]] || prior_count=0
+  if [[ "$prior_stamp" == "$stamp" ]]; then
+    count=$((prior_count + 1))
+  else
+    count=1
+  fi
+  sb_orchestrator_atomic_write "$counter" "$(jq -nc --arg stamp "$stamp" --argjson count "$count" '{stamp:$stamp,count:$count}')" || true
+  limit="${SB_ORCHESTRATOR_STOP_BLOCK_LIMIT:-5}"
+  [[ "$limit" =~ ^[0-9]+$ ]] || limit=5
+  (( count > limit ))
 }
 
 # Clear stale flow queue when the user interrupts with a new goal or informational query.
@@ -394,6 +524,10 @@ sb_orchestrator_clear_queue_on_interrupt() {
 
 # Advance to the next catalog composer when the current flow_queue is drained (multi-WF chain).
 sb_orchestrator_try_advance_composer_chain() {
+  sb_orchestrator_with_lock _sb_orchestrator_try_advance_composer_chain "$@"
+}
+
+_sb_orchestrator_try_advance_composer_chain() {
   local repo_root="${1:-}"
   local file next_composer intent saved_chain updated msg completed_composer
   command -v jq >/dev/null 2>&1 || return 1
@@ -420,6 +554,10 @@ sb_orchestrator_try_advance_composer_chain() {
 }
 
 sb_orchestrator_advance_on_atom() {
+  sb_orchestrator_with_lock _sb_orchestrator_advance_on_atom "$@"
+}
+
+_sb_orchestrator_advance_on_atom() {
   local atom_skill="$1"
   local repo_root="${2:-}"
   local file wid wf_bin next_flow msg
@@ -445,18 +583,23 @@ sb_orchestrator_advance_on_atom() {
   queue_len="$(jq '.flow_queue | length' "$file" 2>/dev/null || echo 0)"
   last_idx="$(jq -r '.last_completed_index // -1' "$file" 2>/dev/null || echo -1)"
   idx="$(sb_orchestrator_queue_index_for_atom "$atom_skill" "$file" "$((last_idx + 1))" 2>/dev/null || true)"
-  if [[ -z "$idx" ]]; then
+
+  local _sched_lib sched_on=false join_result="no-batch" hold_for_batch=false
+  _sched_lib="$(dirname "${BASH_SOURCE[0]}")/orchestrator-scheduler.sh"
+  if [[ -f "$_sched_lib" ]] && declare -f sb_scheduler_runtime_enabled >/dev/null 2>&1 && sb_scheduler_runtime_enabled; then
+    sched_on=true
+  fi
+  if [[ -z "$idx" && "$sched_on" != true ]]; then
     # Ignore stale or optional atom completions that are not still pending in
     # this queue. Rewinding to an earlier match corrupts current_flow.
     return 0
   fi
 
-  local _sched_lib hold_for_batch=false
-  _sched_lib="$(dirname "${BASH_SOURCE[0]}")/orchestrator-scheduler.sh"
-  if [[ -f "$_sched_lib" ]] && declare -f sb_scheduler_runtime_enabled >/dev/null 2>&1 && sb_scheduler_runtime_enabled; then
+  if [[ "$sched_on" == true ]]; then
     # shellcheck source=lib/orchestrator-scheduler.sh
     source "$_sched_lib"
     sb_scheduler_mark_handoff_joined "" "$atom_skill" 2>/dev/null || true
+    join_result="${SB_SCHEDULER_JOIN_RESULT:-no-batch}"
     local catalog_file atom_id
     catalog_file="$(sb_scheduler_catalog_file "$repo_root" 2>/dev/null || true)"
     if [[ -n "$catalog_file" ]]; then
@@ -465,15 +608,22 @@ sb_orchestrator_advance_on_atom() {
         sb_scheduler_refresh_join_gate "$repo_root" "$atom_id" >/dev/null 2>&1 || true
       fi
     fi
-    if sb_scheduler_active_batch_has_pending_joins 2>/dev/null; then
-      hold_for_batch=true
+    # Hold current_flow only while THIS batch still waits for sibling joins. The decision comes
+    # from the join itself: once the last handoff joins, the next batch is dispatched at once,
+    # and asking "does the batch have pending joins" would see that new batch (R4-05).
+    [[ "$join_result" == "batch-pending" ]] && hold_for_batch=true
+    if [[ -z "$idx" ]]; then
+      # A parallel sibling that finished out of order sits behind last_completed_index. Only the
+      # join that completes the batch moves the queue, to the position after the last finisher.
+      [[ "$join_result" == "batch-complete" && "$last_idx" -ge 0 ]] || return 0
+      idx="$last_idx"
     fi
   fi
 
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   if [[ "$hold_for_batch" == true ]]; then
     updated="$(jq --arg completed "$atom_skill" --arg now "$now" --argjson idx "$idx" \
-      '.last_completed = $completed | .last_completed_index = $idx | .updated_at = $now' \
+      '.last_completed = $completed | .last_completed_index = ([.last_completed_index // -1, $idx] | max) | .updated_at = $now' \
       "$file" 2>/dev/null || true)"
     [[ -n "$updated" ]] && sb_orchestrator_write_json "$updated"
     if declare -f sb_orchestrator_event_record_advance >/dev/null 2>&1; then
@@ -500,7 +650,11 @@ sb_orchestrator_advance_on_atom() {
 
   if [[ -n "$next_flow" ]]; then
     msg="SB orchestrator ► Next flow: ${next_flow} (auto-chained; invoke without user prompt)"
-    if [[ -f "${_lib_dir:-}/orchestrator-directive.sh" ]]; then
+    if [[ "$join_result" == "batch-complete" ]] && sb_scheduler_active_batch_has_pending_joins 2>/dev/null; then
+      # The scheduler already dispatched the next batch and wrote its directive (with the
+      # handoff metadata); a plain per-flow directive would overwrite it.
+      :
+    elif [[ -f "${_lib_dir:-}/orchestrator-directive.sh" ]]; then
       # shellcheck source=lib/orchestrator-directive.sh
       source "${_lib_dir}/orchestrator-directive.sh"
       local next_skill intent

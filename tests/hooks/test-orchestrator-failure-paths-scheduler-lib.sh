@@ -123,15 +123,12 @@ assert_eq "pending joins with a failing state helper" 1 "$rc"
 stage="$(orch_stage_libs orchestrator-scheduler.sh orchestrator-state.sh orchestrator-skill-atom.sh orchestrator-event-log.sh orchestrator-directive.sh orchestrator-parent.sh capability-tier.sh)"
 printf '%s\n' 'sb_capability_tier_number() { return 1; }' >"$stage/capability-tier.sh"
 assert_eq "tier probe failing: sequential" 1 "$(bash -c 'source "$1"; sb_scheduler_host_supports_parallel_dispatch; echo $?' _ "$stage/orchestrator-scheduler.sh" 2>/dev/null | tail -1)"
-# Catalog parsing failures.
-sb_scheduler_worker_template_for_atom "$GARB" AF-PLAN >/dev/null && rc=0 || rc=$?
-assert_eq "unreadable catalog: no worker template" 1 "$rc"
-( sb_orchestrator_flow_to_skill() { return 1; }
-  [[ "$(sb_scheduler_skill_for_atom "$CAT" AF-DEP)" == silver-dep ]] ) && rc=0 || rc=$?
-assert_eq "failing flow_to_skill: slug-derived skill" 0 "$rc"
-( sb_orchestrator_flow_to_skill() { return 1; }
-  [[ "$(sb_scheduler_skill_for_atom "$GARB" AF-DEP 2>/dev/null)" == AF-DEP ]] ) 2>/dev/null && rc=0 || rc=$?
-assert_eq "failing flow_to_skill and unreadable slug: token returned" 0 "$rc"
+# batch_tokens unreadable: handoffs fall back to the catalog's own token for the atom.
+orch_write_state "$(jq -n --arg r "$PROJ" '{repo_root:$r, active_intent:"i", scheduler:{batches:[["AF-PLAN"]],batch_tokens:[["silver-plan"]],active_batch_index:0}}')"
+orch_stub_failing jq 'batch_tokens'
+sb_scheduler_refresh_active_batch_dispatch "$PROJ" >/dev/null 2>&1 && rc=0 || rc=$?
+orch_unstub jq
+assert_eq "batch_tokens unreadable: the batch is still dispatched" silver-plan "$(orch_state_get '.scheduler.batch_dispatch.handoffs[0].next_skill')"
 # Refresh/dispatch/join failure injection.
 mkbd() {
   orch_write_state "$(jq -n --arg r "$PROJ" '{repo_root:$r, active_intent:"i", scheduler:{batches:[["AF-READ-A","AF-READ-B"],["AF-PLAN"]],active_batch_index:0}}')"
