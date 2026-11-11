@@ -134,6 +134,12 @@ class ShapeTests(Base):
             self.strict("git push", name, env=dict(ENV, **{name: "x"}))
         self.strict("git push", "exported shell function", env=dict(ENV, **{"BASH_FUNC_git%%": "() { :; }"}))
 
+    def test_coverage_tracer_bash_env(self):
+        env = dict(ENV, BASH_ENV=push_scope.COVERAGE_BASH_ENV, SB_COV_DIR="/x")
+        self.feature("git push", env=env)
+        self.strict("git push", "BASH_ENV", env=dict(env, BASH_ENV="/tmp/evil.sh"))
+        self.strict("git push", "BASH_ENV", env=dict(ENV, BASH_ENV=push_scope.COVERAGE_BASH_ENV))
+
     def test_top_level_shape(self):
         self.strict("git push &", "background")
         self.strict("(git push)", "compound")
