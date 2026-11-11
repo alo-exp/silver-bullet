@@ -135,9 +135,8 @@ sb_pf_path_protected() {
 
 # Prints "DENY<TAB>why" or "PATH<TAB>absolute path" lines for the loaded command's patch writes.
 _sb_pf_patch_scan() {
-  local status file strip cwd orig kind p abs root n comps comp bad dir
+  local status file strip cwd orig kind p abs root n comps comp rest bad dir
   while IFS=$'\t' read -r status file strip cwd orig kind; do
-    [[ -n "$status" ]] || continue
     if [[ "$status" == DENY ]]; then printf 'DENY\t%s\n' "$file"; continue; fi
     [[ "$cwd" != "-" ]] || cwd="$PWD"
     [[ "$file" == /* ]] || file="$cwd/$file"
@@ -165,7 +164,8 @@ _sb_pf_patch_scan() {
       comps="$p"
       while [[ -n "$comps" ]]; do
         comp="${comps%%/*}"
-        if [[ "$comps" == */* ]]; then comps="${comps#*/}"; else comps=""; fi
+        rest="${comps#"$comp"}"
+        comps="${rest#/}"
         if [[ "$comp" == ".." ]]; then bad="the diff names $p, which leaves the project"; break 2; fi
       done
       # Judged as written and as stripped: -p cannot hide a protected name.

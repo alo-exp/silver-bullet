@@ -314,4 +314,17 @@ if sb_pf_contract_unlocked; then tl_fail "an empty record unlocks"; else tl_pass
 rm -f "$UL"
 assert_eq "an unreadable analysis names no inline code" "" "$(SB_SA_JSON='not json' SB_SA_READ_ONLY=false sb_pf_inline_code_reason)"
 
+# round 3: protected paths, bare variables in scripts, a command without a working directory
+PH="$SB_RUNTIME_HOME_ROOT"
+if sb_pf_path_protected "$PH/settings.json"; then tl_pass "the host runtime directory is protected"; else tl_fail "runtime dir not protected"; fi
+if sb_pf_path_protected "$SB_RUNTIME_STATE_DIR/state"; then tl_pass "the state directory is protected"; else tl_fail "state dir not protected"; fi
+if sb_pf_path_protected "/proj/docs/guide.md"; then tl_fail "an ordinary file is protected"; else tl_pass "an ordinary file is not"; fi
+SB_SA_JSON='{"commands":[],"writes":[{"path":"/p/$OUT","raw":"$OUT","dynamic":true,"via":"redirect","scope":"path"}]}'
+if SB_PF_SKIP_BARE_DYNAMIC=1 sb_pf_bare_variable_target >/dev/null; then tl_fail "scripts are exempt from the bare-variable rule"; else tl_pass "scripts are exempt from the bare-variable rule"; fi
+assert_eq "otherwise the variable is named" '$OUT' "$(sb_pf_bare_variable_target)"
+DPW="$TL_TMP/nocwd"; mkdir -p "$DPW"
+printf 'diff --git a/docs/R.md b/docs/R.md\n--- a/docs/R.md\n+++ b/docs/R.md\n@@ -1 +1 @@\n-a\n+b\n' >"$DPW/ok.diff"
+SB_SA_JSON='{"commands":[{"argv":["git","apply","ok.diff"]}]}'
+assert_eq "a command that carries no working directory is judged from the current one" "" "$(cd "$DPW" && sb_pf_patch_verdict)"
+
 tl_results
