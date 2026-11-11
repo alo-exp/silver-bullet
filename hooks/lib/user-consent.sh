@@ -144,6 +144,21 @@ sb_consent_granted() {
   [[ "$(sb_consent_decision "$@")" == "granted" ]]
 }
 
+# sb_consent_pi_enable_words: " --enable-tool TOOL" for every tool the user consented to wire,
+# for scripts/lib/global-toolstack/install-pi.py (no --enable-tool there means "enable nothing"). LeanCTX also
+# needs "install" consent: in Pi it makes the host install an npm package.
+sb_consent_pi_enable_words() {
+  local tool
+  for tool in graphify agentmemory context_mode leanctx rtk; do
+    sb_consent_granted "$tool" wire || continue
+    # LeanCTX in Pi makes the host install an npm package: that also needs "install" consent.
+    if [[ "$tool" == "leanctx" ]] && ! sb_consent_granted leanctx install; then continue; fi
+    printf ' --enable-tool %s' "$tool"
+    if [[ "$tool" == "leanctx" ]]; then printf ' --allow-install'; fi
+  done
+  return 0
+}
+
 # Keep a short, printable provenance label (it is shown back to users).
 _sb_consent_clean_source() {
   local source="${1:-}"
