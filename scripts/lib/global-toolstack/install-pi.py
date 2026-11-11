@@ -107,6 +107,11 @@ def install(
     all_tools = ("graphify", "agentmemory", "context_mode", "leanctx", "rtk")
     # No --enable-tool means "enable nothing new": a tool is switched on only by the user's consent.
     requested = set() if enabled_tools is None else set(enabled_tools)
+    if "leanctx" in requested and not allow_package_install:
+        # LeanCTX in Pi makes the host install an npm package: it needs "install" consent as well as
+        # "wire" (docs/CONSENT.md), so a caller without it gets no leanctx entry at all.
+        print("SKIP: LeanCTX is not enabled in Pi without install consent (pass --allow-install)")
+        requested.discard("leanctx")
     config = {
         "schema": "v1",
         "profile": "five_tool_routed",

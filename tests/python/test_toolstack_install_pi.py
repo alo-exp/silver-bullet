@@ -278,8 +278,9 @@ class InstallTest(PiCase):
         # enabling leanctx alone never lists an npm package: that needs the caller's install consent
         result, _ = self.run_install(enabled_tools={"leanctx"})
         self.assertEqual(self.read("settings.json")["packages"], [])
-        self.assertTrue(self.read("extensions/silver-bullet-five-tool-stack/config.json")["servers"]["leanctx"]["enabled"])
+        self.assertFalse(self.read("extensions/silver-bullet-five-tool-stack/config.json")["servers"]["leanctx"]["enabled"])
         self.run_install(enabled_tools={"leanctx"}, allow_package_install=True)
+        self.assertTrue(self.read("extensions/silver-bullet-five-tool-stack/config.json")["servers"]["leanctx"]["enabled"])
         self.assertEqual(self.read("settings.json")["packages"], ["npm:pi-lean-ctx"])
         # allow-install without leanctx lists nothing
         self.run_install(enabled_tools={"rtk"}, allow_package_install=True)
@@ -312,7 +313,11 @@ class InstallTest(PiCase):
 
     def test_selective_enable_leanctx_configures_bridge(self):
         self.use_agent_dir()
-        result, _ = self.run_install(enabled_tools={"leanctx"})
+        result, out = self.run_install(enabled_tools={"leanctx"})
+        self.assertFalse(result["leanctx_config_changed"])  # no install consent: leanctx is not enabled
+        self.assertIn("SKIP: LeanCTX is not enabled in Pi without install consent", out)
+        self.assertFalse((self.agent / "extensions" / "pi-lean-ctx" / "config.json").exists())
+        result, _ = self.run_install(enabled_tools={"leanctx"}, allow_package_install=True)
         self.assertTrue(result["leanctx_config_changed"])
         self.assertTrue((self.agent / "extensions" / "pi-lean-ctx" / "config.json").is_file())
 
