@@ -198,26 +198,6 @@ ca_classify_command() {
   return 0
 }
 
-# ca_default_branch_names DIR: the default-branch names of the repository at DIR (one line, space separated).
-ca_default_branch_names() {
-  local dir="$1" names="main master" ref
-  ref="$(git -C "$dir" symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null || true)"
-  [[ -z "$ref" ]] || names="$names ${ref#origin/}"
-  names="$names $(git -C "$dir" config --get init.defaultBranch 2>/dev/null || true)"
-  printf '%s' "$names"
-}
-
-# _ca_branch_is_feature DIR NAME NAMES: NAME is an explicit, named, non-default branch (no glob, no
-# variable, not a tag name, not a ref outside refs/heads).
-_ca_branch_is_feature() {
-  local dir="$1" name="$2" names="$3"
-  name="${name#refs/heads/}"
-  case "$name" in
-    "" | *[\*\$\?\[\`\(\)\;\&\|\<\>]* | refs/* | HEAD | @ | -*) return 1 ;;
-  esac
-  [[ " $names " != *" $name "* ]]
-}
-
 # ca_payload_base_dir INPUT: the directory a tool call runs in, on stdout: the payload `cwd` (else $PWD) joined
 # with `tool_input.workdir` (Codex). Returns 1 when the payload names a cwd or workdir that is not a directory:
 # the push scope then treats the push as final delivery. The hook's own $PWD is used only without a cwd field.
@@ -253,32 +233,16 @@ ca_push_scope_verdict() {
   return 1
 }
 
-# ca_mcp_write_is_feature_only PAYLOAD: an MCP write (push_files, create_or_update_file, delete_file, create_branch...)
-# is intermediate only when tool_input.branch names an explicit non-default branch; a missing branch means the
-# repository default, and tag/ref tools are never feature-only.
-ca_mcp_write_is_feature_only() {
-  local payload="$1" tool branch names
-  tool="$(printf '%s' "$payload" | jq -r '.tool_name // ""')"
-  case "${tool##*__}" in
-    create_tag | create_ref | update_ref | update_pull_request_branch) return 1 ;;
-  esac
-  branch="$(printf '%s' "$payload" | jq -r '(.tool_input // {}) | (.branch // "") | if type == "string" then . else "" end')"
-  names="$(ca_default_branch_names "$PWD")"
-  _ca_branch_is_feature "$PWD" "$branch" "$names"
-}
-
-# ca_push_targets_default_branch: the intermediate-tier command must be treated as final delivery (R1-22):
-# a shell push that is not provably a feature-branch push, or an MCP write that is not provably to a feature branch.
+# ca_push_targets_default_branch: the intermediate-tier command must be treated as final delivery (R1-22): a
+# shell push or an MCP write that push_scope.py did not prove to be a feature-branch push (Invariants P and M).
 # Sets ca_push_scope_reason (one sentence) for the block message.
 ca_push_targets_default_branch() {
   ca_push_scope_reason=""
-  if [[ -n "${mcp_payload:-}" ]]; then
-    ! ca_mcp_write_is_feature_only "$mcp_payload"
-  elif sb_shell_analysis_has_action push; then
-    if [[ "${ca_base_bad:-0}" == 1 ]]; then
-      ca_push_scope_reason="the working directory of the command does not exist"
-      return 0
-    fi
+  if [[ "${ca_base_bad:-0}" == 1 ]]; then
+    ca_push_scope_reason="the working directory of the command does not exist"
+    return 0
+  fi
+  if [[ -n "${mcp_payload:-}" ]] || sb_shell_analysis_has_action push; then
     ! ca_push_scope_verdict
   else
     return 1

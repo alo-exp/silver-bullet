@@ -27,19 +27,28 @@ run_tool() { # run_tool EVENT TOOL INPUT-JSON [env...]
   json="$(jq -cn --arg e "$event" --arg t "$tool" --argjson i "$input" '{hook_event_name:$e,tool_name:$t,tool_input:$i}')"
   tl_run_stdin "$json" env "$@" bash -c 'cd "$1" && exec bash "$2"' _ "${RUN_DIR:-$PROJ}" "$HOOK"
 }
+# add_origin DIR: an origin remote whose default branch (main) is known locally, without a network (the push
+# scope needs refs/remotes/origin/HEAD: a checkout that does not know its remote's default branch is strict)
+add_origin() {
+  git -C "$1" remote add origin https://github.com/acme/app.git
+  git -C "$1" update-ref refs/remotes/origin/main "$(git -C "$1" rev-parse main)"
+  git -C "$1" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main
+}
+
 approve() { : >"$SD/enterprise-human-deploy-approved"; }
 unapprove() { rm -f "$SD/enterprise-human-deploy-approved"; }
 
 # ── R1-04 / R3-09: MCP delivery tools are gated ──────────────────────────────
 approve
 mkproj mcp
+add_origin "$PROJ"
 state
 run_tool PreToolUse mcp__github__create_pull_request '{"title":"x"}' -u SB_AGENT_CERT_RUN
 assert_eq "MCP create_pull_request with nothing recorded: denied" "deny" "$(decision)"
 assert_contains "MCP create_pull_request names the deploy floor" "$(message)" "COMPLETION BLOCKED"
 run_tool PreToolUse mcp__github__merge_pull_request '{"pullNumber":1}'
 assert_eq "MCP merge_pull_request: denied" "deny" "$(decision)"
-run_tool PreToolUse mcp__github__push_files '{"branch":"b","files":[]}'
+run_tool PreToolUse mcp__github__push_files '{"owner":"acme","repo":"app","branch":"b","files":[]}'
 assert_eq "MCP push_files needs the planning floor" "deny" "$(decision)"
 assert_contains "MCP push_files: planning message" "$(message)" "COMMIT BLOCKED"
 run_tool PreToolUse mcp__github__actions_run_trigger '{"method":"run_workflow"}'
@@ -49,7 +58,7 @@ assert_eq "MCP read tool: silent" "none" "$(decision)"
 run_tool PreToolUse mcp__filesystem__read_file '{"path":"x"}'
 assert_eq "MCP tool of another server that is not a delivery: silent" "none" "$(decision)"
 state inst-a
-run_tool PreToolUse mcp__github__push_files '{"branch":"b","files":[]}'
+run_tool PreToolUse mcp__github__push_files '{"owner":"acme","repo":"app","branch":"b","files":[]}'
 assert_eq "MCP push_files with the planning floor recorded: allowed" "allow" "$(decision)"
 state inst-a inst-b verify-tests
 run_tool PreToolUse mcp__github__create_pull_request '{"title":"x"}'
@@ -59,9 +68,9 @@ tl_stub python3 'exit 1'
 state
 run_tool PreToolUse mcp__github__merge_pull_request '{"pullNumber":1}'
 assert_eq "helper unavailable: MCP merge_pull_request still denied by name" "deny" "$(decision)"
-run_tool PreToolUse mcp__github__push_files '{"branch":"b"}'
-assert_eq "helper unavailable: MCP push_files still needs planning" "deny" "$(decision)"
-assert_contains "helper unavailable: push_files is a planning-tier block" "$(message)" "COMMIT BLOCKED"
+run_tool PreToolUse mcp__github__push_files '{"owner":"acme","repo":"app","branch":"b"}'
+assert_eq "helper unavailable: MCP push_files cannot be scoped" "deny" "$(decision)"
+assert_contains "helper unavailable: push_files is final delivery (its target is unknown)" "$(message)" "COMPLETION BLOCKED"
 run_tool PreToolUse mcp__github__list_issues '{}'
 assert_eq "helper unavailable: MCP read tool passes" "none" "$(decision)"
 rm -f "$TL_BIN/python3"
@@ -217,6 +226,7 @@ unapprove
 approve
 mkproj pushtier
 state inst-a
+add_origin "$PROJ"
 git -C "$PROJ" checkout -q -b feat
 run_ca PreToolUse "git push origin feat"
 assert_eq "default tier: a feature-branch push stays intermediate" "allow" "$(decision)"
@@ -241,12 +251,11 @@ assert_eq "default tier: refs/tags/<t> is a tag push" "deny" "$(decision)"
 git -C "$PROJ" branch v2.0.0
 run_ca PreToolUse "git push origin v2.0.0"
 assert_eq "default tier: a name that is a branch and not a tag stays intermediate" "allow" "$(decision)"
-git -C "$PROJ" update-ref refs/remotes/origin/HEAD "$(git -C "$PROJ" rev-parse HEAD)" 2>/dev/null || true
-git -C "$PROJ" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/trunk 2>/dev/null || true
 git -C "$PROJ" update-ref refs/remotes/origin/trunk "$(git -C "$PROJ" rev-parse HEAD)"
+git -C "$PROJ" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/trunk
 run_ca PreToolUse "git push origin HEAD:trunk"
 assert_eq "default tier: the remote's default branch name counts" "deny" "$(decision)"
-git -C "$PROJ" update-ref -d refs/remotes/origin/trunk; git -C "$PROJ" symbolic-ref --delete refs/remotes/origin/HEAD 2>/dev/null || true
+git -C "$PROJ" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main; git -C "$PROJ" update-ref -d refs/remotes/origin/trunk
 git -C "$PROJ" config init.defaultBranch develop
 run_ca PreToolUse "git push origin HEAD:develop"
 assert_eq "default tier: init.defaultBranch counts" "deny" "$(decision)"
@@ -425,18 +434,23 @@ echo two >"$PROJ/two.txt"; git -C "$PROJ" add two.txt; git -C "$PROJ" commit -q 
 SHA2="$(git -C "$PROJ" rev-parse HEAD)"
 git -C "$PROJ" update-ref refs/remotes/origin/main "$SHA2"
 GREEN_OLD="$(jq -cn --arg s "$SHA" '[{workflowName:"CI",status:"completed",conclusion:"success",headSha:$s,createdAt:"1"}]')"
-run_ca PreToolUse "gh api repos/o/r/releases -f tag_name=v9 -f target_commitish=$SHA" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+run_ca PreToolUse "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$SHA" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
 assert_eq "gh api releases with target_commitish: CI is checked for that commit" "allow" "$(decision)"
-run_ca PreToolUse "gh api repos/o/r/releases --raw-field target_commitish=$SHA -f tag_name=v9" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+run_ca PreToolUse "gh api repos/{owner}/{repo}/releases --raw-field target_commitish=$SHA -f tag_name=v9" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
 assert_eq "gh api releases with --raw-field" "allow" "$(decision)"
-run_ca PreToolUse "gh api repos/o/r/releases -f tag_name=v9 -f target_commitish=no-such-ref" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+run_ca PreToolUse "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=no-such-ref" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
 assert_contains "gh api releases with an unresolvable target denies" "$(message)" "does not resolve to a commit"
-run_ca PreToolUse "gh api repos/o/r/releases -f tag_name=v9" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+run_ca PreToolUse "gh api repos/{owner}/{repo}/releases -f tag_name=v9" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
 assert_contains "gh api releases without a target: the default branch commit (no CI for it) denies" "$(message)" "$SHA2"
-run_tool PreToolUse mcp__github__create_release "{\"tag_name\":\"v9\",\"target_commitish\":\"$SHA\"}" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+git -C "$PROJ" remote add origin https://github.com/acme/app.git
+run_tool PreToolUse mcp__github__create_release "{\"owner\":\"acme\",\"repo\":\"app\",\"tag_name\":\"v9\",\"target_commitish\":\"$SHA\"}" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
 assert_eq "MCP create_release with target_commitish: CI is checked for that commit" "allow" "$(decision)"
-run_tool PreToolUse mcp__github__create_release '{"tag_name":"v9","target_commitish":"no-such-ref"}' GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+run_tool PreToolUse mcp__github__create_release '{"owner":"acme","repo":"app","tag_name":"v9","target_commitish":"no-such-ref"}' GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
 assert_contains "MCP create_release with an unresolvable target denies" "$(message)" "does not resolve to a commit"
+run_tool PreToolUse mcp__github__create_release '{"owner":"other","repo":"lib","tag_name":"v9","target_commitish":"main"}' GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+assert_contains "MCP create_release in another repository: the commit cannot be read from this checkout" "$(message)" "another repository"
+run_tool PreToolUse mcp__github__create_release '{"tag_name":"v9"}' GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+assert_contains "MCP create_release without owner and repo denies" "$(message)" "cannot determine release commit"
 unapprove
 
 # ── review repair: helper failure with an MCP tool that is neither a delivery nor a read ──
@@ -505,6 +519,7 @@ unapprove
 approve
 mkproj pushallow
 state inst-a
+add_origin "$PROJ"
 git -C "$PROJ" checkout -q -b feat
 mkdir -p "$PROJ/sub"
 OTHER="$TL_TMP/otherrepo"; tl_git_repo "$OTHER"
@@ -549,13 +564,13 @@ deny_push 'git push origin HEAD'
 git -C "$PROJ" checkout -q feat
 # MCP writes: only an explicit non-default branch is intermediate
 state inst-a
-run_tool PreToolUse mcp__github__push_files '{"branch":"feat","files":[]}'
+run_tool PreToolUse mcp__github__push_files '{"owner":"acme","repo":"app","branch":"feat","files":[]}'
 assert_eq "MCP push_files to a feature branch: planning floor only" "allow" "$(decision)"
-run_tool PreToolUse mcp__github__create_or_update_file '{"branch":"feat","path":"a"}'
+run_tool PreToolUse mcp__github__create_or_update_file '{"owner":"acme","repo":"app","branch":"feat","path":"a"}'
 assert_eq "MCP create_or_update_file to a feature branch: planning floor only" "allow" "$(decision)"
-run_tool PreToolUse mcp__github__create_branch '{"branch":"feat2"}'
+run_tool PreToolUse mcp__github__create_branch '{"owner":"ACME","repo":"App","branch":"feat2"}'
 assert_eq "MCP create_branch of a feature branch: planning floor only" "allow" "$(decision)"
-for c in 'mcp__github__push_files|{"branch":"main","files":[]}' 'mcp__github__create_or_update_file|{"branch":"master"}' 'mcp__github__delete_file|{"branch":"main"}' 'mcp__github__push_files|{"files":[]}' 'mcp__github__push_files|{"branch":""}' 'mcp__github__push_files|{"branch":"refs/heads/*"}' 'mcp__github__push_files|{"branch":7}' 'mcp__github__create_tag|{"tag":"v1","branch":"feat"}' 'mcp__github__update_pull_request_branch|{"pullNumber":1}'; do
+for c in 'mcp__github__push_files|{"owner":"acme","repo":"app","branch":"main","files":[]}' 'mcp__github__create_or_update_file|{"owner":"acme","repo":"app","branch":"master"}' 'mcp__github__delete_file|{"owner":"acme","repo":"app","branch":"main"}' 'mcp__github__push_files|{"owner":"acme","repo":"app","files":[]}' 'mcp__github__push_files|{"owner":"acme","repo":"app","branch":""}' 'mcp__github__push_files|{"owner":"acme","repo":"app","branch":"refs/heads/*"}' 'mcp__github__push_files|{"owner":"acme","repo":"app","branch":7}' 'mcp__github__push_files|{"branch":"feat"}' 'mcp__github__push_files|{"owner":"other","repo":"lib","branch":"feat"}' 'mcp__github__create_tag|{"owner":"acme","repo":"app","tag":"v1","branch":"feat"}' 'mcp__github__update_pull_request_branch|{"pullNumber":1}'; do
   run_tool PreToolUse "${c%%|*}" "${c#*|}"
   assert_eq "MCP write is final delivery: $c" "deny" "$(decision)"
   assert_contains "MCP write reports the deploy gate: $c" "$(message)" "COMPLETION BLOCKED"
@@ -581,6 +596,7 @@ assert_eq "no getent and no python3: unknown home, no failure" "[0]" "$TL_OUT"
 
 # ── review repair r3: release target in every gh api spelling; unreadable targets deny ──
 mkproj relapi2 '.release={}'
+git -C "$PROJ" remote add origin https://github.com/acme/app.git
 state inst-a inst-b verify-tests silver-create-release
 approve
 SHA="$(git -C "$PROJ" rev-parse HEAD)"
@@ -588,13 +604,30 @@ echo three >"$PROJ/three.txt"; git -C "$PROJ" add three.txt; git -C "$PROJ" comm
 git -C "$PROJ" update-ref refs/remotes/origin/main "$(git -C "$PROJ" rev-parse HEAD)"
 GREEN_OLD="$(jq -cn --arg s "$SHA" '[{workflowName:"CI",status:"completed",conclusion:"success",headSha:$s,createdAt:"1"}]')"
 for sp in "-f tag_name=v9 --field=target_commitish=$SHA" "-f tag_name=v9 -ftarget_commitish=$SHA" "-f tag_name=v9 -Ftarget_commitish=$SHA" "--raw-field=target_commitish=$SHA -f tag_name=v9" "-X POST -f tag_name=v9 --field target_commitish=$SHA"; do
-  run_ca PreToolUse "gh api $sp repos/o/r/releases" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+  run_ca PreToolUse "gh api $sp repos/{owner}/{repo}/releases" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
   assert_eq "gh api spelling resolves the target: $sp" "allow" "$(decision)"
 done
-for sp in 'repos/o/r/releases --input body.json' 'repos/o/r/releases --input=body.json' 'repos/o/r/releases -f tag_name=v9 -f target_commitish=$T' 'repos/o/r/releases -f target_commitish=abc && gh api repos/o/r/releases -f target_commitish=def'; do
+for sp in 'repos/{owner}/{repo}/releases --input body.json' 'repos/{owner}/{repo}/releases --input=body.json' 'repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$T' 'repos/{owner}/{repo}/releases -f target_commitish=abc && gh api repos/{owner}/{repo}/releases -f target_commitish=def'; do
   run_ca PreToolUse "gh api $sp" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
   assert_contains "unreadable release target denies: $sp" "$(message)" "cannot determine release commit"
 done
+# the release is read the way gh reads it (release_scope.py): preview flag, clusters, trailing slash, one release
+RED="$(jq -cn --arg s "$(git -C "$PROJ" rev-parse HEAD)" '[{workflowName:"CI",status:"completed",conclusion:"failure",headSha:$s,createdAt:"1"}]')"
+GREEN_RED="$(jq -cn --arg s "$SHA" --arg r "$(git -C "$PROJ" rev-parse HEAD)" '[{workflowName:"CI",status:"completed",conclusion:"success",headSha:$s,createdAt:"1"},{workflowName:"CI",status:"completed",conclusion:"failure",headSha:$r,createdAt:"2"}]')"
+HEADSHA="$(git -C "$PROJ" rev-parse HEAD)"
+for sp in "-p corsair repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$HEADSHA" "--preview corsair repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$HEADSHA" "-pcorsair repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$HEADSHA" "repos/{owner}/{repo}/releases -p corsair -f target_commitish=$HEADSHA -f tag_name=v9" "repos/{owner}/{repo}/releases/ -f target_commitish=$HEADSHA -f tag_name=v9" "-if target_commitish=$HEADSHA repos/{owner}/{repo}/releases -f tag_name=v9" "-XPOST repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$HEADSHA" "https://api.github.com/repos/acme/app/releases -f tag_name=v9 -f target_commitish=$HEADSHA"; do
+  run_ca PreToolUse "gh api $sp" GH_RUN_LIST_OVERRIDE="$GREEN_RED"
+  assert_contains "release commit is the red one in spelling: $sp" "$(message)" "not green"
+done
+run_ca PreToolUse "gh release create v9 --target $SHA -p" GH_RUN_LIST_OVERRIDE="$GREEN_RED"
+assert_eq "-p is prerelease for release create: the green --target commit is checked" "allow" "$(decision)"
+for sp in "gh release create v9 --target $SHA && gh api repos/{owner}/{repo}/releases -f tag_name=v10 -f target_commitish=$HEADSHA" "gh release create v9 --target $SHA && gh release create v10 --target $HEADSHA" "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$SHA -f target_commitish=$HEADSHA" "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$SHA -F target_commitish=$HEADSHA" "gh release create v9 --target $HEADSHA --target $SHA" "gh release create v9 -R other/repo --target $SHA" "gh release create v9 --bogus x" "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -F target_commitish={branch}" "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -F target_commitish=@f" "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -f 'target_commitish[]=x'" "hub release create -t $SHA v9"; do
+  run_ca PreToolUse "$sp" GH_RUN_LIST_OVERRIDE="$GREEN_RED"
+  assert_eq "unreadable or ambiguous release denies: $sp" "deny" "$(decision)"
+done
+assert_contains "the reason is part of the release block" "$(message)" "cannot determine release commit"
+run_ca PreToolUse "gh release create v9 --target $SHA" GH_RUN_LIST_OVERRIDE="$GREEN_RED" GH_REPO=other/x
+assert_contains "GH_REPO in the environment redirects the release: denied with the reason" "$(message)" "GH_REPO"
 unapprove
 
 tl_results

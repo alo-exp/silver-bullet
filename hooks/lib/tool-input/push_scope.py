@@ -542,3 +542,74 @@ def _shell_scope(script, result, base, environ, git):
     branches = destination_branches(plan, force, head, new, resolved, names)
     return {"verdict": "feature", "reason": "", "dir": directory, "remote": remote, "branches": branches}
 
+
+# --------------------------------------------------------------------------- MCP writes (Invariant M)
+MCP_PUSH_TOOLS = {"push_files", "create_or_update_file", "delete_file", "create_commit", "create_branch"}
+OWNER_REPO_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+GITHUB_URL_RE = re.compile(r"^(?:https://(?:[^@/]+@)?github\.com/|git@github\.com:|ssh://git@github\.com(?::\d+)?/|"
+                           r"git://github\.com/)([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+?)(?:\.git)?/?$")
+
+
+def github_slug(url):
+    """The ``owner/repo`` a github.com remote URL names (https, scp-like ssh, ssh://, git://), else None."""
+    match = GITHUB_URL_RE.match(url)
+    return None if match is None else "%s/%s" % (match.group(1), match.group(2))
+
+
+def origin_slug(base, environ, git=None):
+    """``owner/repo`` of ``remote.origin.url`` in the checkout at ``base`` (None when unknown); one config read."""
+    if not base or not os.path.isdir(base):
+        return None
+    git = git or Git(environ)
+    try:
+        rc, out, _err = git.call(base, ["config", "-z", "--list"])
+    except Strict:
+        return None
+    urls = parse_config_z(out).get("remote.origin.url") if rc == 0 else None
+    return github_slug(urls[-1]) if urls else None
+
+
+def mcp_scope(tool, fields, base, environ, git=None):
+    """Classify an MCP write: ``feature`` only for a non-default branch of a GitHub repository this checkout has a
+    remote for, whose default branch this checkout knows (``refs/remotes/<remote>/HEAD``)."""
+    try:
+        return _mcp_scope(tool, fields, base, environ, git)
+    except Strict as exc:
+        return strict(str(exc))
+
+
+def _mcp_scope(tool, fields, base, environ, git):
+    if tool not in MCP_PUSH_TOOLS:
+        raise Strict("the MCP tool %s writes refs that Silver Bullet cannot scope" % tool)
+    owner, repo, branch = fields.get("owner"), fields.get("repo"), fields.get("branch")
+    if not (isinstance(owner, str) and isinstance(repo, str) and OWNER_REPO_RE.match(owner)
+            and OWNER_REPO_RE.match(repo) and not repo.endswith(".git")):
+        raise Strict("the MCP call does not name its repository as plain owner and repo strings")
+    if not isinstance(branch, str) or not branch:
+        raise Strict("the MCP call names no branch, so it targets the repository's default branch")
+    if not base or not os.path.isdir(base):
+        raise Strict("the working directory of the call is unknown")
+    for name in ENV_DENY:
+        if environ.get(name):
+            raise Strict("%s is set in the environment and redirects git" % name)
+    git = git or Git(environ)
+    _head, _resolved, cfg = read_facts(git, base, [])
+    wanted = ("%s/%s" % (owner, repo)).lower()
+    matching = []
+    for key, values in cfg.items():
+        parts = remote_variable(key)
+        if parts is not None and parts[1] == "url" and any((github_slug(v) or "").lower() == wanted for v in values):
+            matching.append(parts[0])
+    if not matching:
+        raise Strict("the target repository %s/%s is not a remote of this checkout, so its default branch is "
+                     "unknown" % (owner, repo))
+    names = {"main", "master"}
+    for remote in sorted(matching):
+        refs = remote_head_symrefs(git, base, remote, [])
+        if "refs/remotes/%s/HEAD" % remote not in refs:
+            raise Strict("the default branch of remote %s is not known locally: %s" % (remote, SET_HEAD_REMEDY % remote))
+        names |= default_names(cfg, refs, remote)
+    name = branch.removeprefix("refs/heads/")
+    if name in ("HEAD", "@") or not branch_name_ok(name, names):
+        raise Strict("%s is a default branch or not a plain branch name" % branch)
+    return {"verdict": "feature", "reason": "", "dir": base, "remote": sorted(matching)[0], "branches": [name]}
