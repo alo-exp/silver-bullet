@@ -784,6 +784,61 @@ class TracerAndTimeoutTests(Base):
         self.assertLess(time.monotonic() - started, 8)
 
 
+class ExpansionAndEnvConfigTests(Base):
+    def test_assigning_expansions_are_not_inert(self):
+        for word in ("$((HOME=0))", "$[HOME=0]", "${X:=a}", "${X=a}", "${X:+a}", "${a[0]=1}", "$((1+2))", "${!X}", "$?",
+                     "\"$((PATH=0))\"", "x$((IFS=x))y", "<(echo)"):
+            for verb in (": ", "echo ", "printf '%s' ", "test ", "git status ", "git log "):
+                self.strict("%s%s && git push" % (verb, word), "assigns or computes")
+        self.strict("echo > $((H=1)) && git push", "assigns or computes")
+        self.strict(": <<EOF\n$((H=1))\nEOF\ngit push", "assigns or computes")
+        self.strict("CI=$((H=1)) git push", "variable assignment")
+        self.feature(": <<'EOF'\n$((H=1))\nEOF\ngit push")
+        self.feature("echo $HOME ${USER} \"$PWD\" '$((H=1))' && git push")
+        self.feature("git commit -qm \"$(echo hi)\" && git push")
+
+    def test_env_config(self):
+        def env(**kw):
+            return dict(ENV, **kw)
+        cloud = env(GIT_CONFIG_COUNT="3", GIT_CONFIG_KEY_0="credential.interactive", GIT_CONFIG_VALUE_0="false",
+                    GIT_CONFIG_KEY_1="url.https://github.com/.insteadOf", GIT_CONFIG_VALUE_1="git@github.com:",
+                    GIT_CONFIG_KEY_2="safe.directory", GIT_CONFIG_VALUE_2="*")
+        self.feature("git push", env=cloud)
+        self.feature("git push", env=env(GIT_CONFIG_COUNT="0"))
+        for bad in ("x", "-1", "65", "1.5"):
+            self.strict("git push", "GIT_CONFIG_COUNT", env=env(GIT_CONFIG_COUNT=bad))
+        self.strict("git push", "not defined", env=env(GIT_CONFIG_COUNT="1"))
+        self.strict("git push", "not defined", env=env(GIT_CONFIG_COUNT="1", GIT_CONFIG_KEY_0="user.name"))
+        self.strict("git push", "not defined", env=env(GIT_CONFIG_COUNT="1", GIT_CONFIG_VALUE_0="x"))
+        for key in ("remote.origin.push", "REMOTE.origin.pushurl", "push.default", "alias.p", "include.path",
+                    "includeIf.onbranch:x.path", "core.hooksPath", "core.sshCommand", "url.x.pushInsteadOf",
+                    "filter.f.clean", "diff.external", "gpg.program", "branch.main.remote", "remote.pushDefault",
+                    "core.editor", "pager.log"):
+            self.strict("git push", "changes a push", env=env(GIT_CONFIG_COUNT="1", GIT_CONFIG_KEY_0=key,
+                                                              GIT_CONFIG_VALUE_0="x"))
+
+    def test_editor_lfs_and_gpg_settings(self):
+        for cmd in ("git commit --amend", "git commit -a", "git commit", "git commit -q"):
+            self.strict("%s && git push" % cmd, "would run a program", repo=FakeRepo(cfg={"core.editor": ["vi"]}))
+            self.strict("%s && git push" % cmd, "would run a program", repo=FakeRepo(cfg={"sequence.editor": ["vi"]}))
+        for cmd in ("git commit -qm x", "git commit --amend --no-edit", "git commit -F f", "git commit --message=x",
+                    "git commit -am x", "git commit -mx", "git status", "git add -A"):
+            self.feature("%s && git push" % cmd, repo=FakeRepo(cfg={"core.editor": ["vi"]}))
+        self.strict("git commit -qm x && git push", "would run a program",
+                    repo=FakeRepo(cfg={"gpg.ssh.defaultkeycommand": ["x"]}))
+        stock = {"filter.lfs.clean": ["git-lfs clean -- %f"], "filter.lfs.smudge": ["git-lfs smudge -- %f"],
+                 "filter.lfs.process": ["git-lfs filter-process"], "filter.lfs.required": ["true"]}
+        self.feature("git add -A && git commit -qm x && git push", repo=FakeRepo(cfg=stock))
+        for key in stock:
+            if key != "filter.lfs.required":
+                self.strict("git add -A && git push", "would run a program",
+                            repo=FakeRepo(cfg=dict(stock, **{key: ["sh -c evil"]})))
+                self.strict("git add -A && git push", "would run a program",
+                            repo=FakeRepo(cfg=dict(stock, **{key: [stock[key][0], "sh -c evil"]})))
+        self.strict("git add -A && git push", "would run a program",
+                    repo=FakeRepo(cfg={"filter.other.clean": ["git-lfs clean -- %f"]}))
+
+
 class ParserTests(unittest.TestCase):
     def test_andor_and_pipeline_attributes(self):
         script = shell_analysis.parse("a && b || ! c | d; e")

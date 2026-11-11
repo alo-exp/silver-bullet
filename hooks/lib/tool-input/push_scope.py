@@ -24,7 +24,7 @@ GIT_DEADLINE_SECONDS = 3.0
 GIT_CALL_SECONDS = 2.0
 
 ENV_DENY = ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_CONFIG", "GIT_CONFIG_GLOBAL",
-            "GIT_CONFIG_SYSTEM", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT", "GIT_EXEC_PATH", "BASH_ENV", "ENV")
+            "GIT_CONFIG_SYSTEM", "GIT_CONFIG_PARAMETERS", "GIT_EXEC_PATH", "BASH_ENV", "ENV")
 INERT_PROGRAMS = {"echo", "printf", "true", ":", "cat", "head", "tail", "grep", "wc", "sleep", "pwd", "ls", "test", "["}
 # Inert git: a subcommand is inert only when EVERY option is on its exact allowlist (no prefix abbreviations: git
 # accepts --outp= for --output=, which writes any file). log/show/diff/shortlog are "viewers": they also run
@@ -51,7 +51,11 @@ COMMIT_BOOL_CLUSTER = re.compile(r"^-[aqvsn]+$")
 SYMBOLIC_REF_FORMS = (["HEAD"], ["--short", "HEAD"], ["-q", "HEAD"], ["-q", "--short", "HEAD"], ["--short", "-q", "HEAD"])
 CONFIG_FORMS = ("--get", "--get-all", "--get-regexp")
 VIEWERS = {"log", "show", "diff", "shortlog"}
-RUN_CONFIG = re.compile(r"^(core\.fsmonitor|core\.hookspath|filter\..*\.(clean|smudge|process)|gpg\.(.*\.)?program)$")
+RUN_CONFIG = re.compile(r"^(core\.fsmonitor|core\.hookspath|filter\..*\.(clean|smudge|process)|gpg\.(.*\.)?program|"
+                        r"gpg\.ssh\.defaultkeycommand)$")
+EDITOR_CONFIG = re.compile(r"^(core\.editor|sequence\.editor)$")
+LFS_STOCK = {"filter.lfs.clean": "git-lfs clean -- %f", "filter.lfs.smudge": "git-lfs smudge -- %f",
+             "filter.lfs.process": "git-lfs filter-process"}
 VIEW_CONFIG = re.compile(r"^(core\.pager|pager\..*|diff\.external|diff\..*\.(command|textconv))$")
 # which stored settings make an inert git subcommand run a program (a git hook directory is residual 1)
 RUNS_PROGRAMS = {"status": RUN_CONFIG, "add": RUN_CONFIG, "stage": RUN_CONFIG, "commit": RUN_CONFIG,
@@ -299,6 +303,10 @@ def inert_git(sub, args):
                                                        and not args[1].startswith("-"))
     else:
         ok = False
+    if ok and sub == "commit" and not any(
+            a in ("-m", "--message", "-F", "--file", "--no-edit") or a.startswith(("--message=", "--file=", "-m"))
+            or COMMIT_CLUSTER.match(a) for a in args):
+        return "commit-editor"  # no message on the command line: git starts core.editor
     return sub if ok else None
 
 
@@ -377,9 +385,28 @@ def check_program_config(subs, cfg):
     path, gpg program; pager, external diff, textconv for the viewers): any such setting is final delivery."""
     for sub in subs:
         pattern = (VIEW_CONFIG if sub in VIEWERS else RUNS_PROGRAMS.get(sub, RUN_CONFIG))
-        for key in cfg:
-            if pattern.match(key) or (sub in VIEWERS and RUN_CONFIG.match(key)):
+        for key, values in cfg.items():
+            if key in LFS_STOCK and all(v == LFS_STOCK[key] for v in values):
+                continue  # the stock git-lfs filter commands (git-lfs is installed with git)
+            if pattern.match(key) or (sub in VIEWERS and RUN_CONFIG.match(key)) or \
+                    (sub == "commit-editor" and (RUN_CONFIG.match(key) or EDITOR_CONFIG.match(key))):
                 raise Strict("git %s would run a program named by the setting %s" % (sub, key))
+
+
+def plain_words(script):
+    """An expansion that assigns or computes in the CURRENT shell (`$((X=1))`, `$[X=1]`, `${X:=v}`, `${X=v}`, array
+    forms; anything the parser keeps as ``dyn``) can change a variable git reads (HOME, PATH, GIT_*...). Command
+    substitutions run in a subshell and their commands are judged by S5; plain `$NAME` reads are harmless."""
+    for andor, _background in script.items:
+        for pipeline in andor:
+            for node in pipeline:
+                words = list(node.words) + [w for assign in node.assigns for w in assign.value]
+                for redir in node.redirs:
+                    words += [w for w in (redir.target, redir.body_word) if w is not None]
+                for word in words:
+                    if any(atom[0] == "dyn" for atom in word.atoms):
+                        raise Strict("a word uses an expansion that assigns or computes a shell variable "
+                                     "(arithmetic, ${..=..}, ${..:+..})")
 
 
 def check_state_steps(script, kinds):
@@ -605,8 +632,33 @@ def is_coverage_tracer(value, environ):
     return stat.S_ISREG(info.st_mode) and info.st_uid == os.geteuid() and not info.st_mode & 0o022
 
 
+ENV_CONFIG_DENY = re.compile(
+    r"^(alias\..+|include\..*|includeif\..*|core\.(hookspath|sshcommand|editor|pager|fsmonitor|askpass|gitproxy)|"
+    r"remote\..+\.(push|pushurl|mirror|receivepack|uploadpack|vcs|proxy)|remote\.pushdefault|push\..+|"
+    r"url\..+\.pushinsteadof|filter\..+|diff\..+|pager\..+|gpg\..+|branch\..+\.(remote|pushremote|merge))$",
+    re.IGNORECASE)
+
+
+def env_config_check(environ):
+    """GIT_CONFIG_COUNT/KEY_n/VALUE_n (cloud sessions export credential and insteadOf settings this way): well
+    formed, and no key that changes what a push sends or runs a program (git also lists them in the stored
+    configuration, which is judged again by the same rules)."""
+    count = environ.get("GIT_CONFIG_COUNT")
+    if not count:
+        return
+    if not (count.isdigit() and int(count) <= 64):
+        raise Strict("GIT_CONFIG_COUNT is not a number and redirects git")
+    for index in range(int(count)):
+        key = environ.get("GIT_CONFIG_KEY_%d" % index)
+        if not key or ("GIT_CONFIG_VALUE_%d" % index) not in environ:
+            raise Strict("GIT_CONFIG_COUNT names a setting that is not defined (redirects git)")
+        if ENV_CONFIG_DENY.match(key):
+            raise Strict("GIT_CONFIG_KEY_%d=%s sets git configuration that changes a push" % (index, key))
+
+
 def env_check(environ):
     """S1: variables that redirect git or run code in every bash (the repository's own coverage tracer excepted)."""
+    env_config_check(environ)
     for name in ENV_DENY:
         value = environ.get(name)
         if name == "BASH_ENV" and value and is_coverage_tracer(value, environ):
@@ -643,6 +695,7 @@ def _shell_scope(script, result, base, environ, git, parse, logical_base):
     # S2/S3/S4 shape (a single `bash -lc '<script>'` is judged by its script)
     script, wrapper = unwrap_shell(script, parse)  # a script that does not parse is unseen code (S0)
     top_level(script)
+    plain_words(script)
     top_kinds = []
     for andor, _background in script.items:
         for pipeline in andor:

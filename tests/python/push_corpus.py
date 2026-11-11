@@ -27,6 +27,11 @@ def H(rid, cmd, **opts):
 
 
 PUSH_ORIGIN = "git push origin HEAD"
+# files a previous, ungated write could have planted: a relative HOME / PATH then makes git read them
+PLANT_HOME = ("mkdir -p 0; printf '[url \"@S@/origin.git\"]\\n\\tinsteadOf = https://github.com/acme/app.git\\n"
+              "[remote \"origin\"]\\n\\tpush = refs/heads/feat/x:refs/heads/main\\n' > 0/.gitconfig")
+PLANT_PATH = ("mkdir -p 0; printf '#!/bin/sh\\nexec /usr/bin/git -C @S@/wt-main push origin HEAD\\n' > 0/git; "
+              "chmod +x 0/git")
 D = "@S@/wt-main"
 
 ATTACKS = [
@@ -184,6 +189,26 @@ ATTACKS = [
     C("X64", "git status && git push", "N", "would run a program", setup="git config core.fsmonitor true"),
     C("X65", "git commit -qm x && git push", "N", "would run a program", setup="git config core.hooksPath hk"),
     C("X66", "git add -A && git push", "N", "would run a program", setup="git config filter.f.clean cat"),
+    C("X70", ": $((HOME=0)) && git push origin feat/x", "P", "assigns or computes", setup=PLANT_HOME),
+    C("X71", 'echo "$((HOME=0))" && git push origin feat/x', "P", "assigns or computes", setup=PLANT_HOME),
+    C("X72", ": $((PATH=0)) && git push origin feat/x", "P", "assigns or computes", setup=PLANT_PATH),
+    C("X73", ": ${GIT_DIR:=@S@/wt-main/.git} && git push origin HEAD", None, "assigns or computes"),
+    C("X74", ": ${GIT_DIR=@S@/wt-main/.git}; git push origin HEAD", None, "assigns or computes"),
+    C("X75", "test $[HOME=0] && git push origin feat/x", "P", "assigns or computes", setup=PLANT_HOME),
+    C("X76", "printf '%s' $((IFS=x)) && git push origin feat/x", "N", "assigns or computes"),
+    C("X77", ": <<EOF\n$((HOME=0))\nEOF\ngit push origin feat/x", "P", "assigns or computes", setup=PLANT_HOME),
+    C("X78", ": '$((HOME=0))' \"${X:=y}\" && git push origin feat/x", "N", "assigns or computes"),
+    C("X79", "git commit -qm \"$((HOME=0))\" && git push origin feat/x", None, "assigns or computes", setup=PLANT_HOME),
+    C("X80", "echo > $((HOME=0)) && git push origin feat/x", "N", "assigns or computes"),
+    C("X81", "git push origin feat/x", "P", "GIT_CONFIG_KEY_0", env={"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "remote.origin.push", "GIT_CONFIG_VALUE_0": "refs/heads/feat/x:refs/heads/main"}),
+    C("X82", "git push origin feat/x", "N", "not defined", env={"GIT_CONFIG_COUNT": "2", "GIT_CONFIG_KEY_0": "user.name", "GIT_CONFIG_VALUE_0": "x"}),
+    C("X83", "git push origin feat/x", "N", "not a number", env={"GIT_CONFIG_COUNT": "x"}),
+    C("X84", "git push origin feat/x", "N", "not defined", env={"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "user.name"}),
+    C("X85", "git commit --amend && git push", "N", "would run a program", setup="git config core.editor true"),
+    C("X86", "git commit -a && git push", "N", "would run a program", setup="git config core.editor true"),
+    C("X87", "git commit -q && git push", "N", "would run a program", setup="git config core.editor true"),
+    C("X88", "git commit -qm x && git push", "N", "would run a program", setup="git config gpg.ssh.defaultKeyCommand true"),
+    C("X89", "git add -A && git push", "N", "would run a program", setup="git config filter.lfs.clean 'sh -c evil'"),
     C("E15", "git push origin feat/x", "N", "set-head", setup="git remote set-head origin -d"),
     C("E16", "git push origin HEAD", "N", "detached", setup="git checkout -q --detach"),
 ]
@@ -234,6 +259,11 @@ HONEST = [
     H("H45", "git add -A && git commit -qam 'msg' && git push"),
     H("H46", "", payload="codex", argv=["bash", "-lc", "git push origin feat/x"], cwd="w"),
     H("H47", "git log --oneline --graph -5 --format=%h && git push"),
+    H("H48", 'echo $HOME ${USER} "$PWD" && git push', ),
+    H("H49", "git commit --amend --no-edit -q && git push", setup="git config core.editor 'touch /nonexistent/never'"),
+    H("H50", "git commit -qm x && git push", setup="git config core.editor 'touch /nonexistent/never'"),
+    H("H51", "git add -A && git commit -qm x && git push", setup="git config filter.lfs.clean 'git-lfs clean -- %f'; git config filter.lfs.smudge 'git-lfs smudge -- %f'; git config filter.lfs.process 'git-lfs filter-process'; git config filter.lfs.required true"),
+    H("H52", "git push", env={"GIT_CONFIG_COUNT": "3", "GIT_CONFIG_KEY_0": "credential.interactive", "GIT_CONFIG_VALUE_0": "false", "GIT_CONFIG_KEY_1": "url.https://github.com/.insteadOf", "GIT_CONFIG_VALUE_1": "git@github.com:", "GIT_CONFIG_KEY_2": "url.https://github.com/.insteadOf", "GIT_CONFIG_VALUE_2": "ssh://git@github.com/"}),
     H("H36", "RTK_DISABLED=1 git push origin feat/x"),
     H("H37", "LC_ALL=C CI=1 NO_COLOR=1 GIT_TERMINAL_PROMPT=0 git push -u origin HEAD"),
 ]
