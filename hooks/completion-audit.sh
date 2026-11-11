@@ -98,6 +98,9 @@ esac
 ca_base_bad=0
 # shellcheck disable=SC2034  # ca_base_bad is read by ca_push_targets_default_branch (lib/completion-audit/classify.sh)
 ca_base_dir="$(ca_payload_base_dir "$input")" || ca_base_bad=1
+# the cwd as the host spelled it (a symbolic link is not resolved): the push scope refuses a `cd ..` through one
+SB_PUSH_LOGICAL_CWD="$(printf '%s' "$input" | jq -r '(.cwd // "") | if type == "string" then . else "" end')"
+export SB_PUSH_LOGICAL_CWD
 ca_classify_command "$cmd" "$mcp_payload" "$ca_base_dir" || exit 0
 
 # ── Error handler: warn and exit 0 on unexpected failure ─────────────────────

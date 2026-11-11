@@ -655,6 +655,123 @@ class McpAnalysisTests(Base):
         self.assertNotIn("release", shell_analysis.analyze_command("git status", self.tmp, False))
 
 
+class InertGitTests(Base):
+    def test_viewer_options(self):
+        for cmd in ("git log -1 --output=/x", "git log --outp=/x", "git log --out=/x", "git log -O/x", "git show --output=/x",
+                    "git diff --output=/x", "git shortlog --output=/x", "git diff --ext-diff", "git log --textconv",
+                    "git log --format", "git diff --no-index", "git log -p --output"):
+            self.strict("%s && git push" % cmd, "also runs")
+        for cmd in ("git log --oneline -3", "git log --format=%h -5", "git diff --stat --cached", "git show --stat HEAD",
+                    "git shortlog -sn HEAD", "git diff -- a b", "git log -- --output=x"):
+            self.feature("%s && git push" % cmd)
+
+    def test_other_inert_forms(self):
+        for cmd in ("git status -sb", "git status --short --branch", "git add -A", "git add -- a b", "git add -u .",
+                    "git commit -m msg", "git commit -qam msg", "git commit -a -m msg", "git commit --message=msg",
+                    "git commit -mmsg", "git commit -F msg.txt", "git commit --amend --no-edit", "git commit -nq -m x",
+                    "git symbolic-ref --short HEAD", "git symbolic-ref -q HEAD", "git config --get a.b",
+                    "git config --list", "git config -l", "git remote get-url origin", "git branch --show-current",
+                    "git rev-parse --short HEAD", "git ls-files", "git describe --tags"):
+            self.feature("%s && git push" % cmd)
+        for cmd in ("git status --bogus", "git add --chmod=+x .", "git commit --template=x -m y", "git commit -m",
+                    "git commit -C HEAD", "git symbolic-ref HEAD refs/heads/x", "git symbolic-ref --delete HEAD",
+                    "git config a.b c", "git config --unset a.b", "git config --get", "git remote get-url -x",
+                    "git remote add x y", "git branch newb", "git config --edit", "git stash", "git mv a b"):
+            self.strict("%s && git push" % cmd, "also runs")
+
+    def test_viewer_config(self):
+        for key in ("core.pager", "pager.log", "diff.external", "diff.x.textconv", "diff.y.command", "core.fsmonitor"):
+            self.strict("git log --oneline && git push", "pager", repo=FakeRepo(cfg={key: ["x"]}))
+        self.feature("git status && git push", repo=FakeRepo(cfg={"core.pager": ["less"]}))
+
+    def test_helpers(self):
+        self.assertIsNone(push_scope.inert_git("log", ["--output=x"]))
+        self.assertIs(push_scope.inert_git("log", ["--oneline"]), True)
+        self.assertIs(push_scope.inert_git("status", []), False)
+        self.assertTrue(push_scope.options_ok(["-5"], set()))
+        self.assertFalse(push_scope.options_ok(["-m"], set(), values={"-m"}))
+
+
+class WrapperAndLogicalCwdTests(Base):
+    def parse(self, text):
+        return shell_analysis.parse(text)
+
+    def wrapped(self, cmd, **kw):
+        text = "bash -lc " + shell_analysis.shlex.quote(cmd)
+        result = shell_analysis.analyze_command(text, self.tmp, False)
+        return push_scope.shell_scope(shell_analysis.parse(text), result, self.tmp, ENV,
+                                      push_scope.Git(ENV, kw.get("repo") or FakeRepo()), shell_analysis.parse)
+
+    def test_bash_lc_is_unwrapped(self):
+        self.assertEqual(self.wrapped("git push origin feat/x")["verdict"], "feature")
+        self.assertEqual(self.wrapped("git add -A && git commit -qm x && git push")["verdict"], "feature")
+        for cmd in ("git checkout main && git push", "git push &", "git push 'x"):
+            self.assertEqual(self.wrapped(cmd)["verdict"], "strict", cmd)
+        for text in ("bash -lc 'git push' extra", "bash -c 'git push' ; echo", "bash -x -c 'git push'",
+                     "X=1 bash -c 'git push'", "bash -c 'git push' > /dev/null", "! bash -c 'git push'", "zsh -c 'git push'",
+                     "bash -c 'git push' &", 'bash -c "$X"'):
+            result = shell_analysis.analyze_command(text, self.tmp, False)
+            out = push_scope.shell_scope(shell_analysis.parse(text), result, self.tmp, ENV,
+                                         push_scope.Git(ENV, FakeRepo()), shell_analysis.parse)
+            with self.subTest(text=text):
+                self.assertEqual(out["verdict"], "strict", out)
+        out = push_scope.shell_scope(shell_analysis.parse("git push"),
+                                     shell_analysis.analyze_command("git push", self.tmp, False), self.tmp, ENV,
+                                     push_scope.Git(ENV, FakeRepo()))
+        self.assertEqual(out["verdict"], "feature")
+
+    def test_cd_dotdot_through_a_symlink(self):
+        link = os.path.join(self.tmp, "lnk")
+        os.symlink(os.path.join(self.tmp, "sub", "deep"), link)
+        physical = os.path.join(self.tmp, "sub", "deep")
+        result = shell_analysis.analyze_command("cd .. && git push", physical, False)
+        script = shell_analysis.parse("cd .. && git push")
+        out = push_scope.shell_scope(script, result, physical, ENV, push_scope.Git(ENV, FakeRepo()), None, link)
+        self.assertIn("symbolic link", out["reason"])
+        out = push_scope.shell_scope(script, result, physical, ENV, push_scope.Git(ENV, FakeRepo()), None, physical)
+        self.assertEqual(out["verdict"], "feature")
+        os.symlink(os.path.join(self.tmp, "other"), os.path.join(self.tmp, "sub", "ln2"))
+        self.strict("cd sub/ln2/.. && git push", "symbolic link")
+        self.feature("cd sub/ln2 && git push")
+
+
+class TracerAndTimeoutTests(Base):
+    def test_tracer_path_errors(self):
+        real = push_scope.COVERAGE_BASH_ENV
+        cov = os.path.join(self.tmp, "cov")
+        os.makedirs(cov, exist_ok=True)
+        env = dict(ENV, SB_COV_DIR=cov)
+        self.assertFalse(push_scope.is_coverage_tracer(real + "/", env))
+        self.strict("git push", "BASH_ENV", env=dict(env, BASH_ENV=real + "/"))
+        gone = os.path.join(self.tmp, "gone", "tests", "coverage", "bash-env.sh")
+        saved = push_scope.COVERAGE_BASH_ENV
+        push_scope.COVERAGE_BASH_ENV = gone
+        try:
+            self.assertFalse(push_scope.is_coverage_tracer(gone, env))
+        finally:
+            push_scope.COVERAGE_BASH_ENV = saved
+
+    def test_slow_git_is_killed_with_its_children(self):
+        import time
+        bindir = os.path.join(self.tmp, "slowbin")
+        os.makedirs(bindir, exist_ok=True)
+        stub = os.path.join(bindir, "git")
+        with open(stub, "w") as fh:
+            fh.write("#!/bin/sh\n(sleep 20) &\nsleep 20\n")
+        os.chmod(stub, 0o755)
+        env = dict(ENV, PATH=bindir + ":" + ENV["PATH"])
+        git = push_scope.Git(env)
+        saved = push_scope.GIT_CALL_SECONDS
+        push_scope.GIT_CALL_SECONDS = 0.5
+        started = time.monotonic()
+        try:
+            with self.assertRaises(push_scope.Strict):
+                git.call(self.tmp, ["status"])
+        finally:
+            push_scope.GIT_CALL_SECONDS = saved
+        self.assertLess(time.monotonic() - started, 8)
+
+
 class ParserTests(unittest.TestCase):
     def test_andor_and_pipeline_attributes(self):
         script = shell_analysis.parse("a && b || ! c | d; e")

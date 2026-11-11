@@ -136,8 +136,8 @@ class CorpusTest(unittest.TestCase):
 
     def test_counts(self):
         ids = [r["id"] for r in push_corpus.ROWS]
-        self.assertEqual(len(push_corpus.ATTACKS), 108)  # A1-A15, B1-B20, C1-C22, D1-D26, E1-E16, E17-E25 (assignments)
-        self.assertEqual(len(push_corpus.HONEST), 37)
+        self.assertEqual(len(push_corpus.ATTACKS), 129)  # A1-A15, B1-B20, C1-C22, D1-D26, E1-E16, E17-E25 (assignments)
+        self.assertEqual(len(push_corpus.HONEST), 47)
 
 
 if __name__ == "__main__":
