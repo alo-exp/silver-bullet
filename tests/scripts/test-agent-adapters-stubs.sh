@@ -222,6 +222,18 @@ mkdir -p "$TL_TMP/planted"; ln -s "$TL_TMP/victim-file" "$TL_TMP/planted/latest.
 ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="$TL_TMP/planted"
 assert_contains "transcript: planted file link refused" "$TL_ERR" "transcript target is a symlink"
 assert_eq "transcript: planted link target untouched" "precious" "$(cat "$TL_TMP/victim-file")"
+# a user-owned but group/world-writable named directory is refused (planted files would be written into)
+mkdir -p "$TL_TMP/wwdir"; chmod 0777 "$TL_TMP/wwdir"; printf 'planted\n' >"$TL_TMP/wwdir/latest.jsonl"; chmod 0666 "$TL_TMP/wwdir/latest.jsonl"
+ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="$TL_TMP/wwdir"
+assert_contains "transcript: world-writable named directory refused" "$TL_ERR" "group/other-writable"
+assert_eq "transcript: planted file left alone" "planted" "$(cat "$TL_TMP/wwdir/latest.jsonl")"
+mkdir -p "$TL_TMP/gwdir"; chmod 0770 "$TL_TMP/gwdir"
+ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="$TL_TMP/gwdir"
+assert_contains "transcript: group-writable named directory refused" "$TL_ERR" "group/other-writable"
+mkdir -p "$TL_TMP/okdir"; chmod 0755 "$TL_TMP/okdir"
+ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"' CODEX_TRANSCRIPT_DIR="$TL_TMP/okdir"
+assert_file_exists "transcript: an owner-only-writable named directory is accepted (and tightened to 0700)" "$TL_TMP/okdir/latest.jsonl"
+assert_eq "transcript: accepted directory tightened" "0o700" "$(python3 -c 'import os,sys;print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$TL_TMP/okdir")"
 # uncreatable directories fail closed
 ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="/proc/no/such/dir"
 assert_contains "transcript: uncreatable named directory fails" "$TL_OUT" "rc=1"

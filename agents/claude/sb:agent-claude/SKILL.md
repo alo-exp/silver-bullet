@@ -230,7 +230,7 @@ Sidekick-inspired **single-task** lifecycle:
 | Class | Signals | Parent action |
 |-------|---------|---------------|
 | **Stuck** | Idle timeout, no post-submit output, `Queued follow-up` | Re-brief with narrower scope; Enter-wake (E2E-081); retry once |
-| **Quota (429)** | provider error lines only (`Error:`/`API Error:` lines, HTTP status lines, JSON error objects, provider quota sentences); a bare `429` or `quota` in test output or file names is not one; the unchanged-tree check sees tracked and untracked files but not git-ignored files or writes outside the work dir | delegate re-runs only if the work dir is unchanged since the attempt (git) or `--quota-retry` was passed; 5-hour/weekly windows are never short-retried; if exhausted, schedule resume |
+| **Quota (429)** | provider error lines only (`Error:`/`API Error:` lines, HTTP status lines, JSON error objects, provider quota sentences); a bare `429` or `quota` in test output or file names is not one; the unchanged-tree check sees tracked and untracked files but not git-ignored files, writes outside the work dir, or changes past the first 4 MiB of a large untracked file | delegate re-runs only if the work dir is unchanged since the attempt (git) or `--quota-retry` was passed; 5-hour/weekly windows are never short-retried; if exhausted, schedule resume |
 | **Auth** | `auth`, `login`, `not logged in` | Stop — user must refresh Claude credentials; do not rotate keys in prompt |
 | **Harness** | `ERROR:` from expect harness | Fix SB harness; file issue if reproducible |
 | **Product** | Claude completed but acceptance fails | New brief with gap list; do not claim PASS |

@@ -223,7 +223,7 @@ while True:
         # The CLI may have written its last chunk and exited while select() was timing out:
         # drain what is left in the pipe (non-blocking, to EOF) before leaving the loop.
         os.set_blocking(fd, False)
-        while True:
+        while time.monotonic() < hard_deadline:
             try:
                 data = os.read(fd, 65536)
             except BlockingIOError:
