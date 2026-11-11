@@ -43,6 +43,13 @@ sb_test_consent_revoke_all() {
 # sb_test_consent_mirror CONFIG [CAPS]: grant machine-wide CAPS (default enforce) for every tool the
 # project file CONFIG recommends (enabled_by_user: true), the way a user who answered "yes" to each
 # recommendation would have. For tests that write a config and then exercise a consumer of consent.
+# sb_test_consent_reset_mirror CONFIG [CAPS]: start from an empty store, then mirror CONFIG. For
+# tests that rewrite the project file between runs and expect the user's answers to follow it.
+sb_test_consent_reset_mirror() {
+  sb_test_consent_revoke_all 2>/dev/null || true
+  sb_test_consent_mirror "$@"
+}
+
 sb_test_consent_mirror() {
   local config="$1" caps="${2:-enforce}" tool
   [[ -n "${XDG_CONFIG_HOME:-}" ]] || sb_test_consent_sandbox

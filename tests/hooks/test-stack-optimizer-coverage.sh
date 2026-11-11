@@ -105,6 +105,22 @@ sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "gitignore repair tolerat
 assert_not_contains "failed repair leaves file unchanged" "$(cat "$GI")" '!.agentmemory/memory/**'
 unstub sed
 [[ -z "$(find "$RP" -maxdepth 1 -name '.gitignore.*' 2>/dev/null)" ]] && tl_pass "no temp file is left behind" || tl_fail "no temp file is left behind"
+# a failing copy, move or chmod leaves the user's file as it was and leaves no temp file behind
+printf '# === agentmemory managed block ===\n!.agentmemory/memory/\n' >"$GI"
+tl_stub cp 'exit 1'; hash -r
+sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "a failed copy does not fail the repair" || tl_fail "a failed copy does not fail the repair"
+assert_not_contains "a failed copy leaves the file unchanged" "$(cat "$GI")" '!.agentmemory/memory/**'
+unstub cp
+rm -f "$GI"; tl_stub mv 'exit 1'; hash -r
+sb_stack_ensure_agentmemory_gitignore "$RP" || true
+assert_file_absent "a failed move writes nothing" "$GI"
+unstub mv
+tl_stub chmod 'exit 1'; hash -r
+sb_stack_ensure_agentmemory_gitignore "$RP" || true
+assert_contains "a failed chmod on a new file still writes the block" "$(cat "$GI")" "# === agentmemory managed block ==="
+unstub chmod
+[[ -z "$(find "$RP" -maxdepth 1 -name '.gitignore.*' 2>/dev/null)" ]] && tl_pass "failed writes leave no temp file" || tl_fail "failed writes leave no temp file"
+rm -f "$GI"
 # A committed symlink at .gitignore must never be followed (it could point at ~/.bashrc).
 VICTIM_GI="$TL_TMP/victim-bashrc"; printf 'export A=1\n' >"$VICTIM_GI"
 rm -f "$GI"; ln -s "$VICTIM_GI" "$GI"
@@ -166,6 +182,16 @@ assert_contains "env defaults applied" "$(cat "$EF")" "AGENTMEMORY_INJECT_CONTEX
 sb_stack_merge_agentmemory_env "$RP"
 assert_eq "env block replaced once" "1" "$(grep -c '# === SB synergy_max managed block ===' "$EF")"
 assert_contains "env keeps user line" "$(cat "$EF")" "USER=1"
+# Re-running is idempotent: no extra blank lines, and .env.bak stays the user's ORIGINAL file.
+sum1="$(cksum <"$EF")"; lines1="$(wc -l <"$EF" | tr -d ' ')"
+sb_stack_merge_agentmemory_env "$RP"; sb_stack_merge_agentmemory_env "$RP"
+assert_eq "env re-merge leaves the file byte-identical" "$sum1" "$(cksum <"$EF")"
+assert_eq "env re-merge adds no lines" "$lines1" "$(wc -l <"$EF" | tr -d ' ')"
+assert_eq "env backup keeps the first original" "USER=1" "$(cat "$EF.bak")"
+rm -f "$EF" "$EF.bak"; sb_stack_merge_agentmemory_env "$RP"
+assert_eq "env without a prior file starts with the managed block" "# === SB synergy_max managed block ===" "$(head -n 1 "$EF")"
+assert_file_absent "env without a prior file makes no backup" "$EF.bak"
+printf 'USER=1\n' >"$EF"
 before="$(cat "$EF")"
 assert_eq "env dry-run message" "DRY-RUN: merge $EF (backup .env.bak)" "$(SB_STACK_OPTIMIZER_DRY_RUN=1 sb_stack_merge_agentmemory_env "$RP" "" p)"
 assert_eq "env dry-run untouched" "$before" "$(cat "$EF")"

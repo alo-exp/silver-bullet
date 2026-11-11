@@ -131,6 +131,8 @@ for c in "sed -i s/a/b/ src/a.py" "echo x > src/a.py" "pytest > out.log" "rm -rf
   yes_t "needs_gate: writes, delivery and installs are gated: $c" sb_opt_in_shell_needs_gate graphify "$c"
 done
 no_t "needs_gate: echoing a commit command is read-only" sb_opt_in_shell_needs_gate graphify "echo 'git commit -m x'"
+# a write analysis that fails is treated as "no writes found"
+( sb_shell_candidate_write_paths() { return 1; }; sb_opt_in_shell_needs_gate graphify "make build" ) && tl_fail "needs_gate: a failing write analysis gates nothing" || tl_pass "needs_gate: a failing write analysis gates nothing"
 no_t "needs_gate: the tool's own command is exempt" sb_opt_in_shell_needs_gate graphify "graphify update ."
 yes_t "is_delivery: a variable program word is opaque" sb_opt_in_shell_is_delivery 'X=git; ${X} commit'
 no_t "is_delivery: empty" sb_opt_in_shell_is_delivery ""
@@ -188,6 +190,8 @@ no_t "stamp_write: a nested path under a missing directory is refused" env SB_RU
 assert_file_absent "stamp_write: no tree was created" "$WSTATE/trivial"
 no_t "stamp_write: a path outside the state dir needs its directory to exist" env SB_RUNTIME_STATE_DIR="$WSTATE" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$TL_TMP/nodir/x-usage"
 assert_file_absent "stamp_write: nothing created outside" "$TL_TMP/nodir"
+printf x >"$TL_TMP/a-file"
+no_t "stamp_write: a state dir that cannot be created is refused" env SB_RUNTIME_STATE_DIR="$TL_TMP/a-file/state" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$TL_TMP/a-file/state/a-usage"
 yes_t "stamp_write: the state dir itself is created" env SB_RUNTIME_STATE_DIR="$WSTATE" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$WSTATE/a-usage"
 yes_t "stamp_write: a one-level marker directory is created" env SB_RUNTIME_STATE_DIR="$WSTATE" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$WSTATE/markers/m"
 no_t "stamp_write: a two-level marker directory is refused" env SB_RUNTIME_STATE_DIR="$WSTATE" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$WSTATE/markers2/deep/m"
