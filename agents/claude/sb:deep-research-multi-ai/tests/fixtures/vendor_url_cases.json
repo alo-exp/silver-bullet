@@ -1,0 +1,524 @@
+{
+ "neg": [
+  "Redirect via https://example.com/a,cursor.com/x after login.",
+  "Redirect via https://example.com/x;cursor.com/y after login.",
+  "Redirect via https://example.org?q=(cursor.com/x) after login.",
+  "Redirect via https://example.org?q='cursor.com/pricing' after login.",
+  "Redirect via https://example.org#!cursor.com/x after login.",
+  "Redirect via https://example.org?q=a|cursor.com/x after login.",
+  "Redirect via https://example.org?next=:cursor.com/x after login.",
+  "Redirect via https://example.org?u=*cursor.com/x after login.",
+  "Redirect via https://example.org?x=1;cursor.com/x after login.",
+  "Redirect via https://example.org?x=1~cursor.com/x after login.",
+  "Redirect via https://example.org?x=\"cursor.com/x\" after login.",
+  "Redirect via https://example.org?next=https://cursor.com/ after login.",
+  "Redirect via https://example.org#https://devin.ai/ after login.",
+  "Archive copy: https://example.com/cursor.com/x is mirrored.",
+  "Archive copy: https://example.com/www.devin.ai is mirrored.",
+  "Tracking https://example.com/r?u=www.tembo.io&s=1 in the logs.",
+  "Tracking https://example.com/r?u=%20www.tembo.io/x in the logs.",
+  "Phishing kit at https://cursor.com.evil.example/login copies the page.",
+  "Phishing kit at https://notcursor.com/login copies the page.",
+  "Phishing kit at https://cursor.com@evil.example/login copies the page.",
+  "Phishing kit at https://cursor.com:443@evil.example/login copies the page.",
+  "Phishing kit at https://devin.ai.evil.example/ copies the page.",
+  "Phishing kit at https://devin.ai-login.com/ copies the page.",
+  "Phishing kit at https://evil-devin.ai/ copies the page.",
+  "Phishing kit at https://cursor.com.Evil.io/ copies the page.",
+  "Phishing kit at https://cursor.com.\u00e9vil.io/ copies the page.",
+  "Phishing kit at https://cursor.com.\u00c9VIL.io/ copies the page.",
+  "Phishing kit at https://cursor.com\u3002evil.example/ copies the page.",
+  "Phishing kit at https://cursor.com\uff0eevil.example/ copies the page.",
+  "Phishing kit at https://cursor.com\uff61evil.example/ copies the page.",
+  "Phishing kit at https://cursor.com%2eevil.example/ copies the page.",
+  "Phishing kit at https://cursor.com\u200b.evil.example/ copies the page.",
+  "Phishing kit at https://cursor.com..evil.example/ copies the page.",
+  "Phishing kit at https://cursor.com._x.io/ copies the page.",
+  "Phishing kit at https://cursor.com~evil.example/ copies the page.",
+  "Phishing kit at https://cursor.com!evil.example/ copies the page.",
+  "Phishing kit at https://xn--cursr-9za.com/ copies the page.",
+  "Phishing kit at https://www.cursor.community/ copies the page.",
+  "Phishing kit at https://www.cursor.com-evil.example/ copies the page.",
+  "Phishing kit at https://conductor.builder.io/ copies the page.",
+  "Phishing kit at https://sb.alolabs.dev.evil.example/ copies the page.",
+  "Phishing kit at https://alolabs.dev/ copies the page.",
+  "Email hello@cursor.com for access.",
+  "Email <devin.ai@example.com> for access.",
+  "Email mailto:team@tembo.io/x for access.",
+  "Login as https://admin@cursor.co/x for access.",
+  "Edit C:\\Users\\me\\cursor.com\\notes.txt today.",
+  "Edit ~/sites/cursor.com/index.html today.",
+  "Edit ./conductor.build/BUILD today.",
+  "Edit file:///srv/devin.ai/x today.",
+  "Edit src/tembo.io/main.go today.",
+  "Compute ratio = devin.ai/2 for the trial.",
+  "Call self.conductor.build/2 in the loop.",
+  "Call obj.cursor.com/x in the loop.",
+  "Call conductor.build()/2 in the loop.",
+  "The Cursor class calls cursor.commit/x on the DB.",
+  "Set tembo.io_timeout/2 for the elephant tracker.",
+  "Visit HTTPS://CURSOR.COM/PRICING for the DOS program.",
+  "Visit Cursor.com/pricing for the DOS program.",
+  "Visit WWW.CURSOR.COM for the DOS program.",
+  "Fanfic at github.com/obra/superpowers-fanfic is popular.",
+  "Fanfic at https://gist.github.com/obra/superpowers is popular.",
+  "Fanfic at https://raw.githubusercontent.com/obra/superpowers/main/x is popular.",
+  "History at openai.com/codex-history and openai.com/index/codex.",
+  "Docs at docs.anthropic.com/en/docs/claude-code/overview-old.",
+  "Mirror at https://example.com/github.com/obra/superpowers today.",
+  "Look at github.com/gsd-build for habits.",
+  "Look at https://github.com/ for habits.",
+  "See [cursor.com/pricing](https://example.com/) for the DOS caret.",
+  "See [https://devin.ai/](https://example.com/) for Devin from accounting."
+ ],
+ "neg12": [
+  [
+   "Q",
+   "Redirect via https://example.org/?next=(https://cursor.com/x) after login."
+  ],
+  [
+   "Q",
+   "Redirect via https://example.org/?next='https://devin.ai/' after login."
+  ],
+  [
+   "Q",
+   "Redirect via https://example.org/?next=\"https://devin.ai/\" after login."
+  ],
+  [
+   "Q",
+   "Redirect via https://example.org/?next=<https://devin.ai/> after login."
+  ],
+  [
+   "Q",
+   "Redirect via https://example.org/?next=[https://devin.ai/] after login."
+  ],
+  [
+   "Q",
+   "Redirect via https://example.org/#(https://devin.ai/) after login."
+  ],
+  [
+   "Q",
+   "Redirect via https://example.org/r/(https://conductor.build/) after login."
+  ],
+  [
+   "Q",
+   "Redirect via https://example.org/?a=1&b=(https://tembo.io/) after login."
+  ],
+  [
+   "Q",
+   "Redirect via https://example.org/?next=https://cursor.com/x after login."
+  ],
+  [
+   "Q",
+   "Redirect via https://example.org/?u=www.devin.ai after login."
+  ],
+  [
+   "Q",
+   "Redirect via https://example.org/?u=(www.devin.ai) after login."
+  ],
+  [
+   "Q",
+   "Redirect via https://example.org/https://devin.ai/ after login."
+  ],
+  [
+   "Q",
+   "Wayback: https://web.archive.org/web/2024/https://devin.ai/ snapshot."
+  ],
+  [
+   "Q",
+   "Wayback: https://web.archive.org/web/2024/(https://devin.ai/) snapshot."
+  ],
+  [
+   "J",
+   "Bookmarklet javascript:alert('https://devin.ai/') is blocked."
+  ],
+  [
+   "J",
+   "Bookmarklet javascript:open(\"https://cursor.com/x\") is blocked."
+  ],
+  [
+   "J",
+   "Bookmarklet javascript:void(window.location='https://devin.ai/') is blocked."
+  ],
+  [
+   "J",
+   "Payload data:text/html,<a href='https://devin.ai/'>x</a> is blocked."
+  ],
+  [
+   "J",
+   "Payload data:text/plain,https://devin.ai/ is blocked."
+  ],
+  [
+   "J",
+   "Open file:///srv/https://devin.ai/index.html today."
+  ],
+  [
+   "J",
+   "Open file:///srv/www.devin.ai/index.html today."
+  ],
+  [
+   "J",
+   "Open ftp://devin.ai/pub today."
+  ],
+  [
+   "J",
+   "Open ws://devin.ai/socket today."
+  ],
+  [
+   "J",
+   "Open view-source:https://devin.ai/ today."
+  ],
+  [
+   "J",
+   "Open hxxps://devin.ai/ today."
+  ],
+  [
+   "L",
+   "See [https://devin.ai/ docs](https://example.com/) for Devin from accounting."
+  ],
+  [
+   "L",
+   "See [visit https://devin.ai/](https://example.com/) for Devin from accounting."
+  ],
+  [
+   "L",
+   "See [https://devin.ai/ ](https://example.com/) for Devin from accounting."
+  ],
+  [
+   "L",
+   "See [https://devin.ai/][1] for Devin from accounting.\n\n[1]: https://example.com/"
+  ],
+  [
+   "L",
+   "See [https://devin.ai/] for Devin from accounting."
+  ],
+  [
+   "L",
+   "See <a href=\"https://example.com/\"> https://devin.ai/ </a> for Devin."
+  ],
+  [
+   "L",
+   "See <a href=\"https://example.com/\" title=\"https://devin.ai/\">x</a> for Devin."
+  ],
+  [
+   "L",
+   "See [x](https://example.com/ \"https://devin.ai/\") for Devin."
+  ],
+  [
+   "L",
+   "See [x](https://example.com/ 'https://cursor.com/') for the DOS caret."
+  ],
+  [
+   "L",
+   "See [`https://devin.ai/`](https://example.com/) for Devin."
+  ],
+  [
+   "L",
+   "See [(https://devin.ai/)](https://example.com/) for Devin."
+  ],
+  [
+   "L",
+   "See [<https://devin.ai/>](https://example.com/) for Devin."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com'.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com\".evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com`.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com).evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com].evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com>.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com<.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com\t.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com\u00a0.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com\u2028.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com\u3000.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com\u0000.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com\u007f.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com\u001f.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com\u200b.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com\u200e.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com\u202e.evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com\u2024evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com\ufe52evil.example/ copies the page."
+  ],
+  [
+   "C",
+   "Phishing kit at https://cursor.com./ copies the page.evil"
+  ],
+  [
+   "H",
+   "Phishing kit at https://[::1]/cursor.com copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://[cursor.com]/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://[::ffff:cursor.com]/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://cursor.com:99999/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://cursor.com:abc/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://cursor.com:443:80/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://cursor.com:443@evil.example/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://cursor.com\\@evil.example/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://evil.example\\cursor.com/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://evilcursor.com/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://cursor.com.evil.example/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://cursor-com.evil.example/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://cursor.co/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://CURSOR.COM/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://Cursor.com/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://cursor.com.:443.evil.example/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://https://cursor.com/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https:///cursor.com/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https:\\\\cursor.com/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at http:/cursor.com/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at http:cursor.com/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at //cursor.com/x copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://0x7f.1/cursor.com copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://cursor.com%00.evil.example/ copies the page."
+  ],
+  [
+   "H",
+   "Phishing kit at https://cursor.com\u0130.io/ copies the page."
+  ],
+  [
+   "W",
+   "Mirror at www.cursor.com.evil.example for the DOS caret."
+  ],
+  [
+   "W",
+   "Mirror at www.evil.example/cursor.com for the DOS caret."
+  ],
+  [
+   "W",
+   "Mirror at wwww.cursor.com for the DOS caret."
+  ],
+  [
+   "W",
+   "Mirror at foo.www.cursor.com for the DOS caret."
+  ],
+  [
+   "W",
+   "Mirror at WWW.CURSOR.COM for the DOS caret."
+  ],
+  [
+   "W",
+   "Mirror at www.cursor.community for the DOS caret."
+  ],
+  [
+   "W",
+   "Mirror at x-www.devin.ai for Devin from accounting."
+  ],
+  [
+   "W",
+   "Mirror at _www.devin.ai for Devin from accounting."
+  ],
+  [
+   "W",
+   "Mirror at /www.devin.ai for Devin from accounting."
+  ],
+  [
+   "W",
+   "Mirror at evil.example/www.devin.ai for Devin from accounting."
+  ],
+  [
+   "P",
+   "Fork at https://github.com/obra/superpowers/../../evil/repo is popular."
+  ],
+  [
+   "P",
+   "Fork at https://github.com/obra/superpowers/.. is popular."
+  ],
+  [
+   "P",
+   "Fork at https://github.com/obra/superpowers/./../x is popular."
+  ],
+  [
+   "P",
+   "Blog at https://openai.com/codex/../research is popular."
+  ],
+  [
+   "P",
+   "Blog at https://openai.com/codex/.. is popular."
+  ],
+  [
+   "P",
+   "Docs at https://docs.anthropic.com/en/docs/claude-code/overview/../../api is new."
+  ],
+  [
+   "P",
+   "Fork at https://github.com/obra/superpowersx is popular."
+  ],
+  [
+   "P",
+   "Fork at https://github.com//obra/superpowers is popular."
+  ],
+  [
+   "P",
+   "Fork at https://gist.github.com/obra/superpowers is popular."
+  ],
+  [
+   "P",
+   "Fork at https://github.com.evil.example/obra/superpowers is popular."
+  ],
+  [
+   "P",
+   "Fork at https://github.com/obra/superpowers-fanfic is popular."
+  ],
+  [
+   "P",
+   "Fork at https://github.com:443@evil.example/obra/superpowers is popular."
+  ],
+  [
+   "K",
+   "Run `curl -H 'Ref: x'https://devin.ai/` in a shell."
+  ],
+  [
+   "K",
+   "Set host=www.devin.ai in config."
+  ],
+  [
+   "K",
+   "Set url=\"https://devin.ai/\" in config."
+  ],
+  [
+   "K",
+   "Email support@www.devin.ai for help."
+  ],
+  [
+   "K",
+   "Email mailto:noreply@devin.ai for help."
+  ],
+  [
+   "K",
+   "Ping 'https://devin.ai/'x in the fixture."
+  ],
+  [
+   "K",
+   "Call f(https://devin.ai/) in Lisp."
+  ],
+  [
+   "K",
+   "Matrix: x(https://devin.ai/) y."
+  ]
+ ]
+}
