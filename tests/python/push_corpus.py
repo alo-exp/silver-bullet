@@ -147,6 +147,15 @@ ATTACKS = [
       setup="printf '{\"scripts\":{\"test\":\"git checkout -q main\"}}\\n' > package.json", nowt=True),
     C("E14", "git push origin HEAD", "P", "exported",
       env={"BASH_FUNC_git%%": "() { command git -C @S@/wt-main \"$@\"; }"}),
+    C("E17", "FOO=1 git push origin main", "P", "assignment"),
+    C("E18", "FOO=1 git push origin feat/x", "N", "assignment"),
+    C("E19", "RTK_DISABLED=$X git push origin feat/x", "N", "assignment", env={"X": "1"}),
+    C("E20", "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=push.default GIT_CONFIG_VALUE_0=matching git push", "P", "assignment"),
+    C("E21", "GIT_DIR=@S@/w/.git git push origin feat/x", "N", "assignment"),
+    C("E22", "RTK_DISABLED=2 git push origin feat/x", "N", "assignment"),
+    C("E23", "LANG=$(echo C) git push origin feat/x", "N", "assignment"),
+    C("E24", "GIT_SSH_COMMAND=true git push origin feat/x", "N", "assignment"),
+    C("E25", "RTK_DISABLED+=1 git push origin feat/x", "N", "assignment"),
     C("E15", "git push origin feat/x", "N", "set-head", setup="git remote set-head origin -d"),
     C("E16", "git push origin HEAD", "N", "detached", setup="git checkout -q --detach"),
 ]
@@ -187,6 +196,8 @@ HONEST = [
     H("H33", "echo pushing; git push origin feat/x"),
     H("H34", "[ -f README.md ] && git push origin feat/x"),
     H("H35", "git push", cwd="w", hook_cwd="plain"),
+    H("H36", "RTK_DISABLED=1 git push origin feat/x"),
+    H("H37", "LC_ALL=C CI=1 NO_COLOR=1 GIT_TERMINAL_PROMPT=0 git push -u origin HEAD"),
 ]
 
 RESIDUAL = [

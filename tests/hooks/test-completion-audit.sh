@@ -523,8 +523,10 @@ teardown
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook "PreToolUse" "RTK_DISABLED=1 git push origin feature/test")
-assert_blocks "RTK_DISABLED=1 git push: a variable assignment in the push command is final delivery (push scope)" "$out"
-assert_contains "RTK_DISABLED git push: the block message names the assignment" "$out" "variable assignment"
+assert_passes "RTK_DISABLED=1 git push allowed with planning skill (allowlisted assignment)" "$out"
+out=$(run_hook "PreToolUse" "FOO=1 git push origin feature/test")
+assert_blocks "FOO=1 git push: any other assignment is final delivery (push scope)" "$out"
+assert_contains "FOO=1 git push: the block message names the assignment" "$out" "variable assignment"
 out=$(run_hook "PreToolUse" "git push origin feature/test")
 assert_passes "git push allowed with planning skill (RTK not involved)" "$out"
 teardown
