@@ -69,7 +69,9 @@ Unlike Claude Code, `rtk hook cursor` only rewrites commands that match **global
 
 To verify: `echo '{"tool_name":"Shell","tool_input":{"command":"git status"}}' | rtk hook cursor` should return `updated_input` with `rtk git status` when `Shell(git *)` (or broader) is in the allow list.
 
-**Recommended global allow-list** (`~/.cursor/cli-config.json` → `permissions.allow`): cover common read-heavy dev commands — `git`, `gh`, `npm`/`pnpm`/`yarn`/`bun`, `cargo`/`go`/`rustc`, `kubectl`/`docker`/`helm`/`terraform`/`pulumi`, `aws`/`gcloud`/`az`, `pytest`/`vitest`/`jest`/`mocha`/`tap`, `rg`/`grep`/`cat`/`head`/`tail`/`find`/`ls`, `jq`, `node`/`python`/`ruby`, file ops (`cp`/`mv`/`rm`/`mkdir`/`chmod`), and shell wrappers (`bash`/`sh`/`zsh`). Commands **not** allow-listed return `{}` from `rtk hook cursor` and run uncompressed. Some allow-listed commands (e.g. `yarn`, `bun`) may still return `{}` when RTK has no compressor for that binary — that is upstream RTK behavior, not an allow-list gap.
+**Default merge (read-only).** `scripts/optimize-rtk-context-mode.sh --cli-allowlist read-only` (the default) adds only inspection commands that cannot write or reach the network (`cat`, `ls`, `head`, `tail`, `wc`, `which`, `grep`, `pwd`) plus the exact shapes `git status`, `git status --short`, `git diff`, `git diff --stat` and `git log --oneline`. `git log/diff/show` and `tree` are never wildcarded: they take file-writing flags (`--output=FILE`, `-o FILE`) that would let an approved command overwrite `~/.cursor/cli-config.json`. The full list below pre-approves interpreters, `rm`, `curl`, `docker` and cloud CLIs for every project, so it is merged only with `--cli-allowlist full` (or skipped with `--cli-allowlist none` / `--skip-cli-config`).
+
+**Full global allow-list** (`~/.cursor/cli-config.json` → `permissions.allow`, `--cli-allowlist full`): cover common read-heavy dev commands — `git`, `gh`, `npm`/`pnpm`/`yarn`/`bun`, `cargo`/`go`/`rustc`, `kubectl`/`docker`/`helm`/`terraform`/`pulumi`, `aws`/`gcloud`/`az`, `pytest`/`vitest`/`jest`/`mocha`/`tap`, `rg`/`grep`/`cat`/`head`/`tail`/`find`/`ls`, `jq`, `node`/`python`/`ruby`, file ops (`cp`/`mv`/`rm`/`mkdir`/`chmod`), and shell wrappers (`bash`/`sh`/`zsh`). Commands **not** allow-listed return `{}` from `rtk hook cursor` and run uncompressed. Some allow-listed commands (e.g. `yarn`, `bun`) may still return `{}` when RTK has no compressor for that binary — that is upstream RTK behavior, not an allow-list gap.
 
 `rtk gain` may still warn "No hook installed" on Cursor — it tracks Claude `settings.json` hooks; Cursor wiring is separate and savings still accrue when the hook rewrites commands.
 
@@ -150,6 +152,6 @@ See `silver-bullet.md` §2g-ii.
 
 ## Shell ownership and reload receipts
 
-In `five_tool_routed` mode RTK is the **sole** `sb_shell` owner. Context Mode owns grep/slice/webfetch; LeanCTX shell MCP is disabled. Hook order is RTK before Context Mode; `lean-ctx hook rewrite` entries are removed on repair.
+In `five_tool_routed` mode RTK is the **sole** `sb_shell` owner. Context Mode owns grep/slice/webfetch; LeanCTX shell MCP is disabled. Hook order is RTK before Context Mode; `lean-ctx hook rewrite` entries are removed on repair only for a user who also consented to LeanCTX wiring (they are LeanCTX's hooks, not Silver Bullet's); otherwise remove them yourself.
 
 Host hook changes batch into one reload receipt (not multiple restart prompts). RTK liveness is proven only when the session attestation reports successful shell-hook evidence alongside MCP tools — config presence alone is insufficient for canonical `ready`.

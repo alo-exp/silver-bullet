@@ -102,8 +102,8 @@ else
   _check warn agentmemory-server "not healthy — start agentmemory"
 fi
 
-test_repo="${TEST_REPO:-${HOME}/.cursor/worktrees/repo/r41j}"
-if [[ -d "$test_repo/.git" ]]; then
+test_repo="${TEST_REPO:-}"
+if [[ -n "$test_repo" && -d "$test_repo/.git" ]]; then
   if [[ -f "$test_repo/graphify-out/graph.json" ]]; then
     _check pass graphify-index "present in test repo"
   else
