@@ -118,6 +118,21 @@ active_workflow=$(printf '%s' "$config_vals" | sed -n '4p')
 required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '5p')
 required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
 
+# Integrity: the required lists come from the record the sanctioned writers kept, not from the live
+# file (hooks/lib/integrity.sh): a file rewritten outside them falls back to the last recorded values.
+if [[ -f "$_lib_dir/integrity.sh" ]]; then
+  # shellcheck source=lib/integrity.sh
+  source "$_lib_dir/integrity.sh"
+  _iv_root="$(sb_integrity_root "$PWD")"
+  if [[ -n "$_iv_root" ]]; then
+    sb_integrity_verify "$_iv_root" ""
+    if [[ "$SB_IV_STATUS" != none ]]; then
+      required_planning_cfg="$SB_IV_REQUIRED_PLANNING"
+      required_planning_devops_cfg="$SB_IV_REQUIRED_PLANNING_DEVOPS"
+    fi
+  fi
+fi
+
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
 
@@ -416,7 +431,11 @@ fi
 
 # ── Read state file ───────────────────────────────────────────────────────────
 state_contents=""
-[[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
+if [[ -f "$state_file" ]]; then
+  # Only what the recorder sealed counts (hooks/lib/state-seal.sh): a state edited by anything else yields nothing.
+  source "$_lib_dir/state-seal.sh"
+  state_contents=$(sb_state_seal_trusted "$state_file")
+fi
 
 # HOOK-04: empty state file means no skills were tracked — non-dev session.
 # Fail-open by design: nothing to gate against.

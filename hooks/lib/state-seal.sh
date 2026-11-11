@@ -155,7 +155,7 @@ _sb_state_seal_status() {
 
 sb_state_seal_trusted() {
   local state="$1"
-  [[ -f "$state" ]] || return 0
+  [[ -f "$state" && ! -L "$state" ]] || return 0
   _sb_state_seal_status "$state"
   case "$_SB_SEAL_STATE" in
     ok) head -n "$_SB_SEAL_N" "$state" ;;

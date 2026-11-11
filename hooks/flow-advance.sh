@@ -72,6 +72,12 @@ if [[ "$skill" == "silver-ship" && -f "$repo_root/.silver-bullet.json" ]]; then
     tmp="$(mktemp)"
     if jq '.project.active_workflow = "full-dev-cycle"' "$repo_root/.silver-bullet.json" >"$tmp" 2>/dev/null; then
       mv "$tmp" "$repo_root/.silver-bullet.json"
+      # A sanctioned writer: the integrity record follows (hooks/lib/integrity.sh).
+      if [[ -f "$_lib_dir/integrity.sh" ]]; then
+        # shellcheck source=lib/integrity.sh
+        source "$_lib_dir/integrity.sh"
+        sb_integrity_baseline "$(cd "$repo_root" && pwd -P)" entry config
+      fi
       reset_note="SB ► active_workflow reset to full-dev-cycle after devops ship"
       msg="${msg:+$msg — }${reset_note}"
     else

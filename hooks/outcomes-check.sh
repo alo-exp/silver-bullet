@@ -116,7 +116,11 @@ if [[ "$hook_event" == "SubagentStop" ]]; then
 fi
 
 state_contents=""
-[[ -f "$state_file" && ! -L "$state_file" ]] && state_contents=$(cat "$state_file" 2>/dev/null || true)
+if [[ -f "$state_file" && ! -L "$state_file" ]]; then
+  # Only what the recorder sealed counts (hooks/lib/state-seal.sh): a state edited by anything else yields nothing.
+  source "$_lib_dir/state-seal.sh"
+  state_contents=$(sb_state_seal_trusted "$state_file")
+fi
 
 if declare -f sb_trivial_bypass >/dev/null 2>&1; then
   sb_trivial_bypass "$trivial_file"

@@ -79,7 +79,11 @@ emit_block() {
 
 sb_subagent_state_has_completion_audit() {
   local state_contents=""
-  [[ -f "$state_file" && ! -L "$state_file" ]] && state_contents="$(cat "$state_file" 2>/dev/null || true)"
+  if [[ -f "$state_file" && ! -L "$state_file" ]]; then
+    # Only what the recorder sealed counts (hooks/lib/state-seal.sh): a state edited by anything else yields nothing.
+    source "$_lib_dir/state-seal.sh"
+    state_contents="$(sb_state_seal_trusted "$state_file")"
+  fi
   grep -Fqx 'silver-completion-audit' <<<"$state_contents" 2>/dev/null
 }
 

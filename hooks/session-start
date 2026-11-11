@@ -375,7 +375,7 @@ if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
   trivial_file="${SB_STATE_DIR}/trivial"
 fi
 [[ -L "$trivial_file" ]] && trivial_file="${SB_STATE_DIR}/trivial"
-rm -f -- "$trivial_file" 2>/dev/null || true
+rm -f -- "$trivial_file" "${SB_STATE_DIR}/trivial" 2>/dev/null || true
 rm -f -- "${SB_STATE_DIR}/release-live-matrix" 2>/dev/null || true
 rm -f -- "${SB_STATE_DIR}/e2e-live-matrix" 2>/dev/null || true
 if [[ "$sb_should_mutate" == true ]]; then
@@ -640,6 +640,15 @@ if [[ -f "$_lib_dir/recommended-tools.sh" && -n "${sb_project_root:-}" ]]; then
       fi
     done
   fi
+fi
+
+# Integrity: a fresh session is the trust anchor. Record the contract files, the instruction and
+# planning files and the (now absent) trivial marker as they are, so that anything that changes
+# them outside a sanctioned writer shows up at the next gate decision (hooks/lib/integrity.sh).
+if [[ "$sb_should_mutate" == true && -n "$sb_project_root" && -f "$_lib_dir/integrity.sh" ]]; then
+  # shellcheck source=lib/integrity.sh
+  source "$_lib_dir/integrity.sh"
+  sb_integrity_baseline "$(cd "$sb_project_root" && pwd -P)" session
 fi
 
 # Mark session rules injected (prompt-reminder uses compact ref instead of full re-injection).
