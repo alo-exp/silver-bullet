@@ -71,9 +71,11 @@ for host in pi all; do
   fresh; sb_test_consent_grant leanctx wire
   tl_run bash "$TL_REPO_ROOT/scripts/optimize-five-tool-stack.sh" --host "$host" --project-root "$PROJ" --skip-synergy
   assert_eq "optimizer --host $host, leanctx wire-only: no npm package" "[]" "$(pkgs)"
+  assert_eq "optimizer --host $host, leanctx wire-only: the Pi adapter does not enable leanctx" "" "$( [[ -f "$CFG" ]] && enabled || true)"
   fresh; sb_test_consent_grant leanctx install,wire
   tl_run bash "$TL_REPO_ROOT/scripts/optimize-five-tool-stack.sh" --host "$host" --project-root "$PROJ" --skip-synergy
   assert_eq "optimizer --host $host, leanctx install+wire: npm package listed" '["npm:pi-lean-ctx"]' "$(pkgs)"
+  assert_eq "optimizer --host $host, leanctx install+wire: the Pi adapter enables leanctx" "leanctx" "$(enabled)"
 done
 fresh; sb_test_consent_grant leanctx wire
 tl_run bash "$TL_REPO_ROOT/scripts/install-leanctx-sb.sh" --host pi --project-root "$PROJ" --skip-verify
