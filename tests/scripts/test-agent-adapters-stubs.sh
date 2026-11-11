@@ -195,6 +195,10 @@ assert_not_contains "codex: transcripts are not under SB_ROOT" "$TDIR" "$FSB"
 assert_file_exists "codex: transcript written" "$TDIR/latest.jsonl"
 assert_not_contains "codex: transcript redacted (bearer)" "$(cat "$TDIR/latest.jsonl")" "abcdefgh12345678"
 assert_not_contains "codex: transcript redacted (prompt secret)" "$(cat "$TDIR/latest.jsonl")" "hunter2hunter2"
+assert_eq "codex: transcript stays valid JSONL" "ok" "$(python3 -c 'import json,sys
+[json.loads(l) for l in open(sys.argv[1]) if l.strip()]
+print("ok")' "$TDIR/latest.jsonl")"
+assert_eq "codex: no capture temp file is left behind" "0" "$(find "$TDIR" -name '.capture.*' | wc -l | tr -d ' ')"
 assert_eq "codex: transcript dir is 0700" "0o700" "$(python3 -c 'import os,sys;print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$TDIR")"
 assert_eq "codex: transcript file is 0600" "0o600" "$(python3 -c 'import os,sys;print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$TDIR/latest.jsonl")"
 assert_eq "codex: nothing written under SB_ROOT" "0" "$(find "$FSB" -newer "$FSB/scripts/codex-interactive-invoke.py" -type f | wc -l | tr -d ' ')"
@@ -263,6 +267,10 @@ printf 'import sys\nprint("launcher failed")\nsys.exit(3)\n' >"$FSB/scripts/code
 ad codex 'agent_invoke permissive "p"; echo rc=$?' CODEX_BIN="$CB/codex" SB_ROOT="$FSB" CODEX_TRANSCRIPT_DIR="$TL_TMP/tdir0"
 assert_contains "codex: failing TUI launcher tolerated" "$TL_OUT" "launcher failed"
 cp "$FSB/scripts/launcher.ok" "$FSB/scripts/codex-interactive-invoke.py"
+# a transcript that cannot be redacted is removed and the failure is shown, not swallowed
+ad codex 'agent_invoke permissive "p"' CODEX_BIN="$CB/codex" SB_ROOT="$FSB" CODEX_TRANSCRIPT_DIR="$TL_TMP/tdirW" SB_REDACT_MAX_BYTES=1
+assert_contains "codex: a failed transcript redaction is warned about" "$TL_ERR" "codex transcript not archived"
+assert_eq "codex: nothing is left in the transcript dir after a failed redaction" "0" "$(find "$TL_TMP/tdirW" -type f | wc -l | tr -d ' ')"
 # explicit transcript dir (live-test isolation) is honoured; rotation keeps four archives
 for _ in 1 2 3 4 5 6; do
   ad codex 'agent_invoke strict "p"' CODEX_BIN="$CB/codex" SB_ROOT="$FSB" CODEX_TRANSCRIPT_DIR="$TL_TMP/tdir"

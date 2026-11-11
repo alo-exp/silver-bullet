@@ -86,7 +86,7 @@ delegate --work-dir "$WORK" --prompt "do the thing" --sb-root "$SB" --log "$WORK
 assert_eq "delegation succeeds" 0 "$TL_STATUS"
 assert_contains "adapter output returned" "$TL_OUT" "invoke#1 mode=strict prompt=do the thing exec=1"
 assert_contains "lightweight delegate env exported" "$TL_OUT" "lightweight=1 worker=1"
-assert_contains "MCP servers stripped from the delegate CODEX_HOME" "$TL_OUT" "home-config: model = \"m\" [other] k = 1  auth=tok"
+assert_contains "MCP servers stripped from the delegate CODEX_HOME" "$TL_OUT" "home-config: model = \"m\" [other] k = 1  auth=[REDACTED]"
 assert_file_absent "temporary CODEX_HOME removed afterwards" "$(<"$CFG/codex-home")"
 LOGTXT="$(<"$WORK/log")"
 assert_contains "log header" "$LOGTXT" "=== agent-codex-delegate"
