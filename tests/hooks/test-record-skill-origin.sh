@@ -117,7 +117,7 @@ for trial in 1 2 3; do
   rm -rf "$STATE.lock"
   pids=()
   for sk in silver-context silver-plan silver-quality-gates tdd modularity verify-tests; do
-    ( cd "$TG2_PROJ" && printf '%s' "$(skill_input "$sk")" | env SILVER_BULLET_PROJECT_ROOT="$TG2_PROJ" SILVER_BULLET_SESSION_LOG_PATH_FILE="$LOG_PATH_FILE" SILVER_BULLET_RUNTIME=claude bash "$TL_REPO_ROOT/hooks/record-skill.sh" >/dev/null 2>&1 ) &
+    ( cd "$TG2_PROJ" && printf '%s' "$(skill_input "$sk")" | env SILVER_BULLET_PROJECT_ROOT="$TG2_PROJ" SILVER_BULLET_SESSION_LOG_PATH_FILE="$LOG_PATH_FILE" SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-claude}" bash "$TL_REPO_ROOT/hooks/record-skill.sh" >/dev/null 2>&1 ) &
     pids+=("$!")
   done
   for pid in "${pids[@]}"; do wait "$pid" || true; done
