@@ -12,7 +12,7 @@
 # or --target names nothing that resolves (nothing is printed) (R13-08, R1-19).
 ca_release_commit_sha() {
   local root="$1" parsed ok="" reason="" tag="" target="" sha="" ref
-  parsed="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '(.release // {}) | [(.ok // false | tostring), (.reason // ""), (.tag // ""), (.target // "")] | join("\u001f")' 2>/dev/null || true)"
+  parsed="$(printf '%s' "${SB_SA_JSON:-}" | jq -rR 'try (fromjson | (.release // {}) | [(.ok // false | tostring), (.reason // ""), (.tag // ""), (.target // "")] | join("\u001f")) catch ""' 2>/dev/null)"
   IFS=$'\037' read -r ok reason tag target <<<"$parsed"
   if [[ "$ok" != "true" ]]; then
     printf '%s' "${reason:-the release command could not be read}"

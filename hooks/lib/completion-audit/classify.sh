@@ -226,9 +226,9 @@ ca_payload_base_dir() {
 ca_push_scope_verdict() {
   local verdict
   ca_push_scope_reason=""
-  verdict="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '.push_scope.verdict // "strict"' 2>/dev/null || true)"
+  verdict="$(printf '%s' "${SB_SA_JSON:-}" | jq -rR 'try (fromjson | .push_scope.verdict // "strict") catch "strict"' 2>/dev/null)"
   [[ "$verdict" == "feature" ]] && return 0
-  ca_push_scope_reason="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '.push_scope.reason // ""' 2>/dev/null || true)"
+  ca_push_scope_reason="$(printf '%s' "${SB_SA_JSON:-}" | jq -rR 'try (fromjson | .push_scope.reason // "") catch ""' 2>/dev/null)"
   [[ -n "$ca_push_scope_reason" ]] || ca_push_scope_reason="the push could not be analysed"
   return 1
 }
