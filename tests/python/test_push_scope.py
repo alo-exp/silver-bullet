@@ -679,15 +679,27 @@ class InertGitTests(Base):
                     "git remote add x y", "git branch newb", "git config --edit", "git stash", "git mv a b"):
             self.strict("%s && git push" % cmd, "also runs")
 
-    def test_viewer_config(self):
-        for key in ("core.pager", "pager.log", "diff.external", "diff.x.textconv", "diff.y.command", "core.fsmonitor"):
-            self.strict("git log --oneline && git push", "pager", repo=FakeRepo(cfg={key: ["x"]}))
-        self.feature("git status && git push", repo=FakeRepo(cfg={"core.pager": ["less"]}))
+    def test_program_config(self):
+        for key in ("core.pager", "pager.log", "diff.external", "diff.x.textconv", "diff.y.command", "core.fsmonitor",
+                    "core.hookspath", "filter.lfs.clean", "gpg.program", "gpg.ssh.program"):
+            self.strict("git log --oneline && git push", "would run a program", repo=FakeRepo(cfg={key: ["x"]}))
+        for key in ("core.fsmonitor", "core.hookspath", "filter.lfs.smudge", "filter.x.process", "gpg.program"):
+            for sub in ("status", "add -A", "commit -qm x", "ls-files", "describe", "rev-parse HEAD"):
+                self.strict("git %s && git push" % sub, "would run a program", repo=FakeRepo(cfg={key: ["x"]}))
+        self.feature("git status && git push", repo=FakeRepo(cfg={"core.pager": ["less"], "credential.helper": ["store"],
+                                                                  "core.sshcommand": ["ssh"], "core.editor": ["vi"]}))
+        self.feature("git push", repo=FakeRepo(cfg={"core.fsmonitor": ["true"], "core.hookspath": ["h"]}))
+
+    def test_printf_with_options_is_not_inert(self):
+        for cmd in ("printf -v D main", "printf -vD main", "printf -- -v", "printf -vX %s main", "printf -- '%s' x"):
+            self.strict("%s && git push" % cmd, "also runs")
+        self.feature("printf '%s' x && git push")
+        self.feature("printf 'a b' && git push")
 
     def test_helpers(self):
         self.assertIsNone(push_scope.inert_git("log", ["--output=x"]))
-        self.assertIs(push_scope.inert_git("log", ["--oneline"]), True)
-        self.assertIs(push_scope.inert_git("status", []), False)
+        self.assertEqual(push_scope.inert_git("log", ["--oneline"]), "log")
+        self.assertEqual(push_scope.inert_git("status", []), "status")
         self.assertTrue(push_scope.options_ok(["-5"], set()))
         self.assertFalse(push_scope.options_ok(["-m"], set(), values={"-m"}))
 
