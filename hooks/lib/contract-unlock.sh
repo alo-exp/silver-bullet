@@ -10,11 +10,13 @@
 # directory for contract writers outside this list.
 #
 #   sb_contract_unlock_write SKILL     record SKILL's invocation when it is a contract writer
-#   sb_contract_unlocked [json|md]     a writer skill ran recently enough (json: .silver-bullet*.json,
-#                                      md: silver-bullet.md)
+#   sb_contract_unlocked [json|md|inline]  a writer skill ran recently enough (json: .silver-bullet*.json,
+#                                      md: silver-bullet.md, inline: inline interpreter code may run)
 
 SB_PF_CONTRACT_WRITER_SKILLS="silver-init silver-update silver-add silver-devops silver-migrate"
 SB_CONTRACT_JSON_ONLY_SKILLS="silver-add silver-devops"
+# The init skill reads the host registry with inline python during its scaffold step.
+SB_CONTRACT_INLINE_SKILLS="silver-init"
 SB_CONTRACT_UNLOCK_WINDOW="${SB_CONTRACT_UNLOCK_WINDOW:-7200}"
 
 sb_contract_unlock_file() { printf '%s/contract-unlock' "${SB_RUNTIME_STATE_DIR:-$HOME/.claude/.silver-bullet}"; }
@@ -39,8 +41,10 @@ sb_contract_unlocked() {
   case " $SB_PF_CONTRACT_WRITER_SKILLS " in *" $skill "*) ;; *) return 1 ;; esac
   now="$(date +%s)"
   [[ "$now" -ge "$when" && $((now - when)) -le "$SB_CONTRACT_UNLOCK_WINDOW" ]] || return 1
-  if [[ "$kind" != json ]]; then
-    case " $SB_CONTRACT_JSON_ONLY_SKILLS " in *" $skill "*) return 1 ;; esac
-  fi
+  case "$kind" in
+    inline) case " $SB_CONTRACT_INLINE_SKILLS " in *" $skill "*) return 0 ;; esac; return 1 ;;
+    json) ;;
+    *) case " $SB_CONTRACT_JSON_ONLY_SKILLS " in *" $skill "*) return 1 ;; esac ;;
+  esac
   return 0
 }

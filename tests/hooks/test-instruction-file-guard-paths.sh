@@ -172,4 +172,12 @@ for c in 'cp /tmp/x CLAUDE.m?' 'cp /tmp/x AGENTS.m[d]' 'cp /tmp/x {CLAUDE,GEMINI
 done
 dg_run "$P" "$H" "$(sh 'cp /tmp/x docs/*.txt')"
 assert_eq "an honest pattern passes" "" "$TL_OUT"
+
+# --- round 3: patch writes ---------------------------------------------------------------------------
+printf 'diff --git a/CLAUDE.md b/CLAUDE.md\nnew file mode 100644\n--- /dev/null\n+++ b/CLAUDE.md\n@@ -0,0 +1 @@\n+x\n' >"$P/cl.diff"
+for c in 'patch -p1 < cl.diff' 'cat cl.diff | git apply' 'git apply cl.diff' 'patch -p1 -i cl.diff'; do
+  dg_run "$P" "$H" "$(sh "$c")"
+  assert_eq "a patch that can create CLAUDE.md is refused: $c" "deny" "$(dec)"
+done
+
 tl_results

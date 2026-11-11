@@ -7,6 +7,8 @@ tl_init
 # shellcheck source=../lib/c-toolgates-2-helpers.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/c-toolgates-2-helpers.sh"
 tg2_init_project
+# shellcheck source=../../hooks/lib/state-seal.sh
+source "$TL_REPO_ROOT/hooks/lib/state-seal.sh"
 # shellcheck source=../lib/c-toolgates-2-record-skill.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/c-toolgates-2-record-skill.sh"
 
@@ -17,32 +19,69 @@ cp -R "$TL_REPO_ROOT/templates" "$OTHER/templates"
 REG="$SB_RUNTIME_HOME_ROOT/plugins/installed_plugins.json"
 mkdir -p "$(dirname "$REG")" "$TL_TMP/install-a"
 EVENTS="$SB_RUNTIME_STATE_DIR/seal-events.log"
-copy_rs() { local keep="$TG2_REPO"; TG2_REPO="$OTHER"; rs "$@"; TG2_REPO="$keep"; }
+copy_rs() { local keep="$TG2_REPO"; TG2_REPO="$OTHER"; rs "$1" SILVER_BULLET_DEV_PLUGIN_ROOT= "${@:2}"; TG2_REPO="$keep"; }
 register() { jq -cn --arg p "$1" '{plugins:{"silver-bullet@alo-labs":[{installPath:$p}]}}' >"$REG"; }
+
+no_dev="SILVER_BULLET_DEV_PLUGIN_ROOT="
 
 reset; rm -f "$REG" "$EVENTS"
 copy_rs "$(skill_input silver-context)"
-assert_in "no registry (a bare copy): it records" "$STATE" silver-context
+assert_file_absent "no registry: a bare copy is refused (a missing registry is not a reason to accept)" "$STATE"
+assert_contains "and the refusal is logged" "$(cat "$EVENTS")" "recorder refused"
 
 reset; register "$TL_TMP/install-a"
 copy_rs "$(skill_input silver-context)"
 assert_file_absent "a copy that is not the registered install records nothing" "$STATE"
-assert_contains "and the refusal is logged" "$(cat "$EVENTS")" "recorder refused"
 
 reset; register "$OTHER"
 copy_rs "$(skill_input silver-context)"
 assert_in "the registered install records" "$STATE" silver-context
 
 reset; register "$TL_TMP/install-a"
+mkdir -p "$OTHER/.git"
+copy_rs "$(skill_input silver-context)"
+assert_file_absent "a copy with a .git directory is not a source checkout to trust" "$STATE"
+rmdir "$OTHER/.git"
+: >"$OTHER/.git"
+copy_rs "$(skill_input silver-context)"
+assert_file_absent "nor one with a .git file" "$STATE"
+rm -f "$OTHER/.git"
+
+reset; register "$TL_TMP/install-a"
 rs "$(skill_input silver-context)"
-assert_in "a source checkout (.git) is its own authority" "$STATE" silver-context
+assert_in "the developer's own checkout, named for the host, records" "$STATE" silver-context
+reset; register "$TL_TMP/install-a"
+rs "$(skill_input silver-context)" "$no_dev"
+assert_file_absent "the same checkout without that naming is refused" "$STATE"
+reset; register "$TL_TMP/install-a"
+copy_rs "$(skill_input silver-context)" SILVER_BULLET_DEV_PLUGIN_ROOT="$TL_TMP/install-a"
+assert_file_absent "a development root that is another directory admits nothing" "$STATE"
+reset; rm -f "$REG"
+copy_rs "$(skill_input silver-context)" SILVER_BULLET_DEV_PLUGIN_ROOT="$OTHER"
+assert_in "a copy named as the development root records" "$STATE" silver-context
 
 reset; rm -f "$REG"
-copy_rs "$(skill_input silver-context)" CLAUDE_PLUGIN_ROOT="$TL_REPO_ROOT"
+mkdir -p "$SB_RUNTIME_HOME_ROOT/plugins/host-managed"
+cp -R "$TL_REPO_ROOT/hooks" "$SB_RUNTIME_HOME_ROOT/plugins/host-managed/hooks"
+cp -R "$TL_REPO_ROOT/templates" "$SB_RUNTIME_HOME_ROOT/plugins/host-managed/templates"
+keep="$TG2_REPO"; TG2_REPO="$SB_RUNTIME_HOME_ROOT/plugins/host-managed"
+rs "$(skill_input silver-context)" "$no_dev"
+TG2_REPO="$keep"
+assert_in "without a registry a root below the host's plugins directory records" "$STATE" silver-context
+reset; rm -f "$REG"
+keep="$TG2_REPO"
+mv "$SB_RUNTIME_HOME_ROOT/plugins/host-managed" "$TL_TMP/host-managed-moved"
+TG2_REPO="$TL_TMP/host-managed-moved"
+rs "$(skill_input silver-context)" "$no_dev"
+TG2_REPO="$keep"
+assert_file_absent "and one outside it does not" "$STATE"
+
+reset; rm -f "$REG"
+copy_rs "$(skill_input silver-context)" "$no_dev" CLAUDE_PLUGIN_ROOT="$TL_REPO_ROOT"
 assert_file_absent "CLAUDE_PLUGIN_ROOT naming another root: refused" "$STATE"
-reset
+reset; register "$OTHER"
 copy_rs "$(skill_input silver-context)" CLAUDE_PLUGIN_ROOT="$OTHER"
-assert_in "CLAUDE_PLUGIN_ROOT naming this root: records" "$STATE" silver-context
+assert_in "CLAUDE_PLUGIN_ROOT naming this registered root: records" "$STATE" silver-context
 
 # ── the keyed seal ──────────────────────────────────────────────────────────────────────────
 reset; rm -f "$REG" "$SB_RUNTIME_STATE_DIR/seal.key" "$STATE.hwm"
@@ -69,6 +108,22 @@ assert_contains "and again when it is invoked a second time" "$(cat "$SB_RUNTIME
 # a registry that is not JSON names no install
 reset; printf 'not json' >"$REG"
 copy_rs "$(skill_input silver-context)"
-assert_in "an unreadable registry names nothing: the copy records" "$STATE" silver-context
+assert_file_absent "an unreadable registry names nothing: the copy is refused" "$STATE"
+
+# ── parallel recorders lose nothing ───────────────────────────────────────────────────────────
+rm -f "$REG"
+for trial in 1 2 3; do
+  reset
+  rm -rf "$STATE.lock"
+  pids=()
+  for sk in silver-context silver-plan silver-quality-gates tdd modularity verify-tests; do
+    ( cd "$TG2_PROJ" && printf '%s' "$(skill_input "$sk")" | env SILVER_BULLET_PROJECT_ROOT="$TG2_PROJ" SILVER_BULLET_SESSION_LOG_PATH_FILE="$LOG_PATH_FILE" SILVER_BULLET_RUNTIME=claude bash "$TL_REPO_ROOT/hooks/record-skill.sh" >/dev/null 2>&1 ) &
+    pids+=("$!")
+  done
+  for pid in "${pids[@]}"; do wait "$pid" || true; done
+  trusted="$(sb_state_seal_trusted "$STATE" | grep -cE '^(silver-context|silver-plan|silver-quality-gates|tdd|modularity|verify-tests)$' || true)"
+  assert_eq "six parallel recorders, trial $trial: every skill is kept" "6" "$trusted"
+  assert_file_absent "and the lock is released" "$STATE.lock"
+done
 
 tl_results

@@ -56,6 +56,8 @@ fi
 if ! declare -F sb_state_seal_write >/dev/null 2>&1; then
   sb_state_seal_write() { :; }
   sb_state_seal_enforce() { :; }
+  sb_state_seal_lock() { :; }
+  sb_state_seal_unlock() { :; }
 fi
 if [[ -f "$_lib_dir/contract-unlock.sh" ]]; then
   # shellcheck source=lib/contract-unlock.sh
@@ -294,29 +296,35 @@ if ! sb_runtime_path_is_state_scoped "$STATE_FILE"; then
   STATE_FILE="${SB_STATE_DIR}/state"
 fi
 
-# --- Only the install the host runs may record (R3-01) ---
-# A copy of the plugin made to run the recorder elsewhere is refused: the host sets
-# CLAUDE_PLUGIN_ROOT to the root of the hook it runs, and the host's registry names the installs
-# of this plugin. A source checkout (.git) is its own authority.
+# --- Only the install the host registered may record (R3-01) ---
+# The recorder's own realpath must be the root of an install of this plugin that the host's
+# registry (installed_plugins.json) lists, or the checkout named by SILVER_BULLET_DEV_PLUGIN_ROOT
+# (set by the developer who runs the host from a source checkout; a command cannot set it for a
+# hook). Hosts without such a registry are trusted only below their own plugins directory.
+# CLAUDE_PLUGIN_ROOT, when the host sets it, must name this same root. There is no "any .git
+# checkout" rule, and a missing registry is not a reason to accept.
 _self_root="$(cd "${_repo_dir:-.}" && pwd -P)"
-_origin_ok=true
-if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && "$(cd "$CLAUDE_PLUGIN_ROOT" 2>/dev/null && pwd -P)" != "$_self_root" ]]; then
-  _origin_ok=false
-fi
-if [[ "$_origin_ok" == true && ! -e "${_repo_dir:-.}/.git" ]] && declare -F sb_plugin_cache_installed_paths >/dev/null 2>&1; then
-  _registered=""
-  if [[ -f "$(sb_plugin_cache_registry_file)" ]]; then
-    _registered="$(jq -r '.plugins // {} | to_entries[] | select(.key | test("silver-bullet"; "i")) | .value[]? | .installPath // empty' "$(sb_plugin_cache_registry_file)" 2>/dev/null || true)"
+_origin_ok=false
+if [[ -z "${CLAUDE_PLUGIN_ROOT:-}" || "$(cd "$CLAUDE_PLUGIN_ROOT" 2>/dev/null && pwd -P)" == "$_self_root" ]]; then
+  if [[ -n "${SILVER_BULLET_DEV_PLUGIN_ROOT:-}" && "$(cd "$SILVER_BULLET_DEV_PLUGIN_ROOT" 2>/dev/null && pwd -P)" == "$_self_root" ]]; then
+    _origin_ok=true
   fi
-  if [[ -n "$_registered" ]]; then
-    _origin_ok=false
+  _registry_seen=false
+  if declare -F sb_plugin_cache_registry_file >/dev/null 2>&1 && [[ -f "$(sb_plugin_cache_registry_file)" ]]; then
+    _registry_seen=true
     while IFS= read -r _install; do
-      [[ -n "$_install" && "$(cd "$_install" 2>/dev/null && pwd -P)" == "$_self_root" ]] && _origin_ok=true
-    done <<<"$_registered"
+      if [[ -n "$_install" && "$(cd "$_install" 2>/dev/null && pwd -P)" == "$_self_root" ]]; then _origin_ok=true; fi
+    done < <(jq -r '.plugins // {} | to_entries[] | select(.key | test("silver-bullet"; "i")) | .value[]? | .installPath // empty' "$(sb_plugin_cache_registry_file)" 2>/dev/null || true)
+  fi
+  if [[ "$_registry_seen" != true && "$_origin_ok" != true ]]; then
+    _plugins_dir="$(cd "${SB_RUNTIME_HOME_ROOT:-/nonexistent}/plugins" 2>/dev/null && pwd -P)" || _plugins_dir=""
+    if [[ -n "$_plugins_dir" ]]; then
+      case "$_self_root" in "$_plugins_dir"/*) _origin_ok=true ;; esac
+    fi
   fi
 fi
 if [[ "$_origin_ok" != true ]]; then
-  declare -F _sb_state_seal_log >/dev/null 2>&1 && _sb_state_seal_log "$STATE_FILE" "recorder refused: it is not running from the plugin root the host registered ($_self_root)"
+  if declare -F _sb_state_seal_log >/dev/null 2>&1; then _sb_state_seal_log "$STATE_FILE" "recorder refused: it is not running from a root the host registered ($_self_root)"; fi
   exit 0
 fi
 
@@ -351,6 +359,8 @@ debug_record_skill
 
 recorded_any=false
 completed_skills_to_mark=()
+sb_state_seal_lock "$STATE_FILE"
+trap 'sb_state_seal_unlock' EXIT
 
 for raw in "${skills_to_record[@]}"; do
   loaded_only=false
@@ -446,6 +456,7 @@ done
 if [[ "${recorded_any:-false}" == true ]]; then
   sb_state_seal_write "$STATE_FILE"
 fi
+sb_state_seal_unlock
 
 if [[ ${#completed_skills_to_mark[@]} -gt 0 ]] && declare -F sb_session_ledger_mark_completed >/dev/null 2>&1; then
   for skill in "${completed_skills_to_mark[@]}"; do

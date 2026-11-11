@@ -117,6 +117,8 @@ fi
 if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]]; then
   unseen_why="$(sb_pf_unseen_reason)"
   [[ -z "$unseen_why" ]] || deny "$(sb_pf_unseen_message "$unseen_why")"
+  patch_why="$(sb_pf_patch_verdict)"
+  [[ -z "$patch_why" ]] || deny "$(sb_pf_patch_message "$patch_why")"
 fi
 
 # Is this canonical path one of the SB-managed planning artifacts? Sets planning_rel.

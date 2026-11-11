@@ -24,6 +24,7 @@
 #   sb_state_seal_enforce STATE    before appending: drop unsealed lines; empty a tampered state
 #   sb_state_seal_trusted STATE    print the content the gates may trust
 #   sb_state_seal_file STATE       the seal path
+#   sb_state_seal_lock STATE / sb_state_seal_unlock   serialise a recorder's enforce, append and re-seal
 
 sb_state_seal_file() { printf '%s.seal' "$1"; }
 _sb_state_seal_hwm_file() { printf '%s.hwm' "$1"; }
@@ -130,6 +131,11 @@ _sb_state_seal_status() {
   if [[ "$version" != v2 || ! "$c" =~ ^[0-9]+$ || ! "$n" =~ ^[0-9]+$ ]]; then
     _SB_SEAL_STATE=tampered; _SB_SEAL_WHY="the seal is unreadable"; return 0
   fi
+  # A plain checksum is what a seal made without python3 holds. Where keyed seals are possible
+  # (python3 or a key exists) an unkeyed one is a downgrade, not a fallback.
+  if [[ "$kind" != hmac ]] && { command -v python3 >/dev/null 2>&1 || [[ -f "$(_sb_state_seal_key_file "$state")" ]]; }; then
+    _SB_SEAL_STATE=tampered; _SB_SEAL_WHY="the seal is unkeyed although keyed seals are available"; return 0
+  fi
   lines="$(wc -l <"$state" | tr -d ' ')"
   # An emptied state (rm, : >) holds nothing to trust or distrust: a reset by its owner.
   [[ "$lines" -gt 0 ]] || return 0
@@ -172,4 +178,29 @@ sb_state_seal_enforce() {
       rm -f -- "$(sb_state_seal_file "$state")"
       ;;
   esac
+}
+
+# One recorder at a time reads, extends and re-seals the state: concurrent recorders (parallel
+# subagents) would otherwise take each other's fresh line for an unsealed one. mkdir is atomic and
+# portable; a lock whose owner is gone, or that is over a minute old, is taken over; after
+# SB_STATE_SEAL_LOCK_TRIES waits (0.1 s apart, default 50) the recorder goes on without it.
+sb_state_seal_lock() { # STATE
+  local lock="$1.lock" tries="${SB_STATE_SEAL_LOCK_TRIES:-50}" pid
+  while ! mkdir "$lock" 2>/dev/null; do
+    pid="$(cat "$lock/pid" 2>/dev/null || true)"
+    if { [[ -n "$pid" ]] && ! kill -0 "$pid" 2>/dev/null; } || [[ -n "$(find "$lock" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then
+      rm -rf -- "$lock"
+      continue
+    fi
+    tries=$((tries - 1))
+    [[ "$tries" -gt 0 ]] || return 0
+    sleep 0.1
+  done
+  printf '%s\n' "$$" >"$lock/pid"
+  SB_STATE_SEAL_LOCK_HELD="$lock"
+}
+
+sb_state_seal_unlock() {
+  if [[ -n "${SB_STATE_SEAL_LOCK_HELD:-}" ]]; then rm -rf -- "$SB_STATE_SEAL_LOCK_HELD"; fi
+  SB_STATE_SEAL_LOCK_HELD=""
 }

@@ -14,6 +14,8 @@ export SILVER_BULLET_TEST_HOOK_ENFORCED=1
 
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/record-skill.sh"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# The recorder runs from this checkout: name it the way a developer running the host from a checkout does.
+export SILVER_BULLET_DEV_PLUGIN_ROOT="$REPO_ROOT"
 PASS=0
 FAIL=0
 TEST_HOME_CLEANUP=""

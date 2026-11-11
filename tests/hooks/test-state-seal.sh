@@ -217,4 +217,44 @@ sb_state_seal_enforce "$S"
 assert_file_absent "enforce through a symlinked state does nothing" "$TL_TMP/real2"
 rm -f "$S"
 
+# an unkeyed seal is a downgrade where keyed seals are possible
+fresh
+printf 'a\n' >"$S"
+sb_state_seal_write "$S"
+printf 'v2\ncksum\n1\n1\n-\n%s\n' "$(printf 'sb-seal-v2\n1\n1\n-\na\n' | cksum | tr ' ' -)" >"$S.seal"
+assert_eq "a checksum seal with python3 and a key available is not trusted" "" "$(sb_state_seal_trusted "$S")"
+assert_contains "and logged as a downgrade" "$(logged)" "unkeyed"
+fresh
+printf 'a\n' >"$S"
+PATH="$NOPY" sb_state_seal_write "$S"
+assert_eq "a checksum seal with neither python3 nor a key still verifies" "a" "$(PATH="$NOPY" sb_state_seal_trusted "$S")"
+assert_eq "but not once python3 is back" "" "$(sb_state_seal_trusted "$S")"
+
+# the lock
+fresh
+LK="$S.lock"
+sb_state_seal_lock "$S"
+assert_file_exists "the lock is taken" "$LK/pid"
+assert_eq "it names its owner" "$$" "$(cat "$LK/pid")"
+sb_state_seal_unlock
+assert_file_absent "and released" "$LK"
+sb_state_seal_unlock
+assert_file_absent "releasing twice does nothing" "$LK"
+mkdir "$LK"
+printf '99999999\n' >"$LK/pid"
+sb_state_seal_lock "$S"
+assert_eq "a lock whose owner is gone is taken over" "$$" "$(cat "$LK/pid")"
+sb_state_seal_unlock
+mkdir "$LK"
+touch -t 202001010000 "$LK"
+sb_state_seal_lock "$S"
+assert_eq "a lock over a minute old is taken over" "$$" "$(cat "$LK/pid")"
+sb_state_seal_unlock
+mkdir "$LK"
+printf '%s\n' "$$" >"$LK/pid"
+SB_STATE_SEAL_LOCK_TRIES=2 sb_state_seal_lock "$S"
+assert_eq "a lock held by a live owner is waited for, then given up" "" "${SB_STATE_SEAL_LOCK_HELD:-}"
+assert_file_exists "and left alone" "$LK/pid"
+rm -rf "$LK"
+
 tl_results
