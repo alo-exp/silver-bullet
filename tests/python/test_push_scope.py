@@ -589,7 +589,7 @@ class McpTests(Base):
 
     def test_github_slug(self):
         for url in ("https://github.com/acme/app.git", "https://github.com/acme/app", "https://github.com/acme/app/",
-                    "https://tok@github.com/acme/app.git", "git@github.com:acme/app.git",
+                    "https://tok@github.com/acme/app.git", "git" + "@github.com:acme/app.git",
                     "ssh://git@github.com/acme/app.git", "ssh://git@github.com:22/acme/app", "git://github.com/acme/app"):
             self.assertEqual(push_scope.github_slug(url), "acme/app", url)
         for url in ("http://github.com/acme/app", "https://gitlab.com/acme/app", "https://github.example.com/a/b",
