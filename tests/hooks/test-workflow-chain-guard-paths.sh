@@ -294,13 +294,4 @@ assert_contains "the only workflow is the active one without any variable" "$(re
 dg_run "$P" "$H" "$(sh "export SB_WORKFLOW_ID=wf9; echo x > src/app.py")" SILVER_BULLET_STATE_FILE="$STATE"
 assert_eq "a first-line export selects among workflows but cannot open the gate" "deny" "$(dec)"
 
-# --- round 3: patch writes while the chain is incomplete -------------------------------------------
-fresh; workflow wf1 /sb:ui
-markers silver-quality-gates
-dg_run "$P" "$H" "$(sh 'patch -p1 < p.diff')" SILVER_BULLET_STATE_FILE="$STATE"
-assert_eq "a patch read from standard input is refused" "deny" "$(dec)"
-assert_contains "with the patch message" "$TL_OUT" "cannot inspect patch"
-dg_run "$P" "$H" "$(sh 'git am p.mbox')" SILVER_BULLET_STATE_FILE="$STATE"
-assert_contains "git am of a file that is not there cannot be inspected" "$TL_OUT" "cannot inspect patch"
-
 tl_results

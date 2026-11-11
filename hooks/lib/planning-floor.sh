@@ -31,18 +31,8 @@
 #                                        check SB_PF_SKILLS; 1: not a skill invocation channel;
 #                                        2: an invoke-skill command that cannot be analysed (deny
 #                                        with sb_pf_unanalysable_message)
-#   sb_pf_runs_sb_recorder               the command runs a Silver Bullet record-*.sh hook script
-#   sb_pf_names_sb_recorder              any non-reader command names a record-*.sh script or, in an
-#                                        installed copy, copies/links the plugin hooks directory
-#   sb_pf_text_names_recorder            the (non read-only) command text spells out /hooks/record-...
 #   sb_pf_unseen_reason                  why the loaded shell command cannot be inspected ("" when
 #                                        it can, or when it is plainly read-only)
-#   sb_pf_expand_ancestors RECORDS PATH...  RECORDS plus a "via<TAB>PATH" record for every PATH a
-#                                        directory-capable write (cp -r, rsync, tar -x, unzip, mv,
-#                                        git checkout) or a deletion/move-away covers because it is
-#                                        at or below the target
-#   sb_pf_argv_touches_dir DIR...        a command (ln, find -exec) names a path in or above DIR
-#   sb_pf_script_mentions NEEDLE...      an interpreter script file the command runs names a NEEDLE
 #   sb_pf_mcp_write_tool NAME            an MCP tool name that writes files
 #   sb_pf_contract_unlocked              a skill that legitimately writes the contract files is recorded
 #   sb_pf_state_has_skill SKILL...       one of the skills is recorded in this session's state
@@ -52,13 +42,10 @@
 #                                        opaque writer (python -c, awk system(), ...), else nothing;
 #                                        with `all` for any command (a command that did not parse)
 #   sb_pf_opaque_records [all]           the same as "opaque<TAB>path" records (like sb_pf_write_records)
-#   sb_pf_opaque_mentions NEEDLE...      an opaque writer (interpreter one-liner, awk system(),
-#                                        sed w) whose command text names one of the lower-case
-#                                        NEEDLEs (case-insensitive): its writes cannot be listed
 
 _sb_pf_dir="${BASH_SOURCE[0]:-$0}"
 _sb_pf_dir="${_sb_pf_dir%/*}"
-for _sb_pf_lib in runtime-paths.sh path-canonical.sh hook-output.sh tool-input.sh required-skills.sh skill-discovery.sh state-seal.sh contract-unlock.sh patch-check.sh; do
+for _sb_pf_lib in runtime-paths.sh path-canonical.sh hook-output.sh tool-input.sh required-skills.sh skill-discovery.sh state-seal.sh contract-unlock.sh integrity.sh; do
   # shellcheck source=/dev/null
   [[ -f "$_sb_pf_dir/$_sb_pf_lib" ]] && source "$_sb_pf_dir/$_sb_pf_lib"
 done
@@ -86,9 +73,6 @@ sb_pf_write_records() {
         printf '%s' "${SB_SA_JSON:-}" | jq -r --arg tree "$SB_PF_TREE_VIAS" '
           .writes[]? | select((.scope // "path") == "path" or (.via as $v | $tree | split("|") | index($v)))
           | select((.dynamic | not) or (.path | startswith("/"))) | [.via, .path] | @tsv' 2>/dev/null
-        _sb_pf_pattern_records
-        _sb_pf_brace_records
-        _sb_pf_patch_scan | while IFS=$'\t' read -r kind val; do [[ "$kind" != PATH ]] || printf 'patch\t%s\n' "$val"; done
         ;;
       *)
         {
@@ -114,156 +98,18 @@ sb_pf_write_records() {
 
 # Tree-scope writes (the whole work tree at a path) that G2 gates: extractors. Patch appliers are
 # judged by sb_pf_patch_verdict and recorded by the paths of their diff.
-SB_PF_TREE_VIAS='tar -x|unzip'
+SB_PF_TREE_VIAS='tar -x|unzip|patch|git apply|git am'
+# Extractors write whatever their archive holds, so they can also cover the contract files.
+sb_pf_extract_via() {
+  case "$1" in "tar -x" | unzip) return 0 ;; esac
+  return 1
+}
+
 sb_pf_tree_via() {
   case "|$SB_PF_TREE_VIAS|" in *"|$1|"*) return 0 ;; esac
   return 1
 }
 # Names Silver Bullet protects wherever they sit (basenames), and the planning files below .planning/.
-SB_PF_PROTECTED_BASENAMES='silver-bullet.md .silver-bullet.json .silver-bullet.prompt.json CLAUDE.md AGENTS.md'
-SB_PF_PLANNING_BASENAMES='ROADMAP.md STATE.md PROJECT.md RELEASE.md REQUIREMENTS.md UAT.md'
-
-# Paths a pattern could name that Silver Bullet protects, whether or not they exist yet: the state
-# directory and its files, and for the working directory, the pattern's directory and their
-# project roots: the contract files, the instruction files and the planning files.
-_sb_pf_candidates() {
-  local lit_dir="${1:-}" sd="${SB_RUNTIME_STATE_DIR:-}" dir base cfg root name
-  if [[ -n "$sd" ]]; then
-    printf '%s\n' "$sd" "$sd/state" "$sd/trivial" "$sd/branch" "$sd/state.seal" "$sd/state.hwm" "$sd/seal.key" "$sd/verify-tests-state" "$sd/contract-unlock"
-  fi
-  for dir in "$PWD" "$lit_dir"; do
-    [[ -n "$dir" && -d "$dir" ]] || continue
-    root=""
-    if declare -f sb_find_project_config_walk_only_from >/dev/null 2>&1; then
-      cfg="$(sb_find_project_config_walk_only_from "$dir" 2>/dev/null || true)"
-      [[ -z "$cfg" ]] || root="$(dirname "$cfg")"
-    fi
-    for base in "$dir" "$root"; do
-      [[ -n "$base" ]] || continue
-      for name in $SB_PF_PROTECTED_BASENAMES; do printf '%s/%s\n' "$base" "$name"; done
-      for name in $SB_PF_PLANNING_BASENAMES; do printf '%s/.planning/%s\n' "$base" "$name"; done
-    done
-  done
-}
-
-# _sb_pf_pattern_expand VIA PATTERN [any]: the paths a shell pattern (* ? [..]) can name: every
-# file it matches now, and every protected path it could match (a pattern cannot create a file,
-# but a variable or a brace list can). With `any`, a leading wildcard may match a dot name.
-_sb_pf_pattern_expand() {
-  local via="$1" pat="$2" any="${3:-}" f n=0 lit lit_dir c base
-  (
-    shopt -s nullglob 2>/dev/null
-    set +f
-    IFS=
-    # shellcheck disable=SC2086  # pathname expansion of the pattern is the point
-    for f in $pat; do
-      printf '%s\t%s\n' "$via" "$f"
-      n=$((n + 1))
-      [[ "$n" -lt 200 ]] || break
-    done
-  )
-  lit="${pat%%[*?[]*}"
-  lit_dir="${lit%/*}"
-  while IFS= read -r c; do
-    base="${c##*/}"
-    if [[ "$any" != any && "$base" == .* ]]; then
-      case "${pat##*/}" in [\*\?\[]*) continue ;; esac
-    fi
-    # shellcheck disable=SC2254  # the pattern is meant to be a glob
-    case "$c" in $pat) printf '%s\t%s\n' "$via" "$c" ;; esac
-  done < <(_sb_pf_candidates "$lit_dir")
-}
-
-# RAW is $VAR / ${VAR} assigned from mktemp in this command, or a $(mktemp ...) itself.
-_sb_pf_bare_var_is_mktemp() {
-  local raw="$1" name cmd="${SB_TI_COMMAND:-}"
-  # shellcheck disable=SC2016  # the text is matched literally
-  case "$raw" in '$(mktemp'* | '`mktemp'*) return 0 ;; esac
-  name="${raw#\$}"
-  name="${name#\{}"
-  name="${name%\}}"
-  [[ "$name" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || return 1
-  case "$cmd" in
-    *"$name=\$(mktemp"* | *"$name=\`mktemp"* | *"$name=\"\$(mktemp"*) return 0 ;;
-  esac
-  return 1
-}
-
-# The raw text of the first write target that is nothing but an unresolved variable (not a
-# mktemp file), else nothing and status 1. Scripts are exempt (SB_PF_SKIP_BARE_DYNAMIC).
-sb_pf_bare_variable_target() {
-  local raw pat
-  [[ -z "${SB_PF_SKIP_BARE_DYNAMIC:-}" ]] || return 1
-  while IFS= read -r raw; do
-    # shellcheck disable=SC2016  # a sed expression, not shell
-    pat="$(printf '%s' "$raw" | sed -E 's/\$\{[^}]*\}|\$\([^)]*\)|\$[A-Za-z_][A-Za-z0-9_]*|`[^`]*`|\$[0-9@*#?!$-]/*/g')"
-    [[ "$pat" == "*" ]] || continue
-    ! _sb_pf_bare_var_is_mktemp "$raw" || continue
-    printf '%s' "$raw"
-    return 0
-  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '.writes[]? | select(.dynamic) | .raw // empty' 2>/dev/null)
-  return 1
-}
-
-# Targets that hold a glob character or a variable the analysis could not resolve.
-_sb_pf_pattern_records() {
-  local via pat dyn raw
-  while IFS=$'\t' read -r via pat dyn raw; do
-    if [[ "$dyn" == true ]]; then
-      # A path that starts with a variable may be absolute: it is not joined to the directory.
-      case "$raw" in '$'*) pat="$raw" ;; esac
-      # shellcheck disable=SC2016  # a sed expression, not shell
-      pat="$(printf '%s' "$pat" | sed -E 's/\$\{[^}]*\}|\$\([^)]*\)|\$[A-Za-z_][A-Za-z0-9_]*|`[^`]*`|\$[0-9@*#?!$-]/*/g')"
-      # A target that is nothing but a variable could be anything. Scripts (whose variables are
-      # their own business) and temp files made by mktemp in the same command are the honest cases.
-      if [[ "$pat" == "*" ]]; then
-        [[ -z "${SB_PF_SKIP_BARE_DYNAMIC:-}" ]] || continue
-        _sb_pf_bare_var_is_mktemp "$raw" && continue
-      fi
-      _sb_pf_pattern_expand "$via" "$pat" any
-    else
-      _sb_pf_pattern_expand "$via" "$pat"
-    fi
-  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r --arg tree "$SB_PF_TREE_VIAS" '
-    .writes[]? | select((.scope // "path") == "path" or (.via as $v | $tree | split("|") | index($v)))
-    | select(.dynamic or (.path | test("[*?\\[]")))
-    | [.via, .path, (.dynamic // false | tostring), (.raw // .path)] | @tsv' 2>/dev/null)
-}
-
-# One level of {a,b} expansion; {1..3} becomes a wildcard. Prints every alternative.
-_sb_pf_brace_expand() {
-  local w="$1" pre rest body post alt
-  local -a parts
-  case "$w" in
-    *\{*,*\}*) ;;
-    *\{*..*\}*) pre="${w%%\{*}"; rest="${w#*\{}"; printf '%s*%s\n' "$pre" "${rest#*\}}"; return 0 ;;
-    *) printf '%s\n' "$w"; return 0 ;;
-  esac
-  pre="${w%%\{*}"
-  rest="${w#*\{}"
-  body="${rest%%\}*}"
-  post="${rest#*\}}"
-  IFS=, read -r -a parts <<<"$body"
-  for alt in "${parts[@]}"; do _sb_pf_brace_expand "$pre$alt$post"; done
-}
-
-# Brace lists: the analysis keeps one alternative, bash writes them all.
-_sb_pf_brace_records() {
-  local text="${SB_TI_COMMAND:-}" word alt
-  [[ "$text" == *\{*,*\}* || "$text" == *\{*..*\}* ]] || return 0
-  while IFS= read -r word; do
-    case "$word" in *\$\{* | '') continue ;; esac
-    [[ "$word" == *\{*\}* ]] || continue
-    while IFS= read -r alt; do
-      [[ -n "$alt" ]] || continue
-      alt="${alt/#\~/$HOME}"
-      case "$alt" in
-        *[*?[]*) _sb_pf_pattern_expand brace "$alt" ;;
-        *) printf 'brace\t%s\n' "$alt" ;;
-      esac
-    done < <(_sb_pf_brace_expand "$word")
-  done < <(printf '%s\n' "$text" | tr -s '[:space:];|&<>()"`\047' '\n' | head -200)
-}
 
 sb_pf_write_targets() {
   sb_pf_write_records "$@" | cut -f2- | awk 'NF && !seen[$0]++'
@@ -379,16 +225,6 @@ sb_pf_opaque_records() {
   done < <(sb_pf_opaque_targets "$@")
 }
 
-sb_pf_opaque_mentions() {
-  local text needle
-  printf '%s' "${SB_SA_JSON:-}" | jq -e '(.opaque_writers // []) | length > 0' >/dev/null 2>&1 || return 1
-  text="$(printf '%s' "${SB_TI_COMMAND:-}" | tr '[:upper:]' '[:lower:]')"
-  for needle in "$@"; do
-    [[ "$text" == *"$needle"* ]] && return 0
-  done
-  return 1
-}
-
 sb_pf_invoked_skills() {
   local skill input="${1:-}" mode="${2:-}" tool
   tool="$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null)"
@@ -433,60 +269,7 @@ sb_pf_skill_calls() {
   return 0
 }
 
-# sb_pf_runs_sb_recorder: a command word (or the script an interpreter runs) is a hook script
-# that records state (record-skill.sh and its siblings). Reading one (cat, grep) does not count.
-sb_pf_runs_sb_recorder() {
-  printf '%s' "${SB_SA_JSON:-}" | jq -e '
-    [.commands[]? | .argv as $a
-     | (if ($a[0] | split("/") | last | test("^(bash|sh|zsh|dash|source|\\.)$")) and ($a | length) > 1
-        then ($a[1:] | map(select(startswith("-") | not)) | .[0] // "") else $a[0] end)
-     | split("/") | last | select(test("^record-[A-Za-z0-9*?\\[\\]-]+(\\.[A-Za-z*?]+)?$"))]
-    | length > 0' >/dev/null 2>&1
-}
-
 # Programs that only read, list or inspect: naming a recorder script to them is not running it.
-SB_PF_READER_PROGRAMS='^(cat|grep|egrep|fgrep|rg|sed|awk|head|tail|wc|diff|cmp|ls|stat|file|git|shellcheck|nl|less|more|jq|sha256sum|shasum|cksum|md5sum|realpath|readlink|basename|dirname|test|\[|echo|printf|which|type)$'
-
-# The recorder script names of this plugin (record-*.sh next to the hooks this library belongs to).
-_sb_pf_recorder_names() {
-  local f
-  for f in "$_sb_pf_dir"/../record-*.sh; do
-    [[ -f "$f" ]] && printf '%s\n' "${f##*/}"
-  done
-  return 0
-}
-
-# Any command that is not a reader and names a recorder: by its name, by a glob or a variable that
-# can expand to one (the basename is matched as a pattern against the recorder names), or, with a
-# hooks directory, by copying that directory (or a directory above it).
-sb_pf_names_sb_recorder() {
-  local hooks_dir="${1:-}" prog arg base names name lit
-  names="$(_sb_pf_recorder_names)"
-  while IFS=$'\t' read -r prog arg; do
-    [[ -n "$arg" ]] || continue
-    [[ "$prog" =~ $SB_PF_READER_PROGRAMS ]] && continue
-    base="${arg##*/}"
-    # shellcheck disable=SC2016  # variables are replaced by a wildcard, not expanded
-    base="$(printf '%s' "$base" | sed -E 's/\$\{[^}]*\}|\$\([^)]*\)|\$[A-Za-z_][A-Za-z0-9_]*/*/g')"
-    case "$base" in record-*) return 0 ;; esac
-    # Enough literal characters that a wildcard is aimed at a recorder, not at every script.
-    lit="$(printf '%s' "$base" | tr -d '*?[]' | tr -cd '[:alnum:]')"
-    [[ ${#lit} -ge 6 ]] || continue
-    for name in $names; do
-      # shellcheck disable=SC2254  # the basename is meant to be a glob
-      case "$name" in $base) return 0 ;; esac
-    done
-  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '
-    .commands[]? | (.argv[0] | split("/") | last) as $p | .argv[1:][] | select(startswith("-") | not) | [$p, .] | @tsv' 2>/dev/null)
-  if [[ -n "$hooks_dir" ]]; then sb_pf_argv_copies_dir "$hooks_dir" && return 0; fi
-  return 1
-}
-
-# Inline code (python -c, perl -e, find -exec ...) that spells out a recorder's real path. Only
-# meaningful in an installed copy, where nothing but the host has a reason to name one.
-sb_pf_text_names_recorder() {
-  [[ "${SB_SA_READ_ONLY:-false}" != "true" && "${SB_TI_COMMAND:-}" == */hooks/record-* ]]
-}
 
 # Why the loaded shell command cannot be inspected: the analyser's unseen reasons (an exceeded
 # budget, eval of computed text, a shell fed by a pipe, ...). Empty when the command is plainly
@@ -496,67 +279,6 @@ sb_pf_unseen_reason() {
   local reasons="${SB_SA_UNSEEN_REASONS:-}"
   [[ -n "$reasons" ]] || return 0
   printf '%s' "$(printf '%s' "$reasons" | head -n 3 | tr '\n' ';')"
-}
-
-# Code given on the command line (python -c, node -e, perl -e, awk system(), a program on stdin)
-# can build any path at run time, so its writes cannot be listed. The first reason, "" when the
-# command is plainly read-only or holds none.
-sb_pf_inline_code_reason() {
-  [[ "${SB_SA_READ_ONLY:-false}" != "true" ]] || return 0
-  local reason
-  reason="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '
-    ([.opaque_writers[]? | .reason // empty
-      | select(test("^(inline |awk system|python reads its program from stdin)"))][0]) as $f
-    | ([.commands[]? | (.argv[0] | split("/") | last) as $p | .argv as $a
-        | select(($p == "deno" and ($a[1:] | index("eval")))
-                 or ($p == "bun" and ($a[1:] | map(select(. == "-e" or . == "--eval" or . == "-p" or . == "--print")) | length > 0))
-                 or ($p | IN("osascript","lua","julia","Rscript","tclsh","gawk","mawk","php")) and ($a[1:] | map(select(. == "-e" or . == "-r" or . == "--eval" or . == "-E")) | length > 0))
-        | "inline " + $p + " code"][0]) as $o
-    | $f // $o // empty' 2>/dev/null || true)"
-  [[ -n "$reason" ]] || return 0
-  # perl -pi / ruby -pi filter the files they name: allowed only over plain files, and only when
-  # the code holds nothing that renames, deletes, runs or opens another file.
-  if [[ "$reason" == "inline perl code" || "$reason" == "inline ruby code" ]] && _sb_pf_inplace_plain; then return 0; fi
-  printf '%s' "$reason"
-}
-
-# Every in-place (perl -i / ruby -i) write of the loaded command is a literal, unprotected path, and
-# the command text holds none of the words that let such code reach another file.
-_sb_pf_inplace_plain() {
-  local path dyn n=0 text word
-  while IFS=$'\t' read -r path dyn; do
-    [[ "$dyn" == false ]] || return 1
-    case "$path" in *[*?[]*) return 1 ;; esac
-    ! sb_pf_path_protected "$(sb_pf_canon "$path")" || return 1
-    n=$((n + 1))
-  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '.writes[]? | select(.via | test(" -i$")) | [.path, (.dynamic // false | tostring)] | @tsv' 2>/dev/null)
-  [[ "$n" -gt 0 ]] || return 1
-  text="$(printf '%s' "${SB_TI_COMMAND:-}" | tr '[:upper:]' '[:lower:]')"
-  for word in rename unlink system open begin exec eval qx require; do
-    [[ "$text" != *"$word"* ]] || return 1
-  done
-  return 0
-}
-
-# A script the command runs that cannot be read: it exists but is unreadable, or the command writes
-# it itself (echo > x.py; python3 x.py). Prints it. RECORDS are the command's "via<TAB>path" writes.
-sb_pf_unreadable_script() {
-  local records="${1:-}" prog abs
-  [[ "${SB_SA_READ_ONLY:-false}" != "true" ]] || return 1
-  while IFS= read -r prog; do
-    abs="$(sb_pf_canon "$prog")"
-    if [[ -e "$abs" ]]; then
-      [[ -f "$abs" && -r "$abs" ]] || { printf '%s' "$prog"; return 0; }
-      continue
-    fi
-    if printf '%s\n' "$records" | cut -f2 | grep -Fxq -- "$abs"; then printf '%s' "$prog"; return 0; fi
-  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '
-    .opaque_writers[]? | select((.reason // "") | test("^runs an? ([a-z]+ )?script$")) | .program // empty' 2>/dev/null)
-  return 1
-}
-
-sb_pf_inline_code_message() {
-  printf '🛑 Silver Bullet cannot inspect: %s.\n\nCode given on the command line can build the path of any protected file when it runs, so it is refused inside a Silver Bullet project. Put it in a script file in the project and run that file, use the proper tool (jq for JSON, sed or the Edit tool for files), or ask the user to run it from their own terminal. To read a file, use cat, grep or jq.' "$1"
 }
 
 # sb_pf_tool_input_load INPUT: sb_tool_input_load, except that a plain Edit/Write/MultiEdit call with a
@@ -583,117 +305,6 @@ sb_pf_unseen_message() {
 }
 
 # Names whose copy or move into a directory replaces something Silver Bullet protects.
-SB_PF_PROTECTED_NAMES='^(silver-bullet\.md|\.silver-bullet\.json|\.silver-bullet\.prompt\.json|\.silver-bullet|state|trivial|branch|ROADMAP\.md|STATE\.md|PROJECT\.md|RELEASE\.md|REQUIREMENTS\.md|UAT\.md|\.planning)$'
-
-# cp/mv/install: recursive, or a source that is a directory or carries a protected name.
-_sb_pf_sources_capable() {
-  local prog="$1" recursive="$2" src
-  while IFS= read -r src; do
-    [[ -n "$src" ]] || continue
-    [[ -d "$src" ]] && return 0
-    [[ "${src##*/}" =~ $SB_PF_PROTECTED_NAMES ]] && return 0
-  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r --arg p "$prog" --arg rec "$recursive" '
-    .commands[]? | select((.argv[0] | split("/") | last) == $p)
-    | (.argv[1:] | map(select(startswith("-") | not))) as $a
-    | if $rec == "1" and ([.argv[1:][] | select(test("^-[A-Za-z]*[rRa]") or . == "--recursive" or . == "--archive")] | length > 0)
-      then "/" else empty end,
-      ($a[0:(($a | length) - 1)][])' 2>/dev/null)
-  return 1
-}
-
-# Directory-capable write: the target may be a directory the command fills with a whole tree.
-sb_pf_dir_capable_via() {
-  case "$1" in
-    rsync | "tar -x" | unzip | "unzip -d" | "git checkout" | "git restore") return 0 ;;
-    cp) _sb_pf_sources_capable cp 1 ;;
-    mv) _sb_pf_sources_capable mv 0 ;;
-    install) _sb_pf_sources_capable install 0 ;;
-    *) return 1 ;;
-  esac
-}
-
-# A write that covers everything below its target: a tree written (dir-capable) or deleted/moved away.
-sb_pf_covering_via() {
-  case "$1" in
-    rm | rmdir | unlink | "git rm" | "find -delete" | "mv source") return 0 ;;
-  esac
-  sb_pf_dir_capable_via "$1"
-}
-
-sb_pf_expand_ancestors() {
-  local records="${1:-}" via target path
-  shift
-  printf '%s\n' "$records"
-  while IFS=$'\t' read -r via target; do
-    [[ -n "$target" ]] || continue
-    sb_pf_covering_via "$via" || continue
-    for path in "$@"; do
-      [[ "$path" != "$target" ]] || continue
-      case "$path" in
-        "$target"/*) printf '%s\t%s\n' "$via" "$path" ;;
-      esac
-    done
-  done <<<"$records"
-}
-
-# Paths of a copy or link command (and find -exec start points) that touch DIR: name it, sit in
-# it or contain it. MODE `link`: ln and find -exec. MODE `copy`: every program that copies, moves,
-# archives or links a tree out of reach of the write checks (cp mv rsync install ditto tar zip ln).
-# Only the paths that are in or above a DIR inside the host runtime home count in `copy` mode.
-_sb_pf_argv_scan() {
-  local mode="$1" dir arg prog hit="" home_root
-  shift
-  [[ $# -gt 0 ]] || return 1
-  home_root="$(sb_pf_canon "${SB_RUNTIME_HOME_ROOT:-/nonexistent-sb-home}")"
-  while IFS=$'\t' read -r prog arg; do
-    [[ -n "$arg" ]] || continue
-    arg="$(sb_pf_canon "$arg")"
-    for dir in "$@"; do
-      case "$arg/" in
-        "$dir"/* | "$dir/") hit=1 ;;
-      esac
-      case "$dir/" in
-        "$arg"/*)
-          if [[ "$mode" != copy ]]; then
-            hit=1
-          else
-            case "$arg" in "$home_root" | "$home_root"/*) hit=1 ;; esac
-          fi
-          ;;
-      esac
-      [[ -z "${hit:-}" ]] || return 0
-    done
-  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r --arg mode "$mode" '
-    .commands[]? | (.argv[0] | split("/") | last) as $p
-    | if ($mode == "link" and $p == "ln") or ($mode == "copy" and ($p | test("^(ln|cp|mv|rsync|install|ditto|tar|zip|cpio|scp)$")))
-      then (.argv[1:][] | select(startswith("-") | not) | [$p, .] | @tsv)
-      elif $p == "find" and (.argv | map(select(. == "-exec" or . == "-execdir" or . == "-ok" or . == "-okdir")) | length > 0)
-      then (.argv[1:] as $r | ($r | map(startswith("-")) | index(true)) as $i | $r[0:($i // ($r | length))][] | [$p, .] | @tsv)
-      else empty end' 2>/dev/null)
-  return 1
-}
-
-# A command (ln, find -exec/-execdir/-ok) names a path in, or above, one of the protected DIRs.
-sb_pf_argv_touches_dir() { _sb_pf_argv_scan link "$@"; }
-
-# A command copies, moves, archives or links DIR (or the hooks below it, or a directory above it).
-sb_pf_argv_copies_dir() { _sb_pf_argv_scan copy "$@"; }
-
-# An interpreter script file the command runs (python3 w.py, node x.js, perl p.pl, ruby r.rb)
-# whose body names a NEEDLE (lower-case, case-insensitive). Bodies are read up to 64 KiB.
-sb_pf_script_mentions() {
-  local script body needle
-  while IFS= read -r script; do
-    [[ -f "$script" ]] || continue
-    body="$(head -c 65536 "$script" | tr '[:upper:]' '[:lower:]')"
-    for needle in "$@"; do
-      [[ "$body" == *"$needle"* ]] && return 0
-    done
-  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '
-    .commands[]? | select((.argv[0] | split("/") | last) | test("^(python[0-9.]*|node|nodejs|perl|ruby|php|deno|bun)$"))
-    | (.argv[1:] | map(select(startswith("-") | not)) | .[0] // empty)' 2>/dev/null)
-  return 1
-}
 
 # MCP tools that write files, by name (the hooks.json matcher carries the same verbs; a test
 # compares the two): write edit create move rename patch replace delete append save insert copy

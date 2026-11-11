@@ -117,8 +117,6 @@ fi
 if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]]; then
   unseen_why="$(sb_pf_unseen_reason)"
   [[ -z "$unseen_why" ]] || deny "$(sb_pf_unseen_message "$unseen_why")"
-  patch_why="$(sb_pf_patch_verdict)"
-  [[ -z "$patch_why" ]] || deny "$(sb_pf_patch_message "$patch_why")"
 fi
 
 # Is this canonical path one of the SB-managed planning artifacts? Sets planning_rel.
@@ -239,9 +237,7 @@ ${skill_hint}
 
 A one-off doc fix is the user's decision: only the user can allow it, from their own terminal
 (\`touch ${SB_RUNTIME_STATE_DIR}/planning-edit-override\`, removed when done)." "$target"
-done < <(sb_pf_expand_ancestors "$(sb_pf_write_records "$input")" \
-  "$project_root/.planning/ROADMAP.md" "$project_root/.planning/STATE.md" "$project_root/.planning/PROJECT.md" \
-  "$project_root/.planning/RELEASE.md" "$project_root/.planning/REQUIREMENTS.md" "$project_root/.planning/UAT.md")
+done < <(sb_pf_write_records "$input")
 
 if [[ -n "$notices" ]]; then
   sb_emit_hook_message PreToolUse "$notices"

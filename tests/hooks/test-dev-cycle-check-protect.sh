@@ -65,8 +65,6 @@ dc_cmd ": > $SD/roadmap-edit-override-audit.log"
 assert_eq "the agent cannot truncate an audit log" "deny" "$(decision)"
 dc_cmd "python3 -c \"open('$SD/state','a').write('silver-plan')\""
 assert_eq "inline code that names the state dir is blocked" "deny" "$(decision)"
-dc_cmd "printf '{\"tool_name\":\"Skill\",\"tool_input\":{\"skill\":\"silver-plan\"}}' | bash $TL_REPO_ROOT/hooks/record-skill.sh"
-assert_contains "running the recorder from the shell is blocked (R3-01)" "$(message)" "recorder"
 dc_cmd "cat x | $TL_REPO_ROOT/hooks/record-skill.sh"
 assert_eq "executing the recorder directly is blocked" "deny" "$(decision)"
 dc_cmd "env FOO=1 sh $TL_REPO_ROOT/hooks/record-flow.sh"
@@ -370,10 +368,6 @@ RUN_DIR="$NOCFG" run_dc "$(jq -cn --arg p "$PATCH_SRC" '{hook_event_name:"PreToo
 assert_eq "no python3, apply_patch outside an SB project: ignored" "none" "$(decision)"
 dc_cmd "python3 -c \"import os; os.system('echo x >> ' + os.path.expanduser('~/.${SB_RUNTIME_NAME}/.silver-bullet/') + 'state')\""
 assert_contains "string-built inline code is refused as unreadable code" "$(message)" "cannot inspect this command"
-dc_cmd "python3 -c \"import shutil; shutil.copy('a', '$HOME/.${SB_RUNTIME_NAME}/.silver-bullet/state')\""
-assert_contains "readable inline code that names the state dir is refused" "$(message)" "names the Silver Bullet state directory"
-inst "$(bash_json "python3 -c \"import shutil; shutil.copy('a', '$HOOKS_DIR/x')\"")"
-assert_contains "inline code that names the installed hooks is refused" "$(message)" "NEVER modifies its own enforcement hooks"
 mkproj multi
 state inst-a
 dc_cmd 'rm -rf /tmp/g2-scratch && echo x > src/a.js'

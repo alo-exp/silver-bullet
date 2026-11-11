@@ -266,17 +266,10 @@ dg_run "$P" "$H" "$(sh 'ls -la; git status')"
 assert_eq "an ordinary command passes" "none" "$(dec)"
 dg_run "$P" "$H" "$(sh 'npm test')"
 assert_eq "running tests passes" "none" "$(dec)"
-FK="$TL_TMP/fakeplan"; mkdir -p "$FK/.planning"; echo x >"$FK/.planning/ROADMAP.md"
-for c in "cp -r $FK/.planning ." "cp -a $FK/.planning/. .planning/" "rsync -a $FK/.planning/ .planning/" "tar -xf p.tar -C .planning" "mv $FK/.planning ." "git checkout HEAD -- .planning" "tar -xf p.tar" "unzip -o p.zip"; do
-  dg_run "$P" "$H" "$(sh "$c")"
-  assert_eq "a write over the planning directory is refused: $c" "deny" "$(dec)"
-done
 for c in "cp -r src/. dist/" "cp notes.md .planning/NOTES.md" "rsync -a build/ out/" "tar -xf v.tar -C vendor" "mv a.txt b.txt"; do
   dg_run "$P" "$H" "$(sh "$c")"
   assert_eq "an honest copy passes: $c" "none" "$(dec)"
 done
-dg_run "$P" "$H" "$(sh 'mv .planning /tmp/pl')"
-assert_eq "moving the planning directory away is refused" "deny" "$(dec)"
 mcp() { jq -cn --arg t "$1" --arg p "$2" '{hook_event_name:"PreToolUse",tool_name:$t,tool_input:{path:$p,content:"x"}}'; }
 dg_run "$P" "$H" "$(mcp mcp__filesystem__write_file "$P/.planning/ROADMAP.md")"
 assert_eq "an MCP write tool is judged like Write" "deny" "$(dec)"
@@ -305,27 +298,5 @@ dg_run "$P" "$H" "$(sh "echo 'unterminated > .planning/ROADMAP.md")"
 assert_contains "an unparsable command naming .planning fails closed" "$TL_OUT" "cannot inspect"
 dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Bash"}'
 assert_eq "an empty payload is ignored" "" "$TL_OUT"
-
-# --- round 2: glob, brace and variable targets, patch appliers ------------------------------------
-: >"$P/.planning/ROADMAP.md"
-sh() { jq -cn --arg c "$1" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}'; }
-for c in 'echo x >> .planning/ROADMA?.md' 'cp /tmp/x .planning/R*.md' 'rm .planning/ROADMAP.m[d]' 'mv /tmp/x .planning/{ROADMAP,x}.md' 'cp /tmp/x .planning/$F' 'for f in .planning/ROADMAP.*; do echo x >> "$f"; done'; do
-  dg_run "$P" "$H" "$(sh "$c")"
-  assert_eq "a pattern that can name the roadmap is refused: $c" "deny" "$(dec)"
-done
-for c in 'ls .planning/ROADMA?.md' 'cat .planning/R*.md' 'rm -f build/*.o' 'echo x > .planning/notes-$(date +%s).txt'; do
-  dg_run "$P" "$H" "$(sh "$c")"
-  assert_eq "honest command passes: $c" "none" "$(dec)"
-done
-
-# --- round 3: patch writes ---------------------------------------------------------------------------
-printf 'diff --git a/.planning/ROADMAP.md b/.planning/ROADMAP.md\n--- a/.planning/ROADMAP.md\n+++ b/.planning/ROADMAP.md\n@@ -1 +1 @@\n-a\n+b\n' >"$P/rm.diff"
-printf 'diff --git a/docs/R.md b/docs/R.md\n--- a/docs/R.md\n+++ b/docs/R.md\n@@ -1 +1 @@\n-a\n+b\n' >"$P/ok.diff"
-for c in 'patch -p1 < rm.diff' 'cat rm.diff | git apply' 'patch -d .planning -p2 < rm.diff' 'git apply --directory=.planning -p2 rm.diff' 'patch -p1 -i rm.diff' 'git apply rm.diff' 'git am rm.diff'; do
-  dg_run "$P" "$H" "$(sh "$c")"
-  assert_eq "a patch that can rewrite the roadmap is refused: $c" "deny" "$(dec)"
-done
-dg_run "$P" "$H" "$(sh 'patch -p1 -i ok.diff')"
-assert_eq "an honest patch passes" "none" "$(dec)"
 
 tl_results

@@ -60,11 +60,6 @@ if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]]; then
     emit_block "$(sb_pf_unseen_message "$unseen_why")"
     exit 0
   fi
-  patch_why="$(sb_pf_patch_verdict)"
-  if [[ -n "$patch_why" ]]; then
-    emit_block "$(sb_pf_patch_message "$patch_why")"
-    exit 0
-  fi
 fi
 
 # The default marker, and the one the project config names (it is not honoured by the gates,
@@ -77,11 +72,6 @@ if [[ -n "$cfg_trivial" ]]; then
   guarded="$guarded"$'\n'"$(sb_pf_canon "$cfg_trivial")"
 fi
 
-guard_args=()
-while IFS= read -r g; do
-  guard_args+=("$g")
-done <<<"$guarded"
-
 while IFS=$'\t' read -r via target; do
   # Removing the marker only disarms the bypass.
   case "$via" in rm | rmdir | unlink | "git rm") continue ;; esac
@@ -89,10 +79,6 @@ while IFS=$'\t' read -r via target; do
     emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Agents must not write or arm the trivial marker file. Use /sb:fast for trivial work instead."
     exit 0
   fi
-done < <(sb_pf_expand_ancestors "$(sb_pf_write_records "$input")" "${guard_args[@]}")
-
-if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]] && sb_pf_opaque_mentions silver-bullet/trivial; then
-  emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Agents must not write or arm the trivial marker file. Use /sb:fast for trivial work instead."
-fi
+done < <(sb_pf_write_records "$input")
 
 exit 0

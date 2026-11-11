@@ -13,8 +13,6 @@
 # PYTHONUSERBASE is pinned to the real user base before HOME changes.
 
 TL_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-# The tests run the recorder from this checkout: name it the way a developer running the host from a checkout does.
-export SILVER_BULLET_DEV_PLUGIN_ROOT="$TL_REPO_ROOT"
 TL_PASS=0
 TL_FAIL=0
 
