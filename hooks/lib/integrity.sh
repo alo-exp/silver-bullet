@@ -1,4 +1,5 @@
 # shellcheck shell=bash
+# shellcheck disable=SC2034  # SB_IV_* are outputs, read by the gates that source this file
 # Silver Bullet — effect-based integrity of the files the gates rest on.
 #
 # Security model: Silver Bullet is an enforcement aid against a confused, over-eager or mistaken

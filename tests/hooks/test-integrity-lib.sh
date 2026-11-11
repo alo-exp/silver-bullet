@@ -19,7 +19,7 @@ fresh() {
   mkdir -p "$R/.planning"
   git -C "$R" init -q
   printf '# SB\n' >"$R/silver-bullet.md"
-  printf '{"sb_initiated":true,"skills":{"required_planning":["a","b"],"required_deploy":["a","b","c"],"required_deploy_devops":["d"]},"state":{"state_file":"~/s"}}\n' >"$R/.silver-bullet.json"
+  printf '{"sb_initiated":true,"skills":{"required_planning":["a","b"],"required_deploy":["a","b","c"],"required_deploy_devops":["d"]},"state":{"state_file":"custom/s"}}\n' >"$R/.silver-bullet.json"
   printf '{}\n' >"$R/.silver-bullet.prompt.json"
   printf 'rules\n' >"$R/CLAUDE.md"
   printf 'road\n' >"$R/.planning/ROADMAP.md"
@@ -43,7 +43,7 @@ assert_eq "status none before the first baseline" "none" "$SB_IV_STATUS"
 assert_eq "the live planning list is read" "a b" "$SB_IV_REQUIRED_PLANNING"
 assert_eq "and the deploy list" "a b c" "$SB_IV_REQUIRED_DEPLOY"
 assert_eq "and the devops deploy list" "d" "$SB_IV_REQUIRED_DEPLOY_DEVOPS"
-assert_eq "and the state file" "~/s" "$SB_IV_STATE_FILE"
+assert_eq "and the state file" "custom/s" "$SB_IV_STATE_FILE"
 assert_eq "no marker, no bypass" "false" "$SB_IV_TRIVIAL_OK"
 touch "$SD/trivial"
 verify
@@ -65,7 +65,7 @@ assert_eq "status ok" "ok" "$SB_IV_STATUS"
 assert_eq "nothing diverged" "" "$SB_IV_DIVERGED"
 assert_eq "the recorded planning list" "a b" "$SB_IV_REQUIRED_PLANNING"
 assert_eq "the recorded devops deploy list" "d" "$SB_IV_REQUIRED_DEPLOY_DEVOPS"
-assert_eq "the recorded state file" "~/s" "$SB_IV_STATE_FILE"
+assert_eq "the recorded state file" "custom/s" "$SB_IV_STATE_FILE"
 sb_integrity_baseline "" session
 sb_integrity_baseline "$R" session
 assert_eq "every baseline raises the counter" "2" "$(sed -n 3p "$(rec_of)")"
@@ -94,7 +94,7 @@ ln -s "$R/CLAUDE.md" "$R/.silver-bullet.json"
 verify
 assert_eq "a symlinked config diverges" "config" "$SB_IV_DIVERGED"
 rm -f "$R/.silver-bullet.json"
-printf '{"sb_initiated":true,"skills":{"required_planning":["a","b"],"required_deploy":["a","b","c"],"required_deploy_devops":["d"]},"state":{"state_file":"~/s"}}\n' >"$R/.silver-bullet.json"
+printf '{"sb_initiated":true,"skills":{"required_planning":["a","b"],"required_deploy":["a","b","c"],"required_deploy_devops":["d"]},"state":{"state_file":"custom/s"}}\n' >"$R/.silver-bullet.json"
 verify
 assert_eq "the original bytes verify again" "" "$SB_IV_DIVERGED"
 mv "$R/silver-bullet.md" "$TL_TMP/md.bak"
