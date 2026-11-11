@@ -182,6 +182,7 @@ assert_contains "an archive extracted over the project root can replace the cont
 
 ih_project x-marker-stop
 ih_run 'printf x > "$SD/trivial"'; tally
+touch "$SD/trivial"
 echo dirty >>"$PROJ/src/app.js"
 ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
 assert_eq "an unblessed marker does not bypass the stop gate" "block" "$(printf '%s' "$TL_OUT" | jq -r '.decision // "none"' 2>/dev/null || echo none)"
