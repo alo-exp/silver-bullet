@@ -183,10 +183,10 @@ def _secret_cases():
     add("run --secret %s", _rand(20))
     add("run --api-key %s", _rand(26))
     add("git clone https://admin:%s@git.corp.test/org/repo", _rand(16))
-    add("DB=postgres://app:%s@db.prod.corp.com:5432/x", _rand(18))
-    add("redis://cache:%s@redis.corp.com", _rand(14) + "5")
-    v.append(("curl https://admin:admin@prod-db.company.com/secret", "admin:admin"))
-    v.append(("mysql://root:root@db.prod.internal.company.com/db", "root:root"))
+    add("DB=postgres://app:%s@db-prod:5432/x", _rand(18))
+    add("redis://cache:%s@redis-prod", _rand(14) + "5")
+    v.append(("curl https://admin:admin@prod-db/secret", "admin:admin"))
+    v.append(("mysql://root:root@db-prod-internal/db", "root:root"))
     return v
 
 
@@ -301,8 +301,8 @@ class CorpusTests(unittest.TestCase):
         # the trivial-password exemption (not the user==password rule) and its host limit
         self.assertIsNone(agent_redact.scan("postgres://app:password@localhost/db"))
         self.assertIsNone(agent_redact.scan("postgres://app:changeme@[::1]:5432/db"))
-        self.assertEqual(agent_redact.scan("postgres://app:password@db.prod.company.com/db")[0], "url-userinfo")
-        self.assertEqual(agent_redact.scan("https://admin:admin@prod-db.company.com/x")[0], "url-userinfo")
+        self.assertEqual(agent_redact.scan("postgres://app:password@db-prod/db")[0], "url-userinfo")
+        self.assertEqual(agent_redact.scan("https://admin:admin@prod-db/x")[0], "url-userinfo")
 
     def test_camel_case_names_and_random_letter_runs(self):
         self.assertIsNone(agent_redact.scan("secret=getSecretFromVaultClientFactory"))
