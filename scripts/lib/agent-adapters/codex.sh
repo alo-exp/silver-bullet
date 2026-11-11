@@ -111,6 +111,8 @@ codex_capture_transcript() {
   local transcript_dest
   local archive_id
   local meta_dest
+  local capture_tmp
+  local redactor="${SCRIPT_DIR}/../agent_redact.py"
 
   [[ -f "$transcript_source_file" ]] || return 1
   transcript_dir="$(codex_transcript_dir_prepare)" || return 1
@@ -119,8 +121,10 @@ codex_capture_transcript() {
   meta_dest="${transcript_dir}/latest.meta.json"
   # Never write through a planted link (a named directory can hold one).
   [[ ! -L "$transcript_dest" && ! -L "$meta_dest" ]] || { printf 'ERROR: transcript target is a symlink\n' >&2; return 1; }
+  # Write and redact a private temp file inside the 0700 directory; only the redacted file reaches latest.jsonl.
+  capture_tmp="$(mktemp "${transcript_dir}/.capture.XXXXXX")" || return 1
   if [[ -f "$prompt_file" ]]; then
-    python3 - "$transcript_source_file" "$prompt_file" "$transcript_dest" <<'PY'
+    python3 - "$transcript_source_file" "$prompt_file" "$capture_tmp" <<'PY'
 import json
 import shutil
 import sys
@@ -137,8 +141,14 @@ with dest.open("w", encoding="utf-8") as out:
         shutil.copyfileobj(inp, out)
 PY
   else
-    cp -f -- "$transcript_source_file" "$transcript_dest"
+    cp -f -- "$transcript_source_file" "$capture_tmp"
   fi
+  if ! python3 "$redactor" --redact-file "$capture_tmp"; then
+    rm -f -- "$capture_tmp" "$transcript_dest"
+    printf 'ERROR: transcript redaction failed; the transcript was removed\n' >&2
+    return 1
+  fi
+  mv -f -- "$capture_tmp" "$transcript_dest"
   archive_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
   cp -f -- "$transcript_dest" "${transcript_dir}/${archive_id}.jsonl"
   codex_rotate_transcripts "$transcript_dir" 4
@@ -149,9 +159,9 @@ PY
     --arg work_dir "$WORK_DIR" \
     '{archive_id:$archive_id, captured_at:$captured_at, source:$source, work_dir:$work_dir}' \
     > "$meta_dest"
-  # Transcripts hold the prompt and the whole session: redact them like the delegate logs.
-  local redactor="${SCRIPT_DIR}/../agent_redact.py" f
-  for f in "$transcript_dest" "${transcript_dir}/${archive_id}.jsonl" "$meta_dest"; do
+  # Transcripts hold the prompt and the whole session: the copy and the metadata are redacted like the delegate logs.
+  local f
+  for f in "${transcript_dir}/${archive_id}.jsonl" "$meta_dest"; do
     if ! python3 "$redactor" --redact-file "$f"; then
       # never leave an unredacted transcript behind
       rm -f -- "$transcript_dest" "${transcript_dir}/${archive_id}.jsonl" "$meta_dest"
@@ -447,8 +457,10 @@ PY
     output="${output}"$'\n'"$(cat "$last_message_file")"
     rm -f -- "$last_message_file"
   fi
-  if transcript_path="$(codex_capture_transcript "$transcript_file" "$prompt_file" 2>/dev/null)"; then
+  if transcript_path="$(codex_capture_transcript "$transcript_file" "$prompt_file")"; then
     output="${output}"$'\n'"[codex transcript archived at ${transcript_path}]"
+  else
+    printf '[agent-delegate] WARN: codex transcript not archived (capture or redaction failed)\n' >&2
   fi
   if [[ -n "${CLAUDE_INTERACTIVE_LOG_FILE:-}" ]]; then
     printf '%s' "$output" >"${CLAUDE_INTERACTIVE_LOG_FILE}"

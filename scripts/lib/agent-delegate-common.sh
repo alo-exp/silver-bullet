@@ -217,8 +217,10 @@ agent_delegate_guard_log() {
 agent_delegate_brief_has_secrets() {
   local text="$1" rc=0
   AGENT_DELEGATE_SECRET_FINDING=""
+  AGENT_DELEGATE_SECRET_RC=0
   AGENT_DELEGATE_SECRET_FINDING="$(printf '%s' "$text" | python3 "${_AGENT_DELEGATE_COMMON_DIR}/agent_redact.py" --scan)" || rc=$?
   [[ "$rc" -ne 0 ]] || return 1
+  AGENT_DELEGATE_SECRET_RC="$rc"
   [[ -n "$AGENT_DELEGATE_SECRET_FINDING" ]] || AGENT_DELEGATE_SECRET_FINDING="scanner-error"
   if [[ "${SB_AGENT_ALLOW_SECRET_LIKE_BRIEF:-}" == "1" ]]; then
     printf '[agent-delegate] WARN: SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1 overrides the brief secret scan (%s)\n' \
@@ -229,8 +231,15 @@ agent_delegate_brief_has_secrets() {
 }
 
 agent_delegate_secret_error() {
-  printf 'ERROR: %s contains secret patterns — a secret-looking value (rule/line: %s); replace it with a placeholder or an environment reference, or set SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1 in your own shell to override\n' \
-    "$1" "$AGENT_DELEGATE_SECRET_FINDING" >&2
+  case "${AGENT_DELEGATE_SECRET_RC:-1}" in
+    3)
+      printf 'ERROR: %s is too large or too complex to scan for secrets (limits: SB_REDACT_MAX_BYTES, SB_REDACT_BUDGET_SEC); shorten it or move the bulk into a file the delegate reads\n' "$1" >&2 ;;
+    1)
+      printf 'ERROR: %s contains secret patterns — a secret-looking value (rule/line: %s); replace it with a placeholder or an environment reference, or set SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1 in your own shell to override\n' \
+        "$1" "$AGENT_DELEGATE_SECRET_FINDING" >&2 ;;
+    *)
+      printf 'ERROR: the secret scanner failed on %s, so it was not delegated (a scanner crash is not a pass; SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1 overrides)\n' "$1" >&2 ;;
+  esac
 }
 
 # Resolve PROMPT_TEXT from --prompt, --prompt-file, or --brief-file (caller sets vars).

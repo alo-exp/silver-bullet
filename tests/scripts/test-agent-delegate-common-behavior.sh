@@ -136,10 +136,10 @@ fake_aws="$(printf '%s%s' 'AKIA' 'IOSFODNN7ABCDEFG')"
 fake_jwt="$(printf '%s.%s.%s' 'eyJhbGciOiJIUzI1NiJ9' 'eyJzdWIiOiIxMjM0NTY3ODkwIn0' 'SflKxwRJSMeKKF2QT4fwpMeJf36')"
 fake_val="$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYQwErTyUiOp1')"
 out="$(agent_delegate_redact_output "Authorization: Bearer hunter2xyz password = swordfish ${fake_sk} ${fake_ghp} keep")"
-assert_contains "redact: authorization header value" "$out" "Authorization: [REDACTED]"
+assert_contains "redact: authorization header value (scheme kept)" "$out" "Authorization: Bearer [REDACTED]"
 assert_not_contains "redact: bearer token gone" "$out" "hunter2xyz"
-assert_contains "redact: sk key" "$out" "sk-[REDACTED]"
-assert_contains "redact: ghp token" "$out" "gh_[REDACTED]"
+assert_not_contains "redact: sk key gone" "$out" "$fake_sk"
+assert_not_contains "redact: ghp token gone" "$out" "$fake_ghp"
 assert_not_contains "redact: secret value gone" "$out" "swordfish"
 assert_contains "redact: plain text kept" "$out" "keep"
 for tok in "$fake_pat" "$fake_xox" "$fake_aws" "$fake_jwt" "$fake_val"; do
@@ -235,6 +235,8 @@ SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=0 tl_run agent_delegate_resolve_prompt "$TL_TMP
 assert_eq "override: only an explicit 1 counts" 2 "$TL_STATUS"
 rc=0; PATH="$(tl_path_without python3)" agent_delegate_brief_has_secrets "benign" 2>/dev/null || rc=$?
 assert_eq "secrets: scanner failure fails closed" 0 "$rc"
+tl_run agent_delegate_secret_error "brief"
+assert_contains "secrets: a scanner crash has its own message" "$TL_ERR" "secret scanner failed"
 
 # ---------------- work dir ----------------
 tl_run agent_delegate_validate_work_dir ""
