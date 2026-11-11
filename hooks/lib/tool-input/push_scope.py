@@ -249,6 +249,22 @@ def classify_argv(argv):
 
 
 # --------------------------------------------------------------------------- shape of the script (S2-S4)
+SAFE_ASSIGNS = {"RTK_DISABLED": "1", "NO_COLOR": "1", "CI": "1", "GIT_TERMINAL_PROMPT": "0"}
+LOCALE_VALUE = re.compile(r"^[A-Za-z0-9_.@-]+$")
+
+
+def harmless_assignment(assign):
+    """A plain ``NAME=literal`` from the fixed allowlist (tool switches and locale), nothing git reads for a push."""
+    if assign.append or assign.array or len(assign.value) != 1:
+        return False
+    value = assign.value[0].literal()
+    if value is None:
+        return False
+    if assign.name in ("LANG", "LC_ALL"):
+        return bool(LOCALE_VALUE.match(value))
+    return SAFE_ASSIGNS.get(assign.name) == value
+
+
 def top_level(script):
     """The top-level simple commands as (and_or_index, position, node) after checking the shape (S2)."""
     nodes = []
@@ -259,8 +275,9 @@ def top_level(script):
             for node in pipeline:
                 if type(node).__name__ != "Simple":
                     raise Strict("the push is inside a compound command, function, loop or subshell")
-                if node.assigns:
-                    raise Strict("a variable assignment in the same command as the push")
+                for assign in node.assigns:
+                    if not harmless_assignment(assign):
+                        raise Strict("a variable assignment in the same command as the push")
         nodes.append((index, andor))
     return nodes
 
