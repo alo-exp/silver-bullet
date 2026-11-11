@@ -51,12 +51,11 @@ SB_IV_PLAN_FILES="ROADMAP.md STATE.md PROJECT.md"
 sb_integrity_record_root() { # DIR
   local d
   d="$(cd "${1:-$PWD}" 2>/dev/null && pwd -P)" || return 0
-  while [[ -n "$d" ]]; do
+  while true; do
     if [[ -f "$(_sb_iv_rec_file "$d")" ]]; then printf '%s' "$d"; return 0; fi
     [[ "$d" != "/" ]] || return 0
     d="$(dirname "$d")"
   done
-  return 0
 }
 
 sb_integrity_root() {

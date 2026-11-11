@@ -433,7 +433,7 @@ fi
 state_contents=""
 if [[ -f "$state_file" ]]; then
   # Only what the recorder sealed counts (hooks/lib/state-seal.sh): a state edited by anything else yields nothing.
-  source "$_lib_dir/state-seal.sh"
+  source "$lib_dir/state-seal.sh"
   state_contents=$(sb_state_seal_trusted "$state_file")
 fi
 

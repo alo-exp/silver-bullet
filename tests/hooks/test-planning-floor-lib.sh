@@ -222,6 +222,15 @@ rm -f "$UL"
 : >"$UL"
 if sb_pf_contract_unlocked; then tl_fail "an empty record unlocks"; else tl_pass "an empty unlock record unlocks nothing"; fi
 rm -f "$UL"
+printf 'silver-init notanumber\n' >"$UL"
+if sb_pf_contract_unlocked; then tl_fail "a damaged record unlocks"; else tl_pass "a damaged unlock record unlocks nothing"; fi
+printf 'silver-plan %s\n' "$(date +%s)" >"$UL"
+if sb_pf_contract_unlocked; then tl_fail "a record for a skill that does not own the files unlocks"; else tl_pass "a record for another skill unlocks nothing"; fi
+printf 'silver-init %s\n' "$(( $(date +%s) - 10000 ))" >"$UL"
+if sb_pf_contract_unlocked; then tl_fail "an old unlock still unlocks"; else tl_pass "an unlock older than its window has lapsed"; fi
+printf 'silver-init %s\n' "$(( $(date +%s) + 1000 ))" >"$UL"
+if sb_pf_contract_unlocked; then tl_fail "an unlock dated in the future unlocks"; else tl_pass "an unlock dated in the future unlocks nothing"; fi
+rm -f "$UL"
 assert_eq "no unlock, no tags" "" "$(sb_contract_unlock_tags)"
 sb_contract_unlock_write silver-add
 assert_eq "silver-add covers the JSON configuration" "config prompt" "$(sb_contract_unlock_tags)"
