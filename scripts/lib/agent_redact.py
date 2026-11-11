@@ -319,13 +319,13 @@ def classify(value, tier, name=""):
         if len(v) >= 12 and e >= 3.0 and sum(bool(re.search(p, v)) for p in ("[a-z]", "[A-Z]", "[0-9]", "[^A-Za-z0-9]")) >= 3:
             return SECRET
         return possible
-    if tier == "weak":
-        if re.fullmatch(r"[0-9a-f]{32,}", v):
-            return SECRET
-        if re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]*[-_:][0-9a-f]{7,}", v) and is_ident(re.sub(r"[-_:][0-9a-f]{7,}$", "", v)):
-            return NONE  # word-prefixed digest (cache keys)
-        if len(v) >= 20 and e >= 3.3 and (has_d or not v.islower()):
-            return SECRET
+    # tier "weak" (cache_key, sig): only hashes and long random values
+    if re.fullmatch(r"[0-9a-f]{32,}", v):
+        return SECRET
+    if re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]*[-_:][0-9a-f]{7,}", v) and is_ident(re.sub(r"[-_:][0-9a-f]{7,}$", "", v)):
+        return NONE  # word-prefixed digest (cache keys)
+    if len(v) >= 20 and e >= 3.3 and (has_d or not v.islower()):
+        return SECRET
     return NONE
 
 

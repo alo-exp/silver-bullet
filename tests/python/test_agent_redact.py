@@ -436,7 +436,8 @@ class ClassifierTests(unittest.TestCase):
     def test_spans_and_edge_shapes(self):
         pem_open = "-----BEGIN PRIVATE KEY-----\n" + "".join(random.Random(3).choice(_ALNUM) for _ in range(64))
         self.assertEqual(agent_redact.scan(pem_open + "\n-----END PRIVATE KEY")[0], "pem")
-        self.assertIsNone(agent_redact.scan("<div>" + _value("x", 30) + "</div> <span>x</span> <add key=\"timeout\" value=\"30\"/>"))
+        self.assertIsNone(agent_redact.scan("<div>" + _value("x", 30) + "</div> <span>x</span> <add key=\"timeout\" value=\"30\"/> <add key=\"password\" value=\"\"/>"))
+        self.assertTrue(agent_redact.is_ident("HTTPS_proxy_setting"))
         opaque = "role arn:aws:iam::123456789012:role/arn:aws:x vault:secret/app/path password=" + _value("opaque", 20)
         self.assertEqual(agent_redact.scan(opaque)[0], "assignment")
         self.assertIsNone(agent_redact.scan("password=arn:aws:secretsmanager:eu-west-1:123456789012:secret:prod/db-AbCdEf"))
