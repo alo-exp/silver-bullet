@@ -321,6 +321,20 @@ class CorpusTests(unittest.TestCase):
         for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_ASSIGN", "_CLI_RULES", "_VALUE_RULES", "_TEXT_RULES"):
             self.assertIn(name, scan_src)
 
+    def test_multiline_netrc(self):
+        self.assertEqual(agent_redact.scan("machine h\n  login u\n  password Zq8vLm2Xr9TnW4bQ7s"), ("netrc-multiline", 2))
+        self.assertIsNone(agent_redact.scan("machine h\n  login u\n  password <token>"))
+
+    def test_identifier_shapes_are_not_literals(self):
+        self.assertIsNone(agent_redact.scan("secret=Foo::barBazQuxQuuxCorge"))
+        self.assertIsNone(agent_redact.scan("secret=ab_cd_ef_gh_ij_kl_mn_op"))
+        self.assertIsNone(agent_redact.scan("secret=this.settings.apiKeyHolderObject"))
+        self.assertIsNone(agent_redact.scan("API_KEY=STRIPE_SECRET_KEY_NAME_V2"))
+
+    def test_digitless_values_with_symbols_use_entropy(self):
+        self.assertIsNotNone(agent_redact.scan("secret=abcdefgh/ijklmnop+qrstuvwx"))
+        self.assertIsNone(agent_redact.scan("secret=aaaa+aaaa+aaaa+aaaa+aaaa"))
+
     def test_pem_line_number_and_prose(self):
         self.assertEqual(agent_redact.scan("a\nb\n-----BEGIN PRIVATE KEY-----\nMIIEowIBAAKCAQEAabcdefgh"), ("pem", 3))
         self.assertIsNone(agent_redact.scan("a header line -----BEGIN PRIVATE KEY----- in prose"))
