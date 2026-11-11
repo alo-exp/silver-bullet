@@ -51,10 +51,10 @@ def _envelopes_from_claims(claims: list[str]) -> list[dict]:
     ]
 
 
-from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run, with_apo_pack_run_plain_names  # noqa: E402
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class MaterializeSolutionArtifactsTests(unittest.TestCase):
     def test_materialize_from_matrix_claim(self) -> None:
         envelopes = [
