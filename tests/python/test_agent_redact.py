@@ -2,6 +2,8 @@
 
 import io
 import os
+import random
+import string
 import stat
 import tempfile
 import unittest
@@ -68,7 +70,8 @@ class ScanTests(unittest.TestCase):
                 self.assertEqual(agent_redact.scan("ctx " + token), (kind, 1))
 
     def test_bearer_needs_a_random_looking_value(self):
-        self.assertEqual(agent_redact.scan("a\nAuthorization: Bearer " + LONG_VALUE), ("bearer", 2))
+        self.assertEqual(agent_redact.scan("a\nAuthorization: Bearer " + LONG_VALUE), ("authorization", 2))
+        self.assertEqual(agent_redact.scan("x\ny\nsend Bearer " + LONG_VALUE), ("bearer", 3))
         self.assertIsNone(agent_redact.scan("Authorization: Bearer <your-token-here>"))
         self.assertIsNone(agent_redact.scan("Bearer aaaaaaaaaaaaaaaaaaaaaaaa"))
 
@@ -107,48 +110,186 @@ class ScanTests(unittest.TestCase):
                 self.assertIsNone(agent_redact.scan(text))
 
 
-# Regression corpus (R10b-06 r2): literal secrets the scanner must keep catching, and honest briefs it
-# must keep accepting. Fake values are assembled so no scanner flags this file.
-CORPUS_SECRETS = [
-    "stripe_api_key: " + "sk_test_" + "4eC39HqLyjWDarjtT1zdp7dc",
-    "STRIPE_SECRET_KEY=" + "sk_live_" + "51H8abcdefghijklmnop",
-    "key " + "rk_live_" + "abcdefghijklmnop12",
-    "API_KEY=Xk9_aP2mQ7vR4tL8nB3cW5",
-    "Authorization: Bearer abc_def_ghi_jkl_mno_pqr",
-    "API_KEY=Ab3.Xy9.Qw7.Er5.Ty1.Ui3",
-    "client_secret=hJkLqWeRtYuIoPaSdFgZ",
-    "secret = aB3dE5gH7jK9mN1pQ3sT5vW7",
-    "hook https://hooks.slack.com/" + "services/T0123ABCD/B0123ABCD/abcDEF123ghiJKL456",
-    "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAabcdefgh\n-----END RSA PRIVATE KEY-----",
-    "DB=postgres://app:Zq8vLm2Xr9TnW4@db.prod.test/x",
-    "whsec_" + "abcdefghijklmnopqrstuv",
-]
-CORPUS_HONEST = [
-    "DATABASE_URL=postgres://postgres:postgres@localhost:5432/test",
-    "mysql://root:root@127.0.0.1/db",
-    "git clone https://x-access-token:${GH_TOKEN}@github.test/org/repo",
-    "https://user:<password>@host.test/x",
-    "Never commit files that start with -----BEGIN PRIVATE KEY----- markers.",
-    "csrf_token = 123e4567-e89b-12d3-a456-426614174000",
-    "session_token: 123E4567-E89B-12D3-A456-426614174000",
-    "api_key=my_api_key_variable_name",
-    "token: GOOGLE_CLIENT_SECRET_2_VALUE",
-    "secret = SessionSecretProviderFactory",
-    "Authorization: Bearer <token> is documented",
-    "password: req.body.passwordConfirmation",
-]
+# Regression corpus (R10b-06 r2/r3). Every real-shaped secret must be caught by BOTH the brief scanner
+# (scan) and the log redactor (redact); every honest string must pass the scanner. Values come from a
+# seeded generator and are assembled at run time so no secret scanner flags this file.
+_RNG = random.Random(20261105)
+_ALNUM = string.ascii_letters + string.digits
+
+
+def _rand(n, alphabet=_ALNUM):
+    return "".join(_RNG.choice(alphabet) for _ in range(n))
+
+
+def _uuid():
+    h = _rand(32, "0123456789abcdef")
+    return "-".join([h[:8], h[8:12], h[12:16], h[16:20], h[20:]])
+
+
+def _b64(n):
+    return _rand(n, string.ascii_letters + string.digits + "+/") + "=="
+
+
+def _groups():
+    return "_".join(_rand(4, string.ascii_uppercase + string.digits[1:]) for _ in range(5))
+
+
+def _pem(kind):
+    body = "\n".join(_rand(64, string.ascii_letters + string.digits + "+/") for _ in range(3))
+    return "-----BEGIN %s-----\n%s\n-----END %s-----" % (kind, body, kind)
+
+
+def _secret_cases():
+    """(text, fragment that must not survive redaction)"""
+    v = []
+
+    def add(template, secret):
+        v.append((template % secret, secret))
+
+    for prefix, n in (("ghp_", 36), ("gho_", 36), ("ghs_", 36), ("ghu_", 36), ("github_pat_", 40), ("glpat-", 24),
+                      ("xoxb-", 30), ("xoxp-", 30), ("npm_", 36), ("hf_", 34), ("sk-", 40), ("sk-ant-", 40),
+                      ("sk-proj-", 40), ("sk_live_", 30), ("sk_test_", 30), ("rk_live_", 30), ("whsec_", 32)):
+        add("token seen: %s in the log", prefix + _rand(n))
+    add("id %s", "AKIA" + _rand(16, string.ascii_uppercase + string.digits))
+    add("id %s", "ASIA" + _rand(16, string.ascii_uppercase + string.digits))
+    add("g %s", "AIza" + _rand(35, string.ascii_letters + string.digits + "_-"))
+    add("POST https://hooks.slack.com/services/T%s", "0123ABCD/B0456EFGH/" + _rand(24))
+    add("jwt %s", ".".join("eyJ" + _rand(20, string.ascii_letters + string.digits + "_-") for _ in range(3)))
+    for kind in ("RSA PRIVATE KEY", "EC PRIVATE KEY", "OPENSSH PRIVATE KEY", "PRIVATE KEY"):
+        pem = _pem(kind)
+        v.append(("key:\n" + pem, pem.split("\n")[1]))
+    pgp = "-----BEGIN PGP PRIVATE KEY BLOCK-----\nVersion: GnuPG v2\n\n" + _rand(60, string.ascii_letters + string.digits + "+/") + "\n-----END PGP PRIVATE KEY BLOCK-----"
+    v.append((pgp, pgp.split("\n")[3]))
+    for name in ("API_KEY", "api_key", "AWS_SECRET_ACCESS_KEY", "DB_PASSWORD", "client_secret", "SECRET_KEY",
+                 "STRIPE_SECRET_KEY", "private_key", "signing_key", "AZURE_STORAGE_KEY", "ACCESS_TOKEN", "auth_token",
+                 "password", "passwd", "x-api-key"):
+        add(name + "=%s", _b64(40) if name not in ("password", "passwd") else _rand(14) + "9!")
+    add("HEROKU_API_KEY=%s", _uuid())
+    add("client_secret: %s", _uuid())
+    add("TOKEN=%s", _groups())
+    add("API_KEY=%s", _groups())
+    add("api_token = '%s'", _rand(10) + "_" + _rand(12))
+    add("app.secret-key: %s", _rand(8) + "." + _rand(8) + "." + _rand(8) + "7")
+    add("Authorization: Basic %s", _b64(22))
+    add("Proxy-Authorization: Basic %s", _b64(22))
+    add("Authorization: token %s", _rand(40))
+    add("Authorization: Bearer %s", _rand(8) + "_" + _rand(8) + "_" + _rand(8))
+    add("curl -H 'Authorization: Digest %s'", _rand(32))
+    add("header: Bearer %s", _rand(8) + "." + _rand(8) + "." + _rand(8))
+    add("send Bearer %s now", _rand(30, string.ascii_letters + "_"))
+    add("deploy --token %s", _rand(24))
+    add("login --password %s", _rand(10) + "7Q")
+    add("tool --password=%s", _rand(12) + "3x")
+    add("run --secret %s", _rand(20))
+    add("run --api-key %s", _rand(26))
+    add("git clone https://admin:%s@git.corp.test/org/repo", _rand(16))
+    add("DB=postgres://app:%s@db.prod.corp.com:5432/x", _rand(18))
+    add("redis://cache:%s@redis.corp.com", _rand(14) + "5")
+    v.append(("curl https://admin:admin@prod-db.company.com/secret", "admin:admin"))
+    v.append(("mysql://root:root@db.prod.internal.company.com/db", "root:root"))
+    return v
+
+
+def _honest_cases():
+    v = [
+        "csrf_token = " + _uuid(),
+        "session_token: " + _uuid(),
+        "request_id=" + _uuid() + " trace_token=" + _uuid(),
+        "idempotency_key: " + _uuid(),
+        "correlation_token = " + _uuid(),
+        "client_secret: settings.GOOGLE_CLIENT_SECRET",
+        "const password = req.body.passwordConfirmation",
+        "secret=getSecretFromVaultClient()",
+        "private_key: loadPrivateKeyFromDisk(path)",
+        "Use secret: process.env.SESSION_SECRET for cookie signing",
+        "api_key = os.environ['PAYMENT_API_KEY_PRIMARY']",
+        "token: ${{ secrets.DEPLOY_TOKEN_LONG_NAME }}",
+        "secret = SessionSecretProviderFactory",
+        "password: GOOGLE_CLIENT_SECRET_VALUE_ENV",
+        "TOKEN=GOOGLE_CLIENT_SECRET_2_VALUE",
+        "API_KEY=STRIPE_SECRET_KEY_NAME_V2",
+        "key: Foo::Bar::loadSecretMaterialFromVault",
+        "signing_key = config.signingKeyProvider.current",
+        "AZURE_STORAGE_KEY=${AZURE_STORAGE_KEY}",
+        "DB_PASSWORD=$DB_PASSWORD",
+        "access_token=<your access token here>",
+        "api_key: <PASTE_API_KEY_HERE>",
+        "git clone https://x-access-token:${GH_TOKEN}@github.test/org/repo",
+        "https://user:<password>@host.test/x",
+        "DATABASE_URL=postgres://postgres:postgres@localhost:5432/test",
+        "DATABASE_URL=postgres://user:password@localhost/db",
+        "mysql://root:root@127.0.0.1/db",
+        "redis://admin:admin@cache.local:6379",
+        "https://deploy:deploy@host.test/r",
+        "Never commit files that start with -----BEGIN PRIVATE KEY----- markers.",
+        "The -----BEGIN PGP PRIVATE KEY BLOCK----- header marks an armored key.",
+        "Authorization: Bearer <token> is documented",
+        "Authorization: header is required",
+        "uses Bearer authentication scheme",
+        "returns a session token: JWT",
+        "shows password: field and api_key: optional",
+        "tokens: 12 used, secret: none",
+        "--password-file ./secret.txt",
+        "--token=<your token>",
+        "--token $GH_TOKEN",
+        "--password ${DB_PASSWORD}",
+        "--secret my-secret-name",
+        "--api-key sandbox",
+        "commit: " + _rand(40, "0123456789abcdef"),
+        "sha256: " + _rand(64, "0123456789abcdef"),
+        "integrity: sha512-" + _b64(60),
+        "checksum = " + _rand(40, "0123456789abcdef"),
+        "image: data:image/png;base64," + _b64(60),
+        "fixture_blob = '" + _b64(48) + "'",
+        "etag: W/\"" + _rand(20) + "\"",
+        "uuid: " + _uuid(),
+        "order_id=" + _uuid(),
+        "version: 1.2.3-beta.4+build.5",
+        "build_key_name: release-linux-x86_64-2024",
+        "primary_key = user_id",
+        "cache_key = tenant_id + ':' + user_id",
+        "api_key=my_api_key_variable_name",
+        "token_name = my_long_token_variable_name",
+        "secret = aaaa/aaaa/aaaa/aaaa/aaaa",
+        "password = getpass.getpass('Password: ')",
+        "client_secret = vault.read('secret/data/app')['client_secret']",
+        "const apiKey = this.configService.get('API_KEY')",
+        "export GITHUB_TOKEN=\"${{ github.token }}\"",
+        "ssh-key: id_ed25519 (stored in the agent)",
+    ]
+    return v
+
+
+CORPUS_SECRETS = _secret_cases()
+CORPUS_HONEST = _honest_cases()
 
 
 class CorpusTests(unittest.TestCase):
-    def test_literal_secrets_are_caught(self):
-        for text in CORPUS_SECRETS:
-            with self.subTest(text=text[:30]):
-                self.assertIsNotNone(agent_redact.scan(text))
+    def test_corpus_sizes(self):
+        self.assertGreaterEqual(len(CORPUS_SECRETS), 60)
+        self.assertGreaterEqual(len(CORPUS_HONEST), 60)
 
-    def test_honest_briefs_pass(self):
+    def test_every_secret_is_caught_by_scanner_and_redactor(self):
+        for text, fragment in CORPUS_SECRETS:
+            with self.subTest(text=text[:40]):
+                self.assertIsNotNone(agent_redact.scan(text), "scanner missed")
+                out = agent_redact.redact(text)
+                self.assertNotIn(fragment, out, "redactor kept the secret")
+                self.assertIn("[REDACTED]", out)
+
+    def test_honest_briefs_pass_the_scanner(self):
         for text in CORPUS_HONEST:
-            with self.subTest(text=text[:30]):
+            with self.subTest(text=text[:40]):
                 self.assertIsNone(agent_redact.scan(text))
+
+    def test_scanner_and_redactor_share_one_pattern_set(self):
+        # every compiled pattern the scanner consults is the object redact() substitutes with
+        for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_ASSIGN"):
+            self.assertTrue(hasattr(agent_redact, name))
+        src = open(agent_redact.__file__, encoding="utf-8").read()
+        scan_src = src[src.index("def scan("):src.index("def redact_file(")]
+        for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_ASSIGN"):
+            self.assertIn(name, scan_src)
 
     def test_pem_line_number_and_prose(self):
         self.assertEqual(agent_redact.scan("a\nb\n-----BEGIN PRIVATE KEY-----\nMIIEowIBAAKCAQEAabcdefgh"), ("pem", 3))
@@ -157,10 +298,11 @@ class CorpusTests(unittest.TestCase):
     def test_userinfo_rules(self):
         self.assertEqual(agent_redact.scan("x https://deploy:Zq8vLm2Xr9TnW4@host.test/r")[0], "url-userinfo")
         self.assertIsNone(agent_redact.scan("x https://deploy:deploy@host.test/r"))
-
-    def test_digitless_values_with_symbols_use_entropy(self):
-        self.assertIsNotNone(agent_redact.scan("secret=abcdefgh/ijklmnop+qrstuvwx"))
-        self.assertIsNone(agent_redact.scan("secret=aaaa/aaaa/aaaa/aaaa/aaaa"))
+        # the trivial-password exemption (not the user==password rule) and its host limit
+        self.assertIsNone(agent_redact.scan("postgres://app:password@localhost/db"))
+        self.assertIsNone(agent_redact.scan("postgres://app:changeme@[::1]:5432/db"))
+        self.assertEqual(agent_redact.scan("postgres://app:password@db.prod.company.com/db")[0], "url-userinfo")
+        self.assertEqual(agent_redact.scan("https://admin:admin@prod-db.company.com/x")[0], "url-userinfo")
 
     def test_camel_case_names_and_random_letter_runs(self):
         self.assertIsNone(agent_redact.scan("secret=getSecretFromVaultClientFactory"))

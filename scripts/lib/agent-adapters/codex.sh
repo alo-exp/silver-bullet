@@ -72,9 +72,9 @@ for _, _, path in entries[keep_archives:]:
 PY
 }
 
-# Transcript directories of earlier runs (private mktemp dirs) older than a day are removed on start.
+# Transcript directories of earlier runs (private mktemp dirs) older than 24 hours are removed on start.
 codex_sweep_old_transcripts() {
-  if find "${TMPDIR:-/tmp}" -maxdepth 1 -type d -name 'sb-codex-transcripts.*' -user "$(id -un)" -mtime +1 \
+  if find "${TMPDIR:-/tmp}" -maxdepth 1 -type d -name 'sb-codex-transcripts.*' -user "$(id -un)" -mmin +1440 \
     -exec rm -rf {} + >/dev/null 2>&1; then
     :
   fi
@@ -92,8 +92,12 @@ codex_transcript_dir_prepare() {
   else
     ( umask 077; mkdir -p "$dir" ) || return 1
   fi
-  if ! [[ -d "$dir" && ! -L "$dir" && -O "$dir" ]]; then
-    printf 'ERROR: refusing transcript directory (symlink or not owned by this user): %s\n' "$dir" >&2
+  # A named directory must also be closed to group/other writers: a file another user planted in a
+  # shared directory would otherwise be written into and stay readable by them.
+  local perms
+  perms="$(ls -ld "$dir" | cut -c1-10)"
+  if ! [[ -d "$dir" && ! -L "$dir" && -O "$dir" && "${perms:5:1}" != w && "${perms:8:1}" != w ]]; then
+    printf 'ERROR: refusing transcript directory (symlink, not owned by this user, or group/other-writable): %s\n' "$dir" >&2
     return 1
   fi
   chmod 700 "$dir" && printf '%s\n' "$dir"
