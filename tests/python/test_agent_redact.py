@@ -12,6 +12,7 @@ from unittest import mock
 
 from sbtest import load_module
 import redact_corpus
+import redact_corpus_r5
 
 agent_redact = load_module("scripts/lib/agent_redact.py")
 
@@ -296,6 +297,112 @@ class CorpusTests(unittest.TestCase):
             with self.subTest(fmt=fmt):
                 self.assertIsNone(agent_redact.scan(text), "honest string blocked")
 
+    # exotic formats the best-effort layer does not claim (documented in the skills and CHANGELOG)
+    R5_RESIDUALS = {"ansible vault blob", "session cookie random", "base64-wrapped env", "tab separated"}
+
+    def test_round5_corpus(self):
+        secrets, honest = redact_corpus_r5.build()
+        self.assertGreaterEqual(len(secrets), 85)
+        self.assertGreaterEqual(len(honest), 65)
+        for fmt, text, core, common in secrets:
+            with self.subTest(fmt=fmt):
+                caught_scan = agent_redact.scan(text) is not None
+                caught_redact = core not in agent_redact.redact(text)
+                if common or fmt not in self.R5_RESIDUALS:
+                    self.assertTrue(caught_scan, "scanner missed")
+                    self.assertTrue(caught_redact, "redactor kept the secret")
+                    self.assertIn("[REDACTED]", agent_redact.redact(text))
+                else:
+                    self.assertTrue(fmt in self.R5_RESIDUALS)
+        for fmt, text in honest:
+            with self.subTest(fmt=fmt):
+                self.assertIsNone(agent_redact.scan(text), "honest string blocked")
+
+    def test_round5_scan_catches_whatever_redact_changes_for_common_secrets(self):
+        secrets, _honest = redact_corpus_r5.build()
+        for fmt, text, _core, common in secrets:
+            if common and agent_redact.redact(text) != text:
+                with self.subTest(fmt=fmt):
+                    self.assertIsNotNone(agent_redact.scan(text))
+
+    def test_word_prefix_with_random_tail_is_a_secret_under_a_credential_name(self):
+        import random
+        import string
+        rng = random.Random(77)
+        tail = lambda n: "".join(rng.choice(string.ascii_letters + string.digits) for _ in range(n))
+        for prefix in ("gsk_", "nfp_", "pscale_tkn_", "rnd_", "pat_", "abc_", "live_", "Summer_", "prod."):
+            with self.subTest(prefix=prefix):
+                self.assertIsNotNone(agent_redact.scan("GENERIC_API_KEY=" + prefix + tail(30)))
+                self.assertIn("[REDACTED]", agent_redact.redact("password=" + prefix + tail(12)))
+
+    def test_hyphenated_words_and_powershell_are_not_secrets(self):
+        for text in ("$pwd = Get-Location", "pwd=Get-ChildItem", "PASS=Set-Variable", "$password = Read-Host -AsSecureString",
+                     "pass = get-password", "password: required-field", "password: hunter-two"):
+            with self.subTest(text=text):
+                self.assertIsNone(agent_redact.scan(text))
+
+    def test_limits_fail_closed(self):
+        import contextlib
+        import tempfile
+        old = dict(os.environ)
+        try:
+            os.environ["SB_REDACT_MAX_BYTES"] = "50"
+            out, err = io.StringIO(), io.StringIO()
+            with mock.patch("sys.stdin", io.StringIO("x" * 60)), redirect_stdout(out), redirect_stderr(err):
+                self.assertEqual(agent_redact.main(["a", "--scan"]), 3)
+            self.assertIn("too large or too complex to scan", out.getvalue())
+            out = io.StringIO()
+            with mock.patch("sys.stdin", io.StringIO("password=Zq8vLm2Xr9TnW4 " + "x" * 60)), redirect_stdout(out):
+                self.assertEqual(agent_redact.main(["a", "--redact"]), 3)
+            self.assertEqual(out.getvalue(), agent_redact.WITHHELD)
+            with tempfile.TemporaryDirectory() as tmp:
+                target = os.path.join(tmp, "log")
+                with open(target, "w") as handle:
+                    handle.write("secret line " + "y" * 80)
+                err = io.StringIO()
+                with redirect_stderr(err):
+                    self.assertEqual(agent_redact.main(["a", "--redact-file", target]), 3)
+                with open(target) as handle:
+                    self.assertEqual(handle.read(), agent_redact.WITHHELD)
+                self.assertIn("withheld", err.getvalue())
+            os.environ["SB_REDACT_MAX_BYTES"] = "junk"
+            self.assertEqual(agent_redact._limits()[0], 16 * 1024 * 1024)
+            os.environ.pop("SB_REDACT_MAX_BYTES")
+            os.environ["SB_REDACT_BUDGET_SEC"] = "0.0001"
+            big = "login x\n" * 200000
+            out = io.StringIO()
+            with mock.patch("sys.stdin", io.StringIO(big)), redirect_stdout(out):
+                self.assertEqual(agent_redact.main(["a", "--scan"]), 3)
+            with tempfile.TemporaryDirectory() as tmp:
+                target = os.path.join(tmp, "log")
+                with open(target, "w") as handle:
+                    handle.write(big)
+                with contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(agent_redact.main(["a", "--redact-file", target]), 3)
+                with open(target) as handle:
+                    self.assertEqual(handle.read(), agent_redact.WITHHELD)
+        finally:
+            os.environ.clear()
+            os.environ.update(old)
+
+    def test_megabyte_adversarial_inputs_are_fast(self):
+        """Each shape is >= 1 MiB; the bound is generous (5 s) so loaded machines do not flake, the
+        measured time is about 0.1-0.5 s per MiB (see the review report)."""
+        import time
+        n = 1024 * 1024
+        shapes = {
+            "dots": "a." * (n // 2), "under": "a_" * (n // 2), "equals": "=" * n, "pairs": "a=" * (n // 2),
+            "quotes": "'" * n, "keychars": "Ab3-_." * (n // 6), "brackets": "[" * (n // 2) + "]" * (n // 2),
+            "tokens": "token=" * (n // 6), "lines": "API_KEY=abc\n" * (n // 12), "login": "login a password b " * (n // 19),
+            "pem": "-----BEGIN PRIVATE KEY-----\n" * (n // 27), "urls": "http://a:b@c/" * (n // 14),
+        }
+        for name, text in shapes.items():
+            with self.subTest(shape=name):
+                start = time.monotonic()
+                agent_redact.scan(text)
+                agent_redact.redact(text)
+                self.assertLess(time.monotonic() - start, 5)
+
     def test_scan_catches_whatever_redact_changes_for_every_secret(self):
         secrets, _honest = redact_corpus.build()
         for fmt, text, _core in secrets + [(None, t, None) for t, _f in _secret_cases()]:
@@ -303,22 +410,14 @@ class CorpusTests(unittest.TestCase):
                 if agent_redact.redact(text) != text:
                     self.assertIsNotNone(agent_redact.scan(text))
 
-    def test_pathological_inputs_stay_fast(self):
-        import time
-        for text in ("x.y." * 8000, "login a " * 8000, "a_" * 20000, "-----BEGIN PRIVATE KEY-----" + "\n" * 20000):
-            start = time.monotonic()
-            agent_redact.scan(text)
-            agent_redact.redact(text)
-            self.assertLess(time.monotonic() - start, 5, text[:12])
-
     def test_scanner_and_redactor_share_one_pattern_set(self):
         # every compiled pattern the scanner consults is the object redact() substitutes with
-        for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_ASSIGN", "_CLI_RULES", "_VALUE_RULES", "_TEXT_RULES"):
+        for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_assignments", "_CLI_RULES", "_VALUE_RULES", "_TEXT_RULES"):
             self.assertTrue(hasattr(agent_redact, name))
         with open(agent_redact.__file__, encoding="utf-8") as handle:
             src = handle.read()
         scan_src = src[src.index("def scan("):src.index("def redact_file(")]
-        for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_ASSIGN", "_CLI_RULES", "_VALUE_RULES", "_TEXT_RULES"):
+        for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_assignments", "_CLI_RULES", "_VALUE_RULES", "_TEXT_RULES"):
             self.assertIn(name, scan_src)
 
     def test_multiline_netrc(self):

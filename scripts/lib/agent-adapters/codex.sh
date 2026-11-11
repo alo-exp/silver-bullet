@@ -152,7 +152,12 @@ PY
   # Transcripts hold the prompt and the whole session: redact them like the delegate logs.
   local redactor="${SCRIPT_DIR}/../agent_redact.py" f
   for f in "$transcript_dest" "${transcript_dir}/${archive_id}.jsonl" "$meta_dest"; do
-    python3 "$redactor" --redact-file "$f"
+    if ! python3 "$redactor" --redact-file "$f"; then
+      # never leave an unredacted transcript behind
+      rm -f -- "$transcript_dest" "${transcript_dir}/${archive_id}.jsonl" "$meta_dest"
+      printf 'ERROR: transcript redaction failed; the transcript was removed\n' >&2
+      return 1
+    fi
     chmod 600 "$f"
   done
   printf '%s\n' "$transcript_dest"
