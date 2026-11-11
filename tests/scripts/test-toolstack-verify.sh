@@ -52,7 +52,7 @@ line() { # <name> <expected line>: the report contains this exact line
 
 # ---------- fully provisioned ----------
 good="$TL_TMP/good"; build_home "$good"; good_tools
-vrun "$good"
+vrun "$good" TEST_REPO="$good/.cursor/worktrees/repo/r41j"
 assert_eq "healthy: exit 0" 0 "$TL_STATUS"
 assert_contains "healthy: title" "$TL_OUT" "== Global toolstack verify =="
 line "healthy: toolstack.json" "  [x] toolstack.json: present"
@@ -76,7 +76,7 @@ assert_eq "healthy: no failed or warning lines" 0 "$(grep -cE '^  \[( |!)\]' <<<
 # ---------- warnings do not fail the run ----------
 rm -f "$TL_BIN/graphify-mcp" "$TL_BIN/curl"
 rm -f "$good/.cursor/worktrees/repo/r41j/graphify-out/graph.json"
-vrun "$good"
+vrun "$good" TEST_REPO="$good/.cursor/worktrees/repo/r41j"
 assert_eq "warnings only: exit 0" 0 "$TL_STATUS"
 line "warn: graphify-mcp" "  [!] graphify-mcp: not on PATH"
 line "warn: server" "  [!] agentmemory-server: not healthy — start agentmemory"
@@ -88,6 +88,9 @@ vrun "$good" TEST_REPO="$TL_TMP/other-repo"
 line "TEST_REPO override" "  [x] graphify-index: present in test repo"
 vrun "$good" TEST_REPO="$TL_TMP/not-a-repo"
 assert_not_contains "TEST_REPO without .git is skipped" "$TL_OUT" "graphify-index"
+# R6-31: with no TEST_REPO there is no index check at all - no developer worktree path is probed
+vrun "$good"
+assert_not_contains "no TEST_REPO: no hard-coded worktree is checked" "$TL_OUT" "graphify-index"
 good_tools
 
 # ---------- nothing installed ----------
