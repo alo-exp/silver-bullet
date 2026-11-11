@@ -77,6 +77,27 @@ assert_eq "Codex workdir on main: final delivery" "deny" "$(decision)"
 assert_contains "Codex workdir on main: reason" "$(message)" "default branch"
 expect_strict 'git push' 'does not exist' "$TL_TMP/no-such-dir"
 assert_contains "the block message explains the accepted shape" "$(message)" "A push stays an intermediate commit when it runs as its own command"
+# an "inert" viewer that writes a file (--output) is not inert: it could rewrite HEAD before the push
+expect_strict "git -C $WT log -1 --format='tformat:ref: refs/heads/main' --output=$PROJ_REAL/.git/HEAD && git push origin HEAD" 'git log'
+expect_strict "git -C $WT log -1 --outp=$PROJ_REAL/.git/HEAD && git push origin HEAD" 'git log'
+expect_strict "git -C $WT show -s --output=$PROJ_REAL/.git/HEAD; git push -u origin @" 'git show'
+expect_strict "git diff --output=$PROJ_REAL/.git/HEAD && git push" 'git diff'
+expect_feature 'git log --oneline -3 && git diff --stat && git push'
+# Codex: a single `bash -lc '<script>'` is judged by its script
+run_payload exec_command "$(jq -cn --arg w "$PROJ_REAL" '{cmd:["bash","-lc","git push origin feature/test"],workdir:$w}')"
+assert_eq "Codex bash -lc feature push: intermediate" "allow" "$(decision)"
+run_payload exec_command "$(jq -cn --arg w "$PROJ_REAL" '{cmd:["bash","-lc","git checkout main && git push origin HEAD"],workdir:$w}')"
+assert_eq "Codex bash -lc with a checkout: final delivery" "deny" "$(decision)"
+# gh persistent flags between the group and the subcommand are still deliveries
+for c in 'gh pr -R acme/app merge 1 --squash' 'gh pr --repo acme/app create --fill' 'gh release -R acme/app create v9 --target main'; do
+  run_bash "$c"
+  assert_eq "gh delivery with -R/--repo before the subcommand is gated: $c" "deny" "$(decision)"
+done
+# bash cd is logical: `cd ..` after a symbolic link goes elsewhere than the physical parent
+ln -s "$PROJ_REAL" "$TL_TMP/lnk-proj"
+mkdir -p "$PROJ_REAL/sub2"
+ln -s "$PROJ_REAL/sub2" "$TL_TMP/lnk-sub"
+expect_strict 'cd .. && git push origin HEAD' 'symbolic link' "$TL_TMP/lnk-sub"
 # git settings that change what a push sends
 git -C "$PROJ" config push.default upstream
 expect_strict 'git push' 'push.default'
