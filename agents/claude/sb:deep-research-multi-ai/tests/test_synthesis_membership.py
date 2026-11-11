@@ -15,6 +15,7 @@ sys.path.insert(0, str(SCRIPTS))
 
 from materialize_solution_artifacts import materialize_solution_artifacts  # noqa: E402
 from synthesize_landscape import build_report_markdown, synthesize_landscape  # noqa: E402
+from apo_pack_run_fixture import plain_vendor_spellings  # noqa: E402
 
 
 APO_NEED = {
@@ -61,6 +62,7 @@ def tearDownModule() -> None:
     _OFFLINE_ENV.stop()
 
 
+@plain_vendor_spellings
 class SynthesisMembershipTests(unittest.TestCase):
     def test_core_matrix_excludes_coding_agents(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -131,18 +131,19 @@ PHASE_INSTRUCTIONS: dict[str, str] = {
     "DR-RETRIEVE": (
         "DR-RETRIEVE phase: gather authoritative sources and evidence for the research query. "
         "Return JSON only with keys: sources (array of {title, url, relevance}), "
-        "evidence (array of {claim, source_ref, confidence})."
+        "evidence (array of {claim, source_ref, confidence, vendors})."
     ),
     "DR-TRIANGULATE": (
         "DR-TRIANGULATE phase: cross-check prior evidence and produce claim candidates. "
-        "Return JSON only with keys: claim_candidates (array of {text, confidence, supporting_sources}), "
+        "Return JSON only with keys: claim_candidates (array of {text, confidence, supporting_sources, vendors}), "
         "cross_checks (array of {claim, status, notes}). "
         "Optional key: matrix_entries (array of {vendor, feature, supported (boolean), source_ref})."
     ),
     "DR-CRITIQUE": (
         "DR-CRITIQUE phase: critique the landscape analysis for gaps, bias, and missing competitors. "
-        "Return JSON only with keys: critiques (array of {target, severity, finding}), "
-        "gaps (array of {area, description, suggested_action})."
+        "Return JSON only with keys: critiques (array of {target, severity, finding, vendors}), "
+        "gaps (array of {area, description, suggested_action, vendors}). "
+        "vendors is optional: the vendor slugs the row is about ([] when none)."
     ),
 }
 
