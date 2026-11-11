@@ -13,13 +13,13 @@ if ! declare -f sb_shell_analysis_load >/dev/null 2>&1 && [[ -f "$_ca_lib_dir/sh
   source "$_ca_lib_dir/shell-analysis.sh"
 fi
 
-# _ca_analyse COMMAND: make SB_* describe COMMAND (reusing a load of the same command).
+# _ca_analyse COMMAND [BASE]: make SB_* describe COMMAND (reusing a load of the same command and base).
 _ca_analyse() {
   if ! declare -f sb_shell_analysis_load >/dev/null 2>&1; then
     SB_TI_STATUS="helper_unavailable"
     return 0
   fi
-  _sb_sa_loaded_command "$1" || sb_shell_analysis_load "$1"
+  _sb_sa_loaded_command "$1" ${2:+"$2"} || sb_shell_analysis_load "$1" ${2:+"$2"}
 }
 
 shell_payload_is_sb_skill_adapter_invocation() {
@@ -107,8 +107,9 @@ _ca_mcp_name_tier() {
   esac
 }
 
-# ca_classify_command <full-cmd> [<hook payload JSON>]
-# With a payload (an MCP tool call) the payload is analysed instead of the command text.
+# ca_classify_command <full-cmd> [<hook payload JSON> [<base dir>]]
+# With a payload (an MCP tool call) the payload is analysed instead of the command text. The base dir is the
+# directory the command runs in (ca_payload_base_dir: the payload cwd joined with workdir); it defaults to $PWD.
 # Sets globals: is_intermediate, is_completion, cmd_first_line.
 #   The class is the highest tier across all commands in the payload, so
 #   `git push && gh pr create` is completion (is_intermediate=false, is_completion=true).
@@ -127,7 +128,7 @@ _ca_mcp_name_tier() {
 # Returns 0 when the command matches a delivery gate; 1 to skip (no gate).
 # shellcheck disable=SC2034  # the globals are outputs, read by completion-audit.sh and its tiers
 ca_classify_command() {
-  local cmd="$1" payload="${2:-}" fallback tool_name=""
+  local cmd="$1" payload="${2:-}" base="${3:-}" fallback tool_name=""
   is_intermediate=false
   is_completion=false
   cmd_first_line=$(printf '%s' "$cmd" | head -1)
@@ -135,10 +136,10 @@ ca_classify_command() {
   ca_unseen_reasons=""
 
   if [[ -z "$payload" ]]; then
-    _ca_analyse "$cmd"
+    _ca_analyse "$cmd" "$base"
   else
     # an MCP call: the payload (not a command text) is analysed; the hook has already parsed it with jq
-    sb_tool_input_load "$payload"
+    sb_tool_input_load "$payload" ${base:+"$base"}
     tool_name="$(printf '%s' "$payload" | jq -r '.tool_name // ""')"
   fi
   ca_analysis_status="${SB_TI_STATUS:-helper_unavailable}"
@@ -217,74 +218,39 @@ _ca_branch_is_feature() {
   [[ " $names " != *" $name "* ]]
 }
 
-# ca_push_is_feature_only: ALLOWLIST. True only when the analysed command pushes, every push resolves every
-# destination to an explicit, named, non-default branch of ONE repository we can read, and nothing else about
-# the push is open (no tags, --all, --mirror, deletions, globs, variables, aliases, GIT_DIR, directories we
-# cannot resolve). Anything else is final delivery (R1-22). Uses SB_SA_JSON (the shell analysis) and git:
-# `git -C DIR` and `cd DIR` targets are resolved to the repository they name.
-ca_push_is_feature_only() {
-  local json="${SB_SA_JSON:-}" sub bad cwd dirs d dir="" npush nsub entry names cur ref src dst parts
-  [[ "${SB_TI_STATUS:-}" == "ok" && "${SB_SA_OPAQUE:-false}" != "true" && -z "${SB_SA_POSSIBLE_ACTIONS:-}" ]] || return 1
-  # environment that redirects git is not visible in argv: refuse the literal assignments
-  case "${cmd:-}${SB_TI_COMMAND:-}" in
-    *GIT_DIR* | *GIT_WORK_TREE* | *GIT_COMMON_DIR* | *GIT_NAMESPACE*) return 1 ;;
-  esac
-  npush="$(printf '%s' "$json" | jq -r '(.push // []) | length')"
-  printf '%s' "$json" | jq -e '(.push // []) | all(.[]; ((.tags // false) or (.all // false) or (.mirror // false) or (.delete // false)) | not)' >/dev/null || return 1
-  nsub=0
-  while IFS=$'\t' read -r sub bad cwd dirs; do
-    [[ "$sub" == "push" ]] || continue
-    [[ "$bad" == "false" ]] || return 1
-    nsub=$((nsub + 1))
-    d="$cwd"
-    IFS=$'\037' read -r -a parts <<<"$dirs"
-    for entry in ${parts[@]+"${parts[@]}"}; do
-      case "$entry" in
-        /*) d="$entry" ;;
-        *) d="$d/$entry" ;;
-      esac
-    done
-    d="$(cd "$d" 2>/dev/null && pwd -P)" || return 1
-    git -C "$d" rev-parse --git-dir >/dev/null 2>&1 || return 1
-    [[ -z "$dir" || "$dir" == "$d" ]] || return 1
-    dir="$d"
-  done < <(printf '%s' "$json" | jq -r '
-    def parse($a): reduce range(1; ($a | length)) as $i ({skip: false, sub: "", dirs: [], bad: false};
-      if .sub != "" then .
-      elif .skip then .skip = false
-      elif $a[$i] == "-C" then .skip = true | .dirs += [$a[$i + 1] // ""]
-      elif $a[$i] == "-c" then .skip = true
-      elif ($a[$i] | test("^--(git-dir|work-tree|namespace|exec-path|super-prefix)")) then .bad = true
-      elif ($a[$i] | startswith("-")) then .
-      else .sub = $a[$i] end);
-    (.commands // [])[] | select((.program | split("/") | last) == "git") | . as $c | parse($c.argv)
-    | [.sub, (.bad | tostring), $c.cwd, (.dirs | join("\u001f"))] | @tsv')
-  # a push through an alias (or one we could not place) shows up as fewer `git push` commands than push entries
-  [[ "$nsub" -ge 1 && "$nsub" -eq "$npush" ]] || return 1
-  names="$(ca_default_branch_names "$dir")"
-  cur="$(git -C "$dir" symbolic-ref -q --short HEAD 2>/dev/null || true)"
-  if printf '%s' "$json" | jq -e '(.push // []) | any(.[]; .default // false)' >/dev/null; then
-    _ca_branch_is_feature "$dir" "$cur" "$names" || return 1
+# ca_payload_base_dir INPUT: the directory a tool call runs in, on stdout: the payload `cwd` (else $PWD) joined
+# with `tool_input.workdir` (Codex). Returns 1 when the payload names a cwd or workdir that is not a directory:
+# the push scope then treats the push as final delivery. The hook's own $PWD is used only without a cwd field.
+ca_payload_base_dir() {
+  local input="$1" cwd workdir base="$PWD"
+  if printf '%s' "$input" | jq -e 'type == "object" and has("cwd")' >/dev/null 2>&1; then
+    cwd="$(printf '%s' "$input" | jq -r '.cwd | if type == "string" then . else "" end')"
+    [[ -n "$cwd" && -d "$cwd" ]] || return 1
+    base="$(cd "$cwd" && pwd -P)"
   fi
-  while IFS= read -r ref; do
-    ref="${ref#+}"
-    case "$ref" in
-      *[\*\$\`\(\)]*) return 1 ;;
+  workdir="$(printf '%s' "$input" | jq -r '.tool_input | if type == "object" and (.workdir | type) == "string" then .workdir else "" end' 2>/dev/null)"
+  if [[ -n "$workdir" ]]; then
+    case "$workdir" in
+      /*) ;;
+      *) workdir="$base/$workdir" ;;
     esac
-    src="${ref%%:*}"
-    dst="${ref##*:}"
-    [[ "$ref" == *:* ]] || src="$ref"
-    case "$dst" in
-      HEAD | @) dst="$cur" ;;
-    esac
-    [[ -n "$src" && -n "$dst" ]] || return 1
-    # a bare destination must be an existing local branch (not a tag, not a new ref of unknown kind)
-    if [[ "$dst" != refs/heads/* ]]; then
-      git -C "$dir" show-ref --verify -q "refs/heads/$dst" 2>/dev/null || return 1
-    fi
-    _ca_branch_is_feature "$dir" "$dst" "$names" || return 1
-  done < <(printf '%s' "$json" | jq -r '(.push // [])[] | (.refspecs // [])[]')
-  return 0
+    [[ -d "$workdir" ]] || return 1
+    base="$(cd "$workdir" && pwd -P)"
+  fi
+  printf '%s' "$base"
+}
+
+# ca_push_scope_verdict: true when the shell analysis (SB_SA_JSON) proved the push is a feature-branch push
+# (push_scope.py). Otherwise false, with the one-sentence reason in ca_push_scope_reason. A missing verdict is
+# strict.
+ca_push_scope_verdict() {
+  local verdict
+  ca_push_scope_reason=""
+  verdict="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '.push_scope.verdict // "strict"' 2>/dev/null || true)"
+  [[ "$verdict" == "feature" ]] && return 0
+  ca_push_scope_reason="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '.push_scope.reason // ""' 2>/dev/null || true)"
+  [[ -n "$ca_push_scope_reason" ]] || ca_push_scope_reason="the push could not be analysed"
+  return 1
 }
 
 # ca_mcp_write_is_feature_only PAYLOAD: an MCP write (push_files, create_or_update_file, delete_file, create_branch...)
@@ -303,11 +269,17 @@ ca_mcp_write_is_feature_only() {
 
 # ca_push_targets_default_branch: the intermediate-tier command must be treated as final delivery (R1-22):
 # a shell push that is not provably a feature-branch push, or an MCP write that is not provably to a feature branch.
+# Sets ca_push_scope_reason (one sentence) for the block message.
 ca_push_targets_default_branch() {
+  ca_push_scope_reason=""
   if [[ -n "${mcp_payload:-}" ]]; then
     ! ca_mcp_write_is_feature_only "$mcp_payload"
   elif sb_shell_analysis_has_action push; then
-    ! ca_push_is_feature_only
+    if [[ "${ca_base_bad:-0}" == 1 ]]; then
+      ca_push_scope_reason="the working directory of the command does not exist"
+      return 0
+    fi
+    ! ca_push_scope_verdict
   else
     return 1
   fi

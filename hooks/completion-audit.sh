@@ -93,7 +93,12 @@ case "$tool_name" in
 esac
 [[ -z "$cmd" ]] && exit 0
 
-ca_classify_command "$cmd" "$mcp_payload" || exit 0
+# the directory the command runs in: the payload cwd (Claude) or workdir (Codex), not this hook's own $PWD; a
+# payload naming a directory that does not exist makes a push final delivery (ca_base_bad)
+ca_base_bad=0
+# shellcheck disable=SC2034  # ca_base_bad is read by ca_push_targets_default_branch (lib/completion-audit/classify.sh)
+ca_base_dir="$(ca_payload_base_dir "$input")" || ca_base_bad=1
+ca_classify_command "$cmd" "$mcp_payload" "$ca_base_dir" || exit 0
 
 # ── Error handler: warn and exit 0 on unexpected failure ─────────────────────
 # A delivery command that reaches this point is gated: an unexpected failure must not let it through

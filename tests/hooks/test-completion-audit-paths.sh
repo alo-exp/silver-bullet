@@ -27,6 +27,10 @@ printf 'verified\n' >"$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
 mkproj() {
   PROJ="$TL_TMP/$1"
   tl_git_repo "$PROJ"
+  # an origin whose default branch is known locally (the push scope needs refs/remotes/origin/HEAD)
+  git -C "$PROJ" remote add origin https://example.test/acme/app.git
+  git -C "$PROJ" update-ref refs/remotes/origin/main "$(git -C "$PROJ" rev-parse main)"
+  git -C "$PROJ" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main
   printf '# Silver Bullet\n' >"$PROJ/silver-bullet.md"
   jq -n --arg v "$CFG_VERSION" '{config_version:$v, sb_initiated:true,
       project:{active_workflow:"full-dev-cycle"},
