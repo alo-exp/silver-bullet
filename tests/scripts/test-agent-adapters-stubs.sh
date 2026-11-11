@@ -246,6 +246,8 @@ assert_eq "transcript: no transcript file survives a failed redaction" "0" "$(fi
 # uncreatable directories fail closed
 ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="/proc/no/such/dir"
 assert_contains "transcript: uncreatable named directory fails" "$TL_OUT" "rc=1"
+ad codex 'mktemp() { return 1; }; codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="$TL_TMP/tdirM"
+assert_contains "transcript: a capture temp file that cannot be created fails the capture" "$TL_OUT" "rc=1"
 ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' TMPDIR="$TL_TMP/no-such-tmp"
 assert_contains "transcript: mktemp failure fails" "$TL_OUT" "rc=1"
 # old private directories are swept, recent ones kept

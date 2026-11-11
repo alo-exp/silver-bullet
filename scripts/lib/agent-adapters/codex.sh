@@ -112,6 +112,7 @@ codex_capture_transcript() {
   local archive_id
   local meta_dest
   local capture_tmp
+  local meta_tmp
   local redactor="${SCRIPT_DIR}/../agent_redact.py"
 
   [[ -f "$transcript_source_file" ]] || return 1
@@ -122,7 +123,8 @@ codex_capture_transcript() {
   # Never write through a planted link (a named directory can hold one).
   [[ ! -L "$transcript_dest" && ! -L "$meta_dest" ]] || { printf 'ERROR: transcript target is a symlink\n' >&2; return 1; }
   # Write and redact a private temp file inside the 0700 directory; only the redacted file reaches latest.jsonl.
-  capture_tmp="$(mktemp "${transcript_dir}/.capture.XXXXXX")" || return 1
+  capture_tmp="$(mktemp "${transcript_dir}/.capture.XXXXXX")" && meta_tmp="$(mktemp "${transcript_dir}/.meta.XXXXXX")" \
+    || { rm -f -- "$capture_tmp" "$meta_tmp"; return 1; }
   if [[ -f "$prompt_file" ]]; then
     python3 - "$transcript_source_file" "$prompt_file" "$capture_tmp" <<'PY'
 import json
@@ -143,33 +145,30 @@ PY
   else
     cp -f -- "$transcript_source_file" "$capture_tmp"
   fi
-  if ! python3 "$redactor" --redact-file "$capture_tmp"; then
-    rm -f -- "$capture_tmp" "$transcript_dest"
-    printf 'ERROR: transcript redaction failed; the transcript was removed\n' >&2
-    return 1
-  fi
-  mv -f -- "$capture_tmp" "$transcript_dest"
   archive_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
-  cp -f -- "$transcript_dest" "${transcript_dir}/${archive_id}.jsonl"
-  codex_rotate_transcripts "$transcript_dir" 4
   jq -n \
     --arg archive_id "$archive_id" \
     --arg captured_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
     --arg source "$transcript_source_file" \
     --arg work_dir "$WORK_DIR" \
     '{archive_id:$archive_id, captured_at:$captured_at, source:$source, work_dir:$work_dir}' \
-    > "$meta_dest"
-  # Transcripts hold the prompt and the whole session: the copy and the metadata are redacted like the delegate logs.
+    > "$meta_tmp"
+  # Transcripts hold the prompt and the whole session: redact the transcript and its metadata like the delegate
+  # logs BEFORE anything reaches its final name, and leave nothing behind when that fails.
   local f
-  for f in "${transcript_dir}/${archive_id}.jsonl" "$meta_dest"; do
+  for f in "$capture_tmp" "$meta_tmp"; do
     if ! python3 "$redactor" --redact-file "$f"; then
-      # never leave an unredacted transcript behind
-      rm -f -- "$transcript_dest" "${transcript_dir}/${archive_id}.jsonl" "$meta_dest"
+      rm -f -- "$capture_tmp" "$meta_tmp" "$transcript_dest" "$meta_dest"
       printf 'ERROR: transcript redaction failed; the transcript was removed\n' >&2
       return 1
     fi
-    chmod 600 "$f"
   done
+  chmod 600 "$capture_tmp" "$meta_tmp"
+  mv -f -- "$capture_tmp" "$transcript_dest"
+  mv -f -- "$meta_tmp" "$meta_dest"
+  cp -f -- "$transcript_dest" "${transcript_dir}/${archive_id}.jsonl"
+  chmod 600 "${transcript_dir}/${archive_id}.jsonl"
+  codex_rotate_transcripts "$transcript_dir" 4
   printf '%s\n' "$transcript_dest"
 }
 
