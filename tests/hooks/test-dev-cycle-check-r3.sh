@@ -62,7 +62,7 @@ done
 
 # ── every path in the diff is checked, whatever the way it is spelled ───────────────────────────────
 for sp in "p0:-p0" "p1:-p1" "p2:-p2" "p3:-p3" "p9:-p9" "strip:--strip=1" "strip2:--strip 2" "rev:-R" "reverse:--reverse" "fwd:-N" "forward:--forward"; do
-  tag="${sp%%:*}"; opt="${sp#*:}"
+  opt="${sp#*:}"
   for t in cfg rm cl md st tr; do
     dc_cmd "patch $opt -i $t.diff"
     assert_eq "protected file ($t.diff) refused: patch $opt" "deny" "$(decision)"
