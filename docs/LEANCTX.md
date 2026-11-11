@@ -89,7 +89,7 @@ Registry helpers (Phase 1):
 |------|---------------|----------|----------|-----------|-----------|------------|-------------|----------|-------------|--------------|-----------------|-------|
 | **Cursor** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Full five-tool routed stack |
 | **Claude Code** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Hook chain verified in Phase 4 tests |
-| **Codex** | ✅ LeanCTX | ❌ deny-only | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | AST blocked until PreToolUse rewrite; wire-proxy ordering validator mandatory |
+| **Codex** | ✅ LeanCTX | ❌ deny-only | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | AST blocked until PreToolUse rewrite; wire-proxy ordering validator (checks captured evidence: `install-leanctx-sb.sh --wire-proxy-evidence FILE`) |
 | **OpenCode** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Native MCP + plugin convergence verified |
 | **Pi** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Native extension adapter + pi-lean-ctx bridge |
 
@@ -108,7 +108,7 @@ Codex PreToolUse is **deny-only** — no `updatedInput` rewrite. When LeanCTX is
 - **Wire proxy + ledger + PathJail + injection detection** run normally
 - **AST read-path (`lctx_read_ast`)** is unavailable — RTK + Context Mode remain primary compressors for shell and analysis
 - **LeanCTX shell and sandbox MCP** are explicitly OFF (RTK and CM own those surfaces)
-- Install-time **wire-proxy JSON message ordering** is validated by `scripts/lib/verify-leanctx-wire-proxy-ordering.py` (Phase 2)
+- **Wire-proxy JSON message ordering** evidence is validated by `scripts/lib/verify-leanctx-wire-proxy-ordering.py`: pass captured traffic with `install-leanctx-sb.sh --wire-proxy-evidence FILE`. Without evidence the installer only runs the validator's self-test, which proves the validator, not the proxy.
 
 ## Deep-Research Fetch Routing
 
