@@ -63,9 +63,9 @@ hr_project() {
     tl_git_repo "$HR_PROJ"
   fi
   printf '%s\n' "${1:-{\}}" >"$HR_PROJ/.silver-bullet.json"
+  # The user's answers follow the recommendations in the file (a user who said yes to each one).
+  sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" install,wire,enforce
   export RT_PROJECT_ROOT="$HR_PROJ"
-  sb_test_consent_sandbox
-  sb_test_consent_mirror "$HR_PROJ/.silver-bullet.json"
 }
 
 # hr_consent <tool>=<enabled|disabled|pending|suspended> ...: build project config
@@ -101,8 +101,12 @@ hr_bin() {
   printf '#!/usr/bin/env bash\n%s\n' "${2:-exit 0}" >"$HR_BIN/$1"
   chmod +x "$HR_BIN/$1"
   hash -r
+  hr_forget_health
 }
-hr_nobin() { rm -f "$HR_BIN/$1"; hash -r; }
+hr_nobin() { rm -f "$HR_BIN/$1"; hash -r; hr_forget_health; }
+
+# The agentmemory health answer is cached for 30 seconds; a test that swaps a stub expects the new answer.
+hr_forget_health() { rm -f -- "${SB_RUNTIME_STATE_DIR:-$HOME/.silver-bullet}/agentmemory-health"; }
 
 # hr_state <probe-json>: component state summary "canonical|activation|evidence,csv|repairable"
 hr_state() {

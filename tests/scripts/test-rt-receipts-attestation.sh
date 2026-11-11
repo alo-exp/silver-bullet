@@ -116,6 +116,7 @@ rc=0; rt_receipt_consume_host_evidence || rc=$?
 assert_eq "consume: full evidence clears the receipt" "0" "$rc"
 assert_eq "consume: receipt consumed and full" "full" "$(jq -r .activation_status "$RP")"
 assert_eq "consume: consumed_at stamped" "1" "$(jq -r '.consumed_at != null | if . then 1 else 0 end' "$RP")"
+assert_eq "consume: the clearing is recorded as self-reported (R6-28)" "host_evidence_stdin|self_reported" "$(jq -r '"\(.cleared_by)|\(.evidence_assurance)"' "$RP")"
 assert_eq "consume: suppress flags exported" "1|1" "${RT_SUPPRESS_RELOAD_RECEIPT_CREATE:-}|${RT_HOST_EVIDENCE_RECEIPT_CLEARED:-}"
 unset RT_SUPPRESS_RELOAD_RECEIPT_CREATE RT_HOST_EVIDENCE_RECEIPT_CLEARED
 
