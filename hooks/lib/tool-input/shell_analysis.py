@@ -90,6 +90,7 @@ Analysis schema (version 1):
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import re
@@ -215,6 +216,22 @@ class Compound:
         self.parts = parts
         self.redirs = []
         self.extra = extra
+
+
+class AndOr(list):
+    """The pipelines of one and-or list; ``ops`` holds the operator before each pipeline after the first."""
+
+    def __init__(self, pipes=(), ops=()):
+        super().__init__(pipes)
+        self.ops = list(ops)
+
+
+class Pipeline(list):
+    """The commands of one pipeline; ``negated`` is true for a leading ``!``."""
+
+    def __init__(self, cmds=(), negated=False):
+        super().__init__(cmds)
+        self.negated = negated
 
 
 class Script:
@@ -346,20 +363,23 @@ class _Parser:
         return andor, background
 
     def parse_andor(self):
-        pipes = [self.parse_pipeline()]
+        pipes = AndOr([self.parse_pipeline()])
         while True:
             self.skip_blanks()
             if not (self.at("&&") or self.at("||")):
                 return pipes
+            pipes.ops.append(self.s[self.i:self.i + 2])
             self.i += 2
             self.skip_newlines()
             pipes.append(self.parse_pipeline())
 
     def parse_pipeline(self):
+        negated = False
         while True:
             self.skip_blanks()
             if self.at_word("!"):
                 self.i += 1
+                negated = not negated
             elif self.at_word("time"):
                 self.i += 4
                 self.skip_blanks()
@@ -367,7 +387,7 @@ class _Parser:
                     self.i += 2
             else:
                 break
-        cmds = [self.parse_command()]
+        cmds = Pipeline([self.parse_command()], negated)
         while True:
             self.skip_blanks()
             if self.at("||") or self.peek() != "|":
@@ -4415,6 +4435,34 @@ def is_skill_adapter_invocation(text):
     return _skill_adapter(parse(text or ""))
 
 
+def _sibling(name):
+    """Import a helper module that lives next to this file (None when it is missing)."""
+    module = sys.modules.get(name)
+    if module is not None:
+        return module
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), name + ".py")
+    try:
+        spec = importlib.util.spec_from_file_location(name, path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    except (OSError, AttributeError, ImportError, SyntaxError):
+        sys.modules.pop(name, None)
+        return None
+    return module
+
+
+def _push_scope(analysis, script, result, scope_base, environ):
+    """Attach the proof-based verdict of a shell push (push_scope.shell_scope); strict when it cannot run."""
+    push_scope = _sibling("push_scope")
+    if push_scope is None:
+        result["push_scope"] = {"verdict": "strict", "reason": "push scope helper missing", "dir": "",
+                                "remote": "", "branches": []}
+        return
+    result["push_scope"] = push_scope.shell_scope(script, result, scope_base,
+                                                  os.environ if environ is None else environ)
+
+
 def _result(analysis, script, text):
     actions = sorted(analysis.actions)
     possible = sorted(analysis.possible - analysis.actions)
@@ -4475,8 +4523,11 @@ def _guarded(analysis, walk):
         analysis.unseen(analysis.failed)
 
 
-def analyze_command(command, base_dir=None, lookups=True):
-    """Analyze one shell command string (see the module docstring for the result)."""
+def analyze_command(command, base_dir=None, lookups=True, environ=None, scope_base=None):
+    """Analyze one shell command string (see the module docstring for the result).
+
+    ``scope_base`` is the verified directory the push scope runs git in (the payload cwd); it defaults to
+    ``base_dir``. ``environ`` stands in for the Bash tool's environment (default: the process environment)."""
     text = (command or "").replace("\x00", "")
     base = os.path.realpath(base_dir or os.getcwd())
     analysis = _Analysis(base, lookups)
@@ -4486,10 +4537,13 @@ def analyze_command(command, base_dir=None, lookups=True):
     script = parse(text)
     analysis.deadline = time.monotonic() + MAX_SECONDS  # the walk's own budget starts after the parse
     _guarded(analysis, lambda: analysis.walk_script(script, Env(base, _home())))
-    return _result(analysis, script, text)
+    result = _result(analysis, script, text)
+    if lookups and analysis.push:
+        _push_scope(analysis, script, result, base if scope_base is None else scope_base or None, environ)
+    return result
 
 
-def analyze_argv(argv, base_dir=None, lookups=True):
+def analyze_argv(argv, base_dir=None, lookups=True, environ=None, scope_base=None):
     """Analyze a command given as an argv list (Codex exec_command ``cmd``), run without a shell."""
     argv = [str(part).replace("\x00", "") for part in argv]
     text = " ".join(shlex.quote(part) for part in argv)
@@ -4500,7 +4554,11 @@ def analyze_argv(argv, base_dir=None, lookups=True):
         return _result(analysis, Script([], ""), text[:4096])
     if argv:
         _guarded(analysis, lambda: analysis.execute(argv, Env(base, _home()), {}, None))
-    return _result(analysis, parse(text), text)
+    script = parse(text)
+    result = _result(analysis, script, text)
+    if lookups and analysis.push:
+        _push_scope(analysis, script, result, base if scope_base is None else scope_base or None, environ)
+    return result
 
 
 def _strings(value):
@@ -4549,7 +4607,18 @@ def _tool_kind(tool_name, mcp_tool):
     return "other"
 
 
-def analyze_payload(text, base_dir=None, lookups=True):
+def _payload_scope_base(payload_cwd, workdir, base):
+    """The directory a payload's push runs in: cwd (else ``base``) joined with workdir; "" when cwd is not a directory."""
+    if isinstance(payload_cwd, str) and payload_cwd:
+        if not os.path.isdir(payload_cwd):
+            return ""
+        base = os.path.realpath(payload_cwd)
+    if isinstance(workdir, str) and workdir:
+        base = os.path.realpath(os.path.join(base, workdir))
+    return base
+
+
+def analyze_payload(text, base_dir=None, lookups=True, environ=None):
     """Analyze a hook payload (JSON text); shell tools get the command analysis, MCP tools
     are classified by tool name, Edit/Write/apply_patch report the paths they write."""
     base = os.path.realpath(base_dir or os.getcwd())
@@ -4571,12 +4640,14 @@ def analyze_payload(text, base_dir=None, lookups=True):
     if command is None:
         command = fields.get("cmd")
     workdir = fields.get("workdir")
+    scope_base = _payload_scope_base(payload.get("cwd"), workdir, base)
     if isinstance(workdir, str) and workdir:
         base = os.path.realpath(os.path.join(base, workdir))
     if kind == "shell" and isinstance(command, list):
-        result = analyze_argv(command, base, lookups)
+        result = analyze_argv(command, base, lookups, environ, scope_base)
     else:
-        result = analyze_command(command if kind == "shell" and isinstance(command, str) else "", base, lookups)
+        result = analyze_command(command if kind == "shell" and isinstance(command, str) else "", base, lookups,
+                                 environ, scope_base)
     command_text = command if isinstance(command, str) else \
         " ".join(shlex.quote(str(part)) for part in command) if isinstance(command, list) else ""
     paths = patch_paths(tool_input) if tool_input is not None else []

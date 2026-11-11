@@ -22,7 +22,7 @@ This page lists every key in the template, which code reads it, and the keys the
 | `project.src_pattern` | `/src/` | Path pattern for files that count as source and trigger the planning-floor gate. Must look like a path segment pattern (`^/[a-zA-Z0-9/_.\|()-]*/?$`); unsafe or match-everything values fall back to `/src/` |
 | `project.src_exclude_pattern` | `__tests__\|\.test\.` | Regex for source-like files to exempt (tests). Limited to 200 safe characters, otherwise the default is used |
 | `project.active_workflow` | `full-dev-cycle` | `full-dev-cycle` or `devops-cycle`; selects the workflow doc and the `_devops` skill lists. In `devops-cycle`, `.yml`, `.yaml`, `.json` and `.toml` files count as infrastructure code |
-| `project.push_to_default_branch_tier` | `completion` | `completion` (default): a push to the default branch, of a tag, or with `--all`/`--mirror` needs the full `required_deploy` floor. `intermediate`: such pushes need only the planning floor (the explicit opt-out) |
+| `project.push_to_default_branch_tier` | `completion` | `completion` (default): a push to the default branch, of a tag, or with `--all`/`--mirror` needs the full `required_deploy` floor. `intermediate`: such pushes need only the planning floor (the explicit opt-out). A push is intermediate only when it is proved to be a feature-branch push; the remote's default branch must be known locally (`refs/remotes/<remote>/HEAD`, set by `git clone` or `git remote set-head <remote> --auto`), otherwise the push counts as final delivery |
 
 `dev-cycle-check.sh` reads the patterns; `completion-audit.sh` uses them to classify a change set.
 

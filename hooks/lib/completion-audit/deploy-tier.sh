@@ -486,6 +486,9 @@ if [[ -n "$missing" ]]; then
     unseen_note="$(sb_enterprise_policy_unseen_note)"$'\n\n'
   fi
   msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\n%sChange class: %s\nYou are attempting to create a PR/deploy but these required steps are missing:\n%s%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "$unseen_note" "${ca_change_class:-mixed}" "$missing_lines" "$ordering_note")
+  if [[ -n "${ca_push_scope_reason:-}" ]]; then
+    msg="${msg}"$'\n\n'"Why this push counts as final delivery: ${ca_push_scope_reason}. A push stays an intermediate commit when it runs as its own command, \`git push [-u] [<remote>] [<branch>|HEAD]\` (optionally after \`cd <dir> &&\` or \`git checkout -b <new> &&\`), from a checkout of a non-default branch."
+  fi
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do
