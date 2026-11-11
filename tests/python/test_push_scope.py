@@ -135,10 +135,48 @@ class ShapeTests(Base):
         self.strict("git push", "exported shell function", env=dict(ENV, **{"BASH_FUNC_git%%": "() { :; }"}))
 
     def test_coverage_tracer_bash_env(self):
-        env = dict(ENV, BASH_ENV="/some/copy/tests/coverage/bash-env.sh", SB_COV_DIR="/x")
+        real = push_scope.COVERAGE_BASH_ENV
+        cov = os.path.join(self.tmp, "cov")
+        os.makedirs(cov, exist_ok=True)
+        env = dict(ENV, BASH_ENV=real, SB_COV_DIR=cov)
         self.feature("git push", env=env)
-        self.strict("git push", "BASH_ENV", env=dict(env, BASH_ENV="/tmp/evil.sh"))
-        self.strict("git push", "BASH_ENV", env=dict(ENV, BASH_ENV="/some/copy/tests/coverage/bash-env.sh"))
+        self.strict("git push", "BASH_ENV", env=dict(env, BASH_ENV="/tmp/evil/tests/coverage/bash-env.sh"))
+        self.strict("git push", "BASH_ENV", env=dict(ENV, BASH_ENV=real))  # no SB_COV_DIR
+        self.strict("git push", "BASH_ENV", env=dict(env, SB_COV_DIR=os.path.join(self.tmp, "none")))
+        self.strict("git push", "BASH_ENV", env=dict(env, BASH_ENV="tests/coverage/bash-env.sh"))  # relative
+        link = os.path.join(self.tmp, "tracer-link.sh")
+        os.symlink(real, link)
+        self.strict("git push", "BASH_ENV", env=dict(env, BASH_ENV=link))
+        # a suffix-equal path in a writable temp tree, and a writable copy of the real file
+        fake = os.path.join(self.tmp, "x", "tests", "coverage")
+        os.makedirs(fake)
+        fake_file = os.path.join(fake, "bash-env.sh")
+        shutil.copy(real, fake_file)
+        self.strict("git push", "BASH_ENV", env=dict(env, BASH_ENV=fake_file))
+        self.assertTrue(push_scope.is_coverage_tracer(real, env))
+        saved = push_scope.COVERAGE_BASH_ENV
+        push_scope.COVERAGE_BASH_ENV = fake_file
+        try:
+            os.chmod(fake_file, 0o666)
+            self.assertFalse(push_scope.is_coverage_tracer(fake_file, env))
+            os.chmod(fake_file, 0o644)
+            self.assertTrue(push_scope.is_coverage_tracer(fake_file, env))
+            os.chmod(fake_file, 0o755)
+            self.assertTrue(push_scope.is_coverage_tracer(fake_file, env))
+            os.remove(fake_file)
+            os.mkdir(fake_file)  # not a regular file
+            self.assertFalse(push_scope.is_coverage_tracer(fake_file, env))
+            info = os.stat(real)
+            real_stat = os.stat
+            foreign = type("S", (), {"st_mode": info.st_mode, "st_uid": os.geteuid() + 1})()
+            os.stat = lambda path: foreign if path == real else real_stat(path)
+            push_scope.COVERAGE_BASH_ENV = real
+            try:
+                self.assertFalse(push_scope.is_coverage_tracer(real, env))
+            finally:
+                os.stat = real_stat
+        finally:
+            push_scope.COVERAGE_BASH_ENV = saved
 
     def test_top_level_shape(self):
         self.strict("git push &", "background")

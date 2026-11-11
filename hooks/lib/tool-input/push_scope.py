@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import re
+import stat
 import subprocess
 import time
 
@@ -462,15 +463,28 @@ def check_entries(result):
     return found
 
 
-COVERAGE_BASH_ENV = "/tests/coverage/bash-env.sh"  # the repository coverage tracer (run-coverage.sh)
+HOOK_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+COVERAGE_BASH_ENV = os.path.join(HOOK_ROOT, "tests", "coverage", "bash-env.sh")
+
+
+def is_coverage_tracer(value, environ):
+    """BASH_ENV is exactly this checkout's coverage tracer (run-coverage.sh): absolute, not a symlink, the file the
+    hook's own root names, a regular file owned by this user that nobody else can write, with SB_COV_DIR set to a
+    directory. Anything else is an arbitrary startup file."""
+    cov_dir = environ.get("SB_COV_DIR")
+    if not (os.path.isabs(value) and cov_dir and os.path.isdir(cov_dir)) or os.path.islink(value):
+        return False
+    if os.path.realpath(value) != os.path.realpath(COVERAGE_BASH_ENV):
+        return False
+    info = os.stat(value)
+    return stat.S_ISREG(info.st_mode) and info.st_uid == os.geteuid() and not info.st_mode & 0o022
 
 
 def env_check(environ):
     """S1: variables that redirect git or run code in every bash (the repository's own coverage tracer excepted)."""
     for name in ENV_DENY:
         value = environ.get(name)
-        if name == "BASH_ENV" and value and environ.get("SB_COV_DIR") and \
-                os.path.realpath(value).endswith(COVERAGE_BASH_ENV):
+        if name == "BASH_ENV" and value and is_coverage_tracer(value, environ):
             continue
         if value:
             raise Strict("%s is set in the environment and redirects git" % name)
