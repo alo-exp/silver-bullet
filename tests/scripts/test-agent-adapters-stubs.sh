@@ -269,8 +269,10 @@ assert_eq "codex: rotation keeps latest plus four archives" "5" "$(find "$TL_TMP
 ad codex 'codex_capture_transcript "$TL_TMP/absent" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="$TL_TMP/tdir2"
 assert_contains "codex: capture without a source fails" "$TL_OUT" "rc=1"
 printf '{"a":1}\n' >"$TL_TMP/src.jsonl"
-ad codex 'codex_capture_transcript "$TL_TMP/src.jsonl" "$TL_TMP/absent2"' CODEX_TRANSCRIPT_DIR="$TL_TMP/tdir3"
+ad codex 'codex_capture_transcript "$TL_TMP/src.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="$TL_TMP/tdir3"
 assert_file_exists "codex: capture without a prompt file copies the source" "$TL_TMP/tdir3/latest.jsonl"
+assert_contains "codex: a successful capture returns 0 and prints the path" "$TL_OUT" "$TL_TMP/tdir3/latest.jsonl
+rc=0"
 
 # ============================================================ Claude
 KB="$TL_TMP/bins/claude"; KARGV="$TL_TMP/claude.argv"

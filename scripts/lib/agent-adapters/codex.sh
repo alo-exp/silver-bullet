@@ -156,7 +156,6 @@ PY
     chmod 600 "$f"
   done
   printf '%s\n' "$transcript_dest"
-  return 1
 }
 
 codex_live_guard_context() {

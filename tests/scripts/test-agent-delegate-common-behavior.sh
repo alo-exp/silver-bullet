@@ -134,7 +134,7 @@ fake_pat="$(printf '%s%s' 'github_pat_' '11ABCDEFG0123456789_abcdefghijklmnopqrs
 fake_xox="$(printf '%s%s' 'xoxb-' '123456789012-abcdefABCDEF')"
 fake_aws="$(printf '%s%s' 'AKIA' 'IOSFODNN7ABCDEFG')"
 fake_jwt="$(printf '%s.%s.%s' 'eyJhbGciOiJIUzI1NiJ9' 'eyJzdWIiOiIxMjM0NTY3ODkwIn0' 'SflKxwRJSMeKKF2QT4fwpMeJf36')"
-fake_val="$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYEXAMPLEKEY')"
+fake_val="$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYQwErTyUiOp1')"
 out="$(agent_delegate_redact_output "Authorization: Bearer hunter2xyz password = swordfish ${fake_sk} ${fake_ghp} keep")"
 assert_contains "redact: authorization header value" "$out" "Authorization: [REDACTED]"
 assert_not_contains "redact: bearer token gone" "$out" "hunter2xyz"
