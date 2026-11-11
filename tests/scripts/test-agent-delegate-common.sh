@@ -42,7 +42,7 @@ agent_delegate_is_quota_error 'HTTP 429 rate limit' && check "quota error 429" p
 ! agent_delegate_is_quota_error 'success output' && check "non-quota passes" pass || check "non-quota passes" fail
 
 # Brief secret rejection
-agent_delegate_brief_has_secrets "api_key=$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYEXAMPLEKEY')" && check "brief secret detection" pass || check "brief secret detection" fail
+agent_delegate_brief_has_secrets "api_key=$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYQwErTyUiOp1')" && check "brief secret detection" pass || check "brief secret detection" fail
 ! agent_delegate_brief_has_secrets 'safe brief text' && check "safe brief passes" pass || check "safe brief passes" fail
 
 # Path canonicalization

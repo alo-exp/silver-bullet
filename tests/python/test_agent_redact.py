@@ -11,12 +11,13 @@ from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
 
 from sbtest import load_module
+import redact_corpus
 
 agent_redact = load_module("scripts/lib/agent_redact.py")
 
 # Fake credentials are assembled at run time so no scanner flags this file.
 JWT = ".".join(["eyJhbGciOiJIUzI1NiJ9", "eyJzdWIiOiIxMjM0NTY3ODkwIn0", "SflKxwRJSMeKKF2QT4fwpMeJf36"])
-LONG_VALUE = "wJalrXUtnFEMI/K7MDENG" + "/bPxRfiCYEXAMPLEKEY"
+LONG_VALUE = "wJalrXUtnFEMI/K7MDENG" + "/bPxRfiCYQwErTyUiOp1"
 SAMPLES = {
     "github-pat": "github_pat_" + "11ABCDEFG0123456789_abcdefghijklmnopqrstuv",
     "github": "ghp_" + "abcdefghijklmnopqrstuvwxyz",
@@ -183,10 +184,10 @@ def _secret_cases():
     add("run --secret %s", _rand(20))
     add("run --api-key %s", _rand(26))
     add("git clone https://admin:%s@git.corp.test/org/repo", _rand(16))
-    add("DB=postgres://app:%s@db-prod:5432/x", _rand(18))
-    add("redis://cache:%s@redis-prod", _rand(14) + "5")
-    v.append(("curl https://admin:admin@prod-db/secret", "admin:admin"))
-    v.append(("mysql://root:root@db-prod-internal/db", "root:root"))
+    add("DB=postgres://app:%s@db.prod.test:5432/x", _rand(18))
+    add("redis://cache:%s@redis.prod.test", _rand(14) + "5")
+    v.append(("curl https://admin:admin@prod-db.corp.test/secret", "admin:admin"))
+    v.append(("mysql://root:root@db.prod.test/db", "root:root"))
     return v
 
 
@@ -220,7 +221,7 @@ def _honest_cases():
         "DATABASE_URL=postgres://user:password@localhost/db",
         "mysql://root:root@127.0.0.1/db",
         "redis://admin:admin@cache.local:6379",
-        "https://deploy:deploy@host.test/r",
+        "https://deploy:deploy@host.local/r",
         "Never commit files that start with -----BEGIN PRIVATE KEY----- markers.",
         "The -----BEGIN PGP PRIVATE KEY BLOCK----- header marks an armored key.",
         "Authorization: Bearer <token> is documented",
@@ -282,13 +283,41 @@ class CorpusTests(unittest.TestCase):
             with self.subTest(text=text[:40]):
                 self.assertIsNone(agent_redact.scan(text))
 
+    def test_acceptance_corpus(self):
+        """The reviewer's fixed acceptance corpus (built at runtime, see redact_corpus.py)."""
+        secrets, honest = redact_corpus.build()
+        self.assertGreaterEqual(len(secrets), 120)
+        self.assertGreaterEqual(len(honest), 130)
+        for fmt, text, core in secrets:
+            with self.subTest(fmt=fmt):
+                self.assertIsNotNone(agent_redact.scan(text), "scanner missed")
+                self.assertNotIn(core, agent_redact.redact(text), "redactor kept the secret")
+        for fmt, text in honest:
+            with self.subTest(fmt=fmt):
+                self.assertIsNone(agent_redact.scan(text), "honest string blocked")
+
+    def test_scan_catches_whatever_redact_changes_for_every_secret(self):
+        secrets, _honest = redact_corpus.build()
+        for fmt, text, _core in secrets + [(None, t, None) for t, _f in _secret_cases()]:
+            with self.subTest(fmt=fmt, text=text[:30]):
+                if agent_redact.redact(text) != text:
+                    self.assertIsNotNone(agent_redact.scan(text))
+
+    def test_pathological_inputs_stay_fast(self):
+        import time
+        for text in ("x.y." * 8000, "login a " * 8000, "a_" * 20000, "-----BEGIN PRIVATE KEY-----" + "\n" * 20000):
+            start = time.monotonic()
+            agent_redact.scan(text)
+            agent_redact.redact(text)
+            self.assertLess(time.monotonic() - start, 5, text[:12])
+
     def test_scanner_and_redactor_share_one_pattern_set(self):
         # every compiled pattern the scanner consults is the object redact() substitutes with
-        for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_ASSIGN"):
+        for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_ASSIGN", "_CLI_RULES", "_VALUE_RULES", "_TEXT_RULES"):
             self.assertTrue(hasattr(agent_redact, name))
         src = open(agent_redact.__file__, encoding="utf-8").read()
         scan_src = src[src.index("def scan("):src.index("def redact_file(")]
-        for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_ASSIGN"):
+        for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_ASSIGN", "_CLI_RULES", "_VALUE_RULES", "_TEXT_RULES"):
             self.assertIn(name, scan_src)
 
     def test_pem_line_number_and_prose(self):
@@ -297,12 +326,12 @@ class CorpusTests(unittest.TestCase):
 
     def test_userinfo_rules(self):
         self.assertEqual(agent_redact.scan("x https://deploy:Zq8vLm2Xr9TnW4@host.test/r")[0], "url-userinfo")
-        self.assertIsNone(agent_redact.scan("x https://deploy:deploy@host.test/r"))
+        self.assertIsNone(agent_redact.scan("x https://deploy:deploy@host.local/r"))
         # the trivial-password exemption (not the user==password rule) and its host limit
         self.assertIsNone(agent_redact.scan("postgres://app:password@localhost/db"))
         self.assertIsNone(agent_redact.scan("postgres://app:changeme@[::1]:5432/db"))
-        self.assertEqual(agent_redact.scan("postgres://app:password@db-prod/db")[0], "url-userinfo")
-        self.assertEqual(agent_redact.scan("https://admin:admin@prod-db/x")[0], "url-userinfo")
+        self.assertEqual(agent_redact.scan("postgres://app:password@db.prod.test/db")[0], "url-userinfo")
+        self.assertEqual(agent_redact.scan("https://admin:admin@prod-db.corp.test/x")[0], "url-userinfo")
 
     def test_camel_case_names_and_random_letter_runs(self):
         self.assertIsNone(agent_redact.scan("secret=getSecretFromVaultClientFactory"))

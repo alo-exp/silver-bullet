@@ -73,7 +73,7 @@ run_od --mode bogus --prompt hi
 assert_eq "opencode delegate invalid --mode exits 2" "2" "$TL_STATUS"
 run_od
 assert_eq "opencode delegate without a prompt exits 2" "2" "$TL_STATUS"
-run_od --prompt "password: $(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYEXAMPLEKEY')"
+run_od --prompt "password: $(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYQwErTyUiOp1')"
 assert_eq "opencode delegate refuses a prompt with secrets" "2" "$TL_STATUS"
 run_od --auto-policy bogus --prompt hi
 assert_eq "opencode delegate invalid --auto-policy exits 2" "2" "$TL_STATUS"
