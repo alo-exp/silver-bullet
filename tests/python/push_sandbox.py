@@ -92,6 +92,7 @@ class Sandbox:
         self.g(w, "worktree", "add", "-q", "../wt-main", "main")
         with open(self.p("w", "new.txt"), "w") as fh:
             fh.write("untracked\n")
+        os.symlink(self.p("w", "sub"), self.p("lnk"))
         with open(self.p("dirfile"), "w") as fh:
             fh.write(self.p("wt-main") + "\n")
         with open(self.p("cdfile"), "w") as fh:

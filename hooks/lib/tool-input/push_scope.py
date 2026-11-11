@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import re
+import signal
 import stat
 import subprocess
 import time
@@ -25,7 +26,33 @@ GIT_CALL_SECONDS = 2.0
 ENV_DENY = ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_CONFIG", "GIT_CONFIG_GLOBAL",
             "GIT_CONFIG_SYSTEM", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT", "GIT_EXEC_PATH", "BASH_ENV", "ENV")
 INERT_PROGRAMS = {"echo", "printf", "true", ":", "cat", "head", "tail", "grep", "wc", "sleep", "pwd", "ls", "test", "["}
-INERT_GIT = {"add", "stage", "commit", "status", "diff", "log", "show", "rev-parse", "ls-files", "describe", "shortlog"}
+# Inert git: a subcommand is inert only when EVERY option is on its exact allowlist (no prefix abbreviations: git
+# accepts --outp= for --output=, which writes any file). log/show/diff/shortlog are "viewers": they also run
+# configured pagers, external diff drivers and textconv filters, so the stored configuration is checked too.
+INERT_GIT_ANY = {"rev-parse", "ls-files", "describe"}
+VIEW_COMMON = {"--oneline", "--stat", "--shortstat", "--numstat", "--name-only", "--name-status", "--no-color",
+               "--color", "-p", "--patch", "-s", "--no-patch", "--graph", "--decorate", "--no-decorate",
+               "--abbrev-commit", "--cached", "--staged", "--all", "--branches", "--tags", "--reverse", "--merges",
+               "--no-merges", "--first-parent", "--summary", "--date-order", "-q", "--quiet", "--exit-code",
+               "--compact-summary", "--numbered", "--email", "-n", "-e", "--"}
+VIEW_PREFIXES = ("--format=", "--pretty=", "--max-count=", "--since=", "--until=", "--author=", "--grep=",
+                 "--date=", "--abbrev=")
+STATUS_FLAGS = {"-s", "--short", "-b", "--branch", "--porcelain", "--long", "-v", "--verbose", "-z", "--show-stash",
+                "-uno", "-unormal", "-uall", "--"}
+ADD_FLAGS = {"-A", "--all", "-u", "--update", "-v", "--verbose", "-f", "--force", "-N", "--intent-to-add", "--dry-run",
+             "--"}
+COMMIT_FLAGS = {"-a", "--all", "-q", "--quiet", "-v", "--verbose", "-s", "--signoff", "--no-verify", "-n",
+                "--allow-empty", "--amend", "--no-edit", "--no-gpg-sign", "--allow-empty-message", "--"}
+COMMIT_VALUE = {"-m", "--message", "-F", "--file"}
+VIEW_CLUSTER = re.compile(r"^-[sneq]+$")
+STATUS_CLUSTER = re.compile(r"^-[sbvz]+$")
+COMMIT_CLUSTER = re.compile(r"^-[aqvsn]*m$")
+COMMIT_BOOL_CLUSTER = re.compile(r"^-[aqvsn]+$")
+SYMBOLIC_REF_FORMS = (["HEAD"], ["--short", "HEAD"], ["-q", "HEAD"], ["-q", "--short", "HEAD"], ["--short", "-q", "HEAD"])
+CONFIG_FORMS = ("--get", "--get-all", "--get-regexp")
+VIEWERS = {"log", "show", "diff", "shortlog"}
+VIEWER_CONFIG = re.compile(r"^(core\.pager|pager\..*|diff\.external|diff\..*\.(command|textconv)|"
+                           r"core\.fsmonitor|core\.sshcommand|core\.askpass)$")
 BRANCH_LIST_FLAGS = {"--show-current", "--list", "-l", "-a", "--all", "-r", "--remotes", "-v", "-vv"}
 GIT_GLOBALS_OK = {"--no-pager", "-P"}
 PUSH_BOOL = {"-u", "--set-upstream", "-f", "--force", "-q", "--quiet", "-v", "--verbose", "--progress", "--no-verify",
@@ -66,8 +93,16 @@ class Git:
         self.runner = runner or self._run
 
     def _run(self, args, timeout):
-        proc = subprocess.run(["git"] + args, capture_output=True, env=self.env, timeout=timeout, check=False)
-        return proc.returncode, proc.stdout, proc.stderr
+        proc = subprocess.Popen(["git"] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env,
+                                start_new_session=True)
+        try:
+            out, err = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            # kill git and everything it started: a child that keeps the pipes open would otherwise hold the hook
+            os.killpg(proc.pid, signal.SIGKILL)
+            proc.communicate()
+            raise
+        return proc.returncode, out, err
 
     def call(self, directory, args):
         left = self.deadline - time.monotonic()
@@ -215,8 +250,57 @@ def parse_new_branch(args, create_flags):
     return new, start
 
 
+def options_ok(args, flags, prefixes=(), values=(), clusters=(), value_clusters=()):
+    """Every option is one of ``flags`` (exact), ``prefixes`` (--name=value), takes a value (``values``), or matches a
+    cluster regex; ``--`` ends the options. Anything else, including a prefix abbreviation, is not allowed."""
+    i = 0
+    while i < len(args):
+        word = args[i]
+        if word == "--":
+            return True
+        if word.startswith("-") and len(word) > 1:
+            if word in values or any(c.match(word) for c in value_clusters):
+                i += 1
+                if i >= len(args):
+                    return False
+            elif not (word in flags or re.fullmatch(r"-\d+", word) or
+                      any(word.startswith(p) and len(word) > len(p) for p in prefixes) or
+                      any(c.match(word) for c in clusters)):
+                return False
+        i += 1
+    return True
+
+
+def inert_git(sub, args):
+    """None when ``git <sub> <args>`` is not provably free of side effects on the push's facts, else True for a
+    viewer (log/show/diff/shortlog: the stored pager/diff-driver settings must be checked) or False."""
+    if sub in VIEWERS:
+        return True if options_ok(args, VIEW_COMMON, VIEW_PREFIXES, clusters=(VIEW_CLUSTER,)) else None
+    if sub in INERT_GIT_ANY:
+        return False
+    if sub == "status":
+        ok = options_ok(args, STATUS_FLAGS, clusters=(STATUS_CLUSTER,))
+    elif sub in ("add", "stage"):
+        ok = options_ok(args, ADD_FLAGS)
+    elif sub == "commit":
+        ok = options_ok(args, COMMIT_FLAGS, ("--message=", "--file=", "-m"), COMMIT_VALUE, (COMMIT_BOOL_CLUSTER,),
+                        (COMMIT_CLUSTER,))
+    elif sub == "branch":
+        ok = all(a in BRANCH_LIST_FLAGS for a in args)
+    elif sub == "remote":
+        ok = args in ([], ["-v"]) or (len(args) == 2 and args[0] == "get-url" and not args[1].startswith("-"))
+    elif sub == "symbolic-ref":
+        ok = args in SYMBOLIC_REF_FORMS
+    elif sub == "config":
+        ok = args == ["--list"] or args == ["-l"] or (len(args) == 2 and args[0] in CONFIG_FORMS
+                                                       and not args[1].startswith("-"))
+    else:
+        ok = False
+    return False if ok else None
+
+
 def classify_argv(argv):
-    """argv -> ("push", dirs, args) | ("cd", arg) | ("newbranch", dirs, new, start) | ("inert",) | ("other", name)."""
+    """argv -> ("push", dirs, args) | ("cd", arg) | ("newbranch", dirs, new, start) | ("inert", viewer) | ("other", name)."""
     if not argv:
         return ("other", "")
     prog = argv[0]
@@ -237,15 +321,12 @@ def classify_argv(argv):
             if parsed is not None:
                 return ("newbranch", dirs, parsed[0], parsed[1])
             return ("other", "git " + sub)
-        if sub in INERT_GIT:
-            return ("inert",)
-        if sub == "branch" and all(a in BRANCH_LIST_FLAGS for a in args):
-            return ("inert",)
-        if sub == "remote" and args in ([], ["-v"]):
-            return ("inert",)
+        verdict = inert_git(sub, args)
+        if verdict is not None:
+            return ("inert", verdict)
         return ("other", "git " + sub)
     if prog in INERT_PROGRAMS and not (prog == "printf" and "-v" in argv[1:]):
-        return ("inert",)
+        return ("inert", False)
     return ("other", prog)
 
 
@@ -440,10 +521,15 @@ def destination_branches(plan, force, head, new, resolved, names):
 
 
 # --------------------------------------------------------------------------- the algorithm
-def effective_dir(base, step_cd, dirs):
+def effective_dir(base, step_cd, dirs, logical_base=None):
     directory = base
     if step_cd is not None:
-        directory = os.path.realpath(os.path.join(directory, step_cd))
+        target = os.path.join(directory, step_cd)
+        if ".." in step_cd.split("/") and (os.path.realpath(logical_base or base) != os.path.abspath(logical_base or base)
+                                            or os.path.realpath(target) != os.path.normpath(target)):
+            # bash's cd is logical: `..` after a symlink goes to the symlink's parent, not the target's
+            raise Strict("a `cd` with `..` through a symbolic link is ambiguous")
+        directory = os.path.realpath(target)
     for entry in dirs:
         directory = os.path.realpath(os.path.join(directory, entry))
     if not os.path.isdir(directory):
@@ -451,16 +537,38 @@ def effective_dir(base, step_cd, dirs):
     return directory
 
 
-def check_entries(result):
-    """S5: every command in the analysis is the push, a state step, or inert. Returns the three kinds' entries."""
-    found = {"push": [], "cd": [], "newbranch": []}
+def check_entries(result, wrapper=None):
+    """S5: every command in the analysis is the push, a state step, or inert. Returns the three kinds' entries, and
+    whether a viewer (log/show/diff/shortlog) is among them (``found["viewer"]``). ``wrapper`` is the argv of an
+    unwrapped `bash -c '<script>'`, which is not itself a command of the script."""
+    found = {"push": [], "cd": [], "newbranch": [], "viewer": False}
     for entry in result.get("commands") or []:
-        kind = classify_argv(entry.get("argv") or [])
-        if kind[0] in found:
+        argv = entry.get("argv") or []
+        if wrapper is not None and argv == wrapper:
+            wrapper = None
+            continue
+        kind = classify_argv(argv)
+        if kind[0] in ("push", "cd", "newbranch"):
             found[kind[0]].append((entry, kind))
-        elif kind[0] == "other":
+        elif kind[0] == "inert":
+            found["viewer"] = found["viewer"] or kind[1]
+        else:
             raise Strict("the command also runs %s, which can change what the push does" % (kind[1] or "an unknown program"))
     return found
+
+
+def unwrap_shell(script, parse):
+    """A script that is exactly `bash|sh -c|-lc '<literal script>'` (the Codex shape) -> (inner script, wrapper argv)."""
+    if parse is None or len(script.items) != 1 or script.items[0][1] or len(script.items[0][0]) != 1:
+        return script, None
+    pipeline = script.items[0][0][0]
+    node = pipeline[0] if len(pipeline) == 1 and not pipeline.negated else None
+    if type(node).__name__ != "Simple" or node.assigns or node.redirs:
+        return script, None
+    words = node_words(node)
+    if words is None or len(words) != 3 or words[0] not in ("bash", "sh") or words[1] not in ("-c", "-lc"):
+        return script, None
+    return parse(words[2]), words
 
 
 HOOK_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -476,7 +584,10 @@ def is_coverage_tracer(value, environ):
         return False
     if os.path.realpath(value) != os.path.realpath(COVERAGE_BASH_ENV):
         return False
-    info = os.stat(value)
+    try:
+        info = os.stat(value)
+    except OSError:
+        return False
     return stat.S_ISREG(info.st_mode) and info.st_uid == os.geteuid() and not info.st_mode & 0o022
 
 
@@ -490,15 +601,16 @@ def env_check(environ):
             raise Strict("%s is set in the environment and redirects git" % name)
 
 
-def shell_scope(script, result, base, environ, git=None):
-    """Classify the shell push of an analysis. ``base`` is the verified payload directory (or None)."""
+def shell_scope(script, result, base, environ, git=None, parse=None, logical_base=None):
+    """Classify the shell push of an analysis. ``base`` is the verified payload directory (or None); ``parse`` parses
+    the script of an unwrapped `bash -lc`; ``logical_base`` is the payload cwd as the host spelled it."""
     try:
-        return _shell_scope(script, result, base, environ, git)
+        return _shell_scope(script, result, base, environ, git, parse, logical_base)
     except Strict as exc:
         return strict(str(exc))
 
 
-def _shell_scope(script, result, base, environ, git):
+def _shell_scope(script, result, base, environ, git, parse, logical_base):
     # S0 preconditions
     if not base or not os.path.isdir(base):
         raise Strict("the working directory of the command is unknown")
@@ -514,7 +626,8 @@ def _shell_scope(script, result, base, environ, git):
     env_check(environ)
     if any(name.startswith("BASH_FUNC_") for name in environ):
         raise Strict("an exported shell function is in the environment")
-    # S2/S3/S4 shape
+    # S2/S3/S4 shape (a single `bash -lc '<script>'` is judged by its script)
+    script, wrapper = unwrap_shell(script, parse)  # a script that does not parse is unseen code (S0)
     top_level(script)
     top_kinds = []
     for andor, _background in script.items:
@@ -526,10 +639,11 @@ def _shell_scope(script, result, base, environ, git):
         raise Strict("the push is not a plain top-level `git push`")
     check_state_steps(script, top_kinds)
     # S5 whole-command inertness, counts equal to the top-level counts
-    found = check_entries(result)
+    found = check_entries(result, wrapper)
     for kind in ("push", "cd", "newbranch"):
         if len(found[kind]) != sum(1 for k in top_kinds if k[0] == kind):
-            raise Strict("a `%s` hidden inside a substitution or wrapper" % kind)
+            raise Strict("a `%s` that is not a plain literal step of the script (hidden in a substitution or wrapper, "
+                         "or its argument is a variable, `~` or substitution)" % kind)
     # S6 writes
     for write in result.get("writes") or []:
         if write.get("path") not in ALLOWED_WRITES:
@@ -540,8 +654,8 @@ def _shell_scope(script, result, base, environ, git):
     # S7 directory
     if cd_arg is not None and not os.path.isabs(cd_arg) and environ.get("CDPATH"):
         raise Strict("CDPATH is set, so a relative `cd` is ambiguous")
-    directory = effective_dir(base, cd_arg, push_kind[1])
-    if new_entry is not None and effective_dir(base, cd_arg, new_entry[1]) != directory:
+    directory = effective_dir(base, cd_arg, push_kind[1], logical_base)
+    if new_entry is not None and effective_dir(base, cd_arg, new_entry[1], logical_base) != directory:
         raise Strict("the new branch is created in another directory than the push")
     if not push_kind[1] and result.get("base_dir") == base:
         analysed = push_entry.get("cwd")
@@ -558,6 +672,8 @@ def _shell_scope(script, result, base, environ, git):
     head = "refs/heads/" + new if new else head0
     if new and any(key.startswith("includeif.onbranch:") for key in cfg):
         raise Strict("the git configuration depends on the branch that is about to be created")
+    if found["viewer"] and any(VIEWER_CONFIG.match(key) for key in cfg):
+        raise Strict("git log/show/diff would run a configured pager, diff driver or filter")
     # S10 remote
     if remote_arg is None:
         if new and start:

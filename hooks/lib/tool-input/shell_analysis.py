@@ -4033,6 +4033,12 @@ class _Analysis:
                 self.run_code(expansion[1:] + "".join(" " + shlex.quote(_text(a)) for a in rest), env.copy())
                 return None
             return self.h_gh(argv[:1] + _split_words(expansion) + list(rest), env, prefix, stdin, depth + 1)
+        if group != "api":
+            # cobra strips persistent flags (-R/--repo VALUE, --repo=VALUE) while it looks for the subcommand, so
+            # they may sit between the command group and the subcommand: `gh pr -R o/r merge 1`
+            rest = list(rest)
+            while rest and (_lit(rest[0]) or "").startswith("-"):
+                rest = rest[2:] if _lit(rest[0]) in ("-R", "--repo") else rest[1:]
         sub = _lit(rest[0]) if rest else ""
         tail = [_lit(a) for a in rest[1:]]
         if sub is None and group in ("pr", "release"):
@@ -4459,15 +4465,17 @@ def _sibling(name):
     return module
 
 
-def _push_scope(analysis, script, result, scope_base, environ):
+def _push_scope(analysis, script, result, scope_base, environ, scope_logical=None):
     """Attach the proof-based verdict of a shell push (push_scope.shell_scope); strict when it cannot run."""
     push_scope = _sibling("push_scope")
     if push_scope is None:
         result["push_scope"] = {"verdict": "strict", "reason": "push scope helper missing", "dir": "",
                                 "remote": "", "branches": []}
         return
-    result["push_scope"] = push_scope.shell_scope(script, result, scope_base,
-                                                  os.environ if environ is None else environ)
+    env = os.environ if environ is None else environ
+    if scope_logical is None:
+        scope_logical = env.get("SB_PUSH_LOGICAL_CWD") or None  # the payload cwd as the host spelled it (hook)
+    result["push_scope"] = push_scope.shell_scope(script, result, scope_base, env, None, parse, scope_logical)
 
 
 def _attach_release(result, mcp_tool, fields, scope_base, environ, lookups, command):
@@ -4546,7 +4554,7 @@ def _guarded(analysis, walk):
         analysis.unseen(analysis.failed)
 
 
-def analyze_command(command, base_dir=None, lookups=True, environ=None, scope_base=None):
+def analyze_command(command, base_dir=None, lookups=True, environ=None, scope_base=None, scope_logical=None):
     """Analyze one shell command string (see the module docstring for the result).
 
     ``scope_base`` is the verified directory the push scope runs git in (the payload cwd); it defaults to
@@ -4563,12 +4571,12 @@ def analyze_command(command, base_dir=None, lookups=True, environ=None, scope_ba
     result = _result(analysis, script, text)
     scope_dir = base if scope_base is None else scope_base or None
     if lookups and analysis.push:
-        _push_scope(analysis, script, result, scope_dir, environ)
+        _push_scope(analysis, script, result, scope_dir, environ, scope_logical)
     _attach_release(result, None, {}, scope_dir, environ, lookups, text)
     return result
 
 
-def analyze_argv(argv, base_dir=None, lookups=True, environ=None, scope_base=None):
+def analyze_argv(argv, base_dir=None, lookups=True, environ=None, scope_base=None, scope_logical=None):
     """Analyze a command given as an argv list (Codex exec_command ``cmd``), run without a shell."""
     argv = [str(part).replace("\x00", "") for part in argv]
     text = " ".join(shlex.quote(part) for part in argv)
@@ -4583,7 +4591,7 @@ def analyze_argv(argv, base_dir=None, lookups=True, environ=None, scope_base=Non
     result = _result(analysis, script, text)
     scope_dir = base if scope_base is None else scope_base or None
     if lookups and analysis.push:
-        _push_scope(analysis, script, result, scope_dir, environ)
+        _push_scope(analysis, script, result, scope_dir, environ, scope_logical)
     _attach_release(result, None, {}, scope_dir, environ, lookups, text)
     return result
 
@@ -4668,13 +4676,15 @@ def analyze_payload(text, base_dir=None, lookups=True, environ=None):
         command = fields.get("cmd")
     workdir = fields.get("workdir")
     scope_base = _payload_scope_base(payload.get("cwd"), workdir, base)
+    raw_cwd = payload.get("cwd")
+    scope_logical = os.path.abspath(raw_cwd) if isinstance(raw_cwd, str) and raw_cwd else None
     if isinstance(workdir, str) and workdir:
         base = os.path.realpath(os.path.join(base, workdir))
     if kind == "shell" and isinstance(command, list):
-        result = analyze_argv(command, base, lookups, environ, scope_base)
+        result = analyze_argv(command, base, lookups, environ, scope_base, scope_logical)
     else:
         result = analyze_command(command if kind == "shell" and isinstance(command, str) else "", base, lookups,
-                                 environ, scope_base)
+                                 environ, scope_base, scope_logical)
     command_text = command if isinstance(command, str) else \
         " ".join(shlex.quote(str(part)) for part in command) if isinstance(command, list) else ""
     paths = patch_paths(tool_input) if tool_input is not None else []
