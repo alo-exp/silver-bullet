@@ -171,7 +171,7 @@ else
   fail "pi dry-run exits 0"
 fi
 if PI_CODING_AGENT_DIR="$TEST_HOME/.pi/agent" python3 "$REPO_ROOT/scripts/lib/global-toolstack/install-pi.py" \
-  --repo-root "$REPO_ROOT" --enable-tool graphify --enable-tool context_mode --enable-tool rtk --enable-tool leanctx >/dev/null 2>&1 \
+  --repo-root "$REPO_ROOT" --enable-tool graphify --enable-tool context_mode --enable-tool rtk --enable-tool leanctx --allow-install >/dev/null 2>&1 \
   && jq -e '.profile == "five_tool_routed" and .servers.graphify.enabled and .servers.context_mode.enabled and .servers.rtk.enabled' \
     "$TEST_HOME/.pi/agent/extensions/silver-bullet-five-tool-stack/config.json" >/dev/null \
   && jq -e '.routeShell == false and .enableMcp == true and (.disableTools | index("ctx_shell")) != null' \
