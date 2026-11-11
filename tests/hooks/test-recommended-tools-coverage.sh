@@ -242,6 +242,9 @@ assert_eq "post default host" "agentmemory connect claude-code" "$(SILVER_BULLET
 assert_eq "pre with unparsable config uses builtin" "rtk init -g" "$(sb_recommended_tool_platform_pre_index_commands "$TL_TMP/nope.json" rtk claude)"
 assert_eq "post with unparsable config uses builtin" "agentmemory connect claude-code" "$(sb_recommended_tool_platform_post_index_commands "$TL_TMP/nope.json" agentmemory claude)"
 
+assert_contains "post rtk cursor" "$(post rtk cursor)" "optimize-rtk-context-mode.sh"
+assert_contains "post context_mode cursor" "$(post context_mode cursor)" "Restart Cursor after the MCP/hook merge"
+assert_contains "post context_mode claude" "$(post context_mode claude)" "Restart Claude Code after shared MCP"
 # ---- graphify platform artifact ----
 PR="$TL_TMP/proj"; mkdir -p "$PR"
 assert_eq "artifact cursor" "$PR/.cursor/rules/graphify.mdc" "$(sb_graphify_platform_artifact_path "$PR/" cursor)"

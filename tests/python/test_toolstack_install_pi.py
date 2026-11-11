@@ -48,7 +48,12 @@ class PiCase(unittest.TestCase):
     def run_install(self, **kwargs):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
-            result = pi.install(self.root, kwargs.pop("dry_run", False), kwargs.pop("enabled_tools", None))
+            result = pi.install(
+                self.root,
+                kwargs.pop("dry_run", False),
+                kwargs.pop("enabled_tools", None),
+                allow_package_install=kwargs.pop("allow_package_install", False),
+            )
         return result, out.getvalue()
 
 
@@ -66,29 +71,47 @@ class WriteJsonTest(PiCase):
         pi.write_json(target, {"a": 1}, False)
         self.assertEqual(json.loads(target.read_text()), {"a": 1})
         self.assertTrue(target.read_text().endswith("\n"))
-        self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o600)
         self.assertEqual([p.name for p in target.parent.iterdir()], ["f.json"])
+
+    def test_new_files_are_private_under_the_installer_umask_and_existing_modes_kept(self):
+        old = os.umask(0o077)
+        try:
+            target = self.root / "private.json"
+            pi.write_json(target, {"a": 1}, False)
+            self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o600)
+        finally:
+            os.umask(old)
+        target.chmod(0o640)
+        pi.write_json(target, {"a": 2}, False)
+        self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o640)
+        self.assertEqual(json.loads(Path(str(target) + ".sb-backup").read_text()), {"a": 1})
+
+    def test_symlinked_settings_stay_symlinks(self):
+        real = self.root / "dotfiles" / "settings.json"
+        real.parent.mkdir()
+        real.write_text("{}")
+        link = self.root / "settings.json"
+        link.symlink_to(real)
+        pi.write_json(link, {"a": 1}, False)
+        self.assertTrue(link.is_symlink())
+        self.assertEqual(json.loads(real.read_text()), {"a": 1})
 
 
 class LoadJsonTest(PiCase):
     def test_missing(self):
         self.assertEqual(pi.load_json(self.root / "nope.json"), {})
 
-    def test_invalid(self):
+    def test_invalid_is_refused_not_replaced_by_an_empty_object(self):
         p = self.root / "bad.json"
         p.write_text("{oops")
-        self.assertEqual(pi.load_json(p), {})
+        with self.assertRaises(pi.sbc.ConfigError):
+            pi.load_json(p)
 
-    def test_non_object(self):
+    def test_non_object_is_refused(self):
         p = self.root / "list.json"
         p.write_text("[1]")
-        self.assertEqual(pi.load_json(p), {})
-
-    def test_unreadable_is_empty(self):
-        p = self.root / "f.json"
-        p.write_text("{}")
-        with mock.patch.object(Path, "read_text", side_effect=OSError("denied")):
-            self.assertEqual(pi.load_json(p), {})
+        with self.assertRaises(pi.sbc.ConfigError):
+            pi.load_json(p)
 
     def test_valid_object(self):
         p = self.root / "ok.json"
@@ -156,7 +179,9 @@ class LeanctxConfigTest(PiCase):
 class InstallTest(PiCase):
     def test_full_install(self):
         self.use_agent_dir()
-        result, out = self.run_install()
+        result, out = self.run_install(
+            enabled_tools={"graphify", "agentmemory", "context_mode", "leanctx", "rtk"}, allow_package_install=True
+        )
         ext = self.agent / "extensions" / "silver-bullet-five-tool-stack"
         self.assertEqual((ext / "index.ts").read_bytes(), (Path(pi.__file__).parent / "pi-five-tool-stack.ts").read_bytes())
         config = self.read("extensions/silver-bullet-five-tool-stack/config.json")
@@ -205,9 +230,7 @@ class InstallTest(PiCase):
         self.run_install()
         self.assertNotEqual(index.read_text(), "// tampered\n")
         mtime = index.stat().st_mtime_ns
-        with mock.patch.object(pi.shutil, "copy2") as copy:
-            self.run_install()
-        copy.assert_not_called()
+        self.run_install()
         self.assertEqual(index.stat().st_mtime_ns, mtime)
 
     def test_dry_run_writes_nothing(self):
@@ -215,7 +238,7 @@ class InstallTest(PiCase):
         result, out = self.run_install(dry_run=True)
         self.assertFalse(self.agent.exists())
         self.assertIn("DRY-RUN: would copy", out)
-        self.assertEqual(out.count("DRY-RUN: would write"), 3)
+        self.assertEqual(out.count("DRY-RUN: would write"), 2)
         pi.ensure_global_instances.assert_called_with(dry_run=True)
 
     def test_missing_adapter_source_is_an_error(self):
@@ -246,9 +269,55 @@ class InstallTest(PiCase):
         self.assertFalse(result["leanctx_config_changed"])
         self.assertFalse((self.agent / "extensions" / "pi-lean-ctx" / "config.json").exists())
 
+    def test_pi_lean_ctx_is_registered_only_with_leanctx(self):
+        # R6-10: an RTK-only or Context-Mode-only enable does not add the unpinned npm package
+        self.use_agent_dir()
+        self.run_install(enabled_tools={"rtk", "context_mode"})
+        self.assertEqual(self.read("settings.json").get("packages"), [])
+        self.assertFalse((self.agent / "extensions" / "pi-lean-ctx" / "config.json").exists())
+        # enabling leanctx alone never lists an npm package: that needs the caller's install consent
+        result, _ = self.run_install(enabled_tools={"leanctx"})
+        self.assertEqual(self.read("settings.json")["packages"], [])
+        self.assertFalse(self.read("extensions/silver-bullet-five-tool-stack/config.json")["servers"]["leanctx"]["enabled"])
+        self.run_install(enabled_tools={"leanctx"}, allow_package_install=True)
+        self.assertTrue(self.read("extensions/silver-bullet-five-tool-stack/config.json")["servers"]["leanctx"]["enabled"])
+        self.assertEqual(self.read("settings.json")["packages"], ["npm:pi-lean-ctx"])
+        # allow-install without leanctx lists nothing
+        self.run_install(enabled_tools={"rtk"}, allow_package_install=True)
+        self.assertEqual(self.read("settings.json")["packages"], ["npm:pi-lean-ctx"])
+
+    def test_no_enable_tool_enables_nothing_new(self):
+        self.use_agent_dir()
+        self.run_install()
+        servers = self.read("extensions/silver-bullet-five-tool-stack/config.json")["servers"]
+        self.assertFalse(any(s["enabled"] for s in servers.values()))
+
+    def test_unparseable_settings_are_left_alone(self):
+        # R6-09: a settings.json that is not strict JSON (comments, trailing commas) is not replaced
+        self.use_agent_dir()
+        self.agent.mkdir()
+        original = '{\n  // my theme\n  "theme": "dark",\n}\n'
+        (self.agent / "settings.json").write_text(original)
+        with self.assertRaises(pi.sbc.ConfigError):
+            self.run_install(enabled_tools={"rtk"})
+        self.assertEqual((self.agent / "settings.json").read_text(), original)
+
+    def test_corrupt_extension_config_is_replaced_with_a_backup(self):
+        self.use_agent_dir()
+        cfg = self.agent / "extensions" / "silver-bullet-five-tool-stack" / "config.json"
+        cfg.parent.mkdir(parents=True)
+        cfg.write_text("{broken")
+        self.run_install(enabled_tools={"rtk"})
+        self.assertEqual(Path(str(cfg) + ".sb-backup").read_text(), "{broken")
+        self.assertTrue(self.read("extensions/silver-bullet-five-tool-stack/config.json")["servers"]["rtk"]["enabled"])
+
     def test_selective_enable_leanctx_configures_bridge(self):
         self.use_agent_dir()
-        result, _ = self.run_install(enabled_tools={"leanctx"})
+        result, out = self.run_install(enabled_tools={"leanctx"})
+        self.assertFalse(result["leanctx_config_changed"])  # no install consent: leanctx is not enabled
+        self.assertIn("SKIP: LeanCTX is not enabled in Pi without install consent", out)
+        self.assertFalse((self.agent / "extensions" / "pi-lean-ctx" / "config.json").exists())
+        result, _ = self.run_install(enabled_tools={"leanctx"}, allow_package_install=True)
         self.assertTrue(result["leanctx_config_changed"])
         self.assertTrue((self.agent / "extensions" / "pi-lean-ctx" / "config.json").is_file())
 
@@ -267,7 +336,7 @@ class InstallTest(PiCase):
         (self.agent / "settings.json").write_text(
             json.dumps({"extensions": "junk", "packages": {"x": 1}, "theme": "dark"})
         )
-        self.run_install()
+        self.run_install(enabled_tools={"leanctx"}, allow_package_install=True)
         settings = self.read("settings.json")
         self.assertEqual(settings["theme"], "dark")
         self.assertEqual(len(settings["extensions"]), 1)
@@ -304,7 +373,24 @@ class MainTest(PiCase):
         self.assertTrue(dry)
         self.assertEqual(tools, {"rtk", "graphify"})
 
-    def test_main_defaults_enable_everything(self):
+    def test_main_reports_a_config_error_with_exit_2(self):
+        err = io.StringIO()
+        with mock.patch.object(pi, "install", side_effect=pi.sbc.ConfigError("x: bad json")), contextlib.redirect_stderr(err):
+            code, _ = self.run_main()
+        self.assertEqual(code, 2)
+        self.assertIn("ERROR: x: bad json", err.getvalue())
+
+    def test_main_makes_new_files_private_and_restores_the_umask(self):
+        self.use_agent_dir()
+        before = os.umask(0o022)
+        try:
+            self.run_main("--enable-tool", "rtk")
+            self.assertEqual(os.umask(0o022), 0o022)
+        finally:
+            os.umask(before)
+        self.assertEqual(stat.S_IMODE((self.agent / "settings.json").stat().st_mode), 0o600)
+
+    def test_main_defaults_enable_nothing_new(self):
         with mock.patch.object(pi, "install", return_value={}) as install:
             self.run_main()
         self.assertIsNone(install.call_args.args[2])
@@ -321,6 +407,15 @@ class MainTest(PiCase):
         code, out = self.run_main("--repo-root", str(self.root))
         self.assertEqual(code, 0)
         self.assertIn('"host": "pi"', out)
+
+    def test_allow_install_flag_on_the_command_line(self):
+        self.use_agent_dir()
+        code, _ = self.run_main("--repo-root", str(self.root), "--enable-tool", "leanctx")
+        self.assertEqual(code, 0)
+        self.assertEqual(self.read("settings.json")["packages"], [])
+        code, _ = self.run_main("--repo-root", str(self.root), "--enable-tool", "leanctx", "--allow-install")
+        self.assertEqual(code, 0)
+        self.assertEqual(self.read("settings.json")["packages"], ["npm:pi-lean-ctx"])
 
 
 class ScriptEntryPointTest(unittest.TestCase):
