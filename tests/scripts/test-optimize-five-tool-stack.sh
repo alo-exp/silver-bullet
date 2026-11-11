@@ -30,6 +30,9 @@ source "$REPO_ROOT/tests/lib/repo-snapshot.sh"
 REPO_SNAPSHOT="$(sb_repo_snapshot "$REPO_ROOT" "${TEST_HOME}/repo")"
 export HOME="$TEST_HOME"
 mkdir -p "${TEST_HOME}/.cursor"
+# The user's consent (docs/CONSENT.md): the project file below only recommends LeanCTX.
+source "$REPO_ROOT/tests/lib/consent-helpers.sh"
+sb_test_consent_grant_all
 printf '{"mcpServers":{"context-mode":{"command":"context-mode"}}}\n' >"${TEST_HOME}/.cursor/mcp.json"
 
 # Isolated project config with leanctx opted in.

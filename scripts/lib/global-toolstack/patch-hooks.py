@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Idempotently patch ~/.cursor/hooks.json for global toolstack gates."""
+"""Idempotently patch ~/.cursor/hooks.json for global toolstack gates.
+
+Only the tools named by RT_PATCH_<TOOL>=1 (the ones the user consented to wire) are touched: an
+older LeanCTX/shell-compression hook is replaced only by a working RTK hook, a Context Mode hook is
+rewritten only when Context Mode is consented and its command resolves, and the file is written
+atomically (through a symlink, mode kept, previous content in hooks.json.sb-backup).
+"""
 from __future__ import annotations
 
 import json
@@ -7,23 +13,28 @@ import os
 import shlex
 import shutil
 import sys
-import tempfile
 from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+# sb_host_config.py sits in scripts/lib (the repository) or beside this file (the deployed copy).
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+import sb_host_config as sbc  # noqa: E402
 
 from five_tool_instances import ensure_global_instances, tool_command  # noqa: E402
 
 TS = Path.home() / ".cursor" / "hooks" / "toolstack"
 HOOKS = Path.home() / ".cursor" / "hooks.json"
 SB_BRIDGE = "cursor-hook-bridge.sh"
-LEGACY_ROUTING_HOOK_MARKERS = (
+# Hooks that LeanCTX itself registered: they are the user's, and removable only with LeanCTX consent.
+LEANCTX_HOOK_MARKERS = (
     "lean-ctx hook deny",
     "lean-ctx hook redirect",
     "lean-ctx hook rewrite",
-    "toolstack/shell-compression.sh",
 )
+# Silver Bullet's own legacy shell-compression hook.
+LEGACY_ROUTING_HOOK_MARKERS = ("toolstack/shell-compression.sh",)
 GLOBAL_GATE_NAMES = (
     "stack-compression-coordinator.sh",
     "graphify-gate.sh",
@@ -38,10 +49,18 @@ GLOBAL_GATE_NAMES = (
 
 
 def load_json(path: Path) -> dict[str, Any]:
-    if path.is_file():
-        with path.open(encoding="utf-8") as handle:
-            return json.load(handle)
-    return {}
+    """The JSON object in PATH ({} when absent); sbc.ConfigError when it cannot be parsed."""
+    return sbc.read_json(path, default={})
+
+
+def command_resolves(command: str) -> bool:
+    """True when COMMAND (the program of a hook command line) is an existing file or on PATH."""
+    program = shlex.split(command)[0] if command.strip() else ""
+    if not program:
+        return False
+    if os.path.isabs(program):
+        return os.path.isfile(program) and os.access(program, os.X_OK)
+    return shutil.which(program) is not None
 
 
 def normalize_hooks_config(data: dict[str, Any]) -> dict[str, Any]:
@@ -71,10 +90,17 @@ def hook_cmd(h: Any) -> str:
     return str(h.get("command", "")) if isinstance(h, dict) else ""
 
 
-def is_legacy_routing_hook(command: str) -> bool:
-    """Identify old plugin-owned routing hooks superseded by the global stack."""
+def is_legacy_routing_hook(command: str, *, rtk_replaces: bool = True, leanctx_owned: bool = False) -> bool:
+    """Identify old routing hooks superseded by the global stack.
+
+    The shell-compression rewrite hooks are superseded only by a working RTK hook, so they count
+    as legacy only when RTK_REPLACES (RTK consented and its command resolves). LeanCTX's own
+    deny/redirect/rewrite hooks were registered by LeanCTX, not Silver Bullet: they are removed
+    only when LEANCTX_OWNED (the user consented to LeanCTX wiring) and RTK replaces them."""
     normalized = command.replace("\\\\", "")
-    if any(marker in normalized for marker in LEGACY_ROUTING_HOOK_MARKERS):
+    if rtk_replaces and any(marker in normalized for marker in LEGACY_ROUTING_HOOK_MARKERS):
+        return True
+    if rtk_replaces and leanctx_owned and any(marker in normalized for marker in LEANCTX_HOOK_MARKERS):
         return True
     return SB_BRIDGE in normalized and any(name in normalized for name in GLOBAL_GATE_NAMES)
 
@@ -240,21 +266,18 @@ def attach_hook_list(hooks: dict[str, Any], key: str, lst: list) -> None:
 
 
 def atomic_write_json(path: Path, data: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    payload = json.dumps(data, indent=2) + "\n"
-    with tempfile.NamedTemporaryFile(
-        mode="w",
-        encoding="utf-8",
-        dir=path.parent,
-        delete=False,
-        prefix=".hooks-merge.",
-    ) as tmp:
-        tmp.write(payload)
-        tmp_path = Path(tmp.name)
-    tmp_path.replace(path)
+    sbc.write_json(path, data)
 
 
 def main() -> int:
+    try:
+        return _main()
+    except sbc.ConfigError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+
+
+def _main() -> int:
     patch_graphify = patch_enabled("GRAPHIFY")
     patch_agentmemory = patch_enabled("AGENTMEMORY")
     patch_rtk = patch_enabled("RTK")
@@ -277,6 +300,10 @@ def main() -> int:
 
     manifest = ensure_global_instances()
     rtk_hook_command = f"{tool_command(manifest, 'rtk')} hook cursor"
+    rtk_usable = patch_rtk and command_resolves(rtk_hook_command)
+    cm_usable = patch_cm and command_resolves(
+        canonical_context_mode_hook(manifest, "pretooluse")
+    )
 
     original = load_json(HOOKS)
     data = json.loads(json.dumps(original))
@@ -289,7 +316,7 @@ def main() -> int:
         kept = []
         removed = 0
         for item in event_hooks:
-            if isinstance(item, dict) and is_legacy_routing_hook(hook_cmd(item)):
+            if isinstance(item, dict) and is_legacy_routing_hook(hook_cmd(item), rtk_replaces=rtk_usable, leanctx_owned=patch_leanctx):
                 removed += 1
             else:
                 kept.append(item)
@@ -304,7 +331,7 @@ def main() -> int:
             if not isinstance(item, dict):
                 continue
             phase = context_mode_hook_phase(hook_cmd(item))
-            if phase is None:
+            if phase is None or not cm_usable:
                 continue
             canonical = canonical_context_mode_hook(manifest, phase)
             if hook_cmd(item) != canonical:
@@ -340,7 +367,7 @@ def main() -> int:
     # compatibility but must not be wired into Cursor hooks.
     if ensure_rtk_before_cm(
         pt,
-        patch_rtk=patch_rtk,
+        patch_rtk=rtk_usable,
         patch_cm=patch_cm,
         rtk_hook_command=rtk_hook_command,
     ):
