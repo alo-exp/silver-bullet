@@ -10,16 +10,30 @@
 # directory for contract writers outside this list.
 #
 #   sb_contract_unlock_write SKILL     record SKILL's invocation when it is a contract writer
-#   sb_contract_unlocked [json|md|inline]  a writer skill ran recently enough (json: .silver-bullet*.json,
-#                                      md: silver-bullet.md, inline: inline interpreter code may run)
+#   sb_contract_unlocked [json|md]     a writer skill ran recently enough (json: .silver-bullet*.json,
+#                                      md: silver-bullet.md)
 
 SB_PF_CONTRACT_WRITER_SKILLS="silver-init silver-update silver-add silver-devops silver-migrate"
 SB_CONTRACT_JSON_ONLY_SKILLS="silver-add silver-devops"
-# The init skill reads the host registry with inline python during its scaffold step.
-SB_CONTRACT_INLINE_SKILLS="silver-init"
 SB_CONTRACT_UNLOCK_WINDOW="${SB_CONTRACT_UNLOCK_WINDOW:-7200}"
 
 sb_contract_unlock_file() { printf '%s/contract-unlock' "${SB_RUNTIME_STATE_DIR:-$HOME/.claude/.silver-bullet}"; }
+
+# The integrity tags the unlock in force covers (hooks/lib/integrity.sh): the JSON configuration for
+# every writer, silver-bullet.md and the instruction files only for the full writers.
+sb_contract_unlock_tags() {
+  if sb_contract_unlocked md; then
+    printf 'config prompt md instr:CLAUDE.md instr:AGENTS.md'
+  elif sb_contract_unlocked json; then
+    printf 'config prompt'
+  fi
+  return 0
+}
+
+sb_contract_is_writer() {
+  case " $SB_PF_CONTRACT_WRITER_SKILLS " in *" ${1:-} "*) return 0 ;; esac
+  return 1
+}
 
 sb_contract_unlock_write() {
   local skill="${1:-}" file tmp
@@ -42,7 +56,6 @@ sb_contract_unlocked() {
   now="$(date +%s)"
   [[ "$now" -ge "$when" && $((now - when)) -le "$SB_CONTRACT_UNLOCK_WINDOW" ]] || return 1
   case "$kind" in
-    inline) case " $SB_CONTRACT_INLINE_SKILLS " in *" $skill "*) return 0 ;; esac; return 1 ;;
     json) ;;
     *) case " $SB_CONTRACT_JSON_ONLY_SKILLS " in *" $skill "*) return 1 ;; esac ;;
   esac

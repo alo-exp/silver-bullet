@@ -150,6 +150,27 @@ release_require_pre_release_quality_gate=$(printf '%s' "$config_vals" | sed -n '
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 release_require_rc_matrix=$(printf '%s' "$config_vals" | sed -n '11p')
 
+# Integrity: the required lists come from the record the sanctioned writers kept, not from the live
+# file (hooks/lib/integrity.sh): a file rewritten outside them falls back to the last recorded values.
+if [[ -f "$_lib_dir/integrity.sh" ]]; then
+  # shellcheck source=lib/integrity.sh
+  source "$_lib_dir/integrity.sh"
+  _iv_root="$(sb_integrity_root "$PWD")"
+  if [[ -n "$_iv_root" ]]; then
+    sb_integrity_verify "$_iv_root" ""
+    if [[ "$SB_IV_STATUS" != none ]]; then
+      # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/*-tier.sh
+      required_planning_cfg="$SB_IV_REQUIRED_PLANNING"
+      # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/planning-tier.sh
+      required_planning_devops_cfg="$SB_IV_REQUIRED_PLANNING_DEVOPS"
+      # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
+      required_deploy_cfg="$SB_IV_REQUIRED_DEPLOY"
+      # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
+      required_deploy_devops_cfg="$SB_IV_REQUIRED_DEPLOY_DEVOPS"
+    fi
+  fi
+fi
+
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
 # Env var override for pre-release quality gate file
@@ -191,7 +212,11 @@ fi
 # ── Read state file ───────────────────────────────────────────────────────────
 state_contents=""
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/*.sh
-[[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
+if [[ -f "$state_file" ]]; then
+  # Only what the recorder sealed counts (hooks/lib/state-seal.sh): a state edited by anything else yields nothing.
+  source "$_lib_dir/state-seal.sh"
+  state_contents=$(sb_state_seal_trusted "$state_file")
+fi
 
 # shellcheck disable=SC2154  # is_intermediate is set by ca_classify in lib/completion-audit/classify.sh
 if [[ "$is_intermediate" == true ]]; then

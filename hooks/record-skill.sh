@@ -63,12 +63,14 @@ if [[ -f "$_lib_dir/contract-unlock.sh" ]]; then
   # shellcheck source=lib/contract-unlock.sh
   source "$_lib_dir/contract-unlock.sh"
 fi
-if ! declare -F sb_contract_unlock_write >/dev/null 2>&1; then
-  sb_contract_unlock_write() { :; }
+if [[ -f "$_lib_dir/integrity.sh" ]]; then
+  # shellcheck source=lib/integrity.sh
+  source "$_lib_dir/integrity.sh"
 fi
-if [[ -f "$_lib_dir/plugin-cache-guard.sh" ]]; then
-  # shellcheck source=lib/plugin-cache-guard.sh
-  source "$_lib_dir/plugin-cache-guard.sh"
+if ! declare -F sb_contract_is_writer >/dev/null 2>&1; then
+  # Without the libraries there is nothing to keep in step.
+  sb_contract_unlock_write() { :; }
+  sb_contract_is_writer() { return 1; }
 fi
 
 # jq is required for JSON parsing
@@ -296,38 +298,6 @@ if ! sb_runtime_path_is_state_scoped "$STATE_FILE"; then
   STATE_FILE="${SB_STATE_DIR}/state"
 fi
 
-# --- Only the install the host registered may record (R3-01) ---
-# The recorder's own realpath must be the root of an install of this plugin that the host's
-# registry (installed_plugins.json) lists, or the checkout named by SILVER_BULLET_DEV_PLUGIN_ROOT
-# (set by the developer who runs the host from a source checkout; a command cannot set it for a
-# hook). Hosts without such a registry are trusted only below their own plugins directory.
-# CLAUDE_PLUGIN_ROOT, when the host sets it, must name this same root. There is no "any .git
-# checkout" rule, and a missing registry is not a reason to accept.
-_self_root="$(cd "${_repo_dir:-.}" && pwd -P)"
-_origin_ok=false
-if [[ -z "${CLAUDE_PLUGIN_ROOT:-}" || "$(cd "$CLAUDE_PLUGIN_ROOT" 2>/dev/null && pwd -P)" == "$_self_root" ]]; then
-  if [[ -n "${SILVER_BULLET_DEV_PLUGIN_ROOT:-}" && "$(cd "$SILVER_BULLET_DEV_PLUGIN_ROOT" 2>/dev/null && pwd -P)" == "$_self_root" ]]; then
-    _origin_ok=true
-  fi
-  _registry_seen=false
-  if declare -F sb_plugin_cache_registry_file >/dev/null 2>&1 && [[ -f "$(sb_plugin_cache_registry_file)" ]]; then
-    _registry_seen=true
-    while IFS= read -r _install; do
-      if [[ -n "$_install" && "$(cd "$_install" 2>/dev/null && pwd -P)" == "$_self_root" ]]; then _origin_ok=true; fi
-    done < <(jq -r '.plugins // {} | to_entries[] | select(.key | test("silver-bullet"; "i")) | .value[]? | .installPath // empty' "$(sb_plugin_cache_registry_file)" 2>/dev/null || true)
-  fi
-  if [[ "$_registry_seen" != true && "$_origin_ok" != true ]]; then
-    _plugins_dir="$(cd "${SB_RUNTIME_HOME_ROOT:-/nonexistent}/plugins" 2>/dev/null && pwd -P)" || _plugins_dir=""
-    if [[ -n "$_plugins_dir" ]]; then
-      case "$_self_root" in "$_plugins_dir"/*) _origin_ok=true ;; esac
-    fi
-  fi
-fi
-if [[ "$_origin_ok" != true ]]; then
-  if declare -F _sb_state_seal_log >/dev/null 2>&1; then _sb_state_seal_log "$STATE_FILE" "recorder refused: it is not running from a root the host registered ($_self_root)"; fi
-  exit 0
-fi
-
 # --- Tracked skills list ---
 # SB lifecycle phases (tracked as current silver-* markers)
 # Prefer the canonical tracked list from the packaged config template so
@@ -410,6 +380,11 @@ for raw in "${skills_to_record[@]}"; do
 
   completed_skills_to_mark+=("$skill")
   sb_contract_unlock_write "$skill"
+  if sb_contract_is_writer "$skill"; then
+    # A contract-writing skill starts: the record follows the contract it is about to change.
+    # shellcheck disable=SC2046  # the tags are a word list
+    sb_integrity_baseline "$(sb_integrity_root "$PWD")" entry $(sb_contract_unlock_tags)
+  fi
 
   # --- Record completed skill invocation (no duplicates) ---
   mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true

@@ -1,0 +1,218 @@
+#!/usr/bin/env bash
+# The honest corpus: everyday work and every sanctioned writer keep working under the integrity
+# record. Each row drives the real hooks.
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
+tl_init
+source "$TL_REPO_ROOT/tests/lib/integrity-harness.sh"
+
+ok_cmd() { # NAME CMD [expect none|ok]
+  ih_run "$2"
+  assert_eq "$1: the command is not refused" "ok" "$(printf '%s' "$IH_PRE" | { read -r d; [[ "$d" == deny ]] && echo deny || echo ok; })"
+  assert_eq "$1: nothing diverged" "" "$(ih_diverged)"
+}
+planned() { ih_rec inst-a; }
+
+# 1. record, then edit
+ih_project h1
+planned
+ih_edit
+assert_eq "record inst-a, then edit src: allowed" "ok" "$(not_deny)"
+ih_edit
+assert_eq "and again" "ok" "$(not_deny)"
+
+# 2. before planning the floor still stops edits (the record changes nothing for honest users)
+ih_project h2
+ih_edit
+assert_contains "without planning an edit is refused as before" "$(message)" "Planning incomplete"
+
+# 3. /sb:init stamps the contract through the file tools
+ih_project h3
+ih_rec silver-init
+run_dc "$(edit_json "$PROJ/.silver-bullet.json" Write PreToolUse)"
+assert_eq "the init skill may write the config" "ok" "$(not_deny)"
+jq -n --arg v "$CFG_VERSION" '{config_version:$v,sb_initiated:true,skills:{required_planning:["inst-a"],all_tracked:["inst-a","inst-b"]},project:{src_pattern:"/src/"},note:"init"}' >"$PROJ/.silver-bullet.json"
+printf '# SB init\n' >"$PROJ/silver-bullet.md"
+printf 'new rules\n' >"$PROJ/CLAUDE.md"
+run_dc "$(edit_json "$PROJ/.silver-bullet.json" Write PostToolUse)"
+run_dc "$(edit_json "$PROJ/silver-bullet.md" Write PostToolUse)"
+run_dc "$(edit_json "$PROJ/CLAUDE.md" Write PostToolUse)"
+rm -f "$SD/contract-unlock"
+assert_eq "afterwards the record follows what the skill wrote" "" "$(ih_diverged)"
+planned
+ih_edit
+assert_eq "and source edits pass" "ok" "$(not_deny)"
+
+# 4. /sb:add customises required_deploy and the new value is honoured
+ih_project h4
+ih_rec silver-add
+jq '.skills.required_deploy=["inst-a","inst-b","extra"]' "$PROJ/.silver-bullet.json" >"$PROJ/t.json" && mv "$PROJ/t.json" "$PROJ/.silver-bullet.json"
+run_dc "$(bash_json 'jq ... > t.json && mv t.json .silver-bullet.json' PostToolUse)"
+rm -f "$SD/contract-unlock"
+sb_integrity_verify "$PROJ" ""
+assert_eq "silver-add: no divergence once the skill is done" "" "$SB_IV_DIVERGED"
+assert_eq "silver-add: the new deploy list is the recorded one" "inst-a inst-b extra" "$SB_IV_REQUIRED_DEPLOY"
+
+# 5-6. honest patches
+ih_project h5
+planned
+ih_diff "$PROJ/src/app.js" "$FX/d.txt" src/app.js >"$FX/src.diff"
+ih_run "git apply $FX/src.diff"
+assert_eq "an honest git apply of a src diff after planning" "ok" "$(printf '%s' "$IH_PRE" | { read -r d; [[ "$d" == deny ]] && echo deny || echo ok; })"
+ih_project h6
+ih_diff "$PROJ/docs/README.md" "$FX/d.txt" docs/README.md >"$FX/docs.diff"
+ih_run "git apply $FX/docs.diff"
+assert_eq "a docs-only patch needs no planning" "ok" "$(printf '%s' "$IH_PRE" | { read -r d; [[ "$d" == deny ]] && echo deny || echo ok; })"
+
+# 7-14. everyday commands
+ih_project h7
+for c in 'cd "$(git rev-parse --show-toplevel)" && ls' 'mkdir -p build && ls build' 'echo scratch > /tmp/sb-honest-$$.txt' 'cat .silver-bullet.json | jq .skills' 'grep -n rules CLAUDE.md' 'git status --short' 'python3 -c "print(open(\".silver-bullet.json\").read())"' 'perl -ne "print" CLAUDE.md' 'npm test' 'rm -f build/*.o' 'tar -tf $FX/s.tar'; do
+  ok_cmd "everyday: $c" "$c"
+done
+ih_project h8
+planned
+rm -f "$PROJ/src/old.js"; : >"$PROJ/src/old.js"
+ih_run 'rm src/old.js'
+assert_eq "an honest rm of a source file after planning" "ok" "$(printf '%s' "$IH_PRE" | { read -r d; [[ "$d" == deny ]] && echo deny || echo ok; })"
+ih_project h9
+mkdir -p "$FX/rel" && printf 'x\n' >"$FX/rel/a.txt" && tar -cf "$FX/rel.tar" -C "$FX/rel" a.txt
+ok_cmd "an honest tar -x of a release artifact into dist/" 'tar -xf $FX/rel.tar -C dist'
+
+# 15. session start re-baselines and clears a marker
+ih_project h10
+touch "$SD/trivial"
+ih_session_start startup
+assert_eq "session start removes a leftover marker" "absent" "$([[ -e "$SD/trivial" ]] && echo present || echo absent)"
+assert_eq "and the record is intact" "" "$(ih_diverged)"
+ih_project h11
+printf '{"sb_initiated":true,"skills":{"required_planning":["inst-a","inst-b"]},"project":{"src_pattern":"/src/"}}\n' >"$PROJ/.silver-bullet.json"
+ih_session_start startup
+sb_integrity_verify "$PROJ" ""
+assert_eq "a config the user changed between sessions is recorded at the next start" "inst-a inst-b" "$SB_IV_REQUIRED_PLANNING"
+ih_project h12
+printf '{"sb_initiated":true,"skills":{"required_planning":["zzz"]},"project":{"src_pattern":"/src/"}}\n' >"$PROJ/.silver-bullet.json"
+ih_session_start compact
+sb_integrity_verify "$PROJ" ""
+assert_eq "a compact event is not a re-baseline" "config" "$SB_IV_DIVERGED"
+ih_project h13
+printf 'other/branch\n' >"$SILVER_BULLET_BRANCH_FILE"
+ih_session_start startup
+sb_integrity_verify "$PROJ" ""
+assert_eq "a branch change resets and re-baselines" "ok" "$SB_IV_STATUS"
+
+# 16. parallel subagents
+ih_project h14
+pids=()
+for sk in inst-a inst-b; do
+  ( ih_rec "$sk" ) &
+  pids+=("$!")
+done
+for pid in "${pids[@]}"; do wait "$pid" || true; done
+assert_eq "parallel recorders keep both skills" "2" "$(sb_state_seal_trusted "$STATE" | grep -cE '^inst-(a|b)$' || true)"
+
+# 17-19. commit, stop
+ih_project h15
+planned
+ih_hook completion-audit.sh "$(bash_json 'git commit -m x' PreToolUse)"
+assert_eq "git commit after planning: allowed" "ok" "$(not_deny)"
+echo dirty >>"$PROJ/src/app.js"
+ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
+assert_not_contains "Stop with the planning floor satisfied is not blocked on planning" "$TL_OUT" "inst-a"
+
+# 20. a customised state file path is honoured
+ih_project h16 ".state.state_file=\"$SD/custom-state\""
+sb_integrity_baseline "$PROJ" session
+printf 'inst-a\n' >"$SD/custom-state"
+sb_state_seal_write "$SD/custom-state"
+unset SILVER_BULLET_STATE_FILE
+ih_edit
+assert_eq "the state file named by the recorded config is read" "ok" "$(not_deny)"
+export SILVER_BULLET_STATE_FILE="$STATE"
+
+# 21-22. small edits
+ih_project h17
+run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "ab" "cd")"
+assert_eq "a first small edit" "ok" "$(not_deny)"
+run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "ef" "gh")"
+assert_eq "a second small edit" "ok" "$(not_deny)"
+
+# 23-24. other tools
+ih_project h18
+planned
+run_dc "$(jq -cn --arg p "$PROJ/src/nb.ipynb" '{hook_event_name:"PreToolUse",tool_name:"NotebookEdit",tool_input:{notebook_path:$p}}')"
+assert_eq "NotebookEdit of a notebook in src after planning" "ok" "$(not_deny)"
+run_dc "$(jq -cn --arg p "$PROJ/src/a.js" '{hook_event_name:"PreToolUse",tool_name:"mcp__fs__write_file",tool_input:{path:$p,content:"x"}}')"
+assert_eq "an MCP write to src after planning" "ok" "$(not_deny)"
+
+# 24b. an MCP write is judged by its name when python3 is missing
+ih_project h18b
+NOPYH="$(tl_path_without python3)"
+run_dc "$(jq -cn --arg p "$PROJ/src/a.js" '{hook_event_name:"PreToolUse",tool_name:"mcp__fs__write_file",tool_input:{path:$p,content:"x"}}')" PATH="$NOPYH"
+assert_contains "without python3 a keyed record cannot be verified: the gate says so and stops" "$(message)" "python3 is needed"
+
+# 25. not an SB project
+RUN_DIR="$NOCFG" run_dc "$(edit_json "$NOCFG/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
+assert_eq "outside an SB project nothing is gated" "none" "$(decision)"
+
+# 26-30. edits to instruction and planning files
+ih_project h19
+planned
+printf 'edited by the user\n' >>"$PROJ/CLAUDE.md"
+ih_edit
+assert_eq "the user edits CLAUDE.md in an editor: source edits still pass" "ok" "$(not_deny)"
+assert_contains "with a notice" "$(message)" "CLAUDE.md changed outside a file tool"
+ih_project h20
+planned
+printf 'edited by the user\n' >>"$PROJ/.planning/ROADMAP.md"
+ih_edit
+assert_eq "the user edits ROADMAP.md in an editor: source edits still pass" "ok" "$(not_deny)"
+ih_project h21
+planned
+printf 'more rules\n' >>"$PROJ/CLAUDE.md"
+run_dc "$(edit_json "$PROJ/CLAUDE.md" Edit PostToolUse)"
+assert_eq "an Edit of CLAUDE.md through the file tool is recorded" "" "$(ih_diverged)"
+printf 'more plan\n' >>"$PROJ/.planning/STATE.md"
+run_dc "$(edit_json "$PROJ/.planning/STATE.md" Write PostToolUse)"
+assert_eq "so is a planning file" "" "$(ih_diverged)"
+
+# 31. /sb:update rewrites silver-bullet.md
+ih_project h22
+ih_rec silver-update
+printf '# updated\n' >"$PROJ/silver-bullet.md"
+run_dc "$(edit_json "$PROJ/silver-bullet.md" Write PostToolUse)"
+rm -f "$SD/contract-unlock"
+assert_eq "silver-update rewrites silver-bullet.md" "" "$(ih_diverged)"
+
+# 32. the unlock window follows a Bash rewrite done by a contract skill
+ih_project h23
+ih_rec silver-devops
+jq '.skills.required_deploy=["inst-a"]' "$PROJ/.silver-bullet.json" >"$PROJ/t.json" && mv "$PROJ/t.json" "$PROJ/.silver-bullet.json"
+run_dc "$(bash_json 'jq ... > t.json && mv t.json .silver-bullet.json' PostToolUse)"
+rm -f "$SD/contract-unlock"
+assert_eq "silver-devops rewrites the JSON through Bash during its window" "" "$(ih_diverged)"
+
+# 33. devops workflow lists
+ih_project h24 '.project.active_workflow="devops-cycle" | .skills.required_planning=["inst-b"] | .skills.required_planning_devops=["inst-a"]'
+sb_integrity_baseline "$PROJ" session
+ih_edit
+assert_contains "the devops planning list is the recorded one" "$(message)" "inst-a"
+
+# 34. two projects share one state directory
+ih_project h25
+P1="$PROJ"
+ih_project h26
+sb_integrity_verify "$P1" ""
+assert_eq "each project has its own record" "ok" "$SB_IV_STATUS"
+sb_integrity_verify "$PROJ" ""
+assert_eq "second project" "ok" "$SB_IV_STATUS"
+
+# 35. a legacy trivial marker is honoured where no record exists yet (a fresh install)
+ih_project h27
+rm -f "$SD"/integrity-*
+touch "$SD/trivial"
+ih_edit
+assert_eq "before the first session start the marker still works" "ok" "$(not_deny)"
+rm -f "$SD/trivial"
+
+assert_eq "the honest corpus has at least 30 rows" "ok" "$([[ $(grep -c '^assert_\|^ok_cmd\|^  ok_cmd' "$0") -ge 30 ]] && echo ok || echo few)"
+tl_results

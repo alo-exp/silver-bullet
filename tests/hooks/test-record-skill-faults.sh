@@ -48,12 +48,14 @@ reset; tg2_farm farm-nohookout "$HOOK" hook-output.sh
 TG2_REPO="$TG2_FARM" rs "$(skill_input silver-plan)"
 assert_file_exists "missing hook-output.sh: skill still recorded" "$STATE"
 
-# bash functions can be exported: make the hook's own `cd <dir>/..` probe fail. A recorder that
-# cannot resolve its own root cannot show where it runs from, so it records nothing.
+# bash functions can be exported: make the hook's own `cd <dir>/..` probe fail. This pins the
+# documented degraded mode: when the repo dir cannot be resolved the hook has no template to
+# read, so only the built-in minimal list (silver-quality-gates and its mode markers,
+# verify-tests) is tracked; every other skill is silently untracked.
 cd_fail='cd() { if [[ "${1:-}" == */.. && "${BASH_SOURCE[1]:-}" == *record-skill.sh ]]; then return 1; fi; builtin cd "$@"; }'
 reset; tg2_farm farm-cdfail "$HOOK" required-skills.sh
 ( eval "$cd_fail"; export -f cd; TG2_REPO="$TG2_FARM" rs "$(skill_input silver-quality-gates)" )
-assert_file_absent "an unresolvable repo dir cannot prove the recorder's origin: nothing is recorded" "$STATE"
+assert_in "unresolvable repo dir falls back to the built-in tracked list" "$STATE" silver-quality-gates
 rm -f "$STATE"
 ( eval "$cd_fail"; export -f cd; TG2_REPO="$TG2_FARM" rs "$(skill_input silver-plan)" )
 assert_not_in "the built-in fallback list does not include other skills" "$STATE" silver-plan
