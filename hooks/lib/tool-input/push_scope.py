@@ -51,8 +51,11 @@ COMMIT_BOOL_CLUSTER = re.compile(r"^-[aqvsn]+$")
 SYMBOLIC_REF_FORMS = (["HEAD"], ["--short", "HEAD"], ["-q", "HEAD"], ["-q", "--short", "HEAD"], ["--short", "-q", "HEAD"])
 CONFIG_FORMS = ("--get", "--get-all", "--get-regexp")
 VIEWERS = {"log", "show", "diff", "shortlog"}
-VIEWER_CONFIG = re.compile(r"^(core\.pager|pager\..*|diff\.external|diff\..*\.(command|textconv)|"
-                           r"core\.fsmonitor|core\.sshcommand|core\.askpass)$")
+RUN_CONFIG = re.compile(r"^(core\.fsmonitor|core\.hookspath|filter\..*\.(clean|smudge|process)|gpg\.(.*\.)?program)$")
+VIEW_CONFIG = re.compile(r"^(core\.pager|pager\..*|diff\.external|diff\..*\.(command|textconv))$")
+# which stored settings make an inert git subcommand run a program (a git hook directory is residual 1)
+RUNS_PROGRAMS = {"status": RUN_CONFIG, "add": RUN_CONFIG, "stage": RUN_CONFIG, "commit": RUN_CONFIG,
+                 "describe": RUN_CONFIG, "ls-files": RUN_CONFIG, "rev-parse": RUN_CONFIG}
 BRANCH_LIST_FLAGS = {"--show-current", "--list", "-l", "-a", "--all", "-r", "--remotes", "-v", "-vv"}
 GIT_GLOBALS_OK = {"--no-pager", "-P"}
 PUSH_BOOL = {"-u", "--set-upstream", "-f", "--force", "-q", "--quiet", "-v", "--verbose", "--progress", "--no-verify",
@@ -272,12 +275,12 @@ def options_ok(args, flags, prefixes=(), values=(), clusters=(), value_clusters=
 
 
 def inert_git(sub, args):
-    """None when ``git <sub> <args>`` is not provably free of side effects on the push's facts, else True for a
-    viewer (log/show/diff/shortlog: the stored pager/diff-driver settings must be checked) or False."""
+    """None when ``git <sub> <args>`` is not provably free of side effects on the push's facts, else ``sub`` (the
+    stored settings that run programs for that subcommand are checked later, see PROGRAM_CONFIG)."""
     if sub in VIEWERS:
-        return True if options_ok(args, VIEW_COMMON, VIEW_PREFIXES, clusters=(VIEW_CLUSTER,)) else None
+        return sub if options_ok(args, VIEW_COMMON, VIEW_PREFIXES, clusters=(VIEW_CLUSTER,)) else None
     if sub in INERT_GIT_ANY:
-        return False
+        return sub
     if sub == "status":
         ok = options_ok(args, STATUS_FLAGS, clusters=(STATUS_CLUSTER,))
     elif sub in ("add", "stage"):
@@ -296,7 +299,7 @@ def inert_git(sub, args):
                                                        and not args[1].startswith("-"))
     else:
         ok = False
-    return False if ok else None
+    return sub if ok else None
 
 
 def classify_argv(argv):
@@ -321,12 +324,13 @@ def classify_argv(argv):
             if parsed is not None:
                 return ("newbranch", dirs, parsed[0], parsed[1])
             return ("other", "git " + sub)
-        verdict = inert_git(sub, args)
-        if verdict is not None:
-            return ("inert", verdict)
+        inert = inert_git(sub, args)
+        if inert is not None:
+            return ("inert", inert)
         return ("other", "git " + sub)
-    if prog in INERT_PROGRAMS and not (prog == "printf" and "-v" in argv[1:]):
-        return ("inert", False)
+    if prog in INERT_PROGRAMS and not (prog == "printf" and any(a.startswith("-") for a in argv[1:])):
+        # printf -v NAME (also -vNAME) assigns a shell variable: any dash-word makes printf not inert
+        return ("inert", "")
     return ("other", prog)
 
 
@@ -366,6 +370,16 @@ def top_level(script):
 
 def node_words(node):
     return literals(node.words)
+
+
+def check_program_config(subs, cfg):
+    """An inert git subcommand runs the programs stored settings name for it (fsmonitor, clean/smudge filters, hooks
+    path, gpg program; pager, external diff, textconv for the viewers): any such setting is final delivery."""
+    for sub in subs:
+        pattern = (VIEW_CONFIG if sub in VIEWERS else RUNS_PROGRAMS.get(sub, RUN_CONFIG))
+        for key in cfg:
+            if pattern.match(key) or (sub in VIEWERS and RUN_CONFIG.match(key)):
+                raise Strict("git %s would run a program named by the setting %s" % (sub, key))
 
 
 def check_state_steps(script, kinds):
@@ -539,9 +553,9 @@ def effective_dir(base, step_cd, dirs, logical_base=None):
 
 def check_entries(result, wrapper=None):
     """S5: every command in the analysis is the push, a state step, or inert. Returns the three kinds' entries, and
-    whether a viewer (log/show/diff/shortlog) is among them (``found["viewer"]``). ``wrapper`` is the argv of an
+    the inert git subcommands among them (``found["subs"]``). ``wrapper`` is the argv of an
     unwrapped `bash -c '<script>'`, which is not itself a command of the script."""
-    found = {"push": [], "cd": [], "newbranch": [], "viewer": False}
+    found = {"push": [], "cd": [], "newbranch": [], "subs": set()}
     for entry in result.get("commands") or []:
         argv = entry.get("argv") or []
         if wrapper is not None and argv == wrapper:
@@ -551,7 +565,7 @@ def check_entries(result, wrapper=None):
         if kind[0] in ("push", "cd", "newbranch"):
             found[kind[0]].append((entry, kind))
         elif kind[0] == "inert":
-            found["viewer"] = found["viewer"] or kind[1]
+            found["subs"].add(kind[1])
         else:
             raise Strict("the command also runs %s, which can change what the push does" % (kind[1] or "an unknown program"))
     return found
@@ -672,8 +686,7 @@ def _shell_scope(script, result, base, environ, git, parse, logical_base):
     head = "refs/heads/" + new if new else head0
     if new and any(key.startswith("includeif.onbranch:") for key in cfg):
         raise Strict("the git configuration depends on the branch that is about to be created")
-    if found["viewer"] and any(VIEWER_CONFIG.match(key) for key in cfg):
-        raise Strict("git log/show/diff would run a configured pager, diff driver or filter")
+    check_program_config(found["subs"], cfg)
     # S10 remote
     if remote_arg is None:
         if new and start:
