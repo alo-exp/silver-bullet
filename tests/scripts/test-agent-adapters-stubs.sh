@@ -234,6 +234,11 @@ mkdir -p "$TL_TMP/okdir"; chmod 0755 "$TL_TMP/okdir"
 ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"' CODEX_TRANSCRIPT_DIR="$TL_TMP/okdir"
 assert_file_exists "transcript: an owner-only-writable named directory is accepted (and tightened to 0700)" "$TL_TMP/okdir/latest.jsonl"
 assert_eq "transcript: accepted directory tightened" "0o700" "$(python3 -c 'import os,sys;print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$TL_TMP/okdir")"
+# a redaction failure (here: over the redactor limits) never leaves an unredacted transcript behind
+ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="$TL_TMP/tdirR" SB_REDACT_MAX_BYTES=1
+assert_contains "transcript: redaction failure fails the capture" "$TL_OUT" "rc=1"
+assert_contains "transcript: redaction failure is explained" "$TL_ERR" "transcript redaction failed"
+assert_eq "transcript: no transcript file survives a failed redaction" "0" "$(find "$TL_TMP/tdirR" -type f | wc -l | tr -d ' ')"
 # uncreatable directories fail closed
 ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="/proc/no/such/dir"
 assert_contains "transcript: uncreatable named directory fails" "$TL_OUT" "rc=1"

@@ -224,6 +224,13 @@ SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1 tl_run agent_delegate_resolve_prompt "$TL_TMP
 assert_eq "override: accepted" 0 "$TL_STATUS"
 assert_contains "override: announced on stderr" "$TL_ERR" "overrides the brief secret scan (assignment line 2)"
 assert_contains "override: brief passes through unchanged" "$TL_OUT" "GITLAB_TOKEN="
+# a brief the scanner cannot handle within its limits is refused (fail closed), a log it cannot redact is withheld
+SB_REDACT_MAX_BYTES=10 tl_run agent_delegate_resolve_prompt "" "" "a harmless but rather longer prompt"
+assert_eq "scan limit: oversized brief refused" 2 "$TL_STATUS"
+assert_contains "scan limit: reason named" "$TL_ERR" "too large or too complex to scan"
+out="$(SB_REDACT_MAX_BYTES=10 agent_delegate_redact_output "0123456789abcdef password=Zq8vLm2Xr9TnW4")"
+assert_contains "redact limit: output withheld with a marker" "$out" "output withheld"
+assert_not_contains "redact limit: nothing of the text survives" "$out" "Zq8vLm2Xr9TnW4"
 SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=0 tl_run agent_delegate_resolve_prompt "$TL_TMP/line2.md" "" ""
 assert_eq "override: only an explicit 1 counts" 2 "$TL_STATUS"
 rc=0; PATH="$(tl_path_without python3)" agent_delegate_brief_has_secrets "benign" 2>/dev/null || rc=$?

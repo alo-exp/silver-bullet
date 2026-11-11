@@ -181,7 +181,8 @@ sys.exit(0 if d.get("should_short_retry") is False else 1)' <<<"$json"
 # token prefixes, JWTs, PEM keys, Bearer/Authorization values, KEY=value assignments).
 agent_delegate_redact_output() {
   local blob="$1"
-  printf '%s' "$blob" | python3 "${_AGENT_DELEGATE_COMMON_DIR}/agent_redact.py" --redact
+  # An input over the redactor's size/time limits is withheld (a marker replaces it, exit 3): not an error here.
+  printf '%s' "$blob" | python3 "${_AGENT_DELEGATE_COMMON_DIR}/agent_redact.py" --redact || true
 }
 
 # Redact a log in place (atomic; never through a symlink).
