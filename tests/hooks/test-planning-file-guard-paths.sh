@@ -317,4 +317,15 @@ for c in 'ls .planning/ROADMA?.md' 'cat .planning/R*.md' 'rm -f build/*.o' 'echo
   dg_run "$P" "$H" "$(sh "$c")"
   assert_eq "honest command passes: $c" "none" "$(dec)"
 done
+
+# --- round 3: patch writes ---------------------------------------------------------------------------
+printf 'diff --git a/.planning/ROADMAP.md b/.planning/ROADMAP.md\n--- a/.planning/ROADMAP.md\n+++ b/.planning/ROADMAP.md\n@@ -1 +1 @@\n-a\n+b\n' >"$P/rm.diff"
+printf 'diff --git a/docs/R.md b/docs/R.md\n--- a/docs/R.md\n+++ b/docs/R.md\n@@ -1 +1 @@\n-a\n+b\n' >"$P/ok.diff"
+for c in 'patch -p1 < rm.diff' 'cat rm.diff | git apply' 'patch -d .planning -p2 < rm.diff' 'git apply --directory=.planning -p2 rm.diff' 'patch -p1 -i rm.diff' 'git apply rm.diff' 'git am rm.diff'; do
+  dg_run "$P" "$H" "$(sh "$c")"
+  assert_eq "a patch that can rewrite the roadmap is refused: $c" "deny" "$(dec)"
+done
+dg_run "$P" "$H" "$(sh 'patch -p1 -i ok.diff')"
+assert_eq "an honest patch passes" "none" "$(dec)"
+
 tl_results

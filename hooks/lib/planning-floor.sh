@@ -58,7 +58,7 @@
 
 _sb_pf_dir="${BASH_SOURCE[0]:-$0}"
 _sb_pf_dir="${_sb_pf_dir%/*}"
-for _sb_pf_lib in runtime-paths.sh path-canonical.sh hook-output.sh tool-input.sh required-skills.sh skill-discovery.sh state-seal.sh contract-unlock.sh; do
+for _sb_pf_lib in runtime-paths.sh path-canonical.sh hook-output.sh tool-input.sh required-skills.sh skill-discovery.sh state-seal.sh contract-unlock.sh patch-check.sh; do
   # shellcheck source=/dev/null
   [[ -f "$_sb_pf_dir/$_sb_pf_lib" ]] && source "$_sb_pf_dir/$_sb_pf_lib"
 done
@@ -88,6 +88,7 @@ sb_pf_write_records() {
           | select((.dynamic | not) or (.path | startswith("/"))) | [.via, .path] | @tsv' 2>/dev/null
         _sb_pf_pattern_records
         _sb_pf_brace_records
+        _sb_pf_patch_scan | while IFS=$'\t' read -r kind val; do [[ "$kind" != PATH ]] || printf 'patch\t%s\n' "$val"; done
         ;;
       *)
         {
@@ -97,9 +98,9 @@ sb_pf_write_records() {
             | ([.file_path, .notebook_path, .path, .filePath, .destination, .source, .target,
                 .from, .to, .old_path, .new_path, .oldPath, .newPath, .src, .dst, .sourcePath,
                 .destinationPath, .relative_path, .relativePath] | .[] | strings),
-              (to_entries[] | select((.value | type) == "string")
+              ([.. | objects | to_entries[] | select((.value | type) == "string")
                | select(.key | test("^(content|text|body|data|old_string|new_string|old_str|new_str|input|command|code|patch|diff)$") | not)
-               | select(.key | test("(path|file|dest|src|source|target|uri)"; "i")) | .value),
+               | select(.key | test("(path|file|dest|src|source|target|uri|name)"; "i")) | .value] | .[]),
               ((.file_paths // .paths // []) | arrays | .[] | strings)' 2>/dev/null
         } | while IFS= read -r raw; do
           [[ -n "$raw" ]] && printf 'edit\t%s\n' "$raw"
@@ -111,8 +112,9 @@ sb_pf_write_records() {
   done | awk 'NF && !seen[$0]++'
 }
 
-# Tree-scope writes (the whole work tree at a path) that G2 gates: extractors and patch appliers.
-SB_PF_TREE_VIAS='tar -x|unzip|patch|git apply|git am'
+# Tree-scope writes (the whole work tree at a path) that G2 gates: extractors. Patch appliers are
+# judged by sb_pf_patch_verdict and recorded by the paths of their diff.
+SB_PF_TREE_VIAS='tar -x|unzip'
 sb_pf_tree_via() {
   case "|$SB_PF_TREE_VIAS|" in *"|$1|"*) return 0 ;; esac
   return 1
@@ -184,6 +186,22 @@ _sb_pf_bare_var_is_mktemp() {
   case "$cmd" in
     *"$name=\$(mktemp"* | *"$name=\`mktemp"* | *"$name=\"\$(mktemp"*) return 0 ;;
   esac
+  return 1
+}
+
+# The raw text of the first write target that is nothing but an unresolved variable (not a
+# mktemp file), else nothing and status 1. Scripts are exempt (SB_PF_SKIP_BARE_DYNAMIC).
+sb_pf_bare_variable_target() {
+  local raw pat
+  [[ -z "${SB_PF_SKIP_BARE_DYNAMIC:-}" ]] || return 1
+  while IFS= read -r raw; do
+    # shellcheck disable=SC2016  # a sed expression, not shell
+    pat="$(printf '%s' "$raw" | sed -E 's/\$\{[^}]*\}|\$\([^)]*\)|\$[A-Za-z_][A-Za-z0-9_]*|`[^`]*`|\$[0-9@*#?!$-]/*/g')"
+    [[ "$pat" == "*" ]] || continue
+    ! _sb_pf_bare_var_is_mktemp "$raw" || continue
+    printf '%s' "$raw"
+    return 0
+  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '.writes[]? | select(.dynamic) | .raw // empty' 2>/dev/null)
   return 1
 }
 
@@ -429,16 +447,39 @@ sb_pf_runs_sb_recorder() {
 # Programs that only read, list or inspect: naming a recorder script to them is not running it.
 SB_PF_READER_PROGRAMS='^(cat|grep|egrep|fgrep|rg|sed|awk|head|tail|wc|diff|cmp|ls|stat|file|git|shellcheck|nl|less|more|jq|sha256sum|shasum|cksum|md5sum|realpath|readlink|basename|dirname|test|\[|echo|printf|which|type)$'
 
+# The recorder script names of this plugin (record-*.sh next to the hooks this library belongs to).
+_sb_pf_recorder_names() {
+  local f
+  for f in "$_sb_pf_dir"/../record-*.sh; do
+    [[ -f "$f" ]] && printf '%s\n' "${f##*/}"
+  done
+  return 0
+}
+
+# Any command that is not a reader and names a recorder: by its name, by a glob or a variable that
+# can expand to one (the basename is matched as a pattern against the recorder names), or, with a
+# hooks directory, by copying that directory (or a directory above it).
 sb_pf_names_sb_recorder() {
-  local hooks_dir="${1:-}"
-  printf '%s' "${SB_SA_JSON:-}" | jq -e --arg re "$SB_PF_READER_PROGRAMS" --arg hooks "$hooks_dir" '
-    [.commands[]? | .argv as $a | ($a[0] | split("/") | last) as $prog
-     | select(($prog | test($re)) | not)
-     | ( ($a[1:] | map(split("/") | last | select(test("^record-[A-Za-z0-9*?\\[\\]-]+(\\.[A-Za-z*?]+)?$"))) | length > 0)
-         or ($hooks != "" and ($prog | test("^(cp|mv|rsync|ln|install|tar|unzip|ditto)$"))
-             and ($a[1:] | map(select(. == $hooks or startswith($hooks + "/") or startswith($hooks + "/../"))) | length > 0)) )
-     | select(.)]
-    | length > 0' >/dev/null 2>&1
+  local hooks_dir="${1:-}" prog arg base names name lit
+  names="$(_sb_pf_recorder_names)"
+  while IFS=$'\t' read -r prog arg; do
+    [[ -n "$arg" ]] || continue
+    [[ "$prog" =~ $SB_PF_READER_PROGRAMS ]] && continue
+    base="${arg##*/}"
+    # shellcheck disable=SC2016  # variables are replaced by a wildcard, not expanded
+    base="$(printf '%s' "$base" | sed -E 's/\$\{[^}]*\}|\$\([^)]*\)|\$[A-Za-z_][A-Za-z0-9_]*/*/g')"
+    case "$base" in record-*) return 0 ;; esac
+    # Enough literal characters that a wildcard is aimed at a recorder, not at every script.
+    lit="$(printf '%s' "$base" | tr -d '*?[]' | tr -cd '[:alnum:]')"
+    [[ ${#lit} -ge 6 ]] || continue
+    for name in $names; do
+      # shellcheck disable=SC2254  # the basename is meant to be a glob
+      case "$name" in $base) return 0 ;; esac
+    done
+  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '
+    .commands[]? | (.argv[0] | split("/") | last) as $p | .argv[1:][] | select(startswith("-") | not) | [$p, .] | @tsv' 2>/dev/null)
+  if [[ -n "$hooks_dir" ]]; then sb_pf_argv_copies_dir "$hooks_dir" && return 0; fi
+  return 1
 }
 
 # Inline code (python -c, perl -e, find -exec ...) that spells out a recorder's real path. Only
@@ -461,13 +502,40 @@ sb_pf_unseen_reason() {
 # can build any path at run time, so its writes cannot be listed. The first reason, "" when the
 # command is plainly read-only or holds none.
 sb_pf_inline_code_reason() {
-  [[ "${SB_SA_READ_ONLY:-false}" == "true" ]] && return 0
-  # perl -pi -e / ruby -pi -e filter the files the command names (the analysis lists them as writes).
-  printf '%s' "${SB_SA_JSON:-}" | jq -r '
-    (([.writes[]? | .via | select(test(" -i$"))] | length) > 0) as $inplace
-    | [.opaque_writers[]? | .reason // empty
-       | select(test("^(inline |awk system|python reads its program from stdin)"))
-       | select(($inplace and test("^inline (perl|ruby) code")) | not)][0] // empty' 2>/dev/null || true
+  [[ "${SB_SA_READ_ONLY:-false}" != "true" ]] || return 0
+  local reason
+  reason="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '
+    ([.opaque_writers[]? | .reason // empty
+      | select(test("^(inline |awk system|python reads its program from stdin)"))][0]) as $f
+    | ([.commands[]? | (.argv[0] | split("/") | last) as $p | .argv as $a
+        | select(($p == "deno" and ($a[1:] | index("eval")))
+                 or ($p == "bun" and ($a[1:] | map(select(. == "-e" or . == "--eval" or . == "-p" or . == "--print")) | length > 0))
+                 or ($p | IN("osascript","lua","julia","Rscript","tclsh","gawk","mawk","php")) and ($a[1:] | map(select(. == "-e" or . == "-r" or . == "--eval" or . == "-E")) | length > 0))
+        | "inline " + $p + " code"][0]) as $o
+    | $f // $o // empty' 2>/dev/null || true)"
+  [[ -n "$reason" ]] || return 0
+  # perl -pi / ruby -pi filter the files they name: allowed only over plain files, and only when
+  # the code holds nothing that renames, deletes, runs or opens another file.
+  if [[ "$reason" == "inline perl code" || "$reason" == "inline ruby code" ]] && _sb_pf_inplace_plain; then return 0; fi
+  printf '%s' "$reason"
+}
+
+# Every in-place (perl -i / ruby -i) write of the loaded command is a literal, unprotected path, and
+# the command text holds none of the words that let such code reach another file.
+_sb_pf_inplace_plain() {
+  local path dyn n=0 text word
+  while IFS=$'\t' read -r path dyn; do
+    [[ "$dyn" == false ]] || return 1
+    case "$path" in *[*?[]*) return 1 ;; esac
+    ! sb_pf_path_protected "$(sb_pf_canon "$path")" || return 1
+    n=$((n + 1))
+  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '.writes[]? | select(.via | test(" -i$")) | [.path, (.dynamic // false | tostring)] | @tsv' 2>/dev/null)
+  [[ "$n" -gt 0 ]] || return 1
+  text="$(printf '%s' "${SB_TI_COMMAND:-}" | tr '[:upper:]' '[:lower:]')"
+  for word in rename unlink system open begin exec eval qx require; do
+    [[ "$text" != *"$word"* ]] || return 1
+  done
+  return 0
 }
 
 # A script the command runs that cannot be read: it exists but is unreadable, or the command writes
@@ -552,32 +620,15 @@ sb_pf_covering_via() {
   sb_pf_dir_capable_via "$1"
 }
 
-# A patch applier (patch, git apply, git am) whose diff could not be read writes "the tree" at its
-# directory: that covers what lives in the host runtime home (state, registry, plugin cache), but
-# not the project's own contract and planning files (a readable diff names its files).
-sb_pf_diff_tree_via() {
-  case "$1" in patch | "git apply" | "git am") return 0 ;; esac
-  return 1
-}
-
 sb_pf_expand_ancestors() {
-  local records="${1:-}" via target path diff home_root
+  local records="${1:-}" via target path
   shift
-  home_root="$(sb_pf_canon "${SB_RUNTIME_HOME_ROOT:-/nonexistent-sb-home}")"
   printf '%s\n' "$records"
   while IFS=$'\t' read -r via target; do
     [[ -n "$target" ]] || continue
-    diff=false
-    if sb_pf_diff_tree_via "$via"; then
-      diff=true
-    else
-      sb_pf_covering_via "$via" || continue
-    fi
+    sb_pf_covering_via "$via" || continue
     for path in "$@"; do
       [[ "$path" != "$target" ]] || continue
-      if [[ "$diff" == true ]]; then
-        case "$path" in "$home_root"/*) ;; *) continue ;; esac
-      fi
       case "$path" in
         "$target"/*) printf '%s\t%s\n' "$via" "$path" ;;
       esac
@@ -646,10 +697,10 @@ sb_pf_script_mentions() {
 
 # MCP tools that write files, by name (the hooks.json matcher carries the same verbs; a test
 # compares the two): write edit create move rename patch replace delete append save insert copy
-# upload apply, and mv / put as words.
+# upload apply update modify set_ touch truncate unlink, and mv / put / rm as words.
 sb_pf_mcp_write_tool() {
   case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')" in
-    mcp__*write* | mcp__*edit* | mcp__*create* | mcp__*move* | mcp__*rename* | mcp__*patch* | mcp__*replace* | mcp__*delete* | mcp__*append* | mcp__*save* | mcp__*insert* | mcp__*copy* | mcp__*upload* | mcp__*apply* | mcp__*_mv* | mcp__*mv_* | mcp__*_put* | mcp__*put_*) return 0 ;;
+    mcp__*write* | mcp__*edit* | mcp__*create* | mcp__*move* | mcp__*rename* | mcp__*patch* | mcp__*replace* | mcp__*delete* | mcp__*append* | mcp__*save* | mcp__*insert* | mcp__*copy* | mcp__*upload* | mcp__*apply* | mcp__*_mv* | mcp__*mv_* | mcp__*_put* | mcp__*put_* | mcp__*update* | mcp__*modify* | mcp__*set_* | mcp__*touch* | mcp__*truncate* | mcp__*unlink* | mcp__*_rm* | mcp__*rm_*) return 0 ;;
   esac
   return 1
 }

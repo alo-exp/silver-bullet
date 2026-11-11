@@ -60,6 +60,11 @@ if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]]; then
     emit_block "$(sb_pf_unseen_message "$unseen_why")"
     exit 0
   fi
+  patch_why="$(sb_pf_patch_verdict)"
+  if [[ -n "$patch_why" ]]; then
+    emit_block "$(sb_pf_patch_message "$patch_why")"
+    exit 0
+  fi
 fi
 
 # The default marker, and the one the project config names (it is not honoured by the gates,

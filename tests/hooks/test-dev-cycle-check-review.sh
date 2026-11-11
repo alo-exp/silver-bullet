@@ -113,7 +113,11 @@ for sk in silver-init silver-update silver-add silver-devops silver-migrate; do
   run_dc "$(edit_json "$PROJ/.silver-bullet.json" Edit)"
   assert_eq "$sk unlocks Edit of the config" "none" "$(decision)"
   dc_cmd "python3 -c \"import os;os.replace('/tmp/x','.silver-bullet.json')\""
-  assert_eq "$sk unlocks interpreter edits too" "none" "$(decision)"
+  if [[ "$sk" == silver-init ]]; then
+    assert_eq "$sk unlocks interpreter edits too" "none" "$(decision)"
+  else
+    assert_contains "$sk does not let inline code through" "$(message)" "cannot inspect"
+  fi
 done
 rm -f "$SD/contract-unlock"
 state inst-a silver-plan silver-add

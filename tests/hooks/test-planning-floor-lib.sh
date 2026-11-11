@@ -313,10 +313,5 @@ rm -f "$UL"
 if sb_pf_contract_unlocked; then tl_fail "an empty record unlocks"; else tl_pass "an empty unlock record unlocks nothing"; fi
 rm -f "$UL"
 assert_eq "an unreadable analysis names no inline code" "" "$(SB_SA_JSON='not json' SB_SA_READ_ONLY=false sb_pf_inline_code_reason)"
-OUT_HOME="$TL_TMP/outside-home"
-ex="$(sb_pf_expand_ancestors "$(printf 'patch\t%s\n' "$TL_TMP")" "$OUT_HOME/x" "$SB_RUNTIME_HOME_ROOT/.silver-bullet" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/state")"
-assert_not_contains "a patch tree does not cover a path outside the runtime home" "$ex" "$OUT_HOME/x"
-ex2="$(sb_pf_expand_ancestors "$(printf 'patch\t%s\n' "$SB_RUNTIME_HOME_ROOT")" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/state")"
-assert_contains "but covers one inside it" "$ex2" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/state"
 
 tl_results

@@ -163,12 +163,24 @@ main() {
     fi
   fi
 
+  # A patch write (patch, git apply, git am) is allowed only from one readable file whose paths stay
+  # inside the project and outside protected files (hooks/lib/patch-check.sh).
+  if [[ "$is_shell" == true && "$hook_event" == "PreToolUse" ]]; then
+    patch_why="$(sb_pf_patch_verdict)"
+    if [[ -n "$patch_why" ]] && [[ -n "$(sb_find_project_config_walk_only 2>/dev/null)" ]]; then
+      emit_block "$(sb_pf_patch_message "$patch_why")"
+      exit 0
+    fi
+  fi
+
   # Everything this call writes: "via<TAB>canonical path"
   records="$(sb_pf_write_records "$input")"
   opaque_records=""
   runs_recorder=false
   opaque_state=false
   opaque_contract=""
+  script_recorder=false
+  script_patch_why=""
   script_records=""
   if [[ "$is_shell" == true ]]; then
     opaque_records="$(sb_pf_opaque_records)"
@@ -189,11 +201,15 @@ main() {
       script_dir="$(dirname "$invoked_script")"
       sb_shell_analysis_load "$script_body" "$script_dir"
       script_records="$(SB_PF_SKIP_BARE_DYNAMIC=1 SB_TI_TOOL_KIND=shell sb_pf_write_records "")"
+      if sb_pf_names_sb_recorder "" || sb_pf_runs_sb_recorder; then script_recorder=true; fi
+      script_patch_why="$(sb_pf_patch_verdict)"
       if [[ "$script_dir" != "$PWD" ]]; then
         sb_shell_analysis_load "$script_body" "$PWD"
         script_records="$script_records"$'\n'"$(SB_PF_SKIP_BARE_DYNAMIC=1 SB_TI_TOOL_KIND=shell sb_pf_write_records "")"
       fi
       records="$records"$'\n'"$script_records"
+      # Back to the analysis of the command itself.
+      sb_tool_input_load "$input" "$PWD"
     fi
   else
     skill_adapter=false
@@ -205,6 +221,14 @@ main() {
     unread_script="$(sb_pf_unreadable_script "$records" || true)"
     if [[ -n "$unread_script" ]] && [[ -n "$(sb_find_project_config_walk_only 2>/dev/null)" ]]; then
       emit_block "$(sb_pf_unseen_message "the script $unread_script is written by this command or cannot be read")"
+      exit 0
+    fi
+  fi
+
+  # The script the command runs is held to the same rules as the command.
+  if [[ "$is_shell" == true && "$hook_event" == "PreToolUse" && -n "$(sb_find_project_config_walk_only 2>/dev/null)" ]]; then
+    if [[ -n "$script_patch_why" ]]; then
+      emit_block "$(sb_pf_patch_message "$script_patch_why")"
       exit 0
     fi
   fi
@@ -235,11 +259,16 @@ main() {
     hooks_guard=""
     [[ "$installed_copy" == true ]] && hooks_guard="${sb_plugin_root}/hooks"
     if [[ "$is_shell" == true ]]; then
-      if [[ "$runs_recorder" == true ]] || sb_pf_names_sb_recorder "$hooks_guard" \
+      if [[ "$runs_recorder" == true || "$script_recorder" == true ]] || sb_pf_names_sb_recorder "$hooks_guard" \
         || { [[ -n "$hooks_guard" ]] && { sb_pf_text_names_recorder || sb_pf_argv_copies_dir "$hooks_guard"; }; }; then
         emit_block "🚫 STATE TAMPER BLOCKED — Running, naming, copying or moving a Silver Bullet recorder hook (record-*.sh) or the plugin's hooks directory from the shell forges workflow state, whichever interpreter or copy launches it. Skills are recorded when the host invokes them through its skill channel. To read the hooks, use cat or grep."
         exit 0
       fi
+    fi
+
+    if [[ "$is_shell" == true ]] && bare_var="$(sb_pf_bare_variable_target)"; then
+      emit_block "🛑 Silver Bullet cannot tell what this command writes: the target ${bare_var} is an unresolved variable, which could name a protected file. Set the variable in the same command (a literal value or mktemp) or write the path out."
+      exit 0
     fi
 
     cache_targets=()
@@ -413,7 +442,7 @@ Change it through the owning skill (/sb:init, /sb:update, /sb:add, /sb:devops, /
   # Code given on the command line builds its paths at run time: nothing says what it writes.
   if [[ "$is_shell" == true && "$hook_event" == "PreToolUse" && -n "$cmd_cfg" ]]; then
     inline_why="$(sb_pf_inline_code_reason)"
-    if [[ -n "$inline_why" ]] && ! sb_pf_contract_unlocked json; then
+    if [[ -n "$inline_why" ]] && ! sb_pf_contract_unlocked inline; then
       emit_block "$(sb_pf_inline_code_message "$inline_why")"
       exit 0
     fi

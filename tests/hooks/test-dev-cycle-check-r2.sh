@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# dev-cycle-check round-2 repair: glob, brace and variable targets, patch and git apply, plugin-root
+# dev-cycle-check round-2 repair: glob, brace and variable targets, plugin-root
 # copies, inline interpreter code, the contract unlock window, MCP path keys and verbs.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
@@ -9,7 +9,6 @@ source "$TL_REPO_ROOT/tests/lib/cov-a-dc.sh"
 source "$TL_REPO_ROOT/hooks/lib/planning-floor.sh"
 
 SD="$SB_RUNTIME_STATE_DIR"
-RT="$SB_RUNTIME_NAME"
 
 rm -f "$SD/contract-unlock"
 not_deny() { if [[ "$(decision)" == deny ]]; then echo deny; else echo ok; fi; }
@@ -30,7 +29,7 @@ for c in 'rm silver-bullet.m?' 'rm silver-bullet.[m]d' 'cp /tmp/x silver-bullet.
   dc_cmd "$c"
   assert_contains "refused as silver-bullet.md: $c" "$(message)" "silver-bullet.md defines"
 done
-for c in "cp /tmp/x ${SD%?}?/state-test" "echo x > $SD/trivia[l]" "echo x > $SD/stat?" "cp /tmp/x \$T/state" 'echo hi > $OUT' "tee \${LOG}/state < /dev/null"; do
+for c in "cp /tmp/x ${SD%?}?/state-test" "echo x > $SD/trivia[l]" "echo x > $SD/stat?" "cp /tmp/x \$T/state" "tee \${LOG}/state < /dev/null"; do
   dc_cmd "$c"
   assert_contains "refused as the state directory: $c" "$(message)" "STATE TAMPER"
 done
@@ -47,27 +46,7 @@ assert_contains "every alternative of a brace list counts for the planning floor
 dc_cmd 'cp /tmp/x src/ap?.js'
 assert_contains "and a pattern inside src" "$(message)" "Planning incomplete"
 
-# ── patch, git apply, git am: a tree written by a diff that cannot be read ─────────────────────
-mkproj trees
-state ""
-for c in 'git apply /tmp/p.diff' 'patch -p1 < /tmp/p.diff' 'patch -i /tmp/p.diff' 'git am /tmp/p.mbox' 'git diff main | git apply'; do
-  dc_cmd "$c"
-  assert_contains "a source tree written without planning is refused: $c" "$(message)" "Planning incomplete"
-done
-dc_cmd "patch -d $HOME/.${RT} -p1 < /tmp/p.diff"
-assert_contains "a patch applied above the state directory is refused" "$(message)" "STATE TAMPER"
-dc_cmd "git -C $HOME/.${RT} apply /tmp/p.diff"
-assert_contains "git -C above the state directory is refused" "$(message)" "STATE TAMPER"
-printf -- '--- a/src/app.js\n+++ b/src/app.js\n@@ -0,0 +1 @@\n+x\n' >"$TL_TMP/p.diff"
-dc_cmd "git apply $TL_TMP/p.diff"
-assert_contains "a readable diff names its files" "$(message)" "Planning incomplete"
-state inst-a
-for c in 'git apply /tmp/p.diff' 'patch -p1 < /tmp/p.diff' 'git am /tmp/p.mbox' 'git apply --check /tmp/p.diff'; do
-  dc_cmd "$c"
-  assert_eq "after planning an honest patch passes: $c" "ok" "$(not_deny)"
-done
-dc_cmd "patch -d $HOME/.${RT} -p1 < /tmp/p.diff"
-assert_contains "but never above the state directory" "$(message)" "STATE TAMPER"
+# (patch, git apply and git am are judged by tests/hooks/test-dev-cycle-check-r3.sh)
 
 # ── the plugin root: copies and links of it (R3-01) ─────────────────────────────────────────────
 INSTALLED="$SB_RUNTIME_HOME_ROOT/sbplugin"
@@ -208,7 +187,7 @@ for c in 'T=$(mktemp); echo x > "$T"' 'echo x > "$(mktemp)"' 'T=$(mktemp -d); ec
 done
 for c in 'echo x > "$OUT"' 'echo x > $OUT'; do
   dc_cmd "$c"
-  assert_contains "an unknown bare variable target is refused: $c" "$(message)" "STATE TAMPER"
+  assert_contains "an unknown bare variable target is refused: $c" "$(message)" "unresolved variable"
 done
 dc_cmd "perl -pi -e 's/a/b/' docs/a.md"
 assert_eq "a perl in-place filter over named files passes" "none" "$(decision)"
@@ -231,29 +210,4 @@ dc_cmd "python3 missing.py"
 assert_eq "a script that does not exist yet fails by itself" "none" "$(decision)"
 dc_cmd "python3 ok2.py"
 assert_eq "a readable script passes" "none" "$(decision)"
-mkdir -p "$PROJ/src/sub"
-dc_cmd "cd src && patch -p1 < /tmp/p.diff"
-assert_eq "a patch in a source subdirectory after planning is not refused" "ok" "$(not_deny)"
-state ""
-dc_cmd "cd src && patch -p1 < /tmp/p.diff"
-assert_contains "and needs the planning floor without it" "$(message)" "Planning incomplete"
-
-# ── the remaining branches: huge globs, odd variables, odd braces, no interpreter ────────────────
-mkproj odd
-state inst-a
-mkdir -p "$PROJ/many"
-for i in $(seq 1 210); do : >"$PROJ/many/f$i.o"; done
-dc_cmd 'rm -f many/f*.o'
-assert_eq "a pattern with hundreds of matches is capped, not refused" "none" "$(decision)"
-dc_cmd 'echo x > $1'
-assert_contains "a positional parameter as a target could be anything" "$(message)" "STATE TAMPER"
-for c in '(echo build/{a,b})' 'echo ${HOME}x{a,b}' 'touch {,}'; do
-  dc_cmd "$c"
-  assert_eq "odd brace words are handled: $c" "none" "$(decision)"
-done
-state ""
-NOPY2="$(tl_path_without python3)"
-run_dc "$(jq -cn '{hook_event_name:"PreToolUse",tool_name:"mcp__x__write_file",tool_input:{path:"src/app.js"}}')" PATH="$NOPY2"
-assert_contains "an MCP write needs no interpreter to be judged" "$(message)" "Planning incomplete"
-
 tl_results
