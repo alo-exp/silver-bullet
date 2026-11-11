@@ -213,4 +213,31 @@ for n in mcp__x__update_file mcp__x__modify_file mcp__x__set_content mcp__x__unl
   sb_pf_mcp_write_tool "$n" && tl_pass "the guard treats $n as a writer" || tl_fail "the guard misses $n"
 done
 
+# ── remaining branches of the patch rule and of perl -pi ───────────────────────────────────────────
+mkproj branches
+mkdir -p "$PROJ/docs" "$TL_TMP/elsewhere-dir"
+state inst-a
+printf 'a\n' >"$PROJ/docs/README.md"
+newfile newok.diff docs/NEW.md
+printf 'diff --git a/x y b/x y\n--- a/x y\n+++ b/x y\n@@ -1 +1 @@\n-a\n+b\n' >"$PROJ/ambig.diff"
+dc_cmd "git apply ambig.diff"
+assert_contains "a header with spaces cannot be read reliably" "$(message)" "cannot be told apart"
+edit ok.diff docs/README.md
+for c in "git apply newok.diff" "patch -p9 -i ok.diff" "cd $TL_TMP && git apply $PROJ/ok.diff"; do
+  dc_cmd "$c"
+  assert_eq "honest patch passes: $c" "ok" "$(not_deny)"
+done
+ln -s "$TL_TMP/elsewhere-dir" "$PROJ/docs/ext"
+edit ext.diff docs/ext/f.txt
+dc_cmd "git apply ext.diff"
+assert_contains "a symlink that leaves the project is refused" "$(message)" "outside the project"
+printf 'git apply tr.diff\n' >"$PROJ/go2.sh"
+newfile tr.diff .silver-bullet/trivial
+dc_cmd "bash go2.sh"
+assert_contains "a script that applies a protected patch is refused" "$(message)" "cannot inspect patch"
+dc_cmd 'perl -pi -e s/a/b/ docs/$F.md'
+assert_contains "perl -pi over a computed name is refused" "$(message)" "cannot inspect"
+dc_cmd "perl -pi -e s/a/b/ docs/CLAUDE.md"
+assert_contains "perl -pi over an instruction file is refused" "$(message)" "cannot inspect"
+
 tl_results
