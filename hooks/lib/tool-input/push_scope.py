@@ -462,8 +462,7 @@ def check_entries(result):
     return found
 
 
-COVERAGE_BASH_ENV = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__))))), "tests", "coverage", "bash-env.sh")
+COVERAGE_BASH_ENV = "/tests/coverage/bash-env.sh"  # the repository coverage tracer (run-coverage.sh)
 
 
 def env_check(environ):
@@ -471,7 +470,7 @@ def env_check(environ):
     for name in ENV_DENY:
         value = environ.get(name)
         if name == "BASH_ENV" and value and environ.get("SB_COV_DIR") and \
-                os.path.realpath(value) == os.path.realpath(COVERAGE_BASH_ENV):
+                os.path.realpath(value).endswith(COVERAGE_BASH_ENV):
             continue
         if value:
             raise Strict("%s is set in the environment and redirects git" % name)
