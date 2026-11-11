@@ -315,7 +315,8 @@ class CorpusTests(unittest.TestCase):
         # every compiled pattern the scanner consults is the object redact() substitutes with
         for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_ASSIGN", "_CLI_RULES", "_VALUE_RULES", "_TEXT_RULES"):
             self.assertTrue(hasattr(agent_redact, name))
-        src = open(agent_redact.__file__, encoding="utf-8").read()
+        with open(agent_redact.__file__, encoding="utf-8") as handle:
+            src = handle.read()
         scan_src = src[src.index("def scan("):src.index("def redact_file(")]
         for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_ASSIGN", "_CLI_RULES", "_VALUE_RULES", "_TEXT_RULES"):
             self.assertIn(name, scan_src)

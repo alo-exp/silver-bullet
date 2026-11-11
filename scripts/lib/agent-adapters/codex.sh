@@ -442,7 +442,7 @@ PY
     output="${output}"$'\n'"$(cat "$last_message_file")"
     rm -f -- "$last_message_file"
   fi
-  if transcript_path="$(codex_capture_transcript "$transcript_file" "$prompt_file" 2>/dev/null || true)"; [[ -n "$transcript_path" ]]; then
+  if transcript_path="$(codex_capture_transcript "$transcript_file" "$prompt_file" 2>/dev/null)"; then
     output="${output}"$'\n'"[codex transcript archived at ${transcript_path}]"
   fi
   if [[ -n "${CLAUDE_INTERACTIVE_LOG_FILE:-}" ]]; then
