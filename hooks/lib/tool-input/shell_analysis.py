@@ -2243,7 +2243,7 @@ class _Analysis:
         (self.possible if possible else self.actions).add(name)
         canonical = "%s [%s]" % (CANONICAL_PREFIX[name], " ".join(_text(a) for a in argv))
         self.delivery.append({"action": name, "tier": ACTION_TIER[name], "canonical": canonical,
-                              "possible": possible})
+                              "possible": possible, "argv": [_text(a) for a in argv]})
 
     def write(self, item, env, via, scope="path"):
         text = _text(item)
@@ -4066,7 +4066,14 @@ class _Analysis:
                 continue
             name, eq, value = token.partition("=")
             if not token.startswith("--") and len(token) > 2:
-                name, eq, value = token[:2], "=", token[2:]
+                # a shorthand cluster (-if k=v, -XPOST, -fk=v): bool letters continue it, a value letter takes the
+                # rest of the cluster (after one optional "=") or else the next word
+                k = 1
+                while k < len(token) - 1 and "-" + token[k] not in _GH_API_VALUE:
+                    k += 1
+                name, value = "-" + token[k], token[k + 1:]
+                value = value[1:] if value.startswith("=") else value
+                eq = "=" if value else ""
             if name not in _GH_API_VALUE:
                 continue
             if not eq:
@@ -4463,6 +4470,22 @@ def _push_scope(analysis, script, result, scope_base, environ):
                                                   os.environ if environ is None else environ)
 
 
+def _attach_release(result, mcp_tool, fields, scope_base, environ, lookups, command):
+    """When the command creates a release, record how its tag and target read (release_scope.py)."""
+    if not any(d.get("action") == "release_create" for d in result["delivery"]):
+        return
+    scope = _sibling("release_scope")
+    if scope is None:
+        result["release"] = {"ok": False, "reason": "release scope helper missing", "tag": "", "target": ""}
+        return
+    env = os.environ if environ is None else environ
+    slug = None
+    pusher = _sibling("push_scope") if lookups else None
+    if pusher is not None:
+        slug = pusher.origin_slug(scope_base, env)
+    result["release"] = scope.release_scope(result, mcp_tool, fields, slug, env, command)
+
+
 def _result(analysis, script, text):
     actions = sorted(analysis.actions)
     possible = sorted(analysis.possible - analysis.actions)
@@ -4538,8 +4561,10 @@ def analyze_command(command, base_dir=None, lookups=True, environ=None, scope_ba
     analysis.deadline = time.monotonic() + MAX_SECONDS  # the walk's own budget starts after the parse
     _guarded(analysis, lambda: analysis.walk_script(script, Env(base, _home())))
     result = _result(analysis, script, text)
+    scope_dir = base if scope_base is None else scope_base or None
     if lookups and analysis.push:
-        _push_scope(analysis, script, result, base if scope_base is None else scope_base or None, environ)
+        _push_scope(analysis, script, result, scope_dir, environ)
+    _attach_release(result, None, {}, scope_dir, environ, lookups, text)
     return result
 
 
@@ -4556,8 +4581,10 @@ def analyze_argv(argv, base_dir=None, lookups=True, environ=None, scope_base=Non
         _guarded(analysis, lambda: analysis.execute(argv, Env(base, _home()), {}, None))
     script = parse(text)
     result = _result(analysis, script, text)
+    scope_dir = base if scope_base is None else scope_base or None
     if lookups and analysis.push:
-        _push_scope(analysis, script, result, base if scope_base is None else scope_base or None, environ)
+        _push_scope(analysis, script, result, scope_dir, environ)
+    _attach_release(result, None, {}, scope_dir, environ, lookups, text)
     return result
 
 
@@ -4664,6 +4691,16 @@ def analyze_payload(text, base_dir=None, lookups=True, environ=None):
         result["actions"] = sorted(set(result["actions"]) | {action})
         result["delivery"].append({"action": action, "tier": ACTION_TIER[action], "possible": False,
                                    "canonical": "%s [mcp %s %s]" % (CANONICAL_PREFIX[action], server, mcp_tool)})
+    if kind == "mcp" and mcp_actions:
+        arguments = fields.get("arguments") if tool_name in ("CallMcpTool", "MCP") else fields
+        arguments = arguments if isinstance(arguments, dict) else {}
+        tool = (mcp_tool or "").lower()
+        if "push" in mcp_actions and lookups:
+            pusher = _sibling("push_scope")
+            result["push_scope"] = {"verdict": "strict", "reason": "push scope helper missing", "dir": "",
+                                    "remote": "", "branches": []} if pusher is None else \
+                pusher.mcp_scope(tool, arguments, scope_base or None, os.environ if environ is None else environ)
+        _attach_release(result, tool, arguments, scope_base or None, environ, lookups, "")
     if kind == "mcp" and result["actions"]:
         result["tier"] = _tier(result["actions"])
         result["legacy_first_line"] = " ; ".join(
