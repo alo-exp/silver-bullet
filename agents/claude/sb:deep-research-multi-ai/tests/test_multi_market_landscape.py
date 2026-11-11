@@ -24,6 +24,7 @@ from category_pack import (  # noqa: E402
 from materialize_solution_artifacts import materialize_solution_artifacts  # noqa: E402
 from solution_classifier import classify_solutions  # noqa: E402
 from synthesize_landscape import build_multi_market_chart_data  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run, plain_vendor_spellings  # noqa: E402
 
 
 _OFFLINE_ENV = None
@@ -87,6 +88,7 @@ class MultiMarketPackTests(unittest.TestCase):
         self.assertIn("spec-kit", plugin_slugs)
 
 
+@plain_vendor_spellings
 class MultiMarketClassifierTests(unittest.TestCase):
     def test_secondary_market_core_includes_bmad_gsd_with_evidence(self) -> None:
         pack = load_category_pack("agentic-sdlc-process-orchestrator")
@@ -175,6 +177,7 @@ class MultiMarketChartTests(unittest.TestCase):
         self.assertNotIn("GSD (Get Shit Done)", saas_oss)
 
 
+@plain_vendor_spellings
 class MultiMarketMaterializeTests(unittest.TestCase):
     def test_bmad_gsd_get_scr_artifacts(self) -> None:
         envelopes = [
@@ -212,6 +215,7 @@ class MultiMarketMaterializeTests(unittest.TestCase):
             self.assertTrue((root / "solutions" / "gsd" / "scr.md").is_file())
 
 
+@plain_vendor_spellings
 class MultiMarketMembershipConsistencyTests(unittest.TestCase):
     """User-critical: multi-set membership, no coord collisions, chart⊆listed."""
 
@@ -387,7 +391,6 @@ class MultiMarketMembershipConsistencyTests(unittest.TestCase):
         self.assertTrue(all(p["x"] < 5.5 and p["y"] < 5.5 for p in below), msg=below)
 
 
-from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
 @with_apo_pack_run
