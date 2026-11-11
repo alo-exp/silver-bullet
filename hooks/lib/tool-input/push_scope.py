@@ -462,6 +462,21 @@ def check_entries(result):
     return found
 
 
+COVERAGE_BASH_ENV = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))))), "tests", "coverage", "bash-env.sh")
+
+
+def env_check(environ):
+    """S1: variables that redirect git or run code in every bash (the repository's own coverage tracer excepted)."""
+    for name in ENV_DENY:
+        value = environ.get(name)
+        if name == "BASH_ENV" and value and environ.get("SB_COV_DIR") and \
+                os.path.realpath(value) == os.path.realpath(COVERAGE_BASH_ENV):
+            continue
+        if value:
+            raise Strict("%s is set in the environment and redirects git" % name)
+
+
 def shell_scope(script, result, base, environ, git=None):
     """Classify the shell push of an analysis. ``base`` is the verified payload directory (or None)."""
     try:
@@ -483,9 +498,7 @@ def _shell_scope(script, result, base, environ, git):
     if pushes == 0:
         raise Strict("the push is not a plain top-level `git push`")
     # S1 environment redirecting git
-    for name in ENV_DENY:
-        if environ.get(name):
-            raise Strict("%s is set in the environment and redirects git" % name)
+    env_check(environ)
     if any(name.startswith("BASH_FUNC_") for name in environ):
         raise Strict("an exported shell function is in the environment")
     # S2/S3/S4 shape
@@ -606,9 +619,7 @@ def _mcp_scope(tool, fields, base, environ, git):
         raise Strict("the MCP call names no branch, so it targets the repository's default branch")
     if not base or not os.path.isdir(base):
         raise Strict("the working directory of the call is unknown")
-    for name in ENV_DENY:
-        if environ.get(name):
-            raise Strict("%s is set in the environment and redirects git" % name)
+    env_check(environ)
     git = git or Git(environ)
     _head, _resolved, cfg = read_facts(git, base, [])
     wanted = ("%s/%s" % (owner, repo)).lower()
