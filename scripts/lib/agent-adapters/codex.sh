@@ -95,6 +95,7 @@ codex_transcript_dir_prepare() {
   # A named directory must also be closed to group/other writers: a file another user planted in a
   # shared directory would otherwise be written into and stay readable by them.
   local perms
+  # shellcheck disable=SC2012  # only the mode string of one known path is read
   perms="$(ls -ld "$dir" | cut -c1-10)"
   if ! [[ -d "$dir" && ! -L "$dir" && -O "$dir" && "${perms:5:1}" != w && "${perms:8:1}" != w ]]; then
     printf 'ERROR: refusing transcript directory (symlink, not owned by this user, or group/other-writable): %s\n' "$dir" >&2
