@@ -130,7 +130,6 @@ def _entropy(value):
 _IDENT_CHAIN = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*(?:(?:\.|::|->)[A-Za-z_$][A-Za-z0-9_$]*)+$")
 _LOWER_SNAKE = re.compile(r"^[A-Za-z_][A-Za-z_]*$")
 _WORDISH = re.compile(r"^[A-Za-z][A-Za-z_-]*$")
-_UPPER_SNAKE = re.compile(r"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$")
 _PLAIN_WORD = re.compile(r"^[A-Za-z]+$")
 _NAME_SEGMENTS = re.compile(r"^[A-Za-z0-9]+(?:[_.][A-Za-z0-9]+)+$")
 _NAME_WORD = re.compile(r"^(?:[a-z]{3,}|[A-Z][a-z]{2,}|[A-Z]{3,})$")
@@ -173,16 +172,6 @@ def _name_identifier(value):
     return words * 2 >= len(segments)
 
 
-def _screaming_identifier(value):
-    """SCREAMING_SNAKE names (GOOGLE_CLIENT_SECRET_2, STRIPE_SECRET_KEY_NAME_V2): at least half of the
-    segments are plain words of 4+ letters. Random groups such as AB12_CD34_EF56 contain none."""
-    if not _UPPER_SNAKE.match(value):
-        return False
-    segments = value.split("_")
-    words = sum(1 for seg in segments if len(seg) >= 4 and seg.isalpha())
-    return words * 2 >= len(segments)
-
-
 def _case_transition_rate(value):
     flips = sum(1 for a, b in zip(value, value[1:]) if a.islower() != b.islower())
     return flips / len(value)
@@ -213,8 +202,6 @@ def _looks_random(value, name="", bearer=False, min_len=16):
             # camelCase / PascalCase names read as identifiers; a letter run that flips case often,
             # or a long high-entropy one, is a key
             return _case_transition_rate(value) >= 0.4 or (len(value) >= 20 and entropy >= 3.9)
-    elif _screaming_identifier(value):
-        return False
     return entropy >= (2.8 if min_len < 16 else 3.0)
 
 
