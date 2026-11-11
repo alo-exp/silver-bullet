@@ -40,8 +40,6 @@ export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-# Tests run the recorder from this checkout: name it the way a developer running the host from a checkout does.
-export SILVER_BULLET_DEV_PLUGIN_ROOT="$REPO_ROOT"
 
 # A UTF-8 locale like CI's; some tests read non-ASCII skill files.
 if [[ -z "${LANG:-}" && -z "${LC_ALL:-}" ]]; then

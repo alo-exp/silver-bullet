@@ -87,12 +87,6 @@ fi
 if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]]; then
   unseen_why="$(sb_pf_unseen_reason)"
   [[ -z "$unseen_why" ]] || deny "$(sb_pf_unseen_message "$unseen_why")"
-  patch_why="$(sb_pf_patch_verdict)"
-  [[ -z "$patch_why" ]] || deny "$(sb_pf_patch_message "$patch_why")"
-fi
-
-if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]] && sb_pf_opaque_mentions claude.md agents.md; then
-  deny "$REASON"
 fi
 
 # An instruction file already there (any case) may be updated in place.

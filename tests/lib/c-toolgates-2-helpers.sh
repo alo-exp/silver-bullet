@@ -66,7 +66,6 @@ tg2_run() {
         SILVER_BULLET_PROJECT_ROOT="${TG2_PROJECT_ROOT-$TG2_PROJ}" \
         SILVER_BULLET_HOOK_AUDIT_LOG="$TG2_AUDIT" \
         SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-claude}" \
-        SILVER_BULLET_DEV_PLUGIN_ROOT="${TG2_DEV_ROOT-$TG2_REPO}" \
         "$@" bash "${TG2_REPO}/$hook" 0>/dev/null
     else
       printf '%s' "$input" | env \
@@ -74,7 +73,6 @@ tg2_run() {
         SILVER_BULLET_PROJECT_ROOT="${TG2_PROJECT_ROOT-$TG2_PROJ}" \
         SILVER_BULLET_HOOK_AUDIT_LOG="$TG2_AUDIT" \
         SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-claude}" \
-        SILVER_BULLET_DEV_PLUGIN_ROOT="${TG2_DEV_ROOT-$TG2_REPO}" \
         "$@" bash "${TG2_REPO}/$hook"
     fi
   ) >"$out" 2>"$err" || TL_STATUS=$?
