@@ -7,7 +7,7 @@
 for _ca_var in $(compgen -e | grep -E '^GIT_(DIR|WORK_TREE|COMMON_DIR|NAMESPACE|EXEC_PATH|CONFIG($|_))'); do
   unset "$_ca_var"
 done
-unset _ca_var BASH_ENV ENV
+unset _ca_var ENV
 _ca_tpl() {
   if [[ -z "${_CA_TPL:-}" ]]; then
     _CA_TPL="$TL_TMP/.tpl"
