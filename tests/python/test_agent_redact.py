@@ -1,11 +1,14 @@
 """Unit tests for scripts/lib/agent_redact.py (R4-31, R10b-06)."""
 
 import io
+import json
 import os
+import re
 import random
 import string
 import stat
 import tempfile
+import time
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
@@ -13,6 +16,7 @@ from unittest import mock
 from sbtest import load_module
 import redact_corpus
 import redact_corpus_r5
+import redact_corpus_r6
 
 agent_redact = load_module("scripts/lib/agent_redact.py")
 
@@ -47,11 +51,11 @@ class RedactTests(unittest.TestCase):
 
     def test_authorization_and_bearer(self):
         out = agent_redact.redact("curl -H 'Authorization: Bearer abcdefgh12345678' u")
-        self.assertIn("Authorization: [REDACTED]", out)
+        self.assertIn("Authorization: Bearer [REDACTED]", out)
         self.assertNotIn("abcdefgh12345678", out)
         out = agent_redact.redact("got Bearer abcdefgh12345678 here")
         self.assertEqual(out, "got Bearer [REDACTED] here")
-        self.assertEqual(agent_redact.redact("authorization=token xyz123"), "authorization=[REDACTED]")
+        self.assertEqual(agent_redact.redact("authorization=token xyz123abc789"), "authorization=token [REDACTED]")
 
     def test_assignments_keep_names_and_case(self):
         out = agent_redact.redact("AWS_SECRET_ACCESS_KEY=%s and Api-Key: hunter2 and password = swordfish" % LONG_VALUE)
@@ -266,205 +270,644 @@ CORPUS_SECRETS = _secret_cases()
 CORPUS_HONEST = _honest_cases()
 
 
-class CorpusTests(unittest.TestCase):
-    def test_corpus_sizes(self):
-        self.assertGreaterEqual(len(CORPUS_SECRETS), 60)
-        self.assertGreaterEqual(len(CORPUS_HONEST), 60)
+CORPORA = {
+    "r4": redact_corpus.build,
+    "r5": redact_corpus_r5.build,
+    "r6": redact_corpus_r6.build,
+}
+# exotic formats of the r5 corpus that the best-effort layer documents as residuals (by name only)
+R5_RESIDUALS = {"ansible vault blob", "session cookie random", "base64-wrapped env", "tab separated"}
+WRAPPERS = {
+    "plain": lambda t: t,
+    "backtick": lambda t: "`" + t + "`",
+    "md-quote": lambda t: "> " + t,
+    "code-fence": lambda t: "```\n" + t + "\n```",
+    "bullet": lambda t: "- " + t,
+    "crlf": lambda t: t.replace("\n", "\r\n") + "\r\n",
+    "json-str": lambda t: json.dumps({"out": t}),
+    "prefix-text": lambda t: "Run this: " + t + " then retry.",
+}
 
-    def test_every_secret_is_caught_by_scanner_and_redactor(self):
-        for text, fragment in CORPUS_SECRETS:
-            with self.subTest(text=text[:40]):
-                self.assertIsNotNone(agent_redact.scan(text), "scanner missed")
-                out = agent_redact.redact(text)
-                self.assertNotIn(fragment, out, "redactor kept the secret")
-                self.assertIn("[REDACTED]", out)
 
-    def test_honest_briefs_pass_the_scanner(self):
-        for text in CORPUS_HONEST:
-            with self.subTest(text=text[:40]):
-                self.assertIsNone(agent_redact.scan(text))
+def _build_vendor_token(row):
+    """A token for a VENDOR row built from the row itself: anchor + each part at a realistic length."""
+    name, anchors, parts, _end, left = row
+    rng = random.Random(name)
+    body = ""
+    for part in parts:
+        if isinstance(part, str):
+            body += part
+        else:
+            alphabet = _expand(agent_redact.CLS[part[0]])
+            body += "".join(rng.choice(alphabet) for _ in range(min(part[2], max(part[1], 24))))
+    prefix = ""
+    if left:
+        prefix = "".join(rng.choice(_expand(agent_redact.CLS[left[0]])) for _ in range(left[1]))
+    return prefix + anchors[0] + body, body
 
-    def test_acceptance_corpus(self):
-        """The reviewer's fixed acceptance corpus (built at runtime, see redact_corpus.py)."""
-        secrets, honest = redact_corpus.build()
-        self.assertGreaterEqual(len(secrets), 120)
-        self.assertGreaterEqual(len(honest), 130)
-        for fmt, text, core in secrets:
-            with self.subTest(fmt=fmt):
-                self.assertIsNotNone(agent_redact.scan(text), "scanner missed")
-                self.assertNotIn(core, agent_redact.redact(text), "redactor kept the secret")
-        for fmt, text in honest:
-            with self.subTest(fmt=fmt):
-                self.assertIsNone(agent_redact.scan(text), "honest string blocked")
 
-    # exotic formats the best-effort layer does not claim (documented in the skills and CHANGELOG)
-    R5_RESIDUALS = {"ansible vault blob", "session cookie random", "base64-wrapped env", "tab separated"}
+def _expand(spec):
+    out = ""
+    i = 0
+    while i < len(spec):
+        if i + 2 < len(spec) and spec[i + 1] == "-":
+            out += "".join(chr(c) for c in range(ord(spec[i]), ord(spec[i + 2]) + 1))
+            i += 3
+        else:
+            out += spec[i]
+            i += 1
+    return out
 
-    def test_round5_corpus(self):
-        secrets, honest = redact_corpus_r5.build()
-        self.assertGreaterEqual(len(secrets), 85)
-        self.assertGreaterEqual(len(honest), 65)
-        for fmt, text, core, common in secrets:
-            with self.subTest(fmt=fmt):
-                caught_scan = agent_redact.scan(text) is not None
-                caught_redact = core not in agent_redact.redact(text)
-                if common or fmt not in self.R5_RESIDUALS:
-                    self.assertTrue(caught_scan, "scanner missed")
-                    self.assertTrue(caught_redact, "redactor kept the secret")
-                    self.assertIn("[REDACTED]", agent_redact.redact(text))
-                else:
-                    self.assertTrue(fmt in self.R5_RESIDUALS)
-        for fmt, text in honest:
-            with self.subTest(fmt=fmt):
-                self.assertIsNone(agent_redact.scan(text), "honest string blocked")
 
-    def test_round5_scan_catches_whatever_redact_changes_for_common_secrets(self):
-        secrets, _honest = redact_corpus_r5.build()
-        for fmt, text, _core, common in secrets:
-            if common and agent_redact.redact(text) != text:
-                with self.subTest(fmt=fmt):
-                    self.assertIsNotNone(agent_redact.scan(text))
+def _value(tag, n=20):
+    rng = random.Random(tag)
+    return "".join(rng.choice(_ALNUM) for _ in range(n - 3)) + rng.choice("!#%") + "9" + "Q"
 
-    def test_word_prefix_with_random_tail_is_a_secret_under_a_credential_name(self):
-        import random
-        import string
-        rng = random.Random(77)
-        tail = lambda n: "".join(rng.choice(string.ascii_letters + string.digits) for _ in range(n))
-        for prefix in ("gsk_", "nfp_", "pscale_tkn_", "rnd_", "pat_", "abc_", "live_", "Summer_", "prod."):
-            with self.subTest(prefix=prefix):
-                self.assertIsNotNone(agent_redact.scan("GENERIC_API_KEY=" + prefix + tail(30)))
-                self.assertIn("[REDACTED]", agent_redact.redact("password=" + prefix + tail(12)))
 
-    def test_hyphenated_words_and_powershell_are_not_secrets(self):
-        for text in ("$pwd = Get-Location", "pwd=Get-ChildItem", "PASS=Set-Variable", "$password = Read-Host -AsSecureString",
-                     "pass = get-password", "password: required-field", "password: hunter-two"):
+class RuleTableTests(unittest.TestCase):
+    def test_every_vendor_row_catches_its_own_token(self):
+        for row in agent_redact.VENDOR:
+            with self.subTest(rule=row[0]):
+                token, body = _build_vendor_token(row)
+                self.assertEqual(agent_redact.scan("x " + token + " y")[0], row[0])
+                self.assertNotIn(body, agent_redact.redact("x " + token + " y"))
+
+    def test_vendor_rows_obey_the_table_lint(self):
+        names = [row[0] for row in agent_redact.VENDOR]
+        self.assertEqual(len(names), len(set(names)))
+        for name, anchors, parts, _end, left in agent_redact.VENDOR:
+            with self.subTest(rule=name):
+                self.assertTrue(anchors)
+                bodies = [p for p in parts if not isinstance(p, str)]
+                self.assertTrue(bodies)
+                for cls, lo, hi in bodies:
+                    self.assertLessEqual(lo, hi)
+                    self.assertLessEqual(hi, 8192)
+                if left:
+                    self.assertLessEqual(left[2], 16)
+                for i, part in enumerate(parts):
+                    if isinstance(part, str):  # a separator never starts with a char of a neighbouring class
+                        for j in (i - 1, i + 1):
+                            if 0 <= j < len(parts) and not isinstance(parts[j], str):
+                                self.assertNotIn(part[0], _expand(agent_redact.CLS[parts[j][0]]))
+
+    def test_every_cli_row_catches_its_own_secret(self):
+        value = _value("cli")
+        for prog, rows in agent_redact.CLI.items():
+            command = "deploy-cli" if prog == "*" else prog
+            for flag, mode, tier in rows:
+                forms = []
+                if mode in ("next", "either"):
+                    forms.append("%s %s %s" % (command, flag, value))
+                if mode in ("eq", "either"):
+                    forms.append("%s %s=%s" % (command, flag, value))
+                if mode in ("attached", "either") and len(flag) == 2:
+                    forms.append("%s %s%s" % (command, flag, value))
+                for form in forms:
+                    with self.subTest(form=form.replace(value, "<v>")):
+                        self.assertIsNotNone(agent_redact.scan(form))
+                        self.assertNotIn(value, agent_redact.redact(form))
+
+    def test_cli_rows_keep_honest_values(self):
+        for text in ("mysql -u app -p app", "docker login -u ci --password-stdin ghcr.io", "deploy-cli --token $GH_TOKEN",
+                     "redis-cli -a $REDIS_PASSWORD ping", "sshpass -p '${PW}' ssh host", "curl -u user:$PASS https://h"):
             with self.subTest(text=text):
                 self.assertIsNone(agent_redact.scan(text))
 
-    def test_limits_fail_closed(self):
-        import contextlib
-        import tempfile
-        old = dict(os.environ)
-        try:
-            os.environ["SB_REDACT_MAX_BYTES"] = "50"
-            out, err = io.StringIO(), io.StringIO()
-            with mock.patch("sys.stdin", io.StringIO("x" * 60)), redirect_stdout(out), redirect_stderr(err):
-                self.assertEqual(agent_redact.main(["a", "--scan"]), 3)
-            self.assertIn("too large or too complex to scan", out.getvalue())
-            out = io.StringIO()
-            with mock.patch("sys.stdin", io.StringIO("password=Zq8vLm2Xr9TnW4 " + "x" * 60)), redirect_stdout(out):
-                self.assertEqual(agent_redact.main(["a", "--redact"]), 3)
-            self.assertEqual(out.getvalue(), agent_redact.WITHHELD)
-            with tempfile.TemporaryDirectory() as tmp:
-                target = os.path.join(tmp, "log")
-                with open(target, "w") as handle:
-                    handle.write("secret line " + "y" * 80)
-                err = io.StringIO()
-                with redirect_stderr(err):
-                    self.assertEqual(agent_redact.main(["a", "--redact-file", target]), 3)
-                with open(target) as handle:
-                    self.assertEqual(handle.read(), agent_redact.WITHHELD)
-                self.assertIn("withheld", err.getvalue())
-            os.environ["SB_REDACT_MAX_BYTES"] = "junk"
-            self.assertEqual(agent_redact._limits()[0], 16 * 1024 * 1024)
-            os.environ.pop("SB_REDACT_MAX_BYTES")
-            os.environ["SB_REDACT_BUDGET_SEC"] = "0.0001"
-            big = "login x\n" * 200000
-            out = io.StringIO()
-            with mock.patch("sys.stdin", io.StringIO(big)), redirect_stdout(out):
-                self.assertEqual(agent_redact.main(["a", "--scan"]), 3)
-            with tempfile.TemporaryDirectory() as tmp:
-                target = os.path.join(tmp, "log")
-                with open(target, "w") as handle:
-                    handle.write(big)
-                with contextlib.redirect_stderr(io.StringIO()):
-                    self.assertEqual(agent_redact.main(["a", "--redact-file", target]), 3)
-                with open(target) as handle:
-                    self.assertEqual(handle.read(), agent_redact.WITHHELD)
-        finally:
-            os.environ.clear()
-            os.environ.update(old)
+    def test_positional_commands(self):
+        value = _value("pos")
+        for text in ("aws configure set aws_secret_access_key " + value, "poetry config http-basic.corp ci " + value,
+                     "poetry config pypi-token.pypi " + value, "htpasswd -b users.txt alice " + value,
+                     "ConvertTo-SecureString " + value + " -AsPlainText", "echo " + value + " | docker login --password-stdin",
+                     "curl --user ci:" + value + " https://h", "curl -u ci:" + value + " https://h",
+                     "login a\n  password " + value, "machine h login u password " + value):
+            with self.subTest(text=text.replace(value, "<v>")):
+                self.assertIsNotNone(agent_redact.scan(text))
+                self.assertNotIn(value, agent_redact.redact(text))
+        self.assertIsNone(agent_redact.scan("aws configure set region eu-west-1"))
+        self.assertIsNone(agent_redact.scan("htpasswd -b users.txt alice"))
 
-    def test_megabyte_adversarial_inputs_are_fast(self):
-        """Each shape is >= 1 MiB; the bound is generous (5 s) so loaded machines do not flake, the
-        measured time is about 0.1-0.5 s per MiB (see the review report)."""
-        import time
-        n = 1024 * 1024
-        shapes = {
-            "dots": "a." * (n // 2), "under": "a_" * (n // 2), "equals": "=" * n, "pairs": "a=" * (n // 2),
-            "quotes": "'" * n, "keychars": "Ab3-_." * (n // 6), "brackets": "[" * (n // 2) + "]" * (n // 2),
-            "tokens": "token=" * (n // 6), "lines": "API_KEY=abc\n" * (n // 12), "login": "login a password b " * (n // 19),
-            "pem": "-----BEGIN PRIVATE KEY-----\n" * (n // 27), "urls": "http://a:b@c/" * (n // 14),
+    def test_name_tiers(self):
+        tier = agent_redact.name_tier
+        self.assertEqual([tier(n) for n in ("password", "DB_PASS", "DB_PWD", "dbPassword", "密码")], ["strong"] * 5)
+        self.assertEqual([tier(n) for n in ("token", "client_secret", "dsn", "SECRET_KEY_BASE", "API_KEY", "_auth", "密钥")], ["cred"] * 7)
+        self.assertEqual([tier(n) for n in ("cache_key", "sort_key", "sig", "signature")], ["weak"] * 4)
+        self.assertEqual(tier("Authorization"), "auth-header")
+        for name in ("", "x" * 200, "username", "keyboard", "tokenizer", "!!"):
+            self.assertIsNone(tier(name))
+
+
+class ClassifierTests(unittest.TestCase):
+    CASES = (
+        # (value, tier, name, minimum verdict: "none" | "possible" | "secret")
+        ("${DB_PASSWORD}", "strong", "", "none"), ("$(gh auth token)", "cred", "", "none"), ("{{ vault_pw }}", "strong", "", "none"),
+        ("<your-token>", "cred", "", "none"), ("[REDACTED]", "cred", "", "none"), ("process.env.X_TOKEN", "cred", "", "none"),
+        ("placeholder-value-123", "strong", "", "none"), ("changeme-changeme", "strong", "", "none"), ("xxxxxxxxxxxxxxxx", "cred", "", "none"),
+        ("/etc/app/secrets.yaml", "strong", "", "none"), ("~/.config/app/keys", "cred", "", "none"),
+        ("--flag=value", "cred", "", "none"), ("config.json", "cred", "", "none"), ("2024-01-02T03:04:05Z", "weak", "", "none"),
+        ("format-{name}", "cred", "", "none"), ("user_name=simple", "cred", "", "none"), ("", "cred", "", "none"),
+        ("a phrase with spaces", "strong", "", "possible"), ("a phrase with spaces", "weak", "", "none"),
+        ("aGVsbG8gd29ybGQ", "bearer", "", "secret"), ("abc", "bearer", "", "none"), ("justletters", "bearer", "", "none"),
+        ("123e4567-e89b-12d3-a456-426614174000", "cred", "api_key", "secret"),
+        ("123e4567-e89b-12d3-a456-426614174000", "cred", "session_token", "none"),
+        ("getAccessTokenSilently()", "cred", "", "possible"), ("Foo::barBazQuxQuuxCorge", "cred", "", "possible"),
+        ("this.settings.apiKeyHolderObject", "cred", "", "possible"), ("get_token_for_user", "strong", "", "possible"),
+        ("Zq8mK2pL9x", "strong", "", "secret"), ("12345678", "strong", "", "possible"), ("Zq8mK2", "strong", "", "possible"),
+        ("Zq8mK2pL9xRt4Wv", "cli-pass", "", "secret"), ("Zq8mK2", "cli-pass", "", "secret"),
+        ("0123456789abcdef0123", "cred", "", "secret"), ("Zq8mK2pL9xRt4WvB", "cred", "", "secret"),
+        ("Zq8!mK2pL9xW", "cred", "", "secret"), ("Zq8mK2pL", "cred", "", "possible"), ("qwertyuiopasdf", "cred", "", "possible"),
+        ("0123456789abcdef0123456789abcdef", "weak", "", "secret"), ("cache-1a2b3c4d5e6f7a8b", "weak", "", "none"),
+        ("Zq8mK2pL9xRt4WvBn6Yc", "weak", "", "secret"), ("short", "weak", "", "none"),
+    )
+
+    def test_decision_list(self):
+        order = {"none": 0, "possible": 1, "secret": 2}
+        for value, tier, name, expected in self.CASES:
+            with self.subTest(value=value[:30], tier=tier):
+                self.assertEqual(agent_redact.classify(value, tier, name), order[expected])
+
+    def test_unwrap(self):
+        self.assertEqual(agent_redact.unwrap(' "abc" '), "abc")
+        self.assertEqual(agent_redact.unwrap("`abc`"), "abc")
+        self.assertEqual(agent_redact.unwrap("(abc)"), "abc")
+        self.assertEqual(agent_redact.unwrap("f(abc))"), "f(abc)")
+        self.assertEqual(agent_redact.unwrap("${X}"), "${X}")
+
+    def test_spans_and_edge_shapes(self):
+        pem_open = "-----BEGIN PRIVATE KEY-----\n" + "".join(random.Random(3).choice(_ALNUM) for _ in range(64))
+        self.assertEqual(agent_redact.scan(pem_open + "\n-----END PRIVATE KEY")[0], "pem")
+        self.assertIsNone(agent_redact.scan("<div>" + _value("x", 30) + "</div> <span>x</span> <add key=\"timeout\" value=\"30\"/>"))
+        opaque = "role arn:aws:iam::123456789012:role/arn:aws:x vault:secret/app/path password=" + _value("opaque", 20)
+        self.assertEqual(agent_redact.scan(opaque)[0], "assignment")
+        self.assertIsNone(agent_redact.scan("password=arn:aws:secretsmanager:eu-west-1:123456789012:secret:prod/db-AbCdEf"))
+
+    def test_references_are_whole_value(self):
+        self.assertTrue(agent_redact.is_reference("${X}/path"))
+        self.assertTrue(agent_redact.is_reference("$1"))
+        self.assertTrue(agent_redact.is_reference("vault:secret/app"))
+        self.assertFalse(agent_redact.is_reference("x$(Zq8mK2pL9xRt4)"))
+
+
+class CorpusTests(unittest.TestCase):
+    def check(self, build, wrapper_name, residuals=()):
+        wrap = WRAPPERS[wrapper_name]
+        secrets, honest = build()
+        for fmt, text, core, *_common in secrets:
+            if fmt in residuals:
+                continue
+            wrapped = wrap(text)
+            with self.subTest(fmt=fmt, wrapper=wrapper_name):
+                self.assertIsNotNone(agent_redact.scan(wrapped), "scanner missed")
+                expected = json.dumps(core)[1:-1] if wrapper_name == "json-str" else core
+                if wrapper_name == "crlf":
+                    expected = core.replace("\n", "\r\n")
+                self.assertNotIn(expected, agent_redact.redact(wrapped), "redactor kept the secret")
+        for fmt, text in honest:
+            with self.subTest(honest=fmt, wrapper=wrapper_name):
+                self.assertIsNone(agent_redact.scan(wrap(text)), "honest string blocked")
+
+    def test_corpus_sizes(self):
+        sizes = {name: tuple(len(part) for part in build()) for name, build in CORPORA.items()}
+        self.assertEqual(sizes, {"r4": (122, 133), "r5": (87, 67), "r6": (80, 65)})
+
+    def test_every_corpus_in_every_wrapper(self):
+        for name, build in CORPORA.items():
+            for wrapper in WRAPPERS:
+                with self.subTest(corpus=name, wrapper=wrapper):
+                    self.check(build, wrapper, R5_RESIDUALS if name == "r5" else ())
+
+    def test_scan_catches_whatever_redact_changes(self):
+        for name, build in CORPORA.items():
+            secrets, _honest = build()
+            for fmt, text, *_rest in secrets:
+                if fmt not in R5_RESIDUALS and agent_redact.redact(text) != text:
+                    with self.subTest(corpus=name, fmt=fmt):
+                        self.assertIsNotNone(agent_redact.scan(text))
+
+    def test_every_refused_span_is_redacted(self):
+        for name, build in CORPORA.items():
+            secrets, _honest = build()
+            for fmt, text, *_rest in secrets:
+                for found in agent_redact.analyze(text)[0]:
+                    with self.subTest(corpus=name, fmt=fmt):
+                        self.assertNotEqual(agent_redact.redact(text), text, found)
+
+    def test_scan_and_redact_share_the_pipeline(self):
+        with mock.patch.object(agent_redact, "analyze", wraps=agent_redact.analyze) as spy:
+            agent_redact.scan("password=Zq8mK2pL9xRt4")
+            agent_redact.redact("password=Zq8mK2pL9xRt4")
+        self.assertEqual(spy.call_count, 2)
+
+    def test_rule_names_come_from_the_tables_or_the_passes(self):
+        known = {row[0] for row in agent_redact.VENDOR}
+        known |= {"pem", "discord-bot", "url-userinfo", "url-token-user", "assignment", "authorization", "xml-element",
+                  "xml-attribute", "json-field", "stdin-secret", "netrc", "bearer", "powershell-secure", "cli-aws",
+                  "cli-poetry", "cli-htpasswd", "cli-flag", "cli-user"}
+        known |= {"cli-" + prog for prog in agent_redact._PROGS}
+        for build in CORPORA.values():
+            for _fmt, text, *_rest in build()[0]:
+                for rule, _line in agent_redact.analyze(text)[0]:
+                    self.assertIn(rule, known)
+
+
+class IdentTests(unittest.TestCase):
+    ATTACKS_REFUSED = (
+        "API_TOKEN=deploy_Kx9mQ2Lp8Zr4Tn6W", "SECRET=river.Kx9mQ2Lp8Zr4Tn6W", "token=Alpha_Bravo_Kx9mQ2Lp8Zr4",
+        "API_KEY=prod_api_key_v2_Kx9mQ2Lp", "API_KEY=ab12_cd34_ef56_gh78", "TOKEN=ab_cd_ef_gh_ij_kl_mn_op",
+        "secret=ab_cd_ef_gh_ij_kl_mn_op", "SECRET=Ab_Cd_Ef_Gh_Ij_Kl_Mn_Op", "API_KEY=AB_CD_EF_GH_IJ_KL_MN_OP_QR",
+        "SECRET=sha256_md5_s3_v2_k8s_x1", "password=Winter2025", "db_password=Hunter22", "PASSWORD=qwerty123", "pwd=Summer24",
+        "PASS=Admin123", "SECRET_KEY=thisisnotsecure123", "JWT_SECRET=supersecretjwtkey", "STRIPE_SECRET=Ab-Cd-Ef-Gh-Ij-Kl-Mn-Op",
+        "TOKEN=aGVsbG8td29ybGQtdG9rZW4",
+    )
+    # dictionary words, passphrases and short values: documented residuals for scan(); redact() still masks them
+    ATTACKS_MASKED = (
+        "API_KEY=sunsetRiverMountainBlue", "TOKEN=QuietOceanSilverLamp", "client_secret=purple_monkey_dishwasher_42",
+        "TOKEN=v1_v2_v3_v4_v5_v6_v7", "PASSWORD=correct-horse-battery-staple", "PASSWORD=Correct-Horse-Battery-Staple-9",
+        "PASSWORD=correct_horse_battery_staple", "PASSWORD=correct.horse.battery.staple", "PASSWORD=CorrectHorseBatteryStaple",
+        "password=Spring#2025", "API_KEY=MyCompanyApiKey2024", "JWT_SECRET=my-jwt-secret-key", "SESSION_SECRET=keyboardcat",
+        "API_KEY=Kx9mQ2Lp",
+    )
+    HONEST = (
+        "token = get_token_for_user", "TOKEN_TYPE=access_token", "secret = load_secret_from_vault", "api_key = settings.STRIPE_API_KEY",
+        "password = form.cleaned_data.password", "PASSWORD_FIELD=user_password_hash", "token: ACCESS_TOKEN_V2", "secret_key=SECRET_KEY_NAME",
+        "auth_token = AuthToken.objects.create", "token = jwt.encode", "password_validator=MinimumLengthValidator",
+        "TOKEN_BACKEND=redis_cache_v3", "secret: app-secrets-prod", "secretName: db-credentials", "api_key: ${{ secrets.API_KEY }}",
+        "token=TokenKind.Refresh", "password=PasswordHasher.argon2", "PASSWORD_HASHER=Argon2PasswordHasher", "token_url=/oauth/token",
+        "secret_file=./secrets/prod.env", "passphrase_file=~/.gnupg/passphrase.txt", "pass = handle_password_reset",
+        "token = request.cookies.get", "key_file=keys/service-account.json", "TOKEN=github_token_input", "secret = os.urandom",
+        "access_token = response.json", "token = self._token_cache", "API_KEY_ENV=OPENAI_API_KEY", "SECRET_ARN=prod/db/credentials",
+        "password: \"{{ vault_db_password }}\"", "token=$(gh auth token)", "client_secret=client_secret_basic",
+        "token_endpoint_auth_method=client_secret_post", "credentials=DefaultAzureCredential", "password=PASSWORD_PLACEHOLDER_V1",
+        "token=TOKEN_FROM_STEP_3", "pwd = os.getcwd()", "password_reset_token = PasswordResetTokenGenerator",
+        "token_key=user:42:refresh", "secret_key_ref=k8s/secret/app#key", "password=Get-Credential", "token=uuid4().hex",
+        "authToken: authTokenFromContext", "apiKey: apiKeyFromEnv", "secret = SecretStr", "token: CancellationToken.None",
+        "password_policy=StrongPasswordPolicyV2", "secret_backend=aws_secrets_manager", "TOKEN_ALGO=HS256", "secret_version=AWSCURRENT",
+    )
+
+    def test_random_tails_and_grouped_values_are_refused(self):
+        for text in self.ATTACKS_REFUSED:
+            with self.subTest(text=text):
+                self.assertIsNotNone(agent_redact.scan(text))
+                self.assertIn("[REDACTED]", agent_redact.redact(text))
+
+    def test_passphrases_are_masked_in_logs(self):
+        for text in self.ATTACKS_MASKED:
+            with self.subTest(text=text):
+                self.assertIn("[REDACTED]", agent_redact.redact(text))
+
+    def test_honest_identifiers_pass(self):
+        for text in self.HONEST:
+            with self.subTest(text=text):
+                self.assertIsNone(agent_redact.scan(text))
+
+
+class DjangoTests(unittest.TestCase):
+    def test_thousand_secret_keys_in_four_forms(self):
+        rng = random.Random(1234)
+        alphabet = string.ascii_letters + string.digits + "!@#$%^&*(-_=+)"
+        missed = []
+        for i in range(1000):
+            key = "".join(rng.choice(alphabet) for _ in range(rng.choice((50, 51, 64))))
+            # an unquoted value cannot hold "&": it would read as the start of a query parameter
+            forms = ("SECRET_KEY = '%s'" % key, 'SECRET_KEY = "%s"' % key, "SECRET_KEY=%s" % key.replace("&", "%"),
+                     "SECRET_KEY = 'django-insecure-%s'" % key)
+            for form in forms:
+                if agent_redact.scan(form) is None or key in agent_redact.redact(form):
+                    missed.append(form[:30])
+        self.assertEqual(missed, [])
+
+    def test_parenthesis_is_not_a_bypass(self):
+        for text in ("password=(Zq8mK2pL9xRt4)", "token=f(Zq8mK2pL9xRt4WvB)", "secret=+(Zq8mK2pL9xRt4WvBn)", "password=(x)Zq8mK2pL9xRt4"):
+            with self.subTest(text=text):
+                self.assertIsNotNone(agent_redact.scan(text))
+        for text in ("password=getPassword()", "token = generate_token(user, expires_in=3600)", "secret=load(config.secret)"):
+            with self.subTest(text=text):
+                self.assertIsNone(agent_redact.scan(text))
+
+
+class JsonlTests(unittest.TestCase):
+    def lines(self, *objs, spaced=False):
+        sep = (", ", ": ") if spaced else (",", ":")
+        return "\n".join(json.dumps(o, separators=sep) for o in objs) + "\n"
+
+    def test_redacted_lines_stay_valid_json(self):
+        secret = _value("jsonl", 24)
+        for spaced in (False, True):
+            text = self.lines({"type": "exec_output", "output": "export API_TOKEN=" + secret + "\nok"},
+                              {"type": "message", "text": "nothing secret here"}, spaced=spaced)
+            out = agent_redact.redact(text)
+            self.assertNotIn(secret, out)
+            rows = [json.loads(line) for line in out.splitlines()]
+            self.assertEqual(rows[1], {"type": "message", "text": "nothing secret here"})
+            self.assertEqual(out.splitlines()[1], text.splitlines()[1])
+            self.assertEqual(agent_redact.scan(text), ("assignment", 1))
+
+    def test_every_r4_secret_inside_a_json_string(self):
+        secrets, _honest = redact_corpus.build()
+        for fmt, text, core in secrets:
+            for spaced in (False, True):
+                line = json.dumps({"type": "exec_output", "output": text}, separators=(", ", ": ") if spaced else (",", ":"))
+                with self.subTest(fmt=fmt):
+                    out = agent_redact.redact(line)
+                    json.loads(out)
+                    self.assertNotIn(json.dumps(core)[1:-1], out)
+
+    def test_nested_escaped_and_cjk_forms(self):
+        secret = _value("nested", 22)
+        inner = json.dumps({"password": secret})
+        cases = (
+            json.dumps({"out": inner}), json.dumps({"out": "密码：" + secret}), json.dumps({"out": "token＝" + secret}),
+            json.dumps({"out": "-----BEGIN PRIVATE KEY-----\n" + "".join(random.Random(7).choice(_ALNUM) for _ in range(64)) + "\n-----END PRIVATE KEY-----"}),
+            json.dumps({"password": secret}), json.dumps({"a": [{"b": {"api_key": secret}}]}),
+            '{"out": "{\\"password\\": \\"' + secret + '\\"}"}',
+        )
+        for line in cases:
+            with self.subTest(line=line[:40]):
+                out = agent_redact.redact(line)
+                json.loads(out)
+                self.assertNotIn(secret, out)
+                self.assertIsNotNone(agent_redact.scan(line))
+
+    def test_numbers_under_password_and_non_json(self):
+        out = agent_redact.redact('{"password": 123456789, "count": 3}')
+        self.assertEqual(json.loads(out), {"password": "[REDACTED]", "count": 3})
+        self.assertEqual(agent_redact.scan('{"pin": 1}\n{"password": 12345678}'), ("json-field", 2))
+        text = '{not json: password=' + _value("nj", 20) + "}"
+        self.assertIsNotNone(agent_redact.scan(text))
+        self.assertIsNone(agent_redact.scan('{"password": 12}'))
+
+    def test_deep_nesting_falls_back_to_text(self):
+        deep = "[" * 100000
+        self.assertIsNone(agent_redact.scan(deep))
+        self.assertEqual(agent_redact.redact(deep + "\npassword=" + _value("deep", 20)).splitlines()[0], deep)
+        nested = "[" * 5000 + '"x"' + "]" * 5000
+        self.assertIsNone(agent_redact.scan(nested))
+
+    def test_scan_reports_the_physical_line(self):
+        text = self.lines({"a": 1}, {"b": 2}, {"output": "AWS_SECRET_ACCESS_KEY=" + _value("line", 40)})
+        self.assertEqual(agent_redact.scan(text), ("assignment", 3))
+
+
+class MarkdownTests(unittest.TestCase):
+    def test_honest_fixture_has_no_findings(self):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures", "redact_honest_markdown.md")
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
+        self.assertGreaterEqual(len(text.splitlines()), 40)
+        self.assertIsNone(agent_redact.scan(text))
+
+    def test_code_spans_and_fences(self):
+        secret = _value("md", 20)
+        self.assertIsNone(agent_redact.scan("Use `redis://:pw@` as the prefix, and `.npmrc _auth=` for npm."))
+        self.assertIsNone(agent_redact.scan("**Pass:** `[x]` and \"<your-key>\" and sk-... with an ellipsis"))
+        self.assertIsNotNone(agent_redact.scan("```\nDB_PASSWORD=" + secret + "\n```"))
+        self.assertIsNotNone(agent_redact.scan("set `password=" + secret + "` now"))
+        self.assertNotIn(secret, agent_redact.redact("set `password=" + secret + "` now"))
+        self.assertIn("`", agent_redact.redact("set `password=" + secret + "` now"))
+
+    def test_prose_label_before_a_random_token_stays_a_documented_false_positive(self):
+        self.assertIsNotNone(agent_redact.scan("this pass: `" + _value("sha", 30) + "`"))
+
+
+class LinearityTests(unittest.TestCase):
+    SIZES = (8 * 1024, 128 * 1024)
+
+    @staticmethod
+    def shapes():
+        def jsonl_row():
+            return json.dumps({"type": "exec_output", "output": "psql -h db -U app -c 'select 1' returned 1 rows; " * 2}) + "\n"
+        return {
+            "dots": "a.", "dashes": "a-", "unders": "a_", "equals": "=", "token=": "token=", "quotes": "\"'\"'token\"'=\"'",
+            "short-lines": "k=v\n", "alnum": "Zq8mK2pL9x", "unicode": "密码：令牌ü€", "nul": "a\x00b=\x00",
+            "many-ghp": "ghp_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8 ", "many-pw": "password=Zq8!mK2pL9x ",
+            "jwt-dash": "eyJ-", "discord-near": "A" * 24 + "." + "B" * 6 + "-", "mysql-line": "mysql ", "docker-login": "docker login ",
+            "sshpass": "sshpass ", "redis-cli": "redis-cli ", "netrc-nl": "\n", "netrc-many": "login a\n\n\n\n ", "login-run": "login ",
+            "url-colon": "a:", "url-many": "://u:p/", "pem-begins": "-----BEGIN RSA PRIVATE KEY-----\n", "auth-hdr": "Authorization: x ",
+            "bearer": "Bearer abcdefgh ", "bearer-spaces": "bearer" + " " * 50, "flags": "--password ", "cli-user": " -u aaaaaaaa",
+            "xml": "<password>a", "sig": "?sig=" + "A" * 19 + "&", "minified-js": "function(a,b){return a.token=b.key||c[\"secret\"]};",
+            "key-sep-spaces": "token   :", "htpasswd": "htpasswd -b ", "pscale": "pscale_tkn_" + "a." * 20, "fullwidth": "token＝",
+            "pct": "token%3D", "json-open": "{", "json-nest": "[", "esc-quote": "\\\"password\\\": \\\"", "backticks": "`",
+            "url-at": "https://a@", "url-long-auth": "https://" + "a" * 3000, "pat-run": "pat", "eyJ-dot": "eyJaaaaaaaa.",
+            "aws-cfg": "aws configure set ", "echo-pipe": "echo x | ", "name-128": "a" * 127 + "=", "sk-run": "sk-", "amp": "password=a&",
+            "paren": "token=f(", "md-fence": "```\n", "json-escapes": '{"a":"' + '\\"' * 4 + '"}\n',
+            "jsonl-psql": jsonl_row(),
         }
-        for name, text in shapes.items():
+
+    def timed(self, text):
+        best = 1e9
+        for _ in range(2):
+            start = time.process_time()
+            agent_redact.scan(text)
+            agent_redact.redact(text)
+            best = min(best, time.process_time() - start)
+        return best
+
+    def assert_linear(self, name, unit):
+        small, large = (((unit * (size // len(unit) + 1))[:size]) for size in self.SIZES)
+        t_small, t_large = self.timed(small), self.timed(large)
+        if t_large < 0.02:
+            return
+        # linear is 16; quadratic is 256
+        self.assertLessEqual(t_large / max(t_small, 1e-4), 32, "%s: %.3fs -> %.3fs" % (name, t_small, t_large))
+
+    def test_adversarial_shapes_scale_linearly(self):
+        for name, unit in self.shapes().items():
+            with self.subTest(shape=name):
+                self.assert_linear(name, unit)
+
+    def test_every_table_row_scales_linearly(self):
+        units = {}
+        for name, anchors, parts, _end, _left in agent_redact.VENDOR:
+            first = _expand(agent_redact.CLS[parts[0][0]])
+            units["vendor-%s-flood" % name] = anchors[0] * 4 + " "
+            units["vendor-%s-run" % name] = anchors[0] + first[:1] * (parts[0][2] + 1) + " "
+        for prog, rows in agent_redact.CLI.items():
+            command = "deploy-cli" if prog == "*" else prog
+            for flag, _mode, _tier in rows:
+                units["cli-%s-%s" % (prog, flag)] = "%s %s " % (command, flag)
+                units["cli-%s-%s-attached" % (prog, flag)] = "%s %s" % (command, flag[:2])
+        for name, unit in units.items():
+            with self.subTest(row=name):
+                self.assert_linear(name, unit)
+
+    def test_regexes_have_no_nested_lazy_or_backreference_shapes(self):
+        parser = getattr(re, "_parser", None) or __import__("sre_parse")
+        patterns = list(agent_redact._PATTERNS)
+        patterns += [rx for rules in agent_redact._ANCH.values() for _name, rx, _first, _fmax, _left in rules]
+        self.assertGreater(len(patterns), 40)
+
+        def walk(items, inside_repeat):
+            for op, arg in items:
+                name = str(op)
+                self.assertNotIn(name, ("MIN_REPEAT", "GROUPREF", "GROUPREF_EXISTS"), name)
+                if name in ("MAX_REPEAT", "POSSESSIVE_REPEAT"):
+                    optional = arg[1] <= 1  # "(...)?" is a choice, not a loop
+                    self.assertFalse(inside_repeat and not optional, "nested repeat")
+                    walk(arg[2], inside_repeat or not optional)
+                elif name == "SUBPATTERN":
+                    walk(arg[-1], inside_repeat)
+                elif name == "BRANCH":
+                    for branch in arg[1]:
+                        walk(branch, inside_repeat)
+                elif name in ("ASSERT",):
+                    walk(arg[1], inside_repeat)
+        for pattern in patterns:
+            with self.subTest(pattern=pattern.pattern[:50]):
+                walk(parser.parse(pattern.pattern, pattern.flags), False)
+
+    def test_one_mebibyte_smoke_bound(self):
+        text_units = self.shapes()
+        for name in ("dots", "many-pw", "netrc-many", "jsonl-psql", "url-many", "pem-begins", "mysql-line", "jwt-dash"):
+            unit = text_units[name]
+            text = (unit * (1024 * 1024 // len(unit) + 1))[:1024 * 1024]
             with self.subTest(shape=name):
                 start = time.monotonic()
                 agent_redact.scan(text)
                 agent_redact.redact(text)
-                self.assertLess(time.monotonic() - start, 5)
+                self.assertLess(time.monotonic() - start, 10)
 
-    def test_scan_catches_whatever_redact_changes_for_every_secret(self):
-        secrets, _honest = redact_corpus.build()
-        for fmt, text, _core in secrets + [(None, t, None) for t, _f in _secret_cases()]:
-            with self.subTest(fmt=fmt, text=text[:30]):
-                if agent_redact.redact(text) != text:
-                    self.assertIsNotNone(agent_redact.scan(text))
-
-    def test_scanner_and_redactor_share_one_pattern_set(self):
-        # every compiled pattern the scanner consults is the object redact() substitutes with
-        for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_assignments", "_CLI_RULES", "_VALUE_RULES", "_TEXT_RULES"):
-            self.assertTrue(hasattr(agent_redact, name))
-        with open(agent_redact.__file__, encoding="utf-8") as handle:
-            src = handle.read()
-        scan_src = src[src.index("def scan("):src.index("def redact_file(")]
-        for name in ("_PREFIXED", "_PASSWORD_FLAG", "_AUTH_HEADER", "_BEARER", "_assignments", "_CLI_RULES", "_VALUE_RULES", "_TEXT_RULES"):
-            self.assertIn(name, scan_src)
-
-    def test_multiline_netrc(self):
-        self.assertEqual(agent_redact.scan("machine h\n  login u\n  password Zq8vLm2Xr9TnW4bQ7s"), ("netrc-multiline", 2))
-        self.assertIsNone(agent_redact.scan("machine h\n  login u\n  password <token>"))
-
-    def test_identifier_shapes_are_not_literals(self):
-        self.assertIsNone(agent_redact.scan("secret=Foo::barBazQuxQuuxCorge"))
-        self.assertIsNone(agent_redact.scan("secret=ab_cd_ef_gh_ij_kl_mn_op"))
-        self.assertIsNone(agent_redact.scan("secret=this.settings.apiKeyHolderObject"))
-        self.assertIsNone(agent_redact.scan("API_KEY=STRIPE_SECRET_KEY_NAME_V2"))
-
-    def test_digitless_values_with_symbols_use_entropy(self):
-        self.assertIsNotNone(agent_redact.scan("secret=abcdefgh/ijklmnop+qrstuvwx"))
-        self.assertIsNone(agent_redact.scan("secret=aaaa+aaaa+aaaa+aaaa+aaaa"))
-
-    def test_pem_line_number_and_prose(self):
-        self.assertEqual(agent_redact.scan("a\nb\n-----BEGIN PRIVATE KEY-----\nMIIEowIBAAKCAQEAabcdefgh"), ("pem", 3))
-        self.assertIsNone(agent_redact.scan("a header line -----BEGIN PRIVATE KEY----- in prose"))
-
-    def test_userinfo_rules(self):
-        self.assertEqual(agent_redact.scan("x https://deploy:Zq8vLm2Xr9TnW4@host.test/r")[0], "url-userinfo")
-        self.assertIsNone(agent_redact.scan("x https://deploy:deploy@host.local/r"))
-        # the trivial-password exemption (not the user==password rule) and its host limit
-        self.assertIsNone(agent_redact.scan("postgres://app:password@localhost/db"))
-        self.assertIsNone(agent_redact.scan("postgres://app:changeme@[::1]:5432/db"))
-        self.assertEqual(agent_redact.scan("postgres://app:password@db.prod.test/db")[0], "url-userinfo")
-        self.assertEqual(agent_redact.scan("https://admin:admin@prod-db.corp.test/x")[0], "url-userinfo")
-
-    def test_camel_case_names_and_random_letter_runs(self):
-        self.assertIsNone(agent_redact.scan("secret=getSecretFromVaultClientFactory"))
-        self.assertIsNotNone(agent_redact.scan("secret=qWeRtYuIoPaSdFgHjKlZxCvB"))
-        self.assertIsNotNone(agent_redact.scan("secret=" + "qwertyuiopasdfghjklzxcvbnm"[::-1] + "ABCDEFGHIJKLMNOPQRSTUV"))
+    @unittest.skipUnless(os.environ.get("SB_REDACT_LINEARITY_FULL"), "set SB_REDACT_LINEARITY_FULL=1 for the 1 MiB / 64 KiB variant")
+    def test_full_ratio_variant(self):
+        self.SIZES = (64 * 1024, 1024 * 1024)
+        for name, unit in self.shapes().items():
+            with self.subTest(shape=name):
+                self.assert_linear(name, unit)
 
 
-class MoreRedactionTests(unittest.TestCase):
-    def test_url_userinfo_flags_and_registry_tokens(self):
-        text = "git clone https://user:S3cr3tPassw0rdXYZ@host.test/x.git; tool --password hunter2Super --token=abc; " + "npm_" + "a" * 24 + " hf_" + "b" * 24
-        out = agent_redact.redact(text)
-        for leaked in ("S3cr3tPassw0rdXYZ", "hunter2Super", "abc;", "a" * 24, "b" * 24):
-            self.assertNotIn(leaked, out)
-        self.assertIn("host.test/x.git", out)
-        self.assertIn("--password [REDACTED]", out)
+class _Std:
+    """A stand-in for sys.stdin / sys.stdout with a binary buffer."""
 
-    def test_plain_urls_are_untouched(self):
-        text = "see https://example.com/a:b and ssh://host/org/repo.git"
-        self.assertEqual(agent_redact.redact(text), text)
+    def __init__(self, data=b""):
+        self.buffer = io.BytesIO(data)
+
+    def write(self, text):
+        self.buffer.write(text.encode("utf-8", "surrogateescape"))
+
+    def value(self):
+        return self.buffer.getvalue().decode("utf-8", "surrogateescape")
+
+
+class LimitsTests(unittest.TestCase):
+    def setUp(self):
+        self.env = mock.patch.dict(os.environ)
+        self.env.start()
+        self.addCleanup(self.env.stop)
+        for name in ("SB_REDACT_MAX_BYTES", "SB_REDACT_BUDGET_SEC"):
+            os.environ.pop(name, None)
+
+    def run_main(self, argv, stdin=""):
+        out, err = _Std(), io.StringIO()
+        with mock.patch("sys.stdin", _Std(stdin.encode("utf-8", "surrogateescape"))), mock.patch("sys.stdout", out), redirect_stderr(err):
+            rc = agent_redact.main(["agent_redact.py"] + argv)
+        return rc, out.value(), err.getvalue()
+
+    def test_budget_clamp(self):
+        default = agent_redact.DEFAULT_BUDGET
+        self.assertEqual(default, 60)
+        for raw in ("0", "-1", "nan", "inf", "-inf", "junk", ""):
+            os.environ["SB_REDACT_BUDGET_SEC"] = raw
+            self.assertEqual(agent_redact._limits()[1], default, raw)
+        os.environ["SB_REDACT_BUDGET_SEC"] = "1e9"
+        self.assertEqual(agent_redact._limits()[1], 600)
+        os.environ["SB_REDACT_BUDGET_SEC"] = "2.5"
+        self.assertEqual(agent_redact._limits()[1], 2.5)
+
+    def test_byte_cap_counts_bytes_not_characters(self):
+        os.environ["SB_REDACT_MAX_BYTES"] = "100"
+        rc, out, _ = self.run_main(["--scan"], "é" * 60)  # 60 characters, 120 bytes
+        self.assertEqual((rc, out), (3, agent_redact.TOO_COMPLEX + "\n"))
+        rc, out, _ = self.run_main(["--scan"], "é" * 40)
+        self.assertEqual((rc, out), (0, ""))
+        for junk in ("junk", "0", "-5", "inf"):
+            os.environ["SB_REDACT_MAX_BYTES"] = junk
+            self.assertEqual(agent_redact._limits()[0], 16 * 1024 * 1024, junk)
+
+    def test_oversize_redact_is_withheld(self):
+        os.environ["SB_REDACT_MAX_BYTES"] = "50"
+        rc, out, _ = self.run_main(["--redact"], "password=" + _value("big", 20) + "x" * 60)
+        self.assertEqual((rc, out), (3, agent_redact.WITHHELD))
+
+    def test_tiny_budget_on_a_large_input_fails_closed(self):
+        os.environ["SB_REDACT_BUDGET_SEC"] = "0.0001"
+        big = "login x\n" * 300000
+        self.assertEqual(self.run_main(["--scan"], big)[:2], (3, agent_redact.TOO_COMPLEX + "\n"))
+        self.assertEqual(self.run_main(["--redact"], big)[:2], (3, agent_redact.WITHHELD))
+        with tempfile.TemporaryDirectory() as tmp:
+            target = os.path.join(tmp, "log")
+            with open(target, "w") as handle:
+                handle.write(big)
+            rc, _, err = self.run_main(["--redact-file", target])
+            self.assertEqual(rc, 3)
+            self.assertIn("withheld", err)
+            with open(target) as handle:
+                self.assertEqual(handle.read(), agent_redact.WITHHELD)
+
+    def test_internal_error_fails_closed(self):
+        with mock.patch.object(agent_redact, "analyze", side_effect=RuntimeError("boom\nsecond line")):
+            rc, out, err = self.run_main(["--scan"], "x")
+            self.assertEqual((rc, out), (2, ""))
+            self.assertIn("scanner failed: boom", err)
+            self.assertNotIn("second line", err)
+            self.assertEqual(self.run_main(["--redact"], "x")[:2], (3, agent_redact.WITHHELD))
+            with tempfile.TemporaryDirectory() as tmp:
+                target = os.path.join(tmp, "log")
+                with open(target, "w") as handle:
+                    handle.write("password=hunter")
+                self.assertEqual(self.run_main(["--redact-file", target])[0], 3)
+                with open(target) as handle:
+                    self.assertEqual(handle.read(), agent_redact.WITHHELD)
+
+    def test_error_without_a_message_names_the_exception(self):
+        with mock.patch.object(agent_redact, "analyze", side_effect=KeyError()):
+            self.assertIn("KeyError", self.run_main(["--scan"], "x")[2])
+
+    def test_guard_works_off_the_main_thread(self):
+        import threading
+        result = []
+        thread = threading.Thread(target=lambda: result.append(agent_redact._guarded(lambda t: t + "!", "ok")))
+        thread.start()
+        thread.join()
+        self.assertEqual(result, ["ok!"])
+        self.assertIsNone(agent_redact._DEADLINE)
+
+    def test_alarm_handler_raises_limit_exceeded(self):
+        captured = {}
+
+        def fake_signal(signum, handler):
+            captured["handler"] = handler
+            return None
+        with mock.patch.object(agent_redact.signal, "signal", side_effect=fake_signal), mock.patch.object(agent_redact.signal, "setitimer"):
+            agent_redact._guarded(lambda t: t, "x")
+        with self.assertRaises(agent_redact.LimitExceeded):
+            captured["handler"](14, None)
+
+    def test_guard_and_file_enforce_the_byte_cap_directly(self):
+        os.environ["SB_REDACT_MAX_BYTES"] = "10"
+        with self.assertRaises(agent_redact.LimitExceeded):
+            agent_redact._guarded(len, "x" * 20)
+        with tempfile.TemporaryDirectory() as tmp:
+            target = os.path.join(tmp, "log")
+            with open(target, "w") as handle:
+                handle.write("y" * 50)
+            with self.assertRaises(agent_redact.LimitExceeded):
+                agent_redact.redact_file(target)
+            with open(target) as handle:
+                self.assertEqual(handle.read(), agent_redact.WITHHELD)
+
+    def test_script_runs_as_a_program(self):
+        import subprocess
+        import sys
+        script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "scripts", "lib", "agent_redact.py")
+        done = subprocess.run([sys.executable, script, "--scan"], input=b"password=" + _value("prog", 20).encode(),
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        self.assertEqual((done.returncode, done.stdout), (1, b"assignment line 1\n"))
+
+    def test_bounded_stdin_read(self):
+        os.environ["SB_REDACT_MAX_BYTES"] = "10"
+        stream = io.BytesIO(b"x" * 1000)
+        with self.assertRaises(agent_redact.LimitExceeded):
+            agent_redact.read_bounded(stream)
+        self.assertEqual(stream.tell(), 11)
 
 
 class RedactFileTests(unittest.TestCase):
@@ -477,8 +920,9 @@ class RedactFileTests(unittest.TestCase):
 
     def test_rewrites_in_place_and_keeps_mode(self):
         target = self.path("log")
+        secret = _value("file", 20)
         with open(target, "w") as handle:
-            handle.write("token=abc123\nok\n")
+            handle.write("token=%s\nok\n" % secret)
         os.chmod(target, 0o640)
         self.assertTrue(agent_redact.redact_file(target))
         with open(target) as handle:
@@ -511,22 +955,30 @@ class RedactFileTests(unittest.TestCase):
     def test_failure_cleans_the_temp_file(self):
         target = self.path("log")
         with open(target, "w") as handle:
-            handle.write("token=abc123\n")
+            handle.write("token=%s\n" % _value("fail", 20))
         with mock.patch.object(agent_redact.os, "replace", side_effect=OSError("boom")):
             with self.assertRaises(OSError):
                 agent_redact.redact_file(target)
         self.assertEqual([n for n in os.listdir(self.tmp.name) if n.startswith(".redact.")], [])
 
+    def test_invalid_utf8_bytes_survive(self):
+        target = self.path("bin")
+        with open(target, "wb") as handle:
+            handle.write(b"caf\xe9 token=" + _value("bin", 20).encode() + b"\n")
+        self.assertTrue(agent_redact.redact_file(target))
+        with open(target, "rb") as handle:
+            self.assertEqual(handle.read(), b"caf\xe9 token=[REDACTED]\n")
+
 
 class MainTests(unittest.TestCase):
     def run_main(self, argv, stdin=""):
-        out, err = io.StringIO(), io.StringIO()
-        with mock.patch("sys.stdin", io.StringIO(stdin)), redirect_stdout(out), redirect_stderr(err):
+        out, err = _Std(), io.StringIO()
+        with mock.patch("sys.stdin", _Std(stdin.encode("utf-8"))), mock.patch("sys.stdout", out), redirect_stderr(err):
             rc = agent_redact.main(["agent_redact.py"] + argv)
-        return rc, out.getvalue(), err.getvalue()
+        return rc, out.value(), err.getvalue()
 
     def test_redact_filter(self):
-        rc, out, _ = self.run_main(["--redact"], "token=abc\n")
+        rc, out, _ = self.run_main(["--redact"], "token=%s\n" % _value("main", 20))
         self.assertEqual((rc, out), (0, "token=[REDACTED]\n"))
 
     def test_scan_exit_codes(self):
@@ -539,7 +991,7 @@ class MainTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             target = os.path.join(tmp, "f")
             with open(target, "w") as handle:
-                handle.write("password=abc\n")
+                handle.write("password=%s\n" % _value("rf", 20))
             rc, _, _ = self.run_main(["--redact-file", target])
             self.assertEqual(rc, 0)
             link = os.path.join(tmp, "l")
