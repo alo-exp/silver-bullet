@@ -148,8 +148,8 @@ fi
 state_contents=""
 if [[ -f "$state_file" ]]; then
   # Only what the recorder sealed counts (hooks/lib/state-seal.sh): a state edited by anything else yields nothing.
-  source "$_lib_dir/state-seal.sh"
-  state_contents=$(sb_state_seal_trusted "$state_file")
+  source "$_lib_dir/integrity.sh"
+  state_contents=$(sb_integrity_state_contents "$state_file")
 fi
 
 # ── Detect current git branch (for main-branch exemptions) ───────────────────

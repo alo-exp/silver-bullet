@@ -129,6 +129,9 @@ if [[ -f "$_lib_dir/integrity.sh" ]]; then
     if [[ "$SB_IV_STATUS" != none ]]; then
       required_planning_cfg="$SB_IV_REQUIRED_PLANNING"
       required_planning_devops_cfg="$SB_IV_REQUIRED_PLANNING_DEVOPS"
+      state_file="${SB_IV_STATE_FILE:-$sb_default_state}"
+      state_file="${state_file/#\~/$HOME}"
+      trivial_file="$sb_default_trivial"
     fi
   fi
 fi
@@ -433,13 +436,15 @@ fi
 state_contents=""
 if [[ -f "$state_file" ]]; then
   # Only what the recorder sealed counts (hooks/lib/state-seal.sh): a state edited by anything else yields nothing.
-  source "$lib_dir/state-seal.sh"
-  state_contents=$(sb_state_seal_trusted "$state_file")
+  source "$lib_dir/integrity.sh"
+  state_contents=$(sb_integrity_state_contents "$state_file")
 fi
 
 # HOOK-04: empty state file means no skills were tracked — non-dev session.
 # Fail-open by design: nothing to gate against.
-[[ -z "$state_contents" ]] && exit 0
+# A state file with content that nothing sealed is not an empty one: it is a forged or damaged state, and the
+# floor counts it as having recorded nothing.
+if [[ -z "$state_contents" && ! -s "$state_file" ]]; then exit 0; fi
 
 # Emit block JSON for Stop
 emit_stop_block() {

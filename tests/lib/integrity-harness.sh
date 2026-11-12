@@ -21,10 +21,11 @@ ih_diff() { diff -u --label "a/$3" --label "b/$3" "$1" "$2" || true; }
 
 # ih_project NAME [jq filter]: a baselined project; the state holds one sealed unrelated skill.
 ih_project() {
+  SB_CONTRACT_UNLOCK_WINDOW=7200
   mkproj "$1" ".skills.all_tracked=[\"inst-a\",\"inst-b\"] | ${2:-.}"
   PROJ="$(cd "$PROJ" && pwd -P)"
   export PROJ
-  rm -rf "$SD/integrity-$(printf '%s' "$PROJ" | cksum | cut -d' ' -f1).rec"* "$SD/trivial" "$SD/contract-unlock" "$SD/seal-events.log" "$STATE" "$STATE.seal" "$STATE.hwm"
+  rm -rf "$SD/integrity-$(printf '%s' "$PROJ" | cksum | cut -d' ' -f1).rec"* "$SD/trivial" "$SD/unlock-hint" "$SD/seal-events.log" "$STATE" "$STATE.seal" "$STATE.hwm"
   printf '{}\n' >"$PROJ/.silver-bullet.prompt.json"
   printf 'rules\n' >"$PROJ/CLAUDE.md"
   printf 'agents\n' >"$PROJ/AGENTS.md"
@@ -95,9 +96,18 @@ ih_session_start() { # SOURCE
     | (cd "$PROJ" && SILVER_BULLET_PROJECT_ROOT="$PROJ" bash "$TL_REPO_ROOT/hooks/session-start") >/dev/null 2>&1 || true
 }
 
+ih_session_start_out() { # SOURCE → the hook's output
+  mkdir -p "$SB_RUNTIME_HOME_ROOT/plugins/cache/alo-labs/silver-bullet/test"
+  printf '{"hook_event_name":"SessionStart","source":"%s"}' "${1:-startup}" \
+    | (cd "$PROJ" && SILVER_BULLET_PROJECT_ROOT="$PROJ" bash "$TL_REPO_ROOT/hooks/session-start") 2>/dev/null || true
+}
+ih_status() { sb_integrity_forget; sb_integrity_verify "$PROJ" ""; printf '%s' "$SB_IV_STATUS"; }
+
 ih_hook() { # HOOK JSON → output in TL_OUT
   tl_run_stdin "$2" bash -c 'cd "$1" && exec bash "$2"' _ "$PROJ" "$TL_REPO_ROOT/hooks/$1"
 }
 
-ih_diverged() { sb_integrity_verify "$PROJ" ""; printf '%s' "$SB_IV_DIVERGED"; }
+# ih_lapse: the unlock window of the running skill is over (the entries it refreshed stay accepted).
+ih_lapse() { SB_CONTRACT_UNLOCK_WINDOW=-1; sb_integrity_forget; }
+ih_diverged() { sb_integrity_forget; sb_integrity_verify "$PROJ" ""; printf '%s' "$SB_IV_DIVERGED"; }
 not_deny() { if [[ "$(decision)" == deny ]]; then echo deny; else echo ok; fi; }

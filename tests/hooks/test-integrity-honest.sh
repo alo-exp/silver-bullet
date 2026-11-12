@@ -37,7 +37,7 @@ printf 'new rules\n' >"$PROJ/CLAUDE.md"
 run_dc "$(edit_json "$PROJ/.silver-bullet.json" Write PostToolUse)"
 run_dc "$(edit_json "$PROJ/silver-bullet.md" Write PostToolUse)"
 run_dc "$(edit_json "$PROJ/CLAUDE.md" Write PostToolUse)"
-rm -f "$SD/contract-unlock"
+ih_lapse
 assert_eq "afterwards the record follows what the skill wrote" "" "$(ih_diverged)"
 planned
 ih_edit
@@ -48,7 +48,7 @@ ih_project h4
 ih_rec silver-add
 jq '.skills.required_deploy=["inst-a","inst-b","extra"]' "$PROJ/.silver-bullet.json" >"$PROJ/t.json" && mv "$PROJ/t.json" "$PROJ/.silver-bullet.json"
 run_dc "$(bash_json 'jq ... > t.json && mv t.json .silver-bullet.json' PostToolUse)"
-rm -f "$SD/contract-unlock"
+ih_lapse
 sb_integrity_verify "$PROJ" ""
 assert_eq "silver-add: no divergence once the skill is done" "" "$SB_IV_DIVERGED"
 assert_eq "silver-add: the new deploy list is the recorded one" "inst-a inst-b extra" "$SB_IV_REQUIRED_DEPLOY"
@@ -146,9 +146,9 @@ assert_eq "an MCP write to src after planning" "ok" "$(not_deny)"
 
 # 24b. an MCP write is judged by its name when python3 is missing
 ih_project h18b
-NOPYH="$(tl_path_without python3)"
+NOPYH="$(tl_path_without python3 openssl)"
 run_dc "$(jq -cn --arg p "$PROJ/src/a.js" '{hook_event_name:"PreToolUse",tool_name:"mcp__fs__write_file",tool_input:{path:$p,content:"x"}}')" PATH="$NOPYH"
-assert_contains "without python3 a keyed record cannot be verified: the gate says so and stops" "$(message)" "python3 is needed"
+assert_contains "without python3 a keyed record cannot be verified: the gate says so and stops" "$(message)" "openssl or python3 is needed"
 
 # 25. not an SB project
 RUN_DIR="$NOCFG" run_dc "$(edit_json "$NOCFG/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
@@ -180,7 +180,7 @@ ih_project h22
 ih_rec silver-update
 printf '# updated\n' >"$PROJ/silver-bullet.md"
 run_dc "$(edit_json "$PROJ/silver-bullet.md" Write PostToolUse)"
-rm -f "$SD/contract-unlock"
+ih_lapse
 assert_eq "silver-update rewrites silver-bullet.md" "" "$(ih_diverged)"
 
 # 32. the unlock window follows a Bash rewrite done by a contract skill
@@ -188,7 +188,7 @@ ih_project h23
 ih_rec silver-devops
 jq '.skills.required_deploy=["inst-a"]' "$PROJ/.silver-bullet.json" >"$PROJ/t.json" && mv "$PROJ/t.json" "$PROJ/.silver-bullet.json"
 run_dc "$(bash_json 'jq ... > t.json && mv t.json .silver-bullet.json' PostToolUse)"
-rm -f "$SD/contract-unlock"
+ih_lapse
 assert_eq "silver-devops rewrites the JSON through Bash during its window" "" "$(ih_diverged)"
 
 # 33. devops workflow lists
@@ -206,13 +206,59 @@ assert_eq "each project has its own record" "ok" "$SB_IV_STATUS"
 sb_integrity_verify "$PROJ" ""
 assert_eq "second project" "ok" "$SB_IV_STATUS"
 
-# 35. a legacy trivial marker is honoured where no record exists yet (a fresh install)
+# 35. a project no session has baselined is unbaselined: strict, and it says to start a session
 ih_project h27
 rm -f "$SD"/integrity-*
 touch "$SD/trivial"
 ih_edit
-assert_eq "before the first session start the marker still works" "ok" "$(not_deny)"
+assert_eq "before the first session start there is no marker bypass" "deny" "$(decision)"
+assert_contains "and the message says what to do" "$(message)" "NOT BASELINED"
+assert_contains "restart the session" "$(message)" "Restart the session"
+# an install that never made its key keeps the legacy marker (nothing was ever recorded)
+rm -f "$SD/seal.key"
+touch "$SD/trivial"
+ih_edit
+assert_eq "an install without a key honours the marker" "ok" "$(not_deny)"
 rm -f "$SD/trivial"
+
+# 36. a project nobody baselined (new worktree, fresh clone) is recorded by its first session start
+ih_project h28
+rm -f "$SD"/integrity-*
+ih_edit
+assert_eq "unbaselined: source edits stop" "deny" "$(decision)"
+ih_session_start startup
+assert_eq "after a session start it is verified" "ok" "$(ih_status)"
+planned
+ih_edit
+assert_eq "and edits follow the planning floor again" "ok" "$(not_deny)"
+
+# 37. the user edits the config in an editor: it is named, git checkout puts it right, nothing else is needed
+ih_project h29
+printf '%s\n' "$CFG_NEW" >"$PROJ/.silver-bullet.json"
+ih_edit
+assert_contains "an editor change is named" "$(message)" "ENFORCEMENT CONTRACT CHANGED"
+git -C "$PROJ" checkout -- .silver-bullet.json
+assert_eq "git checkout of the file puts the contract right" "" "$(ih_diverged)"
+planned
+ih_edit
+assert_eq "and the edit passes" "ok" "$(not_deny)"
+
+# 38. the same change accepted by restarting the session: said in the banner and in the log
+ih_project h30
+printf '%s\n' "$CFG_NEW" >"$PROJ/.silver-bullet.json"
+OUT="$(ih_session_start_out startup)"
+assert_contains "the session start banner names the artifact" "$OUT" "SB INTEGRITY"
+assert_contains "and how to revert it" "$OUT" "git diff"
+assert_contains "the log says what was re-baselined" "$(cat "$SD/seal-events.log")" "integrity re-baselined at session start over: config"
+assert_eq "the project verifies afterwards" "" "$(ih_diverged)"
+# a session start over a clean project says nothing about integrity
+OUT="$(ih_session_start_out resume)"
+assert_not_contains "a clean restart is silent about integrity" "$OUT" "SB INTEGRITY"
+# a deleted record
+rm -f "$SD"/integrity-*.rec
+OUT="$(ih_session_start_out startup)"
+assert_contains "a session start over a deleted record says so" "$OUT" "SB INTEGRITY"
+assert_eq "and records the project again" "ok" "$(ih_status)"
 
 assert_eq "the honest corpus has at least 30 rows" "ok" "$([[ $(grep -c '^assert_\|^ok_cmd\|^  ok_cmd' "$0") -ge 30 ]] && echo ok || echo few)"
 tl_results

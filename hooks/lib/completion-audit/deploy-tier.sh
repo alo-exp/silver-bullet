@@ -217,7 +217,11 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
     release_defaults="${DEVOPS_DEFAULT_RELEASE_REQUIRED:-silver-create-release}"
   fi
   release_cfg=""
-  if command -v jq >/dev/null 2>&1 && [[ -f "$config_file" ]]; then
+  if [[ "${SB_IV_STATUS:-none}" != none ]]; then
+    # The recorded list, never the live config's (hooks/lib/integrity.sh).
+    release_cfg="$SB_IV_REQUIRED_RELEASE"
+    if [[ "$delivery_uses_devops_deploy" == true ]]; then release_cfg="${SB_IV_REQUIRED_RELEASE_DEVOPS:-$SB_IV_REQUIRED_RELEASE}"; fi
+  elif command -v jq >/dev/null 2>&1 && [[ -f "$config_file" ]]; then
     if [[ "$delivery_uses_devops_deploy" == true ]]; then
       release_cfg=$(jq -r '(.skills.required_release_devops // .skills.required_release // []) | join(" ")' "$config_file" 2>/dev/null || true)
     else

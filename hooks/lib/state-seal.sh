@@ -41,15 +41,27 @@ _sb_state_seal_log() { # STATE MESSAGE
 
 _sb_state_seal_key_file() { printf '%s/seal.key' "$(_sb_state_seal_dir "$1")"; }
 
+# Keyed digests need openssl or python3 (openssl is an order of magnitude cheaper to start).
+_sb_state_seal_can_hmac() { command -v openssl >/dev/null 2>&1 || command -v python3 >/dev/null 2>&1; }
+
+# A live install is one that has made its key: the first session start or recorded skill does. An
+# install without a key has never run a session, so there is nothing to forge yet; with one, a
+# state nobody sealed is not trusted.
+_sb_state_seal_live() { [[ -f "$(_sb_state_seal_key_file "$1")" ]]; }
+
 # Create the per-install key (random, 0600, atomic: a hard link never replaces an existing key).
 _sb_state_seal_ensure_key() {
   local key tmp
   key="$(_sb_state_seal_key_file "$1")"
   [[ ! -L "$key" ]] || return 1
   [[ -f "$key" ]] && return 0
-  command -v python3 >/dev/null 2>&1 || return 1
+  _sb_state_seal_can_hmac || return 1
   tmp="${key}.$$"
-  (umask 077 && python3 -c 'import os,sys;sys.stdout.write(os.urandom(32).hex())' >"$tmp") 2>/dev/null || { rm -f -- "$tmp"; return 1; }
+  if command -v openssl >/dev/null 2>&1; then
+    (umask 077 && openssl rand -hex 32 >"$tmp") 2>/dev/null || { rm -f -- "$tmp"; return 1; }
+  else
+    (umask 077 && python3 -c 'import os,sys;sys.stdout.write(os.urandom(32).hex())' >"$tmp") 2>/dev/null || { rm -f -- "$tmp"; return 1; }
+  fi
   if ln "$tmp" "$key" 2>/dev/null; then :; fi
   rm -f -- "$tmp"
   [[ -f "$key" ]]
@@ -61,7 +73,11 @@ _sb_state_seal_digest() { # KIND STATE
   if [[ "$1" == hmac ]]; then
     key="$(_sb_state_seal_key_file "$2")"
     [[ -f "$key" && ! -L "$key" ]] || return 1
-    python3 -c 'import hmac,hashlib,sys;k=open(sys.argv[1],"rb").read().strip();sys.stdout.write(hmac.new(k,sys.stdin.buffer.read(),hashlib.sha256).hexdigest())' "$key" 2>/dev/null
+    if command -v openssl >/dev/null 2>&1; then
+      openssl dgst -sha256 -hmac "$(tr -d '[:space:]' <"$key")" 2>/dev/null | awk '{ print $NF }'
+    else
+      python3 -c 'import hmac,hashlib,sys;k=open(sys.argv[1],"rb").read().strip();sys.stdout.write(hmac.new(k,sys.stdin.buffer.read(),hashlib.sha256).hexdigest())' "$key" 2>/dev/null
+    fi
   else
     cksum | tr ' ' '-'
   fi
@@ -100,7 +116,7 @@ sb_state_seal_write() {
   if _sb_state_seal_ensure_key "$state"; then
     kind=hmac
   else
-    _sb_state_seal_log "$state" "warning: the keyed seal is unavailable (python3 or the key); sealing with a plain checksum"
+    _sb_state_seal_log "$state" "warning: the keyed seal is unavailable (openssl or python3, or the key); sealing with a plain checksum"
   fi
   bsum="$(_sb_state_seal_branch_sum "$state")"
   digest="$(_sb_state_seal_message "$state" "$n" "$c" "$bsum" | _sb_state_seal_digest "$kind" "$state")" || return 0
@@ -124,7 +140,11 @@ _sb_state_seal_status() {
   hwm="$(_sb_state_seal_hwm_file "$state")"
   if [[ -L "$seal" ]]; then _SB_SEAL_STATE=tampered; _SB_SEAL_WHY="the seal is a symbolic link"; return 0; fi
   if [[ ! -f "$seal" ]]; then
-    if [[ -s "$hwm" ]]; then _SB_SEAL_STATE=tampered; _SB_SEAL_WHY="the seal was deleted"; fi
+    if [[ -s "$hwm" ]]; then
+      _SB_SEAL_STATE=tampered; _SB_SEAL_WHY="the seal was deleted"
+    elif [[ -s "$state" ]] && _sb_state_seal_live "$state"; then
+      _SB_SEAL_STATE=tampered; _SB_SEAL_WHY="the state has no seal"
+    fi
     return 0
   fi
   { read -r version; read -r kind; read -r c; read -r n; read -r bsum; read -r digest; } <"$seal" 2>/dev/null || true
@@ -133,7 +153,7 @@ _sb_state_seal_status() {
   fi
   # A plain checksum is what a seal made without python3 holds. Where keyed seals are possible
   # (python3 or a key exists) an unkeyed one is a downgrade, not a fallback.
-  if [[ "$kind" != hmac ]] && { command -v python3 >/dev/null 2>&1 || [[ -f "$(_sb_state_seal_key_file "$state")" ]]; }; then
+  if [[ "$kind" != hmac ]] && { _sb_state_seal_can_hmac || _sb_state_seal_live "$state"; }; then
     _SB_SEAL_STATE=tampered; _SB_SEAL_WHY="the seal is unkeyed although keyed seals are available"; return 0
   fi
   lines="$(wc -l <"$state" | tr -d ' ')"

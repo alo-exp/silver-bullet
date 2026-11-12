@@ -69,7 +69,6 @@ if [[ -f "$_lib_dir/integrity.sh" ]]; then
 fi
 if ! declare -F sb_contract_is_writer >/dev/null 2>&1; then
   # Without the libraries there is nothing to keep in step.
-  sb_contract_unlock_write() { :; }
   sb_contract_is_writer() { return 1; }
 fi
 
@@ -379,11 +378,11 @@ for raw in "${skills_to_record[@]}"; do
   fi
 
   completed_skills_to_mark+=("$skill")
-  sb_contract_unlock_write "$skill"
   if sb_contract_is_writer "$skill"; then
-    # A contract-writing skill starts: the record follows the contract it is about to change.
-    # shellcheck disable=SC2046  # the tags are a word list
-    sb_integrity_baseline "$(sb_integrity_root "$PWD")" entry $(sb_contract_unlock_tags)
+    # A contract-writing skill starts: an unlock entry of the verified record (nothing is written
+    # when the project has no valid record), and a hint that wakes dev-cycle-check's PostToolUse up.
+    sb_integrity_baseline "$(sb_integrity_root "$PWD")" unlock "$skill"
+    if : 2>/dev/null >"${SB_STATE_DIR}/unlock-hint"; then :; fi
   fi
 
   # --- Record completed skill invocation (no duplicates) ---
