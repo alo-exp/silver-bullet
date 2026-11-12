@@ -1,63 +1,47 @@
 # shellcheck shell=bash
-# Silver Bullet — the window in which a skill that legitimately rewrites the enforcement contract
-# (.silver-bullet.json, silver-bullet.md) may do so through the agent.
+# Silver Bullet — the skills that legitimately rewrite the enforcement contract, and what an unlock covers.
 #
-# The recorder (record-skill.sh) writes ${SB_RUNTIME_STATE_DIR}/contract-unlock when the host
-# invokes one of these skills; the gates read it. Naming a skill in a command, or reading its
-# SKILL.md, never unlocks anything. The unlock lasts SB_CONTRACT_UNLOCK_WINDOW seconds (default
-# two hours) from the most recent invocation, and silver-add / silver-devops unlock the JSON
-# configuration only, never silver-bullet.md. tests/hooks/test-planning-floor-lib.sh checks the skills
-# directory for contract writers outside this list.
+# The unlock is an ENTRY of the keyed integrity record (hooks/lib/integrity.sh): record-skill.sh
+# writes it when the host invokes one of these skills, it lasts SB_CONTRACT_UNLOCK_WINDOW seconds
+# (default two hours), and the gates read it from the verified record (SB_IV_UNLOCK_SKILL). A plain
+# file in the state directory, or a skill merely named in a command, unlocks nothing.
 #
-#   sb_contract_unlock_write SKILL     record SKILL's invocation when it is a contract writer
-#   sb_contract_unlocked [json|md]     a writer skill ran recently enough (json: .silver-bullet*.json,
-#                                      md: silver-bullet.md)
+# silver-add and silver-devops cover the JSON configuration only; the others also cover
+# silver-bullet.md and the instruction files. tests/hooks/test-planning-floor-lib.sh checks the
+# skills directory for contract writers outside this list.
+#
+#   sb_contract_is_writer SKILL        SKILL is one of the contract-writing skills
+#   sb_contract_skill_tags SKILL       the integrity tags SKILL may change
+#   sb_contract_unlocked [json|md]     the verified record says a writer skill is running (json: the
+#                                      JSON configuration, md: silver-bullet.md)
+#   sb_contract_unlock_tags            the tags the unlock in force covers
 
 SB_PF_CONTRACT_WRITER_SKILLS="silver-init silver-update silver-add silver-devops silver-migrate"
 SB_CONTRACT_JSON_ONLY_SKILLS="silver-add silver-devops"
 SB_CONTRACT_UNLOCK_WINDOW="${SB_CONTRACT_UNLOCK_WINDOW:-7200}"
-
-sb_contract_unlock_file() { printf '%s/contract-unlock' "${SB_RUNTIME_STATE_DIR:-$HOME/.claude/.silver-bullet}"; }
-
-# The integrity tags the unlock in force covers (hooks/lib/integrity.sh): the JSON configuration for
-# every writer, silver-bullet.md and the instruction files only for the full writers.
-sb_contract_unlock_tags() {
-  if sb_contract_unlocked md; then
-    printf 'config prompt md instr:CLAUDE.md instr:AGENTS.md'
-  elif sb_contract_unlocked json; then
-    printf 'config prompt'
-  fi
-  return 0
-}
 
 sb_contract_is_writer() {
   case " $SB_PF_CONTRACT_WRITER_SKILLS " in *" ${1:-} "*) return 0 ;; esac
   return 1
 }
 
-sb_contract_unlock_write() {
-  local skill="${1:-}" file tmp
-  case " $SB_PF_CONTRACT_WRITER_SKILLS " in *" $skill "*) ;; *) return 0 ;; esac
-  file="$(sb_contract_unlock_file)"
-  [[ ! -L "$file" ]] || return 0
-  tmp="${file}.$$"
-  if printf '%s %s\n' "$skill" "$(date +%s)" 2>/dev/null >"$tmp"; then mv -f -- "$tmp" "$file"; fi
-  rm -f -- "$tmp"
-  return 0
+sb_contract_skill_tags() { # SKILL
+  case " $SB_CONTRACT_JSON_ONLY_SKILLS " in
+    *" ${1:-} "*) printf 'config prompt' ;;
+    *) printf 'config prompt md instr:CLAUDE.md instr:AGENTS.md' ;;
+  esac
 }
 
 sb_contract_unlocked() {
-  local kind="${1:-md}" file skill when now
-  file="$(sb_contract_unlock_file)"
-  [[ -f "$file" && ! -L "$file" ]] || return 1
-  read -r skill when <"$file" 2>/dev/null || return 1
-  [[ "$when" =~ ^[0-9]+$ ]] || return 1
-  case " $SB_PF_CONTRACT_WRITER_SKILLS " in *" $skill "*) ;; *) return 1 ;; esac
-  now="$(date +%s)"
-  [[ "$now" -ge "$when" && $((now - when)) -le "$SB_CONTRACT_UNLOCK_WINDOW" ]] || return 1
-  case "$kind" in
-    json) ;;
-    *) case " $SB_CONTRACT_JSON_ONLY_SKILLS " in *" $skill "*) return 1 ;; esac ;;
-  esac
+  local kind="${1:-md}" skill="${SB_IV_UNLOCK_SKILL:-}"
+  [[ -n "$skill" ]] || return 1
+  if [[ "$kind" != json ]]; then
+    case " $SB_CONTRACT_JSON_ONLY_SKILLS " in *" $skill "*) return 1 ;; esac
+  fi
+  return 0
+}
+
+sb_contract_unlock_tags() {
+  [[ -z "${SB_IV_UNLOCK_SKILL:-}" ]] || sb_contract_skill_tags "$SB_IV_UNLOCK_SKILL"
   return 0
 }

@@ -88,9 +88,12 @@ fi
 staged_summaries=$(printf '%s\n' "$changed_files" | grep -E '^\.planning/phases/[0-9]+(\.[0-9]+)?-[^/]+/[0-9]+(\.[0-9]+)?-[0-9]+-SUMMARY\.md$' | sort -u || true)
 [[ -z "$staged_summaries" ]] && exit 0
 
-# ROADMAP.md must exist to perform the check
+# A phase SUMMARY.md is staged, so a roadmap exists: a missing ROADMAP.md is a violation, not a pass.
 roadmap_file="$project_root/.planning/ROADMAP.md"
 if [[ ! -f "$roadmap_file" ]]; then
+  sb_emit_hook_decision PreToolUse deny "ROADMAP FRESHNESS VIOLATION
+
+A phase SUMMARY.md is part of this commit but .planning/ROADMAP.md is missing. Restore it (git checkout -- .planning/ROADMAP.md) or recreate it through the owning skill (/sb:phase), then commit again."
   exit 0
 fi
 

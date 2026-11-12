@@ -167,6 +167,10 @@ if [[ -f "$_lib_dir/integrity.sh" ]]; then
       required_deploy_cfg="$SB_IV_REQUIRED_DEPLOY"
       # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
       required_deploy_devops_cfg="$SB_IV_REQUIRED_DEPLOY_DEVOPS"
+      # The state file and the trivial marker are not the live config's to name either.
+      state_file="${SB_IV_STATE_FILE:-$sb_default_state}"
+      state_file="${state_file/#\~/$HOME}"
+      trivial_file="$sb_default_trivial"
     fi
   fi
 fi
@@ -192,10 +196,9 @@ if ! sb_runtime_path_is_state_scoped "$verify_tests_state_file"; then
   verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
 fi
 
-# ── Trivial bypass (reject symlinks) ─────────────────────────────────────────
-if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
-  exit 0
-fi
+# ── Trivial bypass (reject symlinks; the default marker only counts while the record blesses it) ──
+source "$_lib_dir/trivial-bypass.sh"
+sb_trivial_bypass "$trivial_file"
 # ── Detect current git branch ─────────────────────────────────────────────────
 current_branch=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
@@ -214,8 +217,8 @@ state_contents=""
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/*.sh
 if [[ -f "$state_file" ]]; then
   # Only what the recorder sealed counts (hooks/lib/state-seal.sh): a state edited by anything else yields nothing.
-  source "$_lib_dir/state-seal.sh"
-  state_contents=$(sb_state_seal_trusted "$state_file")
+  source "$_lib_dir/integrity.sh"
+  state_contents=$(sb_integrity_state_contents "$state_file")
 fi
 
 # shellcheck disable=SC2154  # is_intermediate is set by ca_classify in lib/completion-audit/classify.sh

@@ -62,7 +62,7 @@ for sk in silver-init silver-update silver-add silver-devops silver-migrate; do
   run_dc "$(edit_json "$PROJ/.silver-bullet.json" Edit)"
   assert_eq "$sk unlocks Edit of the config" "none" "$(decision)"
 done
-rm -f "$SD/contract-unlock"
+unlock_clear
 state inst-a silver-plan silver-add
 dc_cmd "$CFGW"
 assert_contains "an unrelated recorded skill does not unlock" "$(message)" "ENFORCEMENT CONTRACT PROTECTED"
@@ -106,7 +106,7 @@ assert_eq "a deleted seal is not trusted" "deny" "$(decision)"
 assert_contains "and the event is logged" "$(cat "$SD/seal-events.log")" "the seal was deleted"
 rm -f "$STATE.seal" "$STATE.hwm"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
-assert_eq "a state that never had a seal (older installs, tests) is read as written" "allow" "$(decision)"
+assert_eq "a state with no seal and no counter on a live install is not trusted" "deny" "$(decision)"
 
 # ── PostToolUse costs nothing without a test record (minor 4) ───────────────────────────────
 mkproj post2

@@ -15,6 +15,7 @@ export SILVER_BULLET_TEST_HOOK_ENFORCED=1
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 HOOK="$REPO_ROOT/hooks/dev-cycle-check.sh"
+source "$REPO_ROOT/hooks/lib/integrity.sh"
 WORKFLOWS_SCRIPT="$REPO_ROOT/scripts/workflows.sh"
 CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 PASS=0
@@ -41,7 +42,7 @@ setup() {
   TMPBRANCH_FILE="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   TMPFILE="${TMPDIR_TEST}/src/app.js"
-  rm -f "$TMPSTATE" "$TMPSTATE.seal" "$TMPSTATE.hwm" "${SB_TEST_DIR}/contract-unlock"
+  rm -f "$TMPSTATE" "$TMPSTATE.seal" "$TMPSTATE.hwm" "${SB_TEST_DIR}/unlock-hint" "${SB_TEST_DIR}/seal.key" "${SB_TEST_DIR}"/integrity-* "${SB_TEST_DIR}/trivial"
   rm -f "$TMPBRANCH_FILE"
   rm -f "$VERIFY_TESTS_FILE"
   cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
@@ -386,7 +387,7 @@ teardown
 # Test 4ab: Stage A — scaffold/config write with /src/ literal stays outside source gate
 setup
 # sb:init owns the config files: with it recorded the write is its own business (R2-04)
-echo "silver-init" > "$TMPSTATE"; printf 'silver-init %s\n' "$(date +%s)" > "${SB_TEST_DIR}/contract-unlock"
+echo "silver-init" > "$TMPSTATE"; sb_integrity_baseline "$(cd "$TMPDIR_TEST" && pwd -P)" session; sb_integrity_baseline "$(cd "$TMPDIR_TEST" && pwd -P)" unlock silver-init; sb_integrity_forget
 out=$(run_hook_bash "PreToolUse" "cat > .silver-bullet.json <<'EOF'
 {\"project\":{\"src_pattern\":\"/src/\"}}
 EOF")
@@ -852,7 +853,7 @@ teardown
 
 # Test 19c: cp from plugin cache template into project workspace is ALLOWED (#227)
 setup
-echo "silver-init" > "$TMPSTATE"; printf 'silver-init %s\n' "$(date +%s)" > "${SB_TEST_DIR}/contract-unlock"
+echo "silver-init" > "$TMPSTATE"; sb_integrity_baseline "$(cd "$TMPDIR_TEST" && pwd -P)" session; sb_integrity_baseline "$(cd "$TMPDIR_TEST" && pwd -P)" unlock silver-init; sb_integrity_forget
 out=$(run_hook_bash "PreToolUse" "cp ${PLUGIN_CACHE_PATH}/some-plugin/template.md ${TMPDIR_TEST}/silver-bullet.md")
 assert_passes "F-07: cp from plugin cache into project workspace is allowed (sb:init copies the template)" "$out"
 teardown

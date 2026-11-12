@@ -71,7 +71,10 @@ rm -f "$S.seal"
 assert_eq "a deleted seal is not trusted while the counter exists" "" "$(sb_state_seal_trusted "$S")"
 assert_contains "and logged" "$(logged)" "the seal was deleted"
 rm -f "$S.hwm"
-assert_eq "with neither (an older install) it is read as written" "a
+assert_eq "no seal and no counter on a live install: not trusted" "" "$(sb_state_seal_trusted "$S")"
+assert_contains "and logged" "$(logged)" "the state has no seal"
+rm -f "$SD/seal.key"
+assert_eq "an install that never made its key reads the state as written" "a
 b" "$(sb_state_seal_trusted "$S")"
 
 # a rollback and a copied pair
@@ -154,7 +157,7 @@ rm -f "$LOG"
 # no python3: a plain checksum, said so
 fresh
 printf 'a\nb\n' >"$S"
-NOPY="$(tl_path_without python3)"
+NOPY="$(tl_path_without python3 openssl)"
 PATH="$NOPY" sb_state_seal_write "$S"
 assert_eq "without python3 the seal is a plain checksum" "cksum" "$(sed -n 2p "$S.seal")"
 assert_contains "with a logged warning" "$(logged)" "plain checksum"
@@ -189,11 +192,10 @@ assert_eq "without a runtime state directory the state's own is used" "/x/y" "$(
 
 # a key that cannot be made
 fresh
-REALPY="$(command -v python3)"
-tl_stub python3 "case \"\$*\" in *urandom*) exit 1 ;; esac; exec \"$REALPY\" \"\$@\""
+tl_stub openssl 'exit 1'
 printf 'a\n' >"$S"
 sb_state_seal_write "$S"
-rm -f "$TL_BIN/python3"
+rm -f "$TL_BIN/openssl"
 assert_eq "no key could be made: a plain checksum" "cksum" "$(sed -n 2p "$S.seal")"
 assert_file_absent "and no key file is left" "$SD/seal.key"
 assert_file_absent "nor a temporary one" "$SD/seal.key.$$"
@@ -228,7 +230,12 @@ fresh
 printf 'a\n' >"$S"
 PATH="$NOPY" sb_state_seal_write "$S"
 assert_eq "a checksum seal with neither python3 nor a key still verifies" "a" "$(PATH="$NOPY" sb_state_seal_trusted "$S")"
-assert_eq "but not once python3 is back" "" "$(sb_state_seal_trusted "$S")"
+assert_eq "but not once a digest tool is back" "" "$(sb_state_seal_trusted "$S")"
+fresh
+printf 'a\n' >"$S"
+PATH="$(tl_path_without openssl)" sb_state_seal_write "$S"
+assert_eq "python3 alone seals with a key" "hmac" "$(sed -n 2p "$S.seal")"
+assert_eq "and openssl reads it" "a" "$(sb_state_seal_trusted "$S")"
 
 # the lock
 fresh

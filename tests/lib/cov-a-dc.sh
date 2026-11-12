@@ -35,11 +35,30 @@ mkproj() {
       skills:{required_planning:[\"inst-a\"], required_deploy:[\"inst-a\",\"inst-b\"]}} | ${2:-.}" >"$PROJ/.silver-bullet.json"
   : >"$STATE"
   printf 'feature/test\n' >"$BRANCHF"
-  rm -f "$SILVER_BULLET_VERIFY_TESTS_STATE_FILE" "$SB_RUNTIME_STATE_DIR/small-edit-budget" "$SB_RUNTIME_STATE_DIR/contract-unlock" "${STATE}.seal" "${STATE}.hwm"
+  rm -f "$SILVER_BULLET_VERIFY_TESTS_STATE_FILE" "$SB_RUNTIME_STATE_DIR/small-edit-budget" "$SB_RUNTIME_STATE_DIR/unlock-hint" "${STATE}.seal" "${STATE}.hwm"
+  # Once the install has made its key every project needs its record (hooks/lib/integrity.sh).
+  if [[ -f "$SB_RUNTIME_STATE_DIR/seal.key" ]]; then sb_integrity_baseline "$(cd "$PROJ" && pwd -P)" session; fi
 }
-# unlock SKILL [EPOCH]: the record the recorder leaves when a contract-writing skill runs.
-unlock() { printf '%s %s\n' "$1" "${2:-$(date +%s)}" >"$SB_RUNTIME_STATE_DIR/contract-unlock"; }
-state() { printf '%s\n' "$@" >"$STATE"; }
+# unlock SKILL: the unlock entry the recorder leaves in the project's record when a contract-writing
+# skill runs (the project is baselined first when it has no record yet).
+source "$TL_REPO_ROOT/hooks/lib/integrity.sh"
+unlock() {
+  local root
+  root="$(cd "$PROJ" && pwd -P)"
+  [[ -f "$(_sb_iv_rec_file "$root")" ]] || sb_integrity_baseline "$root" session
+  sb_integrity_baseline "$root" unlock "$1"
+  sb_integrity_forget
+}
+# unlock_clear: the unlock is gone (a session start re-baselined the project).
+unlock_clear() {
+  sb_integrity_baseline "$(cd "$PROJ" && pwd -P)" session
+  sb_integrity_forget
+}
+# state SKILL...: the recorded skills (sealed once the install has a key, like the recorder does).
+state() {
+  printf '%s\n' "$@" >"$STATE"
+  if [[ -f "$SB_RUNTIME_STATE_DIR/seal.key" ]]; then sb_state_seal_write "$STATE"; fi
+}
 
 # run_dc <json> [env...]: run the hook in $PROJ.
 run_dc() {

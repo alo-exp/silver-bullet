@@ -292,7 +292,7 @@ elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branc
   # trigger a wipe — that was the v0.27.x mid-session state-loss path.
   SB_BRANCH_RESET_BANNER="⚠️ SB: git scope changed (${stored_branch}@${stored_git_toplevel:-?} → ${current_branch}@${current_git_toplevel:-?}). Skill state was reset — re-run planning/quality-gates for this branch before delivery."
   sb_safe_write "$state_file"
-  rm -f -- "$state_file" "${state_file}.seal" "${state_file}.hwm" "${SB_STATE_DIR}/contract-unlock" 2>/dev/null || true
+  rm -f -- "$state_file" "${state_file}.seal" "${state_file}.hwm" "${SB_STATE_DIR}/unlock-hint" 2>/dev/null || true
   rm -f -- "${SB_STATE_DIR}/orchestrator.json" \
         "${SB_STATE_DIR}/orchestrator-directive.json" \
         "${SB_STATE_DIR}/orchestrator-worker-active.json" \
@@ -648,7 +648,23 @@ fi
 if [[ "$sb_should_mutate" == true && -n "$sb_project_root" && -f "$_lib_dir/integrity.sh" ]]; then
   # shellcheck source=lib/integrity.sh
   source "$_lib_dir/integrity.sh"
-  sb_integrity_baseline "$(cd "$sb_project_root" && pwd -P)" session
+  sb_iv_root="$(cd "$sb_project_root" && pwd -P)"
+  # Recording what is there now blesses it, so say what changed since the last record: the user
+  # sees it in the session's first message and in seal-events.log (hooks/lib/integrity.sh).
+  sb_integrity_verify "$sb_iv_root" ""
+  sb_iv_changed=""
+  for sb_iv_tag in $SB_IV_DIVERGED; do
+    case "$sb_iv_tag" in config | md | prompt | record) sb_iv_changed="${sb_iv_changed:+$sb_iv_changed, }$sb_iv_tag" ;; esac
+  done
+  if [[ "$SB_IV_STATUS" == ok && -n "$sb_iv_changed" ]] || [[ "$SB_IV_STATUS" == untrusted ]]; then
+    _sb_state_seal_log "${SB_STATE_DIR}/state" "integrity re-baselined at session start over: ${sb_iv_changed:-the record}${SB_IV_WHY:+ ($SB_IV_WHY)}"
+    combined="${combined:+$combined
+
+---
+
+}⚠️ SB INTEGRITY — since the last record of this project, ${sb_iv_changed:-the integrity record} changed outside a sanctioned writer${SB_IV_WHY:+ ($SB_IV_WHY)}. It is recorded as it is now. If you did not change it, revert it with git (git diff shows the change)."
+  fi
+  sb_integrity_baseline "$sb_iv_root" session
 fi
 
 # Mark session rules injected (prompt-reminder uses compact ref instead of full re-injection).

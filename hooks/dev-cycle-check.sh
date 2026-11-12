@@ -85,7 +85,7 @@ main() {
     marker_early="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-${SB_RUNTIME_STATE_DIR}/verify-tests-state}"
     sb_runtime_path_is_state_scoped "$marker_early" || marker_early="${SB_RUNTIME_STATE_DIR}/verify-tests-state"
     post_work=false
-    [[ -e "$marker_early" || -e "${SB_RUNTIME_STATE_DIR}/contract-unlock" || -e "${SB_RUNTIME_STATE_DIR}/trivial" || -L "${SB_RUNTIME_STATE_DIR}/trivial" ]] && post_work=true
+    [[ -e "$marker_early" || -e "${SB_RUNTIME_STATE_DIR}/unlock-hint" || -e "${SB_RUNTIME_STATE_DIR}/trivial" || -L "${SB_RUNTIME_STATE_DIR}/trivial" ]] && post_work=true
     case "$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null)" in
       Edit | Write | MultiEdit | NotebookEdit | apply_patch | mcp__*) post_work=true ;;
     esac
@@ -315,6 +315,7 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
   scope_workflow="full-dev-cycle"
   logic_edit=false
   protected_hit=""
+  protected_root=""
   a_root=""
   a_tags=""
   last_cfg_dir=""
@@ -346,8 +347,8 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
     # directory-capable write into a directory above them counts.
     while IFS= read -r cf; do
       cf="$(sb_pf_canon "$cf")"
-      if [[ "$target" == "$cf" ]]; then protected_hit="$target"; fi
-      if sb_pf_extract_via "$via" && [[ "$cf" == "$target"/* ]]; then protected_hit="$cf"; fi
+      if [[ "$target" == "$cf" ]]; then protected_hit="$target"; protected_root="$root"; fi
+      if sb_pf_extract_via "$via" && [[ "$cf" == "$target"/* ]]; then protected_hit="$cf"; protected_root="$root"; fi
     done < <(sb_pf_config_files "$root")
     if [[ "$cfg" != "$loaded_cfg" ]]; then
       sb_pf_src_load "$cfg"
@@ -377,6 +378,8 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
     # sb:migrate: SB_PF_CONTRACT_WRITER_SKILLS) unlock them; nobody else changes them.
     unlock_kind=md
     case "$protected_hit" in */.silver-bullet.json) unlock_kind=json ;; esac
+    # The unlock is an entry of the verified record, not a file anyone can write.
+    sb_integrity_verify "$protected_root" ""
     if ! sb_pf_contract_unlocked "$unlock_kind"; then
       audit_target="$protected_hit"
       emit_block "🚫 ENFORCEMENT CONTRACT PROTECTED — $(basename "$protected_hit") defines which gates run and what they require; rewriting, moving or deleting it disables process compliance.
@@ -390,6 +393,7 @@ Change it through the owning skill (/sb:init, /sb:update, /sb:add, /sb:devops, /
   if [[ "$hook_event" != "PreToolUse" ]]; then
     post_root="$(sb_integrity_root "$PWD")"
     if [[ -n "$post_root" ]]; then
+      sb_integrity_verify "$post_root" ""
       # A file tool wrote an artifact: the gates that allowed it vouch for it. A shell command never does.
       if [[ "$is_shell" != true && -n "$a_tags" && "$a_root" == "$post_root" ]]; then
         # shellcheck disable=SC2086  # the tags are a word list
@@ -403,6 +407,8 @@ Change it through the owning skill (/sb:init, /sb:update, /sb:add, /sb:devops, /
       fi
       sb_integrity_verify "$post_root" ""
       sb_integrity_restore_safe
+      # The hint only wakes this hook up; the unlock itself lives in the record.
+      if [[ -z "$SB_IV_UNLOCK_SKILL" ]]; then rm -f -- "${SB_RUNTIME_STATE_DIR}/unlock-hint"; fi
     fi
   fi
 
@@ -453,6 +459,13 @@ Change it through the owning skill (/sb:init, /sb:update, /sb:add, /sb:devops, /
 
   # --- The contract the record vouches for changed outside a sanctioned skill -------------------
   if [[ "$hook_event" == "PreToolUse" ]]; then
+    if [[ "$SB_IV_STATUS" == unbaselined ]]; then
+      audit_target="$scope_root"
+      emit_block "🚫 PROJECT NOT BASELINED — Silver Bullet has no integrity record for this project, so the strict defaults apply (planning floor unsatisfied, the template's required lists, no trivial bypass) and source edits stop.
+
+Restart the session (session start records this project's contract files; a new worktree, a fresh clone or a project created inside another one needs its own session start) or run /sb:init. Details: ${SB_RUNTIME_STATE_DIR}/seal-events.log"
+      exit 0
+    fi
     for _div in $SB_IV_DIVERGED; do
       case "$_div" in
         config | md | prompt | record)

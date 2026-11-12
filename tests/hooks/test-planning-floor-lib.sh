@@ -190,16 +190,19 @@ done
 for sk in silver-init silver-update silver-add silver-devops silver-migrate; do
   case " $SB_PF_CONTRACT_WRITER_SKILLS " in *" $sk "*) tl_pass "$sk may rewrite the contract";; *) tl_fail "$sk missing from the unlock list";; esac
 done
-rm -f "$SB_RUNTIME_STATE_DIR/contract-unlock"
-if sb_pf_contract_unlocked; then tl_fail "no record unlocks"; else tl_pass "without a record nothing unlocks"; fi
-sb_contract_unlock_write silver-plan
-if sb_pf_contract_unlocked; then tl_fail "silver-plan unlocks"; else tl_pass "an unrelated skill does not unlock"; fi
-sb_contract_unlock_write silver-add
-if sb_pf_contract_unlocked json; then tl_pass "silver-add unlocks the JSON configuration"; else tl_fail "silver-add unlocks"; fi
+SB_IV_UNLOCK_SKILL=""
+if sb_pf_contract_unlocked; then tl_fail "no unlock in force unlocks"; else tl_pass "without an unlock entry nothing unlocks"; fi
+SB_IV_UNLOCK_SKILL=silver-add
+if sb_pf_contract_unlocked json; then tl_pass "silver-add unlocks the JSON configuration"; else tl_fail "silver-add unlocks json"; fi
 if sb_pf_contract_unlocked md; then tl_fail "silver-add unlocks silver-bullet.md"; else tl_pass "silver-add leaves silver-bullet.md locked"; fi
-sb_contract_unlock_write silver-init
+assert_eq "silver-add covers the JSON configuration" "config prompt" "$(sb_contract_unlock_tags)"
+SB_IV_UNLOCK_SKILL=silver-init
 if sb_pf_contract_unlocked md; then tl_pass "silver-init unlocks silver-bullet.md"; else tl_fail "silver-init unlocks md"; fi
-rm -f "$SB_RUNTIME_STATE_DIR/contract-unlock"
+assert_eq "silver-init covers the contract and the instruction files" "config prompt md instr:CLAUDE.md instr:AGENTS.md" "$(sb_contract_unlock_tags)"
+SB_IV_UNLOCK_SKILL=""
+assert_eq "no unlock, no tags" "" "$(sb_contract_unlock_tags)"
+if sb_contract_is_writer silver-add; then tl_pass "silver-add is a writer"; else tl_fail "silver-add is a writer"; fi
+if sb_contract_is_writer silver-plan; then tl_fail "silver-plan is not a writer"; else tl_pass "silver-plan is not a writer"; fi
 # drift: a skill that rewrites .silver-bullet.json with jq and mv must be on the list
 while IFS= read -r f; do
   name="$(basename "$(dirname "$f")")"
@@ -212,33 +215,7 @@ for h in planning-file-guard instruction-file-guard workflow-chain-guard dev-cyc
   assert_eq "$h is registered for MCP write tools" 1 "$n"
 done
 
-# round 2: the unlock record
-UL="$SB_RUNTIME_STATE_DIR/contract-unlock"
-rm -f "$UL"
-ln -s "$TL_TMP/elsewhere-unlock" "$UL"
-sb_contract_unlock_write silver-init
-assert_file_absent "an unlock is never written through a symlink" "$TL_TMP/elsewhere-unlock"
-rm -f "$UL"
-: >"$UL"
-if sb_pf_contract_unlocked; then tl_fail "an empty record unlocks"; else tl_pass "an empty unlock record unlocks nothing"; fi
-rm -f "$UL"
-printf 'silver-init notanumber\n' >"$UL"
-if sb_pf_contract_unlocked; then tl_fail "a damaged record unlocks"; else tl_pass "a damaged unlock record unlocks nothing"; fi
-printf 'silver-plan %s\n' "$(date +%s)" >"$UL"
-if sb_pf_contract_unlocked; then tl_fail "a record for a skill that does not own the files unlocks"; else tl_pass "a record for another skill unlocks nothing"; fi
-printf 'silver-init %s\n' "$(( $(date +%s) - 10000 ))" >"$UL"
-if sb_pf_contract_unlocked; then tl_fail "an old unlock still unlocks"; else tl_pass "an unlock older than its window has lapsed"; fi
-printf 'silver-init %s\n' "$(( $(date +%s) + 1000 ))" >"$UL"
-if sb_pf_contract_unlocked; then tl_fail "an unlock dated in the future unlocks"; else tl_pass "an unlock dated in the future unlocks nothing"; fi
-rm -f "$UL"
-assert_eq "no unlock, no tags" "" "$(sb_contract_unlock_tags)"
-sb_contract_unlock_write silver-add
-assert_eq "silver-add covers the JSON configuration" "config prompt" "$(sb_contract_unlock_tags)"
-sb_contract_unlock_write silver-init
-assert_eq "silver-init covers the contract and the instruction files" "config prompt md instr:CLAUDE.md instr:AGENTS.md" "$(sb_contract_unlock_tags)"
-rm -f "$UL"
-if sb_contract_is_writer silver-add; then tl_pass "silver-add is a writer"; else tl_fail "silver-add is a writer"; fi
-if sb_contract_is_writer silver-plan; then tl_fail "silver-plan is not a writer"; else tl_pass "silver-plan is not a writer"; fi
+# tree writes
 if sb_pf_extract_via "tar -x" && sb_pf_extract_via unzip; then tl_pass "tar -x and unzip extract"; else tl_fail "extractors"; fi
 if sb_pf_extract_via patch; then tl_fail "patch is not an extractor"; else tl_pass "patch is not an extractor"; fi
 if sb_pf_tree_via patch && sb_pf_tree_via "git apply" && sb_pf_tree_via "git am" && sb_pf_tree_via unzip; then tl_pass "patch appliers and extractors write the tree"; else tl_fail "tree vias"; fi

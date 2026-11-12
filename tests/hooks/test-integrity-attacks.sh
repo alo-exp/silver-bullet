@@ -148,7 +148,7 @@ ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
 assert_contains "rewritten config then Stop: the recorded planning list still applies" "$TL_OUT" "inst-a"
 
 ih_project x-unlock-scope
-sb_contract_unlock_write silver-add
+sb_integrity_baseline "$PROJ" unlock silver-add; sb_integrity_forget
 ih_run 'echo more >> silver-bullet.md'; tally
 ih_edit
 assert_contains "an unlock that does not cover the touched file does not help" "$(message)" "ENFORCEMENT CONTRACT CHANGED"
@@ -187,6 +187,96 @@ echo dirty >>"$PROJ/src/app.js"
 ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
 assert_eq "an unblessed marker does not bypass the stop gate" "block" "$(printf '%s' "$TL_OUT" | jq -r '.decision // "none"' 2>/dev/null || echo none)"
 assert_eq "and is removed" "absent" "$([[ -e "$SD/trivial" || -L "$SD/trivial" ]] && echo present || echo absent)"
+
+# ── round 5: deleting the record, the seal or the counter is not a way to the legacy trust ───────────
+# rec NAME CMD: the record (and its counter) is deleted or emptied, the marker is made; the next edit is refused.
+rec_row() {
+  ih_project "r5-$1"
+  ih_run "$2"; tally
+  ih_edit
+  assert_eq "record $1: the next source edit is refused" "deny" "$(decision)"
+  assert_eq "record $1: as an unbaselined or untrusted project" "yes" "$(message | grep -qE 'ENFORCEMENT CONTRACT|NOT BASELINED' && echo yes || echo no)"
+  assert_eq "record $1: no marker is left" "absent" "$([[ -e "$SD/trivial" || -L "$SD/trivial" ]] && echo present || echo absent)"
+}
+rec_row rm-both 'rm -f "$SD"/integrity-*; touch "$SD/trivial"'
+rec_row dyn-cd 'rm -f "$SD"/integrity-*; cd "$(cat $FX/d.txt)" && touch trivial'
+rec_row find-delete 'find "$SD" -name "integrity-*" -delete; touch "$SD/trivial"'
+rec_row empty-counter 'rm -f "$SD"/integrity-*.rec; : > "$SD"/$(ls "$SD" | grep hwm | grep integ); touch "$SD/trivial"'
+rec_row python-remove 'python3 -c "import glob,os,sys;[os.remove(f) for f in glob.glob(sys.argv[1]+\"/integrity-*\")]" "$SD"; touch "$SD/trivial"'
+rec_row loop 'for f in "$SD"/integrity-*; do rm -f "$f"; done; touch "$SD/trivial"'
+rec_row mv-away 'mkdir -p "$FX/gone"; mv "$SD"/integrity-* "$FX/gone/"; touch "$SD/trivial"'
+rec_row key-kept-config 'rm -f "$SD"/integrity-*; echo "{\"skills\":{\"required_planning\":[]}}" > .silver-bullet.json'
+
+# the planning list rewritten after the record is deleted: the template defaults apply, not the live file
+ih_project r5-rec-gone-config
+ih_run 'rm -f "$SD"/integrity-*; echo "{\"skills\":{\"required_planning\":[]}}" > .silver-bullet.json'; tally
+ih_hook completion-audit.sh "$(bash_json 'git commit -m x' PreToolUse)"
+assert_eq "record gone, config emptied: git commit still asks for the planning floor" "deny" "$(decision)"
+
+# the state seal and its counter deleted, the state forged
+state_row seal-rm-both 'rm -f "$STATE.seal" "$STATE.hwm"; echo inst-a >> "$STATE"'
+state_row seal-dyn-cd 'cd "$(cat $FX/d.txt)" && rm -f state-test.seal state-test.hwm && printf "inst-a\n" > state-test'
+state_row seal-python 'python3 -c "import os,sys;[os.remove(sys.argv[1]+e) for e in (\".seal\",\".hwm\")]" "$STATE"; echo inst-a >> "$STATE"'
+state_row seal-find 'find "$SD" -name "state-test.*" -delete; echo inst-a >> "$STATE"'
+state_row seal-empty-hwm ': > "$STATE.hwm"; rm -f "$STATE.seal"; echo inst-a >> "$STATE"'
+state_row seal-mv 'mkdir -p "$FX/g2"; mv "$STATE.seal" "$STATE.hwm" "$FX/g2/"; echo inst-a >> "$STATE"'
+state_row seal-loop 'for e in seal hwm; do rm -f "$STATE.$e"; done; printf "inst-a\ninst-b\n" > "$STATE"'
+for v in 'git commit -m x' 'gh pr create --title t --body b'; do
+  ih_project r5-seal-gate
+  ih_run 'rm -f "$STATE".*; printf "inst-a\ninst-b\n" > "$STATE"'; tally
+  ih_hook completion-audit.sh "$(bash_json "$v" PreToolUse)"
+  assert_eq "seal pair deleted, state forged: '$v' is refused" "deny" "$(decision)"
+done
+ih_project r5-seal-stop
+ih_run 'rm -f "$STATE".*; printf "inst-a\ninst-b\n" > "$STATE"'; tally
+echo dirty >>"$PROJ/src/app.js"
+ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
+assert_contains "seal pair deleted, state forged: Stop still asks for inst-a" "$TL_OUT" "inst-a"
+
+# a contract-unlock FILE is nothing: the unlock lives in the signed record
+ih_project r5-unlock-file
+ih_run 'printf "silver-init 9999999999\n" > "$SD/contract-unlock"; echo "{\"skills\":{\"required_planning\":[]}}" > .silver-bullet.json'; tally
+ih_edit
+assert_eq "a contract-unlock file written from Bash does not unlock" "deny" "$(decision)"
+assert_contains "the change is named" "$(message)" "ENFORCEMENT CONTRACT CHANGED"
+ih_project r5-unlock-file-py
+ih_run 'python3 -c "import os,sys,time;open(sys.argv[1]+\"/contract-unlock\",\"w\").write(\"silver-init %d\\n\" % (time.time()+9999))" "$SD"; echo "{\"skills\":{\"required_planning\":[]}}" > .silver-bullet.json'; tally
+ih_edit
+assert_eq "the same through python3" "deny" "$(decision)"
+ih_project r5-unlock-hint
+ih_run 'touch "$SD/unlock-hint"; echo "{\"skills\":{\"required_planning\":[]}}" > .silver-bullet.json'; tally
+ih_edit
+assert_eq "the unlock-hint is a hint for the hook, it unlocks nothing" "deny" "$(decision)"
+
+# the gate decision points read the verified record, not the config the agent can edit
+for how in 'jq ".state.state_file=\"/dev/null\"" .silver-bullet.json > t.json && mv t.json .silver-bullet.json' \
+           'jq ".state.trivial_file=\"$SD/state-test\"" .silver-bullet.json > t.json && mv t.json .silver-bullet.json'; do
+  ih_project r5-ca-cfg
+  ih_run "$how"; tally
+  ih_hook completion-audit.sh "$(bash_json 'git commit -m x' PreToolUse)"
+  assert_eq "config edit '$how': git commit still asks for the planning floor" "deny" "$(decision)"
+done
+ih_project r5-release-cfg
+ih_run 'jq ".skills.required_release=[]" .silver-bullet.json > t.json && mv t.json .silver-bullet.json'; tally
+ih_hook completion-audit.sh "$(bash_json 'gh release create v1 --notes x' PreToolUse)"
+assert_eq "an emptied required_release does not open gh release create" "deny" "$(decision)"
+
+# a project the install never recorded is unbaselined: a new worktree, nested project, rewritten root
+ih_project r5-nested
+mkdir -p "$PROJ/nested/src"
+cp "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md" "$PROJ/nested/"
+git -C "$PROJ/nested" init -q
+printf 'x\n' >"$PROJ/nested/src/app.js"
+run_dc "$(edit_json "$PROJ/nested/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
+assert_eq "a project nobody baselined is not trusted on the strength of its own files" "deny" "$(decision)"
+assert_contains "and the message names it" "$(message)" "NOT BASELINED"
+
+# running the hook that writes the record is not a way round when it only sees the project the agent edited
+ih_project r5-record-forged-payload
+ih_run 'echo "{\"skills\":{\"required_planning\":[]}}" > .silver-bullet.json; rm -f "$SD"/integrity-*'; tally
+printf '%s' "$(jq -cn --arg f "$PROJ/.silver-bullet.json" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$f}}')" | (cd "$PROJ" && bash "$TL_REPO_ROOT/hooks/dev-cycle-check.sh") >/dev/null 2>&1 || true
+ih_edit
+assert_eq "a forged file-tool PostToolUse does not re-create a deleted record" "deny" "$(decision)"
 
 # ── the documented residual: the key is readable by the same user ──────────────────────────────────
 ih_project residual-recorder-copy

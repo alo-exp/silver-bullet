@@ -193,7 +193,7 @@ assert_eq "sb:init may move the instruction file" "none" "$(decision)"
 unlock silver-update
 run_dc "$(edit_json "$PROJ/silver-bullet.md" Write)"
 assert_eq "with sb:update recorded silver-bullet.md may be rewritten" "none" "$(decision)"
-rm -f "$SD/contract-unlock"
+unlock_clear
 state inst-a
 # a configured trivial file never arms the bypass
 mkproj trivcfg ".state={trivial_file:\"$SD/branch-test\"}"
@@ -202,7 +202,12 @@ run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
 assert_eq "state.trivial_file pointing at an existing state file does not arm the bypass" "deny" "$(decision)"
 touch "$SD/trivial"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
-assert_eq "the default trivial marker (the user's) still works" "none" "$(decision)"
+assert_eq "a marker nobody blessed does not bypass" "deny" "$(decision)"
+assert_file_absent "and is removed" "$SD/trivial"
+touch "$SD/trivial"
+sb_integrity_baseline "$PROJ" session; sb_integrity_forget
+run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
+assert_eq "the default trivial marker (the user's), blessed at session start, still works" "none" "$(decision)"
 rm -f "$SD/trivial"
 
 # ── outside an SB project nothing is enforced (R2-06) ────────────────────────
@@ -306,6 +311,7 @@ rm -f "$SD/small-edit-budget"
 mkproj onedoc
 state ""
 printf 'other/branch\n' >"$BRANCHF"
+sb_integrity_baseline "$PROJ" session; sb_integrity_forget
 run_dc "$(edit_json "$PROJ/src/app.py" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
 assert_eq "advisory + branch warning + deny: one parseable document that denies" "deny" "$(decision)"
 assert_eq "exactly one document" 1 "$(jq -s length <<<"$TL_OUT")"
@@ -433,6 +439,7 @@ assert_eq "out-of-scope and excluded targets only: ignored" "none" "$(decision)"
 STATE_ALT="$SD/state-from-config"
 mkproj cfgstate ".state={state_file:\"$STATE_ALT\"}"
 printf 'inst-a\n' >"$STATE_ALT"
+sb_state_seal_write "$STATE_ALT"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")" SILVER_BULLET_STATE_FILE=
 assert_contains "state file taken from the config" "$(message)" "Planning verified"
 rm -f "$STATE_ALT"
@@ -455,6 +462,7 @@ assert_eq "unremovable test marker is tolerated" "0" "$TL_STATUS"
 # unreadable config reaching the finalization lookup
 mkproj badcfg
 printf '{ not json' >"$PROJ/.silver-bullet.json"
+sb_integrity_baseline "$PROJ" session; sb_integrity_forget
 state silver-quality-gates silver-context silver-plan
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
 assert_eq "an invalid config pair is not a project: the planning floor stays out" "allow" "$(decision)"
