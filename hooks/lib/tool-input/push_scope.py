@@ -51,7 +51,8 @@ COMMIT_BOOL_CLUSTER = re.compile(r"^-[aqvsn]+$")
 SYMBOLIC_REF_FORMS = (["HEAD"], ["--short", "HEAD"], ["-q", "HEAD"], ["-q", "--short", "HEAD"], ["--short", "-q", "HEAD"])
 CONFIG_FORMS = ("--get", "--get-all", "--get-regexp")
 VIEWERS = {"log", "show", "diff", "shortlog"}
-RUN_CONFIG = re.compile(r"^(core\.fsmonitor|core\.hookspath|filter\..*\.(clean|smudge|process))$")
+RUN_CONFIG = re.compile(r"^(core\.fsmonitor|core\.hookspath|filter\..*\.(clean|smudge|process)|"
+                        r"lfs\.extension\..*|lfs\.customtransfer\..*|lfs\.standalonetransferagent)$")
 SIGN_CONFIG = re.compile(r"^(gpg\.(.*\.)?program|gpg\.ssh\.defaultkeycommand)$")
 LFS_STOCK = {"filter.lfs.clean": ("git-lfs clean -- %f", "git-lfs clean --skip -- %f"),
              "filter.lfs.smudge": ("git-lfs smudge -- %f", "git-lfs smudge --skip -- %f"),
@@ -67,8 +68,10 @@ PUSH_CLUSTER_LETTERS = set("ufqv46")
 NEWBRANCH_FLAGS = {"--quiet", "-q", "--track", "-t", "--no-track"}
 REMOTE_KEYS_OK = {"url", "fetch", "tagopt", "prune", "prunetags", "promisor", "partialclonefilter",
                   "skipdefaultupdate", "skipfetchall", "followremotehead"}
-PUSH_KEYS_OK = {"autosetupremote", "usebitmaps", "negotiate", "useforceifincludes", "gpgsign"}
-FALSE_VALUES = {"false", "no", "off", "0"}
+PUSH_KEYS_OK = {"autosetupremote", "usebitmaps", "negotiate", "useforceifincludes"}
+BOOL_INT = re.compile(r"^[+-]?(0x[0-9a-f]+|[0-9]+)[kmg]?$")
+STOCK_SIGNERS = {"gpg", "gpg2", "gpgsm", "ssh-keygen"}
+STOCK_OWNER_UID = 0
 ALLOWED_WRITES = {"/dev/null", "/dev/stdout", "/dev/stderr", "/dev/tty"}
 BAD_REF_CHARS = re.compile(r"[~^:*?\[\\\s]|@\{")
 BRANCH_RE = re.compile(r"^[A-Za-z0-9._+/-]+$")
@@ -386,7 +389,52 @@ def effective_editor(cfg, environ):
     return ""
 
 
-def check_program_config(subs, cfg, environ=None):
+def git_bool(value):
+    """A config value read as git reads a boolean: true/yes/on, false/no/off, an empty string is false, and any other
+    integer (also 0x.., k/m/g suffixes) is false only when it is zero. Anything git would reject counts as true
+    (the strict reading)."""
+    text = value.strip().lower()
+    if text in ("true", "yes", "on"):
+        return True
+    if text in ("false", "no", "off", ""):
+        return False
+    if BOOL_INT.match(text):
+        body = text.lstrip("+-")
+        body = body[:-1] if body[-1] in "kmg" else body
+        return int(body, 16 if body.startswith("0x") else 10) != 0
+    return True
+
+
+def stock_signer(value, directory, environ):
+    """A signing/verification program git would run that is a stock system signer: an absolute path to gpg, gpg2,
+    gpgsm or ssh-keygen, a regular file owned by root that nobody else can write, outside the project and HOME."""
+    if not os.path.isabs(value) or re.search(r"\s", value) or os.path.basename(value) not in STOCK_SIGNERS:
+        return False
+    try:
+        real = os.path.realpath(value)
+        info = os.stat(real)
+    except OSError:
+        return False
+    for root in (directory, environ.get("HOME") or "/nonexistent"):
+        top = os.path.realpath(root)
+        if real == top or real.startswith(top.rstrip("/") + "/"):
+            return False
+    return stat.S_ISREG(info.st_mode) and info.st_uid == STOCK_OWNER_UID and not info.st_mode & 0o022
+
+
+def check_signing(sub, key, values, cfg, directory, environ):
+    """gpg program settings: a commit that signs, and log/show (which verify signatures: log.showSignature, %G?
+    placeholders, --show-signature) run them; a stock system signer is accepted, anything else is a program."""
+    verifies = sub in ("log", "show")
+    commits = sub in ("commit", "commit-editor") and git_bool(cfg_get(cfg, "commit.gpgsign") or "")
+    if not (verifies or commits):
+        return
+    if key.endswith("defaultkeycommand") or not all(stock_signer(v, directory, environ) for v in values):
+        raise Strict("git %s %s with the program named by %s" % (
+            sub.replace("-editor", ""), "verifies signatures" if verifies else "signs", key))
+
+
+def check_program_config(subs, cfg, environ=None, directory=""):
     """An inert git subcommand runs the programs stored settings name for it (fsmonitor, clean/smudge filters, hooks
     path; the gpg program only for a commit that signs; the editor for a commit without a message; pager, external
     diff, textconv for the viewers): any such setting is final delivery."""
@@ -399,9 +447,8 @@ def check_program_config(subs, cfg, environ=None):
                 continue  # the stock git-lfs filter commands (git-lfs is installed with git)
             if RUN_CONFIG.match(key) or (pattern is not None and pattern.match(key)):
                 raise Strict("git %s would run a program named by the setting %s" % (shown, key))
-            if sub in ("commit", "commit-editor") and SIGN_CONFIG.match(key) and \
-                    (cfg_get(cfg, "commit.gpgsign") or "").lower() in ("true", "yes", "on", "1"):
-                raise Strict("git %s signs with the program named by %s" % (shown, key))
+            if SIGN_CONFIG.match(key):
+                check_signing(sub, key, values, cfg, directory, environ)
         if sub == "commit-editor":
             editor = effective_editor(cfg, environ)
             if editor and editor.strip() not in BENIGN_EDITORS:
@@ -489,7 +536,7 @@ def check_config(cfg, remote):
         if parts is not None and parts[0] == remote:
             var = parts[1]
             if var == "mirror":
-                if any(v.lower() not in FALSE_VALUES for v in values):
+                if any(git_bool(v) for v in values):
                     raise Strict("remote %s is a mirror" % remote)
             elif var not in REMOTE_KEYS_OK:
                 raise Strict("remote.%s.%s changes what a push sends" % (remote, var))
@@ -500,8 +547,11 @@ def check_config(cfg, remote):
                 if value not in ("simple", "current"):
                     raise Strict("push.default=%s pushes more than the named branch" % value)
             elif name == "followtags":
-                if value not in FALSE_VALUES:
+                if git_bool(value):
                     raise Strict("push.followTags pushes tags")
+            elif name == "gpgsign":
+                if value != "false" and (value == "if-asked" or git_bool(value)):
+                    raise Strict("push.gpgSign makes the push run the signing program")
             elif name not in PUSH_KEYS_OK:
                 raise Strict("%s changes what a push sends" % key)
         elif key.startswith("url.") and key.endswith(".pushinsteadof"):
@@ -754,7 +804,7 @@ def _shell_scope(script, result, base, environ, git, parse, logical_base):
     head = "refs/heads/" + new if new else head0
     if new and any(key.startswith("includeif.onbranch:") for key in cfg):
         raise Strict("the git configuration depends on the branch that is about to be created")
-    check_program_config(found["subs"], cfg, environ)
+    check_program_config(found["subs"], cfg, environ, directory)
     # S10 remote
     if remote_arg is None:
         if new and start:
