@@ -104,6 +104,13 @@ codex_transcript_dir_prepare() {
   chmod 700 "$dir" && printf '%s\n' "$dir"
 }
 
+# A SIGKILL during a capture leaves its raw temp file behind (0600, inside the 0700 directory): sweep stale ones that are
+# regular files owned by this user (never a link, never a recent file another capture may still be writing).
+codex_sweep_stale_captures() {
+  find "$1" -maxdepth 1 -type f \( -name '.capture.*' -o -name '.meta.*' \) -user "$(id -u)" -mmin +10 -exec rm -f -- {} + 2>/dev/null
+  return 0
+}
+
 codex_capture_transcript() {
   local transcript_source_file="$1"
   local prompt_file="$2"
@@ -123,8 +130,11 @@ codex_capture_transcript() {
   # Never write through a planted link (a named directory can hold one).
   [[ ! -L "$transcript_dest" && ! -L "$meta_dest" ]] || { printf 'ERROR: transcript target is a symlink\n' >&2; return 1; }
   # Write and redact a private temp file inside the 0700 directory; only the redacted file reaches latest.jsonl.
-  capture_tmp="$(mktemp "${transcript_dir}/.capture.XXXXXX")" && meta_tmp="$(mktemp "${transcript_dir}/.meta.XXXXXX")" \
-    || { rm -f -- "$capture_tmp" "$meta_tmp"; return 1; }
+  codex_sweep_stale_captures "$transcript_dir"
+  if ! capture_tmp="$(mktemp "${transcript_dir}/.capture.XXXXXX")" || ! meta_tmp="$(mktemp "${transcript_dir}/.meta.XXXXXX")"; then
+    rm -f -- "$capture_tmp" "$meta_tmp"
+    return 1
+  fi
   if [[ -f "$prompt_file" ]]; then
     python3 - "$transcript_source_file" "$prompt_file" "$capture_tmp" <<'PY'
 import json
