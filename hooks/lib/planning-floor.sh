@@ -45,11 +45,23 @@
 
 _sb_pf_dir="${BASH_SOURCE[0]:-$0}"
 _sb_pf_dir="${_sb_pf_dir%/*}"
+# A library the caller already loaded is not loaded again: required-skills.sh reads the default lists
+# with jq on every load, which costs about 35 ms on the hot path of every edit.
 for _sb_pf_lib in runtime-paths.sh path-canonical.sh hook-output.sh tool-input.sh required-skills.sh skill-discovery.sh state-seal.sh contract-unlock.sh integrity.sh; do
+  case "$_sb_pf_lib" in
+    required-skills.sh) _sb_pf_probe=sb_required_skill_is_recorded ;;
+    skill-discovery.sh) _sb_pf_probe=sb_skill_is_installed ;;
+    state-seal.sh) _sb_pf_probe=sb_state_seal_write ;;
+    contract-unlock.sh) _sb_pf_probe=sb_contract_is_writer ;;
+    integrity.sh) _sb_pf_probe=sb_integrity_verify ;;
+    path-canonical.sh) _sb_pf_probe=sb_canonical_path ;;
+    *) _sb_pf_probe="" ;;
+  esac
+  if [[ -n "$_sb_pf_probe" ]] && declare -F "$_sb_pf_probe" >/dev/null 2>&1; then continue; fi
   # shellcheck source=/dev/null
   [[ -f "$_sb_pf_dir/$_sb_pf_lib" ]] && source "$_sb_pf_dir/$_sb_pf_lib"
 done
-unset _sb_pf_lib
+unset _sb_pf_lib _sb_pf_probe
 
 SB_PF_DEFAULT_SRC_PATTERN='/src/'
 SB_PF_DEFAULT_SRC_EXCLUDE='__tests__|\.test\.'

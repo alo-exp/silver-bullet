@@ -158,6 +158,7 @@ rm -f "$LOG"
 fresh
 printf 'a\nb\n' >"$S"
 NOPY="$(tl_path_without python3 openssl)"
+NOSSL="$(tl_path_without openssl)"
 PATH="$NOPY" sb_state_seal_write "$S"
 assert_eq "without python3 the seal is a plain checksum" "cksum" "$(sed -n 2p "$S.seal")"
 assert_contains "with a logged warning" "$(logged)" "plain checksum"
@@ -199,6 +200,26 @@ rm -f "$TL_BIN/openssl"
 assert_eq "no key could be made: a plain checksum" "cksum" "$(sed -n 2p "$S.seal")"
 assert_file_absent "and no key file is left" "$SD/seal.key"
 assert_file_absent "nor a temporary one" "$SD/seal.key.$$"
+
+# python3 cannot make the key either (no openssl): a plain checksum, no key left
+fresh
+REALPY="$(command -v python3)"
+tl_stub python3 "case \"\$*\" in *urandom*) exit 1 ;; esac; exec \"$REALPY\" \"\$@\""
+printf 'a\n' >"$S"
+PATH="$TL_BIN:$NOSSL" sb_state_seal_write "$S"
+rm -f "$TL_BIN/python3"
+assert_eq "python3 could not make a key: a plain checksum" "cksum" "$(sed -n 2p "$S.seal")"
+assert_file_absent "and no key file is left" "$SD/seal.key"
+
+# a digest that cannot be computed leaves the seal alone
+fresh
+printf 'a\n' >"$S"
+sb_state_seal_write "$S"
+before="$(cat "$S.seal")"
+tl_stub openssl 'exit 1'
+sb_state_seal_write "$S"
+rm -f "$TL_BIN/openssl"
+assert_eq "no digest: the seal is untouched" "$before" "$(cat "$S.seal")"
 
 # counters: a damaged seal, and a counter that fell behind the seal
 fresh

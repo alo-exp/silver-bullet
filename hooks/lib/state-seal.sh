@@ -69,23 +69,25 @@ _sb_state_seal_ensure_key() {
 
 # The digest of stdin: `hmac` (keyed) or `cksum` (plain). Nothing when it cannot be computed.
 _sb_state_seal_digest() { # KIND STATE
-  local key
+  local key secret out
   if [[ "$1" == hmac ]]; then
     key="$(_sb_state_seal_key_file "$2")"
     [[ -f "$key" && ! -L "$key" ]] || return 1
     if command -v openssl >/dev/null 2>&1; then
-      openssl dgst -sha256 -hmac "$(tr -d '[:space:]' <"$key")" 2>/dev/null | awk '{ print $NF }'
+      secret="$(<"$key")"
+      if out="$(openssl dgst -sha256 -hmac "${secret//[[:space:]]/}" 2>/dev/null)"; then printf '%s' "${out##* }"; else return 1; fi
     else
       python3 -c 'import hmac,hashlib,sys;k=open(sys.argv[1],"rb").read().strip();sys.stdout.write(hmac.new(k,sys.stdin.buffer.read(),hashlib.sha256).hexdigest())' "$key" 2>/dev/null
     fi
   else
-    cksum | tr ' ' '-'
+    out="$(cksum)"
+    printf '%s' "${out// /-}"
   fi
 }
 
 _sb_state_seal_branch_sum() { # STATE
-  local file="${SILVER_BULLET_BRANCH_FILE:-$(_sb_state_seal_dir "$1")/branch}"
-  if [[ -s "$file" && ! -L "$file" ]]; then cksum <"$file" | tr ' ' '-'; else printf -- '-'; fi
+  local file="${SILVER_BULLET_BRANCH_FILE:-$(_sb_state_seal_dir "$1")/branch}" out
+  if [[ -s "$file" && ! -L "$file" ]]; then out="$(cksum <"$file")"; printf '%s' "${out// /-}"; else printf -- '-'; fi
 }
 
 _sb_state_seal_message() { # STATE N C BRANCHSUM
@@ -94,9 +96,9 @@ _sb_state_seal_message() { # STATE N C BRANCHSUM
 }
 
 _sb_state_seal_number() { # FILE: its first line when numeric, else 0
-  local v
-  v="$(sed -n '1p' "$1" 2>/dev/null)"
-  [[ "$v" =~ ^[0-9]+$ ]] && printf '%s' "$v" || printf '0'
+  local v=""
+  if [[ -f "$1" ]] && v="$(<"$1")" 2>/dev/null; then v="${v%%$'\n'*}"; fi
+  if [[ "$v" =~ ^[0-9]+$ ]]; then printf '%s' "$v"; else printf '0'; fi
 }
 
 sb_state_seal_write() {
@@ -156,7 +158,8 @@ _sb_state_seal_status() {
   if [[ "$kind" != hmac ]] && { _sb_state_seal_can_hmac || _sb_state_seal_live "$state"; }; then
     _SB_SEAL_STATE=tampered; _SB_SEAL_WHY="the seal is unkeyed although keyed seals are available"; return 0
   fi
-  lines="$(wc -l <"$state" | tr -d ' ')"
+  lines="$(wc -l <"$state")"
+  lines="${lines//[[:space:]]/}"
   # An emptied state (rm, : >) holds nothing to trust or distrust: a reset by its owner.
   [[ "$lines" -gt 0 ]] || return 0
   if [[ "$lines" -lt "$n" ]]; then _SB_SEAL_STATE=tampered; _SB_SEAL_WHY="the state is shorter than sealed"; return 0; fi
