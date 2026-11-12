@@ -90,7 +90,6 @@ sb_integrity_root() {
   if [[ -n "$cfg" ]]; then (cd "$(dirname "$cfg")" && pwd -P); else sb_integrity_record_root "$dir"; fi
 }
 
-_sb_iv_tags() { printf 'config\nmd\nprompt\ninstr:CLAUDE.md\ninstr:AGENTS.md\nplan:ROADMAP.md\nplan:STATE.md\nplan:PROJECT.md\n'; }
 
 # The live body for ROOT: one "tag<TAB>sum<TAB>extra" line per artifact (the config's extra is the
 # compact, key-sorted JSON of its gate values). The config's checksum covers its gate-relevant
@@ -174,6 +173,8 @@ _sb_iv_message() { # ROOT COUNTER BRANCHSUM BODY
 _sb_iv_read() { # RECFILE
   local line n=0
   _SB_IV_VERSION="" _SB_IV_KIND="" _SB_IV_COUNTER="" _SB_IV_BSUM="" _SB_IV_DIGEST="" _SB_IV_BODY=""
+  local content=""
+  if content="$(<"$1")" 2>/dev/null; then :; fi
   while IFS= read -r line; do
     n=$((n + 1))
     case "$n" in
@@ -184,7 +185,7 @@ _sb_iv_read() { # RECFILE
       5) _SB_IV_DIGEST="$line" ;;
       *) _SB_IV_BODY="${_SB_IV_BODY:+$_SB_IV_BODY$'\n'}$line" ;;
     esac
-  done <"$1" 2>/dev/null || true
+  done <<<"$content"
   [[ "$_SB_IV_VERSION" == v2 && "$_SB_IV_COUNTER" =~ ^[0-9]+$ ]]
 }
 
@@ -214,15 +215,18 @@ _sb_iv_authentic() { # RECFILE STATE ROOT
 
 # Load the gate values of a values JSON into SB_IV_REQUIRED_* / SB_IV_STATE_FILE with one jq call.
 _sb_iv_load_values() { # JSON
-  {
-    read -r SB_IV_REQUIRED_PLANNING || true
-    read -r SB_IV_REQUIRED_PLANNING_DEVOPS || true
-    read -r SB_IV_REQUIRED_DEPLOY || true
-    read -r SB_IV_REQUIRED_DEPLOY_DEVOPS || true
-    read -r SB_IV_REQUIRED_RELEASE || true
-    read -r SB_IV_REQUIRED_RELEASE_DEVOPS || true
-    read -r SB_IV_STATE_FILE || true
-  } < <(printf '%s' "$1" | jq -r '[.rp, .rpd, .rd, .rdd, .rr, .rrd, .sf][] | if . == null then "" elif type == "array" then join(" ") else tostring end')
+  local v
+  local -a vals=()
+  while IFS= read -r v; do
+    vals+=("$v")
+  done < <(printf '%s' "$1" | jq -r '[.rp, .rpd, .rd, .rdd, .rr, .rrd, .sf][] | if . == null then "" elif type == "array" then join(" ") else tostring end')
+  SB_IV_REQUIRED_PLANNING="${vals[0]:-}"
+  SB_IV_REQUIRED_PLANNING_DEVOPS="${vals[1]:-}"
+  SB_IV_REQUIRED_DEPLOY="${vals[2]:-}"
+  SB_IV_REQUIRED_DEPLOY_DEVOPS="${vals[3]:-}"
+  SB_IV_REQUIRED_RELEASE="${vals[4]:-}"
+  SB_IV_REQUIRED_RELEASE_DEVOPS="${vals[5]:-}"
+  SB_IV_STATE_FILE="${vals[6]:-}"
 }
 
 _sb_iv_cache_store() {
@@ -246,16 +250,15 @@ _sb_iv_unlock_from_body() { # BODY
   SB_IV_UNLOCK_SKILL=""
   while IFS=$'\t' read -r tag skill when; do
     [[ "$tag" == unlock ]] || continue
-    [[ "$when" =~ ^[0-9]+$ ]] || continue
-    sb_contract_is_writer "$skill" || continue
-    now="$(date +%s)"
-    if [[ "$now" -ge "$when" && $((now - when)) -le "$SB_CONTRACT_UNLOCK_WINDOW" ]]; then SB_IV_UNLOCK_SKILL="$skill"; fi
+    if [[ "$when" =~ ^[0-9]+$ && "$when" -gt 0 ]] && sb_contract_is_writer "$skill"; then
+      now="$(date +%s)"
+      if [[ "$now" -ge "$when" && $((now - when)) -le "$SB_CONTRACT_UNLOCK_WINDOW" ]]; then SB_IV_UNLOCK_SKILL="$skill"; fi
+    fi
   done <<<"$1"
 }
 
 sb_integrity_verify() { # ROOT [STATE]
-  local root="${1:-}" state="${2:-}" key rec tag want live_body rec_values live_values line mline i j nrec nlive found unlocked
-  local -a rt rl lt ll
+  local root="${1:-}" state="${2:-}" key rec tag live_body rec_values live_values cmp unlocked
   key="$root|$state"
   if [[ "$_SB_IV_CACHE_KEY" == "$key" ]]; then _sb_iv_cache_load; return 0; fi
   SB_IV_STATUS=none SB_IV_DIVERGED="" SB_IV_WHY="" SB_IV_TRIVIAL_OK=false
@@ -264,7 +267,10 @@ sb_integrity_verify() { # ROOT [STATE]
   [[ -n "$state" ]] || state="$(_sb_iv_state_dir)/state"
   rec="$(_sb_iv_rec_file "$root")"
   live_body="$(_sb_iv_live_body "$root")"
-  live_values="$(printf '%s\n' "$live_body" | awk -F'\t' '$1 == "config" { print $3; exit }')"
+  # The config entry comes first in the live body: CONFIG<TAB>DIGEST<TAB>VALUES.
+  live_values="${live_body%%$'\n'*}"
+  live_values="${live_values#*$'\t'}"
+  live_values="${live_values#*$'\t'}"
   if [[ ! -e "$rec" && ! -L "$rec" ]]; then
     if [[ -s "$rec.hwm" ]]; then
       SB_IV_STATUS=untrusted SB_IV_DIVERGED="record" SB_IV_WHY="the record was deleted"
@@ -289,33 +295,18 @@ sb_integrity_verify() { # ROOT [STATE]
     return 0
   fi
   SB_IV_STATUS=ok
-  rt=() rl=() lt=() ll=()
-  while IFS= read -r line; do
-    rt+=("${line%%$'\t'*}")
-    rl+=("$line")
-  done <<<"$_SB_IV_BODY"
-  while IFS= read -r line; do
-    lt+=("${line%%$'\t'*}")
-    ll+=("$line")
-  done <<<"$live_body"
-  nrec=${#rt[@]}
-  nlive=${#lt[@]}
-  rec_values=""
-  mline=""
-  for ((i = 0; i < nlive; i++)); do
-    found=""
-    for ((j = 0; j < nrec; j++)); do
-      if [[ "${rt[$j]}" == "${lt[$i]}" ]]; then found="${rl[$j]}"; fi
-    done
-    [[ "$found" == "${ll[$i]}" ]] || SB_IV_DIVERGED="${SB_IV_DIVERGED:+$SB_IV_DIVERGED }${lt[$i]}"
-    if [[ "${lt[$i]}" == config ]]; then rec_values="${found#*$'\t'*$'\t'}"; fi
-  done
-  for ((j = 0; j < nrec; j++)); do
-    if [[ "${rt[$j]}" == trivial ]]; then mline="${rl[$j]}"; fi
-  done
+  # One awk compares the recorded entries with the live ones: the diverged tags in live order, and the
+  # recorded config values.
+  cmp="$(awk -F'\t' 'NR == FNR { rec[$1] = $0; next }
+    { if (rec[$1] != $0) div = div (div == "" ? "" : " ") $1
+      if ($1 == "config") { split(rec[$1], f, "\t"); val = f[3] } }
+    END { print "D:" div; print "V:" val }' <(printf '%s\n' "$_SB_IV_BODY") <(printf '%s\n' "$live_body"))"
+  SB_IV_DIVERGED="${cmp#D:}"
+  SB_IV_DIVERGED="${SB_IV_DIVERGED%%$'\n'*}"
+  rec_values="${cmp#*$'\n'V:}"
   _sb_iv_unlock_from_body "$_SB_IV_BODY"
   if _sb_iv_marker_present; then
-    if [[ "$mline" == *BLESSED* ]]; then SB_IV_TRIVIAL_OK=true; else SB_IV_DIVERGED="${SB_IV_DIVERGED:+$SB_IV_DIVERGED }trivial"; fi
+    if [[ $'\n'"$_SB_IV_BODY" == *$'\ntrivial\tBLESSED\t'* ]]; then SB_IV_TRIVIAL_OK=true; else SB_IV_DIVERGED="${SB_IV_DIVERGED:+$SB_IV_DIVERGED }trivial"; fi
   fi
   # A sanctioned contract-writing skill is running: its edits to the files it owns are expected.
   for tag in $SB_IV_DIVERGED; do
@@ -396,7 +387,7 @@ _sb_iv_write() { # ROOT RECFILE STATE BODY
 }
 
 sb_integrity_baseline() { # ROOT MODE [..]
-  local root="$1" mode="$2" state rec body tag entry old keep line new_line marker_state live_lines skill="" have_unlock=""
+  local root="$1" mode="$2" state rec body tag entry old keep line new_line marker_state live_lines skill=""
   shift 2
   state="$(_sb_iv_state_dir)/state"
   rec="$(_sb_iv_rec_file "$root")"
@@ -423,13 +414,9 @@ sb_integrity_baseline() { # ROOT MODE [..]
       for entry in "$@"; do [[ "$entry" != "$tag" ]] || keep=false; done
       new_line="$line"
       if [[ "$keep" != true ]]; then new_line="$(printf '%s\n' "$live_lines" | awk -F'\t' -v t="$tag" '$1 == t { print; exit }')"; fi
-      if [[ "$tag" == unlock ]]; then
-        have_unlock=1
-        if [[ "$mode" == unlock ]]; then new_line="unlock"$'\t'"$skill"$'\t'"$(date +%s)"; fi
-      fi
+      if [[ "$tag" == unlock && "$mode" == unlock ]]; then new_line="unlock"$'\t'"$skill"$'\t'"$(date +%s)"; fi
       body="${body:+$body$'\n'}$new_line"
     done <<<"$old"
-    if [[ "$mode" == unlock && -z "$have_unlock" ]]; then body="$body"$'\n'"unlock"$'\t'"$skill"$'\t'"$(date +%s)"; fi
     _sb_iv_write "$root" "$rec" "$state" "$body"
   fi
   sb_state_seal_unlock

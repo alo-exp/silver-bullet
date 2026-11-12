@@ -22,6 +22,8 @@ mkproj() {
   export GH_RUN_LIST_OVERRIDE
   : >"$STATE"
   rm -f "$SB_RUNTIME_STATE_DIR"/release-live-matrix "$SB_RUNTIME_STATE_DIR"/e2e-live-matrix "$SB_RUNTIME_STATE_DIR"/inline-e2e-matrix "$QG"
+  # Once the install has made its key every project needs its record (hooks/lib/integrity.sh).
+  if [[ -f "$SB_RUNTIME_STATE_DIR/seal.key" ]]; then sb_integrity_baseline "$(cd "$PROJ" && pwd -P)" session; sb_integrity_forget; fi
 }
 
 HOOK="$TL_REPO_ROOT/hooks/completion-audit.sh"
@@ -42,7 +44,11 @@ export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$SB_RUNTIME_STATE_DIR/verify-tests
 export SILVER_BULLET_QUALITY_GATE_STATE_FILE="$QG"
 printf 'verified\n' >"$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
 
-state() { printf '%s\n' "$@" >"$STATE"; }
+source "$TL_REPO_ROOT/hooks/lib/integrity.sh"
+state() {
+  printf '%s\n' "$@" >"$STATE"
+  if [[ -f "$SB_RUNTIME_STATE_DIR/seal.key" ]]; then sb_state_seal_write "$STATE"; fi
+}
 run_ca() {
   local event="$1" cmd="$2"
   shift 2

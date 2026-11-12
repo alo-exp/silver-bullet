@@ -42,7 +42,7 @@ setup() {
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   SESSION_LOG_FILE="${TMPDIR_TEST}/docs/sessions/test-state-${TEST_RUN_ID}.md"
-  rm -f "$TMPSTATE" "$TMPSTATE.seal" "$TMPSTATE.hwm"  # clean slate per test
+  rm -f "$TMPSTATE" "$TMPSTATE.seal" "$TMPSTATE.hwm" "${SB_TEST_DIR}/seal.key" "${SB_TEST_DIR}"/integrity-*  # clean slate per test (a fresh install)
   cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
 EOF

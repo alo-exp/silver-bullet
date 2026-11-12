@@ -211,7 +211,7 @@ setup
 stage_summary "27-silver-fast-redesign" "27-01"
 out=$(run_hook "PreToolUse" "git commit -m 'Phase 27: complete'")
 assert_blocks "no ROADMAP.md: the staged summary is refused" "$out"
-assert_contains "no ROADMAP.md: the message says it is missing" "$out" "is missing"
+if [[ "$out" == *"is missing"* ]]; then echo "  PASS no ROADMAP.md: the message says it is missing"; PASS=$((PASS + 1)); else echo "  FAIL no ROADMAP.md: the message says it is missing"; FAIL=$((FAIL + 1)); fi
 teardown
 
 # 9. PostToolUse event — hook emits PreToolUse deny format unconditionally regardless of
