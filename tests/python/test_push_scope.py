@@ -681,9 +681,9 @@ class InertGitTests(Base):
 
     def test_program_config(self):
         for key in ("core.pager", "pager.log", "diff.external", "diff.x.textconv", "diff.y.command", "core.fsmonitor",
-                    "core.hookspath", "filter.lfs.clean", "gpg.program", "gpg.ssh.program"):
+                    "core.hookspath", "filter.lfs.clean"):
             self.strict("git log --oneline && git push", "would run a program", repo=FakeRepo(cfg={key: ["x"]}))
-        for key in ("core.fsmonitor", "core.hookspath", "filter.lfs.smudge", "filter.x.process", "gpg.program"):
+        for key in ("core.fsmonitor", "core.hookspath", "filter.lfs.smudge", "filter.x.process"):
             for sub in ("status", "add -A", "commit -qm x", "ls-files", "describe", "rev-parse HEAD"):
                 self.strict("git %s && git push" % sub, "would run a program", repo=FakeRepo(cfg={key: ["x"]}))
         self.feature("git status && git push", repo=FakeRepo(cfg={"core.pager": ["less"], "credential.helper": ["store"],
@@ -819,18 +819,34 @@ class ExpansionAndEnvConfigTests(Base):
 
     def test_editor_lfs_and_gpg_settings(self):
         for cmd in ("git commit --amend", "git commit -a", "git commit", "git commit -q"):
-            self.strict("%s && git push" % cmd, "would run a program", repo=FakeRepo(cfg={"core.editor": ["vi"]}))
-            self.strict("%s && git push" % cmd, "would run a program", repo=FakeRepo(cfg={"sequence.editor": ["vi"]}))
+            self.strict("%s && git push" % cmd, "start the editor vi", repo=FakeRepo(cfg={"core.editor": ["vi"]}))
+            self.strict("%s && git push" % cmd, "start the editor emacs", env=dict(ENV, EDITOR="emacs -nw"))
+            self.strict("%s && git push" % cmd, "start the editor evil", env=dict(ENV, VISUAL="evil"))
+            self.strict("%s && git push" % cmd, "start the editor x", env=dict(ENV, GIT_EDITOR="x"),
+                        repo=FakeRepo(cfg={"core.editor": ["true"]}))
+            self.feature("%s && git push" % cmd, env=dict(ENV, GIT_EDITOR="true"), repo=FakeRepo(cfg={"core.editor": ["vi"]}))
+            self.feature("%s && git push" % cmd, repo=FakeRepo(cfg={"core.editor": ["true"]}))
+            self.feature("%s && git push" % cmd)
         for cmd in ("git commit -qm x", "git commit --amend --no-edit", "git commit -F f", "git commit --message=x",
                     "git commit -am x", "git commit -mx", "git status", "git add -A"):
-            self.feature("%s && git push" % cmd, repo=FakeRepo(cfg={"core.editor": ["vi"]}))
-        self.strict("git commit -qm x && git push", "would run a program",
-                    repo=FakeRepo(cfg={"gpg.ssh.defaultkeycommand": ["x"]}))
-        stock = {"filter.lfs.clean": ["git-lfs clean -- %f"], "filter.lfs.smudge": ["git-lfs smudge -- %f"],
-                 "filter.lfs.process": ["git-lfs filter-process"], "filter.lfs.required": ["true"]}
-        self.feature("git add -A && git commit -qm x && git push", repo=FakeRepo(cfg=stock))
-        for key in stock:
-            if key != "filter.lfs.required":
+            self.feature("%s && git push" % cmd, repo=FakeRepo(cfg={"core.editor": ["vi"]}),
+                         env=dict(ENV, EDITOR="evil"))
+        # gpg programs matter only for a commit that signs; status/add never sign
+        signing = {"commit.gpgsign": ["true"], "gpg.ssh.defaultkeycommand": ["x"], "gpg.program": ["y"]}
+        self.strict("git commit -qm x && git push", "signs with the program", repo=FakeRepo(cfg=signing))
+        self.strict("git commit -qm x && git push", "signs with the program",
+                    repo=FakeRepo(cfg={"commit.gpgsign": ["yes"], "gpg.ssh.program": ["y"]}))
+        self.feature("git commit -qm x && git push", repo=FakeRepo(cfg={"gpg.program": ["y"], "commit.gpgsign": ["false"]}))
+        self.feature("git commit -qm x && git push", repo=FakeRepo(cfg={"gpg.program": ["y"]}))
+        for cmd in ("git status", "git add -A", "git log -1", "git rev-parse HEAD"):
+            self.feature("%s && git push" % cmd, repo=FakeRepo(cfg=signing))
+        for skip in (False, True):
+            stock = {"filter.lfs.clean": ["git-lfs clean %s-- %%f" % ("--skip " if skip else "")],
+                     "filter.lfs.smudge": ["git-lfs smudge %s-- %%f" % ("--skip " if skip else "")],
+                     "filter.lfs.process": ["git-lfs filter-process" + (" --skip" if skip else "")],
+                     "filter.lfs.required": ["true"]}
+            self.feature("git add -A && git commit -qm x && git push", repo=FakeRepo(cfg=stock))
+            for key in ("filter.lfs.clean", "filter.lfs.smudge", "filter.lfs.process"):
                 self.strict("git add -A && git push", "would run a program",
                             repo=FakeRepo(cfg=dict(stock, **{key: ["sh -c evil"]})))
                 self.strict("git add -A && git push", "would run a program",
