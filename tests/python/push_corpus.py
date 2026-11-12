@@ -27,6 +27,12 @@ def H(rid, cmd, **opts):
 
 
 PUSH_ORIGIN = "git push origin HEAD"
+# a hostile signing/verification/filter program that deletes origin main, and a commit with a gpgsig header
+EVIL = "printf '#!/bin/sh\\n/usr/bin/git --git-dir=@S@/origin.git update-ref -d refs/heads/main\\nexit 1\\n' > @S@/evil; chmod +x @S@/evil"
+SIGNED = ("T=$(git rev-parse HEAD^{tree}); P=$(git rev-parse HEAD); printf 'tree %s\\nparent %s\\nauthor T <t@example.invalid> 1 +0000\\n"
+          "committer T <t@example.invalid> 1 +0000\\ngpgsig -----BEGIN PGP SIGNATURE-----\\n \\n x\\n -----END PGP SIGNATURE-----\\n\\nmsg\\n' "
+          "$T $P > @S@/c.txt; C=$(git hash-object -t commit -w --stdin < @S@/c.txt); git update-ref refs/heads/feat/x $C")
+GPG_EVIL = EVIL + "; git config gpg.program @S@/evil; " + SIGNED
 # writes HEAD of the checkout (a substitution that does this runs before the push the hook has judged)
 WH = "printf 'ref: refs/heads/main\\n' > .git/HEAD"
 PLANT_MAIN = "printf 'ref: refs/heads/main\\n' > @S@/mainhead"
@@ -248,6 +254,24 @@ ATTACKS = [
     C("S32", "echo $(echo x | tee .git/HEAD) && git push origin HEAD", "N", "also runs"),
     C("S33", "echo $(export HOME=0) && git push origin feat/x", "N", "also runs"),
     C("S34", "echo $(cd /tmp; git push origin HEAD) && git push origin feat/x", "N", "more than one"),
+    C("G1", "git log -1 --format=%G? && git push origin feat/x", "P", "verifies signatures", setup=GPG_EVIL),
+    C("G2", "git log -1 && git push origin feat/x", "P", "verifies signatures", setup=GPG_EVIL + "; git config log.showSignature true"),
+    C("G3", "git show -s && git push origin feat/x", "P", "verifies signatures", setup=GPG_EVIL + "; git config log.showSignature true"),
+    C("G4", "git log -1 --format=%GS && git push origin feat/x", "P", "verifies signatures", setup=GPG_EVIL),
+    C("G5", "git log -1 --format=%GK && git push origin feat/x", "P", "verifies signatures", setup=GPG_EVIL),
+    C("G6", "echo $(git log -1 --format=%G?) && git push origin feat/x", "P", "verifies signatures", setup=GPG_EVIL),
+    C("G7", "git log -1 --format=%G? && git push origin feat/x", "P", "verifies signatures", setup=EVIL + "; git config gpg.openpgp.program @S@/evil; " + SIGNED),
+    C("G8", "git commit -q --allow-empty -m x && git push origin feat/x", "P", "signs", setup=EVIL + "; git config gpg.program @S@/evil; git config commit.gpgsign 2"),
+    C("G9", "git commit -q --allow-empty -m x && git push origin feat/x", "P", "signs", setup=EVIL + "; git config gpg.program @S@/evil; git config commit.gpgsign -1"),
+    C("G10", "git commit -q --allow-empty -m x && git push origin feat/x", "P", "signs", setup=EVIL + "; git config gpg.program @S@/evil; git config commit.gpgsign 1k"),
+    C("G11", "git commit -q --allow-empty -m x && git push origin feat/x", "P", "signs", setup=EVIL + "; git config gpg.program @S@/evil",
+      env={"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "commit.gpgsign", "GIT_CONFIG_VALUE_0": "2"}),
+    C("G13", "git push origin feat/x", "P", "signing program", setup=EVIL + "; git config gpg.program @S@/evil; git config push.gpgSign true; git -C @S@/origin.git config receive.certNonceSeed x"),
+    C("G14", "git push origin feat/x", "P", "signing program", setup=EVIL + "; git config gpg.program @S@/evil; git config push.gpgSign if-asked; git -C @S@/origin.git config receive.certNonceSeed x"),
+    C("L1", "git add -A && git push origin feat/x", "P", "would run a program",
+      setup=EVIL + "; git config filter.lfs.clean 'git-lfs clean -- %f'; git config filter.lfs.smudge 'git-lfs smudge -- %f'; git config filter.lfs.process 'git-lfs filter-process'; git config lfs.extension.x.clean '@S@/evil %f'; git config lfs.extension.x.smudge '@S@/evil %f'; git config lfs.extension.x.priority 0; printf '*.bin filter=lfs\\n' > .gitattributes; printf 'data\\n' > big.bin"),
+    C("L1b", "git add -A && git push origin feat/x", "P", "would run a program",
+      setup=EVIL + "; git config filter.lfs.clean 'git-lfs clean --skip -- %f'; git config filter.lfs.smudge 'git-lfs smudge --skip -- %f'; git config filter.lfs.process 'git-lfs filter-process --skip'; git config lfs.extension.x.clean '@S@/evil %f'; git config lfs.extension.x.priority 0; printf '*.bin filter=lfs\\n' > .gitattributes; printf 'data\\n' > big.bin"),
     C("E15", "git push origin feat/x", "N", "set-head", setup="git remote set-head origin -d"),
     C("E16", "git push origin HEAD", "N", "detached", setup="git checkout -q --detach"),
 ]

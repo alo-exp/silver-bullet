@@ -401,7 +401,7 @@ class RemoteTests(Base):
             repo = FakeRepo(cfg={key: [values.get(key, "x")]})
             self.strict("git push origin feat/x", word, repo=repo)
         for key, value in (("remote.origin.mirror", "false"), ("push.default", "simple"),
-                           ("push.default", "current"), ("push.followtags", "false"), ("push.gpgsign", "if-asked"),
+                           ("push.default", "current"), ("push.followtags", "false"), 
                            ("push.autosetupremote", "true"), ("remote.origin.fetch", "+refs/heads/*"),
                            ("remote.origin.tagopt", "--no-tags"), ("url.x.insteadof", "y"),
                            ("remote.other.push", "x"), ("remote.other.pushurl", "x"), ("core.hookspath", "x"),
@@ -838,8 +838,13 @@ class ExpansionAndEnvConfigTests(Base):
                     repo=FakeRepo(cfg={"commit.gpgsign": ["yes"], "gpg.ssh.program": ["y"]}))
         self.feature("git commit -qm x && git push", repo=FakeRepo(cfg={"gpg.program": ["y"], "commit.gpgsign": ["false"]}))
         self.feature("git commit -qm x && git push", repo=FakeRepo(cfg={"gpg.program": ["y"]}))
-        for cmd in ("git status", "git add -A", "git log -1", "git rev-parse HEAD"):
+        for cmd in ("git status", "git add -A", "git rev-parse HEAD", "git diff --stat"):
             self.feature("%s && git push" % cmd, repo=FakeRepo(cfg=signing))
+        for cmd in ("git log -1", "git show -s", "git log --format=%G? -1", "git log --format=%GS -1"):
+            self.strict("%s && git push" % cmd, "verifies signatures", repo=FakeRepo(cfg=signing))
+            self.strict("%s && git push" % cmd, "verifies signatures", repo=FakeRepo(cfg={"gpg.openpgp.program": ["y"]}))
+            self.strict("%s && git push" % cmd, "verifies signatures",
+                        repo=FakeRepo(cfg={"gpg.ssh.defaultkeycommand": ["y"]}))
         for skip in (False, True):
             stock = {"filter.lfs.clean": ["git-lfs clean %s-- %%f" % ("--skip " if skip else "")],
                      "filter.lfs.smudge": ["git-lfs smudge %s-- %%f" % ("--skip " if skip else "")],
@@ -853,6 +858,91 @@ class ExpansionAndEnvConfigTests(Base):
                             repo=FakeRepo(cfg=dict(stock, **{key: [stock[key][0], "sh -c evil"]})))
         self.strict("git add -A && git push", "would run a program",
                     repo=FakeRepo(cfg={"filter.other.clean": ["git-lfs clean -- %f"]}))
+
+
+class SigningAndBooleanTests(Base):
+    def test_git_bool(self):
+        for text in ("true", "TRUE", "yes", "on", "1", "2", "-1", "1k", "0x1", "+3", "1g", "weird", "if-asked"):
+            self.assertTrue(push_scope.git_bool(text), text)
+        for text in ("false", "No", "off", "0", "", "00", "0k", "0x0", " false "):
+            self.assertFalse(push_scope.git_bool(text), text)
+
+    def test_commit_gpgsign_integer_forms(self):
+        for value in ("true", "2", "-1", "1k", "0x1", "yes"):
+            self.strict("git commit -q --allow-empty -m x && git push", "signs",
+                        repo=FakeRepo(cfg={"commit.gpgsign": [value], "gpg.program": ["/tmp/evil"]}))
+        for value in ("false", "0", "", "off", "0k"):
+            self.feature("git commit -q --allow-empty -m x && git push",
+                         repo=FakeRepo(cfg={"commit.gpgsign": [value], "gpg.program": ["/tmp/evil"]}))
+        env = dict(ENV, GIT_CONFIG_COUNT="1", GIT_CONFIG_KEY_0="commit.gpgsign", GIT_CONFIG_VALUE_0="2")
+        self.strict("git commit -q --allow-empty -m x && git push", "signs", env=env,
+                    repo=FakeRepo(cfg={"commit.gpgsign": ["2"], "gpg.program": ["/tmp/evil"]}))
+
+    def test_stock_system_signer(self):
+        outside = tempfile.mkdtemp(prefix="pscope-outside")
+        self.addCleanup(shutil.rmtree, outside, True)
+        stock = os.path.join(outside, "stockbin")
+        os.makedirs(stock, exist_ok=True)
+        good = os.path.join(stock, "gpg")
+        open(good, "w").close()
+        os.chmod(good, 0o755)
+        saved_uid = push_scope.STOCK_OWNER_UID
+        push_scope.STOCK_OWNER_UID = os.geteuid()
+        home = os.path.join(outside, "home")
+        os.makedirs(home, exist_ok=True)
+        env = dict(ENV, HOME=home)
+        try:
+            signing = {"commit.gpgsign": ["true"], "gpg.program": [good]}
+            self.feature("git commit -qm x && git push", repo=FakeRepo(cfg=signing), env=env)
+            self.feature("git log -1 --format=%G? && git push", repo=FakeRepo(cfg=signing), env=env)
+            # a writable file, another name, a relative path, a missing file, inside HOME or the project: strict
+            os.chmod(good, 0o775)
+            self.strict("git commit -qm x && git push", "signs", repo=FakeRepo(cfg=signing), env=env)
+            os.chmod(good, 0o755)
+            other = os.path.join(stock, "evil")
+            open(other, "w").close()
+            os.chmod(other, 0o755)
+            for value in (other, "gpg", os.path.join(stock, "nope"), "/bin/gpg extra",
+                          os.path.join(self.tmp, "sub", "gpg")):
+                self.strict("git commit -qm x && git push", "signs",
+                            repo=FakeRepo(cfg={"commit.gpgsign": ["true"], "gpg.program": [value]}), env=env)
+            inside_home = os.path.join(home, "gpg")
+            open(inside_home, "w").close()
+            os.chmod(inside_home, 0o755)
+            self.strict("git commit -qm x && git push", "signs",
+                        repo=FakeRepo(cfg={"commit.gpgsign": ["true"], "gpg.program": [inside_home]}), env=env)
+            inside_project = os.path.join(self.tmp, "gpg")
+            open(inside_project, "w").close()
+            os.chmod(inside_project, 0o755)
+            self.strict("git commit -qm x && git push", "signs",
+                        repo=FakeRepo(cfg={"commit.gpgsign": ["true"], "gpg.program": [inside_project]}), env=env)
+            self.strict("git commit -qm x && git push", "signs",
+                        repo=FakeRepo(cfg={"commit.gpgsign": ["true"], "gpg.ssh.defaultkeycommand": [good]}), env=env)
+            push_scope.STOCK_OWNER_UID = os.geteuid() + 1  # owned by somebody else than root
+            self.strict("git commit -qm x && git push", "signs", repo=FakeRepo(cfg=signing), env=env)
+        finally:
+            push_scope.STOCK_OWNER_UID = saved_uid
+        # the cloud container: a signer in world-writable /tmp
+        self.strict("git commit -qm x && git push", "signs", repo=FakeRepo(
+            cfg={"commit.gpgsign": ["true"], "gpg.format": ["ssh"], "gpg.ssh.program": ["/tmp/code-sign"]}))
+
+    def test_lfs_extensions_and_push_gpgsign(self):
+        stock = {"filter.lfs.clean": ["git-lfs clean -- %f"], "filter.lfs.smudge": ["git-lfs smudge -- %f"],
+                 "filter.lfs.process": ["git-lfs filter-process"]}
+        for key in ("lfs.extension.x.clean", "lfs.extension.x.smudge", "lfs.customtransfer.a.path",
+                    "lfs.standalonetransferagent"):
+            for cmd in ("git add -A", "git status", "git commit -qm x"):
+                self.strict("%s && git push" % cmd, "would run a program",
+                            repo=FakeRepo(cfg=dict(stock, **{key: ["/tmp/evil %f"]})))
+        for value in ("true", "if-asked", "1", "2", "yes"):
+            self.strict("git push", "signing program", repo=FakeRepo(cfg={"push.gpgsign": [value]}))
+        for value in ("false", "0", "no", ""):
+            self.feature("git push", repo=FakeRepo(cfg={"push.gpgsign": [value]}))
+        for value in ("false", "0", "off", "0x0"):
+            self.feature("git push origin feat/x", repo=FakeRepo(cfg={"remote.origin.mirror": [value]}))
+        for value in ("true", "2", "1k"):
+            self.strict("git push origin feat/x", "mirror", repo=FakeRepo(cfg={"remote.origin.mirror": [value]}))
+            self.strict("git push origin feat/x", "pushes tags", repo=FakeRepo(cfg={"push.followtags": [value]}))
 
 
 class ParserTests(unittest.TestCase):
