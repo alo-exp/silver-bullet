@@ -195,7 +195,7 @@ agent_delegate_redact_log_file() {
   # error, a crash) must not leave the raw log behind: withhold it here, except through a symlink, which is never written.
   if [[ "$rc" -ne 0 && "$rc" -ne 3 && ! -L "$path" ]]; then
     rm -f -- "$path"
-    printf '%s\n' "[REDACTED: output withheld, redaction failed]" >"$path" 2>/dev/null || true
+    ! printf '%s\n' "[REDACTED: output withheld, redaction failed]" >"$path" 2>/dev/null  # best effort; the raw log is already gone
   fi
   return 0
 }
