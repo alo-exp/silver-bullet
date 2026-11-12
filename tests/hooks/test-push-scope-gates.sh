@@ -98,6 +98,21 @@ ln -s "$PROJ_REAL" "$TL_TMP/lnk-proj"
 mkdir -p "$PROJ_REAL/sub2"
 ln -s "$PROJ_REAL/sub2" "$TL_TMP/lnk-sub"
 expect_strict 'cd .. && git push origin HEAD' 'symbolic link' "$TL_TMP/lnk-sub"
+# a substitution (any nesting) is judged like top-level code: a write, a checkout, a config change is not inert
+HEADW="printf 'ref: refs/heads/main\\n' > .git/HEAD"
+expect_strict "echo \$($HEADW) && git push origin HEAD" 'writes'
+expect_strict "echo \`$HEADW\` && git push origin HEAD" 'writes'
+expect_strict "echo \"\$(echo \"\$($HEADW)\")\" && git push origin HEAD" 'writes'
+expect_strict "cat <<EOF >/dev/null
+\$($HEADW)
+EOF
+git push origin HEAD" 'writes'
+expect_strict "echo > \"\$($HEADW; echo /dev/null)\" && git push origin HEAD" 'writes'
+expect_strict "echo \$(cp /tmp/x .git/HEAD) && git push origin HEAD" 'also runs'
+expect_strict "echo \$(git checkout -q main) && git push origin HEAD" 'git checkout'
+expect_strict "echo \$(git config push.default matching) && git push" 'git config'
+expect_strict ": \$((HOME=0)) && git push origin feature/test" 'assigns or computes'
+expect_feature "echo \$(git rev-parse HEAD) && git push origin feature/test"
 # git settings that change what a push sends
 git -C "$PROJ" config push.default upstream
 expect_strict 'git push' 'push.default'

@@ -27,6 +27,11 @@ def H(rid, cmd, **opts):
 
 
 PUSH_ORIGIN = "git push origin HEAD"
+# writes HEAD of the checkout (a substitution that does this runs before the push the hook has judged)
+WH = "printf 'ref: refs/heads/main\\n' > .git/HEAD"
+PLANT_MAIN = "printf 'ref: refs/heads/main\\n' > @S@/mainhead"
+PUSH_HOOK = ("printf '#!/bin/sh\\n/usr/bin/git --git-dir=@S@/origin.git update-ref -d refs/heads/main\\n' "
+             "> .git/hooks/pre-push; chmod +x .git/hooks/pre-push")
 # files a previous, ungated write could have planted: a relative HOME / PATH then makes git read them
 PLANT_HOME = ("mkdir -p 0; printf '[url \"@S@/origin.git\"]\\n\\tinsteadOf = https://github.com/acme/app.git\\n"
               "[remote \"origin\"]\\n\\tpush = refs/heads/feat/x:refs/heads/main\\n' > 0/.gitconfig")
@@ -204,11 +209,45 @@ ATTACKS = [
     C("X82", "git push origin feat/x", "N", "not defined", env={"GIT_CONFIG_COUNT": "2", "GIT_CONFIG_KEY_0": "user.name", "GIT_CONFIG_VALUE_0": "x"}),
     C("X83", "git push origin feat/x", "N", "not a number", env={"GIT_CONFIG_COUNT": "x"}),
     C("X84", "git push origin feat/x", "N", "not defined", env={"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "user.name"}),
-    C("X85", "git commit --amend && git push", "N", "would run a program", setup="git config core.editor true"),
-    C("X86", "git commit -a && git push", "N", "would run a program", setup="git config core.editor true"),
-    C("X87", "git commit -q && git push", "N", "would run a program", setup="git config core.editor true"),
-    C("X88", "git commit -qm x && git push", "N", "would run a program", setup="git config gpg.ssh.defaultKeyCommand true"),
+    C("X85", "git commit --amend && git push", "N", "start the editor", setup="git config core.editor 'touch /nonexistent/x'"),
+    C("X86", "git commit -a && git push", "N", "start the editor", env={"EDITOR": "evil"}),
+    C("X87", "git commit -q && git push", "N", "start the editor", env={"GIT_EDITOR": "evil"}),
+    C("X88", "git commit -qm x && git push", "N", "signs with the program", setup="git config gpg.ssh.defaultKeyCommand true; git config commit.gpgsign true"),
     C("X89", "git add -A && git push", "N", "would run a program", setup="git config filter.lfs.clean 'sh -c evil'"),
+    C("S1", "echo $(" + WH + ") && git push origin HEAD", "P", "writes"),
+    C("S2", "echo `" + WH + "` && git push origin HEAD", "P", "writes"),
+    C("S3", 'echo "$(echo "$(' + WH + ')")" && git push origin HEAD', "P", "writes"),
+    C("S4", "cat <<EOF >/dev/null\n$(" + WH + ")\nEOF\ngit push origin HEAD", "P", "writes"),
+    C("S5", "cat <(" + WH + ") >/dev/null && git push origin HEAD", "P", "assigns or computes"),
+    C("S6", 'echo > "$(' + WH + '; echo /dev/null)" && git push origin HEAD', "P", "writes"),
+    C("S7", "X=$(" + WH + ") git push origin HEAD", "P", "assignment"),
+    C("S8", "echo $(git config remote.origin.push refs/heads/feat/x:refs/heads/main) && git push origin feat/x", "P", "git config"),
+    C("S9", "echo $(" + PUSH_HOOK + ") && git push origin feat/x", "P", "also runs"),
+    C("S10", "if echo $(" + WH + "); then :; fi; git push origin HEAD", "P", "compound"),
+    C("S11", "case $(" + WH + ") in *) :;; esac; git push origin HEAD", "P", "compound"),
+    C("S12", "for i in $(" + WH + "); do :; done; git push origin HEAD", "P", "compound"),
+    C("S13", "while echo $(" + WH + "); do break; done; git push origin HEAD", "P", "compound"),
+    C("S14", "echo $(tee .git/HEAD <<< 'ref: refs/heads/main' >/dev/null) && git push origin HEAD", "P", "also runs"),
+    C("S15", "echo $(cp @S@/mainhead .git/HEAD) && git push origin HEAD", "P", "also runs", setup=PLANT_MAIN),
+    C("S16", "echo $(mv @S@/mainhead .git/HEAD) && git push origin HEAD", "P", "also runs", setup=PLANT_MAIN),
+    C("S17", "echo $(ln -sf @S@/wt-main/.git .git/x) && git push origin HEAD", "N", "also runs"),
+    C("S18", "echo $(install -m 644 @S@/mainhead .git/HEAD) && git push origin HEAD", "P", "also runs", setup=PLANT_MAIN),
+    C("S19", "echo $(sed -i 's/feat.x/main/' .git/HEAD) && git push origin HEAD", "P", "also runs"),
+    C("S20", "echo $(touch .git/x) && git push origin feat/x", "N", "also runs"),
+    C("S21", "echo $(mkdir .git/x) && git push origin feat/x", "N", "also runs"),
+    C("S22", "echo $(git checkout -q main) && git push origin HEAD", "P", "git checkout", nowt=True),
+    C("S23", "echo $(git switch -q main) && git push origin HEAD", "P", "git switch", nowt=True),
+    C("S24", "echo $(git branch -f feat/x main) && git push origin feat/x", "N", "git branch"),
+    C("S25", "echo $(git reset -q --hard origin/main) && git push origin HEAD", "N", "git reset"),
+    C("S26", "echo $(git symbolic-ref HEAD refs/heads/main) && git push origin HEAD", "P", "symbolic-ref"),
+    C("S27", "echo $(git update-ref refs/heads/feat/x main) && git push origin HEAD", "N", "git update-ref"),
+    C("S28", "echo $(cat <<EOF\n$(" + WH + ")\nEOF\n) && git push origin HEAD", "P", "writes"),
+    C("S29", 'git commit -q --allow-empty -m "x$(' + WH + ')" && git push origin HEAD', "P", "writes"),
+    row("S30", "cat > $(echo /dev/null) <<< x && git push origin feat/x", "I", "N"),
+    C("S31", "echo x > $(echo .git/HEAD) && git push origin HEAD", "N", "writes"),
+    C("S32", "echo $(echo x | tee .git/HEAD) && git push origin HEAD", "N", "also runs"),
+    C("S33", "echo $(export HOME=0) && git push origin feat/x", "N", "also runs"),
+    C("S34", "echo $(cd /tmp; git push origin HEAD) && git push origin feat/x", "N", "more than one"),
     C("E15", "git push origin feat/x", "N", "set-head", setup="git remote set-head origin -d"),
     C("E16", "git push origin HEAD", "N", "detached", setup="git checkout -q --detach"),
 ]

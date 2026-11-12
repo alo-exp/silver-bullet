@@ -51,15 +51,13 @@ COMMIT_BOOL_CLUSTER = re.compile(r"^-[aqvsn]+$")
 SYMBOLIC_REF_FORMS = (["HEAD"], ["--short", "HEAD"], ["-q", "HEAD"], ["-q", "--short", "HEAD"], ["--short", "-q", "HEAD"])
 CONFIG_FORMS = ("--get", "--get-all", "--get-regexp")
 VIEWERS = {"log", "show", "diff", "shortlog"}
-RUN_CONFIG = re.compile(r"^(core\.fsmonitor|core\.hookspath|filter\..*\.(clean|smudge|process)|gpg\.(.*\.)?program|"
-                        r"gpg\.ssh\.defaultkeycommand)$")
-EDITOR_CONFIG = re.compile(r"^(core\.editor|sequence\.editor)$")
-LFS_STOCK = {"filter.lfs.clean": "git-lfs clean -- %f", "filter.lfs.smudge": "git-lfs smudge -- %f",
-             "filter.lfs.process": "git-lfs filter-process"}
+RUN_CONFIG = re.compile(r"^(core\.fsmonitor|core\.hookspath|filter\..*\.(clean|smudge|process))$")
+SIGN_CONFIG = re.compile(r"^(gpg\.(.*\.)?program|gpg\.ssh\.defaultkeycommand)$")
+LFS_STOCK = {"filter.lfs.clean": ("git-lfs clean -- %f", "git-lfs clean --skip -- %f"),
+             "filter.lfs.smudge": ("git-lfs smudge -- %f", "git-lfs smudge --skip -- %f"),
+             "filter.lfs.process": ("git-lfs filter-process", "git-lfs filter-process --skip")}
+BENIGN_EDITORS = {"true", ":", "cat", "/bin/true", "/usr/bin/true", "/usr/bin/env true"}
 VIEW_CONFIG = re.compile(r"^(core\.pager|pager\..*|diff\.external|diff\..*\.(command|textconv))$")
-# which stored settings make an inert git subcommand run a program (a git hook directory is residual 1)
-RUNS_PROGRAMS = {"status": RUN_CONFIG, "add": RUN_CONFIG, "stage": RUN_CONFIG, "commit": RUN_CONFIG,
-                 "describe": RUN_CONFIG, "ls-files": RUN_CONFIG, "rev-parse": RUN_CONFIG}
 BRANCH_LIST_FLAGS = {"--show-current", "--list", "-l", "-a", "--all", "-r", "--remotes", "-v", "-vv"}
 GIT_GLOBALS_OK = {"--no-pager", "-P"}
 PUSH_BOOL = {"-u", "--set-upstream", "-f", "--force", "-q", "--quiet", "-v", "--verbose", "--progress", "--no-verify",
@@ -380,17 +378,34 @@ def node_words(node):
     return literals(node.words)
 
 
-def check_program_config(subs, cfg):
+def effective_editor(cfg, environ):
+    """The editor git starts for a commit message: GIT_EDITOR, core.editor, VISUAL, EDITOR (git's own order)."""
+    for value in (environ.get("GIT_EDITOR"), cfg_get(cfg, "core.editor"), environ.get("VISUAL"), environ.get("EDITOR")):
+        if value:
+            return value
+    return ""
+
+
+def check_program_config(subs, cfg, environ=None):
     """An inert git subcommand runs the programs stored settings name for it (fsmonitor, clean/smudge filters, hooks
-    path, gpg program; pager, external diff, textconv for the viewers): any such setting is final delivery."""
+    path; the gpg program only for a commit that signs; the editor for a commit without a message; pager, external
+    diff, textconv for the viewers): any such setting is final delivery."""
+    environ = environ or {}
     for sub in subs:
-        pattern = (VIEW_CONFIG if sub in VIEWERS else RUNS_PROGRAMS.get(sub, RUN_CONFIG))
+        shown = sub.replace("-editor", "")
+        pattern = VIEW_CONFIG if sub in VIEWERS else None
         for key, values in cfg.items():
-            if key in LFS_STOCK and all(v == LFS_STOCK[key] for v in values):
+            if key in LFS_STOCK and all(v in LFS_STOCK[key] for v in values):
                 continue  # the stock git-lfs filter commands (git-lfs is installed with git)
-            if pattern.match(key) or (sub in VIEWERS and RUN_CONFIG.match(key)) or \
-                    (sub == "commit-editor" and (RUN_CONFIG.match(key) or EDITOR_CONFIG.match(key))):
-                raise Strict("git %s would run a program named by the setting %s" % (sub, key))
+            if RUN_CONFIG.match(key) or (pattern is not None and pattern.match(key)):
+                raise Strict("git %s would run a program named by the setting %s" % (shown, key))
+            if sub in ("commit", "commit-editor") and SIGN_CONFIG.match(key) and \
+                    (cfg_get(cfg, "commit.gpgsign") or "").lower() in ("true", "yes", "on", "1"):
+                raise Strict("git %s signs with the program named by %s" % (shown, key))
+        if sub == "commit-editor":
+            editor = effective_editor(cfg, environ)
+            if editor and editor.strip() not in BENIGN_EDITORS:
+                raise Strict("git commit would start the editor %s (set a message with -m)" % editor.split()[0])
 
 
 def plain_words(script):
@@ -739,7 +754,7 @@ def _shell_scope(script, result, base, environ, git, parse, logical_base):
     head = "refs/heads/" + new if new else head0
     if new and any(key.startswith("includeif.onbranch:") for key in cfg):
         raise Strict("the git configuration depends on the branch that is about to be created")
-    check_program_config(found["subs"], cfg)
+    check_program_config(found["subs"], cfg, environ)
     # S10 remote
     if remote_arg is None:
         if new and start:
