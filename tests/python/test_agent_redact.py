@@ -17,6 +17,7 @@ from sbtest import load_module
 import redact_corpus
 import redact_corpus_r5
 import redact_corpus_r6
+import redact_corpus_r7
 
 agent_redact = load_module("scripts/lib/agent_redact.py")
 
@@ -274,9 +275,15 @@ CORPORA = {
     "r4": redact_corpus.build,
     "r5": redact_corpus_r5.build,
     "r6": redact_corpus_r6.build,
+    "r7": redact_corpus_r7.build,
 }
 # exotic formats of the r5 corpus that the best-effort layer documents as residuals (by name only)
 R5_RESIDUALS = {"ansible vault blob", "session cookie random", "base64-wrapped env", "tab separated"}
+# documented residuals of the r7 corpus: Terraform maps keyed by a plain name, .pgpass colon lines, YAML block scalars, JSON map values
+R7_RESIDUALS = {"tfvars token map", "pgpass line", "composer github-oauth hex", "yaml folded scalar"}
+RESIDUALS = {"r4": (), "r5": R5_RESIDUALS, "r6": (), "r7": R7_RESIDUALS}
+# a JSON object quoted inside a prose sentence is not a JSON line, so its \\u escapes stay undecoded
+WRAPPER_RESIDUALS = {("jsonl unicode escape sep", "prefix-text")}
 WRAPPERS = {
     "plain": lambda t: t,
     "backtick": lambda t: "`" + t + "`",
@@ -410,8 +417,8 @@ class ClassifierTests(unittest.TestCase):
         ("aGVsbG8gd29ybGQ", "bearer", "", "secret"), ("abc", "bearer", "", "none"), ("justletters", "bearer", "", "none"),
         ("123e4567-e89b-12d3-a456-426614174000", "cred", "api_key", "secret"),
         ("123e4567-e89b-12d3-a456-426614174000", "cred", "session_token", "none"),
-        ("getAccessTokenSilently()", "cred", "", "possible"), ("Foo::barBazQuxQuuxCorge", "cred", "", "possible"),
-        ("this.settings.apiKeyHolderObject", "cred", "", "possible"), ("get_token_for_user", "strong", "", "possible"),
+        ("getAccessTokenSilently()", "cred", "", "none"), ("Foo::barBazQuxQuuxCorge", "cred", "", "possible"),
+        ("this.settings.apiKeyHolderObject", "cred", "", "none"), ("river.horse.battery.staple", "cred", "", "possible"), ("get_token_for_user", "strong", "", "possible"),
         ("Zq8mK2pL9x", "strong", "", "secret"), ("12345678", "strong", "", "possible"), ("Zq8mK2", "strong", "", "possible"),
         ("Zq8mK2pL9xRt4Wv", "cli-pass", "", "secret"), ("Zq8mK2", "cli-pass", "", "secret"),
         ("0123456789abcdef0123", "cred", "", "secret"), ("Zq8mK2pL9xRt4WvB", "cred", "", "secret"),
@@ -454,7 +461,7 @@ class CorpusTests(unittest.TestCase):
         wrap = WRAPPERS[wrapper_name]
         secrets, honest = build()
         for fmt, text, core, *_common in secrets:
-            if fmt in residuals:
+            if fmt in residuals or (fmt, wrapper_name) in WRAPPER_RESIDUALS:
                 continue
             wrapped = wrap(text)
             with self.subTest(fmt=fmt, wrapper=wrapper_name):
@@ -469,29 +476,43 @@ class CorpusTests(unittest.TestCase):
 
     def test_corpus_sizes(self):
         sizes = {name: tuple(len(part) for part in build()) for name, build in CORPORA.items()}
-        self.assertEqual(sizes, {"r4": (122, 133), "r5": (87, 67), "r6": (80, 65)})
+        self.assertEqual(sizes, {"r4": (122, 133), "r5": (87, 67), "r6": (80, 65), "r7": (114, 87)})
 
     def test_every_corpus_in_every_wrapper(self):
         for name, build in CORPORA.items():
             for wrapper in WRAPPERS:
                 with self.subTest(corpus=name, wrapper=wrapper):
-                    self.check(build, wrapper, R5_RESIDUALS if name == "r5" else ())
+                    self.check(build, wrapper, RESIDUALS[name])
+
+    def test_logs_of_honest_text_are_mostly_untouched(self):
+        """redact() masks a value under a credential name even when scan() does not refuse it (a log is not a brief); the
+        honest corpora may lose at most 8% of their strings that way (prose labels, dictionary-word passphrases, PEM mentions)."""
+        total = changed = 0
+        for build in CORPORA.values():
+            for _fmt, text in build()[1]:
+                total += 1
+                changed += agent_redact.redact(text) != text
+        self.assertGreater(total, 340)
+        self.assertLessEqual(changed, total * 8 // 100, "%d of %d honest strings are altered" % (changed, total))
 
     def test_scan_catches_whatever_redact_changes(self):
         for name, build in CORPORA.items():
             secrets, _honest = build()
             for fmt, text, *_rest in secrets:
-                if fmt not in R5_RESIDUALS and agent_redact.redact(text) != text:
+                if fmt not in RESIDUALS[name] and agent_redact.redact(text) != text:
                     with self.subTest(corpus=name, fmt=fmt):
                         self.assertIsNotNone(agent_redact.scan(text))
 
     def test_every_refused_span_is_redacted(self):
         for name, build in CORPORA.items():
-            secrets, _honest = build()
-            for fmt, text, *_rest in secrets:
-                for found in agent_redact.analyze(text)[0]:
-                    with self.subTest(corpus=name, fmt=fmt):
-                        self.assertNotEqual(agent_redact.redact(text), text, found)
+            for fmt, text, *_rest in build()[0]:
+                if any(line.lstrip()[:1] in ("{", "[") for line in text.split("\n")):
+                    continue  # JSON lines are scanned on their decoded strings, not on the raw text
+                redacted = agent_redact.redact(text)
+                for start, end, rule, verdict in agent_redact.candidates(text):
+                    if verdict == agent_redact.SECRET and end > start and text.count(text[start:end]) == 1:
+                        with self.subTest(corpus=name, fmt=fmt, rule=rule):
+                            self.assertNotIn(text[start:end], redacted)
 
     def test_scan_and_redact_share_the_pipeline(self):
         with mock.patch.object(agent_redact, "analyze", wraps=agent_redact.analyze) as spy:
@@ -503,7 +524,7 @@ class CorpusTests(unittest.TestCase):
         known = {row[0] for row in agent_redact.VENDOR}
         known |= {"pem", "discord-bot", "url-userinfo", "url-token-user", "assignment", "authorization", "xml-element",
                   "xml-attribute", "json-field", "stdin-secret", "netrc", "bearer", "powershell-secure", "cli-aws",
-                  "cli-poetry", "cli-htpasswd", "cli-flag", "cli-user"}
+                  "cli-poetry", "cli-htpasswd", "cli-flag", "cli-user", "pair-value", "dockerfile-env", "table-row"}
         known |= {"cli-" + prog for prog in agent_redact._PROGS}
         for build in CORPORA.values():
             for _fmt, text, *_rest in build()[0]:
@@ -656,6 +677,7 @@ class MarkdownTests(unittest.TestCase):
             text = handle.read()
         self.assertGreaterEqual(len(text.splitlines()), 40)
         self.assertIsNone(agent_redact.scan(text))
+        self.assertEqual(agent_redact.redact(text), text)
 
     def test_code_spans_and_fences(self):
         secret = _value("md", 20)
@@ -692,6 +714,20 @@ class LinearityTests(unittest.TestCase):
             "aws-cfg": "aws configure set ", "echo-pipe": "echo x | ", "name-128": "a" * 127 + "=", "sk-run": "sk-", "amp": "password=a&",
             "paren": "token=f(", "md-fence": "```\n", "json-escapes": '{"a":"' + '\\"' * 4 + '"}\n',
             "jsonl-psql": jsonl_row(),
+            # round 7 reviewer shapes
+            "ref-underscore": "token=$a" + "_" * 1010 + "! ", "ref-brace": "password={" + "a" * 199 + "}" + "_" * 800 + "! ",
+            "backslash-run": "\\", "bs-quote": "\\\"", "eq-token": "token==", "colon-run": ":", "nul-run": "\x00", "uni-run": "密",
+            "surrogate-ish": "\udcff", "long-value-ident": "password=" + "Ab_" * 340 + " ", "long-value-path": "secret=/" + "abc/" * 250 + " ",
+            "call-args": "token=f(" + "a," * 500 + ") ", "weak-hex": "key=a" + "-abcdef0" * 127 + " ", "cli-quotes": "mysql -p '" + "x" * 1000 + " ",
+            "cli-long": "docker login " + "-u " * 2000 + "\n", "netrc-paren": "login(((((((((((((((((", "pem-label": "-----BEGIN " + "A" * 60 + "\n",
+            "pem-noend": "-----BEGIN PRIVATE KEY-----\n" + "A" * 64 + "\n", "url-at-run": "a://" + "@" * 100 + " ",
+            "url-host-dots": "a://u:p@" + "." * 2000 + " ", "xml-attr": 'key="password" value="', "vendor-SK": "-SK", "vendor-key-": "-key-",
+            "tele": "12345678:AA", "slackwh": "https://hooks.slack.com/services/T", "opaque-run": "arn:aws", "ticks-assign": "`token=a` ",
+            "md-table": "| API_TOKEN | x |\n", "auth-unknown": "Authorization: SSWS " + "a" * 40 + "\n", "echo-run": "echo ", "bearer-quote": 'bearer "',
+            "json-many-pw": '{"password": "Zq8!mK2pL9x"}\n', "k8s-pairs": "- name: DB_PASSWORD\n  value: x\n", "name-flood": "name: password ",
+            "obj-value": 'adminPassword": {"value": ', "dockerfile-env": "ENV API_KEY x\n", "long-flag": "--docker-" + "a-" * 20 + "password ",
+            "npm-config": "npm config set ", "bracket-open": "token=f(", "dollar-brace": "token=${", "mysql-quoted": "mysql -p'x' -p'y' ",
+            "json-nested-str": json.dumps({"o": json.dumps({"password": "Zq8mK2pL9xRt4"})}) + "\n",
         }
 
     def timed(self, text):

@@ -246,6 +246,17 @@ assert_eq "transcript: no transcript file survives a failed redaction" "0" "$(fi
 # uncreatable directories fail closed
 ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="/proc/no/such/dir"
 assert_contains "transcript: uncreatable named directory fails" "$TL_OUT" "rc=1"
+# stale capture temp files (left by a SIGKILL) are swept; recent ones, links and other files are kept
+mkdir -p "$TL_TMP/tdirS"; chmod 700 "$TL_TMP/tdirS"
+printf 'raw\n' >"$TL_TMP/tdirS/.capture.OLDAAA"; printf 'raw\n' >"$TL_TMP/tdirS/.meta.OLDBBB"; printf 'raw\n' >"$TL_TMP/tdirS/.capture.NEWCCC"
+printf 'keep\n' >"$TL_TMP/tdirS/notes.txt"; ln -s "$TL_TMP/src2.jsonl" "$TL_TMP/tdirS/.capture.LINK"
+touch -d '3 hours ago' "$TL_TMP/tdirS/.capture.OLDAAA" "$TL_TMP/tdirS/.meta.OLDBBB"
+ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"' CODEX_TRANSCRIPT_DIR="$TL_TMP/tdirS"
+assert_file_absent "transcript: a stale capture temp file is swept" "$TL_TMP/tdirS/.capture.OLDAAA"
+assert_file_absent "transcript: a stale meta temp file is swept" "$TL_TMP/tdirS/.meta.OLDBBB"
+assert_file_exists "transcript: a recent capture temp file is kept" "$TL_TMP/tdirS/.capture.NEWCCC"
+assert_file_exists "transcript: unrelated files are kept" "$TL_TMP/tdirS/notes.txt"
+assert_eq "transcript: a link named like a capture file is kept" "yes" "$([[ -L "$TL_TMP/tdirS/.capture.LINK" ]] && echo yes || echo no)"
 ad codex 'mktemp() { return 1; }; codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' CODEX_TRANSCRIPT_DIR="$TL_TMP/tdirM"
 assert_contains "transcript: a capture temp file that cannot be created fails the capture" "$TL_OUT" "rc=1"
 ad codex 'codex_capture_transcript "$TL_TMP/src2.jsonl" "$TL_TMP/absent2"; echo rc=$?' TMPDIR="$TL_TMP/no-such-tmp"

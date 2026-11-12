@@ -156,6 +156,16 @@ ln -s "$TL_TMP/log.txt" "$TL_TMP/log.link"
 printf 'token=zzz999\n' >"$TL_TMP/log.txt"
 agent_delegate_redact_log_file "$TL_TMP/log.link" 2>/dev/null
 assert_eq "redact file: refuses to write through a symlink" "token=zzz999" "$(cat "$TL_TMP/log.txt")"
+# a redactor that cannot run never leaves the raw log behind
+printf 'token=%s\n' 'zzzSECRET999abcdef' >"$TL_TMP/log.fail"
+PATH="$(tl_path_without python3)" agent_delegate_redact_log_file "$TL_TMP/log.fail"
+assert_not_contains "redact file: a failing redactor withholds the raw log" "$(cat "$TL_TMP/log.fail")" "zzzSECRET999abcdef"
+assert_contains "redact file: the withheld marker says why" "$(cat "$TL_TMP/log.fail")" "redaction failed"
+# a JSON line with a lone surrogate escape is still redacted (and the file stays valid)
+printf 'password=%s\n{"text":"\\ud83d %s%s"}\n' 'Zq8mK2pL9xRt4W' 'ghp_' 'A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8' >"$TL_TMP/log.surrogate"
+agent_delegate_redact_log_file "$TL_TMP/log.surrogate"
+assert_not_contains "redact file: lone surrogate line redacted (token)" "$(cat "$TL_TMP/log.surrogate")" "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"
+assert_not_contains "redact file: lone surrogate file redacted (password)" "$(cat "$TL_TMP/log.surrogate")" "Zq8mK2pL9xRt4W"
 
 # the raw log stays private and is redacted when the delegate is interrupted (R4-31)
 bash -c '

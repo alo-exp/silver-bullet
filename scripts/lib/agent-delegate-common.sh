@@ -189,7 +189,15 @@ agent_delegate_redact_output() {
 agent_delegate_redact_log_file() {
   local path="$1"
   [[ -f "$path" ]] || return 0
-  python3 "${_AGENT_DELEGATE_COMMON_DIR}/agent_redact.py" --redact-file "$path" || true
+  local rc=0
+  python3 "${_AGENT_DELEGATE_COMMON_DIR}/agent_redact.py" --redact-file "$path" || rc=$?
+  # Exit 3: the redactor already replaced the log with its withheld marker. Any other failure (python3 missing, a write
+  # error, a crash) must not leave the raw log behind: withhold it here, except through a symlink, which is never written.
+  if [[ "$rc" -ne 0 && "$rc" -ne 3 && ! -L "$path" ]]; then
+    rm -f -- "$path"
+    printf '%s\n' "[REDACTED: output withheld, redaction failed]" >"$path" 2>/dev/null || true
+  fi
+  return 0
 }
 
 # Keep the raw log private while the child runs (0600) and redact it even when the delegate is
