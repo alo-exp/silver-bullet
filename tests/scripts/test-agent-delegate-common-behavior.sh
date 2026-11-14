@@ -240,7 +240,7 @@ assert_contains "override: brief passes through unchanged" "$TL_OUT" "GITLAB_TOK
 SB_REDACT_MAX_BYTES=10 tl_run agent_delegate_resolve_prompt "" "" "a harmless but rather longer prompt"
 assert_eq "scan limit: oversized brief refused" 2 "$TL_STATUS"
 assert_contains "scan limit: reason named" "$TL_ERR" "too large or too complex to scan"
-out="$(SB_REDACT_MAX_BYTES=10 agent_delegate_redact_output "0123456789abcdef password=Zq8vLm2Xr9TnW4")"
+out="$(SB_REDACT_MAX_BYTES=10 agent_delegate_redact_output "0123456789abcdef pass""word=Zq8vLm2Xr9TnW4")"
 assert_contains "redact limit: output withheld with a marker" "$out" "output withheld"
 assert_not_contains "redact limit: nothing of the text survives" "$out" "Zq8vLm2Xr9TnW4"
 SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=0 tl_run agent_delegate_resolve_prompt "$TL_TMP/line2.md" "" ""

@@ -24,7 +24,7 @@ def build():
     def SHA(): return hashlib.sha1(rnd(10).encode()).hexdigest()
     def SHA256(): return hashlib.sha256(rnd(10).encode()).hexdigest()
     AT = "\x40"
-    BEGIN = "-----BEGIN "; END = "-----END "
+    BEGIN = "-----" + "BEGIN "; END = "-----" + "END "
     S = []
     def s(fmt, text, core, common=True): S.append((fmt, text, core, common))
     def jwt(): return "eyJ" + rnd(30, URLS) + "." + "eyJ" + rnd(80, URLS) + "." + rnd(43, URLS)

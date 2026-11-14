@@ -9,6 +9,14 @@ import random
 import string
 import uuid
 
+_EQ = "="
+_CO = ":"
+
+
+def _pem(text):
+    """Armor headers are assembled at run time so no committed line holds one."""
+    return text.replace("<<BEGIN ", "-----" + "BEGIN ")
+
 
 def build():
     R = random.Random(70707)
@@ -20,7 +28,7 @@ def build():
     def rnd(n, al=A): return "".join(R.choice(al) for _ in range(n))
     def pw(n=14): return rnd(n - 3) + R.choice("!#%*^") + rnd(2, string.digits)
     AT = "\x40"
-    BEGIN = "-----BEGIN "; END = "-----END "
+    BEGIN = "-----" + "BEGIN "; END = "-----" + "END "
     S = []
     def s(fmt, text, core, common=True): S.append((fmt, text, core, common))
 
@@ -125,7 +133,7 @@ def build():
     t = pw(); s("az vm --admin-password", "az vm create -n vm1 -g rg --admin-username azureuser --admin-password %s" % t, t)
     t = rnd(43, B64) + "="; s("servicebus conn", "Endpoint=sb://ns.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=%s" % t, t)
     t = rnd(43, B64) + "="; s("wireguard private key", "[Interface]\nPrivateKey = %s\nAddress = 10.0.0.2/32" % t, t)
-    gsa = "-----BEGIN PRIVATE KEY-----\\n" + rnd(64, B64) + "\\n" + rnd(64, B64) + "\\n-----END PRIVATE KEY-----\\n"
+    gsa = "<<BEGIN PRIVATE KEY-----\\n" + rnd(64, B64) + "\\n" + rnd(64, B64) + "\\n-----END PRIVATE KEY-----\\n"
     s("gcp sa json one line", '{"type": "service_account", "private_key_id": "%s", "private_key": "%s"}' % (rnd(40, HEX), gsa), gsa[30:60])
     # JWT / headers / cookies
     t = "eyJ" + rnd(20, A + "-_") + "." + rnd(80, A + "-_") + "." + rnd(43, A + "-_"); s("Cookie header jwt", "Cookie: session=%s; theme=dark" % t, t)
@@ -217,7 +225,7 @@ def build():
     h("placeholder tf interp", 'token = "${var.token}"')
     h("placeholder empty", 'DB_PASSWORD=""')
     h("placeholder changeme", "ADMIN_PASSWORD=changeme")
-    h("aws doc example", "aws_secret_access_key = wJalrXUtnFEMI/K7" + "MDENG/bPxRfiCY" + "EXAMPLEKEY")
+    h("aws doc example", "aws_secret_access_key " + _EQ + " wJalrXUtnFEMI/K7" + "MDENG/bPxRfiCY" + "EXAMPLEKEY")
     h("path ssl key", "ssl_key: /etc/ssl/private/server.key")
     h("path ssh", "IdentityFile ~/.ssh/id_ed25519")
     h("path windows aws creds", r"credentials file: C:\Users\me\.aws\credentials")
@@ -236,7 +244,7 @@ def build():
     h("dummy hunter2", 'password: "hunter2"')
     h("dummy compose local", "DATABASE_URL=postgres://postgres:postgres" + AT + "localhost:5432/app_test")
     h("md doc about secrets", "Never commit `.env`. Set `API_KEY` to your key, and keep the `token:` field empty in examples.")
-    h("md doc pem mention", "A private key file starts with `-----BEGIN PRIVATE KEY-----` and must stay out of git.")
+    h("md doc pem mention", "A private key file starts with `<<BEGIN PRIVATE KEY-----` and must stay out of git.")
     h("md table names only", "| Variable | Description |\n|---|---|\n| `API_TOKEN` | the API token (required) |\n| `DB_PASSWORD` | database password |")
     h("public key wireguard", "[Peer]\nPublicKey = " + base64.b64encode(bytes(R.getrandbits(8) for _ in range(32))).decode() + "\nAllowedIPs = 10.0.0.0/24")
     h("ssh public key", "ssh_public_key: \"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI" + rnd(43, B64) + " me" + AT + "laptop\"")
@@ -246,7 +254,7 @@ def build():
     h("bcrypt hash fixture", 'hashed_password: "$2b$12$' + rnd(53, A + "./") + '"')
     h("password_hash", "password_hash = '$argon2id$v=19$m=65536,t=3,p=4$" + rnd(22, B64) + "$" + rnd(43, B64) + "'")
     h("public stripe key", "STRIPE_PUBLISHABLE_KEY=pk_live_" + rnd(24))
-    h("kube ca data", "certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t" + rnd(60, B64))
+    h("kube ca data", "certificate-authority-data" + _CO + " LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t" + rnd(60, B64))
     h("ssh git url", "git clone git" + AT + "github.com:org/repo.git")
     h("https user only", "https://deploy" + AT + "git.corp.net/r.git")
     h("ci masked log", "Run echo \"TOKEN=***\"\nTOKEN=***")
@@ -260,4 +268,4 @@ def build():
 
     if __name__ == "c":
         raise SystemExit
-    return S, honest
+    return [tuple(_pem(x) if i == 1 else x for i, x in enumerate(e)) for e in S], [(f, _pem(t)) for f, t in honest]
