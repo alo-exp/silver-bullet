@@ -21,7 +21,7 @@ Sixteen enforcement layers are active. Hooks are invocation-based — the hooks 
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning incomplete before code edits
 3. **Compliance status** (PostToolUse/all) — shows workflow progress on every tool use
 4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — blocks direct edits to SB-managed planning artifacts (ROADMAP.md, STATE.md, etc.); use the owning SB skill or workflow instead
-5. **Completion audit** (Pre+PostToolUse/Bash) — blocks commits until planning done; blocks PR/deploy/release until full workflow done
+5. **Completion audit** (Pre+PostToolUse/Bash, PreToolUse on MCP tools) — blocks commits until planning done; blocks PR/deploy/release until full workflow done; a push is intermediate only when it provably targets an explicit non-default branch — pushes to the default branch, of tags, deletions, globs, `--all`/`--mirror` and anything unresolvable count as final delivery
 6. **CI status check** (Pre+PostToolUse/Bash) — blocks push, PR create/merge and release while CI is failing; after a commit it only warns so a CI fix can be committed
 7. **Session management** (PostToolUse/Bash + SessionStart) — timeout detection, branch-scoped state reset; SessionStart hook checks installed SB version vs GitHub latest and injects the §0.5.1 A/B update prompt when an update is available (fail-soft offline)
 8. **Stop hook** (Stop/SubagentStop) — blocks task-complete declaration if the required_planning floor is incomplete (two-tier model: the full required_deploy list is enforced separately at delivery commands by the completion audit, layer 5)

@@ -82,7 +82,9 @@ for cmd in 'f(){ "$@"; }; f gh pr create --fill' 'a=(gh pr create --fill); "${a[
   "\$(printf '\\x67it') commit -m x"; do
   expect "unseen delivery is gated: $cmd" deny "COMPLETION BLOCKED" "$cmd"
 done
-for cmd in '/usr/lib/git-core/git-push origin HEAD' 'git merge -n other' \
+# a push through the git-core helper path is not provably a feature-branch push: final delivery
+expect "git-core helper push is final delivery" deny "COMPLETION BLOCKED" '/usr/lib/git-core/git-push origin HEAD'
+for cmd in 'git merge -n other' \
   'git commit --allow-empty -m --help' 'HOME=/tmp/h git ci -m x' 'git pull --no-rebase . other'; do
   expect "reshaped commit is gated: $cmd" deny "COMMIT BLOCKED" "$cmd"
 done
@@ -173,7 +175,8 @@ expect "no python3: read-only command allowed" allow "" 'ls -la' PATH="$NOPY"
 tl_stub python3 'exit 7'
 expect "broken python3: commit denied at the strictest floor" deny "COMPLETION BLOCKED" 'git -C . commit -m x'
 expect "broken python3: an alias the regex cannot see is denied" deny "COMPLETION BLOCKED" 'git -c alias.ci=commit ci -m x'
-expect "broken python3: even a harmless command is held" deny "COMPLETION BLOCKED" 'ls -la'
+expect "broken python3: a plainly read-only command is not held (R1-37 follow-up)" allow "" 'ls -la'
+expect "broken python3: a harmless command that is not on the read-only list is held" deny "COMPLETION BLOCKED" 'npm test'
 rm -f "$TL_BIN/python3"
 
 tl_results
