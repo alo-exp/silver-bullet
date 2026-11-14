@@ -13,6 +13,7 @@ G1 ``rev-parse`` (current branch, source refs), G2 ``config -z --list``, G3 ``fo
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import signal
@@ -24,7 +25,13 @@ GIT_DEADLINE_SECONDS = 3.0
 GIT_CALL_SECONDS = 2.0
 
 ENV_DENY = ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_CONFIG", "GIT_CONFIG_GLOBAL",
-            "GIT_CONFIG_SYSTEM", "GIT_CONFIG_PARAMETERS", "GIT_EXEC_PATH", "BASH_ENV", "ENV")
+            "GIT_CONFIG_SYSTEM", "GIT_CONFIG_PARAMETERS", "GIT_EXEC_PATH", "BASH_ENV", "ENV",
+            # programs git starts, or repositories it uses instead of the one the proof read
+            "GIT_EXTERNAL_DIFF", "GIT_SSH", "GIT_PROXY_COMMAND", "GIT_ASKPASS", "SSH_ASKPASS", "GIT_INDEX_FILE",
+            "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES")
+# environment variables that are judged by value (see env_check): GIT_SSH_COMMAND, GIT_PAGER, GIT_EDITOR, VISUAL,
+# EDITOR (check_program_config) and PATH (absolute entries only)
+ENV_BY_VALUE = ("GIT_SSH_COMMAND", "GIT_PAGER", "GIT_EDITOR", "VISUAL", "EDITOR", "PATH", "GIT_CONFIG_COUNT")
 INERT_PROGRAMS = {"echo", "printf", "true", ":", "cat", "head", "tail", "grep", "wc", "sleep", "pwd", "ls", "test", "["}
 # Inert git: a subcommand is inert only when EVERY option is on its exact allowlist (no prefix abbreviations: git
 # accepts --outp= for --output=, which writes any file). log/show/diff/shortlog are "viewers": they also run
@@ -54,6 +61,21 @@ VIEWERS = {"log", "show", "diff", "shortlog"}
 RUN_CONFIG = re.compile(r"^(core\.fsmonitor|core\.hookspath|filter\..*\.(clean|smudge|process)|"
                         r"lfs\.extension\..*|lfs\.customtransfer\..*|lfs\.standalonetransferagent)$")
 SIGN_CONFIG = re.compile(r"^(gpg\.(.*\.)?program|gpg\.ssh\.defaultkeycommand)$")
+EDITOR_CONFIG = re.compile(r"^core\.editor$")
+PUSH_RUN_CONFIG = re.compile(r"^(core\.(sshcommand|gitproxy|askpass|alternaterefscommand)|uploadpack\.packobjectshook|"
+                             r"credential\.helper|credential\..+\.helper|protocol\.ext\.allow)$")
+URL_CONFIG = re.compile(r"^(url\..+\.insteadof|remote\..+\.url)$")
+BOOL_WORDS = {"true", "false", "yes", "no", "on", "off", "0", "1", ""}
+BENIGN_PAGERS = {"cat", "", "true", ":"}
+SSH_PROGRAMS = {"ssh", "/usr/bin/ssh", "/usr/local/bin/ssh", "/bin/ssh"}
+SSH_VALUE_FLAGS = {"-i", "-p", "-l"}  # not -F: a config file can hold ProxyCommand/LocalCommand
+SSH_BOOL_FLAGS = {"-q", "-v", "-T", "-4", "-6", "-A", "-a", "-x", "-C", "-y"}
+SSH_VALUE = re.compile(r"^[A-Za-z0-9_./:@~,+=%-]+$")
+STOCK_HELPERS = {"store", "cache", "osxkeychain", "manager", "manager-core", "libsecret", "wincred", "netrc"}
+STOCK_HELPER_ARGS = re.compile(r"^(\s+(--[a-z-]+(=[A-Za-z0-9_./~-]+)?|[A-Za-z0-9_./~-]+))*$")
+GH_HELPER = re.compile(r"^!(/usr/bin/|/usr/local/bin/|/opt/homebrew/bin/|/bin/)?gh auth git-credential$")
+CREDENTIAL_EXEC_DIRS = {"/usr/lib/git-core", "/usr/libexec/git-core", "/usr/local/libexec/git-core"}
+SAFE_SCHEMES = {"https", "http", "ssh", "git", "file", "git+ssh", "ssh+git"}
 LFS_STOCK = {"filter.lfs.clean": ("git-lfs clean -- %f", "git-lfs clean --skip -- %f"),
              "filter.lfs.smudge": ("git-lfs smudge -- %f", "git-lfs smudge --skip -- %f"),
              "filter.lfs.process": ("git-lfs filter-process", "git-lfs filter-process --skip")}
@@ -307,7 +329,9 @@ def inert_git(sub, args):
     if ok and sub == "commit" and not any(
             a in ("-m", "--message", "-F", "--file", "--no-edit") or a.startswith(("--message=", "--file=", "-m"))
             or COMMIT_CLUSTER.match(a) for a in args):
-        return "commit-editor"  # no message on the command line: git starts core.editor
+        sub = "commit-editor"  # no message on the command line: git starts core.editor
+    if ok and sub in ("commit", "commit-editor") and "--no-gpg-sign" in args:
+        sub += "+nosign"  # an explicit --no-gpg-sign never calls the signing program
     return sub if ok else None
 
 
@@ -405,10 +429,50 @@ def git_bool(value):
     return True
 
 
+def safe_chain(path):
+    """Every directory from / to ``path`` is owned by root and not group/world-writable (a sticky shared directory
+    such as /tmp is therefore not)."""
+    current = os.path.dirname(path)
+    while True:
+        try:
+            info = os.stat(current)
+        except OSError:
+            return False
+        if info.st_uid != STOCK_OWNER_UID or info.st_mode & 0o022:
+            return False
+        parent = os.path.dirname(current)
+        if parent == current:
+            return True
+        current = parent
+
+
+def user_trusted_programs(environ):
+    """Signing programs the user blessed in the per-user consent file (never the committed project config):
+    ``{"trusted_programs": {"signing": ["/abs/path", ...]}}`` in ${XDG_CONFIG_HOME:-~/.config}/silver-bullet/consent.json,
+    a regular file owned by the current user that nobody else can access."""
+    base = environ.get("XDG_CONFIG_HOME") or os.path.join(environ.get("HOME") or "/nonexistent", ".config")
+    path = os.path.join(base, "silver-bullet", "consent.json")
+    try:
+        info = os.lstat(path)
+        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077:
+            return set()
+        with open(path, encoding="utf-8") as handle:
+            listed = json.load(handle)["trusted_programs"]["signing"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return set()
+    return {item for item in listed if isinstance(item, str)} if isinstance(listed, list) else set()
+
+
 def stock_signer(value, directory, environ):
-    """A signing/verification program git would run that is a stock system signer: an absolute path to gpg, gpg2,
-    gpgsm or ssh-keygen, a regular file owned by root that nobody else can write, outside the project and HOME."""
-    if not os.path.isabs(value) or re.search(r"\s", value) or os.path.basename(value) not in STOCK_SIGNERS:
+    """A signing/verification program git would run that is trusted: an absolute path the user listed in the
+    per-user consent file, or a stock system signer: gpg, gpg2, gpgsm or ssh-keygen, a regular file owned by root that
+    nobody else can write, in directories that are all root-owned and not writable by others, not a symlink to
+    anything less, and outside the project and HOME."""
+    if not os.path.isabs(value) or re.search(r"\s", value):
+        return False
+    if value in user_trusted_programs(environ):
+        return True
+    if os.path.basename(value) not in STOCK_SIGNERS:
         return False
     try:
         real = os.path.realpath(value)
@@ -419,13 +483,14 @@ def stock_signer(value, directory, environ):
         top = os.path.realpath(root)
         if real == top or real.startswith(top.rstrip("/") + "/"):
             return False
-    return stat.S_ISREG(info.st_mode) and info.st_uid == STOCK_OWNER_UID and not info.st_mode & 0o022
+    return (stat.S_ISREG(info.st_mode) and info.st_uid == STOCK_OWNER_UID and not info.st_mode & 0o022
+            and safe_chain(value) and safe_chain(real))
 
 
 def check_signing(sub, key, values, cfg, directory, environ):
     """gpg program settings: a commit that signs, and log/show (which verify signatures: log.showSignature, %G?
     placeholders, --show-signature) run them; a stock system signer is accepted, anything else is a program."""
-    verifies = sub in ("log", "show")
+    verifies = sub in ("log", "show", "shortlog")
     commits = sub in ("commit", "commit-editor") and git_bool(cfg_get(cfg, "commit.gpgsign") or "")
     if not (verifies or commits):
         return
@@ -440,15 +505,21 @@ def check_program_config(subs, cfg, environ=None, directory=""):
     diff, textconv for the viewers): any such setting is final delivery."""
     environ = environ or {}
     for sub in subs:
+        unsigned = sub.endswith("+nosign")
+        sub = sub[:-len("+nosign")] if unsigned else sub
         shown = sub.replace("-editor", "")
         pattern = VIEW_CONFIG if sub in VIEWERS else None
         for key, values in cfg.items():
             if key in LFS_STOCK and all(v in LFS_STOCK[key] for v in values):
                 continue  # the stock git-lfs filter commands (git-lfs is installed with git)
+            if key == "core.fsmonitor" and all(v.strip().lower() in BOOL_WORDS for v in values):
+                continue  # a boolean selects git's built-in file system monitor, not a program
             if RUN_CONFIG.match(key) or (pattern is not None and pattern.match(key)):
                 raise Strict("git %s would run a program named by the setting %s" % (shown, key))
-            if SIGN_CONFIG.match(key):
+            if SIGN_CONFIG.match(key) and not unsigned:
                 check_signing(sub, key, values, cfg, directory, environ)
+        if sub in VIEWERS and (environ.get("GIT_PAGER") or "").strip() not in BENIGN_PAGERS:
+            raise Strict("git %s would start the pager %s" % (shown, environ["GIT_PAGER"].split()[0]))
         if sub == "commit-editor":
             editor = effective_editor(cfg, environ)
             if editor and editor.strip() not in BENIGN_EDITORS:
@@ -529,6 +600,73 @@ def remote_variable(key):
     return name, var
 
 
+def ssh_command_ok(command):
+    """A plain `ssh [-i KEY] [-F FILE] [-p N] [-o Name=value] ...` command line: no quoting, no shell syntax and no
+    option that runs a command (ProxyCommand, LocalCommand, KnownHostsCommand...)."""
+    tokens = command.split()
+    if not tokens or tokens[0] not in SSH_PROGRAMS:
+        return False
+    i = 1
+    while i < len(tokens):
+        word = tokens[i]
+        i += 1
+        if word in SSH_BOOL_FLAGS:
+            continue
+        if word in SSH_VALUE_FLAGS or word == "-o":
+            if i >= len(tokens):
+                return False
+            value, i = tokens[i], i + 1
+        elif word.startswith("-o") and len(word) > 2:
+            value = word[2:]
+        else:
+            return False
+        if not SSH_VALUE.match(value):
+            return False
+        if word in ("-o", ) or word.startswith("-o"):
+            name = value.split("=", 1)[0].lower()
+            if "=" not in value or name.endswith("command") or name.endswith("provider") \
+                    or name in ("permitlocalcommand", "proxyjump", "include"):
+                return False
+    return True
+
+
+def stock_helper(value):
+    """A credential helper that is a stock one: store/cache/osxkeychain/manager/libsecret/netrc (with plain
+    options), `gh auth git-credential`, or git's own git-credential-* in its exec directory."""
+    if value == "" or GH_HELPER.match(value):
+        return True
+    name = value.split(None, 1)[0]
+    rest = value[len(name):]
+    if name in STOCK_HELPERS:
+        return bool(STOCK_HELPER_ARGS.match(rest))
+    return os.path.dirname(name) in CREDENTIAL_EXEC_DIRS and os.path.basename(name).startswith("git-credential-") \
+        and bool(STOCK_HELPER_ARGS.match(rest))
+
+
+def safe_url(url):
+    """A remote URL that git reaches with its own transports: https, http, ssh, git, file, scp-like or a path; not
+    `<helper>::...` and not another scheme (that runs git-remote-<scheme> from PATH, or ext:: runs a command)."""
+    if "::" in url:
+        return False
+    match = re.match(r"^([A-Za-z][A-Za-z0-9+.-]*)://", url)
+    return match is None or match.group(1).lower() in SAFE_SCHEMES
+
+
+def check_push_programs(key, values):
+    """Programs a push itself starts or the transport it uses: ssh, proxy, askpass, credential helpers, remote
+    helpers, alternate-refs command. A stock form is accepted; anything else is final delivery."""
+    if key == "core.sshcommand":
+        ok = all(ssh_command_ok(v) for v in values)
+    elif key in ("core.gitproxy", "core.askpass", "core.alternaterefscommand", "uploadpack.packobjectshook"):
+        ok = all(v == "" for v in values)
+    elif key == "protocol.ext.allow":
+        ok = all(v.lower() == "never" for v in values)
+    else:  # credential.helper, credential.<url>.helper
+        ok = all(stock_helper(v) for v in values)
+    if not ok:
+        raise Strict("the setting %s makes the push start a program" % key)
+
+
 def check_config(cfg, remote):
     """S10: per-namespace allowlists for the keys that steer a push."""
     for key, values in cfg.items():
@@ -556,6 +694,12 @@ def check_config(cfg, remote):
                 raise Strict("%s changes what a push sends" % key)
         elif key.startswith("url.") and key.endswith(".pushinsteadof"):
             raise Strict("a url.*.pushInsteadOf rewrite changes where a push goes")
+        if PUSH_RUN_CONFIG.match(key):
+            check_push_programs(key, values)
+        if key.startswith("url.") and key.endswith(".insteadof") and not safe_url(key[len("url."):-len(".insteadof")]):
+            raise Strict("a url.*.insteadOf rewrite points git at a remote helper (%s)" % key)
+        if parts is not None and parts[0] == remote and parts[1] == "url" and not all(safe_url(v) for v in values):
+            raise Strict("the remote URL names a remote helper or an unsupported transport")
 
 
 def bare_remote(cfg, current):
@@ -656,6 +800,8 @@ def check_entries(result, wrapper=None):
         kind = classify_argv(argv)
         if kind[0] in ("push", "cd", "newbranch"):
             found[kind[0]].append((entry, kind))
+            if kind[0] == "newbranch":
+                found["subs"].add("checkout")  # switching branches runs post-checkout, filters and the monitor
         elif kind[0] == "inert":
             found["subs"].add(kind[1])
         else:
@@ -724,6 +870,11 @@ def env_config_check(environ):
 def env_check(environ):
     """S1: variables that redirect git or run code in every bash (the repository's own coverage tracer excepted)."""
     env_config_check(environ)
+    ssh_command = environ.get("GIT_SSH_COMMAND")
+    if ssh_command and not ssh_command_ok(ssh_command):
+        raise Strict("GIT_SSH_COMMAND is set to a command line that is not a plain ssh invocation")
+    if any(not entry.startswith("/") for entry in (environ.get("PATH") or "/usr/bin").split(":")):
+        raise Strict("PATH has an empty or relative entry, so `git` may not be the system git")
     for name in ENV_DENY:
         value = environ.get(name)
         if name == "BASH_ENV" and value and is_coverage_tracer(value, environ):
@@ -901,3 +1052,9 @@ def _mcp_scope(tool, fields, base, environ, git):
     if name in ("HEAD", "@") or not branch_name_ok(name, names):
         raise Strict("%s is a default branch or not a plain branch name" % branch)
     return {"verdict": "feature", "reason": "", "dir": base, "remote": sorted(matching)[0], "branches": [name]}
+
+
+# The classifier's own list of program-running configuration keys, by name (tests/fixtures/push-scope/
+# program-mechanisms.json is diffed against it by tests/python/test_program_mechanisms.py).
+PROGRAM_KEY_PATTERNS = {"run": RUN_CONFIG, "sign": SIGN_CONFIG, "editor": EDITOR_CONFIG, "push_run": PUSH_RUN_CONFIG,
+                        "url": URL_CONFIG, "view": VIEW_CONFIG}

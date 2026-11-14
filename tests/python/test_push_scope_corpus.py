@@ -64,6 +64,8 @@ class CorpusTest(unittest.TestCase):
         text = json.dumps(self.payload(rw, cwd))
         result = shell_analysis.analyze_payload(text, hook_cwd, True, env)
         scope = result.get("push_scope") or {"verdict": "strict", "reason": "no push scope in the analysis"}
+        if rw.get("verdict_only"):
+            return scope, None  # the table of program mechanisms: the verdict is asserted, nothing is executed
         before = sb.refs()
         if rw.get("payload") == "codex":
             subprocess.run(rw["argv"], cwd=cwd, env=env, capture_output=True, check=False, timeout=60)
@@ -85,7 +87,9 @@ class CorpusTest(unittest.TestCase):
                 else:
                     self.assertEqual(scope["verdict"], "strict", scope)
                     self.assertIn(rw["kw"].lower(), scope["reason"].lower(), scope)
-                if rw["gt"] == "P":
+                if rw.get("verdict_only"):
+                    pass
+                elif rw["gt"] == "P":
                     self.assertTrue(effect, "the attack row has no protected effect: the corpus is vacuous")
                 elif rw["gt"] == "N":
                     self.assertFalse(effect, "the row moved a protected ref")
@@ -136,7 +140,7 @@ class CorpusTest(unittest.TestCase):
 
     def test_counts(self):
         ids = [r["id"] for r in push_corpus.ROWS]
-        self.assertEqual(len(push_corpus.ATTACKS), 205)  # A1-A15, B1-B20, C1-C22, D1-D26, E1-E16, E17-E25 (assignments)
+        self.assertEqual(len(push_corpus.ATTACKS), 205 + 34)  # A1-A15, B1-B20, C1-C22, D1-D26, E1-E16, E17-E25 (assignments)
         self.assertEqual(len(push_corpus.HONEST), 52)
 
 
