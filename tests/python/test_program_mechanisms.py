@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 import sys
 import unittest
 
@@ -24,7 +25,8 @@ import sbtest  # noqa: E402
 push_scope = sbtest.load_module("hooks/lib/tool-input/push_scope.py", "push_scope")
 FIXTURE = sbtest.REPO_ROOT / "tests" / "fixtures" / "push-scope" / "program-mechanisms.json"
 DOC = sbtest.REPO_ROOT / "docs" / "ENFORCEMENT.md"
-ROWS = json.loads(FIXTURE.read_text())["rows"]
+TABLE = json.loads(FIXTURE.read_text())
+ROWS = TABLE["rows"]
 CORPUS = {row["id"]: row for row in push_corpus.ROWS}
 ENV_NAME = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
@@ -119,6 +121,51 @@ class ProgramMechanismTable(unittest.TestCase):
                 match = re.search(r"^\| %s \|.*$" % row["id"], text, re.M)
                 self.assertIsNotNone(match)
                 self.assertIn(verdict, match.group(0))
+
+
+    def test_every_program_like_git_key_is_classified_or_reviewed(self):
+        """`git help -c` keys that look like they name a program (hook, command, program, cmd, helper, exec, driver,
+        filter, editor, pager, textconv, external, ...) must be matched by a classifier list or sit in the reviewed
+        non-executing allowlist of the fixture, so a forgotten key fails here."""
+        try:
+            listing = subprocess.run(["git", "help", "-c"], capture_output=True, text=True, check=True).stdout
+        except (OSError, subprocess.CalledProcessError):
+            self.skipTest("git help -c is not available")
+        words = re.compile(r"hook|command|program|cmd|helper|exec|driver|filter|editor|pager|textconv|external|tool|"
+                           r"proxy|ssh|askpass|gpg|fsmonitor|sign", re.I)
+        reviewed = TABLE["reviewed_non_executing"]
+        patterns = list(push_scope.PROGRAM_KEY_PATTERNS.values()) + [push_scope.SIGN_CONFIG]
+        unclassified = []
+        for raw in listing.split():
+            if not words.search(raw):
+                continue
+            key = re.sub(r"<[^>]+>", "x", raw).lower()
+            if any(p.match(key) for p in patterns) or raw.lower() in reviewed or raw.lower().replace("<", "<") in reviewed:
+                continue
+            parts = key.split(".")
+            if parts[0] == "remote" and len(parts) == 3 and parts[2] not in push_scope.REMOTE_KEYS_OK:
+                continue  # refused by the remote.<name>.* allowlist
+            if key in ("push.gpgsign", "commit.gpgsign", "core.fsmonitor"):
+                continue  # judged by value in code (git_bool)
+            unclassified.append(raw)
+        self.assertEqual(unclassified, [], "classify these keys or add them to reviewed_non_executing")
+
+    def test_push_is_never_weaker_than_its_sequence(self):
+        """Where `git push` itself triggers the mechanism (push_triggers), plain `git push` with the same setting must
+        be strict, like `git status && git push`: a sequence never gets a stricter verdict because of the push."""
+        triggers = {r["id"]: r for r in ROWS if r["push_triggers"]}
+        self.assertIn("M02", triggers)
+        for row in triggers.values():
+            for rid in row["corpus_rows"]:
+                corpus = CORPUS[rid]
+                if not corpus.get("verdict_only"):
+                    continue
+                with self.subTest(row=row["id"], corpus=rid):
+                    self.assertIn("git push", corpus["cmd"])
+                    plain = [r for r in push_corpus.ROWS if r.get("verdict_only") and r["cmd"] == "git push"
+                             and r.get("setup") == corpus.get("setup") and r.get("env") == corpus.get("env")]
+                    self.assertTrue(plain or corpus["cmd"] == "git push",
+                                    "no plain `git push` row with the same setting")
 
     def test_helpers(self):
         self.assertEqual(expand("a\\.(b|c)\\.d"), ["a\\.b\\.d", "a\\.c\\.d"])
