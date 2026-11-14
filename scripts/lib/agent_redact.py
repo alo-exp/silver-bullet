@@ -628,7 +628,7 @@ _TAG_AT = re.compile(r"!(?:%s)(?![\w-])" % _TAG_NAMES)  # YAML tags that make a 
 _ANGLE = re.compile(r"<[A-Za-z_][\w.\- ]{0,30}>")
 # Work done by _balanced_end is capped per text (a text of unclosed "${" openers would otherwise rescan its window at every
 # anchor): past the cap an opener is simply not extended.
-_BAL_BUDGET = [0]
+_BAL_BUDGET = [1 << 30]
 
 
 def _balanced_end(text, e, lim):
