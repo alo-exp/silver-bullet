@@ -617,9 +617,9 @@
   },
   {
    "file": "hooks/lib/required-skills.sh",
-   "line": 100,
+   "line": 102,
    "kind": "config",
-   "snippet": "project_version=$(jq -r '.config_version // .version // \"\"' \"$config_file\" 2>/dev/null || true)",
+   "snippet": "if project_version=$(jq -r '.config_version // .version // \"\"' \"$config_file\" 2>/dev/null); then :; fi",
    "record": "X",
    "reason": "reads the template's default lists; reads the project's version through the verified record when one was verified"
   },

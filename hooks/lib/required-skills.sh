@@ -94,10 +94,12 @@ sb_required_skills_config_is_legacy() {
   [[ -n "$default_version" ]] || return 1
   if declare -F sb_iv_jq >/dev/null 2>&1 && [[ -n "${SB_IV_ROOT:-}" ]]; then
     # A gate that verified its project reads the recorded config, not the live file (hooks/lib/integrity.sh).
-    project_version=$(sb_iv_jq -r '.config_version // .version // ""' 2>/dev/null || true)
+    project_version=""
+    if project_version=$(sb_iv_jq -r '.config_version // .version // ""' 2>/dev/null); then :; fi
   else
     [[ -n "$config_file" && -f "$config_file" ]] || return 1
-    project_version=$(jq -r '.config_version // .version // ""' "$config_file" 2>/dev/null || true)
+    project_version=""
+    if project_version=$(jq -r '.config_version // .version // ""' "$config_file" 2>/dev/null); then :; fi
   fi
   if [[ -z "$project_version" ]]; then
     return 0
