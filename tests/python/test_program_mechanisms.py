@@ -25,10 +25,19 @@ import sbtest  # noqa: E402
 push_scope = sbtest.load_module("hooks/lib/tool-input/push_scope.py", "push_scope")
 FIXTURE = sbtest.REPO_ROOT / "tests" / "fixtures" / "push-scope" / "program-mechanisms.json"
 DOC = sbtest.REPO_ROOT / "docs" / "ENFORCEMENT.md"
+SNAPSHOT = sbtest.REPO_ROOT / "tests" / "fixtures" / "push-scope" / "git-help-c-keys.txt"
+DRIFT_SCRIPT = sbtest.REPO_ROOT / "scripts" / "check-git-key-drift.sh"
 TABLE = json.loads(FIXTURE.read_text())
 ROWS = TABLE["rows"]
 CORPUS = {row["id"]: row for row in push_corpus.ROWS}
 ENV_NAME = re.compile(r"^[A-Z][A-Z0-9_]*$")
+
+
+def snapshot_listing():
+    """The vendored `git help -c` key list (the required walks use it, never the installed git) and its git version."""
+    text = SNAPSHOT.read_text()
+    version = re.search(r"^# git version (\S+)", text, re.M).group(1)
+    return "\n".join(line for line in text.splitlines() if line and not line.startswith("#")) + "\n", version
 
 
 def expand_listing(listing):
@@ -156,13 +165,10 @@ class ProgramMechanismTable(unittest.TestCase):
 
 
     def test_every_program_like_git_key_is_classified_or_reviewed(self):
-        """`git help -c` keys that look like they name a program (hook, command, program, cmd, helper, exec, driver,
+        """Keys of the vendored `git help -c` snapshot that look like they name a program (hook, command, program, cmd, helper, exec, driver,
         filter, editor, pager, textconv, external, ...) must be matched by a classifier list or sit in the reviewed
         non-executing allowlist of the fixture, so a forgotten key fails here."""
-        try:
-            listing = subprocess.run(["git", "help", "-c"], capture_output=True, text=True, check=True).stdout
-        except (OSError, subprocess.CalledProcessError):
-            self.skipTest("git help -c is not available")
+        listing, _version = snapshot_listing()
         words = re.compile(r"hook|command|program|cmd|helper|exec|driver|filter|editor|pager|textconv|external|tool|"
                            r"proxy|ssh|askpass|gpg|fsmonitor|sign", re.I)
         reviewed = TABLE["reviewed_non_executing"]
@@ -198,10 +204,7 @@ class ProgramMechanismTable(unittest.TestCase):
     def test_every_file_writing_git_key_is_classified_or_reviewed(self):
         """The same walk for mechanisms that WRITE a file at a user-chosen path (file, path, target, socket, trace,
         output, cookie, store, dir, save, write, dump, log, dest, cache): a classifier list or a reviewed rule."""
-        try:
-            listing = subprocess.run(["git", "help", "-c"], capture_output=True, text=True, check=True).stdout
-        except (OSError, subprocess.CalledProcessError):
-            self.skipTest("git help -c is not available")
+        listing, _version = snapshot_listing()
         words = re.compile(r"file|path|target|socket|trace|output|cookie|store|dir|save|write|dump|log|dest|cache|sock",
                            re.I)
         rules = [re.compile(rx) for rx, _reason in TABLE["reviewed_not_writing"]]
@@ -232,6 +235,48 @@ class ProgramMechanismTable(unittest.TestCase):
         # the dangerous per-URL forms are matched by the classifier (the walk would fail otherwise)
         self.assertTrue(push_scope.WRITE_CONFIG.match("http.x.savecookies"))
         self.assertTrue(push_scope.WRITE_CONFIG.match("http.https://example.com/.savecookies"))
+
+    def test_snapshot_is_vendored_and_versioned(self):
+        listing, version = snapshot_listing()
+        self.assertRegex(version, r"^[0-9]+\.[0-9]+")
+        self.assertGreater(len(listing.split()), 500)
+        self.assertIn("core.hooksPath", listing.split())
+
+    def test_drift_against_the_installed_git(self):
+        """Not blocking: when the installed git differs from the snapshot's, the keys the snapshot lacks are printed
+        (and the test is skipped) so someone classifies them; with the same version there must be no drift."""
+        listing, version = snapshot_listing()
+        installed = subprocess.run(["git", "--version"], capture_output=True, text=True).stdout.split()[-1]
+        keys = subprocess.run(["git", "help", "-c"], capture_output=True, text=True).stdout.split()
+        new = sorted(set(keys) - set(listing.split()))
+        if installed != version:
+            print("git %s (snapshot %s) has %d key(s) the snapshot lacks: %s" % (installed, version, len(new), " ".join(new)))
+            self.skipTest("installed git %s differs from the snapshot's %s: run scripts/check-git-key-drift.sh" % (installed, version))
+        self.assertEqual(new, [])
+
+    def test_drift_script(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            snap = os.path.join(tmp, "snap.txt")
+            real = SNAPSHOT.read_text().splitlines()
+            kept = [line for line in real if line != "core.editor"] + ["made.up.key"]
+            open(snap, "w").write("\n".join(kept) + "\n")
+            env = dict(os.environ, SB_GIT_KEY_SNAPSHOT=snap, GITHUB_ACTIONS="true")
+            run = subprocess.run(["bash", str(DRIFT_SCRIPT)], capture_output=True, text=True, env=env)
+            self.assertEqual(run.returncode, 0)
+            self.assertIn("core.editor", run.stdout)
+            self.assertIn("made.up.key", run.stdout)
+            self.assertIn("::warning title=git config key drift::", run.stdout)
+            clean = os.path.join(tmp, "clean.txt")
+            update = subprocess.run(["bash", str(DRIFT_SCRIPT), "--update"], capture_output=True, text=True,
+                                    env=dict(os.environ, SB_GIT_KEY_SNAPSHOT=clean))
+            self.assertEqual(update.returncode, 0)
+            again = subprocess.run(["bash", str(DRIFT_SCRIPT)], capture_output=True, text=True,
+                                   env=dict(os.environ, SB_GIT_KEY_SNAPSHOT=clean))
+            self.assertIn("no drift", again.stdout)
+            self.assertNotIn("::warning", again.stdout)
+            bad = subprocess.run(["bash", str(DRIFT_SCRIPT), "--bogus"], capture_output=True, text=True)
+            self.assertEqual(bad.returncode, 2)
 
     def test_helpers(self):
         self.assertEqual(expand("a\\.(b|c)\\.d"), ["a\\.b\\.d", "a\\.c\\.d"])
