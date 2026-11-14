@@ -4,6 +4,8 @@
 # Host adapters implement native ctl start/send/key/snapshot/status/abort.
 # shellcheck shell=bash
 
+_AGENT_MODE_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 agent_mode_iso_now() {
   date -u +%Y-%m-%dT%H:%M:%SZ
 }
@@ -237,6 +239,12 @@ agent_mode_handle_flag() {
       ;;
     --task-id)
       SB_AM_SHIFT=2
+      # The id becomes a directory name under .planning/agent-<host>/ and a JSON/Markdown value.
+      # (An empty value is reported by the caller as "requires a value".)
+      if [[ -n "$value" ]] && { ! [[ "$value" =~ ^[A-Za-z0-9._-]{1,64}$ ]] || [[ "$value" == "." || "$value" == ".." ]]; }; then
+        printf 'ERROR: --task-id must match ^[A-Za-z0-9._-]{1,64}$ (and not be . or ..): %s\n' "$value" >&2
+        return 2
+      fi
       SB_AM_TASK_ID="$value"
       return 0
       ;;
@@ -1062,11 +1070,20 @@ agent_mode_maybe_escalate() {
 agent_mode_ctl_write() {
   local control="$1" json="$2"
   [[ -p "${control}/cmd.fifo" ]] || return 1
-  python3 - "${control}/cmd.fifo" "$json" <<'PY'
-import sys
-path, payload = sys.argv[1], sys.argv[2]
-with open(path, "w", encoding="utf-8") as fh:
-    fh.write(payload.rstrip() + "\n")
+  python3 - "${control}/cmd.fifo" "$json" "${_AGENT_MODE_LIB_DIR}" <<'PY'
+import os, sys
+path, payload, lib_dir = sys.argv[1], sys.argv[2], sys.argv[3]
+sys.path.insert(0, lib_dir)
+import agent_fifo
+try:
+    try:
+        timeout = float(os.environ.get("SB_AGENT_CTL_TIMEOUT") or "8")
+    except ValueError:
+        timeout = 8.0
+    agent_fifo.write_line(path, payload, timeout)
+except (OSError, TimeoutError) as exc:
+    sys.stderr.write("ERROR: could not open cmd.fifo (no driver reading it?): %s\n" % exc)
+    sys.exit(2)
 PY
 }
 

@@ -73,7 +73,7 @@ run_od --mode bogus --prompt hi
 assert_eq "opencode delegate invalid --mode exits 2" "2" "$TL_STATUS"
 run_od
 assert_eq "opencode delegate without a prompt exits 2" "2" "$TL_STATUS"
-run_od --prompt 'password: hunter2'
+run_od --prompt "password: $(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYQwErTyUiOp1')"
 assert_eq "opencode delegate refuses a prompt with secrets" "2" "$TL_STATUS"
 run_od --auto-policy bogus --prompt hi
 assert_eq "opencode delegate invalid --auto-policy exits 2" "2" "$TL_STATUS"
@@ -117,7 +117,7 @@ alh_script "0|ok-output"
 run_od --prompt "do the thing"
 assert_eq "default delegation exits 0" "0" "$TL_STATUS"
 assert_eq "default delegation prints the adapter output" "ok-output" "$TL_OUT"
-assert_contains "adapter got mode and prompt" "$(alh_rec)" "invoke n=1 mode=permissive prompt=do the thing"
+assert_contains "adapter got mode and prompt" "$(alh_rec)" "invoke n=1 mode=strict prompt=do the thing"
 assert_eq "model pinned to mimo-v2.5" "mimo-v2.5" "$(alh_env OPENCODE_MODEL)"
 assert_eq "provider pinned to opencode-go" "opencode-go" "$(alh_env OPENCODE_MODEL_PROVIDER)"
 assert_eq "run model pinned" "opencode-go/mimo-v2.5" "$(alh_env OPENCODE_RUN_MODEL)"
@@ -163,20 +163,22 @@ tl_run timeout 60 bash "$DELEGATE" --sb-root "$SB" --work-dir "$W" --prompt p
 assert_eq "preflight failure exits 2" "2" "$TL_STATUS"
 assert_contains "preflight failure message" "$TL_ERR" "recommended-tools preflight failed"
 assert_eq "preflight failure never reaches the adapter" "0" "$(alh_attempts)"
-rm -rf "$SB/scripts"
+rm -rf "$SB/scripts/enterprise-e2e"
 
 # ---------------------------------------------------------------- missing adapter / CLI
 MISSING_SB="$TL_TMP/sb-missing"
 mkdir -p "$MISSING_SB"
 tl_run timeout 60 bash "$DELEGATE" --sb-root "$MISSING_SB" --skip-preflight --work-dir "$W" --prompt p
 assert_eq "missing adapter exits 1" "1" "$TL_STATUS"
-assert_contains "missing adapter message" "$TL_ERR" "missing OpenCode live adapter at $MISSING_SB/tests/live/agents/opencode/agent.sh"
+assert_contains "missing adapter message" "$TL_ERR" "missing OpenCode live adapter at $MISSING_SB/scripts/lib/agent-adapters/opencode.sh"
 NOOC_PATH="$(tl_path_without opencode)"
 tl_run timeout 60 env PATH="$NOOC_PATH" OPENCODE_BIN= bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p
 assert_eq "missing OpenCode CLI exits 1" "1" "$TL_STATUS"
 assert_contains "missing OpenCode CLI message" "$TL_ERR" "native OpenCode CLI not found"
 
 # ---------------------------------------------------------------- quota retry loop
+# an untouched git work dir lets the delegate re-run a quota failure without --quota-retry (R4-20)
+git -C "$W" init -q 2>/dev/null
 rm -f "$TL_TMP/sleep.log"
 alh_script "1|HTTP 429 rate limit hit"
 tl_run timeout 60 env AGENT_OPENCODE_QUOTA_RETRY_MAX=2 AGENT_OPENCODE_QUOTA_RETRY_INTERVAL=3 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p --no-escalate

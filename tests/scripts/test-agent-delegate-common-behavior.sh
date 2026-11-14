@@ -84,6 +84,32 @@ assert_contains "clear matrix env: readonly var tolerated, others still cleared"
 # ---------------- quota detection / short-retry gate ----------------
 agent_delegate_is_quota_error "Token Plan exhausted" && tl_pass "quota: token plan" || tl_fail "quota: token plan"
 agent_delegate_is_quota_error "all fine" && tl_fail "quota: clean output" || tl_pass "quota: clean output is not quota"
+# Only provider/CLI error text counts (R4-20): honest output that merely mentions the words is not a quota error.
+quota_yes() { agent_delegate_is_quota_error "$1" && tl_pass "quota yes: $1" || tl_fail "quota yes: $1"; }
+quota_no() { agent_delegate_is_quota_error "$1" && tl_fail "quota no: $1" || tl_pass "quota no: $1"; }
+quota_yes '{"type":"error","error":{"type":"rate_limit_error","message":"slow down"}}'
+quota_yes 'HTTP/1.1 429 Too Many Requests'
+quota_yes 'Error: 429 rate limit exceeded for model'
+quota_yes 'API Error: 429 {"message":"Number of request tokens has exceeded your per-minute rate limit"}'
+quota_yes '{"status": 429, "error": "x"}'
+quota_yes "Error: You exceeded your current quota, please check your plan"
+quota_yes 'insufficient_quota'
+quota_yes "You've hit your usage limit. Upgrade to Pro or try again in 3 hours."
+quota_yes 'Claude 5-hour quota has been exhausted. Resets in 2hr'
+quota_yes $'building...\nERROR: usage limit reached; resets in 3 hours\nbye'
+quota_no 'AssertionError at line 429'
+quota_no 'edited docs/quota.md and src/rate-limiter.py'
+quota_no 'wrote 429 bytes to out.txt'
+quota_no 'tests/rate_limit_test.go: PASS (version 4.29)'
+quota_no 'FAIL: expected quota calculation for tenant 4290'
+quota_no 'the user token plan page renders'
+# test output that merely mentions the words (R4-20 minor)
+quota_no 'expected status 429, got 200'
+quota_no 'FAIL: rate limiter should return Too Many Requests'
+quota_no 'quota exceeded test passed'
+quota_no 'implementing rate limit exceeded handler'
+quota_no 'status=429'
+quota_no $'  1) retries on 429\n     AssertionError: expected rate limit exceeded to be thrown'
 
 cat >"$ST/scripts/review-fix-ladder.py" <<'PY'
 import json, os, sys
@@ -104,18 +130,58 @@ mv "$ST/scripts/rfl.bak" "$ST/scripts/review-fix-ladder.py"
 # ---------------- redaction ----------------
 fake_sk="$(printf '%s-%s' 'sk' 'abc1234567890')"
 fake_ghp="$(printf '%s%s' 'ghp_' 'abcdefghijklmnopqrstuvwxyz')"
-out="$(agent_delegate_redact_output "Authorization: Bearer hunter2 password = swordfish ${fake_sk} ${fake_ghp} keep")"
-assert_contains "redact: key/value patterns" "$out" "Authorization=[REDACTED]"
-assert_contains "redact: sk key" "$out" "sk-[REDACTED]"
-assert_contains "redact: ghp token" "$out" "ghp_[REDACTED]"
+fake_pat="$(printf '%s%s' 'github_pat_' '11ABCDEFG0123456789_abcdefghijklmnopqrstuv')"
+fake_xox="$(printf '%s%s' 'xoxb-' '123456789012-abcdefABCDEF')"
+fake_aws="$(printf '%s%s' 'AKIA' 'IOSFODNN7ABCDEFG')"
+fake_jwt="$(printf '%s.%s.%s' 'eyJhbGciOiJIUzI1NiJ9' 'eyJzdWIiOiIxMjM0NTY3ODkwIn0' 'SflKxwRJSMeKKF2QT4fwpMeJf36')"
+fake_val="$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYQwErTyUiOp1')"
+out="$(agent_delegate_redact_output "Authorization: Bearer hunter2xyz password = swordfish ${fake_sk} ${fake_ghp} keep")"
+assert_contains "redact: authorization header value (scheme kept)" "$out" "Authorization: Bearer [REDACTED]"
+assert_not_contains "redact: bearer token gone" "$out" "hunter2xyz"
+assert_not_contains "redact: sk key gone" "$out" "$fake_sk"
+assert_not_contains "redact: ghp token gone" "$out" "$fake_ghp"
 assert_not_contains "redact: secret value gone" "$out" "swordfish"
 assert_contains "redact: plain text kept" "$out" "keep"
+for tok in "$fake_pat" "$fake_xox" "$fake_aws" "$fake_jwt" "$fake_val"; do
+  out="$(agent_delegate_redact_output "curl -H 'Authorization: Bearer ${tok}' https://x; AWS_SECRET_ACCESS_KEY=${tok}")"
+  assert_not_contains "redact: ${tok:0:8}... removed everywhere" "$out" "$tok"
+done
 agent_delegate_redact_log_file "$TL_TMP/nolog"
 assert_file_absent "redact file: missing file stays missing" "$TL_TMP/nolog"
 printf 'token=abc123\nok line\n' >"$TL_TMP/log.txt"
 agent_delegate_redact_log_file "$TL_TMP/log.txt"
 assert_eq "redact file: rewritten in place" "token=[REDACTED]
 ok line" "$(cat "$TL_TMP/log.txt")"
+ln -s "$TL_TMP/log.txt" "$TL_TMP/log.link"
+printf 'token=zzz999\n' >"$TL_TMP/log.txt"
+agent_delegate_redact_log_file "$TL_TMP/log.link" 2>/dev/null
+assert_eq "redact file: refuses to write through a symlink" "token=zzz999" "$(cat "$TL_TMP/log.txt")"
+# a redactor that cannot run never leaves the raw log behind
+printf 'token=%s\n' 'zzzSECRET999abcdef' >"$TL_TMP/log.fail"
+PATH="$(tl_path_without python3)" agent_delegate_redact_log_file "$TL_TMP/log.fail"
+assert_not_contains "redact file: a failing redactor withholds the raw log" "$(cat "$TL_TMP/log.fail")" "zzzSECRET999abcdef"
+assert_contains "redact file: the withheld marker says why" "$(cat "$TL_TMP/log.fail")" "redaction failed"
+# a JSON line with a lone surrogate escape is still redacted (and the file stays valid)
+printf 'password=%s\n{"text":"\\ud83d %s%s"}\n' 'Zq8mK2pL9xRt4W' 'ghp_' 'A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8' >"$TL_TMP/log.surrogate"
+agent_delegate_redact_log_file "$TL_TMP/log.surrogate"
+assert_not_contains "redact file: lone surrogate line redacted (token)" "$(cat "$TL_TMP/log.surrogate")" "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"
+assert_not_contains "redact file: lone surrogate file redacted (password)" "$(cat "$TL_TMP/log.surrogate")" "Zq8mK2pL9xRt4W"
+
+# the raw log stays private and is redacted when the delegate is interrupted (R4-31)
+bash -c '
+  source "$1/scripts/lib/agent-delegate-common.sh"
+  LOGF="$2/guarded/run.log"
+  agent_delegate_guard_log "$LOGF"
+  stat_mode="$(python3 -c "import os,sys;print(oct(os.stat(sys.argv[1]).st_mode & 0o777))" "$LOGF")"
+  printf "key=\"x\" token=livevalue123\n" >>"$LOGF"
+  kill -TERM $$
+  sleep 5
+  echo "mode=$stat_mode"' _ "$ST" "$TL_TMP" >/dev/null 2>&1 || true
+assert_eq "guard_log: interrupted delegate leaves a redacted log" "key=\"x\" token=[REDACTED]" "$(cat "$TL_TMP/guarded/run.log")"
+assert_eq "guard_log: log is 0600" "0o600" "$(python3 -c 'import os,sys;print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$TL_TMP/guarded/run.log")"
+mkdir -p "$TL_TMP/chmodfail"; printf '#!/bin/sh\nexit 1\n' >"$TL_TMP/chmodfail/chmod"; chmod +x "$TL_TMP/chmodfail/chmod"
+PATH="$TL_TMP/chmodfail:$PATH" bash -c 'source "$1/scripts/lib/agent-delegate-common.sh"; agent_delegate_guard_log "$2/guarded2/run.log"; echo survived' _ "$ST" "$TL_TMP" | grep -q survived && tl_pass "guard_log: a failing chmod is tolerated" || tl_fail "guard_log: a failing chmod is tolerated"
+bash -c 'source "$1/scripts/lib/agent-delegate-common.sh"; agent_delegate_guard_log ""; echo noop' _ "$ST" | grep -q noop && tl_pass "guard_log: empty log path is a no-op" || tl_fail "guard_log: empty log path is a no-op"
 
 # ---------------- resolve_prompt ----------------
 tl_run agent_delegate_resolve_prompt "$TL_TMP/nobrief" "" ""
@@ -124,7 +190,7 @@ assert_contains "prompt: missing brief message" "$TL_ERR" "brief file not found"
 printf 'do the thing\n' >"$TL_TMP/brief.md"
 tl_run agent_delegate_resolve_prompt "$TL_TMP/brief.md" "$TL_TMP/ignored" "ignored"
 assert_eq "prompt: brief wins" "do the thing" "$TL_OUT"
-printf 'api_key: hunter2\n' >"$TL_TMP/secret.md"
+printf 'use AWS_SECRET_ACCESS_KEY=%s for the upload\n' "$fake_val" >"$TL_TMP/secret.md"
 tl_run agent_delegate_resolve_prompt "$TL_TMP/secret.md" "" ""
 assert_eq "prompt: secret in brief" 2 "$TL_STATUS"
 assert_contains "prompt: secret in brief message" "$TL_ERR" "brief contains secret patterns"
@@ -138,7 +204,7 @@ assert_eq "prompt: secret in prompt file" 2 "$TL_STATUS"
 assert_contains "prompt: secret in prompt file message" "$TL_ERR" "prompt file contains secret patterns"
 tl_run agent_delegate_resolve_prompt "" "" "inline prompt"
 assert_eq "prompt: inline text" "inline prompt" "$TL_OUT"
-tl_run agent_delegate_resolve_prompt "" "" "password: x"
+tl_run agent_delegate_resolve_prompt "" "" "export GITLAB_TOKEN=${fake_val}"
 assert_eq "prompt: secret inline" 2 "$TL_STATUS"
 assert_contains "prompt: secret inline message" "$TL_ERR" "prompt contains secret patterns"
 tl_run agent_delegate_resolve_prompt "" "" ""
@@ -146,6 +212,41 @@ assert_eq "prompt: nothing provided" 2 "$TL_STATUS"
 assert_contains "prompt: nothing provided message" "$TL_ERR" "provide --prompt, --prompt-file, or --brief-file"
 agent_delegate_brief_has_secrets "x ${fake_sk}" && tl_pass "secrets: sk key" || tl_fail "secrets: sk key"
 agent_delegate_brief_has_secrets "x ${fake_ghp}" && tl_pass "secrets: ghp token" || tl_fail "secrets: ghp token"
+# R10b-06: upper-case env assignments, Bearer JWTs and prefix tokens are caught ...
+for sample in "AWS_SECRET_ACCESS_KEY=${fake_val}" "GITLAB_TOKEN=$(printf '%s%s' 'glpat-' 'abcdefghij0123456789xy')" "Authorization: Bearer ${fake_jwt}" "${fake_pat}" "${fake_xox}" "${fake_aws}" $'-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAabcdefgh'; do
+  agent_delegate_brief_has_secrets "context: ${sample}" && tl_pass "secrets: rejects ${sample:0:14}..." || tl_fail "secrets: rejects ${sample:0:14}..."
+done
+# ... and an honest auth-feature brief is not refused
+for honest in "Implement login: POST /login returns a session token: JWT" "the form shows password: field and api_key: optional" "Authorization: Bearer <token> is documented in README" "set GITHUB_TOKEN=\${GITHUB_TOKEN} in the workflow" "tokens: 12 used, secret: none" "api_key = os.environ[\"API_KEY\"]"; do
+  agent_delegate_brief_has_secrets "$honest" && tl_fail "secrets: accepts honest brief: ${honest:0:30}" || tl_pass "secrets: accepts honest brief: ${honest:0:30}"
+done
+# honest auth-feature code: references and calls are not literal secrets (R10b-06)
+for honest in "client_secret: settings.GOOGLE_CLIENT_SECRET" "const password = req.body.passwordConfirmation" "secret=getSecretFromVaultClient()" "private_key: loadPrivateKeyFromDisk(path)" "Use secret: process.env.SESSION_SECRET for cookie signing"; do
+  agent_delegate_brief_has_secrets "$honest" && tl_fail "secrets: accepts code '${honest:0:34}'" || tl_pass "secrets: accepts code '${honest:0:34}'"
+done
+# the refusal names the rule and the line, and the user's override is announced
+printf 'ok\nGITLAB_TOKEN=%s\n' "$fake_val" >"$TL_TMP/line2.md"
+tl_run agent_delegate_resolve_prompt "$TL_TMP/line2.md" "" ""
+assert_eq "named finding: refused" 2 "$TL_STATUS"
+assert_contains "named finding: rule and line" "$TL_ERR" "rule/line: assignment line 2"
+assert_contains "named finding: how to override" "$TL_ERR" "SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1"
+SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1 tl_run agent_delegate_resolve_prompt "$TL_TMP/line2.md" "" ""
+assert_eq "override: accepted" 0 "$TL_STATUS"
+assert_contains "override: announced on stderr" "$TL_ERR" "overrides the brief secret scan (assignment line 2)"
+assert_contains "override: brief passes through unchanged" "$TL_OUT" "GITLAB_TOKEN="
+# a brief the scanner cannot handle within its limits is refused (fail closed), a log it cannot redact is withheld
+SB_REDACT_MAX_BYTES=10 tl_run agent_delegate_resolve_prompt "" "" "a harmless but rather longer prompt"
+assert_eq "scan limit: oversized brief refused" 2 "$TL_STATUS"
+assert_contains "scan limit: reason named" "$TL_ERR" "too large or too complex to scan"
+out="$(SB_REDACT_MAX_BYTES=10 agent_delegate_redact_output "0123456789abcdef password=Zq8vLm2Xr9TnW4")"
+assert_contains "redact limit: output withheld with a marker" "$out" "output withheld"
+assert_not_contains "redact limit: nothing of the text survives" "$out" "Zq8vLm2Xr9TnW4"
+SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=0 tl_run agent_delegate_resolve_prompt "$TL_TMP/line2.md" "" ""
+assert_eq "override: only an explicit 1 counts" 2 "$TL_STATUS"
+rc=0; PATH="$(tl_path_without python3)" agent_delegate_brief_has_secrets "benign" 2>/dev/null || rc=$?
+assert_eq "secrets: scanner failure fails closed" 0 "$rc"
+tl_run agent_delegate_secret_error "brief"
+assert_contains "secrets: a scanner crash has its own message" "$TL_ERR" "secret scanner failed"
 
 # ---------------- work dir ----------------
 tl_run agent_delegate_validate_work_dir ""
@@ -271,9 +372,21 @@ assert_eq "state marker: json fields" "cursor|t-1|3|quota" "$(jq -r '[.host,.tas
 agent_delegate_write_degraded_fallback_evidence "" h t trig why
 agent_delegate_write_degraded_fallback_evidence "$TL_TMP/deg" "codex" "t-2" "quota" 'said "no"'
 agent_delegate_write_degraded_fallback_evidence "$TL_TMP/deg" "codex" "t-3" "quota" 'again'
+agent_delegate_write_state_marker "$TL_TMP/marker2" 'h"o' 't"\x' 7 'cl"ass'
+assert_eq "state marker: awkward values round-trip" 'h"o|t"\x|7|cl"ass' "$(jq -r '[.host,.task_id,(.exit_code|tostring),.failure_class]|join("|")' "$TL_TMP/marker2/state.json")"
+agent_delegate_write_state_marker "$TL_TMP/marker3" h t "not-a-number" c
+assert_eq "state marker: non-numeric exit code becomes 1" 1 "$(jq -r .exit_code "$TL_TMP/marker3/state.json")"
+agent_delegate_write_result_skeleton "$TL_TMP/res/result.md" $'ho|st' $'t\nid|x' 3
+assert_eq "result skeleton: cells cannot split the table" 1 "$(grep -c '^| task_id |' "$TL_TMP/res/result.md")"
+assert_contains "result skeleton: pipes and newlines flattened" "$(cat "$TL_TMP/res/result.md")" "| task_id | t id x |"
 assert_eq "degraded evidence: two jsonl records" 2 "$(wc -l <"$TL_TMP/deg/degraded-fallback.jsonl" | tr -d ' ')"
 assert_eq "degraded evidence: record fields and escaped quotes" "EV-DELEGATE-DEGRADED-FALLBACK|codex|quota|t-2|said \"no\"" \
   "$(head -1 "$TL_TMP/deg/degraded-fallback.jsonl" | jq -r '[.evidence_id,.host,.trigger,.task_id,.reason]|join("|")')"
+# JSON stays valid for awkward values (R4-32)
+agent_delegate_write_degraded_fallback_evidence "$TL_TMP/deg" 'h"o\st' 't"4\' "q" $'line one\nline "two" \\ end'
+assert_eq "degraded evidence: awkward values round-trip" $'h"o\\st|t"4\\|line one\nline "two" \\ end' \
+  "$(tail -1 "$TL_TMP/deg/degraded-fallback.jsonl" | jq -r '[.host,.task_id,.reason]|join("|")')"
+assert_eq "degraded evidence: every line parses" 3 "$(jq -c . "$TL_TMP/deg/degraded-fallback.jsonl" | wc -l | tr -d ' ')"
 
 # ---------------- failure class ----------------
 fc() { SB_AM_FAILURE_CLASS="${FC_PRE:-}" agent_delegate_normalize_failure_class "$@"; }
@@ -296,6 +409,80 @@ assert_eq "class: a 511-byte log is under the default floor" "log-floor" "$(fc 1
 assert_eq "class: a 512-byte log meets the default floor" "delegate-failure" "$(fc 1 "boom" "$TL_TMP/floor.log")"
 assert_eq "class: missing log file falls through" "delegate-failure" "$(fc 1 "boom" "$TL_TMP/nolog")"
 assert_eq "class: generic failure" "delegate-failure" "$(fc 1 "boom")"
+
+# ---------------- default permission mode (R4-23) ----------------
+DM_PROJ="$TL_TMP/dm-proj"; DM_OTHER="$TL_TMP/dm-other"
+mkdir -p "$DM_PROJ/sub" "$DM_OTHER"
+git -C "$DM_PROJ" init -q
+unset SB_AGENT_DELEGATE_DEFAULT_MODE CLAUDE_PROJECT_DIR
+assert_eq "default mode: work dir is the project root" "permissive" "$(cd "$DM_PROJ" && agent_delegate_default_mode "$DM_PROJ" 2>/dev/null)"
+assert_eq "default mode: work dir inside the project" "permissive" "$(cd "$DM_PROJ/sub" && agent_delegate_default_mode "$DM_PROJ/sub")"
+assert_eq "default mode: project subdir cwd, project root work dir" "permissive" "$(cd "$DM_PROJ/sub" && agent_delegate_default_mode "$DM_PROJ")"
+assert_eq "default mode: unrelated directory is strict" "strict" "$(cd "$DM_PROJ" && agent_delegate_default_mode "$DM_OTHER")"
+# a separate repo cloned inside the project, and children of a non-repo project dir, are outside (strict)
+mkdir -p "$DM_PROJ/vendor/third" "$TL_TMP/dm-plain/child"
+git -C "$DM_PROJ/vendor/third" init -q
+assert_eq "default mode: nested separate clone is strict" "strict" "$(cd "$DM_PROJ" && agent_delegate_default_mode "$DM_PROJ/vendor/third" 2>/dev/null)"
+assert_eq "default mode: non-git project dir, child is strict" "strict" "$(cd "$TL_TMP/dm-plain" && agent_delegate_default_mode "$TL_TMP/dm-plain/child" 2>/dev/null)"
+assert_eq "default mode: CLAUDE_PROJECT_DIR=non-repo, clone below it is strict" "strict" "$(cd "$TL_TMP" && CLAUDE_PROJECT_DIR="$TL_TMP/dm-plain" agent_delegate_default_mode "$DM_PROJ" 2>/dev/null)"
+assert_contains "default mode: the choice is announced" "$(cd "$DM_PROJ" && agent_delegate_default_mode "$DM_OTHER" 2>&1 >/dev/null)" "default --mode strict"
+assert_eq "default mode: unreadable project dir is strict" "strict" "$(cd "$DM_PROJ" && CLAUDE_PROJECT_DIR="$TL_TMP/no-project" agent_delegate_default_mode "$DM_PROJ" 2>/dev/null)"
+assert_eq "default mode: unreadable work dir is strict" "strict" "$(cd "$DM_PROJ" && agent_delegate_default_mode "$TL_TMP/nonexistent-dir" 2>/dev/null)"
+assert_eq "default mode: non-git cwd, same dir" "permissive" "$(cd "$DM_OTHER" && agent_delegate_default_mode "$DM_OTHER")"
+assert_eq "default mode: CLAUDE_PROJECT_DIR defines the project" "permissive" "$(cd "$DM_OTHER" && CLAUDE_PROJECT_DIR="$DM_PROJ" agent_delegate_default_mode "$DM_PROJ/sub")"
+assert_eq "default mode: explicit override strict" "strict" "$(cd "$DM_PROJ" && SB_AGENT_DELEGATE_DEFAULT_MODE=strict agent_delegate_default_mode "$DM_PROJ")"
+assert_eq "default mode: explicit override permissive" "permissive" "$(cd "$DM_PROJ" && SB_AGENT_DELEGATE_DEFAULT_MODE=permissive agent_delegate_default_mode "$DM_OTHER")"
+assert_eq "default mode: bad override ignored" "strict" "$(cd "$DM_PROJ" && SB_AGENT_DELEGATE_DEFAULT_MODE=bogus agent_delegate_default_mode "$DM_OTHER")"
+
+# ---------------- quota retry decision (R4-20) ----------------
+QD_REPO="$TL_TMP/qd-repo"; mkdir -p "$QD_REPO"; git -C "$QD_REPO" init -q
+QD_ERR='{"error":{"type":"rate_limit_error"}}'
+rc=0; agent_delegate_quota_retry_decision lbl "plain failure" 1 3 "$QD_REPO" x 2>/dev/null || rc=$?
+assert_eq "retry decision: non-quota output stops" 1 "$rc"
+FP="$(agent_delegate_workdir_fingerprint "$QD_REPO")"
+assert_eq "fingerprint: non-repo is unknown" "unknown" "$(agent_delegate_workdir_fingerprint "$TL_TMP/dm-other")"
+assert_eq "fingerprint: stable for an untouched repo" "$FP" "$(agent_delegate_workdir_fingerprint "$QD_REPO")"
+rc=0; agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>/dev/null || rc=$?
+assert_eq "retry decision: untouched repo retries" 0 "$rc"
+# git failing on status/diff must not break the fingerprint (pipefail-safe)
+mkdir -p "$TL_TMP/gitfail"
+REAL_GIT="$(command -v git)"
+printf '#!/usr/bin/env bash\nfor a in "$@"; do [[ "$a" == status || "$a" == diff ]] && exit 128; done\nexec "%s" "$@"\n' "$REAL_GIT" >"$TL_TMP/gitfail/git"
+chmod +x "$TL_TMP/gitfail/git"
+assert_eq "fingerprint survives failing git status/diff" 0 "$(PATH="$TL_TMP/gitfail:$PATH" agent_delegate_workdir_fingerprint "$QD_REPO" >/dev/null; echo $?)"
+# an edit to a pre-existing untracked file changes the fingerprint
+echo one >"$QD_REPO/untracked.txt"
+FP_U1="$(agent_delegate_workdir_fingerprint "$QD_REPO")"
+echo two >>"$QD_REPO/untracked.txt"
+FP_U2="$(agent_delegate_workdir_fingerprint "$QD_REPO")"
+[[ "$FP_U1" != "$FP_U2" ]] && tl_pass "fingerprint sees edits to untracked files" || tl_fail "fingerprint sees edits to untracked files"
+rm -f "$QD_REPO/untracked.txt"
+# untracked symlinks (to /dev/zero, to a FIFO, outside the tree) are never followed (r2)
+ln -s /dev/zero "$QD_REPO/zero-link"; mkfifo "$QD_REPO/a-fifo"; head -c 2000 /dev/urandom >"$TL_TMP/outside.bin"; ln -s "$TL_TMP/outside.bin" "$QD_REPO/out-link"
+start=$SECONDS
+FP_L1="$(timeout 20 bash -c 'source "$1"; agent_delegate_workdir_fingerprint "$2"' _ "$ST/scripts/lib/agent-delegate-common.sh" "$QD_REPO")"
+[[ $((SECONDS - start)) -lt 10 && -n "$FP_L1" ]] && tl_pass "fingerprint does not hang on a link to /dev/zero or a FIFO" || tl_fail "fingerprint does not hang on a link to /dev/zero or a FIFO"
+head -c 2000 /dev/urandom >"$TL_TMP/outside.bin"
+FP_L2="$(timeout 20 bash -c 'source "$1"; agent_delegate_workdir_fingerprint "$2"' _ "$ST/scripts/lib/agent-delegate-common.sh" "$QD_REPO")"
+assert_eq "fingerprint ignores the content behind links (never reads outside the tree)" "$FP_L1" "$FP_L2"
+ln -sfn "$TL_TMP/elsewhere" "$QD_REPO/out-link"
+FP_L3="$(timeout 20 bash -c 'source "$1"; agent_delegate_workdir_fingerprint "$2"' _ "$ST/scripts/lib/agent-delegate-common.sh" "$QD_REPO")"
+[[ "$FP_L1" != "$FP_L3" ]] && tl_pass "fingerprint sees a retargeted link" || tl_fail "fingerprint sees a retargeted link"
+rm -f "$QD_REPO/zero-link" "$QD_REPO/a-fifo" "$QD_REPO/out-link"
+echo changed >"$QD_REPO/new.txt"
+rc=0; err="$(agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>&1 >/dev/null)" || rc=$?
+assert_eq "retry decision: changed repo stops" 1 "$rc"
+assert_contains "retry decision: changed repo explains opt-in" "$err" "pass --quota-retry"
+rc=0; SB_AM_QUOTA_RETRY=1 agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>/dev/null || rc=$?
+assert_eq "retry decision: --quota-retry opts in" 0 "$rc"
+rc=0; err="$(RESOLVER_JSON='{"should_short_retry": false}' agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>&1 >/dev/null)" || rc=$?
+assert_eq "retry decision: long quota window stops" 1 "$rc"
+assert_contains "retry decision: long window left to the RFL schedule" "$err" "skip short retry (RFL schedule)"
+rc=0; agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$TL_TMP/dm-other" unknown 2>/dev/null || rc=$?
+assert_eq "retry decision: unknown fingerprint stops" 1 "$rc"
+rc=0; err="$(SB_AM_QUOTA_RETRY=1 agent_delegate_quota_retry_decision lbl "$QD_ERR" 4 3 "$QD_REPO" "$FP" 2>&1 >/dev/null)" || rc=$?
+assert_eq "retry decision: budget exhausted stops" 1 "$rc"
+assert_contains "retry decision: exhaustion reported" "$err" "quota retries exhausted"
 
 # ---------------- preflight ----------------
 SBR="$TL_TMP/sbroot"; mkdir -p "$SBR/scripts/enterprise-e2e/lib"
