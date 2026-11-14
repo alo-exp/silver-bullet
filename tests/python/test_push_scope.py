@@ -861,6 +861,15 @@ class ExpansionAndEnvConfigTests(Base):
 
 
 class SigningAndBooleanTests(Base):
+    def test_no_gpg_sign_skips_the_signing_program(self):
+        signing = {"commit.gpgsign": ["true"], "gpg.ssh.program": ["/tmp/code-sign"]}
+        self.feature("git commit --no-gpg-sign -m x && git push", repo=FakeRepo(cfg=signing))
+        self.feature("git commit -qm x --no-gpg-sign && git push", repo=FakeRepo(cfg=signing))
+        self.strict("git commit -m x && git push", "signs", repo=FakeRepo(cfg=signing))
+        self.strict("git log -1 && git push", "verifies", repo=FakeRepo(cfg=signing))  # verification is not signing
+        self.strict("git commit --no-gpg-sign && git push", "start the editor", repo=FakeRepo(cfg=signing),
+                    env=dict(ENV, EDITOR="evil"))
+
     def test_git_bool(self):
         for text in ("true", "TRUE", "yes", "on", "1", "2", "-1", "1k", "0x1", "+3", "1g", "weird", "if-asked"):
             self.assertTrue(push_scope.git_bool(text), text)
@@ -886,8 +895,9 @@ class SigningAndBooleanTests(Base):
         good = os.path.join(stock, "gpg")
         open(good, "w").close()
         os.chmod(good, 0o755)
-        saved_uid = push_scope.STOCK_OWNER_UID
+        saved_uid, saved_chain = push_scope.STOCK_OWNER_UID, push_scope.safe_chain
         push_scope.STOCK_OWNER_UID = os.geteuid()
+        push_scope.safe_chain = lambda path: True  # temp directories are not root-owned: safe_chain has its own test
         home = os.path.join(outside, "home")
         os.makedirs(home, exist_ok=True)
         env = dict(ENV, HOME=home)
@@ -921,7 +931,7 @@ class SigningAndBooleanTests(Base):
             push_scope.STOCK_OWNER_UID = os.geteuid() + 1  # owned by somebody else than root
             self.strict("git commit -qm x && git push", "signs", repo=FakeRepo(cfg=signing), env=env)
         finally:
-            push_scope.STOCK_OWNER_UID = saved_uid
+            push_scope.STOCK_OWNER_UID, push_scope.safe_chain = saved_uid, saved_chain
         # the cloud container: a signer in world-writable /tmp
         self.strict("git commit -qm x && git push", "signs", repo=FakeRepo(
             cfg={"commit.gpgsign": ["true"], "gpg.format": ["ssh"], "gpg.ssh.program": ["/tmp/code-sign"]}))
@@ -943,6 +953,112 @@ class SigningAndBooleanTests(Base):
         for value in ("true", "2", "1k"):
             self.strict("git push origin feat/x", "mirror", repo=FakeRepo(cfg={"remote.origin.mirror": [value]}))
             self.strict("git push origin feat/x", "pushes tags", repo=FakeRepo(cfg={"push.followtags": [value]}))
+
+
+class ProgramMechanismTests(Base):
+    def test_safe_chain(self):
+        real_stat = os.stat
+
+        class Info:
+            def __init__(self, uid, mode):
+                self.st_uid, self.st_mode = uid, mode
+
+        table = {"/": Info(0, 0o755), "/usr": Info(0, 0o755), "/usr/bin": Info(0, 0o755), "/tmp": Info(0, 0o1777),
+                 "/opt": Info(1000, 0o755), "/grp": Info(0, 0o775)}
+        os.stat = lambda path: table[path] if path in table else real_stat(path)
+        try:
+            self.assertTrue(push_scope.safe_chain("/usr/bin/gpg"))
+            self.assertFalse(push_scope.safe_chain("/tmp/code-sign"))
+            self.assertFalse(push_scope.safe_chain("/opt/x/gpg"))
+            self.assertFalse(push_scope.safe_chain("/grp/gpg"))
+            self.assertFalse(push_scope.safe_chain("/nonexistent-dir/x/gpg"))
+        finally:
+            os.stat = real_stat
+
+    def test_user_trusted_signing_program(self):
+        outside = tempfile.mkdtemp(prefix="pscope-trust")
+        self.addCleanup(shutil.rmtree, outside, True)
+        cfgdir = os.path.join(outside, "silver-bullet")
+        os.makedirs(cfgdir)
+        path = os.path.join(cfgdir, "consent.json")
+        env = dict(ENV, XDG_CONFIG_HOME=outside, HOME=outside)
+        signing = {"commit.gpgsign": ["true"], "gpg.ssh.program": ["/tmp/code-sign"]}
+        self.strict("git commit -qm x && git push", "signs", repo=FakeRepo(cfg=signing), env=env)
+        with open(path, "w") as fh:
+            fh.write('{"trusted_programs": {"signing": ["/tmp/code-sign"]}}')
+        os.chmod(path, 0o600)
+        self.feature("git commit -qm x && git push", repo=FakeRepo(cfg=signing), env=env)
+        self.feature("git log -1 --format=%G? && git push", repo=FakeRepo(cfg=signing), env=env)
+        self.strict("git commit -qm x && git push", "signs",
+                    repo=FakeRepo(cfg={"commit.gpgsign": ["true"], "gpg.ssh.program": ["/tmp/other"]}), env=env)
+        self.strict("git commit -qm x && git push", "signs",
+                    repo=FakeRepo(cfg={"commit.gpgsign": ["true"], "gpg.ssh.defaultkeycommand": ["/tmp/code-sign"]}), env=env)
+        os.chmod(path, 0o644)  # readable by others: not trusted
+        self.strict("git commit -qm x && git push", "signs", repo=FakeRepo(cfg=signing), env=env)
+        for body in ('{"trusted_programs": 1}', '{"trusted_programs": {"signing": "x"}}', "not json",
+                     '{"trusted_programs": {"signing": [1]}}'):
+            with open(path, "w") as fh:
+                fh.write(body)
+            os.chmod(path, 0o600)
+            self.assertEqual(push_scope.user_trusted_programs(env), set())
+        os.remove(path)
+        os.symlink("/etc/hostname", path)
+        self.assertEqual(push_scope.user_trusted_programs(env), set())
+
+    def test_ssh_commands_credentials_and_urls(self):
+        for good in ("ssh", "ssh -i ~/.ssh/key -o IdentitiesOnly=yes", "/usr/bin/ssh -p 22 -q",
+                     "ssh -oStrictHostKeyChecking=no -4"):
+            self.assertTrue(push_scope.ssh_command_ok(good), good)
+            self.feature("git push origin feat/x", repo=FakeRepo(cfg={"core.sshcommand": [good]}))
+        for bad in ("", "sh -c evil", "ssh -o ProxyCommand=evil", "ssh -oLocalCommand=x", "ssh -o PermitLocalCommand=yes",
+                    "ssh -i", "ssh -o", "ssh -o Foo", "ssh $X", "ssh -i 'a b'", "ssh ; evil", "ssh -Z", "evil -i k",
+                    "ssh -o ProxyJump=x", "ssh -F /tmp/cfg", "ssh -o Include=/tmp/cfg", "ssh -o PKCS11Provider=/tmp/x.so",
+                    "ssh -o SecurityKeyProvider=/tmp/x.so"):
+            self.assertFalse(push_scope.ssh_command_ok(bad), bad)
+        self.strict("git push origin feat/x", "start a program", repo=FakeRepo(cfg={"core.sshcommand": ["sh -c evil"]}))
+        for helper in ("store", "cache --timeout 3600", "osxkeychain", "!gh auth git-credential",
+                       "!/usr/bin/gh auth git-credential", "/usr/lib/git-core/git-credential-store --file=/x", "manager-core", ""):
+            self.assertTrue(push_scope.stock_helper(helper), helper)
+        self.feature("git push origin feat/x", repo=FakeRepo(cfg={"credential.helper": ["store"],
+                                                                  "credential.https://x.helper": ["cache"]}))
+        for helper in ("!evil", "/tmp/git-credential-x", "store;evil", "!gh auth git-credential; evil", "evil",
+                       "/usr/lib/git-core/evil"):
+            self.assertFalse(push_scope.stock_helper(helper), helper)
+        self.strict("git push origin feat/x", "start a program", repo=FakeRepo(cfg={"credential.helper": ["!evil"]}))
+        self.strict("git push origin feat/x", "start a program",
+                    repo=FakeRepo(cfg={"credential.https://x.helper": ["!evil"]}))
+        for key in ("core.gitproxy", "core.askpass", "core.alternaterefscommand", "uploadpack.packobjectshook"):
+            self.strict("git push origin feat/x", "start a program", repo=FakeRepo(cfg={key: ["evil"]}))
+            self.feature("git push origin feat/x", repo=FakeRepo(cfg={key: [""]}))
+        self.strict("git push origin feat/x", "start a program", repo=FakeRepo(cfg={"protocol.ext.allow": ["always"]}))
+        self.feature("git push origin feat/x", repo=FakeRepo(cfg={"protocol.ext.allow": ["never"]}))
+        for url in ("ext::sh -c evil", "evil://x/y", "foo::bar"):
+            self.assertFalse(push_scope.safe_url(url), url)
+            self.strict("git push origin feat/x", "remote helper", repo=FakeRepo(cfg={"url.%s.insteadof" % url: ["https://github.com/"]}))
+        self.strict("git push origin feat/x", "unsupported transport", repo=FakeRepo(cfg={"remote.origin.url": ["evil://x"]}))
+        for url in ("https://github.com/a/b.git", "git@github.com:a/b.git", "/srv/repo.git", "../x", "ssh://git@h/x", "file:///x"):
+            self.assertTrue(push_scope.safe_url(url), url)
+        self.feature("git push origin feat/x", repo=FakeRepo(cfg={"url.https://github.com/.insteadof": ["git@github.com:"]}))
+
+    def test_environment_programs(self):
+        for name in ("GIT_EXTERNAL_DIFF", "GIT_SSH", "GIT_PROXY_COMMAND", "GIT_ASKPASS", "SSH_ASKPASS", "GIT_INDEX_FILE",
+                     "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES"):
+            self.strict("git push", name, env=dict(ENV, **{name: "x"}))
+        self.feature("git push", env=dict(ENV, GIT_ASKPASS=""))
+        self.feature("git push", env=dict(ENV, GIT_SSH_COMMAND="ssh -i /k -o IdentitiesOnly=yes"))
+        self.strict("git push", "GIT_SSH_COMMAND", env=dict(ENV, GIT_SSH_COMMAND="sh -c evil"))
+        for path in ("/usr/bin::/bin", "/usr/bin:.:/bin", "bin:/usr/bin", ":/usr/bin"):
+            self.strict("git push", "PATH", env=dict(ENV, PATH=path))
+        self.feature("git log -1 && git push", env=dict(ENV, GIT_PAGER="cat"))
+        self.strict("git log -1 && git push", "pager", env=dict(ENV, GIT_PAGER="evil --x"))
+        self.feature("git status && git push", env=dict(ENV, GIT_PAGER="evil"))
+
+    def test_fsmonitor_and_shortlog(self):
+        for value in ("true", "false", "0", ""):
+            self.feature("git status && git push", repo=FakeRepo(cfg={"core.fsmonitor": [value]}))
+        self.strict("git status && git push", "would run", repo=FakeRepo(cfg={"core.fsmonitor": [".git/hook"]}))
+        self.strict("git shortlog -s HEAD --format=%G? && git push", "verifies",
+                    repo=FakeRepo(cfg={"gpg.program": ["/tmp/evil"]}))
 
 
 class ParserTests(unittest.TestCase):
