@@ -13,12 +13,14 @@ G1 ``rev-parse`` (current branch, source refs), G2 ``config -z --list``, G3 ``fo
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
 import signal
 import stat
 import subprocess
+import sys
 import time
 
 GIT_DEADLINE_SECONDS = 3.0
@@ -70,6 +72,9 @@ BENIGN_PAGERS = {"cat", "", "true", ":"}
 SSH_PROGRAMS = {"ssh", "/usr/bin/ssh", "/usr/local/bin/ssh", "/bin/ssh"}
 SSH_VALUE_FLAGS = {"-i", "-p", "-l"}  # not -F: a config file can hold ProxyCommand/LocalCommand
 SSH_BOOL_FLAGS = {"-q", "-v", "-T", "-4", "-6", "-A", "-a", "-x", "-C", "-y"}
+# ssh_config keywords that name a program, load more configuration or reroute the connection through one
+SSH_PROGRAM_OPTIONS = {"proxycommand", "localcommand", "knownhostscommand", "remotecommand", "xauthlocation",
+                       "pkcs11provider", "securitykeyprovider", "include", "match", "permitlocalcommand", "proxyjump"}
 SSH_VALUE = re.compile(r"^[A-Za-z0-9_./:@~,+=%-]+$")
 STOCK_HELPERS = {"store", "cache", "osxkeychain", "manager", "manager-core", "libsecret", "wincred", "netrc"}
 STOCK_HELPER_ARGS = re.compile(r"^(\s+(--[a-z-]+(=[A-Za-z0-9_./~-]+)?|[A-Za-z0-9_./~-]+))*$")
@@ -81,6 +86,9 @@ LFS_STOCK = {"filter.lfs.clean": ("git-lfs clean -- %f", "git-lfs clean --skip -
              "filter.lfs.process": ("git-lfs filter-process", "git-lfs filter-process --skip")}
 BENIGN_EDITORS = {"true", ":", "cat", "/bin/true", "/usr/bin/true", "/usr/bin/env true"}
 VIEW_CONFIG = re.compile(r"^(core\.pager|pager\..*|diff\.external|diff\..*\.(command|textconv))$")
+DIFF_CONFIG = re.compile(r"^(diff\.external|diff\..*\.(command|textconv))$")
+PAGER_CONFIG = re.compile(r"^(core\.pager|pager\..*)$")
+GC_CONFIG = re.compile(r"^gc\.recentobjectshook$")  # auto gc runs after a commit
 BRANCH_LIST_FLAGS = {"--show-current", "--list", "-l", "-a", "--all", "-r", "--remotes", "-v", "-vv"}
 GIT_GLOBALS_OK = {"--no-pager", "-P"}
 PUSH_BOOL = {"-u", "--set-upstream", "-f", "--force", "-q", "--quiet", "-v", "--verbose", "--progress", "--no-verify",
@@ -301,20 +309,56 @@ def options_ok(args, flags, prefixes=(), values=(), clusters=(), value_clusters=
     return True
 
 
+def commit_facts(args):
+    """(message given, --no-gpg-sign given, verbose) for ``git commit`` words that options_ok accepted: a real walk
+    over option words and their values (a message or file named like an option is a value, not an option)."""
+    message = nosign = verbose = False
+    i = 0
+    while i < len(args):
+        word = args[i]
+        i += 1
+        if word == "--":
+            break
+        if not (word.startswith("-") and len(word) > 1):
+            continue
+        if word in COMMIT_VALUE or COMMIT_CLUSTER.match(word):
+            message = True
+            i += 1  # the value, whatever it looks like
+            verbose = verbose or (COMMIT_CLUSTER.match(word) is not None and "v" in word)
+        elif word.startswith(("--message=", "--file=")) or (word.startswith("-m") and not word.startswith("--")):
+            message = True
+        elif word == "--no-edit":
+            message = True
+        elif word == "--no-gpg-sign":
+            nosign = True
+        elif word in ("-v", "--verbose") or (COMMIT_BOOL_CLUSTER.match(word) is not None and "v" in word):
+            verbose = True
+    return message, nosign, verbose
+
+
 def inert_git(sub, args):
-    """None when ``git <sub> <args>`` is not provably free of side effects on the push's facts, else ``sub`` (the
-    stored settings that run programs for that subcommand are checked later, see PROGRAM_CONFIG)."""
+    """None when ``git <sub> <args>`` is not provably free of side effects on the push's facts, else ``(sub, flags)``:
+    flags say what the stored settings must be checked for (see check_program_config): ``diff`` (renders a diff, so
+    textconv and external diff run), ``editor`` (a commit without a message), ``nosign`` (--no-gpg-sign)."""
+    flags = set()
     if sub in VIEWERS:
-        return sub if options_ok(args, VIEW_COMMON, VIEW_PREFIXES, clusters=(VIEW_CLUSTER,)) else None
-    if sub in INERT_GIT_ANY:
-        return sub
-    if sub == "status":
+        ok = options_ok(args, VIEW_COMMON, VIEW_PREFIXES, clusters=(VIEW_CLUSTER,))
+    elif sub in INERT_GIT_ANY:
+        ok = True
+    elif sub == "status":
         ok = options_ok(args, STATUS_FLAGS, clusters=(STATUS_CLUSTER,))
+        if ok and any(a in ("-v", "--verbose") or (STATUS_CLUSTER.match(a) and "v" in a) for a in args if a != "--"):
+            flags.add("diff")  # status -v shows the staged diff, through textconv
     elif sub in ("add", "stage"):
         ok = options_ok(args, ADD_FLAGS)
     elif sub == "commit":
         ok = options_ok(args, COMMIT_FLAGS, ("--message=", "--file=", "-m"), COMMIT_VALUE, (COMMIT_BOOL_CLUSTER,),
                         (COMMIT_CLUSTER,))
+        if ok:
+            message, nosign, verbose = commit_facts(args)
+            for flag, wanted in (("editor", not message), ("nosign", nosign), ("diff", verbose)):
+                if wanted:
+                    flags.add(flag)
     elif sub == "branch":
         ok = all(a in BRANCH_LIST_FLAGS for a in args)
     elif sub == "remote":
@@ -326,13 +370,7 @@ def inert_git(sub, args):
                                                        and not args[1].startswith("-"))
     else:
         ok = False
-    if ok and sub == "commit" and not any(
-            a in ("-m", "--message", "-F", "--file", "--no-edit") or a.startswith(("--message=", "--file=", "-m"))
-            or COMMIT_CLUSTER.match(a) for a in args):
-        sub = "commit-editor"  # no message on the command line: git starts core.editor
-    if ok and sub in ("commit", "commit-editor") and "--no-gpg-sign" in args:
-        sub += "+nosign"  # an explicit --no-gpg-sign never calls the signing program
-    return sub if ok else None
+    return (sub, frozenset(flags)) if ok else None
 
 
 def classify_argv(argv):
@@ -363,7 +401,7 @@ def classify_argv(argv):
         return ("other", "git " + sub)
     if prog in INERT_PROGRAMS and not (prog == "printf" and any(a.startswith("-") for a in argv[1:])):
         # printf -v NAME (also -vNAME) assigns a shell variable: any dash-word makes printf not inert
-        return ("inert", "")
+        return ("inert", ("", frozenset()))
     return ("other", prog)
 
 
@@ -417,7 +455,7 @@ def git_bool(value):
     """A config value read as git reads a boolean: true/yes/on, false/no/off, an empty string is false, and any other
     integer (also 0x.., k/m/g suffixes) is false only when it is zero. Anything git would reject counts as true
     (the strict reading)."""
-    text = value.strip().lower()
+    text = value.lower()
     if text in ("true", "yes", "on"):
         return True
     if text in ("false", "no", "off", ""):
@@ -446,21 +484,52 @@ def safe_chain(path):
         current = parent
 
 
+def file_digest(path):
+    """sha256 of a file's content (hex), or "" when it cannot be read."""
+    try:
+        with open(path, "rb") as handle:
+            return hashlib.sha256(handle.read()).hexdigest()
+    except OSError:
+        return ""
+
+
+def trust_entry(path):
+    """The consent-file entry that pins ``path``: its realpath, owner, mode and the sha256 of its content."""
+    real = os.path.realpath(path)
+    info = os.stat(real)
+    return {"path": path, "realpath": real, "uid": info.st_uid, "mode": info.st_mode & 0o7777,
+            "sha256": file_digest(real)}
+
+
 def user_trusted_programs(environ):
     """Signing programs the user blessed in the per-user consent file (never the committed project config):
-    ``{"trusted_programs": {"signing": ["/abs/path", ...]}}`` in ${XDG_CONFIG_HOME:-~/.config}/silver-bullet/consent.json,
-    a regular file owned by the current user that nobody else can access."""
+    ``{"trusted_programs": {"signing": [{"path", "realpath", "uid", "mode", "sha256"}, ...]}}`` in
+    ${XDG_CONFIG_HOME:-~/.config}/silver-bullet/consent.json, a regular file owned by the current user that nobody
+    else can access. Returns the entries by path; each is checked against the file as it is now (pinned_program)."""
     base = environ.get("XDG_CONFIG_HOME") or os.path.join(environ.get("HOME") or "/nonexistent", ".config")
     path = os.path.join(base, "silver-bullet", "consent.json")
     try:
         info = os.lstat(path)
         if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077:
-            return set()
+            return {}
         with open(path, encoding="utf-8") as handle:
             listed = json.load(handle)["trusted_programs"]["signing"]
     except (OSError, ValueError, KeyError, TypeError):
-        return set()
-    return {item for item in listed if isinstance(item, str)} if isinstance(listed, list) else set()
+        return {}
+    entries = {}
+    for item in listed if isinstance(listed, list) else []:
+        if isinstance(item, dict) and isinstance(item.get("path"), str):
+            entries[item["path"]] = item
+    return entries
+
+
+def pinned_program(value, entry):
+    """The program at ``value`` is the one the user blessed: same realpath, owner, mode and content hash."""
+    try:
+        now = trust_entry(value)
+    except OSError:
+        return False
+    return all(entry.get(field) == now[field] for field in ("realpath", "uid", "mode", "sha256")) and bool(now["sha256"])
 
 
 def stock_signer(value, directory, environ):
@@ -470,8 +539,9 @@ def stock_signer(value, directory, environ):
     anything less, and outside the project and HOME."""
     if not os.path.isabs(value) or re.search(r"\s", value):
         return False
-    if value in user_trusted_programs(environ):
-        return True
+    entry = user_trusted_programs(environ).get(value)
+    if entry is not None:
+        return pinned_program(value, entry)
     if os.path.basename(value) not in STOCK_SIGNERS:
         return False
     try:
@@ -491,38 +561,52 @@ def check_signing(sub, key, values, cfg, directory, environ):
     """gpg program settings: a commit that signs, and log/show (which verify signatures: log.showSignature, %G?
     placeholders, --show-signature) run them; a stock system signer is accepted, anything else is a program."""
     verifies = sub in ("log", "show", "shortlog")
-    commits = sub in ("commit", "commit-editor") and git_bool(cfg_get(cfg, "commit.gpgsign") or "")
+    commits = sub == "commit" and git_bool(cfg_get(cfg, "commit.gpgsign") or "")
     if not (verifies or commits):
         return
     if key.endswith("defaultkeycommand") or not all(stock_signer(v, directory, environ) for v in values):
         raise Strict("git %s %s with the program named by %s" % (
-            sub.replace("-editor", ""), "verifies signatures" if verifies else "signs", key))
+            sub, "verifies signatures" if verifies else "signs", key))
+
+
+def benign_pager(value):
+    """A stock pager: nothing, true, `:`, cat, less, more, most with plain dash options."""
+    if value in BENIGN_PAGERS:
+        return True
+    words = value.split()
+    return os.path.basename(words[0]) in ("cat", "less", "more", "most") and \
+        all(re.fullmatch(r"-[A-Za-z0-9]+", word) for word in words[1:]) and "/" not in value.replace(words[0], "", 1)
 
 
 def check_program_config(subs, cfg, environ=None, directory=""):
-    """An inert git subcommand runs the programs stored settings name for it (fsmonitor, clean/smudge filters, hooks
-    path; the gpg program only for a commit that signs; the editor for a commit without a message; pager, external
-    diff, textconv for the viewers): any such setting is final delivery."""
+    """An inert git subcommand runs the programs stored settings name for it. ``subs`` holds ``(subcommand, flags)``:
+    fsmonitor, filters, hooks path and gc hooks for all; textconv and external diff for log/show/diff, status -v and
+    commit -v (or commit.verbose); pagers for the viewers; the gpg program for a commit that signs and for
+    log/show/shortlog; the editor for a commit without a message. Any such setting makes the push final delivery."""
     environ = environ or {}
-    for sub in subs:
-        unsigned = sub.endswith("+nosign")
-        sub = sub[:-len("+nosign")] if unsigned else sub
-        shown = sub.replace("-editor", "")
-        pattern = VIEW_CONFIG if sub in VIEWERS else None
+    for sub, flags in subs:
+        shown = sub
+        viewer = sub in VIEWERS
+        editor_commit = "editor" in flags
+        diffs = viewer or "diff" in flags or (editor_commit and git_bool(cfg_get(cfg, "commit.verbose") or ""))
         for key, values in cfg.items():
             if key in LFS_STOCK and all(v in LFS_STOCK[key] for v in values):
                 continue  # the stock git-lfs filter commands (git-lfs is installed with git)
-            if key == "core.fsmonitor" and all(v.strip().lower() in BOOL_WORDS for v in values):
-                continue  # a boolean selects git's built-in file system monitor, not a program
-            if RUN_CONFIG.match(key) or (pattern is not None and pattern.match(key)):
+            if key == "core.fsmonitor" and all(v.lower() in BOOL_WORDS for v in values):
+                continue  # a boolean selects git's built-in file system monitor, not a program (no stripping)
+            if RUN_CONFIG.match(key) or (diffs and DIFF_CONFIG.match(key)) or (sub == "commit" and GC_CONFIG.match(key)):
                 raise Strict("git %s would run a program named by the setting %s" % (shown, key))
-            if SIGN_CONFIG.match(key) and not unsigned:
+            if viewer and PAGER_CONFIG.match(key) and not all(benign_pager(v) for v in values):
+                raise Strict("git %s would start the pager named by %s" % (shown, key))
+            if SIGN_CONFIG.match(key) and "nosign" not in flags:
                 check_signing(sub, key, values, cfg, directory, environ)
-        if sub in VIEWERS and (environ.get("GIT_PAGER") or "").strip() not in BENIGN_PAGERS:
-            raise Strict("git %s would start the pager %s" % (shown, environ["GIT_PAGER"].split()[0]))
-        if sub == "commit-editor":
+        if viewer:
+            for name in ("GIT_PAGER", "PAGER"):
+                if not benign_pager(environ.get(name) or ""):
+                    raise Strict("git %s would start the pager %s" % (shown, environ[name].split()[0]))
+        if editor_commit:
             editor = effective_editor(cfg, environ)
-            if editor and editor.strip() not in BENIGN_EDITORS:
+            if editor and editor not in BENIGN_EDITORS:
                 raise Strict("git commit would start the editor %s (set a message with -m)" % editor.split()[0])
 
 
@@ -624,8 +708,7 @@ def ssh_command_ok(command):
             return False
         if word in ("-o", ) or word.startswith("-o"):
             name = value.split("=", 1)[0].lower()
-            if "=" not in value or name.endswith("command") or name.endswith("provider") \
-                    or name in ("permitlocalcommand", "proxyjump", "include"):
+            if "=" not in value or name.endswith("command") or name.endswith("provider") or name in SSH_PROGRAM_OPTIONS:
                 return False
     return True
 
@@ -694,6 +777,8 @@ def check_config(cfg, remote):
                 raise Strict("%s changes what a push sends" % key)
         elif key.startswith("url.") and key.endswith(".pushinsteadof"):
             raise Strict("a url.*.pushInsteadOf rewrite changes where a push goes")
+        if key == "core.hookspath" and any(values):
+            raise Strict("core.hooksPath names the directory of the pre-push hook")
         if PUSH_RUN_CONFIG.match(key):
             check_push_programs(key, values)
         if key.startswith("url.") and key.endswith(".insteadof") and not safe_url(key[len("url."):-len(".insteadof")]):
@@ -801,9 +886,9 @@ def check_entries(result, wrapper=None):
         if kind[0] in ("push", "cd", "newbranch"):
             found[kind[0]].append((entry, kind))
             if kind[0] == "newbranch":
-                found["subs"].add("checkout")  # switching branches runs post-checkout, filters and the monitor
+                found["subs"].add(("checkout", frozenset()))  # switching branches runs post-checkout, filters and the monitor
         elif kind[0] == "inert":
-            found["subs"].add(kind[1])
+            found["subs"].add(kind[1])  # (git subcommand, flags); programs have ("", flags) from classify_argv
         else:
             raise Strict("the command also runs %s, which can change what the push does" % (kind[1] or "an unknown program"))
     return found
@@ -1057,4 +1142,21 @@ def _mcp_scope(tool, fields, base, environ, git):
 # The classifier's own list of program-running configuration keys, by name (tests/fixtures/push-scope/
 # program-mechanisms.json is diffed against it by tests/python/test_program_mechanisms.py).
 PROGRAM_KEY_PATTERNS = {"run": RUN_CONFIG, "sign": SIGN_CONFIG, "editor": EDITOR_CONFIG, "push_run": PUSH_RUN_CONFIG,
-                        "url": URL_CONFIG, "view": VIEW_CONFIG}
+                        "url": URL_CONFIG, "view": VIEW_CONFIG, "gc": GC_CONFIG}
+
+
+def main(argv):
+    """``push_scope.py --trust-entry PATH``: print the consent-file entry that pins PATH (see user_trusted_programs)."""
+    if len(argv) == 2 and argv[0] == "--trust-entry":
+        try:
+            print(json.dumps(trust_entry(argv[1]), indent=2))
+        except OSError as exc:
+            print("cannot read %s: %s" % (argv[1], exc), file=sys.stderr)
+            return 1
+        return 0
+    print("usage: push_scope.py --trust-entry PATH", file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
