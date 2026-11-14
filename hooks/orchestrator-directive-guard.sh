@@ -207,7 +207,6 @@ if [[ -f "$(sb_orchestrator_directive_file)" ]] && sb_orchestrator_directive_is_
       && ! sb_orchestrator_guard_applies_to_workspace; then
       exit 0
     fi
-    config_file="$_odg_workspace_config"
     SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
     state_file="${SILVER_BULLET_STATE_FILE:-${SB_STATE_DIR}/state}"
     # The state file is the verified project's, and only the lines the recorder sealed count.
