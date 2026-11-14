@@ -77,9 +77,8 @@ FORBIDDEN_HARDCODED="executing-plans subagent-driven-development"
 # ── Read configurable forbidden list from .silver-bullet.json ────────────────
 # The project's own forbidden list is read from the verified record (hooks/lib/integrity.sh).
 forbidden_cfg=""
-[[ -n "$(declare -F sb_integrity_gate)" ]] || source "$_lib_dir/integrity.sh"
 if sb_integrity_gate "$PWD"; then
-  forbidden_cfg=$(sb_iv_jq -r '(.skills.forbidden // []) | .[]' 2>/dev/null || true)
+  if forbidden_cfg=$(sb_iv_jq -r '(.skills.forbidden // []) | .[]' 2>/dev/null); then :; fi
 fi
 
 check_skill() {

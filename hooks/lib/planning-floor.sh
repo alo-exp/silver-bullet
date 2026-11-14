@@ -177,7 +177,8 @@ sb_pf_src_load() {
   [[ -n "$root" ]] || return 0
   sb_integrity_verify "$root" ""
   # One jq call: pattern, exclusion, workflow (each with its default) on three lines.
-  vals="$(sb_iv_jq -r '[(.project.src_pattern // "/src/"), (.project.src_exclude_pattern // "__tests__|\\.test\\."), (.project.active_workflow // "full-dev-cycle")] | map(tostring) | .[]' 2>/dev/null || true)"
+  vals=""
+  if vals="$(sb_iv_jq -r '[(.project.src_pattern // "/src/"), (.project.src_exclude_pattern // "__tests__|\\.test\\."), (.project.active_workflow // "full-dev-cycle")] | map(tostring) | .[]' 2>/dev/null)"; then :; fi
   value="${vals%%$'\n'*}"
   rest="${vals#*$'\n'}"
   # Only safe path-segment patterns (no regex injection) and nothing that matches everything.

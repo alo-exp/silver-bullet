@@ -667,7 +667,8 @@ if [[ "$sb_should_mutate" == true && -n "$sb_project_root" && -f "$_lib_dir/inte
   # A first baseline (a new worktree, a fresh clone) adopts whatever the files hold: say when they differ
   # from what git has committed (the agent may have changed them before this session start).
   if [[ "$SB_IV_STATUS" == unbaselined ]]; then
-    sb_iv_git_diff="$(git -C "$sb_iv_root" status --porcelain -- .silver-bullet.json silver-bullet.md .silver-bullet.prompt.json 2>/dev/null | awk '{ printf "%s%s", (n++ ? ", " : ""), $2 }')"
+    sb_iv_git_diff=""
+    if sb_iv_git_diff="$(git -C "$sb_iv_root" status --porcelain -- .silver-bullet.json silver-bullet.md .silver-bullet.prompt.json 2>/dev/null | awk '{ printf "%s%s", (n++ ? ", " : ""), $2 }')"; then :; fi
     if [[ -n "$sb_iv_git_diff" ]]; then
       _sb_state_seal_log "${SB_STATE_DIR}/state" "integrity first baseline adopted files that differ from git HEAD: $sb_iv_git_diff"
       combined="${combined:+$combined
