@@ -22,20 +22,26 @@ assert_eq "canon of an empty path is empty" "" "$(sb_pf_canon "")"
 assert_eq "canon of a Windows spelling (msys)" "/c/proj/src/a.js" "$(OSTYPE=msys sb_pf_canon 'C:\proj\src\a.js')"
 
 # ── sb_pf_src_load / sb_pf_src_in_scope ──────────────────────────────────────
-printf '{"project":{"src_pattern":"/src/|/lib/","src_exclude_pattern":"generated","active_workflow":"devops-cycle"}}\n' >"$P/cfg.json"
-sb_pf_src_load "$P/cfg.json"
+# The source scope comes from the verified project (a root with a live config on an install that never ran
+# a session reads it as written; hooks/lib/integrity.sh).
+SPR="$P/srcproj"
+mkdir -p "$SPR"
+printf '# SB\n' >"$SPR/silver-bullet.md"
+sf_cfg() { printf '%s\n' "$1" >"$SPR/.silver-bullet.json"; sb_integrity_forget; }
+sf_cfg '{"project":{"src_pattern":"/src/|/lib/","src_exclude_pattern":"generated","active_workflow":"devops-cycle"}}'
+sb_pf_src_load "$SPR"
 assert_eq "a valid multi-segment pattern is honoured" "/src/|/lib/" "$SB_PF_SRC_PATTERN"
 assert_eq "a valid exclusion is honoured" "generated" "$SB_PF_SRC_EXCLUDE"
 assert_eq "the workflow is read" "devops-cycle" "$SB_PF_WORKFLOW"
-printf '{"project":{"src_pattern":".*","src_exclude_pattern":"a b;c"}}\n' >"$P/cfg.json"
-sb_pf_src_load "$P/cfg.json"
+sf_cfg '{"project":{"src_pattern":".*","src_exclude_pattern":"a b;c"}}'
+sb_pf_src_load "$SPR"
 assert_eq "a match-everything pattern falls back" "/src/" "$SB_PF_SRC_PATTERN"
 assert_eq "an unsafe exclusion falls back" '__tests__|\.test\.' "$SB_PF_SRC_EXCLUDE"
-sb_pf_src_load "$P/missing.json"
-assert_eq "a missing config gives the defaults" "/src/" "$SB_PF_SRC_PATTERN"
+sb_pf_src_load "$P/no-such-project"
+assert_eq "a missing project gives the defaults" "/src/" "$SB_PF_SRC_PATTERN"
 assert_eq "and the default workflow" "full-dev-cycle" "$SB_PF_WORKFLOW"
-printf 'not json\n' >"$P/cfg.json"
-sb_pf_src_load "$P/cfg.json"
+sf_cfg 'not json'
+sb_pf_src_load "$SPR"
 assert_eq "an unreadable config gives the default workflow" "full-dev-cycle" "$SB_PF_WORKFLOW"
 sb_pf_src_load ""
 check_scope() { # path expected label
@@ -195,12 +201,14 @@ if sb_pf_contract_unlocked; then tl_fail "no unlock in force unlocks"; else tl_p
 SB_IV_UNLOCK_SKILL=silver-add
 if sb_pf_contract_unlocked json; then tl_pass "silver-add unlocks the JSON configuration"; else tl_fail "silver-add unlocks json"; fi
 if sb_pf_contract_unlocked md; then tl_fail "silver-add unlocks silver-bullet.md"; else tl_pass "silver-add leaves silver-bullet.md locked"; fi
-assert_eq "silver-add covers the JSON configuration" "config prompt" "$(sb_contract_unlock_tags)"
+assert_eq "silver-add covers the JSON configuration" "config prompt" "$(sb_contract_skill_tags silver-add)"
+assert_eq "silver-add is declared to write its tracker keys only" "_github_project issue_tracker issue_tracker_adapter" "$(sb_contract_skill_config_keys silver-add)"
+assert_eq "silver-devops is declared to write the active workflow only" "project.active_workflow" "$(sb_contract_skill_config_keys silver-devops)"
+assert_eq "silver-init may write any key" "" "$(sb_contract_skill_config_keys silver-init)"
 SB_IV_UNLOCK_SKILL=silver-init
 if sb_pf_contract_unlocked md; then tl_pass "silver-init unlocks silver-bullet.md"; else tl_fail "silver-init unlocks md"; fi
-assert_eq "silver-init covers the contract and the instruction files" "config prompt md instr:CLAUDE.md instr:AGENTS.md" "$(sb_contract_unlock_tags)"
+assert_eq "silver-init covers the contract and the instruction files" "config prompt md instr:CLAUDE.md instr:AGENTS.md" "$(sb_contract_skill_tags silver-init)"
 SB_IV_UNLOCK_SKILL=""
-assert_eq "no unlock, no tags" "" "$(sb_contract_unlock_tags)"
 if sb_contract_is_writer silver-add; then tl_pass "silver-add is a writer"; else tl_fail "silver-add is a writer"; fi
 if sb_contract_is_writer silver-plan; then tl_fail "silver-plan is not a writer"; else tl_pass "silver-plan is not a writer"; fi
 # drift: a skill that rewrites .silver-bullet.json with jq and mv must be on the list

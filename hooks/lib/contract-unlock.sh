@@ -12,9 +12,9 @@
 #
 #   sb_contract_is_writer SKILL        SKILL is one of the contract-writing skills
 #   sb_contract_skill_tags SKILL       the integrity tags SKILL may change
+#   sb_contract_skill_config_keys SKILL  the config keys a JSON-only SKILL may change ("" = any)
 #   sb_contract_unlocked [json|md]     the verified record says a writer skill is running (json: the
 #                                      JSON configuration, md: silver-bullet.md)
-#   sb_contract_unlock_tags            the tags the unlock in force covers
 
 SB_PF_CONTRACT_WRITER_SKILLS="silver-init silver-update silver-add silver-devops silver-migrate"
 SB_CONTRACT_JSON_ONLY_SKILLS="silver-add silver-devops"
@@ -32,16 +32,21 @@ sb_contract_skill_tags() { # SKILL
   esac
 }
 
+# The configuration keys a JSON-only skill is declared to write (jq paths without the leading dot). A
+# running skill's unlock covers changes to these keys only; any other key that differs stays a drift (the
+# agent cannot launder a weakening of required_planning by running /sb:add). Empty: the whole file.
+sb_contract_skill_config_keys() { # SKILL
+  case "${1:-}" in
+    silver-add) printf '_github_project issue_tracker issue_tracker_adapter' ;;
+    silver-devops) printf 'project.active_workflow' ;;
+  esac
+}
+
 sb_contract_unlocked() {
   local kind="${1:-md}" skill="${SB_IV_UNLOCK_SKILL:-}"
   [[ -n "$skill" ]] || return 1
   if [[ "$kind" != json ]]; then
     case " $SB_CONTRACT_JSON_ONLY_SKILLS " in *" $skill "*) return 1 ;; esac
   fi
-  return 0
-}
-
-sb_contract_unlock_tags() {
-  [[ -z "${SB_IV_UNLOCK_SKILL:-}" ]] || sb_contract_skill_tags "$SB_IV_UNLOCK_SKILL"
   return 0
 }

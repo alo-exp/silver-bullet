@@ -134,7 +134,8 @@ run_ca PreToolUse "$REL"
 assert_contains "recorded release skill is required" "$(message)" "/inst-b"
 jq '.skills.required_release=[]' "$PROJ/.silver-bullet.json" >"$PROJ/t.json" && mv "$PROJ/t.json" "$PROJ/.silver-bullet.json"
 run_ca PreToolUse "$REL"
-assert_contains "an emptied live release list does not lift it" "$(message)" "/inst-b"
+assert_contains "an emptied live release list does not lift it: the drift stops delivery" "$(message)" "ENFORCEMENT CONTRACT CHANGED"
+assert_contains "and tells the agent to ask the user" "$(message)" "Ask the user"
 mkproj reldevopsrec '.project.active_workflow="devops-cycle" | .skills.required_deploy_devops=["inst-a"] | .skills.required_release_devops=["inst-b"]'
 state inst-a
 run_ca PreToolUse "$REL"

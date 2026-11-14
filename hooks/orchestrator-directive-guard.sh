@@ -6,7 +6,7 @@ trap 'exit 0' ERR
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-directive.sh orchestrator-state.sh orchestrator-parent.sh required-skills.sh hook-audit.sh cert-bypass.sh; do
+for _lib in runtime-paths.sh sb-project-gate.sh integrity.sh orchestrator-directive.sh orchestrator-state.sh orchestrator-parent.sh required-skills.sh hook-audit.sh cert-bypass.sh; do
   # shellcheck disable=SC1090
   [[ -f "$_lib_dir/$_lib" ]] && source "$_lib_dir/$_lib"
 done
@@ -210,18 +210,15 @@ if [[ -f "$(sb_orchestrator_directive_file)" ]] && sb_orchestrator_directive_is_
     config_file="$_odg_workspace_config"
     SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
     state_file="${SILVER_BULLET_STATE_FILE:-${SB_STATE_DIR}/state}"
-    if [[ -n "$config_file" ]]; then
-      cfg_state="$(jq -r '.state.state_file // empty' "$config_file" 2>/dev/null || true)"
-      if [[ -n "$cfg_state" ]]; then
-        state_file="$cfg_state"
-        state_file="${state_file/#\~/$HOME}"
-      fi
+    # The state file is the verified project's, and only the lines the recorder sealed count.
+    if sb_integrity_gate "$PWD" && [[ -n "$SB_IV_STATE_FILE" ]]; then
+      state_file="${SB_IV_STATE_FILE/#\~/$HOME}"
     fi
     if ! sb_runtime_path_is_state_scoped "$state_file"; then
       state_file="${SB_STATE_DIR}/state"
     fi
     state_contents=""
-    [[ -f "$state_file" && ! -L "$state_file" ]] && state_contents="$(cat "$state_file" 2>/dev/null || true)"
+    state_contents="$(sb_integrity_state_contents "$state_file")"
     if ! sb_orchestrator_directive_skill_recorded "$expected" "$state_contents"; then
       directive_json="$(sb_orchestrator_directive_read 2>/dev/null || true)"
       reason="$(printf '%s' "$directive_json" | jq -r '.reason // "Orchestrator directive pending"' 2>/dev/null || true)"

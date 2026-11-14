@@ -19,7 +19,7 @@
 #   sb_pf_unanalysable_message           why the call could not be analysed and how to proceed
 #   sb_pf_plain_read_only COMMAND        pure-Bash verdict (no helper needed) for a plainly
 #                                        read-only single command
-#   sb_pf_src_load CONFIG                SB_PF_SRC_PATTERN / SB_PF_SRC_EXCLUDE / SB_PF_WORKFLOW
+#   sb_pf_src_load ROOT                  SB_PF_SRC_PATTERN / SB_PF_SRC_EXCLUDE / SB_PF_WORKFLOW
 #   sb_pf_src_in_scope ABS ROOT          ABS is production source: inside ROOT, matches the source
 #                                        pattern as a path-segment pattern on its project-relative
 #                                        form, and is not a test file
@@ -165,24 +165,31 @@ sb_pf_plain_read_only() {
   return 0
 }
 
-# sb_pf_src_load CONFIG: the project's source pattern, exclusion and workflow, validated.
+# sb_pf_src_load ROOT: the project's source pattern, exclusion and workflow, validated. They come from the
+# VERIFIED record of the project (hooks/lib/integrity.sh), never from the live file: a config rewritten
+# outside a sanctioned writer cannot take files out of the floor, and an unbaselined or untrusted project
+# gets the defaults.
 sb_pf_src_load() {
-  local config="${1:-}"
+  local root="${1:-}" vals value rest
   SB_PF_SRC_PATTERN="$SB_PF_DEFAULT_SRC_PATTERN"
   SB_PF_SRC_EXCLUDE="$SB_PF_DEFAULT_SRC_EXCLUDE"
   SB_PF_WORKFLOW="full-dev-cycle"
-  [[ -n "$config" && -f "$config" ]] || return 0
-  local value
-  value="$(jq -r '.project.src_pattern // "/src/"' "$config" 2>/dev/null || true)"
+  [[ -n "$root" ]] || return 0
+  sb_integrity_verify "$root" ""
+  # One jq call: pattern, exclusion, workflow (each with its default) on three lines.
+  vals="$(sb_iv_jq -r '[(.project.src_pattern // "/src/"), (.project.src_exclude_pattern // "__tests__|\\.test\\."), (.project.active_workflow // "full-dev-cycle")] | map(tostring) | .[]' 2>/dev/null || true)"
+  value="${vals%%$'\n'*}"
+  rest="${vals#*$'\n'}"
   # Only safe path-segment patterns (no regex injection) and nothing that matches everything.
   if grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$' <<<"$value" && ! grep -qE '^\.\*$|^\.\+$|^/$|^$' <<<"$value"; then
     SB_PF_SRC_PATTERN="$value"
   fi
-  value="$(jq -r '.project.src_exclude_pattern // "__tests__|\\.test\\."' "$config" 2>/dev/null || true)"
+  value="${rest%%$'\n'*}"
   if [[ ${#value} -le 200 ]] && grep -qE '^[a-zA-Z0-9/_.\-|()\^$+?*]+$' <<<"$value"; then
     SB_PF_SRC_EXCLUDE="$value"
   fi
-  SB_PF_WORKFLOW="$(jq -r '.project.active_workflow // "full-dev-cycle"' "$config" 2>/dev/null || echo full-dev-cycle)"
+  value="${rest#*$'\n'}"
+  SB_PF_WORKFLOW="${value:-full-dev-cycle}"
 }
 
 sb_pf_src_in_scope() {

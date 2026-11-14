@@ -242,21 +242,20 @@ case "$composer_slug" in
     ;;
 esac
 
-config_file="$(sb_find_project_config)"
-sb_pf_src_load "$config_file"
+# The project and its gate values come from the verified record (hooks/lib/integrity.sh), the state from its seal.
+sb_integrity_gate "$PWD" || exit 0
+sb_pf_src_load "$SB_IV_ROOT"
 
 state_file="${SILVER_BULLET_STATE_FILE:-${SB_RUNTIME_STATE_DIR}/state}"
-if [[ -n "$config_file" ]]; then
-  cfg_state="$(jq -r '.state.state_file // ""' "$config_file" 2>/dev/null || true)"
-  [[ -n "$cfg_state" ]] && state_file="${cfg_state/#\~/$HOME}"
-fi
+cfg_state="$SB_IV_STATE_FILE"
+[[ -n "$cfg_state" ]] && state_file="${cfg_state/#\~/$HOME}"
 if ! sb_runtime_path_is_state_scoped "$state_file"; then
   state_file="${SB_RUNTIME_STATE_DIR}/state"
 fi
 
 missing_markers=()
 state_contents=""
-[[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
+state_contents="$(sb_integrity_state_contents "$state_file")"
 catalog_index="${SB_ATOMIC_FLOW_INDEX:-$_lib_dir/../../docs/generated/atomic-flow-index.json}"
 for marker in "${required_markers[@]}"; do
   if [[ "$marker" == "silver-quality-gates" ]] && declare -f sb_qg_preplan_marker_recorded >/dev/null 2>&1; then
@@ -298,7 +297,7 @@ if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]]; then
   fi
 fi
 
-project_root="$(sb_pf_canon "$(dirname "$config_file")")"
+project_root="$(sb_pf_canon "$SB_IV_ROOT")"
 implementation_write=false
 while IFS=$'\t' read -r via target; do
   case "$target" in

@@ -73,7 +73,7 @@ setup() {
   TMPDIR_TEST=$(mktemp -d)
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
-  rm -f "$TMPSTATE"
+  rm -f "$TMPSTATE" "${SB_TEST_DIR}/seal.key" "${SB_TEST_DIR}/trivial" "${SB_TEST_DIR}"/integrity-*
   rm -f "${SB_TEST_DIR}/ups-coalesce-turn" "${SB_TEST_DIR}/ups-coalesce-seen" 2>/dev/null || true
   # Init a git repo so branch-detection tests work (hook silently handles no-git too)
   git -C "$TMPDIR_TEST" init -q
@@ -212,10 +212,19 @@ setup
 write_cfg
 # No skills recorded — would normally output missing list
 rm -f "$TMPSTATE"
-# Create trivial file (not a symlink)
-touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+# The user's marker, blessed by a session start (hooks/lib/integrity.sh): the reminder stays quiet
+touch "${SB_TEST_DIR}/trivial"
+source "$REPO_ROOT/hooks/lib/integrity.sh"
+sb_integrity_baseline "$(cd "$TMPDIR_TEST" && pwd -P)" session
 out=$(run_hook)
-assert_noop_json "trivial file present -> valid no-op hook JSON" "$out"
+assert_noop_json "blessed trivial marker -> valid no-op hook JSON" "$out"
+# a marker nobody blessed (and one named only by the config) does not silence it
+rm -f "${SB_TEST_DIR}/trivial"
+sb_integrity_baseline "$(cd "$TMPDIR_TEST" && pwd -P)" session
+touch "${SB_TEST_DIR}/trivial"
+out=$(run_hook)
+assert_not_contains "an unblessed marker does not silence the reminder" "$out" '"hookEventName":"UserPromptSubmit"}'
+rm -f "${SB_TEST_DIR}/trivial"
 teardown
 
 # Test 6: Main branch -> finishing-a-development-branch NOT in missing (TD-02)

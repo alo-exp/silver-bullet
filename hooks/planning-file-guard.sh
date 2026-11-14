@@ -91,12 +91,11 @@ deny() {
 }
 
 # ── Exit early if project is not using Silver Bullet ─────────────────────────
-config_file="$(sb_find_project_config_walk_only 2>/dev/null || true)"
-[[ -n "$config_file" ]] || exit 0
+sb_integrity_gate "$PWD" || exit 0
 if declare -f sb_project_active >/dev/null 2>&1; then
-  sb_project_active "$config_file" || exit 0
+  sb_project_active "$SB_IV_ROOT/.silver-bullet.json" || exit 0
 fi
-project_root="$(sb_pf_canon "$(dirname "$config_file")")"
+project_root="$(sb_pf_canon "$SB_IV_ROOT")"
 
 # (An unparsable payload has no tool name: it goes on to the analysis, which fails closed.)
 tool_name="$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null || true)"
@@ -149,7 +148,6 @@ note() {
 
 _override="${SB_RUNTIME_STATE_DIR}/planning-edit-override"
 _roadmap_override="${SB_RUNTIME_STATE_DIR}/roadmap-edit-override"
-_trivial_file="${SB_RUNTIME_STATE_DIR}/trivial"
 
 while IFS=$'\t' read -r via target; do
   planning_rel=""
@@ -185,7 +183,7 @@ while IFS=$'\t' read -r via target; do
   fi
 
   # ── Trivial bypass (user-created marker; the configured path is never honoured) ──
-  if [[ -f "$_trivial_file" && ! -L "$_trivial_file" ]]; then
+  if sb_integrity_trivial_ok "$SB_IV_ROOT"; then
     continue
   fi
 

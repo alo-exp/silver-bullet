@@ -189,35 +189,68 @@ assert_file_exists "and kept" "$SD/trivial"
 rm -f "$SD/trivial"
 sb_integrity_baseline "$R" session
 
-# ── the unlock is an entry of the record ───────────────────────────────────────────────────────────
+# ── the unlock is an entry of the record, and it never blesses a drift that was there before ───────
 printf '{"skills":{"required_planning":["z"]}}\n' >"$R/.silver-bullet.json"
 printf '# changed\n' >"$R/silver-bullet.md"
 verify
 assert_eq "no unlock: both diverge" "config md" "$SB_IV_DIVERGED"
 sb_integrity_baseline "$R" unlock silver-add
 verify
-assert_eq "silver-add accepts the JSON change" "md" "$SB_IV_DIVERGED"
-assert_eq "the unlock is read from the record" "silver-add" "$SB_IV_UNLOCK_SKILL"
-assert_eq "and the live values are used" "z" "$SB_IV_REQUIRED_PLANNING"
-sb_integrity_baseline "$R" unlock silver-init
+assert_eq "a drift that predates the skill is not adopted by it: no unlock" "config md" "$SB_IV_DIVERGED"
+assert_eq "and no skill is unlocked" "" "$SB_IV_UNLOCK_SKILL"
+assert_contains "the refusal is logged" "$(logged)" "contract skill silver-add got no unlock: config changed before it ran"
+sb_integrity_baseline "$R" session
+printf '%s\n' "$GOOD" >"$R/.silver-bullet.json"
+printf '# SB\n' >"$R/silver-bullet.md"
+sb_integrity_baseline "$R" session
+sb_integrity_baseline "$R" unlock silver-add
 verify
-assert_eq "silver-init accepts both" "" "$SB_IV_DIVERGED"
+assert_eq "silver-add on a clean project is unlocked" "silver-add" "$SB_IV_UNLOCK_SKILL"
+jq '._github_project = {"number":1}' "$R/.silver-bullet.json" >"$R/t.json" && mv "$R/t.json" "$R/.silver-bullet.json"
+verify
+assert_eq "a change to a key the skill is declared to write is expected" "" "$SB_IV_DIVERGED"
+assert_eq "and the live values are used" "a b" "$SB_IV_REQUIRED_PLANNING"
+jq '.skills.required_planning = []' "$R/.silver-bullet.json" >"$R/t.json" && mv "$R/t.json" "$R/.silver-bullet.json"
+verify
+assert_eq "a change to any other key is still a drift, unlock or not" "config" "$SB_IV_DIVERGED"
+assert_eq "and the recorded list applies" "a b" "$SB_IV_REQUIRED_PLANNING"
+sb_integrity_verify "$R" ""
+SB_IV_UNLOCK_SKILL=silver-add
+sb_integrity_baseline "$R" adopt
+verify
+assert_eq "adopting does not adopt the other key" "config" "$SB_IV_DIVERGED"
+printf '%s\n' "$GOOD" >"$R/.silver-bullet.json"
+jq '._github_project = {"number":2}' "$R/.silver-bullet.json" >"$R/t.json" && mv "$R/t.json" "$R/.silver-bullet.json"
+verify
+SB_IV_UNLOCK_SKILL=silver-add
+sb_integrity_baseline "$R" adopt
 SB_CONTRACT_UNLOCK_WINDOW=-1
+verify
+assert_eq "adopting what the skill is declared to write keeps it accepted after the window" "" "$SB_IV_DIVERGED"
+SB_CONTRACT_UNLOCK_WINDOW=7200
+sb_integrity_baseline "$R" session
+sb_integrity_baseline "$R" unlock silver-init
+printf '# SB 2\n' >"$R/silver-bullet.md"
+printf '{"skills":{"required_planning":["q"]}}\n' >"$R/.silver-bullet.json"
+verify
+assert_eq "silver-init may write any key and the md" "" "$SB_IV_DIVERGED"
+SB_IV_UNLOCK_SKILL=silver-init
+sb_integrity_baseline "$R" adopt
+SB_CONTRACT_UNLOCK_WINDOW=-1
+verify
+assert_eq "its writes are adopted" "" "$SB_IV_DIVERGED"
+assert_eq "once the window has lapsed" "" "$SB_IV_UNLOCK_SKILL"
 printf '{"skills":{"required_planning":["y"]}}\n' >"$R/.silver-bullet.json"
 verify
-assert_eq "an unlock past its window has lapsed: a later change diverges" "config" "$SB_IV_DIVERGED"
-assert_eq "and names no skill" "" "$SB_IV_UNLOCK_SKILL"
+assert_eq "a later change diverges" "config" "$SB_IV_DIVERGED"
 SB_CONTRACT_UNLOCK_WINDOW=7200
+# an unlock written into the record without the key is not a record any more
+sb_integrity_baseline "$R" session
 sb_integrity_baseline "$R" unlock silver-init
-SB_CONTRACT_UNLOCK_WINDOW=-1
-verify
-assert_eq "the unlock refreshed the entries its skill owns, so they stay accepted after it lapses" "" "$SB_IV_DIVERGED"
-SB_CONTRACT_UNLOCK_WINDOW=7200
-# a forged unlock: the record is signed, so a plain edit of it is not a record any more
 cp "$(rec_of)" "$TL_TMP/rec.keep"
 awk -F'\t' -v OFS='\t' '$1 == "unlock" { $2 = "silver-init"; $3 = 9999999999 } { print }' "$(rec_of)" >"$(rec_of).tmp" && mv "$(rec_of).tmp" "$(rec_of)"
 verify
-assert_eq "an unlock written into the record without the key is not trusted" "untrusted" "$SB_IV_STATUS"
+assert_eq "an unlock edited into the record without the key is not trusted" "untrusted" "$SB_IV_STATUS"
 cp "$TL_TMP/rec.keep" "$(rec_of)"
 sb_integrity_baseline "$R" session
 printf 'silver-init 9999999999\n' >"$SD/contract-unlock"

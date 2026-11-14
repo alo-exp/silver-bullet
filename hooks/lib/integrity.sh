@@ -57,8 +57,9 @@ if ! declare -f sb_contract_unlocked >/dev/null 2>&1; then
 fi
 
 SB_IV_PLAN_FILES="ROADMAP.md STATE.md PROJECT.md"
-_SB_IV_VARS="STATUS DIVERGED WHY TRIVIAL_OK REQUIRED_PLANNING REQUIRED_PLANNING_DEVOPS REQUIRED_DEPLOY REQUIRED_DEPLOY_DEVOPS REQUIRED_RELEASE REQUIRED_RELEASE_DEVOPS STATE_FILE UNLOCK_SKILL"
+_SB_IV_VARS="STATUS DIVERGED WHY TRIVIAL_OK REQUIRED_PLANNING REQUIRED_PLANNING_DEVOPS REQUIRED_DEPLOY REQUIRED_DEPLOY_DEVOPS REQUIRED_RELEASE REQUIRED_RELEASE_DEVOPS STATE_FILE UNLOCK_SKILL CONFIG ROOT"
 _SB_IV_CACHE_KEY=""
+_SB_IV_EMPTY="{}"
 
 _sb_iv_state_dir() { printf '%s' "${SB_RUNTIME_STATE_DIR:-$HOME/.claude/.silver-bullet}"; }
 
@@ -80,24 +81,66 @@ sb_integrity_record_root() { # DIR
   done
 }
 
-sb_integrity_root() {
-  local dir="${1:-$PWD}" cfg=""
-  if ! declare -f sb_find_project_config_walk_only_from >/dev/null 2>&1; then
-    # shellcheck source=sb-project-gate.sh
-    source "$_sb_iv_dir/sb-project-gate.sh"
+# The nearest directory at or above DIR holding BOTH contract files (the project boundary), stopping at a
+# git root; SILVER_BULLET_PROJECT_ROOT wins when it holds both. Prints the config path, status 1 if none.
+sb_integrity_live_config_walk() { # [DIR]
+  local d="${1:-$PWD}" root=""
+  if [[ -n "${SILVER_BULLET_PROJECT_ROOT:-}" ]]; then
+    root="${SILVER_BULLET_PROJECT_ROOT%/}"
+    if [[ -f "$root/.silver-bullet.json" && -f "$root/silver-bullet.md" ]]; then
+      printf '%s/.silver-bullet.json' "$root"
+      return 0
+    fi
   fi
-  cfg="$(sb_find_project_config_walk_only_from "$dir" 2>/dev/null)" || cfg=""
-  if [[ -n "$cfg" ]]; then (cd "$(dirname "$cfg")" && pwd -P); else sb_integrity_record_root "$dir"; fi
+  while [[ -n "$d" ]]; do
+    if [[ -f "$d/.silver-bullet.json" && -f "$d/silver-bullet.md" ]]; then
+      printf '%s/.silver-bullet.json' "$d"
+      return 0
+    fi
+    if [[ -d "$d/.git" || "$d" == "/" ]]; then break; fi
+    d="$(dirname "$d")"
+  done
+  return 1
 }
 
+# The SB project root of DIR. The nearest directory at or above DIR that holds a RECORD wins, even when a
+# nearer directory carries its own config and silver-bullet.md: a nested project made by writing two files
+# is not a new root, session start has to baseline it (hooks/session-start). Without any record the nearest
+# directory with both files is the (unbaselined) root; "" outside any project.
+sb_integrity_root() {
+  local dir="${1:-$PWD}" cfg="" rec=""
+  rec="$(sb_integrity_record_root "$dir")"
+  if [[ -z "$rec" && -n "${SILVER_BULLET_PROJECT_ROOT:-}" ]]; then rec="$(sb_integrity_record_root "$SILVER_BULLET_PROJECT_ROOT")"; fi
+  if [[ -n "$rec" ]]; then printf '%s' "$rec"; return 0; fi
+  cfg="$(sb_integrity_live_config_walk "$dir")" || cfg=""
+  if [[ -n "$cfg" ]]; then (cd "$(dirname "$cfg")" && pwd -P); fi
+}
 
-# The live body for ROOT: one "tag<TAB>sum<TAB>extra" line per artifact (the config's extra is the
-# compact, key-sorted JSON of its gate values). The config's checksum covers its gate-relevant
-# content only (the hooks keep a tier, consent flags and optimisation timestamps in it) as
-# canonical JSON, so formatting does not count.
+# The live body for ROOT: one "tag<TAB>digest<TAB>extra" line per artifact. The files are hashed with
+# SHA-256 (one openssl process for the whole set; python3's hashlib, then POSIX cksum where neither
+# exists). The config entry carries the canonical (key-sorted, compact) JSON of the WHOLE config minus
+# the keys the hooks themselves keep up to date (a tier, tool consent and timestamps): that JSON is what
+# the gates read through sb_iv_jq, and it is compared as text, so formatting does not count.
+_sb_iv_hash_files() { # FILE.. -> one "hash<TAB>file" line per file
+  local out line name
+  if command -v openssl >/dev/null 2>&1; then
+    if out="$(openssl dgst -sha256 "$@" 2>/dev/null)"; then
+      while IFS= read -r line; do
+        name="${line#*(}"
+        printf '%s\t%s\n' "${line##*= }" "${name%)= *}"
+      done <<<"$out"
+      return 0
+    fi
+  fi
+  python3 -c 'import hashlib,sys
+for f in sys.argv[1:]:
+    print(hashlib.sha256(open(f,"rb").read()).hexdigest()+"\t"+f)' "$@" 2>/dev/null && return 0
+  cksum "$@" | awk '{ print $1 "-" $2 "\t" $3 }'
+}
+
 _sb_iv_live_body() { # ROOT
-  local root="$1" tags tag path sum size name i n cfg canon values
-  local -a names sums lst
+  local root="$1" tag path hash name i n cfg canon
+  local -a names hashes lst
   lst=()
   for tag in md prompt instr:CLAUDE.md instr:AGENTS.md plan:ROADMAP.md plan:STATE.md plan:PROJECT.md; do
     case "$tag" in
@@ -109,33 +152,22 @@ _sb_iv_live_body() { # ROOT
     if [[ -f "$path" && ! -L "$path" ]]; then lst+=("$path"); fi
   done
   names=()
-  sums=()
+  hashes=()
   if [[ ${#lst[@]} -gt 0 ]]; then
-    while read -r sum size name; do
+    while IFS=$'\t' read -r hash name; do
       names+=("$name")
-      sums+=("$sum-$size")
-    done < <(cksum "${lst[@]}" 2>/dev/null)
+      hashes+=("$hash")
+    done < <(_sb_iv_hash_files "${lst[@]}")
   fi
   cfg="$root/.silver-bullet.json"
   if [[ -L "$cfg" ]]; then
     printf 'config\tlink\t{}\n'
   elif [[ -f "$cfg" ]]; then
     canon=""
-    values=""
-    {
-      read -r canon || true
-      read -r values || true
-    } < <(jq -S -c 'del(.recommended_tools, .sb_enforcement_tier),
-      {rp: (.skills.required_planning // null), rpd: (.skills.required_planning_devops // null),
-       rd: (.skills.required_deploy // null), rdd: (.skills.required_deploy_devops // null),
-       rr: (.skills.required_release // null), rrd: (.skills.required_release_devops // null),
-       sf: (.state.state_file // null)}' "$cfg" 2>/dev/null)
-    if [[ -n "$values" ]]; then
-      sum="$(printf '%s\n' "$canon" | cksum)"
-      printf 'config\t%s\t%s\n' "${sum%% *}-${sum#* }" "$values"
+    if canon="$(jq -S -c 'del(.recommended_tools, .sb_enforcement_tier)' "$cfg" 2>/dev/null)"; then
+      printf 'config\t-\t%s\n' "$canon"
     else
-      sum="$(cksum <"$cfg")"
-      printf 'config\t%s\t{"invalid":true}\n' "${sum%% *}-${sum#* }"
+      printf 'config\tinvalid\t{"invalid":true}\n'
     fi
   else
     printf 'config\tabsent\t{}\n'
@@ -150,12 +182,12 @@ _sb_iv_live_body() { # ROOT
     if [[ -L "$path" ]]; then
       printf '%s\tlink\t-\n' "$tag"
     elif [[ -f "$path" ]]; then
-      sum=""
+      hash=""
       n=${#names[@]}
       for ((i = 0; i < n; i++)); do
-        if [[ "${names[$i]}" == "$path" ]]; then sum="${sums[$i]}"; fi
+        if [[ "${names[$i]}" == "$path" ]]; then hash="${hashes[$i]}"; fi
       done
-      printf '%s\t%s\t-\n' "$tag" "$sum"
+      printf '%s\t%s\t-\n' "$tag" "$hash"
     else
       printf '%s\tabsent\t-\n' "$tag"
     fi
@@ -217,9 +249,10 @@ _sb_iv_authentic() { # RECFILE STATE ROOT
 _sb_iv_load_values() { # JSON
   local v
   local -a vals=()
+  SB_IV_CONFIG="${1:-$_SB_IV_EMPTY}"
   while IFS= read -r v; do
     vals+=("$v")
-  done < <(printf '%s' "$1" | jq -r '[.rp, .rpd, .rd, .rdd, .rr, .rrd, .sf][] | if . == null then "" elif type == "array" then join(" ") else tostring end')
+  done < <(printf '%s' "$1" | jq -r 'def l: if type == "array" then join(" ") else "" end; (.skills.required_planning | l), (.skills.required_planning_devops | l), (.skills.required_deploy | l), (.skills.required_deploy_devops | l), (.skills.required_release | l), (.skills.required_release_devops | l), (.state.state_file // "" | tostring)')
   SB_IV_REQUIRED_PLANNING="${vals[0]:-}"
   SB_IV_REQUIRED_PLANNING_DEVOPS="${vals[1]:-}"
   SB_IV_REQUIRED_DEPLOY="${vals[2]:-}"
@@ -257,20 +290,46 @@ _sb_iv_unlock_from_body() { # BODY
   done <<<"$1"
 }
 
+# True when two canonical config JSONs are equal outside the keys SKILL is declared to write.
+_sb_iv_config_within() { # SKILL LIVE-JSON RECORDED-JSON
+  local keys k del=""
+  keys="$(sb_contract_skill_config_keys "$1")"
+  [[ -n "$keys" ]] || return 0
+  for k in $keys; do del="${del:+$del, }.$k"; done
+  [[ "$(jq -S -c "del($del)" <<<"$2")" == "$(jq -S -c "del($del)" <<<"$3")" ]]
+}
+
+# True when the entry TAG is the same in both bodies.
+_sb_iv_line_equal() { # BODY-A BODY-B TAG
+  local a b
+  a="$(printf '%s\n' "$1" | awk -F'\t' -v t="$3" '$1 == t { print; exit }')"
+  b="$(printf '%s\n' "$2" | awk -F'\t' -v t="$3" '$1 == t { print; exit }')"
+  [[ "$a" == "$b" ]]
+}
+
+# True when the record body holds a contract-skill unlock that is still in its window.
+_sb_iv_unlock_active_in() { # BODY
+  _sb_iv_unlock_from_body "$1"
+  [[ -n "$SB_IV_UNLOCK_SKILL" ]]
+}
+
+# Sets live_body and live_values (the config entry's JSON) in the caller: CONFIG<TAB>DIGEST<TAB>VALUES comes first.
+_sb_iv_live() { # ROOT
+  live_body="$(_sb_iv_live_body "$1")"
+  live_values="${live_body%%$'\n'*}"
+  live_values="${live_values#*$'\t'}"
+  live_values="${live_values#*$'\t'}"
+}
+
 sb_integrity_verify() { # ROOT [STATE]
   local root="${1:-}" state="${2:-}" key rec tag live_body rec_values live_values cmp unlocked
   key="$root|$state"
   if [[ "$_SB_IV_CACHE_KEY" == "$key" ]]; then _sb_iv_cache_load; return 0; fi
-  SB_IV_STATUS=none SB_IV_DIVERGED="" SB_IV_WHY="" SB_IV_TRIVIAL_OK=false
+  SB_IV_STATUS=none SB_IV_DIVERGED="" SB_IV_WHY="" SB_IV_TRIVIAL_OK=false SB_IV_CONFIG="$_SB_IV_EMPTY" SB_IV_ROOT="$root"
   SB_IV_REQUIRED_PLANNING="" SB_IV_REQUIRED_PLANNING_DEVOPS="" SB_IV_REQUIRED_DEPLOY="" SB_IV_REQUIRED_DEPLOY_DEVOPS=""
   SB_IV_REQUIRED_RELEASE="" SB_IV_REQUIRED_RELEASE_DEVOPS="" SB_IV_STATE_FILE="" SB_IV_UNLOCK_SKILL=""
   [[ -n "$state" ]] || state="$(_sb_iv_state_dir)/state"
   rec="$(_sb_iv_rec_file "$root")"
-  live_body="$(_sb_iv_live_body "$root")"
-  # The config entry comes first in the live body: CONFIG<TAB>DIGEST<TAB>VALUES.
-  live_values="${live_body%%$'\n'*}"
-  live_values="${live_values#*$'\t'}"
-  live_values="${live_values#*$'\t'}"
   if [[ ! -e "$rec" && ! -L "$rec" ]]; then
     if [[ -s "$rec.hwm" ]]; then
       SB_IV_STATUS=untrusted SB_IV_DIVERGED="record" SB_IV_WHY="the record was deleted"
@@ -281,6 +340,7 @@ sb_integrity_verify() { # ROOT [STATE]
     else
       # An install that never ran a session: there is nothing recorded to compare with.
       ! _sb_iv_marker_present || SB_IV_TRIVIAL_OK=true
+      _sb_iv_live "$root"
       _sb_iv_load_values "$live_values"
     fi
     _SB_IV_CACHE_KEY="$key"
@@ -295,6 +355,7 @@ sb_integrity_verify() { # ROOT [STATE]
     return 0
   fi
   SB_IV_STATUS=ok
+  _sb_iv_live "$root"
   # One awk compares the recorded entries with the live ones: the diverged tags in live order, and the
   # recorded config values.
   cmp="$(awk -F'\t' 'NR == FNR { rec[$1] = $0; next }
@@ -312,7 +373,8 @@ sb_integrity_verify() { # ROOT [STATE]
   for tag in $SB_IV_DIVERGED; do
     unlocked=false
     case "$tag" in
-      config | prompt) sb_contract_unlocked json && unlocked=true ;;
+      config) sb_contract_unlocked json && _sb_iv_config_within "$SB_IV_UNLOCK_SKILL" "$live_values" "$rec_values" && unlocked=true ;;
+      prompt) sb_contract_unlocked json && unlocked=true ;;
       md) sb_contract_unlocked md && unlocked=true ;;
     esac
     if [[ "$unlocked" == true ]]; then
@@ -327,6 +389,77 @@ sb_integrity_verify() { # ROOT [STATE]
   _SB_IV_CACHE_KEY="$key"
   _sb_iv_cache_store
   return 0
+}
+
+# The ONE reader of protected configuration. Gates never open .silver-bullet.json: they verify the project
+# (sb_integrity_gate) and query the verified copy with jq arguments, exactly as they would query the file.
+# SB_IV_CONFIG is the recorded config while the project is verified (the live file only on an install that
+# never ran a session), and "{}" while it is unbaselined or untrusted (so every filter's own default
+# applies: the template's strict values).
+sb_iv_jq() { # JQ-ARGS (no file)
+  printf '%s' "${SB_IV_CONFIG:-$_SB_IV_EMPTY}" | jq "$@"
+}
+
+# A private copy of the VERIFIED config for the libraries that take a config path (enterprise policy,
+# change class, evidence schema...): sets SB_IV_CONFIG_FILE. It lives in the state directory, which the
+# planning floor protects, and holds the recorded values; the gates never name the project's own file.
+sb_integrity_config_snapshot() {
+  local snap tmp
+  snap="$(_sb_iv_rec_file "${SB_IV_ROOT:-}")"
+  snap="${snap%.rec}.cfg.json"
+  tmp="$snap.$$"
+  if [[ ! -L "$snap" ]] && printf '%s\n' "${SB_IV_CONFIG:-$_SB_IV_EMPTY}" 2>/dev/null >"$tmp"; then mv -f -- "$tmp" "$snap"; fi
+  rm -f -- "$tmp"
+  SB_IV_CONFIG_FILE="$snap"
+}
+
+# True when the project is unbaselined or untrusted, or a gate-relevant contract file (config, silver-bullet.md,
+# the prompt file, the record) differs from what was recorded, after any running contract skill's own files.
+sb_integrity_contract_drift() {
+  local d
+  if sb_integrity_strict; then return 0; fi
+  for d in ${SB_IV_DIVERGED:-}; do
+    case "$d" in config | md | prompt | record) return 0 ;; esac
+  done
+  return 1
+}
+
+# True only while the record blesses the default trivial marker (the user's, made before the session).
+# An unblessed marker is deleted. The configured trivial path is never honoured.
+sb_integrity_trivial_ok() { # [DIR]
+  sb_integrity_gate "${1:-$PWD}" || return 1
+  sb_integrity_restore_safe
+  [[ "$SB_IV_TRIVIAL_OK" == true ]]
+}
+
+# For the hooks that decide "is this an SB project": the config path of the project of DIR ("" outside one).
+sb_integrity_activation_config() { # [DIR]
+  local root
+  root="$(sb_integrity_root "${1:-$PWD}")"
+  [[ -z "$root" ]] || printf '%s/.silver-bullet.json' "$root"
+}
+
+# What a gate tells the agent. It addresses the USER: the agent cannot cure it (a skill the agent runs
+# never adopts a drift that was there before it), only the user can, with a session start.
+sb_integrity_drift_message() { # ROOT
+  if [[ "${SB_IV_STATUS:-none}" == unbaselined ]]; then
+    printf '%s' "🚫 PROJECT NOT BASELINED — Silver Bullet has no integrity record for ${1:-this project}, so the strict defaults apply (planning floor unsatisfied, the template's required lists, no trivial bypass).
+
+Ask the user to restart the session: session start records the project's contract files. Details: $(_sb_iv_state_dir)/seal-events.log"
+  else
+    printf '%s' "🚫 ENFORCEMENT CONTRACT CHANGED — ${SB_IV_DIVERGED:-the record} no longer matches what Silver Bullet recorded${SB_IV_WHY:+ ($SB_IV_WHY)}, so the gates use the last recorded values and the strict defaults.
+
+Do not try to re-record it yourself and do not run a skill to make it stick: a skill never adopts a change that was made before it. Ask the user to review the change (git diff) and either revert it (git checkout -- the file) or restart the session so session start records the files. Details: $(_sb_iv_state_dir)/seal-events.log"
+  fi
+}
+
+# Decide the project of DIR for a gate: sets SB_IV_ROOT and verifies it. Returns 1 outside any SB project
+# (a root with a record is a project even when its contract files were deleted or moved away).
+sb_integrity_gate() { # [DIR]
+  local root
+  root="$(sb_integrity_root "${1:-$PWD}")"
+  [[ -n "$root" ]] || return 1
+  sb_integrity_verify "$root" ""
 }
 
 # Drop the per-process verification cache (tests, and anything that changed the files itself).
@@ -387,7 +520,7 @@ _sb_iv_write() { # ROOT RECFILE STATE BODY
 }
 
 sb_integrity_baseline() { # ROOT MODE [..]
-  local root="$1" mode="$2" state rec body tag entry old keep line new_line marker_state live_lines skill=""
+  local root="$1" mode="$2" state rec body tag entry old keep line new_line marker_state live_lines skill="" drift rec_cfg live_cfg skip_config=""
   shift 2
   state="$(_sb_iv_state_dir)/state"
   rec="$(_sb_iv_rec_file "$root")"
@@ -401,17 +534,42 @@ sb_integrity_baseline() { # ROOT MODE [..]
     _sb_iv_write "$root" "$rec" "$state" "$body"
   elif [[ -f "$rec" ]] && _sb_iv_authentic "$rec" "$state" "$root"; then
     old="$_SB_IV_BODY"
-    if [[ "$mode" == unlock ]]; then
-      skill="$1"
+    live_lines="$(_sb_iv_live_body "$root")"
+    if [[ "$mode" == unlock || "$mode" == adopt ]]; then
+      if [[ "$mode" == unlock ]]; then skill="$1"; else skill="${SB_IV_UNLOCK_SKILL:-}"; fi
       # shellcheck disable=SC2046  # the tags are a word list
       set -- $(sb_contract_skill_tags "$skill")
     fi
-    live_lines="$(_sb_iv_live_body "$root")"
+    if [[ "$mode" == unlock ]]; then
+      # A contract skill is declared to write its own files, not to bless what was changed before it ran:
+      # a drift that predates it is the user's to adopt (session start), so the skill gets no unlock.
+      drift=""
+      for entry in "$@"; do
+        if ! _sb_iv_line_equal "$old" "$live_lines" "$entry"; then drift="${drift:+$drift }$entry"; fi
+      done
+      if [[ -n "$drift" ]] && ! _sb_iv_unlock_active_in "$old"; then
+        _sb_state_seal_log "$state" "contract skill $skill got no unlock: $drift changed before it ran (a session start adopts it)"
+        sb_state_seal_unlock
+        return 0
+      fi
+      set --
+    fi
+    if [[ "$mode" == adopt ]]; then
+      # Only what the skill is declared to write is adopted: other keys stay a drift.
+      rec_cfg="${old#*config$'\t'*$'\t'}"
+      rec_cfg="${rec_cfg%%$'\n'*}"
+      live_cfg="${live_lines#config$'\t'*$'\t'}"
+      live_cfg="${live_cfg%%$'\n'*}"
+      if ! _sb_iv_config_within "$skill" "$live_cfg" "$rec_cfg"; then
+        skip_config=true
+      fi
+    fi
     body=""
     while IFS= read -r line; do
       tag="${line%%$'\t'*}"
       keep=true
       for entry in "$@"; do [[ "$entry" != "$tag" ]] || keep=false; done
+      if [[ "$skip_config" == true && "$tag" == config ]]; then keep=true; fi
       new_line="$line"
       if [[ "$keep" != true ]]; then new_line="$(printf '%s\n' "$live_lines" | awk -F'\t' -v t="$tag" '$1 == t { print; exit }')"; fi
       if [[ "$tag" == unlock && "$mode" == unlock ]]; then new_line="unlock"$'\t'"$skill"$'\t'"$(date +%s)"; fi

@@ -70,7 +70,7 @@ rm -f "$SD/trivial"
 ec_cfg "$(jq -cn --arg t "$SD/custom-trivial" '{sb_initiated:true,state:{trivial_file:$t}}')"
 : >"$SD/custom-trivial"
 GH_STATUS_OVERRIDE="$RED" run_ci "$(pre 'git push')"
-assert_eq "configured trivial file bypasses" "" "$TL_OUT"
+assert_contains "a configured trivial file does not bypass: only the default marker the record blesses does" "$TL_OUT" "CI FAILURE DETECTED"
 rm -f "$SD/custom-trivial"
 
 # ---- value validation -------------------------------------------------------

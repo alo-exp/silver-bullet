@@ -183,7 +183,7 @@ sb_state_seal_trusted() {
   case "$_SB_SEAL_STATE" in
     ok) head -n "$_SB_SEAL_N" "$state" ;;
     tampered) _sb_state_seal_log "$state" "state not trusted: $_SB_SEAL_WHY" ;;
-    *) cat "$state" ;;
+    *) cat "$state" 2>/dev/null || true ;;
   esac
 }
 

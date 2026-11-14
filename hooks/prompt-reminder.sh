@@ -77,47 +77,42 @@ if [[ ! -t 0 ]]; then
   fi
 fi
 
-# ── Resolve config file by walking up from $PWD ──────────────────────────────
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir=$(dirname "$search_dir")
-done
-
+# ── The project: nearest root with a record, else nearest directory with both contract files ──
 if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"
 fi
-
-# No config → project not set up with Silver Bullet — return a no-op payload
-[[ -z "$config_file" ]] && finish_noop
-
-if declare -f sb_project_active >/dev/null 2>&1; then
-  sb_project_active "$config_file" || finish_noop
-elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
-  sb_project_is_initiated "$config_file" || finish_noop
+if [[ -f "$_lib_dir/integrity.sh" ]]; then
+  # shellcheck source=lib/integrity.sh
+  source "$_lib_dir/integrity.sh"
 fi
+
+# No project → not set up with Silver Bullet — return a no-op payload
+sb_integrity_gate "$PWD" || finish_noop
+if declare -f sb_project_active >/dev/null 2>&1; then
+  sb_project_active "$SB_IV_ROOT/.silver-bullet.json" || finish_noop
+elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+  sb_project_is_initiated "$SB_IV_ROOT/.silver-bullet.json" || finish_noop
+fi
+# The live config path is only for the tool-consent keys the hooks keep up to date themselves
+# (.recommended_tools, tier): the enforcement values below come from the verified record.
+config_file="$SB_IV_ROOT/.silver-bullet.json"
+sb_integrity_config_snapshot
+verified_config_file="$SB_IV_CONFIG_FILE"
 
 # ── Read config values (single jq call for speed) ────────────────────────────
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 
 sb_default_state="${SB_STATE_DIR}/state"
 sb_default_trivial="${SB_STATE_DIR}/trivial"
-config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
+config_vals=$(sb_iv_jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
   (.state.state_file // $ds),
   (.state.trivial_file // $dt),
   ((.skills.required_deploy // []) | join(" ")),
   ((.skills.required_planning // []) | join(" ")),
   (.project.active_workflow // "full-dev-cycle"),
   ((.skills.required_planning_devops // []) | join(" "))
-] | join("\n")' "$config_file")
+] | join("\n")')
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
 state_file="${state_file/#\~/$HOME}"
@@ -140,7 +135,7 @@ if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
 fi
 
 # ── Trivial bypass (reject symlinks) ─────────────────────────────────────────
-if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
+if sb_integrity_trivial_ok "$SB_IV_ROOT"; then
   finish_noop
 fi
 
@@ -207,7 +202,7 @@ fi
 
 if [[ "$delivery_adjacent" == true ]]; then
   if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
-    required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "${DEFAULT_REQUIRED:-silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review security silver-secure silver-validate silver-review-request silver-review-triage silver-triage silver-branch-finish silver-completion-audit tdd verify-tests}")"
+    required_skills="$(sb_required_skills_normalize_configured_list "$verified_config_file" "$required_deploy_cfg" "${DEFAULT_REQUIRED:-silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review security silver-secure silver-validate silver-review-request silver-review-triage silver-triage silver-branch-finish silver-completion-audit tdd verify-tests}")"
   elif [[ -n "$required_deploy_cfg" ]]; then
     required_skills="$required_deploy_cfg"
   else
@@ -215,7 +210,7 @@ if [[ "$delivery_adjacent" == true ]]; then
   fi
 else
   if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
-    required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$planning_cfg" "$planning_default")"
+    required_skills="$(sb_required_skills_normalize_configured_list "$verified_config_file" "$planning_cfg" "$planning_default")"
   elif [[ -n "$planning_cfg" ]]; then
     required_skills="$planning_cfg"
   else

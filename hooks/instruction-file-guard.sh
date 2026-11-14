@@ -43,26 +43,10 @@ case "$tool_name" in
   *) sb_tool_is_shell_like "$tool_name" || sb_pf_mcp_write_tool "$tool_name" || exit 0 ;;
 esac
 
-resolve_repo_root() {
-  local dir="$PWD"
-  while true; do
-    if [[ -f "$dir/.silver-bullet.json" ]] || [[ -f "$dir/silver-bullet.md" ]]; then
-      printf '%s' "$dir"
-      return 0
-    fi
-    if [[ -d "$dir/.git" ]] || [[ "$dir" == "/" ]]; then
-      return 1
-    fi
-    dir=$(dirname "$dir")
-  done
-}
-
-repo_root="$(resolve_repo_root 2>/dev/null || true)"
+# The project: nearest root with a record, else nearest directory with a contract file (hooks/lib/integrity.sh).
+repo_root="$(sb_integrity_root "$PWD")"
 [[ -n "$repo_root" ]] || exit 0
 repo_root="$(sb_pf_canon "$repo_root")"
-
-# Only enforce inside an SB-initiated project.
-[[ -f "$repo_root/.silver-bullet.json" ]] || exit 0
 if declare -f sb_project_active >/dev/null 2>&1; then
   sb_project_active "$repo_root/.silver-bullet.json" || exit 0
 fi
