@@ -714,6 +714,7 @@ class InertGitTests(Base):
         self.assertEqual(push_scope.inert_git("commit", ["-avm", "x"]), ("commit", frozenset({"diff"})))
         self.assertEqual(push_scope.inert_git("commit", ["-v", "--no-edit"]), ("commit", frozenset({"diff"})))
         self.assertEqual(push_scope.inert_git("commit", ["-mx"]), ("commit", frozenset()))
+        self.assertEqual(push_scope.inert_git("commit", ["a.txt", "-m", "x", "b.txt"]), ("commit", frozenset()))
         self.assertEqual(push_scope.inert_git("commit", ["--message=x", "--no-gpg-sign", "--verbose"]),
                          ("commit", frozenset({"nosign", "diff"})))
         self.assertIsNone(push_scope.inert_git("commit", ["--no-gpg"]))
@@ -1071,6 +1072,16 @@ class ProgramMechanismTests(Base):
         with redirect_stdout(out):
             self.assertEqual(push_scope.main(["--trust-entry", push_scope.COVERAGE_BASH_ENV]), 0)
         self.assertIn("sha256", out.getvalue())
+        import runpy
+        saved = sys.argv
+        sys.argv = ["push_scope.py", "--trust-entry", push_scope.COVERAGE_BASH_ENV]
+        try:
+            with redirect_stdout(io.StringIO()), self.assertRaises(SystemExit) as raised:
+                runpy.run_path(os.path.join(os.path.dirname(push_scope.COVERAGE_BASH_ENV), "..", "..", "hooks", "lib",
+                                            "tool-input", "push_scope.py"), run_name="__main__")
+        finally:
+            sys.argv = saved
+        self.assertEqual(raised.exception.code, 0)
         self.assertEqual(push_scope.file_digest(os.path.join(self.tmp, "nope")), "")
 
     def test_ssh_commands_credentials_and_urls(self):
