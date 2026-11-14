@@ -40,6 +40,7 @@ import time
 REDACTED = "[REDACTED]"
 NONE, POSSIBLE, SECRET = 0, 1, 2
 NAME_MAX, VALUE_MAX, URL_MAX = 128, 1024, 2048
+CALL_VALUE_MAX = 256  # an unquoted argument / subscript value is read this far at most (a quoted literal may be longer)
 
 # ---------------------------------------------------------------- tables
 CLS = {
@@ -289,6 +290,27 @@ def _random_literal(lit):
     return len(lit) >= 12 and not re.search(r"\s", lit) and bool(re.search(r"\d", lit)) and entropy(lit) >= 3.2 and not is_ident(lit)
 
 
+_ID_LITERAL = re.compile(r"(?i)^(?:arn:[a-z0-9-]+:|(?:sha\d*|md5):[0-9a-f]{16,}$|[a-z]{1,4}-[0-9a-f]{8,}$|projects/|subscriptions/|/subscriptions/|[a-z][a-z0-9+.-]*://[^@\s]*$)")
+_QUOTED_ARG = re.compile(r"(?:([A-Za-z_]\w*)[ \t]*=[ \t]*)?[\"']([^\"'\n]{12,})[\"']")
+
+
+def _identifier_literal(lit):
+    """UUIDs, ARNs, resource names, digests and SHAs, URLs without userinfo and paths: identifiers, not secrets."""
+    return bool(_UUID.match(lit) or _ID_LITERAL.match(lit) or re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", lit) or is_path(lit))
+
+
+def _secret_literals(v):
+    """Quoted literals inside a call that look like secrets. The parameter name decides: under a credential name (client_secret=,
+    password=, api_key=) any random-looking literal counts, even a UUID; under any other name identifier-shaped literals do not."""
+    return [m.group(2) for m in _QUOTED_ARG.finditer(v) if _literal_is_secret(m.group(1), m.group(2))]
+
+
+def _literal_is_secret(param, lit):
+    if param and name_tier(param) in ("strong", "cred"):
+        return _random_literal(lit) or bool(_UUID.match(lit))
+    return _random_literal(lit) and not _identifier_literal(lit)
+
+
 def _split_args(body):
     parts, cur, depth, quote = [], [], 0, None
     for c in body:
@@ -314,7 +336,9 @@ def _arg_ok(arg, depth):
     if not arg:
         return True
     m = _ARG_NAME.match(arg)
+    param = None
     if m:
+        param = m.group(0).rstrip("= \t") if m.group(0)[0].isalpha() else None
         arg = arg[m.end():].strip()
         if not arg:
             return True
@@ -322,7 +346,7 @@ def _arg_ok(arg, depth):
         return True
     lit = re.fullmatch(r"[fbru]{0,2}([\"'])(.*)\1", arg, re.S)
     if lit:
-        return not _random_literal(lit.group(2))
+        return not _literal_is_secret(param, lit.group(2))
     if re.search(r"\s[-+*/%]\s", arg):  # salt + pw
         return all(_arg_ok(x, depth) for x in re.split(r"\s[-+*/%]\s", arg))
     if depth < _EXPR_DEPTH and is_expr(arg, depth + 1):
@@ -413,8 +437,13 @@ _DEFAULT_FORMS = (
 )
 
 
+_NO_DEFAULT = re.compile(r"^\$\{[A-Za-z_]\w*(?:\.\w+)*:?[?+]")
+
+
 def _fallback_literal(v):
     """The literal default behind a reference (``${VAR:-lit}``, ``x | default('lit')``), or None when v has no default form."""
+    if _NO_DEFAULT.match(v):
+        return ""  # ${X:?message} and ${X:+alt} carry no default value
     m = _DEFAULT_FORMS[0].match(v)
     if m:
         return m.group(1)
@@ -440,9 +469,9 @@ def classify(value, tier, name=""):
     fallback = _fallback_literal(v)
     if fallback is not None:
         return classify_default(fallback, tier, name)
-    quoted = [x for x in re.findall(r"[\"']([^\"'\n]{12,})[\"']", v) if _random_literal(x)] if "(" in v else []
+    quoted = _secret_literals(v) if "(" in v else []
     if "{" in v or "$" in v:  # literal text next to a reference / interpolation (f'{prefix}<random>', ${A}<random>)
-        quoted += [t for t in re.findall(r"[A-Za-z0-9+/=_-]{12,}", re.sub(r"\$?\{[^{}]*\}|\$\([^()]*\)|\$[A-Za-z_]\w*", " ", v)) if _random_literal(t)]
+        quoted += [t for t in re.findall(r"[A-Za-z0-9+/=_-]{12,}", re.sub(r"\$?\{[^{}]*\}|\$\([^()]*\)|\$[A-Za-z_]\w*", " ", v)) if _random_literal(t) and not _identifier_literal(t)]
     if name and v.lower() in (name.lower(), name.lower().replace("_", "")):
         return NONE  # SECRET = 'SECRET': an enum member, not a value
     if not quoted and (is_reference(v) or _REF_TAG.match(v) or _PLACEHOLDER.search(v) or _ANGLE.search(v)):
@@ -696,7 +725,25 @@ def _balanced_end(text, e, lim):
     return -1
 
 
-def _value_at(text, j, ticks=None):
+def _literal_at(text, j, opener=None):
+    """(start, end) of the string literal that opens at ``j`` (see _STR_OPEN), or None when there is none or it is not closed.
+    Cheap: it never scans an unquoted value, so grammars that want only a literal use it."""
+    opener = opener or _STR_OPEN.match(text, j)
+    if not opener:
+        return None
+    o = opener.group(0)
+    if o[0] == "%":
+        closer = _CLOSE_FOR[o[-1]]
+    elif o[-1] == '"' and "#" in o:
+        closer = '"' + "#" * o.count("#")  # Rust raw string r#"..."#
+    else:
+        closer = o[next(i for i, c in enumerate(o) if c in "\"'`"):]  # the quote, tripled for """ and '''
+    start = j + len(o)
+    close = text.find(closer, start, min(len(text), start + VALUE_MAX))
+    return (start, close) if close >= start else None
+
+
+def _value_at(text, j, ticks=None, limit=VALUE_MAX):
     """Return (vstart, vend) of the value starting at j (after separator and blanks). ``ticks`` (sorted backtick
     positions) says whether j is inside a Markdown code span: then a backtick closes the span and ends the value."""
     n = len(text)
@@ -705,28 +752,18 @@ def _value_at(text, j, ticks=None):
         j += 1
     opener = _STR_OPEN.match(text, j)
     if opener and not (opener.group(0) == "`" and inside):
-        o = opener.group(0)
-        if o[0] == "%":
-            closer = _CLOSE_FOR[o[-1]]
-        elif o[-1] == '"' and "#" in o:
-            closer = '"' + "#" * o.count("#")  # Rust raw string r#"..."#
-        else:
-            closer = o[next(i for i, c in enumerate(o) if c in "\"'`"):]  # the quote, tripled for """ and '''
-        start = j + len(o)
-        close = text.find(closer, start, min(n, start + VALUE_MAX))
-        if close >= start:
-            return start, close
-        return _unquoted_value(text, start)
+        lit = _literal_at(text, j, opener)
+        return lit if lit else _unquoted_value(text, j + len(opener.group(0)), limit)
     if j + 1 < n and text[j] == "\\" and text[j + 1] in "\"'":  # an escaped quote: \"value\" inside JSON text
         q = "\\" + text[j + 1]
         close = text.find(q, j + 2, min(n, j + 2 + VALUE_MAX))
         if close > j:
             return j + 2, close
         j += 1
-    return _unquoted_value(text, j)
+    return _unquoted_value(text, j, limit)
 
 
-def _unquoted_value(text, j):
+def _unquoted_value(text, j, limit=VALUE_MAX):
     n = len(text)
     placeholder = _PLACEHOLDER_AT.match(text, j)
     if placeholder:  # (sensitive value), (known after apply), ***, 16 bytes: one value, not cut at its first word
@@ -740,7 +777,7 @@ def _unquoted_value(text, j):
         nl = text.find("\n", j, min(n, j + VALUE_MAX))
         return j, (nl if nl >= 0 else min(n, j + VALUE_MAX))
     e = j
-    lim = min(n, j + VALUE_MAX)
+    lim = min(n, j + limit)
     head_ok = True  # everything so far is an identifier/attribute chain (balanced groups included)
     tried = False
     while e < lim:
@@ -767,11 +804,17 @@ _FALLBACK_OP = re.compile(r"[ \t]*(?:\|\||\?\?|\?:|\bor\b)[ \t]*|[ \t]+if\b[^\n'
 def _fallback_after(text, vs, ve):
     """(start, end) of a quoted literal that follows a default operator right after the value that ends at ``ve``."""
     p = ve + 1 if vs > 0 and text[vs - 1] in "\"'`" and text[ve:ve + 1] == text[vs - 1] else ve
-    op = _FALLBACK_OP.match(text, p)
-    if not op:
-        return None
-    fs, fe = _value_at(text, op.end())
-    return (fs, fe) if fe > fs and text[fs - 1] in "\"'`" else None
+    for _ in range(4):  # a || b || 'lit': references between the operators are skipped
+        op = _FALLBACK_OP.match(text, p)
+        if not op:
+            return None
+        fs, fe = _value_at(text, op.end())
+        if fe <= fs:
+            return None
+        if text[fs - 1] in "\"'`":
+            return fs, fe
+        p = fe
+    return None
 
 
 _SCHEME_PREFIX = re.compile(r"[A-Za-z][A-Za-z-]{0,31}[ \t]+(?=\S)")
@@ -1004,7 +1047,7 @@ def pass_calls(text, out):
             tier = name_tier(name)
             if tier is None:
                 continue
-            vs, ve = _value_at(text, m.end())
+            vs, ve = _value_at(text, m.end(), None, CALL_VALUE_MAX)
             if ve <= vs:
                 continue
             if tier == "auth-header":
@@ -1027,14 +1070,14 @@ def pass_calls(text, out):
         tier = name_tier(m.group(1))
         if tier is None or tier == "auth-header":
             continue
-        vs, ve = _value_at(text, m.end())
-        if ve > vs and text[vs - 1] in "\"'`":
-            out.append((vs, ve, "setter-argument", classify(text[vs:ve], tier, m.group(1))))
+        lit = _literal_at(text, m.end())
+        if lit and lit[1] > lit[0]:
+            out.append((lit[0], lit[1], "setter-argument", classify(text[lit[0]:lit[1]], tier, m.group(1))))
     for m in _LOGIN_CALL.finditer(text):  # login(user, "lit"): only a plainly secret-shaped literal counts
         _tick()
-        vs, ve = _value_at(text, m.end())
-        if ve > vs and text[vs - 1] in "\"'`":
-            out.append((vs, ve, "login-argument", SECRET if classify(text[vs:ve], "strong") == SECRET else NONE))
+        lit = _literal_at(text, m.end())
+        if lit and lit[1] > lit[0]:
+            out.append((lit[0], lit[1], "login-argument", SECRET if classify(text[lit[0]:lit[1]], "strong") == SECRET else NONE))
 
 
 _WORD = re.compile(r"[^\s`'\"|;&()<>]+|'[^'\n]{0,1024}'|\"[^\"\n]{0,1024}\"|[|;&]+|\n")
