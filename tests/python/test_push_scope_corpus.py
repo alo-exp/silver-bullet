@@ -56,13 +56,14 @@ class CorpusTest(unittest.TestCase):
         hook_cwd = sb.p(rw.get("hook_cwd", rw.get("cwd", "w")))
         env_extra = {k: self.sub(v) for k, v in rw.get("env", {}).items()}
         env = push_sandbox.git_env(sb.root, env_extra)
+        verdict_env = push_sandbox.git_env(sb.root, env_extra, plain=True)
         if rw.get("nowt"):
             sb.g(sb.p("w"), "worktree", "remove", "--force", "../wt-main")
         if rw.get("setup"):
             done = self.sh(self.sub(rw["setup"]), cwd, env)
             self.assertEqual(done.returncode, 0, done.stderr)
         text = json.dumps(self.payload(rw, cwd))
-        result = shell_analysis.analyze_payload(text, hook_cwd, True, env)
+        result = shell_analysis.analyze_payload(text, hook_cwd, True, verdict_env)
         scope = result.get("push_scope") or {"verdict": "strict", "reason": "no push scope in the analysis"}
         if rw.get("verdict_only"):
             return scope, None  # the table of program mechanisms: the verdict is asserted, nothing is executed
@@ -131,7 +132,7 @@ class CorpusTest(unittest.TestCase):
             cwd = self.sb.p("plain" if variant == "plain" else "w")
             if variant == "nohead":
                 self.sb.g(self.sb.p("w"), "remote", "set-head", "origin", "-d")
-            env = push_sandbox.git_env(self.sb.root)
+            env = push_sandbox.git_env(self.sb.root, plain=True)
             text = json.dumps({"tool_name": "mcp__github__" + tool, "cwd": cwd, "tool_input": fields})
             result = shell_analysis.analyze_payload(text, cwd, True, env)
             with self.subTest(row=rid):
@@ -140,7 +141,7 @@ class CorpusTest(unittest.TestCase):
 
     def test_counts(self):
         ids = [r["id"] for r in push_corpus.ROWS]
-        self.assertEqual(len(push_corpus.ATTACKS), 205 + 34 + 16)  # A1-A15, B1-B20, C1-C22, D1-D26, E1-E16, E17-E25 (assignments)
+        self.assertEqual(len(push_corpus.ATTACKS), 205 + 34 + 16 + 26 + 3)  # A1-A15, B1-B20, C1-C22, D1-D26, E1-E16, E17-E25 (assignments)
         self.assertEqual(len(push_corpus.HONEST), 52)
 
 
