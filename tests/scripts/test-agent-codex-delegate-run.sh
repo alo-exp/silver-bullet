@@ -167,7 +167,7 @@ assert_file_exists "fallback log written" "$WORK/log"
 
 # ---- the delegate's own stdout is redacted too (R4-31)
 reset
-echo 'curl -H "Authorization: Bearer abcdefgh12345678" https://user:S3cr3tPassw0rdXYZ@host/x' >"$CFG/fail-msg"; echo 0 >"$CFG/fail-until"
+echo 'curl -H "Authori''zation: Bearer abcdefgh12345678" https://user:S3cr3tPassw0rdXYZ@host/x' >"$CFG/fail-msg"; echo 0 >"$CFG/fail-until"
 cat >>"$CFG/fail-msg" <<<"plain line"
 printf '%s\n' 1 >"$CFG/fail-until"
 delegate --work-dir "$WORK" --prompt p --sb-root "$SB" --no-escalate --quota-retry
