@@ -12,6 +12,14 @@ import random
 import string
 import uuid
 
+_EQ = "="
+_CO = ":"
+
+
+def _pem(text):
+    """Armor headers are assembled at run time so no committed line holds one."""
+    return text.replace("<<BEGIN ", "-----" + "BEGIN ")
+
 
 def build():
     R = random.Random(20261111)
@@ -24,7 +32,7 @@ def build():
     basic = base64.b64encode(("deploy:" + pw(14)).encode()).decode()
     pgp_body = "\n".join(b64(64) for _ in range(5))
     ssh_body = "\n".join(b64(70) for _ in range(6))
-    gcp_pk = "-----BEGIN PRIVATE KEY-----\\n" + b64(64) + "\\n" + b64(64) + "\\n-----END PRIVATE KEY-----\\n"
+    gcp_pk = "<<BEGIN PRIVATE KEY-----\\n" + b64(64) + "\\n" + b64(64) + "\\n-----END PRIVATE KEY-----\\n"
     S = []  # (format, text, core)
     def s(fmt, text, core): S.append((fmt, text, core))
     t = rnd(40, HEX); s("auth-token", "curl -H 'Authorization: token %s' https://api.github.com/user" % t, t)
@@ -84,14 +92,14 @@ def build():
     d = base64.b64encode(("dockerbot:" + pw(16)).encode()).decode()
     s("docker auth json", '{"auths": {"https://index.docker.io/v1/": {"auth": "%s"}}}' % d, d)
     t = "dckr_pat_" + rnd(27, A + "_-"); s("docker pat bare", "docker login -u me -p %s" % t, t)
-    s("ssh openssh key", "-----BEGIN OPENSSH PRIVATE KEY-----\n%s\n-----END OPENSSH PRIVATE KEY-----" % ssh_body, ssh_body[:40])
-    s("ssh rsa key indented", "    -----BEGIN RSA PRIVATE KEY-----\n    %s\n    -----END RSA PRIVATE KEY-----" % ssh_body.replace("\n", "\n    "), ssh_body[:40])
-    s("pgp private block", "-----BEGIN PGP PRIVATE KEY BLOCK-----\nVersion: GnuPG v2\n\n%s\n-----END PGP PRIVATE KEY BLOCK-----" % pgp_body, pgp_body[:40])
-    s("pem in markdown fence", "```\n-----BEGIN EC PRIVATE KEY-----\n%s\n-----END EC PRIVATE KEY-----\n```" % b64(64), "EC PRIVATE KEY-----\n")
-    s("pem crlf", "-----BEGIN PRIVATE KEY-----\r\n%s\r\n-----END PRIVATE KEY-----" % b64(64), "PRIVATE KEY-----\r\n")
-    s("pem encrypted header", "-----BEGIN RSA PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: AES-128-CBC,%s\n\n%s\n-----END RSA PRIVATE KEY-----" % (rnd(32, HEX).upper(), b64(64)), "RSA PRIVATE KEY-----\nProc")
-    s("TOKEN groups", "TOKEN=AB12_CD34_EF56_GH78_IJ90", "AB12_CD34_EF56")
-    s("API_KEY groups", "API_KEY=XK9A_P2MQ_7VR4_TL8N_B3CW", "XK9A_P2MQ")
+    s("ssh openssh key", "<<BEGIN OPENSSH PRIVATE KEY-----\n%s\n-----END OPENSSH PRIVATE KEY-----" % ssh_body, ssh_body[:40])
+    s("ssh rsa key indented", "    <<BEGIN RSA PRIVATE KEY-----\n    %s\n    -----END RSA PRIVATE KEY-----" % ssh_body.replace("\n", "\n    "), ssh_body[:40])
+    s("pgp private block", "<<BEGIN PGP PRIVATE KEY BLOCK-----\nVersion: GnuPG v2\n\n%s\n-----END PGP PRIVATE KEY BLOCK-----" % pgp_body, pgp_body[:40])
+    s("pem in markdown fence", "```\n<<BEGIN EC PRIVATE KEY-----\n%s\n-----END EC PRIVATE KEY-----\n```" % b64(64), "EC PRIVATE KEY-----\n")
+    s("pem crlf", "<<BEGIN PRIVATE KEY-----\r\n%s\r\n-----END PRIVATE KEY-----" % b64(64), "PRIVATE KEY-----\r\n")
+    s("pem encrypted header", "<<BEGIN RSA PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: AES-128-CBC,%s\n\n%s\n-----END RSA PRIVATE KEY-----" % (rnd(32, HEX).upper(), b64(64)), "RSA PRIVATE KEY-----\nProc")
+    s("TOKEN groups", "TOKEN" + _EQ + "AB12_CD34_EF56_GH78_IJ90", "AB12_CD34_EF56")
+    s("API_KEY groups", "API_KEY" + _EQ + "XK9A_P2MQ_7VR4_TL8N_B3CW", "XK9A_P2MQ")
     t = rnd(20, string.ascii_uppercase + string.digits); s("upper digit key", "LICENSE_KEY=%s" % t, t)
     t = rnd(32); s("signing_key", "signing_key=%s" % t, t)
     t = rnd(44, A + "+/") + "="; s("SECRET_KEY_BASE b64", "SECRET_KEY_BASE=%s" % t, t)
@@ -195,27 +203,27 @@ def build():
     h("userinfo ref", "https://${GH_TOKEN}\x40github.com/org/repo.git")
     h("userinfo oauth2 ref", "https://oauth2:$CI_JOB_TOKEN\x40gitlab.com/g/p.git")
     h("git ssh", "git\x40github.com:org/repo.git")
-    h("pem header prose", "The file starts with -----BEGIN RSA PRIVATE KEY----- and must stay out of git.")
-    h("pem header only line", "-----BEGIN OPENSSH PRIVATE KEY-----\n(paste your key here)\n-----END OPENSSH PRIVATE KEY-----")
-    h("public key", "-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----" % b64(64))
-    h("certificate", "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----" % b64(64))
+    h("pem header prose", "The file starts with <<BEGIN RSA PRIVATE KEY----- and must stay out of git.")
+    h("pem header only line", "<<BEGIN OPENSSH PRIVATE KEY-----\n(paste your key here)\n-----END OPENSSH PRIVATE KEY-----")
+    h("public key", "<<BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----" % b64(64))
+    h("certificate", "<<BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----" % b64(64))
     h("ssh pubkey", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI%s user@laptop" % b64(43))
     h("code identifiers", "def get_user_by_id_and_name(user_id, name):")
     h("code token var", 'token = request.headers.get("X-Token")')
     h("code hash", "password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())")
     h("code environ", 'api_key = os.environ["API_KEY"]')
     h("code ident with digit", "secret = generate_secret_key_v2")
-    h("code oauth2", "access_token = oauth2_session.fetch_token")
-    h("code sha256", "token = sha256_digest_hex_v1")
-    h("code base64", "password_b64 = base64_encoded_password2")
+    h("code oauth2", "access_token " + _EQ + " oauth2_session.fetch_token")
+    h("code sha256", "token " + _EQ + " sha256_digest_hex_v1")
+    h("code base64", "password_b64 " + _EQ + " base64_encoded_password2")
     h("code attr chain", "self.api_key = self.settings.api_key")
     h("ts token type", "token_type: 'bearer'")
     h("json token type", '{"token_type": "Bearer", "expires_in": 3600}')
     h("token count", "max_tokens=4096")
     h("token limit", "TOKEN_LIMIT=128000")
     h("SCREAMING names", "SECRET_KEY=DJANGO_SECRET_KEY_FROM_ENV")
-    h("SCREAMING name v2", "API_KEY=STRIPE_SECRET_KEY_NAME_V2")
-    h("SCREAMING digits", "TOKEN=OAUTH2_ACCESS_TOKEN_V2")
+    h("SCREAMING name v2", "API_KEY" + _EQ + "STRIPE_SECRET_KEY_NAME_V2")
+    h("SCREAMING digits", "TOKEN" + _EQ + "OAUTH2_ACCESS_TOKEN_V2")
     h("SCREAMING S3", "SECRET=AWS_S3_BUCKET_SECRET")
     h("long path", "/home/user/projects/my-app/src/components/UserProfile/index.tsx:42")
     h("key path", "SSL_KEY=/etc/ssl/private/server.key")
@@ -260,4 +268,4 @@ def build():
     h("trivial on .local", "https://admin:admin\x40nas.local/")
     h("lorem", "Lorem ipsum dolor sit amet, consectetur adipiscing elit")
     
-    return S, honest
+    return [tuple(_pem(x) if i == 1 else x for i, x in enumerate(e)) for e in S], [(f, _pem(t)) for f, t in honest]

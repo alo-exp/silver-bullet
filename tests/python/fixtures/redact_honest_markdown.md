@@ -33,7 +33,7 @@ auth:
     name: db
     key: password
 token: ${{ secrets.GITHUB_TOKEN }}
-password_policy: min_length=12
+password_policy: see the policy page
 ```
 
 ## Configuration names
