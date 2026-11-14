@@ -15,7 +15,7 @@ Every place in `hooks/`, `hooks/lib/` and `scripts/` that reads a protected valu
 | hooks/lib/agentmemory-gate.sh:166 | config | `ttl="$(jq -r '.recommended_tools.agentmemory.usage_ttl_seconds // "" \| tostring' "$config` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
 | hooks/lib/agentmemory-gate.sh:175 | config | `configured="$(jq -r '.recommended_tools.agentmemory.usage_state_file // "" \| strings' "$c` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
 | hooks/lib/alumnium-gate.sh:24 | config | `name="$(jq -r '.recommended_tools.alumnium.mcp_server_name // "" \| strings' "$config_file` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
-| hooks/lib/completion-audit/change-class.sh:94 | config | `src_pattern="$(jq -r '.project.src_pattern // "/src/"' "$config_file" 2>/dev/null \|\| ech` | X | reads $config_file, which completion-audit.sh sets to the verified snapshot |
+| hooks/lib/completion-audit/change-class.sh:124 | config | `src_pattern="$(jq -r '.project.src_pattern // "/src/"' "$config_file" 2>/dev/null \|\| ech` | X | reads $config_file, which completion-audit.sh sets to the verified snapshot |
 | hooks/lib/completion-audit/gates.sh:224 | config | `strict=$(jq -r '.hooks.evidence_schema.strict \| if . == null then "true" else tostring en` | X | reads $config_file, which completion-audit.sh sets to the verified snapshot |
 | hooks/lib/completion-audit/gates.sh:227 | config | `strict=$(jq -r '.hooks.evidence_schema.strict \| if . == null then "true" else tostring en` | X | reads $config_file, which completion-audit.sh sets to the verified snapshot |
 | hooks/lib/context-mode-gate.sh:25 | config | `min="$(jq -r '.recommended_tools.context_mode.min_node_version // "" \| tostring' "$config` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
@@ -23,7 +23,7 @@ Every place in `hooks/`, `hooks/lib/` and `scripts/` that reads a protected valu
 | hooks/lib/context-mode-read-deny.sh:83 | config | `state_file="$(jq -r '.state.state_file // "" \| strings' "$config_file" 2>/dev/null \|\| t` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
 | hooks/lib/context-mode-read-deny.sh:84 | config | `trivial_file="$(jq -r '.state.trivial_file // "" \| strings' "$config_file" 2>/dev/null \|` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
 | hooks/lib/enforcement-tier-gate.sh:8 | config | `jq -r 'if (.sb_enforcement_tier // "") != "" then (.sb_enforcement_tier \| tostring) else ` | X | the tier is min(configured, probed): a live value can only lower it; excluded from the record (hooks keep it) |
-| hooks/lib/enforcement-tier-gate.sh:38 | config | `updated="$(jq --argjson t "$tier" '.sb_enforcement_tier = $t' "$config_file" 2>/dev/null \` | X | the tier is min(configured, probed): a live value can only lower it; excluded from the record (hooks keep it) |
+| hooks/lib/enforcement-tier-gate.sh:48 | config | `updated="$(jq --argjson t "$tier" '.sb_enforcement_tier = $t' "$config_file" 2>/dev/null \` | X | the tier is min(configured, probed): a live value can only lower it; excluded from the record (hooks keep it) |
 | hooks/lib/enterprise-policy.sh:13 | config | `profile="$(jq -r '.enterprise_policy.active_profile // empty' "$config_file" 2>/dev/null \` | X | receives the verified snapshot from the delivery gates (completion-audit); other callers print advisory text |
 | hooks/lib/enterprise-policy.sh:135 | config | `hooks_strict="$(jq -r '.hooks.evidence_schema.strict \| if . == null then "true" else tost` | X | receives the verified snapshot from the delivery gates (completion-audit); other callers print advisory text |
 | hooks/lib/integrity.sh:90 | config | `if [[ -f "$root/.silver-bullet.json" && -f "$root/silver-bullet.md" ]]; then` | A | the integrity machinery: reads the live files to verify and to record them |
@@ -61,8 +61,9 @@ Every place in `hooks/`, `hooks/lib/` and `scripts/` that reads a protected valu
 | hooks/session-start:361 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
 | hooks/session-start:362 | config | `cfg_trivial=$(jq -r '.state.trivial_file // ""' "$search_dir/.silver-bullet.json" 2>/dev/n` | A | the trust anchor: baselines the record at the end of session start |
 | scripts/deploy-gate-snippet.sh:50 | config | `if [[ -f "$_dw_search_dir/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
-| scripts/deploy-gate-snippet.sh:86 | trivial | `if [[ -f "$TRIVIAL_FILE" && ! -L "$TRIVIAL_FILE" ]]; then` | X | user-run or skill-run script, not a hook gate |
-| scripts/deploy-gate-snippet.sh:110 | state | `if ! grep -Fqx -- "$_skill" "$STATE_FILE" 2>/dev/null; then` | X | user-run or skill-run script, not a hook gate |
+| scripts/deploy-gate-snippet.sh:115 | trivial | `if [[ -f "$TRIVIAL_FILE" && ! -L "$TRIVIAL_FILE" ]]; then` | X | user-run or skill-run script, not a hook gate |
+| scripts/deploy-gate-snippet.sh:146 | state | `sb_required_skill_is_recorded "$(<"$STATE_FILE")" "$_skill" && continue` | X | user-run or skill-run script, not a hook gate |
+| scripts/deploy-gate-snippet.sh:147 | state | `elif grep -Fqx -- "$_skill" "$STATE_FILE" 2>/dev/null; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/dogfood-orchestrator-parent-surface.sh:27 | state | `grep -qx "$skill" "$STATE_FILE" 2>/dev/null \|\| printf '%s\n' "$skill" >>"$STATE_FILE"` | X | user-run or skill-run script, not a hook gate |
 | scripts/dogfood-orchestrator-parent-surface.sh:36 | state | `echo "PASS: lifecycle skills recorded ($(wc -l <"$STATE_FILE" \| tr -d ' ') lines)"` | X | user-run or skill-run script, not a hook gate |
 | scripts/export-enterprise-evidence.sh:79 | config | `if [[ -f "${PROJECT_ROOT}/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
@@ -71,7 +72,7 @@ Every place in `hooks/`, `hooks/lib/` and `scripts/` that reads a protected valu
 | scripts/optimize-five-tool-stack.sh:108 | config | `if [[ -n "$PROJECT_ROOT" && -f "${PROJECT_ROOT}/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/optimize-five-tool-stack.sh:118 | config | `[[ -z "$cfg" ]] \|\| [[ "$(jq -r '.recommended_tools.leanctx.enabled_by_user' "$cfg" 2>/de` | X | user-run or skill-run script, not a hook gate |
 | scripts/optimize-five-tool-stack.sh:126 | config | `profile="$(jq -r '.recommended_tools.leanctx.optimization_profile // "five_tool_routed"' "` | X | user-run or skill-run script, not a hook gate |
-| scripts/pre-release-gate.sh:49 | config | `if jq -e '.recommended_tools.leanctx.enabled_by_user == true' "${REPO_ROOT}/.silver-bullet` | X | user-run or skill-run script, not a hook gate |
+| scripts/pre-release-gate.sh:52 | config | `if jq -e '.recommended_tools.leanctx.enabled_by_user == true' "${REPO_ROOT}/.silver-bullet` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-bootstrap.sh:28 | config | `if [[ -f "$TARGET/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-consent.sh:92 | config | `while [[ "$_sb_probe" != "/" && ! -f "$_sb_probe/.silver-bullet.json" ]]; do` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-consent.sh:95 | config | `if [[ -f "$_sb_probe/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |

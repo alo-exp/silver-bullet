@@ -429,6 +429,10 @@ assert_eq "ctl key" 'key|Enter' "$(jq -r '[.op,.name]|join("|")' <<<"$line")"
 agent_mode_ctl_op "$CTL" abort; read -r -t 2 -u 7 line
 assert_eq "ctl op" 'abort' "$(jq -r .op <<<"$line")"
 exec 7>&-
+# R4-22: no reader on the fifo -> bounded failure, not a hang
+CTL_NR="$TL_TMP/ctl-noreader"; mkdir -p "$CTL_NR"; mkfifo "$CTL_NR/cmd.fifo"
+rc=0; SB_AGENT_CTL_TIMEOUT=1 agent_mode_ctl_write "$CTL_NR" '{"op":"abort"}' 2>/dev/null || rc=$?
+assert_eq "ctl write: reader-less fifo fails fast" 2 "$rc"
 
 EVF="$TL_TMP/waitev.jsonl"
 rc=0; agent_mode_wait_event "$EVF" "done" 0.2 >/dev/null || rc=$?; assert_eq "wait: missing events file times out" 1 "$rc"

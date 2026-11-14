@@ -36,7 +36,8 @@ new_tree() {
     sync-codex-marketplace-version.sh sync-cursor-marketplace-version.sh; do
     cp "$TL_REPO_ROOT/scripts/$s" "$T/scripts/"
   done
-  cp "$TL_REPO_ROOT/scripts/lib/agent-plugins-common.sh" "$T/scripts/lib/"
+  cp "$TL_REPO_ROOT/scripts/lib/agent-plugins-common.sh" "$TL_REPO_ROOT/scripts/lib/release-bypass-audit.sh" "$T/scripts/lib/"
+  mkdir -p "$T/hooks/lib"; cp "$TL_REPO_ROOT/hooks/lib/runtime-paths.sh" "$T/hooks/lib/"
   jq -n '{version: "2.0.0"}' >"$T/package.json"
   jq -n '{name: "silver-bullet", version: "2.0.0"}' >"$T/.claude-plugin/plugin.json"
   jq -n '{name: "silver-bullet", version: "2.0.0"}' >"$T/.cursor-plugin/plugin.json"
@@ -132,6 +133,8 @@ assert_eq "prepare leaves no temporary clone" "" "$(ls -A "$TL_TMP/tmpdir")"
 run_release env SB_SKIP_PRE_RELEASE_GATE=1 GATE_RC=3 bash "$SCRIPT" 2.0.0
 assert_eq "skipped gate: prepare still succeeds" 0 "$TL_STATUS"
 assert_not_contains "gate skipped on request" "$(<"$LOG")" "gate"
+assert_contains "R13-20: the skipped gate is announced" "$TL_ERR" "AUDIT: release gate bypass SB_SKIP_PRE_RELEASE_GATE=1"
+assert_contains "R13-20: the skipped gate is logged" "$(cat "$SB_RUNTIME_STATE_DIR/release-bypass-log.jsonl")" '"switch":"SB_SKIP_PRE_RELEASE_GATE"'
 
 # --- publish preconditions (R13-07) -----------------------------------------------------------
 new_tree

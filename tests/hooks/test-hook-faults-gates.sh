@@ -29,6 +29,12 @@ ec_fail jq '*".tool_name"*'
 GH_STATUS_OVERRIDE="$RED" hook ci-status-check.sh "$EC_PROJ" "$(pre 'git push')" "$TL_TMP/noti/hooks/ci-status-check.sh"
 assert_contains "ci: tool name extraction failing is tolerated" "$TL_OUT" "CI FAILURE DETECTED"
 ec_unfail jq
+ec_fail jq '*".tool_name"*'
+GH_STATUS_OVERRIDE="$RED" hook ci-status-check.sh "$EC_PROJ" "$(pre 'git push')"
+ec_unfail jq
+assert_contains "ci: tool name extraction failing, libraries present: the helper still reads the call" "$TL_OUT" "CI FAILURE DETECTED"
+GH_STATUS_OVERRIDE="$RED" hook ci-status-check.sh "$EC_PROJ" '{"hook_event_name":"PreToolUse","tool_name":"Custom","tool_input":{"command":"git push"}}' "$TL_TMP/noti/hooks/ci-status-check.sh"
+assert_contains "ci: without the tool-input library any named tool is treated as a shell call" "$TL_OUT" "CI FAILURE DETECTED"
 ec_fail jq '*".tool_input.command"*'
 GH_STATUS_OVERRIDE="$RED" hook ci-status-check.sh "$EC_PROJ" "$(pre 'git push')" "$TL_TMP/noti/hooks/ci-status-check.sh"
 assert_eq "ci: command extraction failing means nothing to check" "" "$TL_OUT"
@@ -136,15 +142,16 @@ assert_eq "trivial: failing project check: allowed" "" "$TL_OUT"
 # ======== pr-traceability ======================================================
 ec_cfg '{"config_version":"0.40.0","sb_initiated":true}'
 printf 'spec-version=1.0\n' >"$SD/spec-session"
-tl_stub gh 'case "$*" in "pr view --json url --jq .url") printf "https://x/pr/1";; esac'
+tl_stub gh 'exit 0'
 mkdir -p "$EC_PROJ/.planning"
 printf -- '<!-- Populated automatically -->\n' >"$EC_PROJ/.planning/SPEC.md"
-pr_in='{"tool_name":"Bash","tool_input":{"command":"gh pr create"}}'
+# the PR URL comes from the create command's own output (R1-27)
+pr_in='{"tool_name":"Bash","tool_input":{"command":"gh pr create"},"tool_response":{"stdout":"https://x/pull/1"}}'
 ec_fail git '*"add"*'
 hook pr-traceability.sh "$EC_PROJ" "$pr_in"
 ec_unfail git
 assert_contains "pr: failing git add does not stop the update" "$TL_OUT" "Spec traceability added"
-assert_contains "pr: SPEC.md still updated" "$(cat "$EC_PROJ/.planning/SPEC.md")" "https://x/pr/1"
+assert_contains "pr: SPEC.md still updated" "$(cat "$EC_PROJ/.planning/SPEC.md")" "https://x/pull/1"
 rm -f "$EC_PROJ/.planning/SPEC.md"
 printf 'no findings here\n' >"$EC_PROJ/.planning/VALIDATION.md"
 hook pr-traceability.sh "$EC_PROJ" "$pr_in"

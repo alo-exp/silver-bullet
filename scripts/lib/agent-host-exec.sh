@@ -83,12 +83,16 @@ agent_host_build_argv() {
       if [[ "$interaction" == "interactive" ]]; then
         return 2
       fi
-      AGENT_HOST_ARGV=("$cli" exec --cd "$work_dir" --sandbox danger-full-access --color never)
+      # Strict never carries a bypass flag: workspace-write sandbox, approvals and hook trust
+      # stay on. Permissive keeps the full-access sandbox; the hook-trust bypass additionally
+      # needs an explicit CODEX_BYPASS_HOOK_TRUST=1 (or CODEX_AUTO_TRUST_HOOKS=1) opt-in.
       if [[ "$permission_mode" == "permissive" ]]; then
-        AGENT_HOST_ARGV+=(--dangerously-bypass-approvals-and-sandbox)
-      fi
-      if [[ "${CODEX_BYPASS_HOOK_TRUST:-${CODEX_AUTO_TRUST_HOOKS:-}}" == "1" ]]; then
-        AGENT_HOST_ARGV+=(--dangerously-bypass-hook-trust)
+        AGENT_HOST_ARGV=("$cli" exec --cd "$work_dir" --sandbox danger-full-access --color never --dangerously-bypass-approvals-and-sandbox)
+        if [[ "${CODEX_BYPASS_HOOK_TRUST:-${CODEX_AUTO_TRUST_HOOKS:-}}" == "1" ]]; then
+          AGENT_HOST_ARGV+=(--dangerously-bypass-hook-trust)
+        fi
+      else
+        AGENT_HOST_ARGV=("$cli" exec --cd "$work_dir" --sandbox workspace-write --color never)
       fi
       if [[ -n "${CODEX_MODEL:-${SB_LIVE_CODEX_MODEL:-}}" ]]; then
         AGENT_HOST_ARGV+=(--model "${CODEX_MODEL:-${SB_LIVE_CODEX_MODEL}}")
@@ -97,10 +101,13 @@ agent_host_build_argv() {
       ;;
     opencode)
       local run_model="${OPENCODE_RUN_MODEL:-opencode-go/mimo-v2.5}"
+      # --auto auto-approves tool calls: permissive only; strict never adds it (R4-23).
+      local oc_auto=()
+      [[ "$permission_mode" == "permissive" ]] && oc_auto=(--auto)
       if [[ "$interaction" == "interactive" ]]; then
-        AGENT_HOST_ARGV=("$cli" "$work_dir" -m "$run_model" --auto --prompt "$prompt")
+        AGENT_HOST_ARGV=("$cli" "$work_dir" -m "$run_model" ${oc_auto[@]+"${oc_auto[@]}"} --prompt "$prompt")
       else
-        AGENT_HOST_ARGV=("$cli" run --dir "$work_dir" -m "$run_model" --auto "$prompt")
+        AGENT_HOST_ARGV=("$cli" run --dir "$work_dir" -m "$run_model" ${oc_auto[@]+"${oc_auto[@]}"} "$prompt")
       fi
       ;;
     pi)
@@ -249,10 +256,8 @@ agent_host_pi_continue_prompt() {
 agent_host_pi_fresh_rewrite_prompt() {
   local expect_file="$1"
   local original_prompt="${2:-}"
-  local rel
-  rel="./$(basename "$expect_file")"
   local demand
-  demand="FRESH SESSION (not --continue). ${rel} is still missing, too small, or an IN_PROGRESS stub (also ${expect_file}). Your first or second tool call must be write to that path. Never end on a plan. Forbidden phrases: I will, I'll, Next I will. A sentence without a write tool call is a failed task."
+  demand="FRESH SESSION (not --continue). ${expect_file} is still missing, too small, or an IN_PROGRESS stub (write to this absolute path: this session starts in a scratch directory). Your first or second tool call must be write to that path. Never end on a plan. Forbidden phrases: I will, I'll, Next I will. A sentence without a write tool call is a failed task."
   if [[ -n "$original_prompt" ]]; then
     printf '%s\n\n%s' "$demand" "$original_prompt"
   else
@@ -281,7 +286,8 @@ agent_host_pi_fresh_rewrite_for_file() {
   cli="$(agent_host_resolve_cli pi)" || return 127
   provider="${PI_PROVIDER:-opencode-go}"
   model="${PI_MODEL:-mimo-v2.5}"
-  rewrite_dir="$(mktemp -d "${work_dir}/.pi-fresh-rewrite.XXXXXX")" || return 1
+  # Scratch session dir under TMPDIR, never inside the user's repo (R4-24); removed on every exit path.
+  rewrite_dir="$(mktemp -d "${TMPDIR:-/tmp}/pi-fresh-rewrite.XXXXXX")" || return 1
   prompt="$(agent_host_pi_fresh_rewrite_prompt "$expect_file" "$original_prompt")"
   # New session store in the rewrite dir — cwd alone is not enough if Pi looks
   # up ~/.pi/agent/sessions by project. Never --continue on the plan-only session.
@@ -306,6 +312,7 @@ agent_host_pi_fresh_rewrite_for_file() {
   cat "$cap" || true
   captured="$(cat "$cap" 2>/dev/null || true)"
   rm -f "$cap"
+  rm -rf "$rewrite_dir"
   if agent_host_pi_file_ok "$expect_file"; then
     return 0
   fi
@@ -362,7 +369,8 @@ agent_host_pi_continue_for_file() {
     fi
     cont+=("$prompt")
     printf '[agent-pi] --continue hop %s/%s for %s\n' "$hop" "$max_hops" "$expect_file" >&2
-    "${cont[@]}" || rc=$?
+    # Same zero-byte/idle/hard-timeout guard as the first hop: a stalled provider must not hang the delegate.
+    (agent_host_pi_run_guard_with_argv "$expect_file" "${cont[@]}") || rc=$?
     hop=$((hop + 1))
   done
   if agent_host_pi_file_ok "$expect_file"; then
@@ -461,7 +469,7 @@ agent_host_run_pty() {
   agent_host_build_argv "$host" "interactive" "$work_dir" "$prompt" "$permission_mode" || return $?
   agent_host_dump_argv
   python3 - "$timeout" "$work_dir" "${AGENT_HOST_ARGV[@]}" <<'PY'
-import os, pty, select, sys, time
+import os, pty, select, signal, sys, time
 
 timeout = int(sys.argv[1])
 work_dir = sys.argv[2]
@@ -483,17 +491,55 @@ if child_pid == 0:
     os.execvpe(cli, args, os.environ.copy())
     os._exit(127)
 
+
+def exit_code(status):
+    if hasattr(os, "waitstatus_to_exitcode"):
+        return os.waitstatus_to_exitcode(status)
+    if os.WIFEXITED(status):
+        return os.WEXITSTATUS(status)
+    return 1
+
+
+def reap(grace):
+    """Poll waitpid(WNOHANG) for up to ``grace`` seconds: (reaped, wait status or None)."""
+    end = time.monotonic() + grace
+    while True:
+        try:
+            pid, wait_status = os.waitpid(child_pid, os.WNOHANG)
+        except ChildProcessError:
+            return True, None
+        if pid == child_pid:
+            return True, wait_status
+        if time.monotonic() >= end:
+            return False, None
+        time.sleep(0.05)
+
+
+def terminate():
+    """Stop the whole session: TERM the process group, then KILL, each with a bounded
+    WNOHANG wait; closing the master afterwards HUPs any member that left the group (R4-21)."""
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            os.killpg(child_pid, sig)
+        except OSError:
+            pass
+        reaped, _status = reap(3.0)
+        if reaped:
+            break
+    try:
+        os.close(master_fd)
+    except OSError:
+        pass
+
+
 stdout_parts = []
 hard_deadline = time.monotonic() + timeout
-rc = 3
+timed_out = False
 try:
     while True:
         now = time.monotonic()
         if now >= hard_deadline:
-            try:
-                os.kill(child_pid, 15)
-            except OSError:
-                pass
+            timed_out = True
             break
         ready, _, _ = select.select([master_fd], [], [], 0.2)
         if ready:
@@ -509,34 +555,24 @@ try:
             combined = "".join(stdout_parts)
             if combined:
                 sys.stdout.write(combined)
-            if hasattr(os, "waitstatus_to_exitcode"):
-                rc = os.waitstatus_to_exitcode(status)
-            elif os.WIFEXITED(status):
-                rc = os.WEXITSTATUS(status)
-            else:
-                rc = 1
+            rc = exit_code(status)
             sys.exit(3 if rc == 127 else (rc or 0))
 except Exception as exc:
     sys.stdout.write("\nERROR: mode-unavailable (%s)\n" % exc)
-    try:
-        os.kill(child_pid, 15)
-    except OSError:
-        pass
+    terminate()
     sys.exit(3)
 
+if not timed_out:
+    # Output ended: the child normally exits right away, but never wait past the deadline.
+    reaped, status = reap(max(0.0, hard_deadline - time.monotonic()))
+    timed_out = not reaped
 combined = "".join(stdout_parts)
 if combined:
     sys.stdout.write(combined)
-try:
-    _pid, status = os.waitpid(child_pid, 0)
-    if hasattr(os, "waitstatus_to_exitcode"):
-        rc = os.waitstatus_to_exitcode(status)
-    elif os.WIFEXITED(status):
-        rc = os.WEXITSTATUS(status)
-    else:
-        rc = 1
-except Exception:
-    rc = 3
+if timed_out:
+    terminate()
+    sys.exit(124)
+rc = 3 if status is None else exit_code(status)
 sys.exit(3 if rc == 127 else (rc or 0))
 PY
 }

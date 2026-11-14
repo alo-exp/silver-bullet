@@ -102,6 +102,7 @@ assert_allowed "S5.2: trivial bypass on completion-audit" "$out"
 # stop-check: should bypass
 out=$(run_stop_check "Stop")
 assert_allowed "S5.3: trivial bypass on stop-check" "$out"
+rm -f "${SB_TEST_DIR}/trivial" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 
 rm -f "${SB_TEST_DIR}/trivial"
 integration_teardown

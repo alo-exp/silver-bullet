@@ -2,6 +2,12 @@
 # shellcheck disable=SC2034  # variables are consumed by the sourcing tests
 # shellcheck shell=bash
 # Shared completion-audit fixture (sourced after tl_init).
+# The push scope refuses a hook environment that redirects git (GIT_CONFIG_*, GIT_DIR, ...): the fixture runs
+# the hook in a clean one, whatever the caller (a CI runner, a sandboxed agent) exports.
+for _ca_var in $(compgen -e | grep -E '^GIT_(DIR|WORK_TREE|COMMON_DIR|NAMESPACE|EXEC_PATH|CONFIG($|_))'); do
+  unset "$_ca_var"
+done
+unset _ca_var ENV
 _ca_tpl() {
   if [[ -z "${_CA_TPL:-}" ]]; then
     _CA_TPL="$TL_TMP/.tpl"
@@ -26,7 +32,8 @@ mkproj() {
   if [[ -f "$SB_RUNTIME_STATE_DIR/seal.key" ]]; then sb_integrity_baseline "$(cd "$PROJ" && pwd -P)" session; sb_integrity_forget; fi
 }
 
-HOOK="$TL_REPO_ROOT/hooks/completion-audit.sh"
+PLUGIN="$(tl_fake_plugin_root)"
+HOOK="$PLUGIN/hooks/completion-audit.sh"
 CFG_VERSION="$(jq -r '.config_version' "$TL_REPO_ROOT/templates/silver-bullet.config.json.default")"
 
 SKILLS="$TL_TMP/skills"

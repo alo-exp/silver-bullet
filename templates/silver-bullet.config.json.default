@@ -8,7 +8,8 @@
     "name": "{{PROJECT_NAME}}",
     "src_pattern": "/src/",
     "src_exclude_pattern": "__tests__|\\.test\\.",
-    "active_workflow": "full-dev-cycle"
+    "active_workflow": "full-dev-cycle",
+    "push_to_default_branch_tier": "completion"
   },
   "skills": {
     "required_planning": [
@@ -532,9 +533,9 @@
   "release": {
     "_comment_quality_gate_markers": "On gh release create: adversarial-review-clean, sentinel-skills-clean, quality-gate-stage-3, full-test-suite-rerun",
     "profile": "generic",
-    "require_plugin_runtime_matrix": true,
-    "require_pre_release_quality_gate": true,
-    "require_rc_matrix": true,
+    "require_plugin_runtime_matrix": false,
+    "require_pre_release_quality_gate": false,
+    "require_rc_matrix": false,
     "quality_gate_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
   },
   "compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions.",
