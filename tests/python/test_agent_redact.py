@@ -734,6 +734,9 @@ class LinearityTests(unittest.TestCase):
             "subscript-set": "a['password'] = ", "call-arg": "define('PASSWORD', ", "yaml-tag": "password: !Ref ", "placeholder": "password = (sensitive ",
             "form-data": 'form-data; name="password"\n\n', "nginx-auth": "proxy_set_header Authorization ", "list-value": "- value: x\n",
             "angle-run": "token=https://<a>@<b", "unclosed-dollar": "token=${", "unclosed-paren": "token=f(", "hdr-prose": "Authorization: Basic words and words ",
+            "string-prefix": "SECRET_KEY = rb'", "triple-quote": "token = \'\'\'", "rust-raw": 'secret = r##"', "ruby-q": "api_key = %q(", "fallback-op": "token = a || ",
+            "env-access": "process.env.TOKEN || ", "setter": "setPassword(", "login-call": "login(a, ", "default-filter": "{{ password | default(",
+            "dollar-default": "token=${A:-", "template-run": "{{ ", "symbol-subscript": "cfg[:api_key] = ",
             "json-nested-str": json.dumps({"o": json.dumps({"password": "Zq8mK2pL9xRt4"})}) + "\n",
         }
 

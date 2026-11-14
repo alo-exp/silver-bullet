@@ -371,8 +371,8 @@ def unwrap(v):
         v = v[1:-1]
     v = v.strip("\"'`")
     v = v.rstrip(",;")
-    if len(v) >= 2 and v[0] + v[-1] in ("[]", "()", "{}") and not v.startswith("${"):
-        v = v[1:-1]
+    if len(v) >= 2 and v[0] + v[-1] in ("[]", "()", "{}") and not v.startswith("${") and _balanced_end(v, 0, len(v)) == len(v):
+        v = v[1:-1]  # one bracket group around the whole value
     while v and v[-1] in ")]}" and v.count({")": "(", "]": "[", "}": "{"}[v[-1]]) < v.count(v[-1]):
         v = v[:-1]
     return v
@@ -406,13 +406,46 @@ def is_syntax(v):
     return bool(_CHAIN.fullmatch(v) and re.split(r"[.\[]", v, maxsplit=1)[0].lower() in _REF_ROOTS)
 
 
+_DEFAULT_FORMS = (
+    re.compile(r"^\$\{[A-Za-z_]\w*(?:\.\w+)*(?::-|:=|-|=|:)(.*)\}$", re.S),  # ${VAR:-x} ${VAR:=x} ${VAR-x} Spring ${x:lit}
+    re.compile(r"\|\s*default\(\s*([\"'])(.*?)\1"),                       # Jinja / Ansible: x | default('lit')
+    re.compile(r"\bdefault\s+([\"'])(.*?)\1"),                              # Go template: default "lit" .X
+)
+
+
+def _fallback_literal(v):
+    """The literal default behind a reference (``${VAR:-lit}``, ``x | default('lit')``), or None when v has no default form."""
+    m = _DEFAULT_FORMS[0].match(v)
+    if m:
+        return m.group(1)
+    for rx in _DEFAULT_FORMS[1:]:
+        m = rx.search(v)
+        if m:
+            return m.group(2)
+    return None
+
+
+def classify_default(lit, tier, name=""):
+    """A literal fallback behind a reference: empty, trivial and placeholder defaults are honest, anything else is judged."""
+    lit = unwrap(lit)
+    if not lit.strip() or lit.lower() in TRIVIAL:
+        return NONE
+    return classify(lit, tier, name)
+
+
 def classify(value, tier, name=""):
     v = unwrap(value)
     if not v or v == "$":
         return NONE
+    fallback = _fallback_literal(v)
+    if fallback is not None:
+        return classify_default(fallback, tier, name)
+    quoted = [x for x in re.findall(r"[\"']([^\"'\n]{12,})[\"']", v) if _random_literal(x)] if "(" in v else []
+    if "{" in v or "$" in v:  # literal text next to a reference / interpolation (f'{prefix}<random>', ${A}<random>)
+        quoted += [t for t in re.findall(r"[A-Za-z0-9+/=_-]{12,}", re.sub(r"\$?\{[^{}]*\}|\$\([^()]*\)|\$[A-Za-z_]\w*", " ", v)) if _random_literal(t)]
     if name and v.lower() in (name.lower(), name.lower().replace("_", "")):
         return NONE  # SECRET = 'SECRET': an enum member, not a value
-    if is_reference(v) or _REF_TAG.match(v) or _PLACEHOLDER.search(v) or _ANGLE.search(v):
+    if not quoted and (is_reference(v) or _REF_TAG.match(v) or _PLACEHOLDER.search(v) or _ANGLE.search(v)):
         return NONE
     if tier != "bearer" and is_syntax(v):
         return NONE
@@ -428,13 +461,20 @@ def classify(value, tier, name=""):
         return NONE
     if is_path(v, strict=tier in ("strong", "cred", "cli-pass", "cli-token")):
         return NONE
+    interpolated = re.sub(r"\$?\{[^{}]*\}|%\([A-Za-z_]\w*\)[sd]", " ", v)
+    if interpolated != v:  # a format string / template literal: only its literal text can hold a secret
+        if not any(_random_literal(t) for t in re.findall(r"[A-Za-z0-9+/=_-]{12,}", interpolated)):
+            return NONE
+        v = interpolated.strip()
     nested = re.fullmatch(r"([A-Za-z_][\w.-]{0,63})=([\w.:/-]{0,64})", v)
     if nested and is_ident(nested.group(1)) and (not nested.group(2) or nested.group(2).isdigit() or is_ident(nested.group(2))):
         return NONE  # NAME=simple: an inner assignment, judged by its own anchor
-    if ( re.match(r"^--[a-z][a-z0-9-]*(?:=|$)", v) or re.search(r"\{[A-Za-z_]\w*\}|\$\{|%\([A-Za-z_]\w*\)[sd]|\{\}", v) or re.fullmatch(r"\d{4}-\d\d-\d\d[T ][\d:.]+Z?", v)
+    if ( re.match(r"^--[a-z][a-z0-9-]*(?:=|$)", v) or re.search(r"\$\{|\{\}", v) or re.fullmatch(r"\d{4}-\d\d-\d\d[T ][\d:.]+Z?", v)
             or re.fullmatch(r"[\w-]+(?:\.[\w-]+)*\.(?:sh|py|js|ts|md|json|ya?ml|toml|txt|pem|key|crt|env|conf|cfg|ini|log)", v)):
         return NONE  # a nested NAME=value, a flag, a format template or a file name: not itself a literal secret
     possible = POSSIBLE if tier in ("strong", "cred", "cli-pass", "cli-token") else NONE
+    if quoted and possible:
+        return SECRET  # a call whose argument is a random-looking literal: os.getenv("X", "<random>")
     if is_code(v):
         return NONE if "(" in v or "[" in v else possible  # a call is code; a dotted word chain may be a passphrase (masked, not refused)
     if re.search(r"\s", v):
@@ -620,6 +660,9 @@ _QPARAM = re.compile(r"&[A-Za-z_][\w.-]{0,63}=")
 _SEP_CHARS = set("=:：＝%")
 
 
+# a string opener: Python prefixes in any case (b r u f t rb br fr rf ...), triple quotes, C# @"/$", Rust r#"..."#, Ruby %q( %Q(, backtick
+_STR_OPEN = re.compile(r"(?i)(?:[rubft]{1,2})?(?:\"\"\"|'''|\"|')|`|[@$]{1,2}\"|r#+\"|%[qQ][(\[{<]")
+_CLOSE_FOR = {"(": ")", "[": "]", "{": "}", "<": ">"}
 _OPENERS = "({["
 _CLOSERS = {"(": ")", "{": "}", "[": "]"}
 _HEADCHARS = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.$:>-@%!")
@@ -660,20 +703,38 @@ def _value_at(text, j, ticks=None):
     inside = ticks is not None and bisect.bisect_left(ticks, j) % 2 == 1
     while j < n and text[j] in " \t*":
         j += 1
-    if j < n and text[j] == "f" and j + 1 < n and text[j + 1] in "\"'":
-        j += 1
-    esc = j + 1 < n and text[j] == "\\" and text[j + 1] in "\"'"
-    if esc:
-        j += 1
-    if j < n and (text[j] in "\"'" or (text[j] == "`" and not inside)):
-        q = ("\\" if esc else "") + text[j]
-        close = text.find(q, j + 1, min(n, j + 1 + VALUE_MAX))
+    opener = _STR_OPEN.match(text, j)
+    if opener and not (opener.group(0) == "`" and inside):
+        o = opener.group(0)
+        if o[0] == "%":
+            closer = _CLOSE_FOR[o[-1]]
+        elif o[-1] == '"' and "#" in o:
+            closer = '"' + "#" * o.count("#")  # Rust raw string r#"..."#
+        else:
+            closer = o[next(i for i, c in enumerate(o) if c in "\"'`"):]  # the quote, tripled for """ and '''
+        start = j + len(o)
+        close = text.find(closer, start, min(n, start + VALUE_MAX))
+        if close >= start:
+            return start, close
+        return _unquoted_value(text, start)
+    if j + 1 < n and text[j] == "\\" and text[j + 1] in "\"'":  # an escaped quote: \"value\" inside JSON text
+        q = "\\" + text[j + 1]
+        close = text.find(q, j + 2, min(n, j + 2 + VALUE_MAX))
         if close > j:
-            return j + 1, close
+            return j + 2, close
         j += 1
+    return _unquoted_value(text, j)
+
+
+def _unquoted_value(text, j):
+    n = len(text)
     placeholder = _PLACEHOLDER_AT.match(text, j)
     if placeholder:  # (sensitive value), (known after apply), ***, 16 bytes: one value, not cut at its first word
         return j, placeholder.end()
+    if text.startswith("{{", j):  # a template expression {{ x | default('v') }} is one value
+        close = text.find("}}", j + 2, min(n, j + VALUE_MAX))
+        if close > 0:
+            return j, close + 2
     tag = _TAG_AT.match(text, j)
     if tag:  # a YAML tag (!Ref X, !Sub "...", !secret x) takes the rest of the line
         nl = text.find("\n", j, min(n, j + VALUE_MAX))
@@ -698,6 +759,19 @@ def _value_at(text, j, ticks=None):
         head_ok = head_ok and c in _HEADCHARS
         e += 1
     return j, e
+
+
+_FALLBACK_OP = re.compile(r"[ \t]*(?:\|\||\?\?|\?:|\bor\b)[ \t]*|[ \t]+if\b[^\n'\"]{0,100}\belse[ \t]+")
+
+
+def _fallback_after(text, vs, ve):
+    """(start, end) of a quoted literal that follows a default operator right after the value that ends at ``ve``."""
+    p = ve + 1 if vs > 0 and text[vs - 1] in "\"'`" and text[ve:ve + 1] == text[vs - 1] else ve
+    op = _FALLBACK_OP.match(text, p)
+    if not op:
+        return None
+    fs, fe = _value_at(text, op.end())
+    return (fs, fe) if fe > fs and text[fs - 1] in "\"'`" else None
 
 
 _SCHEME_PREFIX = re.compile(r"[A-Za-z][A-Za-z-]{0,31}[ \t]+(?=\S)")
@@ -773,6 +847,10 @@ def pass_assign(text, out):
                 out.append((vs, ve, "authorization", verdict))
         else:
             out.append((vs, ve, "assignment", classify(text[vs:ve], tier, name)))
+            fb = _fallback_after(text, vs, ve)
+            if fb:  # X || 'lit', X ?? 'lit', X or 'lit', X ?: 'lit', a if c else 'lit'
+                out.append((fb[0], fb[1], "fallback-default", classify_default(text[fb[0]:fb[1]], tier, name)))
+                ve = fb[1]
         consumed = ve
 
 
@@ -906,7 +984,12 @@ def pass_pairs(text, out):
             out.append((vs, ve, "table-row", SECRET))  # a table cell is documentation unless it is plainly a literal
 
 
-_SUBSCRIPT_SET = re.compile(r"\[[ \t]*[\"']([A-Za-z_][\w.\-]{0,127})[\"'][ \t]*\][ \t]*=(?!=)[ \t]*")
+_SUBSCRIPT_SET = re.compile(r"\[[ \t]*(?:[\"']([A-Za-z_][\w.\-]{0,127})[\"']|:([A-Za-z_]\w{0,127}))[ \t]*\][ \t]*=(?!=)[ \t]*")
+_ENV_ACCESS = re.compile(r"(?:process\.env|import\.meta\.env|Deno\.env|\$_ENV|\$_SERVER)(?:\.([A-Za-z_]\w*)|\[[ \t]*[\"']([A-Za-z_][\w.\-]*)[\"'][ \t]*\])"
+                         r"|(?:environ|ENV|env)\[[ \t]*[\"']([A-Za-z_][\w.\-]*)[\"'][ \t]*\]"
+                         r"|(?:getenv|environ\.get|ENV\.fetch|os\.getenv|GetEnvironmentVariable)\([ \t]*[\"']([A-Za-z_][\w.\-]*)[\"'][ \t]*\)")
+_SETTER = re.compile(r"(?<![A-Za-z0-9_])(set_?[A-Za-z]\w{2,40}|with_?\w{3,40}|password|passwd|token|secret|api_?key)[ \t]*\([ \t]*")
+_LOGIN_CALL = re.compile(r"(?<![A-Za-z0-9_])(?:login|log_in|signin|sign_in|authenticate)[ \t]*\([ \t]*[^,()\n]{1,100},[ \t]*")
 _CALL_ARG = re.compile(r"\([ \t]*[\"']([A-Za-z_][\w.\-]{0,127})[\"'][ \t]*,[ \t]*")
 
 
@@ -917,7 +1000,7 @@ def pass_calls(text, out):
     for rx, rule in ((_SUBSCRIPT_SET, "subscript-assign"), (_CALL_ARG, "call-argument")):
         for m in rx.finditer(text):
             _tick()
-            name = m.group(1)
+            name = m.group(1) or (m.group(2) if rx is _SUBSCRIPT_SET else None)
             tier = name_tier(name)
             if tier is None:
                 continue
@@ -932,6 +1015,26 @@ def pass_calls(text, out):
                     verdict = NONE  # a bare argument (a variable) is a reference, not a literal
             if ve > vs:
                 out.append((vs, ve, rule, verdict))
+    for m in _ENV_ACCESS.finditer(text):  # process.env.X || 'lit', os.environ['X'] or 'lit', getenv('X') ?: 'lit'
+        _tick()
+        name = next(g for g in m.groups() if g)
+        tier = name_tier(name)
+        fb = _fallback_after(text, m.end(), m.end()) if tier and tier != "auth-header" else None
+        if fb:
+            out.append((fb[0], fb[1], "fallback-default", classify_default(text[fb[0]:fb[1]], tier, name)))
+    for m in _SETTER.finditer(text):  # ds.setPassword('lit'), conn.set_password("lit"), client.password('lit')
+        _tick()
+        tier = name_tier(m.group(1))
+        if tier is None or tier == "auth-header":
+            continue
+        vs, ve = _value_at(text, m.end())
+        if ve > vs and text[vs - 1] in "\"'`":
+            out.append((vs, ve, "setter-argument", classify(text[vs:ve], tier, m.group(1))))
+    for m in _LOGIN_CALL.finditer(text):  # login(user, "lit"): only a plainly secret-shaped literal counts
+        _tick()
+        vs, ve = _value_at(text, m.end())
+        if ve > vs and text[vs - 1] in "\"'`":
+            out.append((vs, ve, "login-argument", SECRET if classify(text[vs:ve], "strong") == SECRET else NONE))
 
 
 _WORD = re.compile(r"[^\s`'\"|;&()<>]+|'[^'\n]{0,1024}'|\"[^\"\n]{0,1024}\"|[|;&]+|\n")
@@ -1110,7 +1213,7 @@ def _opaque_spans(text):
 
 
 # Text-facing patterns, linted by the test suite: no nested or lazy repeats and no back-references.
-_PATTERNS = (_ANCH_RE, _DISCORD, _KEY_ANCHOR, _XML, _XML_ATTR, _XML_NAMED, _NV_NAME, _NV_VALUE, _OBJ_VALUE, _ENV_LINE, _MD_ROW, _SUBSCRIPT_SET, _CALL_ARG, _FORM_FIELD, _LIST_VALUE, _HDR_DIRECTIVE, _SCHEME_PREFIX, _WORD, _BEARER, _CLI_ANCHOR, _NETRC_ANCHOR, _OPAQUE,
+_PATTERNS = (_ANCH_RE, _DISCORD, _KEY_ANCHOR, _XML, _XML_ATTR, _XML_NAMED, _NV_NAME, _NV_VALUE, _OBJ_VALUE, _ENV_LINE, _MD_ROW, _SUBSCRIPT_SET, _CALL_ARG, _ENV_ACCESS, _SETTER, _LOGIN_CALL, _FALLBACK_OP, _STR_OPEN, _FORM_FIELD, _LIST_VALUE, _HDR_DIRECTIVE, _SCHEME_PREFIX, _WORD, _BEARER, _CLI_ANCHOR, _NETRC_ANCHOR, _OPAQUE,
              _QPARAM, _HOST, _SEP)
 
 
