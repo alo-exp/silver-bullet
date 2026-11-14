@@ -66,12 +66,12 @@ assert_eq "v2 rollback off" 1 "$rc"
 
 echo "=== without jq ==="
 NOJQ="$(tl_path_without jq)"
-(
-  PATH="$NOJQ"
-  sb_agent_delegation_activate claude T7 "$ROOT" '["x"]' "$ROOT/log"
-)
-assert_contains "no-jq activate writes host" "$(cat "$STATE")" '"host":"claude"'
-assert_contains "no-jq activate writes work_dir" "$(cat "$STATE")" "\"work_dir\":\"$ROOT\""
+# jq is a required prerequisite: activation does not fall back to a hand-built JSON file (R4-32).
+sb_agent_delegation_deactivate
+( PATH="$NOJQ"; sb_agent_delegation_activate claude T7 "$ROOT" '["x"]' "$ROOT/log" ) && rc=0 || rc=$?
+assert_eq "no-jq activate fails" 1 "$rc"
+assert_file_absent "no-jq activate writes nothing" "$STATE"
+printf '{"active":true,"host":"claude","task_id":"T7","work_dir":"%s"}\n' "$ROOT" >"$STATE"
 (
   PATH="$NOJQ"
   sb_agent_delegation_is_active
@@ -99,6 +99,45 @@ assert_eq "no-jq: read_field cannot parse work_dir, so the repo root is the scop
   sb_agent_delegation_path_in_scope "$TL_TMP/elsewhere.txt" "$ROOT"
 ) && rc=0 || rc=$?
 assert_eq "no-jq: path outside the repo root not in scope" 1 "$rc"
+
+echo "=== activate: JSON safety and atomicity (R4-32) ==="
+sb_agent_delegation_deactivate
+sb_agent_delegation_activate codex 'fix "login" \ bug
+../x' "$ROOT/we ird\"dir" '["a b"]' "$ROOT/log\"x"
+assert_eq "awkward task id: state parses" true "$(jq -r .active "$STATE")"
+assert_eq "awkward task id: sanitised to the safe alphabet" 'fix__login____bug_.._x' "$(sb_agent_delegation_read_field task_id x)"
+assert_eq "awkward work_dir round-trips" "$ROOT/we ird\"dir" "$(sb_agent_delegation_read_field work_dir x)"
+assert_eq "log path with a quote round-trips" "$ROOT/log\"x" "$(sb_agent_delegation_read_field log_path x)"
+long="$(printf 'a%.0s' $(seq 1 100))"
+sb_agent_delegation_activate codex "$long" "$ROOT" '[]' ""
+tid="$(sb_agent_delegation_read_field task_id x)"
+assert_eq "task id capped at 64 characters" 64 "${#tid}"
+sb_agent_delegation_activate codex "" "$ROOT" '[]' ""
+assert_eq "empty task id gets a placeholder" task "$(sb_agent_delegation_read_field task_id x)"
+assert_eq "clean_task_id keeps the safe alphabet" 'A-b_9.z' "$(sb_agent_delegation_clean_task_id 'A-b_9.z')"
+assert_eq "no temp files left behind" 0 "$(find "$(dirname "$STATE")" -name '.agent-delegation-active.*' | wc -l | tr -d ' ')"
+before="$(cat "$STATE")"
+sb_agent_delegation_activate codex T1 "$ROOT" 'not json' "" 2>/dev/null && rc=0 || rc=$?
+assert_eq "invalid ownership JSON fails" 1 "$rc"
+assert_eq "failed activation leaves the previous state intact" "$before" "$(cat "$STATE")"
+assert_eq "failed activation leaves no temp file" 0 "$(find "$(dirname "$STATE")" -name '.agent-delegation-active.*' | wc -l | tr -d ' ')"
+rm -f "$STATE"
+echo victim >"$TL_TMP/victim"
+ln -s "$TL_TMP/victim" "$STATE"
+sb_agent_delegation_activate codex T1 "$ROOT" '[]' "" 2>/dev/null && rc=0 || rc=$?
+assert_eq "symlinked state file is refused" 1 "$rc"
+assert_eq "symlink target untouched" victim "$(cat "$TL_TMP/victim")"
+rm -f "$STATE"
+SAVED_SD="$SB_RUNTIME_STATE_DIR"
+mkdir -p "$TL_TMP/realdir"; ln -s "$TL_TMP/realdir" "$TL_TMP/linkdir"
+SB_RUNTIME_STATE_DIR="$TL_TMP/linkdir" sb_agent_delegation_activate codex T1 "$ROOT" '[]' "" 2>/dev/null && rc=0 || rc=$?
+assert_eq "symlinked state dir is refused" 1 "$rc"
+assert_eq "nothing written through the symlinked dir" 0 "$(ls -A "$TL_TMP/realdir" | wc -l | tr -d ' ')"
+SB_RUNTIME_STATE_DIR="$SAVED_SD"
+mktemp() { return 1; }
+sb_agent_delegation_activate codex T1 "$ROOT" '[]' "" && rc=0 || rc=$?
+unset -f mktemp
+assert_eq "mktemp failure fails activation" 1 "$rc"
 
 echo "=== path_in_scope ==="
 sb_agent_delegation_deactivate

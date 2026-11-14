@@ -17,7 +17,7 @@ Usage: agent-pi-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file PATH |
        [--log PATH] [--mode permissive|strict] [--interaction-mode auto|interactive|non-interactive]
        [--sb-root PATH] [--attach] [--no-escalate] [--allow-mode-fallback]
 
-Delegates a single task to Pi via tests/live/agents/pi/agent.sh.
+Delegates a single task to Pi via scripts/lib/agent-adapters/pi.sh.
 NI: pi -p --provider opencode-go --model mimo-v2.5. Interactive: TUI probe or honest mode-unavailable.
 EOF
 }
@@ -27,7 +27,7 @@ PROMPT_TEXT=""
 PROMPT_FILE=""
 BRIEF_FILE=""
 LOG_FILE=""
-MODE="permissive"
+MODE=""
 SB_ROOT="${SB_ROOT:-$REPO_ROOT}"
 
 while [[ $# -gt 0 ]]; do
@@ -57,6 +57,16 @@ while [[ $# -gt 0 ]]; do
 done
 
 agent_delegate_validate_work_dir "$WORK_DIR" || exit 2
+if [[ -z "$MODE" ]]; then
+  MODE="$(agent_delegate_default_mode "$WORK_DIR")"
+  agent_mode_note_permission_mode "$MODE"
+fi
+# Pi has no permission controls to tighten: strict cannot be honoured, so refuse rather than
+# run it unrestricted under a name that promises otherwise (R4-23).
+if [[ "$MODE" == "strict" ]]; then
+  printf 'ERROR: Pi has no strict mode (it has no permission controls). Pass --mode permissive to run Pi explicitly, or delegate to a host that supports strict (claude, codex, opencode).\n' >&2
+  exit 2
+fi
 agent_delegate_clear_matrix_env
 
 if [[ -n "$BRIEF_FILE" ]]; then
@@ -68,6 +78,7 @@ fi
 if [[ -n "$LOG_FILE" ]]; then
   LOG_FILE="$(agent_delegate_canonicalize_path "$LOG_FILE")"
 fi
+agent_delegate_guard_log "$LOG_FILE"
 
 PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
 agent_mode_run_delegate_resolver "pi" "$WORK_DIR" "$PROMPT_TEXT" || exit $?
@@ -83,9 +94,9 @@ if ! agent_delegate_preflight_recommended_tools "$WORK_DIR" "$SB_ROOT" "pi"; the
   exit 2
 fi
 
-AGENT_SH="${SB_ROOT}/tests/live/agents/pi/agent.sh"
+AGENT_SH="${SB_ROOT}/scripts/lib/agent-adapters/pi.sh"
 [[ -f "$AGENT_SH" ]] || {
-  printf 'ERROR: missing Pi live adapter at %s (full SB checkout required)\n' "$AGENT_SH" >&2
+  printf 'ERROR: missing Pi live adapter at %s\n' "$AGENT_SH" >&2
   exit 1
 }
 
@@ -99,6 +110,7 @@ quota_retry_interval="${AGENT_PI_QUOTA_RETRY_INTERVAL:-60}"
 quota_retry_max="$(agent_delegate_quota_retry_max AGENT_PI_QUOTA_RETRY_MAX 5)"
 log_floor="${SB_AGENT_PI_LOG_FLOOR:-512}"
 attempt=0
+fp_before="unknown"
 
 agent_pi_apply_lightweight_env() {
   [[ "${SB_AGENT_PI_LIGHTWEIGHT:-1}" == "1" ]] || return 0
@@ -117,7 +129,7 @@ agent_pi_invoke_once() {
   export PI_WORK_DIR="$WORK_DIR"
   export PI_BIN="$CLI"
   export CLAUDE_INTERACTIVE_LOG_FILE="${LOG_FILE:-}"
-  # shellcheck source=tests/live/agents/pi/agent.sh
+  # shellcheck source=scripts/lib/agent-adapters/pi.sh
   source "$AGENT_SH"
   agent_preflight
   agent_invoke "$MODE" "$PROMPT_TEXT"
@@ -140,6 +152,7 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
   fi
 
   final_exit=0
+  fp_before="$(agent_delegate_workdir_fingerprint "$WORK_DIR")"
   final_output="$(agent_pi_invoke_once)" || final_exit=$?
 
   if [[ -n "$LOG_FILE" ]]; then
@@ -161,17 +174,7 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
   if [[ "$final_exit" -eq 0 ]]; then
     break
   fi
-  if ! agent_delegate_is_quota_error "$final_output"; then
-    break
-  fi
-  if agent_delegate_quota_blocks_short_retry "$final_output"; then
-    printf '[agent-pi] quota window exhausted — skip short retry (RFL schedule)\n' >&2
-    break
-  fi
-  if [[ "$attempt" -gt "$quota_retry_max" ]]; then
-    printf '[agent-pi] quota retries exhausted\n' >&2
-    break
-  fi
+  agent_delegate_quota_retry_decision "agent-pi" "$final_output" "$attempt" "$quota_retry_max" "$WORK_DIR" "$fp_before" || break
 done
 
 if [[ "$final_exit" -ne 0 ]]; then
@@ -185,5 +188,5 @@ if [[ "$final_exit" -ne 0 ]]; then
   fi
 fi
 
-printf '%s' "$final_output"
+agent_delegate_redact_output "$final_output"
 exit "$final_exit"
