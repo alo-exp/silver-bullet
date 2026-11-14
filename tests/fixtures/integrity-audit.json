@@ -323,7 +323,7 @@
   ]
  },
  "counts": {
-  "X": 70,
+  "X": 71,
   "A": 22
  },
  "rows": [
@@ -417,7 +417,7 @@
   },
   {
    "file": "hooks/lib/completion-audit/change-class.sh",
-   "line": 94,
+   "line": 124,
    "kind": "config",
    "snippet": "src_pattern=\"$(jq -r '.project.src_pattern // \"/src/\"' \"$config_file\" 2>/dev/null || echo \"/src/\")\"",
    "record": "X",
@@ -481,7 +481,7 @@
   },
   {
    "file": "hooks/lib/enforcement-tier-gate.sh",
-   "line": 38,
+   "line": 48,
    "kind": "config",
    "snippet": "updated=\"$(jq --argjson t \"$tier\" '.sb_enforcement_tier = $t' \"$config_file\" 2>/dev/null || true)\"",
    "record": "X",
@@ -785,7 +785,7 @@
   },
   {
    "file": "scripts/deploy-gate-snippet.sh",
-   "line": 86,
+   "line": 115,
    "kind": "trivial",
    "snippet": "if [[ -f \"$TRIVIAL_FILE\" && ! -L \"$TRIVIAL_FILE\" ]]; then",
    "record": "X",
@@ -793,9 +793,17 @@
   },
   {
    "file": "scripts/deploy-gate-snippet.sh",
-   "line": 110,
+   "line": 146,
    "kind": "state",
-   "snippet": "if ! grep -Fqx -- \"$_skill\" \"$STATE_FILE\" 2>/dev/null; then",
+   "snippet": "sb_required_skill_is_recorded \"$(<\"$STATE_FILE\")\" \"$_skill\" && continue",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/deploy-gate-snippet.sh",
+   "line": 147,
+   "kind": "state",
+   "snippet": "elif grep -Fqx -- \"$_skill\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "X",
    "reason": "user-run or skill-run script, not a hook gate"
   },
@@ -865,7 +873,7 @@
   },
   {
    "file": "scripts/pre-release-gate.sh",
-   "line": 49,
+   "line": 52,
    "kind": "config",
    "snippet": "if jq -e '.recommended_tools.leanctx.enabled_by_user == true' \"${REPO_ROOT}/.silver-bullet.json\" >/dev/null 2>&1; then",
    "record": "X",

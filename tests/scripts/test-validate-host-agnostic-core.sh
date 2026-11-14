@@ -107,6 +107,17 @@ mkdir -p "$probe_root/hooks/lib"
 printf 'state="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}"\n' >"$probe_root/hooks/lib/token-compression-tools-gate.sh"
 expect_verdict 0 "allowlisted runtime file keeps its \$HOME default"
 
+# The per-host agent adapters name their own host by design; any other shared script stays scanned.
+mkdir -p "$probe_root/scripts/lib/agent-adapters"
+printf '#!/usr/bin/env bash\nrm -rf "${HOME}/.codex/x"  # CODEX_HOME\n' >"$probe_root/scripts/lib/agent-adapters/codex.sh"
+expect_verdict 0 "scripts/lib/agent-adapters/ may name its own host"
+mkdir -p "$probe_root/scripts/lib/other"
+printf '#!/usr/bin/env bash\nrm -rf "${HOME}/.codex/x"\n' >"$probe_root/scripts/lib/other/codex.sh"
+expect_verdict 1 "a shared script outside the adapters directory is still scanned" "scripts/lib/other/codex.sh:2"
+mkdir -p "$probe_root/scripts/lib/agent-adapters-extra"
+printf '#!/usr/bin/env bash\nrm -rf "${HOME}/.codex/x"\n' >"$probe_root/scripts/lib/agent-adapters-extra/codex.sh"
+expect_verdict 1 "a sibling directory with a similar name is not exempt" "scripts/lib/agent-adapters-extra/codex.sh:2"
+
 mkdir -p "$probe_root/skills/silver-x/scripts"
 printf 'const p = "~/.claude/settings.json"; // Claude Code\n' >"$probe_root/skills/silver-x/scripts/probe.js"
 expect_verdict 1 "a .js file under skills/ is scanned" "skills/silver-x/scripts/probe.js:1"

@@ -43,7 +43,7 @@ grep -q 'SB_AGENT_DELEGATE_V2' "$SKILL" && check "documents V2 default-on flag" 
 grep -q 'AGENT-DELEGATE' "$SKILL" && check "documents native worker template" pass || check "documents native worker template" fail
 
 [[ -x "$WRAPPER" ]] && check "delegate wrapper executable" pass || check "delegate wrapper executable" fail
-grep -q 'tests/live/agents/codex/agent.sh' "$WRAPPER" && check "wrapper uses live agent adapter" pass || check "wrapper uses live agent adapter" fail
+grep -q 'scripts/lib/agent-adapters/codex.sh' "$WRAPPER" && check "wrapper uses live agent adapter" pass || check "wrapper uses live agent adapter" fail
 grep -q 'agent_preflight' "$WRAPPER" && check "wrapper calls agent_preflight" pass || check "wrapper calls agent_preflight" fail
 grep -q 'agent_delegate_canonicalize_path' "$WRAPPER" && check "wrapper canonicalizes log/brief paths" pass || check "wrapper canonicalizes log/brief paths" fail
 grep -q 'absolute' "$SKILL" && check "documents absolute path policy" pass || check "documents absolute path policy" fail
@@ -52,8 +52,8 @@ grep -q 'AGENT_CODEX_QUOTA_RETRY' "$WRAPPER" && check "wrapper quota retry env" 
 LIB="${REPO_ROOT}/scripts/agent-codex/lib.sh"
 grep -q 'SB_AGENT_CODEX_MODEL_READY_TIMEOUT' "$LIB" && check "harness model-ready timeout env" pass || check "harness model-ready timeout env" fail
 grep -q 'CODEX_EXEC_TAIL_IDLE_TIMEOUT' "$LIB" && check "harness exec tail idle timeout env" pass || check "harness exec tail idle timeout env" fail
-grep -q 'CODEX_EXEC_TAIL_IDLE_TIMEOUT' "${REPO_ROOT}/tests/live/agents/codex/agent.sh" && check "adapter exec tail idle timeout" pass || check "adapter exec tail idle timeout" fail
-grep -q 'exec_output_shows_product_evidence' "${REPO_ROOT}/tests/live/agents/codex/agent.sh" && check "adapter exec product evidence detection" pass || check "adapter exec product evidence detection" fail
+grep -q 'CODEX_EXEC_TAIL_IDLE_TIMEOUT' "${REPO_ROOT}/scripts/lib/agent-adapters/codex.sh" && check "adapter exec tail idle timeout" pass || check "adapter exec tail idle timeout" fail
+grep -q 'exec_output_shows_product_evidence' "${REPO_ROOT}/scripts/lib/agent-adapters/codex.sh" && check "adapter exec product evidence detection" pass || check "adapter exec product evidence detection" fail
 grep -q 'SB_AGENT_CODEX_LIGHTWEIGHT' "$WRAPPER" && check "wrapper lightweight env default" pass || check "wrapper lightweight env default" fail
 grep -q 'SB_ORCHESTRATOR_WORKER' "$WRAPPER" && check "wrapper orchestrator worker bypass" pass || check "wrapper orchestrator worker bypass" fail
 grep -q 'agent_codex_apply_runtime_env' "$LIB" && check "harness disables RTK for logs" pass || check "harness disables RTK for logs" fail
