@@ -137,13 +137,20 @@ class EdgeShapeTests(Case):
 
 
 class OpenerCostTests(unittest.TestCase):
-    def test_unclosed_opener_runs_are_cheap(self):
+    def test_unclosed_opener_runs_have_a_bounded_amount_of_bracket_work(self):
         for unit in ("token=${", "token=$(", "token=${{ "):
-            text = (unit * (256 * 1024 // len(unit) + 1))[:256 * 1024]
-            start = time.process_time()
-            agent_redact.scan(text)
-            agent_redact.redact(text)
-            self.assertLess(time.process_time() - start, 3.0, unit)  # about 0.2 s here; the old cost was 5 s for this size
+            text = (unit * (64 * 1024 // len(unit) + 1))[:64 * 1024]
+            agent_redact.candidates(text)
+            # the per-text allowance is 8 characters of bracket scanning per input character; one scan may overrun it by a window
+            self.assertGreater(agent_redact._BAL_BUDGET[0], -2 * agent_redact.VALUE_MAX, unit)
+            self.assertLess(agent_redact._BAL_BUDGET[0], 8 * len(text) + 4096, unit)  # and the work really is being counted
+
+    def test_unclosed_opener_runs_are_fast_enough(self):
+        text = ("token=${" * (256 * 1024 // 8))
+        start = time.process_time()
+        agent_redact.scan(text)
+        agent_redact.redact(text)
+        self.assertLess(time.process_time() - start, 30.0)  # a coarse backstop; the work bound above is the real test
 
 
 if __name__ == "__main__":
