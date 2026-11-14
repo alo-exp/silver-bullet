@@ -180,8 +180,10 @@ bash -c '
 assert_eq "guard_log: interrupted delegate leaves a redacted log" "key=\"x\" token=[REDACTED]" "$(cat "$TL_TMP/guarded/run.log")"
 assert_eq "guard_log: log is 0600" "0o600" "$(python3 -c 'import os,sys;print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$TL_TMP/guarded/run.log")"
 mkdir -p "$TL_TMP/chmodfail"; printf '#!/bin/sh\nexit 1\n' >"$TL_TMP/chmodfail/chmod"; chmod +x "$TL_TMP/chmodfail/chmod"
-PATH="$TL_TMP/chmodfail:$PATH" bash -c 'source "$1/scripts/lib/agent-delegate-common.sh"; agent_delegate_guard_log "$2/guarded2/run.log"; echo survived' _ "$ST" "$TL_TMP" | grep -q survived && tl_pass "guard_log: a failing chmod is tolerated" || tl_fail "guard_log: a failing chmod is tolerated"
-bash -c 'source "$1/scripts/lib/agent-delegate-common.sh"; agent_delegate_guard_log ""; echo noop' _ "$ST" | grep -q noop && tl_pass "guard_log: empty log path is a no-op" || tl_fail "guard_log: empty log path is a no-op"
+out_survived="$(PATH="$TL_TMP/chmodfail:$PATH" bash -c 'source "$1/scripts/lib/agent-delegate-common.sh"; agent_delegate_guard_log "$2/guarded2/run.log"; echo survived' _ "$ST" "$TL_TMP")"
+[[ "$out_survived" == *survived* ]] && tl_pass "guard_log: a failing chmod is tolerated" || tl_fail "guard_log: a failing chmod is tolerated"
+out_noop="$(bash -c 'source "$1/scripts/lib/agent-delegate-common.sh"; agent_delegate_guard_log ""; echo noop' _ "$ST")"
+[[ "$out_noop" == *noop* ]] && tl_pass "guard_log: empty log path is a no-op" || tl_fail "guard_log: empty log path is a no-op"
 
 # ---------------- resolve_prompt ----------------
 tl_run agent_delegate_resolve_prompt "$TL_TMP/nobrief" "" ""
