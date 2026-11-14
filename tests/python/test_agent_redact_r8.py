@@ -126,6 +126,16 @@ class MinorFormatTests(Case):
                 self.assertIsNone(agent_redact.scan(text))
 
 
+class EdgeShapeTests(Case):
+    def test_degenerate_shapes_are_quietly_ignored(self):
+        self.assertTrue(agent_redact.is_expr("f(a=)"))
+        for text in ('--x\r\nContent-Disposition: form-data; name="comment"\r\n\r\nhello\r\n', 'form-data; name="password"\n\n',
+                     'proxy_set_header Authorization ;', 'proxy_set_header Authorization "";', 'proxy_set_header Authorization " ";',
+                     "headers['Authorization'] = ' '", "headers['Authorization'] = ''"):
+            with self.subTest(text=text):
+                self.assertIsNone(agent_redact.scan(text))
+
+
 class OpenerCostTests(unittest.TestCase):
     def test_unclosed_opener_runs_are_cheap(self):
         for unit in ("token=${", "token=$(", "token=${{ "):
