@@ -58,19 +58,48 @@ while true; do
   _dw_search_dir=$(dirname "$_dw_search_dir")
 done
 
+if [[ -f "$_repo_root/hooks/lib/trivial-bypass.sh" ]]; then
+  # shellcheck source=hooks/lib/trivial-bypass.sh
+  source "$_repo_root/hooks/lib/trivial-bypass.sh"
+fi
+
 # --- Read config (gracefully degrade if jq is absent) ---
 _SB_STATE_DIR="${SB_RUNTIME_STATE_DIR:-}"
+# A copy of this file outside the plugin has none of the hooks/lib helpers. The gate then fails CLOSED: it
+# cannot locate the state directory, so it blocks with a message instead of passing (an undefined helper
+# would otherwise trip the ERR trap, which exits 0).
+if [[ -z "$_SB_STATE_DIR" ]]; then
+  echo "[deploy-gate] ❌ Silver Bullet's runtime libraries were not found next to this script, so the workflow state cannot be located."
+  echo "    Run it from the Silver Bullet plugin (bash /path/to/silver-bullet/scripts/deploy-gate-snippet.sh), or source it with SB_RUNTIME_STATE_DIR set."
+  return 1 2>/dev/null || exit 1
+fi
 STATE_FILE="${_SB_STATE_DIR}/state"
 TRIVIAL_FILE="${_SB_STATE_DIR}/trivial"
+_DEFAULT_TRIVIAL_FILE="$TRIVIAL_FILE"
 REQUIRED_DEPLOY="silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review security silver-secure silver-validate silver-review-request silver-review-triage silver-triage silver-branch-finish silver-completion-audit tdd verify-tests"
 [[ -n "${DEFAULT_REQUIRED:-}" ]] && REQUIRED_DEPLOY="$DEFAULT_REQUIRED"
 
+_dw_have_path_helpers=false
+if declare -F sb_expand_state_config_path >/dev/null 2>&1 && declare -F sb_trivial_path_trusted >/dev/null 2>&1 \
+  && declare -F sb_runtime_path_is_state_scoped >/dev/null 2>&1; then
+  _dw_have_path_helpers=true
+fi
+
 if [[ -n "$_dw_config_file" ]] && command -v jq >/dev/null 2>&1; then
+  # Config paths are repository content: they get the same expansion and state-directory check the hooks
+  # apply (R1-24, R1-25), so the shipped template's ${SB_RUNTIME_HOME_ROOT}/... spelling resolves to the
+  # real files and a path outside the state directory falls back to the defaults.
   _val=$(jq -r '.state.state_file // ""' "$_dw_config_file")
-  [[ -n "$_val" ]] && STATE_FILE="${_val/#\~/$HOME}"
+  if [[ -n "$_val" && "$_dw_have_path_helpers" == true ]]; then
+    _val="$(sb_expand_state_config_path "$_val")"
+    ! sb_runtime_path_is_state_scoped "$_val" || STATE_FILE="$_val"
+  fi
 
   _val=$(jq -r '.state.trivial_file // ""' "$_dw_config_file")
-  [[ -n "$_val" ]] && TRIVIAL_FILE="${_val/#\~/$HOME}"
+  if [[ -n "$_val" && "$_dw_have_path_helpers" == true ]]; then
+    _val="$(sb_expand_state_config_path "$_val")"
+    ! sb_trivial_path_trusted "$_val" "$_DEFAULT_TRIVIAL_FILE" || TRIVIAL_FILE="$_val"
+  fi
 
   _val=$(jq -r '(.skills.required_deploy // []) | join(" ")' "$_dw_config_file")
   if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
@@ -85,7 +114,8 @@ fi
 # 1. Trivial-change fast path
 if [[ -f "$TRIVIAL_FILE" && ! -L "$TRIVIAL_FILE" ]]; then
   echo "[deploy-gate] ℹ️  Trivial change detected — workflow check skipped."
-  # Safety: only delete regular files (not symlinks)
+  # Safety: both paths were validated above (inside the state directory, trivial named `trivial`); only
+  # regular files are deleted, never a symlink
   [[ -f "$STATE_FILE" && ! -L "$STATE_FILE" ]] && rm -f -- "$STATE_FILE"
   rm -f -- "$TRIVIAL_FILE"
   return 0 2>/dev/null || exit 0
@@ -104,12 +134,20 @@ if [[ ! -f "$STATE_FILE" ]]; then
   return 1 2>/dev/null || exit 1
 fi
 
-# 4. Check required skills
+# 4. Check required skills (same rules as the hook: branch finishing does not apply on main/master,
+#    and recorded skills may match through aliases)
+_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
 _missing=()
 for _skill in $REQUIRED_DEPLOY; do
-  if ! grep -Fqx -- "$_skill" "$STATE_FILE" 2>/dev/null; then
-    _missing+=("$_skill")
+  if [[ "$_branch" == "main" || "$_branch" == "master" ]]; then
+    case "$_skill" in finishing-a-development-branch | silver-branch-finish) continue ;; esac
   fi
+  if declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
+    sb_required_skill_is_recorded "$(<"$STATE_FILE")" "$_skill" && continue
+  elif grep -Fqx -- "$_skill" "$STATE_FILE" 2>/dev/null; then
+    continue
+  fi
+  _missing+=("$_skill")
 done
 
 if [[ ${#_missing[@]} -gt 0 ]]; then
