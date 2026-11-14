@@ -35,7 +35,7 @@ sb_project_root_cache_write() {
 sb_project_root_cache_read() {
   local cached=""
   [[ -f "$SB_PROJECT_ROOT_CACHE_FILE" ]] || return 1
-  cached="$(sed -n '1p' "$SB_PROJECT_ROOT_CACHE_FILE" 2>/dev/null || true)"
+  if cached="$(sed -n '1p' "$SB_PROJECT_ROOT_CACHE_FILE" 2>/dev/null)"; then :; fi
   [[ -n "$cached" && -f "$cached/.silver-bullet.json" && -f "$cached/silver-bullet.md" ]] || return 1
   printf '%s' "$cached"
 }

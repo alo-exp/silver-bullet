@@ -93,7 +93,7 @@ PY
 fi
 
 # ── Read config values (from the verified record) ─────────────────────────────
-sb_integrity_gate "$PWD" || exit 0
+sb_integrity_gate "$_iv_root"
 sb_integrity_config_snapshot
 config_file="$SB_IV_CONFIG_FILE"
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"

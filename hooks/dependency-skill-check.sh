@@ -52,13 +52,6 @@ if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
   raw_skill="$(sb_skill_canonical_name "$raw_skill")"
 fi
 
-case "$raw_skill" in
-  superpowers:*|design:*|engineering:*|product-management:*|multai:*)
-    exit 0
-    ;;
-  code-review|clarify|test-driven-development|systematic-debugging|requesting-code-review|receiving-code-review|finishing-a-development-branch|design-critique|user-research|write-spec)
-    exit 0
-    ;;
-esac
+# Every absorbed dependency namespace and every SB-owned skill passes: this hook never blocks.
 
 exit 0

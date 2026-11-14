@@ -243,7 +243,7 @@ case "$composer_slug" in
 esac
 
 # The project and its gate values come from the verified record (hooks/lib/integrity.sh), the state from its seal.
-sb_integrity_gate "$PWD" || exit 0
+sb_integrity_gate "$PWD"
 sb_pf_src_load "$SB_IV_ROOT"
 
 state_file="${SILVER_BULLET_STATE_FILE:-${SB_RUNTIME_STATE_DIR}/state}"
