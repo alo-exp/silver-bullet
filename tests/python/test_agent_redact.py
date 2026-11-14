@@ -18,6 +18,7 @@ import redact_corpus
 import redact_corpus_r5
 import redact_corpus_r6
 import redact_corpus_r7
+import redact_corpus_r8
 
 agent_redact = load_module("scripts/lib/agent_redact.py")
 
@@ -276,12 +277,15 @@ CORPORA = {
     "r5": redact_corpus_r5.build,
     "r6": redact_corpus_r6.build,
     "r7": redact_corpus_r7.build,
+    "r8": redact_corpus_r8.build,
 }
 # exotic formats of the r5 corpus that the best-effort layer documents as residuals (by name only)
 R5_RESIDUALS = {"ansible vault blob", "session cookie random", "base64-wrapped env", "tab separated"}
 # documented residuals of the r7 corpus: Terraform maps keyed by a plain name, .pgpass colon lines, YAML block scalars, JSON map values
 R7_RESIDUALS = {"tfvars token map", "pgpass line", "composer github-oauth hex", "yaml folded scalar"}
-RESIDUALS = {"r4": (), "r5": R5_RESIDUALS, "r6": (), "r7": R7_RESIDUALS}
+# documented residuals of the r8 corpus: a bare Heroku CLI uuid and a Rails master.key (a bare 32-hex file body)
+R8_RESIDUALS = {"heroku auth token", "rails master.key"}
+RESIDUALS = {"r4": (), "r5": R5_RESIDUALS, "r6": (), "r7": R7_RESIDUALS, "r8": R8_RESIDUALS}
 # a JSON object quoted inside a prose sentence is not a JSON line, so its \\u escapes stay undecoded
 WRAPPER_RESIDUALS = {("jsonl unicode escape sep", "prefix-text")}
 WRAPPERS = {
@@ -476,7 +480,7 @@ class CorpusTests(unittest.TestCase):
 
     def test_corpus_sizes(self):
         sizes = {name: tuple(len(part) for part in build()) for name, build in CORPORA.items()}
-        self.assertEqual(sizes, {"r4": (122, 133), "r5": (87, 67), "r6": (80, 65), "r7": (114, 87)})
+        self.assertEqual(sizes, {"r4": (122, 133), "r5": (87, 67), "r6": (80, 65), "r7": (114, 87), "r8": (103, 85)})
 
     def test_every_corpus_in_every_wrapper(self):
         for name, build in CORPORA.items():
@@ -524,7 +528,7 @@ class CorpusTests(unittest.TestCase):
         known = {row[0] for row in agent_redact.VENDOR}
         known |= {"pem", "discord-bot", "url-userinfo", "url-token-user", "assignment", "authorization", "xml-element",
                   "xml-attribute", "json-field", "stdin-secret", "netrc", "bearer", "powershell-secure", "cli-aws",
-                  "cli-poetry", "cli-htpasswd", "cli-flag", "cli-user", "pair-value", "dockerfile-env", "table-row"}
+                  "cli-poetry", "cli-htpasswd", "cli-flag", "cli-user", "pair-value", "dockerfile-env", "table-row", "call-argument", "subscript-assign", "form-data"}
         known |= {"cli-" + prog for prog in agent_redact._PROGS}
         for build in CORPORA.values():
             for _fmt, text, *_rest in build()[0]:
@@ -727,6 +731,9 @@ class LinearityTests(unittest.TestCase):
             "json-many-pw": '{"password": "Zq8!mK2pL9x"}\n', "k8s-pairs": "- name: DB_PASSWORD\n  value: x\n", "name-flood": "name: password ",
             "obj-value": 'adminPassword": {"value": ', "dockerfile-env": "ENV API_KEY x\n", "long-flag": "--docker-" + "a-" * 20 + "password ",
             "npm-config": "npm config set ", "bracket-open": "token=f(", "dollar-brace": "token=${", "mysql-quoted": "mysql -p'x' -p'y' ",
+            "subscript-set": "a['password'] = ", "call-arg": "define('PASSWORD', ", "yaml-tag": "password: !Ref ", "placeholder": "password = (sensitive ",
+            "form-data": 'form-data; name="password"\n\n', "nginx-auth": "proxy_set_header Authorization ", "list-value": "- value: x\n",
+            "angle-run": "token=https://<a>@<b", "unclosed-dollar": "token=${", "unclosed-paren": "token=f(", "hdr-prose": "Authorization: Basic words and words ",
             "json-nested-str": json.dumps({"o": json.dumps({"password": "Zq8mK2pL9xRt4"})}) + "\n",
         }
 

@@ -94,9 +94,13 @@ VENDOR = [
     ("discord-webhook", ("https://discord.com/api/webhooks/", "https://discordapp.com/api/webhooks/"), [("D", 17, 20), "/", ("U", 60, 80)], False, None),
     ("mapbox", ("sk.eyJ",), [("U", 20, 4096), ".", ("U", 10, 255)], False, None),
     ("pem-base64", _B64_PEM, [("B", 40, 8192)], False, None),  # kubeconfig client-key-data, Secret ssh-privatekey
+    ("fly", ("fm2_", "fm1_"), [("FB", 40, 8192)], False, None),
+    ("teams-webhook", (".webhook.office.com/webhookb2/",), [("U2", 60, 400)], False, None),
     ("slack-webhook", ("https://hooks.slack.com/services/T",), [("A", 6, 32), "/B", ("A", 6, 32), "/", ("A", 16, 64)], False, None),
 ]
 CLS["A-"] = "A-Za-z0-9-"
+CLS["FB"] = "A-Za-z0-9_+/=-"  # Fly.io tokens
+CLS["U2"] = "A-Za-z0-9_@/.-"  # Teams webhook paths
 
 # word-driven CLI table: program -> list of (flag, mode, tier). mode: next | attached | eq | either
 P, T = "cli-pass", "cli-token"
@@ -129,7 +133,7 @@ SCHEMES = {"bearer", "basic", "token", "digest", "bot", "apikey", "sso-key", "ss
            "sharedkey", "sharedkeylite", "negotiate", "hmac"}
 
 STRONG_WORDS = {"password", "passwd", "pass", "pwd", "pw", "passphrase", "passcode"}
-CRED_WORDS = {"secret", "token", "credential", "credentials", "apikey", "dsn"}
+CRED_WORDS = {"secret", "token", "credential", "credentials", "apikey", "dsn", "psk"}
 WEAK_WORDS = {"sig", "signature"}
 KEY_QUALIFIERS = {"api", "access", "secret", "private", "signing", "encryption", "auth", "license", "account", "master",
                   "app", "client", "shared", "storage", "service", "role", "subscription", "consumer", "webhook",
@@ -137,7 +141,7 @@ KEY_QUALIFIERS = {"api", "access", "secret", "private", "signing", "encryption",
 PUBLIC_WORDS = {"public", "publishable", "pub", "pk"}
 # a credential word at the END of a name written as one concatenated word (dbpassword, NGROK_AUTHTOKEN, secretkey)
 CONCAT_STRONG = ("password", "passwd", "passphrase", "passcode", "adminpass", "userpass", "rootpass", "dbpass", "rootpw", "adminpw",
-                 "dbpw", "userpw")
+                 "dbpw", "userpw", "adminpwd", "userpwd", "rootpwd", "dbpwd")
 CONCAT_CRED = ("authtoken", "accesstoken", "apitoken", "bearertoken", "refreshtoken", "secrettoken", "clientsecret", "apisecret",
                "appsecret", "secretkey", "privatekey", "apikey", "accesskey", "masterkey", "authkey", "encryptionkey", "signingkey",
                "licensekey", "accountkey", "keydata", "dockerconfigjson", "token", "secret")
@@ -165,7 +169,7 @@ def name_tier(name):
     prev = words[-2] if len(words) > 1 else ""
     if last in STRONG_WORDS or (last.endswith(("password", "passwd", "pass", "pwd")) and name.isupper()):
         return "strong"
-    if last == "auth" and (len(words) == 1 or name.startswith("_")):
+    if last == "auth" and (len(words) == 1 or name.startswith("_") or prev in ("cloud", "basic", "http", "proxy")):
         return "cred"
     if last in CRED_WORDS:
         return None if prev == "existing" else "cred"
@@ -206,6 +210,11 @@ def is_reference(v):
                 or (_REF.match(v) and not v.startswith(("$", "{", "<", "%", "#"))))
 
 
+_PLACEHOLDER = re.compile(r"(?i)^[(<\[]?(?:sensitive(?: value)?|known after apply|redacted|secret|hidden|masked|omitted|computed|empty|none)[)>\]]?$"
+                          r"|^\*{3,}$|^\d+\s+bytes$")
+_TAG_NAMES = (r"Ref|Sub|GetAtt|Join|FindInMap|ImportValue|Select|Split|Base64|Cidr|If|Equals|Not|And|Or|Condition|env_var|env|secret|vault|"
+              r"include|include_dir_\w+|reference|ssm|unsafe|Transform|GetAZs")
+_REF_TAG = re.compile(r"^(?:!(?:%s)(?![\w-])|@Microsoft\.KeyVault\(|%%env\(|<%%)" % _TAG_NAMES)
 _DUMMY = re.compile(r"dummy|fake|placeholder|replace[-_ ]?me|change[-_ ]?me|not[-_]a[-_]real|example|sample|redacted|x{4,}|"
                     r"^test[-_]|[-_]test$|for[-_]tests?|^your[-_]|[-_]your[-_]|^\*+$|\.\.\.|\u2026", re.I)
 _UUID = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
@@ -213,7 +222,6 @@ _HUMPS = re.compile(r"[A-Z]{2,}(?![a-z])|[A-Z]?[a-z]+|[A-Z]|[0-9]+")
 _SEG_SPLIT = re.compile(r"(?:\.|::|->|[_\-:/])+")
 _VOWEL = set("aeiouyAEIOUY")
 _CONS_RUN = re.compile(r"[^aeiouyAEIOUY0-9]{6,}")
-_CALL = re.compile(r"^(?:new |await )?[A-Za-z_$][\w$]*(?:(?:\.|::|->)[A-Za-z_$][\w$]*)*\((?P<args>[^()]*)\)(?:\.[A-Za-z_]\w*(?:\([^()]*\))?)*$")
 
 
 def word_segment(seg):
@@ -268,17 +276,92 @@ def is_path(v, strict=False):
 _CALL_HEAD = re.compile(r"^(?:new |await )?([A-Za-z_$][\w$]*(?:(?:\.|::|->)[A-Za-z_$][\w$]*)*)\((.*)$")
 
 
-def is_code(v):
-    """A call (identifier chain + '(' + identifier/number arguments, possibly cut at a quote) or an attribute chain."""
-    m = _CALL_HEAD.match(v)
+_EXPR_HEAD = re.compile(r"(?:new |await )?[@$]?[A-Za-z_][\w$]*(?:(?:\.|::|->)[A-Za-z_$][\w$]*)*")
+_METHOD = re.compile(r"(?:\.|->)[A-Za-z_$][\w$]*")
+_ARG_NAME = re.compile(r"(?:\*{1,2}|[A-Za-z_]\w*[ \t]*=(?!=))[ \t]*")
+_NUMBER = re.compile(r"-?\d+(?:\.\d+)?")
+_LITERALS = {"None", "True", "False", "null", "true", "false", "undefined", "nil", "NULL"}
+_EXPR_DEPTH = 6
+
+
+def _random_literal(lit):
+    """A quoted argument that is itself shaped like a secret (long, mixed, with digits): not a harmless word."""
+    return len(lit) >= 12 and not re.search(r"\s", lit) and bool(re.search(r"\d", lit)) and entropy(lit) >= 3.2 and not is_ident(lit)
+
+
+def _split_args(body):
+    parts, cur, depth, quote = [], [], 0, None
+    for c in body:
+        if quote:
+            quote = None if c == quote else quote
+        elif c in "\"'":
+            quote = c
+        elif c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+        elif c == "," and depth == 0:
+            parts.append("".join(cur))
+            cur = []
+            continue
+        cur.append(c)
+    parts.append("".join(cur))
+    return parts
+
+
+def _arg_ok(arg, depth):
+    arg = arg.strip()
+    if not arg:
+        return True
+    m = _ARG_NAME.match(arg)
     if m:
-        head, args = m.group(1), m.group(2)
-        if not is_ident(head.replace("::", ".").replace("->", ".")) and not re.fullmatch(r"[a-z_][a-z0-9_]{1,30}", head):
+        arg = arg[m.end():].strip()
+        if not arg:
+            return True
+    if _NUMBER.fullmatch(arg) or arg in _LITERALS:
+        return True
+    lit = re.fullmatch(r"[fbru]{0,2}([\"'])(.*)\1", arg, re.S)
+    if lit:
+        return not _random_literal(lit.group(2))
+    if re.search(r"\s[-+*/%]\s", arg):  # salt + pw
+        return all(_arg_ok(x, depth) for x in re.split(r"\s[-+*/%]\s", arg))
+    if depth < _EXPR_DEPTH and is_expr(arg, depth + 1):
+        return True
+    return bool(re.fullmatch(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*", arg)) and (len(arg) <= 3 or is_ident(arg))
+
+
+def is_expr(v, depth=0):
+    """A code expression: an identifier/attribute chain with balanced call or subscript groups and method chains
+    (f(g()), a.b(c).d(), x['k'].m()), whose arguments are identifiers, numbers or harmless literals. A call that carries a
+    random-looking literal argument is NOT an expression."""
+    m = _EXPR_HEAD.match(v)
+    if not m:
+        return False
+    i, groups = m.end(), 0
+    while i < len(v):
+        if v[i] in "([":
+            close = _balanced_end(v, i, len(v))
+            if close < 0 or (v[i] == "(" and not all(_arg_ok(a, depth) for a in _split_args(v[i + 1:close - 1]))) or (
+                    v[i] == "[" and not _arg_ok(v[i + 1:close - 1], depth)):
+                return False
+            i, groups = close, groups + 1
+            continue
+        n = _METHOD.match(v, i)
+        if not n:
             return False
-        args = re.sub(r"\)[\w.()]*$", "", args)
-        return all(is_ident(a) or a.isdigit() for a in (x.strip("\"'") for x in re.split(r"[\s,=*]+", args)) if a)
-    if re.fullmatch(r"[A-Za-z_$][\w$]*(?:(?:\.|::|->)[A-Za-z_$][\w$]*)+", v):
-        return is_ident(v)
+        i = n.end()
+    return groups > 0 or (("." in m.group(0) or "::" in m.group(0) or "->" in m.group(0)) and is_ident(v))
+
+
+def is_code(v):
+    """A call, subscript or attribute chain (see is_expr), or a call cut short by a quote (identifier arguments only)."""
+    if is_expr(v):
+        return True
+    cut = _CALL_HEAD.match(v)
+    if cut:
+        head, args = cut.group(1), re.sub(r"\)[\w.()]*$", "", cut.group(2))
+        return (is_ident(head.replace("::", ".").replace("->", ".")) or bool(re.fullmatch(r"[a-z_][a-z0-9_]{1,30}", head))) and all(
+            is_ident(a) or a.isdigit() for a in (x.strip("\"'") for x in re.split(r"[\s,=*]+", args)) if a)
     return False
 
 
@@ -329,7 +412,7 @@ def classify(value, tier, name=""):
         return NONE
     if name and v.lower() in (name.lower(), name.lower().replace("_", "")):
         return NONE  # SECRET = 'SECRET': an enum member, not a value
-    if is_reference(v):
+    if is_reference(v) or _REF_TAG.match(v) or _PLACEHOLDER.search(v) or _ANGLE.search(v):
         return NONE
     if tier != "bearer" and is_syntax(v):
         return NONE
@@ -353,7 +436,7 @@ def classify(value, tier, name=""):
         return NONE  # a nested NAME=value, a flag, a format template or a file name: not itself a literal secret
     possible = POSSIBLE if tier in ("strong", "cred", "cli-pass", "cli-token") else NONE
     if is_code(v):
-        return NONE if "(" in v else possible  # a call is code; a dotted word chain may be a passphrase (masked, not refused)
+        return NONE if "(" in v or "[" in v else possible  # a call is code; a dotted word chain may be a passphrase (masked, not refused)
     if re.search(r"\s", v):
         return possible  # a phrase, not a token
     if tier in ("strong", "cli-pass"):
@@ -539,23 +622,34 @@ _SEP_CHARS = set("=:：＝%")
 
 _OPENERS = "({["
 _CLOSERS = {"(": ")", "{": "}", "[": "]"}
-_HEAD = re.compile(r"[A-Za-z0-9_.$:>\-]*")
+_HEADCHARS = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.$:>-@%!")
+_PLACEHOLDER_AT = re.compile(r"(?i)\(?(?:sensitive(?: value)?|known after apply|redacted|hidden|computed)\)?|\*{3,}|\d+[ \t]+bytes\b")
+_TAG_AT = re.compile(r"!(?:%s)(?![\w-])" % _TAG_NAMES)  # YAML tags that make a value a reference (CloudFormation, Home Assistant)
+_ANGLE = re.compile(r"<[A-Za-z_][\w.\- ]{0,30}>")
+# Work done by _balanced_end is capped per text (a text of unclosed "${" openers would otherwise rescan its window at every
+# anchor): past the cap an opener is simply not extended.
+_BAL_BUDGET = [0]
 
 
 def _balanced_end(text, e, lim):
     """Index just past the bracket that closes the one at ``e`` on the same line (within ``lim``), or -1."""
     stack = []
+    if _BAL_BUDGET[0] <= 0:
+        return -1
+    i = e
     for i in range(e, lim):
         c = text[i]
         if c in _CLOSERS:
             stack.append(_CLOSERS[c])
         elif c in ")}]":
             if not stack or stack.pop() != c:
-                return -1
+                break
             if not stack:
+                _BAL_BUDGET[0] -= i - e
                 return i + 1
         elif c == "\n":
-            return -1
+            break
+    _BAL_BUDGET[0] -= i - e + 1
     return -1
 
 
@@ -577,19 +671,31 @@ def _value_at(text, j, ticks=None):
         if close > j:
             return j + 1, close
         j += 1
+    placeholder = _PLACEHOLDER_AT.match(text, j)
+    if placeholder:  # (sensitive value), (known after apply), ***, 16 bytes: one value, not cut at its first word
+        return j, placeholder.end()
+    tag = _TAG_AT.match(text, j)
+    if tag:  # a YAML tag (!Ref X, !Sub "...", !secret x) takes the rest of the line
+        nl = text.find("\n", j, min(n, j + VALUE_MAX))
+        return j, (nl if nl >= 0 else min(n, j + VALUE_MAX))
     e = j
     lim = min(n, j + VALUE_MAX)
+    head_ok = True  # everything so far is an identifier/attribute chain (balanced groups included)
     tried = False
     while e < lim:
         c = text[e]
-        if c in _OPENERS and e > j and not tried and _HEAD.match(text, j, e).end() == e:
-            close = _balanced_end(text, e, lim)  # a reference or call keeps its brackets: ${X}, $(cmd), f(a, b)
+        if c in _OPENERS and e > j and head_ok and not tried:
+            close = _balanced_end(text, e, lim)  # a reference or call keeps its brackets: ${X}, $(cmd), f(a, b), x['k'].m()
             if close > 0:
                 e = close
                 continue
             tried = True
+        elif c == "<" and e > j and _ANGLE.match(text, e):
+            e = _ANGLE.match(text, e).end()  # https://<key>@host: a placeholder inside a value
+            continue
         if c in _STOP_UNQ and (c != "&" or _QPARAM.match(text, e) or e + 1 >= n or text[e + 1] in " \t\n&"):
             break
+        head_ok = head_ok and c in _HEADCHARS
         e += 1
     return j, e
 
@@ -630,7 +736,7 @@ def _auth_span(text, vs, ve):
     return vs, ve, verdict
 
 
-_KEY_ANCHOR = re.compile(r"(?i)(?:password|passwd|pass|pwd|pw|pat|passphrase|passcode|secret|token|credentials?|key|keydata|dockerconfigjson|auth|"
+_KEY_ANCHOR = re.compile(r"(?i)(?:password|passwd|pass|pwd|pw|pat|psk|passphrase|passcode|secret|token|credentials?|key|keydata|dockerconfigjson|auth|"
                          r"authorization|dsn|sig|signature|base|密码|口令|密钥|令牌)[\"'`\\* \t]{0,4}(?:=>|:=|[=:：＝]|%3[dD])")
 
 
@@ -707,6 +813,9 @@ _NV_VALUE = re.compile(r"(?i)(?<![\w])[\"']?value[\"']?[ \t]*[:=]")
 _OBJ_VALUE = re.compile(r"\{[ \t\r\n]*[\"']?value[\"']?[ \t]*:")  # the name sits before the brace: found by looking backwards
 _ENV_LINE = re.compile(r"(?<![\w.-])(?:ENV|ARG)[ \t]+([A-Za-z_][\w.\-]{0,127})[ \t]+(?=[^=\s])")
 _MD_ROW = re.compile(r"(?m)^[ \t>*-]{0,8}\|[ \t]*`?([A-Za-z_][\w.\-]{0,127})`?[ \t]*\|[ \t]*`?")
+_FORM_FIELD = re.compile(r"form-data;[ \t]*name=\"([A-Za-z_][\w.\-]{0,127})\"[^\n]{0,200}\n\r*\n")
+_LIST_VALUE = re.compile(r"(?m)^[ \t]*-[ \t]+value[\"']?[ \t]*:[ \t]*")
+_HDR_DIRECTIVE = re.compile(r"(?i)\b(?:proxy_set_header|add_header|header|set_header)[ \t]+Authorization[ \t]+")
 PAIR_WINDOW = 300
 
 
@@ -726,6 +835,31 @@ def pass_pairs(text, out):
         if ve > vs:
             out.append((vs, ve, "pair-value", classify(text[vs:ve], tier, m.group(1))))
             consumed = ve
+    for m in _LIST_VALUE.finditer(text):  # "- value: V" followed by "name: X" (the order swapped)
+        _tick()
+        vs, ve = _value_at(text, m.end())
+        nm = _NV_NAME.search(text, ve, min(len(text), ve + PAIR_WINDOW))
+        tier = name_tier(nm.group(1)) if nm else None
+        if ve > vs and tier and tier != "auth-header" and not _NV_VALUE.search(text, ve, nm.start()):
+            out.append((vs, ve, "pair-value", classify(text[vs:ve], tier, nm.group(1))))
+    for m in _FORM_FIELD.finditer(text):  # multipart/form-data: the part body is the value
+        _tick()
+        tier = name_tier(m.group(1))
+        if tier is None or tier == "auth-header":
+            continue
+        eol = text.find("\n", m.end(), min(len(text), m.end() + VALUE_MAX))
+        ve = (eol if eol >= 0 else min(len(text), m.end() + VALUE_MAX))
+        while ve > m.end() and text[ve - 1] == "\r":
+            ve -= 1
+        if ve > m.end():
+            out.append((m.end(), ve, "form-data", classify(text[m.end():ve], tier, m.group(1))))
+    for m in _HDR_DIRECTIVE.finditer(text):  # nginx: proxy_set_header Authorization "Basic ..."
+        _tick()
+        vs, ve = _value_at(text, m.end())
+        if ve > vs:
+            vs, ve, verdict = _auth_span(text, vs, ve)
+            if ve > vs:
+                out.append((vs, ve, "authorization", verdict))
     for m in _OBJ_VALUE.finditer(text):
         _tick()
         j = m.start()
@@ -772,9 +906,37 @@ def pass_pairs(text, out):
             out.append((vs, ve, "table-row", SECRET))  # a table cell is documentation unless it is plainly a literal
 
 
+_SUBSCRIPT_SET = re.compile(r"\[[ \t]*[\"']([A-Za-z_][\w.\-]{0,127})[\"'][ \t]*\][ \t]*=(?!=)[ \t]*")
+_CALL_ARG = re.compile(r"\([ \t]*[\"']([A-Za-z_][\w.\-]{0,127})[\"'][ \t]*,[ \t]*")
+
+
+def pass_calls(text, out):
+    """A credential name that is a string subscript or the first literal argument of a call, with its value after it:
+    app.config['SECRET_KEY'] = 'v', os.environ["X"] = 'v', $cfg['password'] = 'v', define('DB_PASSWORD', 'v'),
+    props.setProperty("password", "v"), os.environ.get("TOKEN", "default")."""
+    for rx, rule in ((_SUBSCRIPT_SET, "subscript-assign"), (_CALL_ARG, "call-argument")):
+        for m in rx.finditer(text):
+            _tick()
+            name = m.group(1)
+            tier = name_tier(name)
+            if tier is None:
+                continue
+            vs, ve = _value_at(text, m.end())
+            if ve <= vs:
+                continue
+            if tier == "auth-header":
+                vs, ve, verdict = _auth_span(text, vs, ve)
+            else:
+                verdict = classify(text[vs:ve], tier, name)
+                if verdict == POSSIBLE and text[vs - 1] not in "\"'":
+                    verdict = NONE  # a bare argument (a variable) is a reference, not a literal
+            if ve > vs:
+                out.append((vs, ve, rule, verdict))
+
+
 _WORD = re.compile(r"[^\s`'\"|;&()<>]+|'[^'\n]{0,1024}'|\"[^\"\n]{0,1024}\"|[|;&]+|\n")
 _BEARER = re.compile(r"(?i)(?<![A-Za-z0-9_])bearer[ \t]+")
-_EXTRA_PROGS = ("aws", "poetry", "htpasswd", "curl", "wget", "gh", "convertto-securestring", "npm", "yarn", "pnpm")
+_EXTRA_PROGS = ("aws", "poetry", "htpasswd", "curl", "wget", "gh", "convertto-securestring", "npm", "yarn", "pnpm", "vault")
 _PKG_MANAGERS = ("npm", "yarn", "pnpm")
 _PROGS = set(CLI) - {"*"} | set(_EXTRA_PROGS)
 FLAGS = {prog: {f: (mode, tier) for f, mode, tier in rows} for prog, rows in CLI.items()}
@@ -852,6 +1014,9 @@ def _lex_command(text, p, end, out):
             if hit and hit[0] in ("eq", "either") and val:
                 out.append((ws + len(f) + 1, we, "cli-%s" % (prog or "flag"), classify(val, hit[1])))
                 continue
+        if prog == "gh" and w in ("--body", "-b") and args[:2] == ["secret", "set"]:
+            pending = ("cli-token", "cli-gh")
+            continue
         ft = _flag_tier(w)
         if ft:
             pending = (ft, "cli-%s" % (prog or "flag"))
@@ -873,6 +1038,8 @@ def _lex_command(text, p, end, out):
             out.append((ws, we, "cli-poetry", classify(w, "cli-pass")))
         elif prog == "poetry" and len(args) == 3 and args[0] == "config" and args[1].startswith("pypi-token."):
             out.append((ws, we, "cli-poetry", classify(w, "cli-token")))
+        elif prog == "vault" and args[0] == "login" and len(args) == 2 and not w.startswith("-"):
+            out.append((ws, we, "cli-vault", classify(w, "cli-token")))
         elif prog in _PKG_MANAGERS and args[:2] == ["config", "set"] and len(args) == 4 and name_tier(args[2]) in ("strong", "cred"):
             out.append((ws, we, "cli-" + prog, classify(w, "cli-pass" if name_tier(args[2]) == "strong" else "cli-token")))
         elif prog == "htpasswd" and args and args[0].startswith("-") and "b" in args[0]:
@@ -921,7 +1088,7 @@ def pass_words(text, out):
             out.append((vs, ve, "bearer", classify(text[vs:ve], "bearer")))
 
 
-PASSES = (pass_pem, pass_vendor, pass_shapes, pass_url, pass_assign, pass_xml, pass_pairs, pass_words)
+PASSES = (pass_pem, pass_vendor, pass_shapes, pass_url, pass_assign, pass_xml, pass_pairs, pass_calls, pass_words)
 
 
 _OPAQUE = re.compile(r"(?i)(?<![\w.-])(?:arn:aws|arn:aws-[a-z-]+|vault:|op://|ssm:|kms:)")
@@ -943,11 +1110,12 @@ def _opaque_spans(text):
 
 
 # Text-facing patterns, linted by the test suite: no nested or lazy repeats and no back-references.
-_PATTERNS = (_ANCH_RE, _DISCORD, _KEY_ANCHOR, _XML, _XML_ATTR, _XML_NAMED, _NV_NAME, _NV_VALUE, _OBJ_VALUE, _ENV_LINE, _MD_ROW, _SCHEME_PREFIX, _WORD, _BEARER, _CLI_ANCHOR, _NETRC_ANCHOR, _OPAQUE,
+_PATTERNS = (_ANCH_RE, _DISCORD, _KEY_ANCHOR, _XML, _XML_ATTR, _XML_NAMED, _NV_NAME, _NV_VALUE, _OBJ_VALUE, _ENV_LINE, _MD_ROW, _SUBSCRIPT_SET, _CALL_ARG, _FORM_FIELD, _LIST_VALUE, _HDR_DIRECTIVE, _SCHEME_PREFIX, _WORD, _BEARER, _CLI_ANCHOR, _NETRC_ANCHOR, _OPAQUE,
              _QPARAM, _HOST, _SEP)
 
 
 def candidates(text):
+    _BAL_BUDGET[0] = 8 * len(text) + 4096
     out = []
     for p in PASSES:
         p(text, out)
