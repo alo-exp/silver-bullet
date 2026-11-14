@@ -503,7 +503,7 @@
    "corpus_rows": [
     "V16"
    ],
-   "note": "store, cache --timeout N, osxkeychain, manager, libsecret, netrc, `!gh auth git-credential` pass; a --file or --socket option writes a file and is refused (M40)",
+   "note": "store (no --file), cache --timeout N, osxkeychain, libsecret, wincred, `!gh auth git-credential` pass; Git Credential Manager (manager, manager-core) writes traces and plaintext stores by its own settings and is stock only when the consent file pins it; a --file or --socket option writes a file and is refused (M40)",
    "residual": ""
   },
   {
@@ -1023,11 +1023,33 @@
   {
    "push_triggers": true,
    "writes_file": true,
+   "id": "M46",
+   "mechanism": "GIT_TEST_* (test switches: some write files, all change how git behaves), GCM_TRACE / GCM_CREDENTIAL_STORE (Git Credential Manager settings; GCM is not a stock helper, M15)",
+   "kind": "env",
+   "keys": [
+    "GIT_TEST_*"
+   ],
+   "triggers": "every git command",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "code",
+   "corpus_rows": [
+    "Y01",
+    "W35",
+    "W36"
+   ],
+   "note": "GIT_TEST_ variables must be unset or empty",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": true,
    "id": "M42",
-   "mechanism": "http.saveCookies with http.cookieFile (git rewrites the cookie jar)",
+   "mechanism": "http.saveCookies and http.<url>.saveCookies for every URL form, with http.cookieFile (git rewrites the cookie jar)",
    "kind": "config",
    "keys": [
-    "http.savecookies"
+    "http.savecookies",
+    "http.https://example.com/.savecookies"
    ],
    "triggers": "push over http(s), fetch",
    "reachable": true,
@@ -1063,12 +1085,14 @@
    "push_triggers": false,
    "writes_file": true,
    "id": "M44",
-   "mechanism": "lfs.storage (git-lfs writes objects there), GIT_LFS_PROGRESS (progress file), GIT_SHALLOW_FILE",
+   "mechanism": "lfs.storage (git-lfs writes objects there), GIT_LFS_PROGRESS (progress file), GIT_SHALLOW_FILE, SSLKEYLOGFILE / GIT_SSL_KEYLOGFILE (TLS key log; judged in the hook's own environment, a variable set only in the shell that runs the push is the environment-inheritance residual 2)",
    "kind": "config+env",
    "keys": [
     "lfs.storage",
     "GIT_LFS_PROGRESS",
-    "GIT_SHALLOW_FILE"
+    "GIT_SHALLOW_FILE",
+    "SSLKEYLOGFILE",
+    "GIT_SSL_KEYLOGFILE"
    ],
    "triggers": "add (with the lfs filter), push (lfs)",
    "reachable": true,
@@ -1077,7 +1101,8 @@
    "corpus_rows": [
     "W19",
     "W07",
-    "W08"
+    "W08",
+    "W42"
    ],
    "note": "",
    "residual": ""
@@ -1086,7 +1111,7 @@
    "push_triggers": true,
    "writes_file": true,
    "id": "M45",
-   "mechanism": "a local path, file://, bundle or `.` remote (also through url.<base>.insteadOf): git push runs receive-pack WITH THE REMOTE REPOSITORY'S OWN configuration and hooks on this machine (core.hooksPath, gc.recentObjectsHook, receive.procReceiveRefs, post-receive, updateInstead...)",
+   "mechanism": "a local path, file://, bundle or `.` remote, or a loopback host (localhost, 127.x, ::1; ssh or http to a repository on this machine) (also through url.<base>.insteadOf): git push runs receive-pack WITH THE REMOTE REPOSITORY'S OWN configuration and hooks on this machine (core.hooksPath, gc.recentObjectsHook, receive.procReceiveRefs, post-receive, updateInstead...)",
    "kind": "config",
    "keys": [
     "remote.origin.url",
@@ -1103,9 +1128,10 @@
     "W23",
     "W24",
     "W25",
-    "W26"
+    "W26",
+    "W38"
    ],
-   "note": "a deliberate rule: honest feature pushes go to a hosted remote (https, ssh, git, scp-like)",
+   "note": "a deliberate rule: honest feature pushes go to a hosted remote (https, ssh, git, scp-like `[user@]host:path` including `host:/abs/path`)",
    "residual": ""
   },
   {

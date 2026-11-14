@@ -31,6 +31,38 @@ CORPUS = {row["id"]: row for row in push_corpus.ROWS}
 ENV_NAME = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
 
+def expand_listing(listing):
+    """Keys of `git help -c` with every wildcard family expanded into its real subsection forms: `http.<url>.*` becomes
+    http.<url>.<name> for every http.<name> the listing has (and the URL-shaped subsection variants), so a dangerous
+    key is checked in the form git accepts it per URL, not only in its plain form."""
+    raw = listing.split()
+    plain = [key for key in raw if "*" not in key]
+    out = list(plain)
+    for key in raw:
+        if "*" not in key:
+            continue
+        match = re.match(r"^([a-z0-9]+)\.(?:<[^>]+>\.)?\*$", key, re.I)
+        if match is None:
+            out.append(key)
+            continue
+        section = match.group(1)
+        names = [k.split(".", 1)[1] for k in plain if k.lower().startswith(section.lower() + ".")
+                 and k.count(".") == 1 and "<" not in k]
+        placeholder = "<" in key
+        for name in names:
+            out.append("%s.%s.%s" % (section, "<sub>" if placeholder else "x", name) if placeholder else
+                       "%s.%s" % (section, name))
+            if placeholder:
+                out.append("%s.https://example.com/.%s" % (section, name))
+    return out
+
+
+def reduced(key):
+    """section.name for a key with a subsection (the form the reviewed lists are written in)."""
+    parts = key.split(".")
+    return key if len(parts) < 3 else "%s.%s" % (parts[0], parts[-1])
+
+
 def top_level_alternatives(rx):
     """``^(a|b|c)$`` or ``^a$`` -> ['a', 'b', 'c'] split at the outermost alternation."""
     body = rx.pattern.lstrip("^").rstrip("$")
@@ -136,11 +168,12 @@ class ProgramMechanismTable(unittest.TestCase):
         reviewed = TABLE["reviewed_non_executing"]
         patterns = list(push_scope.PROGRAM_KEY_PATTERNS.values()) + [push_scope.SIGN_CONFIG]
         unclassified = []
-        for raw in listing.split():
+        for raw in expand_listing(listing):
             if not words.search(raw):
                 continue
             key = re.sub(r"<[^>]+>", "x", raw).lower()
-            if any(p.match(key) for p in patterns) or raw.lower() in reviewed or raw.lower().replace("<", "<") in reviewed:
+            if any(p.match(key) for p in patterns) or raw.lower() in reviewed or reduced(key) in reviewed \
+                    or reduced(raw.lower()) in reviewed:
                 continue
             parts = key.split(".")
             if parts[0] == "remote" and len(parts) == 3 and parts[2] not in push_scope.REMOTE_KEYS_OK:
@@ -174,11 +207,11 @@ class ProgramMechanismTable(unittest.TestCase):
         rules = [re.compile(rx) for rx, _reason in TABLE["reviewed_not_writing"]]
         patterns = list(push_scope.PROGRAM_KEY_PATTERNS.values()) + [push_scope.SIGN_CONFIG, push_scope.WRITE_CONFIG]
         unclassified = []
-        for raw in listing.split():
+        for raw in expand_listing(listing):
             if not words.search(raw):
                 continue
             key = re.sub(r"<[^>]+>", "x", raw).lower()
-            if any(p.match(key) for p in patterns) or any(r.fullmatch(key) for r in rules):
+            if any(p.match(key) for p in patterns) or any(r.fullmatch(key) or r.fullmatch(reduced(key)) for r in rules):
                 continue
             unclassified.append(raw)
         self.assertEqual(unclassified, [], "classify these keys or add a reviewed_not_writing rule")
@@ -188,6 +221,17 @@ class ProgramMechanismTable(unittest.TestCase):
         for row in ROWS:
             if row["writes_file"]:
                 self.assertEqual(row["verdict"], "strict", row["id"])
+
+    def test_wildcard_families_are_expanded(self):
+        keys = expand_listing("http.<url>.* http.cookieFile http.saveCookies alias.* credential.<url>.* credential.helper")
+        self.assertIn("http.<sub>.saveCookies", keys)
+        self.assertIn("http.https://example.com/.cookieFile", keys)
+        self.assertIn("credential.<sub>.helper", keys)
+        self.assertEqual(reduced("http.x.savecookies"), "http.savecookies")
+        self.assertEqual(reduced("core.editor"), "core.editor")
+        # the dangerous per-URL forms are matched by the classifier (the walk would fail otherwise)
+        self.assertTrue(push_scope.WRITE_CONFIG.match("http.x.savecookies"))
+        self.assertTrue(push_scope.WRITE_CONFIG.match("http.https://example.com/.savecookies"))
 
     def test_helpers(self):
         self.assertEqual(expand("a\\.(b|c)\\.d"), ["a\\.b\\.d", "a\\.c\\.d"])
