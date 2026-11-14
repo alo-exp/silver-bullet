@@ -27,6 +27,10 @@ if PATH="$(tl_path_without jq)" sb_config_marked_initiated "$R/.silver-bullet.js
 printf 'not json\n' >"$TL_TMP/bad.json"
 if sb_config_marked_initiated "$TL_TMP/bad.json"; then tl_fail "bad"; else tl_pass "an unreadable config is not marked"; fi
 
+# a config path that vanished between the lookup and the check: the hook stands down
+out="$(cd "$R/src" && bash -c "source '$TL_REPO_ROOT/hooks/lib/sb-project-gate.sh'; sb_find_project_config() { printf '%s' /nonexistent/.silver-bullet.json; }; sb_project_active_or_exit; echo ran")"
+assert_eq "a config that is gone by the time it is checked stands the hook down" "" "$out"
+
 # ── the gate-or-exit helpers ──────────────────────────────────────────────────────────────────────
 out="$(cd "$R/src" && bash -c "source '$TL_REPO_ROOT/hooks/lib/sb-project-gate.sh'; sb_project_active_or_exit; echo ran")"
 assert_eq "inside a project the hook goes on" "ran" "$out"

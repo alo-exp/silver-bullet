@@ -30,7 +30,7 @@ config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity.sh" && sb_
 search_dir="${config_file:+${config_file%/*}}"
 search_dir="${search_dir:-$PWD}"
 [[ -n "$config_file" ]] || exit 0
-sb_project_gate_or_exit 2>/dev/null || exit 0
+if declare -f sb_project_gate_or_exit >/dev/null 2>&1; then sb_project_gate_or_exit 2>/dev/null; fi
 
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 trivial_file="${SB_STATE_DIR}/trivial"

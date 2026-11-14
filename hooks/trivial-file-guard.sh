@@ -64,7 +64,8 @@ fi
 # The default marker, and the one the project config names (it is not honoured by the gates,
 # but writing it is still an attempt to arm the bypass).
 default_trivial="${SB_RUNTIME_STATE_DIR}/trivial"
-cfg_trivial="$(sb_iv_jq -r '.state.trivial_file // ""' 2>/dev/null || true)"
+cfg_trivial=""
+if cfg_trivial="$(sb_iv_jq -r '.state.trivial_file // ""' 2>/dev/null)"; then :; fi
 cfg_trivial="${cfg_trivial/#\~/$HOME}"
 guarded=$(sb_pf_canon "$default_trivial")
 if [[ -n "$cfg_trivial" ]]; then

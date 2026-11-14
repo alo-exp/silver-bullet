@@ -244,6 +244,21 @@ printf '{"skills":{"required_planning":["y"]}}\n' >"$R/.silver-bullet.json"
 verify
 assert_eq "a later change diverges" "config" "$SB_IV_DIVERGED"
 SB_CONTRACT_UNLOCK_WINDOW=7200
+# a diverged prompt file is expected while a JSON skill runs, and the trivial helper needs a project
+fresh
+sb_integrity_baseline "$R" session
+sb_integrity_baseline "$R" unlock silver-add
+printf '{"x":2}\n' >"$R/.silver-bullet.prompt.json"
+verify
+assert_eq "the prompt file is among the files a JSON skill may write" "" "$SB_IV_DIVERGED"
+sb_integrity_baseline "$R" session
+if (cd "$TL_TMP" && sb_integrity_trivial_ok "$TL_TMP/bare"); then tl_fail "no project"; else tl_pass "outside a project the marker helper says no"; fi
+if sb_integrity_trivial_ok "$R"; then tl_fail "no marker"; else tl_pass "a project without a blessed marker says no"; fi
+touch "$SD/trivial"
+sb_integrity_baseline "$R" session
+if sb_integrity_trivial_ok "$R"; then tl_pass "a blessed marker says yes"; else tl_fail "blessed"; fi
+rm -f "$SD/trivial"
+sb_integrity_baseline "$R" session
 # an unlock written into the record without the key is not a record any more
 sb_integrity_baseline "$R" session
 sb_integrity_baseline "$R" unlock silver-init
