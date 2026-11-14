@@ -154,9 +154,8 @@ def main():
     if "--json" in args:
         json.dump({"counts": c, "rows": rows}, sys.stdout, indent=1)
     else:
-        print(dict(c), len(rows))
-        for r in rows:
-            if r["record"] == "N": print("N  %s:%s [%s] %s" % (r["file"], r["line"], r["kind"], r["snippet"]))
+        n_rows = ["N  %s:%s [%s] %s" % (x["file"], x["line"], x["kind"], x["snippet"]) for x in rows if x["record"] == "N"]
+        print("\n".join(["%s %s" % (dict(c), len(rows))] + n_rows))
 
 
 if __name__ == "__main__":

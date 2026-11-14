@@ -536,7 +536,8 @@ sb_integrity_baseline() { # ROOT MODE [..]
     old="$_SB_IV_BODY"
     live_lines="$(_sb_iv_live_body "$root")"
     if [[ "$mode" == unlock || "$mode" == adopt ]]; then
-      if [[ "$mode" == unlock ]]; then skill="$1"; else skill="${SB_IV_UNLOCK_SKILL:-}"; fi
+      skill="${SB_IV_UNLOCK_SKILL:-}"
+      if [[ "$mode" == unlock ]]; then skill="$1"; fi
       # shellcheck disable=SC2046  # the tags are a word list
       set -- $(sb_contract_skill_tags "$skill")
     fi
