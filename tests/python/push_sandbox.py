@@ -24,8 +24,11 @@ import subprocess
 DEFAULT_BRANCHES = {"main", "master", "develop"}
 
 
-def git_env(root, extra=None):
-    env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": os.path.join(root, "home"),
+def git_env(root, extra=None, plain=False):
+    """The environment of a sandbox command. ``plain`` uses a HOME without the url.<local path>.insteadOf rewrites: the
+    verdict is computed as on a real machine (remotes are hosted URLs), while the ground-truth run uses the rewrites
+    to push to the local bare repositories."""
+    env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": os.path.join(root, "home_plain" if plain else "home"),
            "GIT_CONFIG_NOSYSTEM": "1", "LC_ALL": "C", "TMPDIR": os.path.join(root, "tmp")}
     env.update(extra or {})
     return env
@@ -55,6 +58,9 @@ class Sandbox:
         s = self.root
         for sub in ("home", "tmp", "plain", "bin"):
             os.makedirs(self.p(sub), exist_ok=True)
+        os.makedirs(self.p("home_plain"), exist_ok=True)
+        with open(self.p("home_plain", ".gitconfig"), "w") as fh:
+            fh.write("[user]\n\tname = T\n\temail = t@example.invalid\n[init]\n\tdefaultBranch = main\n")
         with open(self.p("home", ".gitconfig"), "w") as fh:
             fh.write("[user]\n\tname = T\n\temail = t@example.invalid\n[init]\n\tdefaultBranch = main\n"
                      "[protocol \"file\"]\n\tallow = always\n"

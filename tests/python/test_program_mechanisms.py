@@ -86,7 +86,7 @@ class ProgramMechanismTable(unittest.TestCase):
                     self.assertEqual(CORPUS[rid]["expect"], "C", rid)
 
     def test_table_keys_are_in_the_classifier(self):
-        env_known = set(push_scope.ENV_DENY) | set(push_scope.ENV_BY_VALUE)
+        env_known = set(push_scope.ENV_DENY) | set(push_scope.ENV_BY_VALUE) | set(push_scope.ENV_WRITE_DENY)
         for row in ROWS:
             if row["verdict"] != "strict":
                 continue
@@ -109,7 +109,7 @@ class ProgramMechanismTable(unittest.TestCase):
                     self.assertTrue(any(re.fullmatch(alternative, key) for key in samples.get(name, [])),
                                     "the classifier lists %s but the table has no key for it" % alternative)
         table_env = {key for row in ROWS for key in row["keys"] if ENV_NAME.match(key) and "." not in key}
-        for name in list(push_scope.ENV_DENY) + list(push_scope.ENV_BY_VALUE):
+        for name in list(push_scope.ENV_DENY) + list(push_scope.ENV_BY_VALUE) + list(push_scope.ENV_WRITE_DENY):
             self.assertIn(name, table_env, name)
 
     def test_docs_carry_the_table(self):
@@ -151,21 +151,43 @@ class ProgramMechanismTable(unittest.TestCase):
         self.assertEqual(unclassified, [], "classify these keys or add them to reviewed_non_executing")
 
     def test_push_is_never_weaker_than_its_sequence(self):
-        """Where `git push` itself triggers the mechanism (push_triggers), plain `git push` with the same setting must
-        be strict, like `git status && git push`: a sequence never gets a stricter verdict because of the push."""
-        triggers = {r["id"]: r for r in ROWS if r["push_triggers"]}
-        self.assertIn("M02", triggers)
-        for row in triggers.values():
-            for rid in row["corpus_rows"]:
-                corpus = CORPUS[rid]
-                if not corpus.get("verdict_only"):
-                    continue
-                with self.subTest(row=row["id"], corpus=rid):
-                    self.assertIn("git push", corpus["cmd"])
-                    plain = [r for r in push_corpus.ROWS if r.get("verdict_only") and r["cmd"] == "git push"
-                             and r.get("setup") == corpus.get("setup") and r.get("env") == corpus.get("env")]
-                    self.assertTrue(plain or corpus["cmd"] == "git push",
-                                    "no plain `git push` row with the same setting")
+        """Every strict mechanism the push itself triggers (push_triggers) has a plain `git push` verdict-only row in
+        the corpus, so `git push` is as strict as `git status && git push` for it."""
+        triggers = [r for r in ROWS if r["push_triggers"]]
+        self.assertGreaterEqual(len(triggers), 15)
+        for row in triggers:
+            with self.subTest(row=row["id"]):
+                self.assertEqual(row["verdict"], "strict")
+                plain = [rid for rid in row["corpus_rows"]
+                         if CORPUS[rid].get("verdict_only") and CORPUS[rid]["cmd"] == "git push"]
+                self.assertTrue(plain, "no plain `git push` verdict row for this mechanism")
+
+    def test_every_file_writing_git_key_is_classified_or_reviewed(self):
+        """The same walk for mechanisms that WRITE a file at a user-chosen path (file, path, target, socket, trace,
+        output, cookie, store, dir, save, write, dump, log, dest, cache): a classifier list or a reviewed rule."""
+        try:
+            listing = subprocess.run(["git", "help", "-c"], capture_output=True, text=True, check=True).stdout
+        except (OSError, subprocess.CalledProcessError):
+            self.skipTest("git help -c is not available")
+        words = re.compile(r"file|path|target|socket|trace|output|cookie|store|dir|save|write|dump|log|dest|cache|sock",
+                           re.I)
+        rules = [re.compile(rx) for rx, _reason in TABLE["reviewed_not_writing"]]
+        patterns = list(push_scope.PROGRAM_KEY_PATTERNS.values()) + [push_scope.SIGN_CONFIG, push_scope.WRITE_CONFIG]
+        unclassified = []
+        for raw in listing.split():
+            if not words.search(raw):
+                continue
+            key = re.sub(r"<[^>]+>", "x", raw).lower()
+            if any(p.match(key) for p in patterns) or any(r.fullmatch(key) for r in rules):
+                continue
+            unclassified.append(raw)
+        self.assertEqual(unclassified, [], "classify these keys or add a reviewed_not_writing rule")
+        for row in ROWS:
+            self.assertIn("writes_file", row)
+        self.assertTrue(any(r["writes_file"] for r in ROWS))
+        for row in ROWS:
+            if row["writes_file"]:
+                self.assertEqual(row["verdict"], "strict", row["id"])
 
     def test_helpers(self):
         self.assertEqual(expand("a\\.(b|c)\\.d"), ["a\\.b\\.d", "a\\.c\\.d"])

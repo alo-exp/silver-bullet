@@ -1086,21 +1086,24 @@ class ProgramMechanismTests(Base):
 
     def test_ssh_commands_credentials_and_urls(self):
         for good in ("ssh", "ssh -i ~/.ssh/key -o IdentitiesOnly=yes", "/usr/bin/ssh -p 22 -q",
-                     "ssh -oStrictHostKeyChecking=no -4"):
+                     "ssh -oStrictHostKeyChecking=no -4", "ssh -o ForwardAgent=no -o BatchMode=yes -o ConnectTimeout=10"):
             self.assertTrue(push_scope.ssh_command_ok(good), good)
             self.feature("git push origin feat/x", repo=FakeRepo(cfg={"core.sshcommand": [good]}))
         for bad in ("", "sh -c evil", "ssh -o ProxyCommand=evil", "ssh -oLocalCommand=x", "ssh -o PermitLocalCommand=yes",
                     "ssh -i", "ssh -o", "ssh -o Foo", "ssh $X", "ssh -i 'a b'", "ssh ; evil", "ssh -Z", "evil -i k",
                     "ssh -o ProxyJump=x", "ssh -F /tmp/cfg", "ssh -o Include=/tmp/cfg", "ssh -o PKCS11Provider=/tmp/x.so",
-                    "ssh -o SecurityKeyProvider=/tmp/x.so", "ssh -o XAuthLocation=/tmp/x", "ssh -o Match=exec", "ssh -oKnownHostsCommand=x"):
+                    "ssh -o SecurityKeyProvider=/tmp/x.so", "ssh -o UserKnownHostsFile=/tmp/k", "ssh -o ControlPath=/tmp/c",
+                    "ssh -o ControlMaster=auto", "ssh -o LocalForward=1:h:2", "ssh -o ForwardAgent=yes", "ssh -E /tmp/log",
+                    "ssh -D 1080", "ssh -L 1:h:2", "ssh -o LogFile=/tmp/x", "ssh -o XAuthLocation=/tmp/x", "ssh -o Match=exec", "ssh -oKnownHostsCommand=x"):
             self.assertFalse(push_scope.ssh_command_ok(bad), bad)
         self.strict("git push origin feat/x", "start a program", repo=FakeRepo(cfg={"core.sshcommand": ["sh -c evil"]}))
         for helper in ("store", "cache --timeout 3600", "osxkeychain", "!gh auth git-credential",
-                       "!/usr/bin/gh auth git-credential", "/usr/lib/git-core/git-credential-store --file=/x", "manager-core", ""):
+                       "!/usr/bin/gh auth git-credential", "/usr/lib/git-core/git-credential-store", "manager-core", ""):
             self.assertTrue(push_scope.stock_helper(helper), helper)
         self.feature("git push origin feat/x", repo=FakeRepo(cfg={"credential.helper": ["store"],
                                                                   "credential.https://x.helper": ["cache"]}))
-        for helper in ("!evil", "/tmp/git-credential-x", "store;evil", "!gh auth git-credential; evil", "evil",
+        for helper in ("store --file=/tmp/c", "cache --socket=/tmp/s", "cache --timeout x", "store extra", "cache --timeout 10 --socket=/s",
+                       "/usr/lib/git-core/git-credential-store --file=/x", "!evil", "/tmp/git-credential-x", "store;evil", "!gh auth git-credential; evil", "evil",
                        "/usr/lib/git-core/evil"):
             self.assertFalse(push_scope.stock_helper(helper), helper)
         self.strict("git push origin feat/x", "start a program", repo=FakeRepo(cfg={"credential.helper": ["!evil"]}))
@@ -1165,6 +1168,66 @@ class ProgramMechanismTests(Base):
         self.strict("git status && git push", "would run", repo=FakeRepo(cfg={"core.fsmonitor": [".git/hook"]}))
         self.strict("git shortlog -s HEAD --format=%G? && git push", "verifies",
                     repo=FakeRepo(cfg={"gpg.program": ["/tmp/evil"]}))
+
+
+class WriteMechanismTests(Base):
+    def test_trace_and_write_settings(self):
+        for key in ("trace2.eventtarget", "trace2.normaltarget", "trace2.perftarget", "fsmonitor.socketdir", "lfs.storage"):
+            for cmd in ("git push", "git status && git push"):
+                self.strict(cmd, "makes git write a file", repo=FakeRepo(cfg={key: ["/tmp/x"]}))
+            self.feature("git push", repo=FakeRepo(cfg={key: [""]}))
+        for value in ("true", "1", "yes", "2"):
+            self.strict("git push", "cookie jar", repo=FakeRepo(cfg={"http.savecookies": [value], "http.cookiefile": ["/x"]}))
+        self.feature("git push", repo=FakeRepo(cfg={"http.savecookies": ["false"], "http.cookiefile": ["/x"]}))
+        self.feature("git push", repo=FakeRepo(cfg={"http.cookiefile": ["/x"]}))
+        self.strict("git commit -qm x && git push", "would run a program",
+                    repo=FakeRepo(cfg={"gc.repackfilterto": ["/x"]}))
+        self.feature("git status && git push", repo=FakeRepo(cfg={"gc.repackfilterto": ["/x"]}))
+
+    def test_trace_and_file_environment(self):
+        for name in ("GIT_TRACE", "GIT_TRACE2", "GIT_TRACE2_EVENT", "GIT_TRACE2_PERF", "GIT_TRACE_PACKET",
+                     "GIT_TRACE_SETUP", "GIT_TRACE_CURL"):
+            for value in ("/tmp/t", "af_unix:/tmp/s", "~/t", "2>x"):
+                self.strict("git push", "names a file", env=dict(ENV, **{name: value}))
+            for value in ("", "0", "1", "2", "true", "False", "9"):
+                self.feature("git push", env=dict(ENV, **{name: value}))
+        for name in ("GIT_LFS_PROGRESS", "GIT_SHALLOW_FILE"):
+            self.strict("git push", "names a file", env=dict(ENV, **{name: "/tmp/p"}))
+            self.feature("git push", env=dict(ENV, **{name: ""}))
+
+    def test_local_path_remotes(self):
+        for url in ("/srv/repo.git", "file:///srv/repo.git", "../repo.git", "repo.git", ".", "..", "~/repo.git"):
+            self.assertFalse(push_scope.hosted_url(url), url)
+            self.strict("git push origin feat/x", "local path", repo=FakeRepo(cfg={"remote.origin.url": [url]}))
+        for url in ("https://github.com/a/b.git", "http://h/x", "ssh://git@h/x", "git://h/x", "git@github.com:a/b.git",
+                    "host.example:path/x.git", "ssh://git@h:2222/x"):
+            self.assertTrue(push_scope.hosted_url(url), url)
+            self.feature("git push origin feat/x", repo=FakeRepo(cfg={"remote.origin.url": [url]}))
+        self.assertFalse(push_scope.hosted_url("ext::sh -c x"))
+        self.assertFalse(push_scope.hosted_url("evil://h/x"))
+        # url.<base>.insteadOf rewrites a hosted URL into a path (the longest prefix wins)
+        base = {"remote.origin.url": ["https://github.com/acme/app.git"]}
+        for rewrite in ("file:///srv/", "/srv/"):
+            self.strict("git push origin feat/x", "local path",
+                        repo=FakeRepo(cfg=dict(base, **{"url.%s.insteadof" % rewrite: ["https://github.com/"]})))
+        self.strict("git push origin feat/x", "local path", repo=FakeRepo(cfg=dict(base, **{
+            "url.https://other/.insteadof": ["https://github.com/"], "url./srv/app.insteadof": ["https://github.com/acme/"]})))
+        self.feature("git push origin feat/x", repo=FakeRepo(cfg=dict(base, **{
+            "url./srv/.insteadof": ["https://github.com/"], "url.https://other/.insteadof": ["https://github.com/acme/"]})))
+        self.assertEqual(push_scope.rewrite_url("https://github.com/a/b", {}), "https://github.com/a/b")
+
+    def test_pager_names_and_trust_entry_files(self):
+        for value in ("/usr/bin/less", "./less", "/tmp/cat", "less;evil", "less -x y"):
+            self.assertFalse(push_scope.benign_pager(value), value)
+        for value in ("less", "less -FRX", "cat", "more", "most", "", " "[:0]):
+            self.assertTrue(push_scope.benign_pager(value), value)
+        self.assertFalse(push_scope.benign_pager(" "))
+        import io
+        from contextlib import redirect_stderr
+        err = io.StringIO()
+        with redirect_stderr(err):
+            self.assertEqual(push_scope.main(["--trust-entry", self.tmp]), 1)
+        self.assertIn("not a regular file", err.getvalue())
 
 
 class ParserTests(unittest.TestCase):

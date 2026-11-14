@@ -33,7 +33,11 @@ ENV_DENY = ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_
             "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES")
 # environment variables that are judged by value (see env_check): GIT_SSH_COMMAND, GIT_PAGER, GIT_EDITOR, VISUAL,
 # EDITOR (check_program_config) and PATH (absolute entries only)
-ENV_BY_VALUE = ("GIT_SSH_COMMAND", "GIT_PAGER", "GIT_EDITOR", "VISUAL", "EDITOR", "PATH", "GIT_CONFIG_COUNT")
+ENV_BY_VALUE = ("GIT_SSH_COMMAND", "GIT_PAGER", "GIT_EDITOR", "VISUAL", "EDITOR", "PATH", "GIT_CONFIG_COUNT", "PAGER",
+                "GIT_TRACE", "GIT_TRACE2", "GIT_TRACE2_EVENT", "GIT_TRACE2_PERF", "GIT_TRACE_PACKET")
+# variables that make git or git-lfs WRITE a file at a path the value names (a diagnostic stream: 0-9, true/false...)
+ENV_WRITE_DENY = ("GIT_LFS_PROGRESS", "GIT_SHALLOW_FILE")
+TRACE_VALUE = re.compile(r"^(|[0-9]|true|false|yes|no|on|off)$", re.I)
 INERT_PROGRAMS = {"echo", "printf", "true", ":", "cat", "head", "tail", "grep", "wc", "sleep", "pwd", "ls", "test", "["}
 # Inert git: a subcommand is inert only when EVERY option is on its exact allowlist (no prefix abbreviations: git
 # accepts --outp= for --output=, which writes any file). log/show/diff/shortlog are "viewers": they also run
@@ -64,6 +68,7 @@ RUN_CONFIG = re.compile(r"^(core\.fsmonitor|core\.hookspath|filter\..*\.(clean|s
                         r"lfs\.extension\..*|lfs\.customtransfer\..*|lfs\.standalonetransferagent)$")
 SIGN_CONFIG = re.compile(r"^(gpg\.(.*\.)?program|gpg\.ssh\.defaultkeycommand)$")
 EDITOR_CONFIG = re.compile(r"^core\.editor$")
+WRITE_CONFIG = re.compile(r"^(trace2\.(event|normal|perf)target|http\.savecookies|fsmonitor\.socketdir|lfs\.storage)$")
 PUSH_RUN_CONFIG = re.compile(r"^(core\.(sshcommand|gitproxy|askpass|alternaterefscommand)|uploadpack\.packobjectshook|"
                              r"credential\.helper|credential\..+\.helper|protocol\.ext\.allow)$")
 URL_CONFIG = re.compile(r"^(url\..+\.insteadof|remote\..+\.url)$")
@@ -72,12 +77,17 @@ BENIGN_PAGERS = {"cat", "", "true", ":"}
 SSH_PROGRAMS = {"ssh", "/usr/bin/ssh", "/usr/local/bin/ssh", "/bin/ssh"}
 SSH_VALUE_FLAGS = {"-i", "-p", "-l"}  # not -F: a config file can hold ProxyCommand/LocalCommand
 SSH_BOOL_FLAGS = {"-q", "-v", "-T", "-4", "-6", "-A", "-a", "-x", "-C", "-y"}
-# ssh_config keywords that name a program, load more configuration or reroute the connection through one
+# the only `-o` options accepted on a core.sshCommand/GIT_SSH_COMMAND line: none names a program, loads
+# configuration, writes a file (UserKnownHostsFile, ControlPath, LogFile, forwards...) or reroutes the connection
+SSH_SAFE_OPTIONS = {"stricthostkeychecking", "batchmode", "connecttimeout", "identitiesonly", "serveraliveinterval",
+                    "serveralivecountmax", "forwardagent", "compression"}
+# ssh_config keywords that name a program, load more configuration or reroute the connection through one (documented
+# in docs/ENFORCEMENT.md; the allowlist above already refuses them)
 SSH_PROGRAM_OPTIONS = {"proxycommand", "localcommand", "knownhostscommand", "remotecommand", "xauthlocation",
                        "pkcs11provider", "securitykeyprovider", "include", "match", "permitlocalcommand", "proxyjump"}
 SSH_VALUE = re.compile(r"^[A-Za-z0-9_./:@~,+=%-]+$")
 STOCK_HELPERS = {"store", "cache", "osxkeychain", "manager", "manager-core", "libsecret", "wincred", "netrc"}
-STOCK_HELPER_ARGS = re.compile(r"^(\s+(--[a-z-]+(=[A-Za-z0-9_./~-]+)?|[A-Za-z0-9_./~-]+))*$")
+STOCK_HELPER_ARGS = {"cache": re.compile(r"^(\s+--timeout[ =][0-9]+)?$")}  # no file or socket options for any helper
 GH_HELPER = re.compile(r"^!(/usr/bin/|/usr/local/bin/|/opt/homebrew/bin/|/bin/)?gh auth git-credential$")
 CREDENTIAL_EXEC_DIRS = {"/usr/lib/git-core", "/usr/libexec/git-core", "/usr/local/libexec/git-core"}
 SAFE_SCHEMES = {"https", "http", "ssh", "git", "file", "git+ssh", "ssh+git"}
@@ -88,7 +98,7 @@ BENIGN_EDITORS = {"true", ":", "cat", "/bin/true", "/usr/bin/true", "/usr/bin/en
 VIEW_CONFIG = re.compile(r"^(core\.pager|pager\..*|diff\.external|diff\..*\.(command|textconv))$")
 DIFF_CONFIG = re.compile(r"^(diff\.external|diff\..*\.(command|textconv))$")
 PAGER_CONFIG = re.compile(r"^(core\.pager|pager\..*)$")
-GC_CONFIG = re.compile(r"^gc\.recentobjectshook$")  # auto gc runs after a commit
+GC_CONFIG = re.compile(r"^gc\.(recentobjectshook|repackfilterto)$")  # auto gc runs after a commit
 BRANCH_LIST_FLAGS = {"--show-current", "--list", "-l", "-a", "--all", "-r", "--remotes", "-v", "-vv"}
 GIT_GLOBALS_OK = {"--no-pager", "-P"}
 PUSH_BOOL = {"-u", "--set-upstream", "-f", "--force", "-q", "--quiet", "-v", "--verbose", "--progress", "--no-verify",
@@ -574,8 +584,7 @@ def benign_pager(value):
     if value in BENIGN_PAGERS:
         return True
     words = value.split()
-    return os.path.basename(words[0]) in ("cat", "less", "more", "most") and \
-        all(re.fullmatch(r"-[A-Za-z0-9]+", word) for word in words[1:]) and "/" not in value.replace(words[0], "", 1)
+    return bool(words) and words[0] in ("cat", "less", "more", "most") and all(re.fullmatch(r"-[A-Za-z0-9]+", w) for w in words[1:])
 
 
 def check_program_config(subs, cfg, environ=None, directory=""):
@@ -706,9 +715,9 @@ def ssh_command_ok(command):
             return False
         if not SSH_VALUE.match(value):
             return False
-        if word in ("-o", ) or word.startswith("-o"):
-            name = value.split("=", 1)[0].lower()
-            if "=" not in value or name.endswith("command") or name.endswith("provider") or name in SSH_PROGRAM_OPTIONS:
+        if word == "-o" or word.startswith("-o"):
+            name, _eq, setting = value.partition("=")
+            if name.lower() not in SSH_SAFE_OPTIONS or (name.lower() == "forwardagent" and setting != "no"):
                 return False
     return True
 
@@ -721,9 +730,32 @@ def stock_helper(value):
     name = value.split(None, 1)[0]
     rest = value[len(name):]
     if name in STOCK_HELPERS:
-        return bool(STOCK_HELPER_ARGS.match(rest))
+        return bool(STOCK_HELPER_ARGS.get(name, re.compile(r"^$")).match(rest))
     return os.path.dirname(name) in CREDENTIAL_EXEC_DIRS and os.path.basename(name).startswith("git-credential-") \
-        and bool(STOCK_HELPER_ARGS.match(rest))
+        and rest == ""
+
+
+def rewrite_url(url, cfg):
+    """The URL git uses after url.<base>.insteadOf (the longest matching prefix wins)."""
+    best, replacement = -1, url
+    for key, values in cfg.items():
+        if key.startswith("url.") and key.endswith(".insteadof"):
+            base = key[len("url."):-len(".insteadof")]
+            for prefix in values:
+                if prefix and url.startswith(prefix) and len(prefix) > best:
+                    best, replacement = len(prefix), base + url[len(prefix):]
+    return replacement
+
+
+def hosted_url(url):
+    """A hosted remote: https/http/ssh/git URL or scp-like host:path. A local path, file://, a bundle or `.` runs the
+    receiving repository's own configuration and hooks on this machine."""
+    if "::" in url:
+        return False
+    match = re.match(r"^([A-Za-z][A-Za-z0-9+.-]*)://[^/]+", url)
+    if match is not None:
+        return match.group(1).lower() in ("https", "http", "ssh", "git", "git+ssh", "ssh+git")
+    return re.match(r"^([A-Za-z0-9._-]+@)?[A-Za-z0-9._-]{2,}:[^/:]", url) is not None
 
 
 def safe_url(url):
@@ -733,6 +765,18 @@ def safe_url(url):
         return False
     match = re.match(r"^([A-Za-z][A-Za-z0-9+.-]*)://", url)
     return match is None or match.group(1).lower() in SAFE_SCHEMES
+
+
+def check_write_config(cfg):
+    """Settings that make any git command write a file at a path they name (trace2 targets, a cookie jar, the monitor's
+    socket directory, the lfs object store): final delivery when set. http.saveCookies is a boolean."""
+    for key, values in cfg.items():
+        if WRITE_CONFIG.match(key):
+            if key == "http.savecookies":
+                if any(git_bool(v) for v in values):
+                    raise Strict("http.saveCookies makes git write the cookie jar")
+            elif any(v for v in values):
+                raise Strict("the setting %s makes git write a file at a path it names" % key)
 
 
 def check_push_programs(key, values):
@@ -783,8 +827,12 @@ def check_config(cfg, remote):
             check_push_programs(key, values)
         if key.startswith("url.") and key.endswith(".insteadof") and not safe_url(key[len("url."):-len(".insteadof")]):
             raise Strict("a url.*.insteadOf rewrite points git at a remote helper (%s)" % key)
-        if parts is not None and parts[0] == remote and parts[1] == "url" and not all(safe_url(v) for v in values):
-            raise Strict("the remote URL names a remote helper or an unsupported transport")
+        if parts is not None and parts[0] == remote and parts[1] == "url":
+            if not all(safe_url(v) for v in values):
+                raise Strict("the remote URL names a remote helper or an unsupported transport")
+            if not all(hosted_url(rewrite_url(v, cfg)) for v in values):
+                raise Strict("the remote is a local path or file:// URL: the receiving repository's own "
+                             "configuration and hooks would run (push to a hosted remote)")
 
 
 def bare_remote(cfg, current):
@@ -960,6 +1008,12 @@ def env_check(environ):
         raise Strict("GIT_SSH_COMMAND is set to a command line that is not a plain ssh invocation")
     if any(not entry.startswith("/") for entry in (environ.get("PATH") or "/usr/bin").split(":")):
         raise Strict("PATH has an empty or relative entry, so `git` may not be the system git")
+    for name, value in environ.items():
+        if name.startswith("GIT_TRACE") and not TRACE_VALUE.match(value):
+            raise Strict("%s names a file git would write" % name)
+    for name in ENV_WRITE_DENY:
+        if environ.get(name):
+            raise Strict("%s names a file git would write" % name)
     for name in ENV_DENY:
         value = environ.get(name)
         if name == "BASH_ENV" and value and is_coverage_tracer(value, environ):
@@ -1040,6 +1094,7 @@ def _shell_scope(script, result, base, environ, git, parse, logical_base):
     head = "refs/heads/" + new if new else head0
     if new and any(key.startswith("includeif.onbranch:") for key in cfg):
         raise Strict("the git configuration depends on the branch that is about to be created")
+    check_write_config(cfg)
     check_program_config(found["subs"], cfg, environ, directory)
     # S10 remote
     if remote_arg is None:
@@ -1142,13 +1197,15 @@ def _mcp_scope(tool, fields, base, environ, git):
 # The classifier's own list of program-running configuration keys, by name (tests/fixtures/push-scope/
 # program-mechanisms.json is diffed against it by tests/python/test_program_mechanisms.py).
 PROGRAM_KEY_PATTERNS = {"run": RUN_CONFIG, "sign": SIGN_CONFIG, "editor": EDITOR_CONFIG, "push_run": PUSH_RUN_CONFIG,
-                        "url": URL_CONFIG, "view": VIEW_CONFIG, "gc": GC_CONFIG}
+                        "url": URL_CONFIG, "view": VIEW_CONFIG, "gc": GC_CONFIG, "write": WRITE_CONFIG}
 
 
 def main(argv):
     """``push_scope.py --trust-entry PATH``: print the consent-file entry that pins PATH (see user_trusted_programs)."""
     if len(argv) == 2 and argv[0] == "--trust-entry":
         try:
+            if not os.path.isfile(os.path.realpath(argv[1])):
+                raise OSError("not a regular file")
             print(json.dumps(trust_entry(argv[1]), indent=2))
         except OSError as exc:
             print("cannot read %s: %s" % (argv[1], exc), file=sys.stderr)
