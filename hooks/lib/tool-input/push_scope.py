@@ -17,6 +17,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import signal
 import stat
 import subprocess
@@ -36,8 +37,8 @@ ENV_DENY = ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_
 ENV_BY_VALUE = ("GIT_SSH_COMMAND", "GIT_PAGER", "GIT_EDITOR", "VISUAL", "EDITOR", "PATH", "GIT_CONFIG_COUNT", "PAGER",
                 "GIT_TRACE", "GIT_TRACE2", "GIT_TRACE2_EVENT", "GIT_TRACE2_PERF", "GIT_TRACE_PACKET")
 # variables that make git or git-lfs WRITE a file at a path the value names (a diagnostic stream: 0-9, true/false...)
-ENV_WRITE_DENY = ("GIT_LFS_PROGRESS", "GIT_SHALLOW_FILE")
-TRACE_VALUE = re.compile(r"^(|[0-9]|true|false|yes|no|on|off)$", re.I)
+ENV_WRITE_DENY = ("GIT_LFS_PROGRESS", "GIT_SHALLOW_FILE", "SSLKEYLOGFILE", "GIT_SSL_KEYLOGFILE")
+TRACE_VALUE = re.compile(r"^(|0|1|2|true|false)$", re.I)  # git help git: stderr or off; 3-9 is an fd, anything else a path
 INERT_PROGRAMS = {"echo", "printf", "true", ":", "cat", "head", "tail", "grep", "wc", "sleep", "pwd", "ls", "test", "["}
 # Inert git: a subcommand is inert only when EVERY option is on its exact allowlist (no prefix abbreviations: git
 # accepts --outp= for --output=, which writes any file). log/show/diff/shortlog are "viewers": they also run
@@ -68,7 +69,7 @@ RUN_CONFIG = re.compile(r"^(core\.fsmonitor|core\.hookspath|filter\..*\.(clean|s
                         r"lfs\.extension\..*|lfs\.customtransfer\..*|lfs\.standalonetransferagent)$")
 SIGN_CONFIG = re.compile(r"^(gpg\.(.*\.)?program|gpg\.ssh\.defaultkeycommand)$")
 EDITOR_CONFIG = re.compile(r"^core\.editor$")
-WRITE_CONFIG = re.compile(r"^(trace2\.(event|normal|perf)target|http\.savecookies|fsmonitor\.socketdir|lfs\.storage)$")
+WRITE_CONFIG = re.compile(r"^(trace2\.(event|normal|perf)target|http\.(.+\.)?savecookies|fsmonitor\.socketdir|lfs\.storage)$")
 PUSH_RUN_CONFIG = re.compile(r"^(core\.(sshcommand|gitproxy|askpass|alternaterefscommand)|uploadpack\.packobjectshook|"
                              r"credential\.helper|credential\..+\.helper|protocol\.ext\.allow)$")
 URL_CONFIG = re.compile(r"^(url\..+\.insteadof|remote\..+\.url)$")
@@ -86,7 +87,8 @@ SSH_SAFE_OPTIONS = {"stricthostkeychecking", "batchmode", "connecttimeout", "ide
 SSH_PROGRAM_OPTIONS = {"proxycommand", "localcommand", "knownhostscommand", "remotecommand", "xauthlocation",
                        "pkcs11provider", "securitykeyprovider", "include", "match", "permitlocalcommand", "proxyjump"}
 SSH_VALUE = re.compile(r"^[A-Za-z0-9_./:@~,+=%-]+$")
-STOCK_HELPERS = {"store", "cache", "osxkeychain", "manager", "manager-core", "libsecret", "wincred", "netrc"}
+# helpers that their own configuration cannot steer to a file (no GCM: its trace and plaintext store settings write files)
+STOCK_HELPERS = {"store", "cache", "osxkeychain", "libsecret", "wincred"}
 STOCK_HELPER_ARGS = {"cache": re.compile(r"^(\s+--timeout[ =][0-9]+)?$")}  # no file or socket options for any helper
 GH_HELPER = re.compile(r"^!(/usr/bin/|/usr/local/bin/|/opt/homebrew/bin/|/bin/)?gh auth git-credential$")
 CREDENTIAL_EXEC_DIRS = {"/usr/lib/git-core", "/usr/libexec/git-core", "/usr/local/libexec/git-core"}
@@ -135,7 +137,8 @@ class Git:
     """Runs the three allowed read-only git calls under one shared deadline."""
 
     def __init__(self, environ, runner=None):
-        self.env = dict(environ)
+        # git's trace output (GIT_TRACE=1 goes to stderr) would look like a warning: our reads run without it
+        self.env = {k: v for k, v in environ.items() if not k.startswith("GIT_TRACE")}
         self.env.update(GIT_TERMINAL_PROMPT="0", GIT_OPTIONAL_LOCKS="0", LC_ALL="C", GIT_PAGER="cat")
         self.deadline = time.monotonic() + GIT_DEADLINE_SECONDS
         self.runner = runner or self._run
@@ -511,7 +514,7 @@ def trust_entry(path):
             "sha256": file_digest(real)}
 
 
-def user_trusted_programs(environ):
+def user_trusted_programs(environ, kind="signing", field="path"):
     """Signing programs the user blessed in the per-user consent file (never the committed project config):
     ``{"trusted_programs": {"signing": [{"path", "realpath", "uid", "mode", "sha256"}, ...]}}`` in
     ${XDG_CONFIG_HOME:-~/.config}/silver-bullet/consent.json, a regular file owned by the current user that nobody
@@ -523,13 +526,13 @@ def user_trusted_programs(environ):
         if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077:
             return {}
         with open(path, encoding="utf-8") as handle:
-            listed = json.load(handle)["trusted_programs"]["signing"]
+            listed = json.load(handle)["trusted_programs"][kind]
     except (OSError, ValueError, KeyError, TypeError):
         return {}
     entries = {}
     for item in listed if isinstance(listed, list) else []:
-        if isinstance(item, dict) and isinstance(item.get("path"), str):
-            entries[item["path"]] = item
+        if isinstance(item, dict) and isinstance(item.get(field), str):
+            entries[item[field]] = item
     return entries
 
 
@@ -722,17 +725,31 @@ def ssh_command_ok(command):
     return True
 
 
-def stock_helper(value):
-    """A credential helper that is a stock one: store/cache/osxkeychain/manager/libsecret/netrc (with plain
-    options), `gh auth git-credential`, or git's own git-credential-* in its exec directory."""
+def trusted_credential_helper(value, environ):
+    """A helper the user blessed in the consent file ({"trusted_programs": {"credential": [{"helper": "manager",
+    "path": "/usr/bin/git-credential-manager", realpath, uid, mode, sha256}]}}): the pinned file must be the one git
+    finds on PATH for that name."""
+    entry = user_trusted_programs(environ, "credential", "helper").get(value)
+    path = entry.get("path") if entry else None
+    if not isinstance(path, str) or not pinned_program(path, entry):
+        return False
+    found = shutil.which("git-credential-" + value, path=environ.get("PATH") or "/usr/bin")
+    return found is not None and os.path.realpath(found) == os.path.realpath(path)
+
+
+def stock_helper(value, environ=None):
+    """A credential helper that is a stock one: store (no --file), cache (--timeout only), osxkeychain, libsecret,
+    wincred, `gh auth git-credential`, or git's own git-credential-* in its exec directory; Git Credential Manager
+    only when the consent file pins it."""
     if value == "" or GH_HELPER.match(value):
         return True
     name = value.split(None, 1)[0]
     rest = value[len(name):]
     if name in STOCK_HELPERS:
         return bool(STOCK_HELPER_ARGS.get(name, re.compile(r"^$")).match(rest))
-    return os.path.dirname(name) in CREDENTIAL_EXEC_DIRS and os.path.basename(name).startswith("git-credential-") \
-        and rest == ""
+    if os.path.dirname(name) in CREDENTIAL_EXEC_DIRS and os.path.basename(name).startswith("git-credential-"):
+        return rest == ""
+    return trusted_credential_helper(value, environ or {})
 
 
 def rewrite_url(url, cfg):
@@ -747,15 +764,30 @@ def rewrite_url(url, cfg):
     return replacement
 
 
+LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "0.0.0.0", "[::1]"}
+
+
+def url_host(url):
+    """The host of a URL or scp-like address (lower case, no user, port or brackets), or "" for a path."""
+    match = re.match(r"^[A-Za-z][A-Za-z0-9+.-]*://(?:[^/@]*@)?(\[[^\]]+\]|[^/:]+)", url)
+    if match is None and "://" not in url:
+        match = re.match(r"^(?:[^@/:]+@)?(\[[^\]]+\]|[^/:@]{2,}):", url)
+    return match.group(1).strip("[]").lower() if match else ""
+
+
 def hosted_url(url):
-    """A hosted remote: https/http/ssh/git URL or scp-like host:path. A local path, file://, a bundle or `.` runs the
-    receiving repository's own configuration and hooks on this machine."""
-    if "::" in url:
+    """A hosted remote: https/http/ssh/git URL or scp-like [user@]host:path (also host:/abs/path). A local path, file://,
+    a bundle, `.` or a loopback host (localhost, 127.x, ::1) reaches a repository on this machine, whose own
+    configuration and hooks run."""
+    if "::" in url.replace("[::1]", ""):
         return False
-    match = re.match(r"^([A-Za-z][A-Za-z0-9+.-]*)://[^/]+", url)
-    if match is not None:
-        return match.group(1).lower() in ("https", "http", "ssh", "git", "git+ssh", "ssh+git")
-    return re.match(r"^([A-Za-z0-9._-]+@)?[A-Za-z0-9._-]{2,}:[^/:]", url) is not None
+    scheme = re.match(r"^([A-Za-z][A-Za-z0-9+.-]*)://[^/]+", url)
+    if scheme is not None and scheme.group(1).lower() not in ("https", "http", "ssh", "git", "git+ssh", "ssh+git"):
+        return False
+    host = url_host(url)
+    if not host or host in LOCAL_HOSTS or host.startswith("127.") or host.endswith(".localhost"):
+        return False
+    return True
 
 
 def safe_url(url):
@@ -772,14 +804,14 @@ def check_write_config(cfg):
     socket directory, the lfs object store): final delivery when set. http.saveCookies is a boolean."""
     for key, values in cfg.items():
         if WRITE_CONFIG.match(key):
-            if key == "http.savecookies":
+            if key.endswith("savecookies"):
                 if any(git_bool(v) for v in values):
                     raise Strict("http.saveCookies makes git write the cookie jar")
             elif any(v for v in values):
                 raise Strict("the setting %s makes git write a file at a path it names" % key)
 
 
-def check_push_programs(key, values):
+def check_push_programs(key, values, environ=None):
     """Programs a push itself starts or the transport it uses: ssh, proxy, askpass, credential helpers, remote
     helpers, alternate-refs command. A stock form is accepted; anything else is final delivery."""
     if key == "core.sshcommand":
@@ -789,12 +821,12 @@ def check_push_programs(key, values):
     elif key == "protocol.ext.allow":
         ok = all(v.lower() == "never" for v in values)
     else:  # credential.helper, credential.<url>.helper
-        ok = all(stock_helper(v) for v in values)
+        ok = all(stock_helper(v, environ) for v in values)
     if not ok:
         raise Strict("the setting %s makes the push start a program" % key)
 
 
-def check_config(cfg, remote):
+def check_config(cfg, remote, environ=None):
     """S10: per-namespace allowlists for the keys that steer a push."""
     for key, values in cfg.items():
         parts = remote_variable(key)
@@ -824,7 +856,7 @@ def check_config(cfg, remote):
         if key == "core.hookspath" and any(values):
             raise Strict("core.hooksPath names the directory of the pre-push hook")
         if PUSH_RUN_CONFIG.match(key):
-            check_push_programs(key, values)
+            check_push_programs(key, values, environ)
         if key.startswith("url.") and key.endswith(".insteadof") and not safe_url(key[len("url."):-len(".insteadof")]):
             raise Strict("a url.*.insteadOf rewrite points git at a remote helper (%s)" % key)
         if parts is not None and parts[0] == remote and parts[1] == "url":
@@ -979,7 +1011,8 @@ def is_coverage_tracer(value, environ):
 ENV_CONFIG_DENY = re.compile(
     r"^(alias\..+|include\..*|includeif\..*|core\.(hookspath|sshcommand|editor|pager|fsmonitor|askpass|gitproxy)|"
     r"remote\..+\.(push|pushurl|mirror|receivepack|uploadpack|vcs|proxy)|remote\.pushdefault|push\..+|"
-    r"url\..+\.pushinsteadof|filter\..+|diff\..+|pager\..+|gpg\..+|branch\..+\.(remote|pushremote|merge))$",
+    r"url\..+\.pushinsteadof|filter\..+|diff\..+|pager\..+|gpg\..+|branch\..+\.(remote|pushremote|merge)|"
+    r"http\.(.+\.)?savecookies|trace2\..+|fsmonitor\..+|lfs\.storage|gc\.(recentobjectshook|repackfilterto))$",
     re.IGNORECASE)
 
 
@@ -1011,6 +1044,8 @@ def env_check(environ):
     for name, value in environ.items():
         if name.startswith("GIT_TRACE") and not TRACE_VALUE.match(value):
             raise Strict("%s names a file git would write" % name)
+        if name.startswith("GIT_TEST_") and value:
+            raise Strict("%s changes how git behaves (and may write files)" % name)
     for name in ENV_WRITE_DENY:
         if environ.get(name):
             raise Strict("%s names a file git would write" % name)
@@ -1109,7 +1144,7 @@ def _shell_scope(script, result, base, environ, git, parse, logical_base):
         raise Strict("pushes to a URL or path remote have no known default branch")
     if len(cfg.get("remote.%s.url" % remote, [])) != 1:
         raise Strict("pushes to a URL or path remote have no known default branch")
-    check_config(cfg, remote)
+    check_config(cfg, remote, environ)
     # S11 default branches
     candidates = ["refs/%s" % new, "refs/tags/%s" % new, "refs/heads/%s" % new, "refs/remotes/%s" % new] \
         if new else []

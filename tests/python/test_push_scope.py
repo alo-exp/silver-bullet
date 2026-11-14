@@ -1097,12 +1097,12 @@ class ProgramMechanismTests(Base):
                     "ssh -D 1080", "ssh -L 1:h:2", "ssh -o LogFile=/tmp/x", "ssh -o XAuthLocation=/tmp/x", "ssh -o Match=exec", "ssh -oKnownHostsCommand=x"):
             self.assertFalse(push_scope.ssh_command_ok(bad), bad)
         self.strict("git push origin feat/x", "start a program", repo=FakeRepo(cfg={"core.sshcommand": ["sh -c evil"]}))
-        for helper in ("store", "cache --timeout 3600", "osxkeychain", "!gh auth git-credential",
-                       "!/usr/bin/gh auth git-credential", "/usr/lib/git-core/git-credential-store", "manager-core", ""):
+        for helper in ("store", "cache --timeout 3600", "osxkeychain", "libsecret", "wincred", "!gh auth git-credential",
+                       "!/usr/bin/gh auth git-credential", "/usr/lib/git-core/git-credential-store", ""):
             self.assertTrue(push_scope.stock_helper(helper), helper)
         self.feature("git push origin feat/x", repo=FakeRepo(cfg={"credential.helper": ["store"],
                                                                   "credential.https://x.helper": ["cache"]}))
-        for helper in ("store --file=/tmp/c", "cache --socket=/tmp/s", "cache --timeout x", "store extra", "cache --timeout 10 --socket=/s",
+        for helper in ("manager", "manager-core", "netrc", "store --file=/tmp/c", "cache --socket=/tmp/s", "cache --timeout x", "store extra", "cache --timeout 10 --socket=/s",
                        "/usr/lib/git-core/git-credential-store --file=/x", "!evil", "/tmp/git-credential-x", "store;evil", "!gh auth git-credential; evil", "evil",
                        "/usr/lib/git-core/evil"):
             self.assertFalse(push_scope.stock_helper(helper), helper)
@@ -1189,8 +1189,10 @@ class WriteMechanismTests(Base):
                      "GIT_TRACE_SETUP", "GIT_TRACE_CURL"):
             for value in ("/tmp/t", "af_unix:/tmp/s", "~/t", "2>x"):
                 self.strict("git push", "names a file", env=dict(ENV, **{name: value}))
-            for value in ("", "0", "1", "2", "true", "False", "9"):
+            for value in ("", "0", "1", "2", "true", "False"):
                 self.feature("git push", env=dict(ENV, **{name: value}))
+            for value in ("3", "9", "yes", "on", "no", "trace.log", "10"):
+                self.strict("git push", "names a file", env=dict(ENV, **{name: value}))
         for name in ("GIT_LFS_PROGRESS", "GIT_SHALLOW_FILE"):
             self.strict("git push", "names a file", env=dict(ENV, **{name: "/tmp/p"}))
             self.feature("git push", env=dict(ENV, **{name: ""}))
@@ -1228,6 +1230,86 @@ class WriteMechanismTests(Base):
         with redirect_stderr(err):
             self.assertEqual(push_scope.main(["--trust-entry", self.tmp]), 1)
         self.assertIn("not a regular file", err.getvalue())
+
+
+class RootCauseTests(Base):
+    def test_per_url_and_cased_forms_of_write_keys(self):
+        for key in ("http.savecookies", "http.https://example.com/.savecookies", "http.https://example.com.savecookies",
+                    "http.https://example.com/a/b/.savecookies", "http.http://h:8000/.savecookies"):
+            self.strict("git push", "cookie jar", repo=FakeRepo(cfg={key: ["true"], "http.cookiefile": ["/x"]}))
+            self.feature("git push", repo=FakeRepo(cfg={key: ["false"], "http.cookiefile": ["/x"]}))
+        for key in ("HTTP.https://example.com/.SAVECOOKIES", "Http.x.SaveCookies"):
+            env = dict(ENV, GIT_CONFIG_COUNT="1", GIT_CONFIG_KEY_0=key, GIT_CONFIG_VALUE_0="true")
+            self.strict("git push", "changes a push", env=env)
+        for key in ("trace2.eventtarget", "fsmonitor.socketdir", "lfs.storage", "http.x.savecookies"):
+            env = dict(ENV, GIT_CONFIG_COUNT="1", GIT_CONFIG_KEY_0=key, GIT_CONFIG_VALUE_0="/x")
+            self.strict("git push", "changes a push", env=env)
+
+    def test_credential_manager_needs_the_consent_pin(self):
+        outside = tempfile.mkdtemp(prefix="pscope-gcm")
+        self.addCleanup(shutil.rmtree, outside, True)
+        bindir = os.path.join(outside, "bin")
+        os.makedirs(bindir)
+        helper = os.path.join(bindir, "git-credential-manager")
+        with open(helper, "w") as fh:
+            fh.write("#!/bin/sh\nexit 0\n")
+        os.chmod(helper, 0o755)
+        cfgdir = os.path.join(outside, "silver-bullet")
+        os.makedirs(cfgdir)
+        path = os.path.join(cfgdir, "consent.json")
+        env = dict(ENV, XDG_CONFIG_HOME=outside, HOME=outside, PATH=bindir + ":/usr/bin")
+        cfg = {"credential.helper": ["manager"]}
+        self.strict("git push", "start a program", repo=FakeRepo(cfg=cfg), env=env)
+
+        def bless(entry):
+            with open(path, "w") as fh:
+                json.dump({"trusted_programs": {"credential": [entry]}}, fh)
+            os.chmod(path, 0o600)
+
+        entry = dict(push_scope.trust_entry(helper), helper="manager")
+        bless(entry)
+        self.feature("git push", repo=FakeRepo(cfg=cfg), env=env)
+        self.strict("git push", "start a program", repo=FakeRepo(cfg={"credential.helper": ["manager-core"]}), env=env)
+        with open(helper, "a") as fh:
+            fh.write("# changed\n")
+        self.strict("git push", "start a program", repo=FakeRepo(cfg=cfg), env=env)  # content differs from the pin
+        bless(dict(push_scope.trust_entry(helper), helper="manager"))
+        other = os.path.join(outside, "elsewhere")
+        os.makedirs(other)
+        shutil.copy(helper, os.path.join(other, "git-credential-manager"))
+        self.strict("git push", "start a program", repo=FakeRepo(cfg=cfg),
+                    env=dict(env, PATH=other + ":/usr/bin"))  # git would run another file than the pinned one
+        self.strict("git push", "start a program", repo=FakeRepo(cfg=cfg), env=dict(env, PATH="/nonexistent"))
+        bless({"helper": "manager", "path": 7})
+        self.strict("git push", "start a program", repo=FakeRepo(cfg=cfg), env=env)
+
+    def test_loopback_and_scp_like_remotes(self):
+        for url in ("ssh://localhost/srv/x.git", "http://localhost:8000/x.git", "http://127.0.0.1/x", "https://[::1]/x",
+                    "git@localhost:srv/x.git", "ssh://git@127.0.0.2/x", "http://sub.localhost/x", "localhost:/srv/x.git",
+                    "ssh://0.0.0.0/x"):
+            self.assertFalse(push_scope.hosted_url(url), url)
+            self.strict("git push origin feat/x", "remote", repo=FakeRepo(cfg={"remote.origin.url": [url]}))
+        for url in ("git@github.com:/abs/path.git", "user@host.example:/srv/git/x.git", "host.example:/srv/x.git",
+                    "ssh://git@host.example/srv/x.git", "https://user:pw@host.example/x"):
+            self.assertTrue(push_scope.hosted_url(url), url)
+        self.assertFalse(push_scope.hosted_url("C:/repo"))
+        self.assertEqual(push_scope.url_host("https://u@h.example:443/x"), "h.example")
+        self.assertEqual(push_scope.url_host("/srv/x"), "")
+
+    def test_git_reads_run_without_trace_output(self):
+        git = push_scope.Git(dict(ENV, GIT_TRACE="1", GIT_TRACE2="1", GIT_TRACE_PACKET="2", GIT_FOO="x"))
+        self.assertNotIn("GIT_TRACE", git.env)
+        self.assertNotIn("GIT_TRACE2", git.env)
+        self.assertNotIn("GIT_TRACE_PACKET", git.env)
+        self.assertEqual(git.env["GIT_FOO"], "x")
+        self.feature("git push", env=dict(ENV, GIT_TRACE="1", GIT_TRACE2="true"))
+
+    def test_variables_that_write_files_and_test_hooks(self):
+        for name in ("SSLKEYLOGFILE", "GIT_SSL_KEYLOGFILE"):
+            self.strict("git push", "names a file", env=dict(ENV, **{name: "/tmp/keys"}))
+            self.feature("git push", env=dict(ENV, **{name: ""}))
+        self.strict("git push", "GIT_TEST_", env=dict(ENV, GIT_TEST_FOO="1"))
+        self.feature("git push", env=dict(ENV, GIT_TEST_FOO=""))
 
 
 class ParserTests(unittest.TestCase):
