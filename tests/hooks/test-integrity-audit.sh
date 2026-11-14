@@ -33,4 +33,22 @@ out="$(python3 "$T/scripts/audit-protected-reads.py" --check "$FX" 2>&1)" && rc=
 assert_eq "--check fails on it" "1" "$rc"
 assert_contains "and names it" "$out" "new-gate.sh"
 
+# every output mode of the scanner
+out="$(python3 "$AUDIT")"
+assert_contains "the default report counts the rows" "$out" "'A'"
+out="$(python3 "$T/scripts/audit-protected-reads.py")"
+assert_contains "and lists an N row" "$out" "N  hooks/new-gate.sh:1"
+assert_contains "--json carries the rows" "$(python3 "$AUDIT" --json | jq -r '.rows[0].file')" "hooks/"
+assert_contains "--markdown is a table" "$(python3 "$AUDIT" --markdown | head -1)" "| file:line |"
+assert_contains "--rev reads an older tree" "$(python3 "$AUDIT" --rev HEAD | head -1)" "'A'"
+# the fixture must know every row, and every row it knows must still exist
+jq '.rows += [{"file":"hooks/gone.sh","line":1,"kind":"config","snippet":"jq x","record":"X","reason":"a row that no longer exists in the tree"}] | .rows |= map(select(.file != "hooks/lib/enterprise-policy.sh"))' "$FX" >"$TL_TMP/fx2.json"
+out="$(python3 "$AUDIT" --check "$TL_TMP/fx2.json" 2>&1)" && rc=0 || rc=$?
+assert_eq "a fixture that is out of date fails" "1" "$rc"
+assert_contains "and names a row the tree has but the fixture lacks" "$out" "NEW hooks/lib/enterprise-policy.sh"
+assert_contains "and a stale row" "$out" "STALE hooks/gone.sh"
+# a classified line rule and the tools' consent class
+assert_contains "a consent read is class X" "$(python3 "$AUDIT" --json | jq -r '[.rows[] | select(.file == "hooks/lib/enterprise-policy.sh")][0].record')" "X"
+assert_contains "the dev-cycle-check wake-up test is class X with its reason" "$(python3 "$AUDIT" --json | jq -r '[.rows[] | select(.file == "hooks/dev-cycle-check.sh")][0].reason')" "wake-up"
+
 tl_results
