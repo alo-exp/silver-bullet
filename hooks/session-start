@@ -664,6 +664,20 @@ if [[ "$sb_should_mutate" == true && -n "$sb_project_root" && -f "$_lib_dir/inte
 
 }⚠️ SB INTEGRITY — since the last record of this project, ${sb_iv_changed:-the integrity record} changed outside a sanctioned writer${SB_IV_WHY:+ ($SB_IV_WHY)}. It is recorded as it is now. If you did not change it, revert it with git (git diff shows the change)."
   fi
+  # A first baseline (a new worktree, a fresh clone) adopts whatever the files hold: say when they differ
+  # from what git has committed (the agent may have changed them before this session start).
+  if [[ "$SB_IV_STATUS" == unbaselined ]]; then
+    sb_iv_git_diff="$(git -C "$sb_iv_root" status --porcelain -- .silver-bullet.json silver-bullet.md .silver-bullet.prompt.json 2>/dev/null | awk '{ printf "%s%s", (n++ ? ", " : ""), $2 }')"
+    if [[ -n "$sb_iv_git_diff" ]]; then
+      _sb_state_seal_log "${SB_STATE_DIR}/state" "integrity first baseline adopted files that differ from git HEAD: $sb_iv_git_diff"
+      combined="${combined:+$combined
+
+---
+
+}⚠️ SB INTEGRITY — this project had no record yet and its contract files differ from what git has committed (${sb_iv_git_diff}). They are recorded as they are now. If you did not change them, revert them with git (git diff shows the change) and restart the session."
+    fi
+  fi
+  _sb_state_seal_log "${SB_STATE_DIR}/state" "integrity baseline recorded by session-start (source: ${sb_session_source}) for $sb_iv_root"
   sb_integrity_baseline "$sb_iv_root" session
 fi
 

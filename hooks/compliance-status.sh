@@ -103,17 +103,7 @@ fi
 
 # Walk up to find config if not cached
 if [[ -z "$config_file" ]]; then
-  search_dir="$PWD"
-  while true; do
-    if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-      config_file="$search_dir/.silver-bullet.json"
-      break
-    fi
-    if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-      break
-    fi
-    search_dir=$(dirname "$search_dir")
-  done
+  config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity.sh" && sb_integrity_activation_config "$PWD") 2>/dev/null; true)"
 
   # Cache result (only when config was actually found)
   if [[ -n "${pwd_hash:-}" && -n "$config_file" ]]; then

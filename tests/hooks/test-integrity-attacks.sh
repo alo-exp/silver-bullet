@@ -269,7 +269,7 @@ git -C "$PROJ/nested" init -q
 printf 'x\n' >"$PROJ/nested/src/app.js"
 run_dc "$(edit_json "$PROJ/nested/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
 assert_eq "a project nobody baselined is not trusted on the strength of its own files" "deny" "$(decision)"
-assert_contains "and the message names it" "$(message)" "NOT BASELINED"
+assert_contains "and the message is the root's planning floor" "$(message)" "Planning incomplete"
 
 # running the hook that writes the record is not a way round when it only sees the project the agent edited
 ih_project r5-record-forged-payload
@@ -277,6 +277,111 @@ ih_run 'echo "{\"skills\":{\"required_planning\":[]}}" > .silver-bullet.json; rm
 printf '%s' "$(jq -cn --arg f "$PROJ/.silver-bullet.json" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$f}}')" | (cd "$PROJ" && bash "$TL_REPO_ROOT/hooks/dev-cycle-check.sh") >/dev/null 2>&1 || true
 ih_edit
 assert_eq "a forged file-tool PostToolUse does not re-create a deleted record" "deny" "$(decision)"
+
+# ── round 6: every gate decides from the verified record, and a root with a record stays a project ──────
+PYMV='python3 -c "import os,sys;os.rename(sys.argv[1],sys.argv[2])"'
+# gone NAME CMD: the contract files are moved away; commit, push, PR, Stop and the roadmap gate still apply.
+gone_row() {
+  ih_project "r6-$1"
+  ih_run "$2"; tally
+  for v in 'git commit -m x' 'git push origin main' 'gh pr create --title t --body b'; do
+    ih_hook completion-audit.sh "$(bash_json "$v" PreToolUse)"
+    assert_eq "gone $1: '$v' is still judged" "deny" "$(decision)"
+  done
+  echo dirty >>"$PROJ/src/app.js"
+  ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
+  assert_contains "gone $1: Stop still asks for the planning floor" "$TL_OUT" "inst-a"
+  ih_edit
+  assert_eq "gone $1: source edits stop" "deny" "$(decision)"
+}
+gone_row md-python "$PYMV \"\$PWD/silver-bullet.md\" \"\$PWD/sb.md.bak\""
+gone_row cfg-python "$PYMV \"\$PWD/.silver-bullet.json\" \"\$PWD/cfg.bak\""
+gone_row both-dyncd 'cd "$(cat $FX/pd.txt)" && mkdir -p ../gone-r6 && python3 -c "import os;os.rename(\".silver-bullet.json\",\"../gone-r6/c\");os.rename(\"silver-bullet.md\",\"../gone-r6/m\")"'
+# the roadmap gate with a staged summary
+ih_project r6-roadmap-gone
+mkdir -p "$PROJ/.planning/phases/01-x"
+printf 's\n' >"$PROJ/.planning/phases/01-x/01-01-SUMMARY.md"
+git -C "$PROJ" add -f .planning >/dev/null 2>&1
+ih_run "$PYMV \"\$PWD/silver-bullet.md\" \"\$PWD/sb.md.bak\""; tally
+printf '%s' "$(bash_json 'git commit -m x' PreToolUse)" | (cd "$PROJ" && bash "$TL_REPO_ROOT/hooks/roadmap-freshness.sh") >"$TL_TMP/rf.out" 2>/dev/null || true
+assert_contains "the roadmap gate still runs when the contract files moved away" "$(cat "$TL_TMP/rf.out")" "ROADMAP"
+
+# what counts as source comes from the record
+ih_project r6-srcpattern
+ih_rec inst-a
+ih_run 'python3 -c "import json;c=json.load(open(\".silver-bullet.json\"));c.setdefault(\"project\",{})[\"src_pattern\"]=\"/nothing-here/\";json.dump(c,open(\".silver-bullet.json\",\"w\"))"'; tally
+ih_edit
+assert_eq "a changed src_pattern does not take source out of the floor" "deny" "$(decision)"
+assert_contains "and the message names the contract" "$(message)" "ENFORCEMENT CONTRACT CHANGED"
+assert_contains "and addresses the user" "$(message)" "Ask the user"
+assert_not_contains "and never tells the agent to re-record" "$(message)" "run the owning skill"
+# a nested project made with two file-tool writes is not a new root
+ih_project r6-nested-write
+mkdir -p "$PROJ/src/sub/src"
+run_dc "$(edit_json "$PROJ/src/sub/.silver-bullet.json" Write PreToolUse)"
+run_dc "$(edit_json "$PROJ/src/sub/.silver-bullet.json" Write PostToolUse)"
+printf '{"project":{"src_pattern":"/nothing/"},"skills":{"required_planning":[]}}\n' >"$PROJ/src/sub/.silver-bullet.json"
+printf '# SB\n' >"$PROJ/src/sub/silver-bullet.md"
+run_dc "$(edit_json "$PROJ/src/sub/silver-bullet.md" Write PostToolUse)"
+printf 'x\n' >"$PROJ/src/sub/src/x.js"
+run_dc "$(edit_json "$PROJ/src/sub/src/x.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
+assert_eq "the nested project inherits the root's record: its source is gated" "deny" "$(decision)"
+assert_contains "by the root's planning floor" "$(message)" "inst-a"
+
+# release switches and the other gate-relevant keys come from the record and drift fails closed
+ih_project r6-release-switch '.sb_enforcement_tier=2 | .release={require_pre_release_quality_gate:true}'
+ih_rec inst-a; ih_rec inst-b
+ih_run 'python3 -c "import json;c=json.load(open(\".silver-bullet.json\"));c[\"release\"][\"require_pre_release_quality_gate\"]=False;json.dump(c,open(\".silver-bullet.json\",\"w\"))"'; tally
+export SB_ENTERPRISE_HUMAN_DEPLOY_APPROVAL=1 SILVER_BULLET_TEST_HOOK_ENFORCED=1
+ih_hook completion-audit.sh "$(bash_json 'gh release create v1 --notes x' PreToolUse)"
+assert_eq "flipping a release switch in the file does not open gh release create" "deny" "$(decision)"
+assert_contains "the drift is named and the user is asked" "$TL_OUT" "Ask the user"
+unset SB_ENTERPRISE_HUMAN_DEPLOY_APPROVAL SILVER_BULLET_TEST_HOOK_ENFORCED
+
+# the workflow-chain guard reads the sealed state, not the raw one
+ih_project r6-wcg
+ih_run 'printf "silver-quality-gates\nsilver-context\nsilver-plan\nsilver-validate\ninst-a\n" > "$STATE"'; tally
+ih_hook workflow-chain-guard.sh "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
+assert_not_contains "forged chain markers in the raw state do not satisfy the chain guard" "$TL_OUT" '"allow"'
+
+# planning-file-guard and ci-status-check honour only a blessed marker
+ih_project r6-pfg-trivial
+ih_run 'touch "$SD/trivial"'; tally
+ih_hook planning-file-guard.sh "$(jq -cn --arg p "$PROJ/.planning/ROADMAP.md" '{hook_event_name:"PreToolUse",tool_name:"Write",tool_input:{file_path:$p,content:"x"}}')"
+assert_eq "an unblessed trivial marker does not open the planning files" "deny" "$(decision)"
+ih_project r6-ci-trivial
+ih_run 'touch "$SD/trivial"; jq ".state.trivial_file=\"$SD/custom\"" .silver-bullet.json > t.json && mv t.json .silver-bullet.json; : > "$SD/custom"'; tally
+GH_STATUS_OVERRIDE='{"status":"completed","conclusion":"failure","name":"ci"}' ih_hook ci-status-check.sh "$(bash_json 'git push origin main' PreToolUse)"
+assert_contains "neither the marker nor the configured trivial path lifts a red CI" "$TL_OUT" "CI FAILURE"
+
+# a contract skill never launders a drift that was there before it
+ih_project r6-launder
+ih_run 'python3 -c "import json;c=json.load(open(\".silver-bullet.json\"));c[\"skills\"][\"required_planning\"]=[];json.dump(c,open(\".silver-bullet.json\",\"w\"))"'; tally
+for sk in silver-add silver-init silver-update silver-devops silver-migrate; do ih_rec "$sk"; done
+ih_edit
+assert_eq "running every contract skill after a weakening does not make it permanent" "deny" "$(decision)"
+assert_contains "the weakening is still a drift" "$(ih_diverged)" "config"
+assert_contains "the refusal is logged" "$(cat "$SD/seal-events.log")" "got no unlock"
+# a skill in its window adopts only its declared keys
+ih_project r6-skill-keys
+ih_rec silver-add
+ih_run 'python3 -c "import json;c=json.load(open(\".silver-bullet.json\"));c[\"skills\"][\"required_planning\"]=[];c[\"_github_project\"]={\"number\":1};json.dump(c,open(\".silver-bullet.json\",\"w\"))"'; tally
+run_dc "$(bash_json 'x' PostToolUse)"
+ih_edit
+assert_eq "a weakened key written during a skill's window is not adopted" "deny" "$(decision)"
+
+# a first baseline over files that differ from git says so
+ih_project r6-first-baseline
+rm -f "$SD"/integrity-*
+printf '{"skills":{"required_planning":[]},"sb_initiated":true}\n' >"$PROJ/.silver-bullet.json"
+OUT="$(ih_session_start_out startup)"
+assert_contains "a first baseline over a changed contract says so" "$OUT" "differ from what git has committed"
+assert_contains "and logs it" "$(cat "$SD/seal-events.log")" "first baseline adopted files that differ from git HEAD"
+assert_contains "the baseline records its source" "$(cat "$SD/seal-events.log")" "baseline recorded by session-start (source: startup)"
+
+# the record's file digests are SHA-256, not CRC-32
+ih_project r6-sha256
+assert_eq "the plan file digests in the record are 64 hex digits" "ok" "$(awk -F'\t' '$1 ~ /^(md|instr:CLAUDE.md)$/ && length($2) == 64 { n++ } END { print (n >= 1 ? "ok" : "bad") }' "$SD"/integrity-*.rec)"
 
 # ── the documented residual: the key is readable by the same user ──────────────────────────────────
 ih_project residual-recorder-copy

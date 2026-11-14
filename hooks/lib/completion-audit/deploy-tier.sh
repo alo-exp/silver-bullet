@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 # completion-audit: TIER 2 final delivery gate
 ca_run_deploy_tier_gate() {
-project_root="$(dirname "$config_file")"
+project_root="$SB_IV_ROOT"
+# Final delivery stands on the verified contract: any drift of a gate-relevant file, or a project that is
+# unbaselined or untrusted, stops it (the planning tier is already strict in those cases).
+if sb_integrity_contract_drift; then
+  emit_block "$(sb_integrity_drift_message "$SB_IV_ROOT")"
+  exit 0
+fi
 # shellcheck disable=SC2154  # _lib_dir is set by completion-audit.sh
 if [[ -f "${_lib_dir}/enterprise-policy.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
   # shellcheck source=lib/enterprise-policy.sh
@@ -169,7 +175,7 @@ if [[ "$active_workflow" == "devops-cycle" ]]; then
   delivery_uses_devops_deploy=true
   DEFAULT_REQUIRED="$DEVOPS_DEFAULT_REQUIRED"
 else
-  project_root_for_composer="$(dirname "$config_file")"
+  project_root_for_composer="$SB_IV_ROOT"
   wf_dir_for_composer="$project_root_for_composer/.planning/workflows"
   composer_wf_id="${SB_WORKFLOW_ID:-}"
   if [[ -z "$composer_wf_id" ]]; then
@@ -216,18 +222,9 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
   if [[ "$delivery_uses_devops_deploy" == true ]]; then
     release_defaults="${DEVOPS_DEFAULT_RELEASE_REQUIRED:-silver-create-release}"
   fi
-  release_cfg=""
-  if [[ "${SB_IV_STATUS:-none}" != none ]]; then
-    # The recorded list, never the live config's (hooks/lib/integrity.sh).
-    release_cfg="$SB_IV_REQUIRED_RELEASE"
-    if [[ "$delivery_uses_devops_deploy" == true ]]; then release_cfg="${SB_IV_REQUIRED_RELEASE_DEVOPS:-$SB_IV_REQUIRED_RELEASE}"; fi
-  elif command -v jq >/dev/null 2>&1 && [[ -f "$config_file" ]]; then
-    if [[ "$delivery_uses_devops_deploy" == true ]]; then
-      release_cfg=$(jq -r '(.skills.required_release_devops // .skills.required_release // []) | join(" ")' "$config_file" 2>/dev/null || true)
-    else
-      release_cfg=$(jq -r '(.skills.required_release // []) | join(" ")' "$config_file" 2>/dev/null || true)
-    fi
-  fi
+  # The recorded list, never the live config's (hooks/lib/integrity.sh).
+  release_cfg="$SB_IV_REQUIRED_RELEASE"
+  if [[ "$delivery_uses_devops_deploy" == true ]]; then release_cfg="${SB_IV_REQUIRED_RELEASE_DEVOPS:-$SB_IV_REQUIRED_RELEASE}"; fi
   if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
     release_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$release_cfg" "$release_defaults")"
   elif [[ -n "$release_cfg" ]]; then
@@ -275,7 +272,7 @@ done
 # Pre-ship quality-gates must record adversarial mode when VERIFICATION.md passed.
 if declare -f sb_qg_repo_requires_pre_ship_marker >/dev/null 2>&1 \
    && declare -f sb_qg_pre_ship_marker_recorded >/dev/null 2>&1; then
-  project_root_qg="$(dirname "$config_file")"
+  project_root_qg="$SB_IV_ROOT"
   if sb_qg_repo_requires_pre_ship_marker "$project_root_qg"; then
     if [[ "$delivery_uses_devops_deploy" == true ]] \
        && declare -f sb_dqg_pre_ship_marker_recorded >/dev/null 2>&1; then
@@ -327,7 +324,7 @@ fi
 # Verifies that key SB lifecycle phases produced expected output files.
 # These checks prove the work was done, not just that the skill was invoked.
 artifact_blocks=""
-project_root=$(dirname "$config_file")
+project_root=$SB_IV_ROOT
 
 find_planning_artifact() {
   local pattern="$1"

@@ -40,18 +40,10 @@ else
 fi
 
 # Resolve SB project
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir=$(dirname "$search_dir")
-done
+# The project: the nearest root with a record, else the nearest directory with both contract files.
+config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity.sh" && sb_integrity_activation_config "$PWD") 2>/dev/null; true)"
+search_dir="${config_file:+${config_file%/*}}"
+search_dir="${search_dir:-$PWD}"
 [[ -n "$config_file" ]] || exit 0
 
 if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
@@ -128,7 +120,7 @@ fi
 
 [[ -z "$state_contents" ]] && exit 0
 
-sb_outcomes_auto_evaluate "$state_contents" "$trivial_file"
+sb_outcomes_auto_evaluate "$state_contents"
 
 if sb_outcomes_all_done; then
   exit 0

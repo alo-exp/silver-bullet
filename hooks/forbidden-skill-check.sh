@@ -75,10 +75,11 @@ _SB_RETIRED_NS_HYPHEN=$(printf '%s%s-' gs d)
 FORBIDDEN_HARDCODED="executing-plans subagent-driven-development"
 
 # ── Read configurable forbidden list from .silver-bullet.json ────────────────
-config_file="$(sb_find_project_config_walk_only 2>/dev/null || true)"
+# The project's own forbidden list is read from the verified record (hooks/lib/integrity.sh).
 forbidden_cfg=""
-if [[ -n "$config_file" ]]; then
-  forbidden_cfg=$(jq -r '(.skills.forbidden // []) | .[]' "$config_file" 2>/dev/null || true)
+[[ -n "$(declare -F sb_integrity_gate)" ]] || source "$_lib_dir/integrity.sh"
+if sb_integrity_gate "$PWD"; then
+  forbidden_cfg=$(sb_iv_jq -r '(.skills.forbidden // []) | .[]' 2>/dev/null || true)
 fi
 
 check_skill() {

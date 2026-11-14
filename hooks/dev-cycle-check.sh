@@ -114,7 +114,7 @@ main() {
   if [[ "${SB_TI_STATUS:-}" == "parse_failed" && -z "${SB_TI_TOOL_NAME:-}" ]]; then
     # The payload itself is not valid JSON: the host's call cannot be judged. Inside an SB project
     # that is a deny with a message, not a silent allow.
-    [[ -n "$(sb_find_project_config_walk_only 2>/dev/null)" ]] || exit 0
+    [[ -n "$(sb_integrity_root "$PWD")" ]] || exit 0
     hook_event="PreToolUse"
     emit_block "$(sb_pf_unanalysable_message)"
     exit 0
@@ -142,7 +142,7 @@ main() {
     elif [[ "$is_shell" == true ]]; then
       # python3 is missing, or the payload is not valid: the planning floor cannot tell what the
       # command writes. Inside an SB project that is a deny — except for a plainly read-only command.
-      [[ -n "$(sb_find_project_config_walk_only 2>/dev/null || true)" ]] || exit 0
+      [[ -n "$(sb_integrity_root "$PWD")" ]] || exit 0
       cmd_fallback="$(printf '%s' "$input" | jq -r '.tool_input | objects | (.command // .cmd // "") | strings' 2>/dev/null)"
       sb_pf_plain_read_only "$cmd_fallback" && exit 0
       [[ "$hook_event" == "PreToolUse" ]] || exit 0
@@ -151,7 +151,7 @@ main() {
     elif [[ "$tool_name" == "apply_patch" ]]; then
       # A patch needs the helper; the file tools' path fields are plain JSON.
       [[ "$hook_event" == "PreToolUse" ]] || exit 0
-      [[ -n "$(sb_find_project_config_walk_only 2>/dev/null || true)" ]] || exit 0
+      [[ -n "$(sb_integrity_root "$PWD")" ]] || exit 0
       emit_block "$(sb_pf_unanalysable_message)"
       exit 0
     else
@@ -164,7 +164,7 @@ main() {
   # plainly read-only (R1-06, review blocker 1).
   if [[ "$is_shell" == true && "$hook_event" == "PreToolUse" ]]; then
     unseen_why="$(sb_pf_unseen_reason)"
-    if [[ -n "$unseen_why" ]] && [[ -n "$(sb_find_project_config_walk_only 2>/dev/null)" ]]; then
+    if [[ -n "$unseen_why" ]] && [[ -n "$(sb_integrity_root "$PWD")" ]]; then
       emit_block "$(sb_pf_unseen_message "$unseen_why")"
       exit 0
     fi
@@ -298,14 +298,12 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
   # --- Which project do these writes belong to? ---------------------------------------------
   # A project is a directory holding BOTH .silver-bullet.json and silver-bullet.md (a stale
   # project-root cache never counts). Outside one this hook enforces nothing (R2-06).
+  # The root is the nearest directory with a RECORD (a nested project written under it is not a new
+  # root); without any record the nearest directory with both files (an unbaselined project).
   config_for_dir() {
     local found
-    found="$(sb_find_project_config_walk_only_from "$1" 2>/dev/null)" || found=""
-    if [[ -z "$found" ]]; then
-      # The contract files are gone but the project has a record: it is still a project.
-      found="$(sb_integrity_record_root "$1")"
-      [[ -z "$found" ]] || found="$found/.silver-bullet.json"
-    fi
+    found="$(sb_integrity_root "$1")"
+    [[ -z "$found" ]] || found="$found/.silver-bullet.json"
     printf '%s' "$found"
   }
   targets_in_scope=""
@@ -351,7 +349,7 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
       if sb_pf_extract_via "$via" && [[ "$cf" == "$target"/* ]]; then protected_hit="$cf"; protected_root="$root"; fi
     done < <(sb_pf_config_files "$root")
     if [[ "$cfg" != "$loaded_cfg" ]]; then
-      sb_pf_src_load "$cfg"
+      sb_pf_src_load "$root"
       loaded_cfg="$cfg"
     fi
     # A tree written at the project root (tar -x, unzip, patch, git apply, git am) is production source.
@@ -399,11 +397,9 @@ Change it through the owning skill (/sb:init, /sb:update, /sb:add, /sb:devops, /
         # shellcheck disable=SC2086  # the tags are a word list
         sb_integrity_baseline "$post_root" entry $a_tags
       fi
-      # A contract-writing skill is running: its edits to the files it owns are expected.
-      unlock_tags="$(sb_contract_unlock_tags)"
-      if [[ -n "$unlock_tags" ]]; then
-        # shellcheck disable=SC2086  # the tags are a word list
-        sb_integrity_baseline "$post_root" entry $unlock_tags
+      # A contract-writing skill is running: what it is declared to write is adopted, nothing else.
+      if [[ -n "$SB_IV_UNLOCK_SKILL" ]]; then
+        sb_integrity_baseline "$post_root" adopt
       fi
       sb_integrity_verify "$post_root" ""
       sb_integrity_restore_safe
@@ -459,22 +455,13 @@ Change it through the owning skill (/sb:init, /sb:update, /sb:add, /sb:devops, /
 
   # --- The contract the record vouches for changed outside a sanctioned skill -------------------
   if [[ "$hook_event" == "PreToolUse" ]]; then
-    if [[ "$SB_IV_STATUS" == unbaselined ]]; then
+    if sb_integrity_contract_drift; then
       audit_target="$scope_root"
-      emit_block "🚫 PROJECT NOT BASELINED — Silver Bullet has no integrity record for this project, so the strict defaults apply (planning floor unsatisfied, the template's required lists, no trivial bypass) and source edits stop.
-
-Restart the session (session start records this project's contract files; a new worktree, a fresh clone or a project created inside another one needs its own session start) or run /sb:init. Details: ${SB_RUNTIME_STATE_DIR}/seal-events.log"
+      emit_block "$(sb_integrity_drift_message "$scope_root")"
       exit 0
     fi
     for _div in $SB_IV_DIVERGED; do
       case "$_div" in
-        config | md | prompt | record)
-          audit_target="$scope_root"
-          emit_block "🚫 ENFORCEMENT CONTRACT CHANGED — $_div no longer matches what Silver Bullet recorded${SB_IV_WHY:+ ($SB_IV_WHY)} (a command or an editor changed it outside a sanctioned skill), so the gates fall back to the strict defaults and source edits stop.
-
-Revert the change (git checkout -- the file), run the owning skill (/sb:update, /sb:init, /sb:add, /sb:devops, /sb:migrate), or restart the session so session start re-records the files. Details: ${SB_RUNTIME_STATE_DIR}/seal-events.log"
-          exit 0
-          ;;
         instr:* | plan:*)
           emit_advisory "ℹ️ ${_div#*:} changed outside a file tool since it was recorded (logged in seal-events.log)."
           ;;

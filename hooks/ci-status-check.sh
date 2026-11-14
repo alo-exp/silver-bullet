@@ -76,21 +76,13 @@ else
   grep -qE '\bgit (commit|push)\b|\bgh pr (create|merge)\b|\bgh release create\b' <<<"$cmd" || exit 0
 fi
 
-# ── Resolve config file — exit silently if not a Silver Bullet project ───────
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir=$(dirname "$search_dir")
-done
-[[ -z "$config_file" ]] && exit 0
-
+# ── Resolve the project — exit silently if not a Silver Bullet project ───────
+# The nearest root with a record, else the nearest directory with both contract files (hooks/lib/integrity.sh).
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
+# shellcheck source=lib/integrity.sh
+source "$_lib_dir/integrity.sh"
+sb_integrity_gate "$PWD" || exit 0
+config_file="$SB_IV_ROOT/.silver-bullet.json"
 if declare -f sb_project_active >/dev/null 2>&1; then
   sb_project_active "$config_file" || exit 0
 elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
@@ -105,11 +97,8 @@ _ci_override_file="${_sb_state_dir}/ci-red-override"
 # Default trivial path — used by backward compat check (always hardcoded
 # because that check specifically detects old-style usage of the default path).
 _trivial_file="${_sb_state_dir}/trivial"
-# Config-driven trivial path for the real trivial-session bypass; allows
-# projects to specify a custom state.trivial_file in .silver-bullet.json.
+# The real trivial-session bypass is the default marker, and only while the record blesses it.
 _bypass_trivial="${_trivial_file}"
-_cfg_trivial=$(jq -r '.state.trivial_file // ""' "$config_file" 2>/dev/null || true)
-[[ -n "$_cfg_trivial" ]] && _bypass_trivial="$_cfg_trivial"
 if [[ -f "$_ci_override_file" && ! -L "$_ci_override_file" ]]; then
   exit 0
 fi
@@ -117,14 +106,13 @@ fi
 # detects when the old default trivial file is used as CI-red override.
 # trivial-bypass helper exits 0 silently, which would swallow this notice.
 # Remove this block in v0.25.
-if [[ -f "$_trivial_file" && ! -L "$_trivial_file" ]]; then
+if sb_integrity_trivial_ok "$SB_IV_ROOT"; then
   printf '{"hookSpecificOutput":{"message":"[deprecation] host-runtime/.silver-bullet/trivial used as CI-red override. This flag moved to ci-red-override in v0.23.6 and will stop working in v0.25. See silver-bullet#31."}}'
   exit 0
 fi
 
 # ── Trivial bypass (sourced from shared helper — REF-01) ────────────────────
 # shellcheck source=lib/trivial-bypass.sh
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 if [[ -f "$_lib_dir/trivial-bypass.sh" ]]; then
   # shellcheck disable=SC1090
   source "$_lib_dir/trivial-bypass.sh"

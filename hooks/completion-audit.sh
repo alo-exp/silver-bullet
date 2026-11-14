@@ -72,30 +72,21 @@ ca_classify_command "$cmd" || exit 0
 # ── Error handler: warn and exit 0 on unexpected failure ─────────────────────
 trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️  completion-audit.sh: unexpected error — skipping check\"}}" ; exit 0' ERR
 
-# ── Resolve config file by walking up from $PWD ──────────────────────────────
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir=$(dirname "$search_dir")
-done
-
-# No config → project not set up with Silver Bullet — silent exit
-[[ -z "$config_file" ]] && exit 0
-
+# ── The project: the nearest root with a record, else the nearest directory holding both contract files ──
+# Everything below reads the VERIFIED record (hooks/lib/integrity.sh): a root with a record is a project
+# even when its contract files were moved away, and no gate value is read from the live files.
+source "$_lib_dir/integrity.sh"
+sb_integrity_gate "$PWD" || exit 0
+sb_integrity_config_snapshot
+config_file="$SB_IV_CONFIG_FILE"
+project_root="$SB_IV_ROOT"
 if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"
   sb_project_is_initiated "$config_file" || exit 0
 fi
 
-# ── Read config values ────────────────────────────────────────────────────────
+# ── Read config values (from the verified record) ───────────────────────────────
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_STATE_DIR"
 state_file="${SB_STATE_DIR}/state"
@@ -113,7 +104,7 @@ release_require_rc_matrix="false"
 
 sb_default_state="${SB_STATE_DIR}/state"
 sb_default_trivial="${SB_STATE_DIR}/trivial"
-config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
+config_vals=$(sb_iv_jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
   (.state.state_file // $ds),
   (.state.trivial_file // $dt),
   ((.skills.required_planning // []) | join(" ")),
@@ -125,7 +116,7 @@ config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" 
   ((.release.require_plugin_runtime_matrix // false) | tostring),
   ((.release.require_pre_release_quality_gate // false) | tostring),
   ((.release.require_rc_matrix // false) | tostring)
-] | join("\n")' "$config_file")
+] | join("\n")')
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
 state_file="${state_file/#\~/$HOME}"
@@ -149,31 +140,8 @@ release_require_plugin_runtime_matrix=$(printf '%s' "$config_vals" | sed -n '9p'
 release_require_pre_release_quality_gate=$(printf '%s' "$config_vals" | sed -n '10p')
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 release_require_rc_matrix=$(printf '%s' "$config_vals" | sed -n '11p')
-
-# Integrity: the required lists come from the record the sanctioned writers kept, not from the live
-# file (hooks/lib/integrity.sh): a file rewritten outside them falls back to the last recorded values.
-if [[ -f "$_lib_dir/integrity.sh" ]]; then
-  # shellcheck source=lib/integrity.sh
-  source "$_lib_dir/integrity.sh"
-  _iv_root="$(sb_integrity_root "$PWD")"
-  if [[ -n "$_iv_root" ]]; then
-    sb_integrity_verify "$_iv_root" ""
-    if [[ "$SB_IV_STATUS" != none ]]; then
-      # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/*-tier.sh
-      required_planning_cfg="$SB_IV_REQUIRED_PLANNING"
-      # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/planning-tier.sh
-      required_planning_devops_cfg="$SB_IV_REQUIRED_PLANNING_DEVOPS"
-      # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
-      required_deploy_cfg="$SB_IV_REQUIRED_DEPLOY"
-      # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
-      required_deploy_devops_cfg="$SB_IV_REQUIRED_DEPLOY_DEVOPS"
-      # The state file and the trivial marker are not the live config's to name either.
-      state_file="${SB_IV_STATE_FILE:-$sb_default_state}"
-      state_file="${state_file/#\~/$HOME}"
-      trivial_file="$sb_default_trivial"
-    fi
-  fi
-fi
+# The trivial marker is the user's, at the default path: the config does not name another one.
+if [[ "$SB_IV_STATUS" != none ]]; then trivial_file="$sb_default_trivial"; fi
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"

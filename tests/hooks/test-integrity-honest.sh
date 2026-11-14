@@ -43,15 +43,23 @@ planned
 ih_edit
 assert_eq "and source edits pass" "ok" "$(not_deny)"
 
-# 4. /sb:add customises required_deploy and the new value is honoured
+# 4. /sb:add caches the GitHub project in the config: its declared keys are adopted
 ih_project h4
 ih_rec silver-add
-jq '.skills.required_deploy=["inst-a","inst-b","extra"]' "$PROJ/.silver-bullet.json" >"$PROJ/t.json" && mv "$PROJ/t.json" "$PROJ/.silver-bullet.json"
+jq '._github_project={"number":3}' "$PROJ/.silver-bullet.json" >"$PROJ/t.json" && mv "$PROJ/t.json" "$PROJ/.silver-bullet.json"
 run_dc "$(bash_json 'jq ... > t.json && mv t.json .silver-bullet.json' PostToolUse)"
 ih_lapse
 sb_integrity_verify "$PROJ" ""
 assert_eq "silver-add: no divergence once the skill is done" "" "$SB_IV_DIVERGED"
-assert_eq "silver-add: the new deploy list is the recorded one" "inst-a inst-b extra" "$SB_IV_REQUIRED_DEPLOY"
+assert_eq "silver-add: the recorded config holds the cache" "3" "$(sb_iv_jq -r '._github_project.number')"
+# ... but it does not bless another key: a weakened list stays a drift and the recorded list applies
+ih_project h4b
+ih_rec silver-add
+jq '.skills.required_deploy=["inst-a"] | .skills.required_planning=[]' "$PROJ/.silver-bullet.json" >"$PROJ/t.json" && mv "$PROJ/t.json" "$PROJ/.silver-bullet.json"
+run_dc "$(bash_json 'jq ... > t.json && mv t.json .silver-bullet.json' PostToolUse)"
+ih_lapse
+assert_eq "silver-add: a weakened required list stays a drift" "config" "$(ih_diverged)"
+assert_eq "silver-add: the recorded planning list still applies" "inst-a" "$SB_IV_REQUIRED_PLANNING"
 
 # 5-6. honest patches
 ih_project h5
@@ -186,7 +194,7 @@ assert_eq "silver-update rewrites silver-bullet.md" "" "$(ih_diverged)"
 # 32. the unlock window follows a Bash rewrite done by a contract skill
 ih_project h23
 ih_rec silver-devops
-jq '.skills.required_deploy=["inst-a"]' "$PROJ/.silver-bullet.json" >"$PROJ/t.json" && mv "$PROJ/t.json" "$PROJ/.silver-bullet.json"
+jq '.project.active_workflow="devops-cycle"' "$PROJ/.silver-bullet.json" >"$PROJ/t.json" && mv "$PROJ/t.json" "$PROJ/.silver-bullet.json"
 run_dc "$(bash_json 'jq ... > t.json && mv t.json .silver-bullet.json' PostToolUse)"
 ih_lapse
 assert_eq "silver-devops rewrites the JSON through Bash during its window" "" "$(ih_diverged)"
@@ -213,7 +221,7 @@ touch "$SD/trivial"
 ih_edit
 assert_eq "before the first session start there is no marker bypass" "deny" "$(decision)"
 assert_contains "and the message says what to do" "$(message)" "NOT BASELINED"
-assert_contains "restart the session" "$(message)" "Restart the session"
+assert_contains "restart the session" "$(message)" "restart the session"
 # an install that never made its key keeps the legacy marker (nothing was ever recorded)
 rm -f "$SD/seal.key"
 touch "$SD/trivial"

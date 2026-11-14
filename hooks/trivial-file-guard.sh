@@ -34,10 +34,9 @@ fi
 hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"' 2>/dev/null || echo "PreToolUse")
 [[ "$hook_event" == "PreToolUse" ]] || exit 0
 
-config_file="$(sb_find_project_config_walk_only 2>/dev/null || true)"
-[[ -n "$config_file" ]] || exit 0
+sb_integrity_gate "$PWD" || exit 0
 if declare -f sb_project_active >/dev/null 2>&1; then
-  sb_project_active "$config_file" || exit 0
+  sb_project_active "$SB_IV_ROOT/.silver-bullet.json" || exit 0
 fi
 
 emit_block() {
@@ -65,7 +64,7 @@ fi
 # The default marker, and the one the project config names (it is not honoured by the gates,
 # but writing it is still an attempt to arm the bypass).
 default_trivial="${SB_RUNTIME_STATE_DIR}/trivial"
-cfg_trivial="$(jq -r '.state.trivial_file // ""' "$config_file" 2>/dev/null || true)"
+cfg_trivial="$(sb_iv_jq -r '.state.trivial_file // ""' 2>/dev/null || true)"
 cfg_trivial="${cfg_trivial/#\~/$HOME}"
 guarded=$(sb_pf_canon "$default_trivial")
 if [[ -n "$cfg_trivial" ]]; then
