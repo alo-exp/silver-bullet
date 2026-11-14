@@ -80,7 +80,8 @@ matcher="$(jq -r '[.hooks.PreToolUse[] | select(any(.hooks[]; .command | test("c
 for name in Bash exec_command mcp__github__create_pull_request mcp__github__merge_pull_request mcp__github__push_files; do
   assert_eq "completion-audit matcher '$matcher' matches $name" "yes" "$(grep -qE "^(${matcher})\$" <<<"$name" && echo yes || echo no)"
 done
-assert_eq "forbidden-skill-check still sees Skill calls (G2 merge hazard guard)" "yes" "$(jq -r '[.hooks.PreToolUse[] | select(any(.hooks[]; .command | test("forbidden-skill-check"))) | .matcher] | .[0]' "$TL_REPO_ROOT/hooks/hooks.json" | grep -qE 'Skill' && echo yes || echo no)"
+forbidden_matcher="$(jq -r '[.hooks.PreToolUse[] | select(any(.hooks[]; .command | test("forbidden-skill-check"))) | .matcher] | .[0]' "$TL_REPO_ROOT/hooks/hooks.json")"
+assert_eq "forbidden-skill-check still sees Skill calls (G2 merge hazard guard)" "yes" "$([[ "$forbidden_matcher" == *Skill* ]] && echo yes || echo no)"
 
 # ── helper unavailable: say so, and let plainly read-only commands through ─────
 mkproj nohelper
