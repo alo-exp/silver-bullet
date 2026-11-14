@@ -79,7 +79,6 @@ source "$_lib_dir/integrity.sh"
 sb_integrity_gate "$PWD" || exit 0
 sb_integrity_config_snapshot
 config_file="$SB_IV_CONFIG_FILE"
-project_root="$SB_IV_ROOT"
 if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"
@@ -104,6 +103,7 @@ release_require_rc_matrix="false"
 
 sb_default_state="${SB_STATE_DIR}/state"
 sb_default_trivial="${SB_STATE_DIR}/trivial"
+# shellcheck disable=SC2016  # the jq program
 config_vals=$(sb_iv_jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
   (.state.state_file // $ds),
   (.state.trivial_file // $dt),

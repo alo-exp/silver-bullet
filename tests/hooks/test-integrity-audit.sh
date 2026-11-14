@@ -23,20 +23,19 @@ assert_eq "and is current" "" "$(python3 "$AUDIT" --markdown | diff - <(sed -n '
 # the scanner itself: a planted live read is found, a verified one is not
 T="$TL_TMP/tree"
 mkdir -p "$T/hooks" "$T/scripts"
-cp "$AUDIT" "$T/scripts/"
 printf 'x=$(jq -r ".a" "$config_file")\n' >"$T/hooks/new-gate.sh"
 printf 'y=$(sb_iv_jq -r ".a"; jq . "$config_file")\n' >"$T/hooks/ok-gate.sh"
-planted="$(python3 "$T/scripts/audit-protected-reads.py" | grep -c '^N .*new-gate.sh' || true)"
+planted="$(SB_AUDIT_ROOT="$T" python3 "$AUDIT" | grep -c '^N .*new-gate.sh' || true)"
 assert_eq "a gate that reads the config live is an N row" "1" "$planted"
-assert_eq "a gate that reads through the record is class Y" "Y" "$(python3 "$T/scripts/audit-protected-reads.py" --json | jq -r '[.rows[] | select(.file == "hooks/ok-gate.sh")][0].record')"
-out="$(python3 "$T/scripts/audit-protected-reads.py" --check "$FX" 2>&1)" && rc=0 || rc=$?
+assert_eq "a gate that reads through the record is class Y" "Y" "$(SB_AUDIT_ROOT="$T" python3 "$AUDIT" --json | jq -r '[.rows[] | select(.file == "hooks/ok-gate.sh")][0].record')"
+out="$(SB_AUDIT_ROOT="$T" python3 "$AUDIT" --check "$FX" 2>&1)" && rc=0 || rc=$?
 assert_eq "--check fails on it" "1" "$rc"
 assert_contains "and names it" "$out" "new-gate.sh"
 
 # every output mode of the scanner
 out="$(python3 "$AUDIT")"
 assert_contains "the default report counts the rows" "$out" "'A'"
-out="$(python3 "$T/scripts/audit-protected-reads.py")"
+out="$(SB_AUDIT_ROOT="$T" python3 "$AUDIT")"
 assert_contains "and lists an N row" "$out" "N  hooks/new-gate.sh:1"
 assert_contains "--json carries the rows" "$(python3 "$AUDIT" --json | jq -r '.rows[0].file')" "hooks/"
 assert_contains "--markdown is a table" "$(python3 "$AUDIT" --markdown | head -1)" "| file:line |"

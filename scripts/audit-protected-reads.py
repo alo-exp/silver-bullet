@@ -13,7 +13,7 @@ tests/hooks/test-integrity-audit.sh fails on any N row and on any row the fixtur
 """
 import glob, json, os, re, subprocess, sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.environ.get("SB_AUDIT_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 READ_PATTERNS = [
     ("config", re.compile(r'\bjq\b[^\n]*"\$\{?(?:config_file|cfg|sb_cfg|config|_cfg|cfg_file|config_path|scope_config)\b')),

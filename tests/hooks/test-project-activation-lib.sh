@@ -7,7 +7,6 @@ export PYTHONDONTWRITEBYTECODE=1
 source "$TL_REPO_ROOT/hooks/lib/sb-project-gate.sh"
 source "$TL_REPO_ROOT/hooks/lib/required-skills.sh"
 
-SD="$SB_RUNTIME_STATE_DIR"
 R="$TL_TMP/proj"
 mkdir -p "$R/src/deep/er"
 git -C "$R" init -q
