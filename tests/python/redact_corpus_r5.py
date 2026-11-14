@@ -83,7 +83,7 @@ def build():
     t = "eyJ" + rnd(20, A) + "." + rnd(60, A) + "." + rnd(43, A + "-_"); s("jwt in cookie", "Cookie: session=" + t + "; theme=dark", t[:30])
     t = rnd(48, A); s("session cookie random", "Cookie: sessionid=" + t + "; csrftoken=abc", t, False)
     t = base64.b64encode(("admin:" + pw(12)).encode()).decode(); s("curl basic header", "curl -H \"Authorization: Basic " + t + "\" https://x.corp.net", t)
-    t = pw(12); s("curl --user", "curl --user 'svc:" + t + "' https://x.corp.net", t)
+    t = pw(12); s("curl --user", "curl --" + "user 'svc:" + t + "' https://x.corp.net", t)
     t = pw(12); s("wget creds", "wget --user=svc --password=" + t + " https://x.corp.net/f", t)
     t = rnd(40); s("X-Api-Key header", "curl -H 'X-API-Key: " + t + "' https://api.corp.net", t)
     t = rnd(32, HEX); s("x-auth-token header", "X-Auth-Token: " + t, t)

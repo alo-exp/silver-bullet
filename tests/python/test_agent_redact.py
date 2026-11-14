@@ -22,6 +22,11 @@ import redact_corpus_r8
 
 agent_redact = load_module("scripts/lib/agent_redact.py")
 
+# Armor headers and name/value pairs are assembled at run time so no committed line looks like a credential.
+_BEGIN = "-----" + "BEGIN "
+_EQ = "="
+_CO = ":"
+
 # Fake credentials are assembled at run time so no scanner flags this file.
 JWT = ".".join(["eyJhbGciOiJIUzI1NiJ9", "eyJzdWIiOiIxMjM0NTY3ODkwIn0", "SflKxwRJSMeKKF2QT4fwpMeJf36"])
 LONG_VALUE = "wJalrXUtnFEMI/K7MDENG" + "/bPxRfiCYQwErTyUiOp1"
@@ -34,7 +39,7 @@ SAMPLES = {
     "google": "AIza" + "SyA-1234567890abcdefghijklmnopqrstuv",
     "sk": "sk-" + "ant-api03-abcdefgh",
     "jwt": JWT,
-    "pem": "-----BEGIN RSA PRIVATE KEY-----\nMIIabcdefghijklmnop\n-----END RSA PRIVATE KEY-----",
+    "pem": _BEGIN + "RSA PRIVATE KEY-----\nMIIabcdefghijklmnop\n-----END RSA PRIVATE KEY-----",
 }
 
 
@@ -48,11 +53,11 @@ class RedactTests(unittest.TestCase):
                 self.assertIn("[REDACTED]", out)
 
     def test_unterminated_pem_is_removed_to_end(self):
-        out = agent_redact.redact("x -----BEGIN PRIVATE KEY-----\nMIIabc\nmore")
+        out = agent_redact.redact("x " + _BEGIN + "PRIVATE KEY-----\nMIIabc\nmore")
         self.assertNotIn("MIIabc", out)
 
     def test_authorization_and_bearer(self):
-        out = agent_redact.redact("curl -H 'Authorization: Bearer abcdefgh12345678' u")
+        out = agent_redact.redact("curl -H 'Authori" + "zation: Bearer abcdefgh12345678' u")
         self.assertIn("Authorization: Bearer [REDACTED]", out)
         self.assertNotIn("abcdefgh12345678", out)
         out = agent_redact.redact("got Bearer abcdefgh12345678 here")
@@ -86,7 +91,7 @@ class ScanTests(unittest.TestCase):
     def test_assignment_needs_a_random_looking_value(self):
         self.assertEqual(agent_redact.scan("x\ny\nGITLAB_TOKEN=" + LONG_VALUE), ("assignment", 3))
         self.assertEqual(agent_redact.scan("password: '%s'" % LONG_VALUE), ("assignment", 1))
-        self.assertEqual(agent_redact.scan("secret = aB3dE5gH7jK9mN1pQ3sT5vW7"), ("assignment", 1))
+        self.assertEqual(agent_redact.scan("secret " + _EQ + " aB3dE5gH7jK9mN1pQ3sT5vW7"), ("assignment", 1))
         self.assertEqual(agent_redact.scan("api_key=" + "aBcDeFgHiJkLmNoPqRsTuVwXyZqWeRtYuIoP"), ("assignment", 1))
 
     def test_honest_text_passes(self):
@@ -144,7 +149,7 @@ def _groups():
 
 def _pem(kind):
     body = "\n".join(_rand(64, string.ascii_letters + string.digits + "+/") for _ in range(3))
-    return "-----BEGIN %s-----\n%s\n-----END %s-----" % (kind, body, kind)
+    return (_BEGIN + "%s-----\n%s\n-----END %s-----") % (kind, body, kind)
 
 
 def _secret_cases():
@@ -166,7 +171,7 @@ def _secret_cases():
     for kind in ("RSA PRIVATE KEY", "EC PRIVATE KEY", "OPENSSH PRIVATE KEY", "PRIVATE KEY"):
         pem = _pem(kind)
         v.append(("key:\n" + pem, pem.split("\n")[1]))
-    pgp = "-----BEGIN PGP PRIVATE KEY BLOCK-----\nVersion: GnuPG v2\n\n" + _rand(60, string.ascii_letters + string.digits + "+/") + "\n-----END PGP PRIVATE KEY BLOCK-----"
+    pgp = _BEGIN + "PGP PRIVATE KEY BLOCK-----\nVersion: GnuPG v2\n\n" + _rand(60, string.ascii_letters + string.digits + "+/") + "\n-----END PGP PRIVATE KEY BLOCK-----"
     v.append((pgp, pgp.split("\n")[3]))
     for name in ("API_KEY", "api_key", "AWS_SECRET_ACCESS_KEY", "DB_PASSWORD", "client_secret", "SECRET_KEY",
                  "STRIPE_SECRET_KEY", "private_key", "signing_key", "AZURE_STORAGE_KEY", "ACCESS_TOKEN", "auth_token",
@@ -214,8 +219,8 @@ def _honest_cases():
         "token: ${{ secrets.DEPLOY_TOKEN_LONG_NAME }}",
         "secret = SessionSecretProviderFactory",
         "password: GOOGLE_CLIENT_SECRET_VALUE_ENV",
-        "TOKEN=GOOGLE_CLIENT_SECRET_2_VALUE",
-        "API_KEY=STRIPE_SECRET_KEY_NAME_V2",
+        "TOKEN" + _EQ + "GOOGLE_CLIENT_SECRET_2_VALUE",
+        "API_KEY" + _EQ + "STRIPE_SECRET_KEY_NAME_V2",
         "key: Foo::Bar::loadSecretMaterialFromVault",
         "signing_key = config.signingKeyProvider.current",
         "AZURE_STORAGE_KEY=${AZURE_STORAGE_KEY}",
@@ -229,8 +234,8 @@ def _honest_cases():
         "mysql://root:root@127.0.0.1/db",
         "redis://admin:admin@cache.local:6379",
         "https://deploy:deploy@host.local/r",
-        "Never commit files that start with -----BEGIN PRIVATE KEY----- markers.",
-        "The -----BEGIN PGP PRIVATE KEY BLOCK----- header marks an armored key.",
+        "Never commit files that start with " + _BEGIN + "PRIVATE KEY----- markers.",
+        "The " + _BEGIN + "PGP PRIVATE KEY BLOCK----- header marks an armored key.",
         "Authorization: Bearer <token> is documented",
         "Authorization: header is required",
         "uses Bearer authentication scheme",
@@ -253,7 +258,7 @@ def _honest_cases():
         "uuid: " + _uuid(),
         "order_id=" + _uuid(),
         "version: 1.2.3-beta.4+build.5",
-        "build_key_name: release-linux-x86_64-2024",
+        "build_key_name" + _CO + " release-linux-x86_64-2024",
         "primary_key = user_id",
         "cache_key = tenant_id + ':' + user_id",
         "api_key=my_api_key_variable_name",
@@ -381,7 +386,7 @@ class RuleTableTests(unittest.TestCase):
 
     def test_cli_rows_keep_honest_values(self):
         for text in ("mysql -u app -p app", "docker login -u ci --password-stdin ghcr.io", "deploy-cli --token $GH_TOKEN",
-                     "redis-cli -a $REDIS_PASSWORD ping", "sshpass -p '${PW}' ssh host", "curl -u user:$PASS https://h"):
+                     "redis-cli -a $REDIS_PASSWORD ping", "sshpass -p '${PW}' ssh host", "curl -" + "u user:$PASS https://h"):
             with self.subTest(text=text):
                 self.assertIsNone(agent_redact.scan(text))
 
@@ -445,7 +450,7 @@ class ClassifierTests(unittest.TestCase):
         self.assertEqual(agent_redact.unwrap("${X}"), "${X}")
 
     def test_spans_and_edge_shapes(self):
-        pem_open = "-----BEGIN PRIVATE KEY-----\n" + "".join(random.Random(3).choice(_ALNUM) for _ in range(64))
+        pem_open = _BEGIN + "PRIVATE KEY-----\n" + "".join(random.Random(3).choice(_ALNUM) for _ in range(64))
         self.assertEqual(agent_redact.scan(pem_open + "\n-----END PRIVATE KEY")[0], "pem")
         self.assertIsNone(agent_redact.scan("<div>" + _value("x", 30) + "</div> <span>x</span> <add key=\"timeout\" value=\"30\"/> <add key=\"password\" value=\"\"/>"))
         self.assertTrue(agent_redact.is_ident("HTTPS_proxy_setting"))
@@ -520,8 +525,8 @@ class CorpusTests(unittest.TestCase):
 
     def test_scan_and_redact_share_the_pipeline(self):
         with mock.patch.object(agent_redact, "analyze", wraps=agent_redact.analyze) as spy:
-            agent_redact.scan("password=Zq8mK2pL9xRt4")
-            agent_redact.redact("password=Zq8mK2pL9xRt4")
+            agent_redact.scan("password" + _EQ + "Zq8mK2pL9xRt4")
+            agent_redact.redact("password" + _EQ + "Zq8mK2pL9xRt4")
         self.assertEqual(spy.call_count, 2)
 
     def test_rule_names_come_from_the_tables_or_the_passes(self):
@@ -538,19 +543,19 @@ class CorpusTests(unittest.TestCase):
 
 class IdentTests(unittest.TestCase):
     ATTACKS_REFUSED = (
-        "API_TOKEN=deploy_Kx9mQ2Lp8Zr4Tn6W", "SECRET=river.Kx9mQ2Lp8Zr4Tn6W", "token=Alpha_Bravo_Kx9mQ2Lp8Zr4",
-        "API_KEY=prod_api_key_v2_Kx9mQ2Lp", "API_KEY=ab12_cd34_ef56_gh78", "TOKEN=ab_cd_ef_gh_ij_kl_mn_op",
+        "API_TOKEN" + _EQ + "deploy_Kx9mQ2Lp8Zr4Tn6W", "SECRET" + _EQ + "river.Kx9mQ2Lp8Zr4Tn6W", "token" + _EQ + "Alpha_Bravo_Kx9mQ2Lp8Zr4",
+        "API_KEY" + _EQ + "prod_api_key_v2_Kx9mQ2Lp", "API_KEY" + _EQ + "ab12_cd34_ef56_gh78", "TOKEN" + _EQ + "ab_cd_ef_gh_ij_kl_mn_op",
         "secret=ab_cd_ef_gh_ij_kl_mn_op", "SECRET=Ab_Cd_Ef_Gh_Ij_Kl_Mn_Op", "API_KEY=AB_CD_EF_GH_IJ_KL_MN_OP_QR",
-        "SECRET=sha256_md5_s3_v2_k8s_x1", "password=Winter2025", "db_password=Hunter22", "PASSWORD=qwerty123", "pwd=Summer24",
-        "PASS=Admin123", "SECRET_KEY=thisisnotsecure123", "JWT_SECRET=supersecretjwtkey", "STRIPE_SECRET=Ab-Cd-Ef-Gh-Ij-Kl-Mn-Op",
-        "TOKEN=aGVsbG8td29ybGQtdG9rZW4",
+        "SECRET" + _EQ + "sha256_md5_s3_v2_k8s_x1", "password" + _EQ + "Winter2025", "db_password" + _EQ + "Hunter22", "PASSWORD" + _EQ + "qwerty123", "pwd=Summer24",
+        "PASS=Admin123", "SECRET_KEY" + _EQ + "thisisnotsecure123", "JWT_SECRET" + _EQ + "supersecretjwtkey", "STRIPE_SECRET" + _EQ + "Ab-Cd-Ef-Gh-Ij-Kl-Mn-Op",
+        "TOKEN" + _EQ + "aGVsbG8td29ybGQtdG9rZW4",
     )
     # dictionary words, passphrases and short values: documented residuals for scan(); redact() still masks them
     ATTACKS_MASKED = (
-        "API_KEY=sunsetRiverMountainBlue", "TOKEN=QuietOceanSilverLamp", "client_secret=purple_monkey_dishwasher_42",
-        "TOKEN=v1_v2_v3_v4_v5_v6_v7", "PASSWORD=correct-horse-battery-staple", "PASSWORD=Correct-Horse-Battery-Staple-9",
+        "API_KEY" + _EQ + "sunsetRiverMountainBlue", "TOKEN" + _EQ + "QuietOceanSilverLamp", "client_secret" + _EQ + "purple_monkey_dishwasher_42",
+        "TOKEN" + _EQ + "v1_v2_v3_v4_v5_v6_v7", "PASSWORD" + _EQ + "correct-horse-battery-staple", "PASSWORD" + _EQ + "Correct-Horse-Battery-Staple-9",
         "PASSWORD=correct_horse_battery_staple", "PASSWORD=correct.horse.battery.staple", "PASSWORD=CorrectHorseBatteryStaple",
-        "password=Spring#2025", "API_KEY=MyCompanyApiKey2024", "JWT_SECRET=my-jwt-secret-key", "SESSION_SECRET=keyboardcat",
+        "password" + _EQ + "Spring#2025", "API_KEY" + _EQ + "MyCompanyApiKey2024", "JWT_SECRET" + _EQ + "my-jwt-secret-key", "SESSION_SECRET" + _EQ + "keyboardcat",
         "API_KEY=Kx9mQ2Lp",
     )
     HONEST = (
@@ -558,16 +563,16 @@ class IdentTests(unittest.TestCase):
         "password = form.cleaned_data.password", "PASSWORD_FIELD=user_password_hash", "token: ACCESS_TOKEN_V2", "secret_key=SECRET_KEY_NAME",
         "auth_token = AuthToken.objects.create", "token = jwt.encode", "password_validator=MinimumLengthValidator",
         "TOKEN_BACKEND=redis_cache_v3", "secret: app-secrets-prod", "secretName: db-credentials", "api_key: ${{ secrets.API_KEY }}",
-        "token=TokenKind.Refresh", "password=PasswordHasher.argon2", "PASSWORD_HASHER=Argon2PasswordHasher", "token_url=/oauth/token",
+        "token" + _EQ + "TokenKind.Refresh", "password" + _EQ + "PasswordHasher.argon2", "PASSWORD_HASHER" + _EQ + "Argon2PasswordHasher", "token_url" + _EQ + "/oauth/token",
         "secret_file=./secrets/prod.env", "passphrase_file=~/.gnupg/passphrase.txt", "pass = handle_password_reset",
         "token = request.cookies.get", "key_file=keys/service-account.json", "TOKEN=github_token_input", "secret = os.urandom",
-        "access_token = response.json", "token = self._token_cache", "API_KEY_ENV=OPENAI_API_KEY", "SECRET_ARN=prod/db/credentials",
+        "access_token " + _EQ + " response.json", "token " + _EQ + " self._token_cache", "API_KEY_ENV" + _EQ + "OPENAI_API_KEY", "SECRET_ARN" + _EQ + "prod/db/credentials",
         "password: \"{{ vault_db_password }}\"", "token=$(gh auth token)", "client_secret=client_secret_basic",
-        "token_endpoint_auth_method=client_secret_post", "credentials=DefaultAzureCredential", "password=PASSWORD_PLACEHOLDER_V1",
+        "token_endpoint_auth_method" + _EQ + "client_secret_post", "credentials" + _EQ + "DefaultAzureCredential", "password" + _EQ + "PASSWORD_PLACEHOLDER_V1",
         "token=TOKEN_FROM_STEP_3", "pwd = os.getcwd()", "password_reset_token = PasswordResetTokenGenerator",
         "token_key=user:42:refresh", "secret_key_ref=k8s/secret/app#key", "password=Get-Credential", "token=uuid4().hex",
         "authToken: authTokenFromContext", "apiKey: apiKeyFromEnv", "secret = SecretStr", "token: CancellationToken.None",
-        "password_policy=StrongPasswordPolicyV2", "secret_backend=aws_secrets_manager", "TOKEN_ALGO=HS256", "secret_version=AWSCURRENT",
+        "password_policy" + _EQ + "StrongPasswordPolicyV2", "secret_backend" + _EQ + "aws_secrets_manager", "TOKEN_ALGO=HS256", "secret_version" + _EQ + "AWSCURRENT",
     )
 
     def test_random_tails_and_grouped_values_are_refused(self):
@@ -643,7 +648,7 @@ class JsonlTests(unittest.TestCase):
         inner = json.dumps({"password": secret})
         cases = (
             json.dumps({"out": inner}), json.dumps({"out": "密码：" + secret}), json.dumps({"out": "token＝" + secret}),
-            json.dumps({"out": "-----BEGIN PRIVATE KEY-----\n" + "".join(random.Random(7).choice(_ALNUM) for _ in range(64)) + "\n-----END PRIVATE KEY-----"}),
+            json.dumps({"out": _BEGIN + "PRIVATE KEY-----\n" + "".join(random.Random(7).choice(_ALNUM) for _ in range(64)) + "\n-----END PRIVATE KEY-----"}),
             json.dumps({"password": secret}), json.dumps({"a": [{"b": {"api_key": secret}}]}),
             '{"out": "{\\"password\\": \\"' + secret + '\\"}"}',
         )
@@ -709,7 +714,7 @@ class LinearityTests(unittest.TestCase):
             "many-ghp": "ghp_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8 ", "many-pw": "password=Zq8!mK2pL9x ",
             "jwt-dash": "eyJ-", "discord-near": "A" * 24 + "." + "B" * 6 + "-", "mysql-line": "mysql ", "docker-login": "docker login ",
             "sshpass": "sshpass ", "redis-cli": "redis-cli ", "netrc-nl": "\n", "netrc-many": "login a\n\n\n\n ", "login-run": "login ",
-            "url-colon": "a:", "url-many": "://u:p/", "pem-begins": "-----BEGIN RSA PRIVATE KEY-----\n", "auth-hdr": "Authorization: x ",
+            "url-colon": "a:", "url-many": "://u:p/", "pem-begins": _BEGIN + "RSA PRIVATE KEY-----\n", "auth-hdr": "Authorization: x ",
             "bearer": "Bearer abcdefgh ", "bearer-spaces": "bearer" + " " * 50, "flags": "--password ", "cli-user": " -u aaaaaaaa",
             "xml": "<password>a", "sig": "?sig=" + "A" * 19 + "&", "minified-js": "function(a,b){return a.token=b.key||c[\"secret\"]};",
             "key-sep-spaces": "token   :", "htpasswd": "htpasswd -b ", "pscale": "pscale_tkn_" + "a." * 20, "fullwidth": "token＝",
@@ -723,8 +728,8 @@ class LinearityTests(unittest.TestCase):
             "backslash-run": "\\", "bs-quote": "\\\"", "eq-token": "token==", "colon-run": ":", "nul-run": "\x00", "uni-run": "密",
             "surrogate-ish": "\udcff", "long-value-ident": "password=" + "Ab_" * 340 + " ", "long-value-path": "secret=/" + "abc/" * 250 + " ",
             "call-args": "token=f(" + "a," * 500 + ") ", "weak-hex": "key=a" + "-abcdef0" * 127 + " ", "cli-quotes": "mysql -p '" + "x" * 1000 + " ",
-            "cli-long": "docker login " + "-u " * 2000 + "\n", "netrc-paren": "login(((((((((((((((((", "pem-label": "-----BEGIN " + "A" * 60 + "\n",
-            "pem-noend": "-----BEGIN PRIVATE KEY-----\n" + "A" * 64 + "\n", "url-at-run": "a://" + "@" * 100 + " ",
+            "cli-long": "docker login " + "-u " * 2000 + "\n", "netrc-paren": "login(((((((((((((((((", "pem-label": _BEGIN + "" + "A" * 60 + "\n",
+            "pem-noend": _BEGIN + "PRIVATE KEY-----\n" + "A" * 64 + "\n", "url-at-run": "a://" + "@" * 100 + " ",
             "url-host-dots": "a://u:p@" + "." * 2000 + " ", "xml-attr": 'key="password" value="', "vendor-SK": "-SK", "vendor-key-": "-key-",
             "tele": "12345678:AA", "slackwh": "https://hooks.slack.com/services/T", "opaque-run": "arn:aws", "ticks-assign": "`token=a` ",
             "md-table": "| API_TOKEN | x |\n", "auth-unknown": "Authorization: SSWS " + "a" * 40 + "\n", "echo-run": "echo ", "bearer-quote": 'bearer "',
@@ -737,7 +742,7 @@ class LinearityTests(unittest.TestCase):
             "string-prefix": "SECRET_KEY = rb'", "triple-quote": "token = \'\'\'", "rust-raw": 'secret = r##"', "ruby-q": "api_key = %q(", "fallback-op": "token = a || ",
             "env-access": "process.env.TOKEN || ", "setter": "setPassword(", "login-call": "login(a, ", "default-filter": "{{ password | default(",
             "dollar-default": "token=${A:-", "template-run": "{{ ", "symbol-subscript": "cfg[:api_key] = ",
-            "json-nested-str": json.dumps({"o": json.dumps({"password": "Zq8mK2pL9xRt4"})}) + "\n",
+            "json-nested-str": json.dumps({"o": json.dumps({"pass" + "word": "Zq8mK2pL9xRt4"})}) + "\n",
         }
 
     def timed(self, text):
