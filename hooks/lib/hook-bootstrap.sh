@@ -79,7 +79,7 @@ fi
 # Detects git commit/push/deploy commands and blocks if workflow is incomplete.
 #
 # TWO-TIER ENFORCEMENT:
-#   Intermediate commits (git commit, git push to feature branches):
+#   Intermediate commits (git commit, git push to feature branches; a push to the default branch or of a tag is final delivery, see ca_push_targets_default_branch):
 #     → Only require required_planning skills (default: silver-quality-gates)
 #     → Allows GSD execute-phase to make atomic commits during development
 #   Final delivery (gh pr create, deploy, gh release create):

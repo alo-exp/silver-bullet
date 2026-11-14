@@ -12,7 +12,13 @@ source "${REPO_ROOT}/tests/live/lib/rc-delegate-smoke.sh"
 # shellcheck source=tests/scripts/lib/five-tool-prerelease.sh
 source "${REPO_ROOT}/tests/scripts/lib/five-tool-prerelease.sh"
 
-[[ "${SB_SKIP_RC_MATRIX:-0}" == "1" ]] && { echo "SKIP: SB_SKIP_RC_MATRIX=1"; exit 0; }
+if [[ "${SB_SKIP_RC_MATRIX:-0}" == "1" ]]; then
+  # shellcheck source=scripts/lib/release-bypass-audit.sh
+  source "${SCRIPT_DIR}/lib/release-bypass-audit.sh"
+  sb_release_bypass_audit SB_SKIP_RC_MATRIX "$REPO_ROOT"
+  echo "SKIP: SB_SKIP_RC_MATRIX=1 (logged; it writes no markers, so the release gate still blocks)"
+  exit 0
+fi
 
 RC_CI_MODE=0
 [[ "${SB_RC_CI_MODE:-0}" == "1" || "${GITHUB_ACTIONS:-}" == "true" ]] && RC_CI_MODE=1
@@ -46,7 +52,7 @@ host_live() {
 run_cell() {
   local host="$1" mode="$2"
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    sb_smoke_write_rc_marker "$host" "$mode" pass dry-run; PASS=$((PASS+1)); return
+    sb_smoke_write_rc_marker "$host" "$mode" dry-run dry-run; SKIP=$((SKIP+1)); return
   fi
   # CI: no first-party Anthropic/Codex API keys — structural install only for codex/claude.
   if [[ "$RC_CI_MODE" -eq 1 && "$host" != "cursor" ]]; then
