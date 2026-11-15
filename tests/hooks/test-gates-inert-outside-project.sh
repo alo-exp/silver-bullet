@@ -32,7 +32,7 @@ for h in spec-floor-check forbidden-skill-check uat-gate; do
   assert_eq "$h is not registered for MCP tools" "no" "$([[ "$m" == *mcp__* ]] && echo yes || echo no)"
   assert_eq "$h is still registered" "yes" "$([[ -n "$m" ]] && echo yes || echo no)"
 done
-for h in completion-audit ci-status-check; do
+for h in phase-archive completion-audit ci-status-check; do
   m="$(jq -r --arg h "$h.sh" '[.hooks.PreToolUse[] | select(any(.hooks[]; .command | endswith($h + "\""))) | .matcher] | join(",")' "$TL_REPO_ROOT/hooks/hooks.json")"
   assert_eq "$h still sees MCP delivery tools" "yes" "$([[ "$m" == *mcp__* ]] && echo yes || echo no)"
 done

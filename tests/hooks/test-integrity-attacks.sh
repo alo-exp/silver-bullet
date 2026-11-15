@@ -446,6 +446,29 @@ for spell in 'rm -f "$STATE" "$STATE.hwm" "$STATE.seal"' ': > "$STATE"; : > "$ST
   assert_contains "state gone with its counter ($spell): Stop applies the floor" "$TL_OUT" "inst-a"
 done
 
+# round 9: the record deleted and a contract file (or both) moved away leaves no inert project
+anchor_row() { # NAME CMD
+  ih_project "r9-$1"
+  echo d >>"$PROJ/src/app.js"
+  ih_run "$2"; tally
+  ih_edit
+  assert_eq "anchor $1: source edits stop" "deny" "$(decision)"
+  assert_contains "anchor $1: as an unbaselined project" "$(message)" "NOT BASELINED"
+  ih_hook completion-audit.sh "$(bash_json 'git commit -am x' PreToolUse)"
+  assert_eq "anchor $1: git commit is judged" "deny" "$(decision)"
+  ih_hook completion-audit.sh "$(bash_json 'gh pr create --fill' PreToolUse)"
+  assert_eq "anchor $1: gh pr create is judged" "deny" "$(decision)"
+  ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
+  assert_contains "anchor $1: Stop asks for the floor" "$TL_OUT" "missing required skills"
+}
+anchor_row md 'cd "$(cat $FX/d.txt)" && rm -f integrity-*; cd "$(cat $FX/pd.txt)" && python3 -c "import os;os.rename(\"silver-bullet.md\",\"/tmp/sbr9.md\")"'
+anchor_row json 'cd "$(cat $FX/d.txt)" && rm -f integrity-*; cd "$(cat $FX/pd.txt)" && python3 -c "import os;os.rename(\".silver-bullet.json\",\"/tmp/sbr9.json\")"'
+anchor_row both 'cd "$(cat $FX/d.txt)" && rm -f integrity-*; cd "$(cat $FX/pd.txt)" && python3 -c "import os;os.rename(\".silver-bullet.json\",\"/tmp/sbr9.json\");os.rename(\"silver-bullet.md\",\"/tmp/sbr9.md\")"'
+anchor_row record-only 'cd "$(cat $FX/d.txt)" && rm -f integrity-*'
+rm -f /tmp/sbr9.md /tmp/sbr9.json
+# the advice for an honest user never suggests removing the record by hand
+assert_not_contains "no hand-removal of the record is suggested" "$(message)" "rm -f"
+
 # a configured trivial path is ignored once the project has a record
 ih_project r7-trivial-path
 : >"$SD/custom-trivial"

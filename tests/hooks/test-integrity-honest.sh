@@ -313,8 +313,7 @@ assert_eq "without git there is no proof: the record stays" "yes" "$([[ -f "$(_s
 ih_project h41d
 printf '%s\n' "$CFG_NEW" >"$PROJ/.silver-bullet.json"
 ih_edit
-assert_contains "the message names the record path" "$(message)" "integrity-"
-assert_contains "and the removal command" "$(message)" "rm -f"
+assert_not_contains "the message never suggests deleting the record by hand" "$(message)" "rm -f"
 
 # 42. first baseline of a worktree whose config is hidden from git status: compared by content, shown to the user
 ih_project h42
@@ -393,6 +392,56 @@ uninstall_project 'h45"q\path'
 OUT="$(ih_session_start_out startup)"
 assert_eq "the message is valid JSON whatever the path holds" "ok" "$(jq -e .systemMessage >/dev/null 2>&1 <<<"$OUT" && echo ok || echo bad)"
 assert_eq "and the record is retired" "no" "$(has_rec)"
+
+# 46. a repository that never had Silver Bullet stays untouched on a live install
+mkdir -p "$TL_TMP/plain"
+git -C "$TL_TMP/plain" init -q
+printf 'x\n' >"$TL_TMP/plain/a.txt"
+git -C "$TL_TMP/plain" add -A >/dev/null 2>&1; git -C "$TL_TMP/plain" commit -q -m init >/dev/null 2>&1
+mkdir -p "$TL_TMP/plain/src"
+assert_eq "no record, no contract file, nothing tracked: no project" "" "$(sb_integrity_root "$TL_TMP/plain/src")"
+assert_eq "and a directory outside git too" "" "$(sb_integrity_root "$TL_TMP")"
+
+# 47. retirement only on a default branch Silver Bullet can recognise, from every candidate ref
+has_rec() { [[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no; }
+uninst47() { git -C "$PROJ" rm -q --cached .silver-bullet.json silver-bullet.md >/dev/null 2>&1; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"; git -C "$PROJ" commit -q -m "remove SB" >/dev/null 2>&1; }
+ih_project h47c
+git -C "$PROJ" branch -m trunk >/dev/null 2>&1; git -C "$PROJ" checkout -q -b feat >/dev/null 2>&1
+git -C "$PROJ" branch -D main master >/dev/null 2>&1 || true
+uninst47
+OUT="$(ih_session_start_out startup)"
+assert_eq "default branch 'trunk', nothing to recognise: not retired" "yes" "$(has_rec)"
+ih_edit
+assert_contains "the advice says how to name the default branch" "$(message)" "init.defaultBranch"
+git -C "$PROJ" config init.defaultBranch trunk
+git -C "$PROJ" branch -f trunk HEAD >/dev/null 2>&1
+OUT="$(ih_session_start_out startup)"
+assert_eq "with init.defaultBranch naming a branch that is free of the files: retired" "no" "$(has_rec)"
+ih_project h47d
+git init -q --bare "$TL_TMP/h47d.git"; git -C "$PROJ" remote add origin "$TL_TMP/h47d.git" || true
+git -C "$PROJ" push -q origin HEAD:main >/dev/null 2>&1 || true; git -C "$PROJ" fetch -q origin >/dev/null 2>&1 || true
+git -C "$PROJ" checkout -q -b feat >/dev/null 2>&1 || true
+uninst47
+git -C "$PROJ" branch -D -q main >/dev/null 2>&1 || true; git -C "$PROJ" branch -D -q master >/dev/null 2>&1 || true
+git -C "$PROJ" remote set-head origin -d >/dev/null 2>&1 || true
+OUT="$(ih_session_start_out startup)"
+assert_eq "origin/main alone still carries the files: not retired" "yes" "$(has_rec)"
+ih_edit
+assert_contains "the advice says to merge or push the removal" "$(message)" "default branch still has them"
+git -C "$PROJ" push -q origin HEAD:main >/dev/null 2>&1 || true; git -C "$PROJ" fetch -q origin >/dev/null 2>&1 || true
+OUT="$(ih_session_start_out startup)"
+assert_eq "once the removal is on origin/main: retired" "no" "$(has_rec)"
+ih_project h47e
+git -C "$PROJ" rm -q --cached .silver-bullet.json silver-bullet.md >/dev/null 2>&1 || true; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
+ih_edit
+assert_contains "removed, not committed: the advice says to commit" "$(message)" "commit the removal"
+git -C "$PROJ" commit -q -m rm >/dev/null 2>&1 || true
+ih_edit
+assert_contains "committed everywhere: the advice says start a new session" "$(message)" "start a new session and the record is retired"
+ih_project h47f
+rm -f "$PROJ/silver-bullet.md"
+ih_edit
+assert_contains "one file left: restore it" "$(message)" "restore it"
 
 assert_eq "the honest corpus has at least 30 rows" "ok" "$([[ $(grep -c '^assert_\|^ok_cmd\|^  ok_cmd' "$0") -ge 30 ]] && echo ok || echo few)"
 tl_results

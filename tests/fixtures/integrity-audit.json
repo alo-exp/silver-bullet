@@ -18,7 +18,7 @@
  },
  "counts": {
   "X": 118,
-  "A": 25
+  "A": 24
  },
  "rows": [
   {
@@ -182,24 +182,40 @@
    "reason": "handed the root's config path by the delivery tier only after the drift check proved it equals the record; session and prompt callers print advisory text with it"
   },
   {
-   "file": "hooks/lib/integrity.sh",
-   "line": 90,
+   "file": "hooks/lib/integrity-anchor.sh",
+   "line": 36,
    "kind": "config",
    "snippet": "if [[ -f \"$root/.silver-bullet.json\" && -f \"$root/silver-bullet.md\" ]]; then",
    "record": "A",
-   "reason": "the integrity machinery: reads the live files to verify and to record them"
+   "reason": "the integrity machinery: where the project is (record, contract files, git tracking)"
   },
   {
-   "file": "hooks/lib/integrity.sh",
-   "line": 96,
+   "file": "hooks/lib/integrity-anchor.sh",
+   "line": 42,
    "kind": "config",
    "snippet": "if [[ -f \"$d/.silver-bullet.json\" && -f \"$d/silver-bullet.md\" ]]; then",
    "record": "A",
-   "reason": "the integrity machinery: reads the live files to verify and to record them"
+   "reason": "the integrity machinery: where the project is (record, contract files, git tracking)"
+  },
+  {
+   "file": "hooks/lib/integrity-anchor.sh",
+   "line": 77,
+   "kind": "config",
+   "snippet": "if [[ -e \"$d/.silver-bullet.json\" || -L \"$d/.silver-bullet.json\" || -e \"$d/silver-bullet.md\" || -L \"$d/silver-bullet.md\" ]]; then",
+   "record": "A",
+   "reason": "the integrity machinery: where the project is (record, contract files, git tracking)"
+  },
+  {
+   "file": "hooks/lib/integrity-anchor.sh",
+   "line": 99,
+   "kind": "config",
+   "snippet": "if [[ -n \"$cfg\" && ( -e \"$cfg/.silver-bullet.json\" || -e \"$cfg/silver-bullet.md\" ) ]]; then printf '%s' \"$cfg\"; return 0; fi",
+   "record": "A",
+   "reason": "the integrity machinery: where the project is (record, contract files, git tracking)"
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 167,
+   "line": 117,
    "kind": "config",
    "snippet": "if canon=\"$(jq -S -c 'del(.recommended_tools, .sb_enforcement_tier)' \"$cfg\" 2>/dev/null)\"; then",
    "record": "A",
@@ -207,7 +223,15 @@
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 627,
+   "line": 395,
+   "kind": "config",
+   "snippet": "if [[ ! -e \"${1:-/}/.silver-bullet.json\" || ! -e \"${1:-/}/silver-bullet.md\" ]]; then advice=\" $(_sb_iv_removal_advice \"${1:-/}\")\"; fi",
+   "record": "A",
+   "reason": "the integrity machinery: reads the live files to verify and to record them"
+  },
+  {
+   "file": "hooks/lib/integrity.sh",
+   "line": 574,
    "kind": "config",
    "snippet": "if new=\"$(jq -S -c --arg v \"$value\" '.project.active_workflow = $v' <<<\"$cfg\" 2>/dev/null)\" && [[ -n \"$new\" ]]; then",
    "record": "A",
@@ -215,41 +239,9 @@
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 650,
+   "line": 610,
    "kind": "config",
-   "snippet": "[[ ! -e \"$root/.silver-bullet.json\" && ! -L \"$root/.silver-bullet.json\" && ! -e \"$root/silver-bullet.md\" && ! -L \"$root/silver-bullet.md\" ]] || return 1",
-   "record": "A",
-   "reason": "the integrity machinery: reads the live files to verify and to record them"
-  },
-  {
-   "file": "hooks/lib/integrity.sh",
-   "line": 653,
-   "kind": "config",
-   "snippet": "! git -C \"$root\" cat-file -e HEAD:.silver-bullet.json 2>/dev/null || return 1",
-   "record": "A",
-   "reason": "the integrity machinery: reads the live files to verify and to record them"
-  },
-  {
-   "file": "hooks/lib/integrity.sh",
-   "line": 654,
-   "kind": "md",
-   "snippet": "! git -C \"$root\" cat-file -e HEAD:silver-bullet.md 2>/dev/null || return 1",
-   "record": "A",
-   "reason": "the integrity machinery: reads the live files to verify and to record them"
-  },
-  {
-   "file": "hooks/lib/integrity.sh",
-   "line": 658,
-   "kind": "config",
-   "snippet": "! git -C \"$root\" cat-file -e \"$ref:.silver-bullet.json\" 2>/dev/null || return 1",
-   "record": "A",
-   "reason": "the integrity machinery: reads the live files to verify and to record them"
-  },
-  {
-   "file": "hooks/lib/integrity.sh",
-   "line": 659,
-   "kind": "md",
-   "snippet": "! git -C \"$root\" cat-file -e \"$ref:silver-bullet.md\" 2>/dev/null || return 1",
+   "snippet": "if [[ -e \"$root/.silver-bullet.json\" || -L \"$root/.silver-bullet.json\" || -e \"$root/silver-bullet.md\" || -L \"$root/silver-bullet.md\" ]]; then printf 'present'; ",
    "record": "A",
    "reason": "the integrity machinery: reads the live files to verify and to record them"
   },

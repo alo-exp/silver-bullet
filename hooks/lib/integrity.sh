@@ -56,65 +56,15 @@ if ! declare -f sb_contract_unlocked >/dev/null 2>&1; then
   source "$_sb_iv_dir/contract-unlock.sh"
 fi
 
+if ! declare -f sb_integrity_root >/dev/null 2>&1; then
+  # shellcheck source=integrity-anchor.sh
+  source "$_sb_iv_dir/integrity-anchor.sh"
+fi
+
 SB_IV_PLAN_FILES="ROADMAP.md STATE.md PROJECT.md"
 _SB_IV_VARS="STATUS DIVERGED WHY TRIVIAL_OK REQUIRED_PLANNING REQUIRED_PLANNING_DEVOPS REQUIRED_DEPLOY REQUIRED_DEPLOY_DEVOPS REQUIRED_RELEASE REQUIRED_RELEASE_DEVOPS STATE_FILE UNLOCK_SKILL TRACKED CONFIG ROOT SRC_PATTERN SRC_EXCLUDE WORKFLOW"
 _SB_IV_CACHE_KEY=""
 _SB_IV_EMPTY="{}"
-
-_sb_iv_state_dir() { printf '%s' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"; }
-
-_sb_iv_rec_file() { # ROOT
-  local sum
-  sum="$(printf '%s' "$1" | cksum)"
-  printf '%s/integrity-%s.rec' "$(_sb_iv_state_dir)" "${sum%% *}"
-}
-
-# A project whose contract files were deleted or moved away is still a project: the nearest
-# directory above DIR that has a record is its root (deleting the files must not switch the gates off).
-sb_integrity_record_root() { # DIR
-  local d
-  d="$(cd "${1:-$PWD}" 2>/dev/null && pwd -P)" || return 0
-  while true; do
-    if [[ -f "$(_sb_iv_rec_file "$d")" ]]; then printf '%s' "$d"; return 0; fi
-    [[ "$d" != "/" ]] || return 0
-    d="$(dirname "$d")"
-  done
-}
-
-# The nearest directory at or above DIR holding BOTH contract files (the project boundary), stopping at a
-# git root; SILVER_BULLET_PROJECT_ROOT wins when it holds both. Prints the config path, status 1 if none.
-sb_integrity_live_config_walk() { # [DIR]
-  local d="${1:-$PWD}" root=""
-  if [[ -n "${SILVER_BULLET_PROJECT_ROOT:-}" ]]; then
-    root="${SILVER_BULLET_PROJECT_ROOT%/}"
-    if [[ -f "$root/.silver-bullet.json" && -f "$root/silver-bullet.md" ]]; then
-      printf '%s/.silver-bullet.json' "$root"
-      return 0
-    fi
-  fi
-  while [[ -n "$d" ]]; do
-    if [[ -f "$d/.silver-bullet.json" && -f "$d/silver-bullet.md" ]]; then
-      printf '%s/.silver-bullet.json' "$d"
-      return 0
-    fi
-    if [[ -d "$d/.git" || "$d" == "/" ]]; then break; fi
-    d="$(dirname "$d")"
-  done
-  return 1
-}
-
-# The SB project root of DIR. The nearest directory at or above DIR that holds a RECORD wins, even when a
-# nearer directory carries its own config and silver-bullet.md: a nested project made by writing two files
-# is not a new root, session start has to baseline it (hooks/session-start). Without any record the nearest
-# directory with both files is the (unbaselined) root; "" outside any project.
-sb_integrity_root() {
-  local dir="${1:-$PWD}" cfg="" rec=""
-  rec="$(sb_integrity_record_root "$dir")"
-  if [[ -z "$rec" && -n "${SILVER_BULLET_PROJECT_ROOT:-}" ]]; then rec="$(sb_integrity_record_root "$SILVER_BULLET_PROJECT_ROOT")"; fi
-  if [[ -n "$rec" ]]; then printf '%s' "$rec"; return 0; fi
-  cfg="$(sb_integrity_live_config_walk "$dir")" || cfg=""
-  if [[ -n "$cfg" ]]; then (cd "$(dirname "$cfg")" && pwd -P); fi
-}
 
 # The live body for ROOT: one "tag<TAB>digest<TAB>extra" line per artifact. The files are hashed with
 # SHA-256 (one openssl process for the whole set; python3's hashlib, then POSIX cksum where neither
@@ -436,24 +386,21 @@ sb_integrity_trivial_ok() { # [DIR]
   [[ "$SB_IV_TRIVIAL_OK" == true ]]
 }
 
-# For the hooks that decide "is this an SB project": the config path of the project of DIR ("" outside one).
-sb_integrity_activation_config() { # [DIR]
-  local root
-  root="$(sb_integrity_root "${1:-$PWD}")"
-  [[ -z "$root" ]] || printf '%s/.silver-bullet.json' "$root"
-}
-
 # What a gate tells the agent. It addresses the USER: the agent cannot cure it (a skill the agent runs
 # never adopts a drift that was there before it), only the user can, with a session start.
 sb_integrity_drift_message() { # ROOT
+  local advice=""
+  # a project whose contract files are gone gets the advice that works for an honest user; it never suggests
+  # deleting the record by hand (that would be the way to switch the gates off)
+  if [[ ! -e "${1:-/}/.silver-bullet.json" || ! -e "${1:-/}/silver-bullet.md" ]]; then advice=" $(_sb_iv_removal_advice "${1:-/}")"; fi
   if [[ "${SB_IV_STATUS:-none}" == unbaselined ]]; then
     printf '%s' "🚫 PROJECT NOT BASELINED — Silver Bullet has no integrity record for ${1:-this project}, so the strict defaults apply (planning floor unsatisfied, the template's required lists, no trivial bypass).
 
-Ask the user to restart the session: session start records the project's contract files. Details: $(_sb_iv_state_dir)/seal-events.log"
+Ask the user to restart the session: session start records the project's contract files.${advice} Details: $(_sb_iv_state_dir)/seal-events.log"
   else
     printf '%s' "🚫 ENFORCEMENT CONTRACT CHANGED — ${SB_IV_DIVERGED:-the record} no longer matches what Silver Bullet recorded${SB_IV_WHY:+ ($SB_IV_WHY)}, so the gates use the last recorded values and the strict defaults.
 
-Do not try to re-record it yourself and do not run a skill to make it stick: a skill never adopts a change that was made before it. Ask the user to review the change (git diff) and either revert it (git checkout -- the file) or restart the session so session start records the files. If Silver Bullet was removed on purpose (the user deleted .silver-bullet.json and silver-bullet.md and committed), restarting the session retires the record; the user can also remove it by hand: rm -f -- $(_sb_iv_rec_file "${SB_IV_ROOT:-/}") $(_sb_iv_rec_file "${SB_IV_ROOT:-/}").hwm. Details: $(_sb_iv_state_dir)/seal-events.log"
+Do not try to re-record it yourself and do not run a skill to make it stick: a skill never adopts a change that was made before it. Ask the user to review the change (git diff) and either revert it (git checkout -- the file) or restart the session so session start records the files.${advice} Details: $(_sb_iv_state_dir)/seal-events.log"
   fi
 }
 
@@ -641,26 +588,43 @@ sb_integrity_set_workflow() { # ROOT VALUE
 # removed Silver Bullet and committed) is no project any more. Called by session start, the trust anchor:
 # the record and its counter are retired, logged, and the root is printed for the user.
 sb_integrity_retire_if_uninstalled() { # DIR
-  local root rec ref
+  local root rec
   root="$(sb_integrity_record_root "${1:-$PWD}")"
   [[ -n "$root" ]] || return 1
   rec="$(_sb_iv_rec_file "$root")"
   # only a record that verifies is retired by anything: an untrusted one stays untrusted
   _sb_iv_authentic "$rec" "$(_sb_iv_state_dir)/state" "$root" || return 1
-  [[ ! -e "$root/.silver-bullet.json" && ! -L "$root/.silver-bullet.json" && ! -e "$root/silver-bullet.md" && ! -L "$root/silver-bullet.md" ]] || return 1
-  # HEAD must be a real commit (an orphan or unborn branch proves nothing) without either file
-  git -C "$root" rev-parse -q --verify "HEAD^{commit}" >/dev/null 2>&1 || return 1
-  ! git -C "$root" cat-file -e HEAD:.silver-bullet.json 2>/dev/null || return 1
-  ! git -C "$root" cat-file -e HEAD:silver-bullet.md 2>/dev/null || return 1
-  # ... and so must the default branch (the remote's HEAD, main, master) where it exists
-  for ref in refs/remotes/origin/HEAD refs/heads/main refs/heads/master; do
-    if git -C "$root" rev-parse -q --verify "$ref^{commit}" >/dev/null 2>&1; then
-      ! git -C "$root" cat-file -e "$ref:.silver-bullet.json" 2>/dev/null || return 1
-      ! git -C "$root" cat-file -e "$ref:silver-bullet.md" 2>/dev/null || return 1
-    fi
-  done
+  [[ "$(_sb_iv_removal_state "$root")" == ready ]] || return 1
   rm -f -- "$rec" "$rec.hwm"
   _SB_IV_CACHE_KEY=""
-  _sb_state_seal_log "$(_sb_iv_state_dir)/state" "integrity record retired: $root has no contract files in the tree or in git HEAD (Silver Bullet was removed)"
+  _sb_state_seal_log "$(_sb_iv_state_dir)/state" "integrity record retired: $root has no contract files in the tree, at HEAD or on the default branch (Silver Bullet was removed)"
   printf '%s' "$root"
+}
+
+# Where an honest removal of Silver Bullet from ROOT stands: present (a contract file is still in the tree),
+# uncommitted (HEAD still tracks one, or HEAD is no commit), default (the default branch still tracks one),
+# unknown (no default branch can be determined: nothing is retired on a guess), ready (gone from the tree,
+# HEAD and every default-branch candidate).
+_sb_iv_removal_state() { # ROOT
+  local root="$1" ref refs
+  if [[ -e "$root/.silver-bullet.json" || -L "$root/.silver-bullet.json" || -e "$root/silver-bullet.md" || -L "$root/silver-bullet.md" ]]; then printf 'present'; return 0; fi
+  if ! git -C "$root" rev-parse -q --verify "HEAD^{commit}" >/dev/null 2>&1; then printf 'uncommitted'; return 0; fi
+  if [[ -n "$(git -C "$root" ls-tree --name-only HEAD .silver-bullet.json silver-bullet.md 2>/dev/null)" ]]; then printf 'uncommitted'; return 0; fi
+  refs="$(_sb_iv_default_refs "$root")"
+  if [[ -z "$refs" ]]; then printf 'unknown'; return 0; fi
+  for ref in $refs; do
+    if [[ -n "$(git -C "$root" ls-tree --name-only "$ref" .silver-bullet.json silver-bullet.md 2>/dev/null)" ]]; then printf 'default'; return 0; fi
+  done
+  printf 'ready'
+}
+
+# What an honest user must do when the contract files are gone (printed into the gate messages).
+_sb_iv_removal_advice() { # ROOT
+  case "$(_sb_iv_removal_state "${1:-/}")" in
+    present) printf 'A contract file is missing while the other is still there: restore it (git checkout -- .silver-bullet.json silver-bullet.md) and restart the session.' ;;
+    uncommitted) printf 'The contract files are gone from the working tree but git HEAD still has them (or HEAD is no commit): if that was a mistake restore them (git checkout -- .silver-bullet.json silver-bullet.md); if Silver Bullet was removed on purpose, commit the removal, then start a new session.' ;;
+    default) printf 'The contract files are gone here but the default branch still has them: restore them (git checkout -- .silver-bullet.json silver-bullet.md), or merge or push the removal to the default branch and then start a new session (a new session retires the record only once HEAD and the default branch are free of them).' ;;
+    unknown) printf 'The contract files are gone, but this repository has no default branch Silver Bullet can recognise (main, master, init.defaultBranch or a remote HEAD), so nothing is retired on a guess: restore the files, or set git config init.defaultBranch to the default branch name and start a new session.' ;;
+    *) printf 'Silver Bullet was removed from this repository (the files are gone from the tree, HEAD and the default branch): start a new session and the record is retired.' ;;
+  esac
 }

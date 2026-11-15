@@ -103,7 +103,7 @@ fi
 
 # Walk up to find config if not cached
 if [[ -z "$config_file" ]]; then
-  config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity.sh" && sb_integrity_activation_config "$PWD") 2>/dev/null; true)"
+  config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity-anchor.sh" && sb_integrity_activation_config "$PWD") 2>/dev/null; true)"
 
   # Cache result (only when config was actually found)
   if [[ -n "${pwd_hash:-}" && -n "$config_file" ]]; then
