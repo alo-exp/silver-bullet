@@ -57,7 +57,7 @@ if ! declare -f sb_contract_unlocked >/dev/null 2>&1; then
 fi
 
 SB_IV_PLAN_FILES="ROADMAP.md STATE.md PROJECT.md"
-_SB_IV_VARS="STATUS DIVERGED WHY TRIVIAL_OK REQUIRED_PLANNING REQUIRED_PLANNING_DEVOPS REQUIRED_DEPLOY REQUIRED_DEPLOY_DEVOPS REQUIRED_RELEASE REQUIRED_RELEASE_DEVOPS STATE_FILE UNLOCK_SKILL CONFIG ROOT SRC_PATTERN SRC_EXCLUDE WORKFLOW"
+_SB_IV_VARS="STATUS DIVERGED WHY TRIVIAL_OK REQUIRED_PLANNING REQUIRED_PLANNING_DEVOPS REQUIRED_DEPLOY REQUIRED_DEPLOY_DEVOPS REQUIRED_RELEASE REQUIRED_RELEASE_DEVOPS STATE_FILE UNLOCK_SKILL TRACKED CONFIG ROOT SRC_PATTERN SRC_EXCLUDE WORKFLOW"
 _SB_IV_CACHE_KEY=""
 _SB_IV_EMPTY="{}"
 
@@ -325,7 +325,7 @@ sb_integrity_verify() { # ROOT [STATE]
   SB_IV_STATUS=none SB_IV_DIVERGED="" SB_IV_WHY="" SB_IV_TRIVIAL_OK=false SB_IV_CONFIG="$_SB_IV_EMPTY" SB_IV_ROOT="$root"
   SB_IV_SRC_PATTERN="/src/" SB_IV_SRC_EXCLUDE='__tests__|\.test\.' SB_IV_WORKFLOW="full-dev-cycle"
   SB_IV_REQUIRED_PLANNING="" SB_IV_REQUIRED_PLANNING_DEVOPS="" SB_IV_REQUIRED_DEPLOY="" SB_IV_REQUIRED_DEPLOY_DEVOPS=""
-  SB_IV_REQUIRED_RELEASE="" SB_IV_REQUIRED_RELEASE_DEVOPS="" SB_IV_STATE_FILE="" SB_IV_UNLOCK_SKILL=""
+  SB_IV_REQUIRED_RELEASE="" SB_IV_REQUIRED_RELEASE_DEVOPS="" SB_IV_STATE_FILE="" SB_IV_UNLOCK_SKILL="" SB_IV_TRACKED=false
   [[ -n "$state" ]] || state="$(_sb_iv_state_dir)/state"
   rec="$(_sb_iv_rec_file "$root")"
   if [[ ! -e "$rec" && ! -L "$rec" ]]; then
@@ -364,6 +364,7 @@ sb_integrity_verify() { # ROOT [STATE]
   SB_IV_DIVERGED="${SB_IV_DIVERGED%%$'\n'*}"
   rec_values="${cmp#*$'\n'V:}"
   _sb_iv_unlock_from_body "$_SB_IV_BODY"
+  if [[ $'\n'"$_SB_IV_BODY" == *$'\ntracked\t1\t'* ]]; then SB_IV_TRACKED=true; fi
   if _sb_iv_marker_present; then
     if [[ $'\n'"$_SB_IV_BODY" == *$'\ntrivial\tBLESSED\t'* ]]; then SB_IV_TRIVIAL_OK=true; else SB_IV_DIVERGED="${SB_IV_DIVERGED:+$SB_IV_DIVERGED }trivial"; fi
   fi
@@ -534,6 +535,11 @@ sb_integrity_baseline() { # ROOT MODE [..]
     marker_state=ABSENT
     if _sb_iv_marker_present; then marker_state=BLESSED; fi
     body="$body"$'\n'"trivial"$'\t'"$marker_state"$'\t'"-"$'\n'"unlock"$'\t'"-"$'\t'"0"
+    # "The recorder has tracked skills here" is evidence only the keyed record can hold (the counter file is an
+    # ordinary file): a session start keeps it.
+    if [[ -f "$rec" ]] && _sb_iv_authentic "$rec" "$state" "$root" && [[ $'\n'"$_SB_IV_BODY" == *$'\ntracked\t1\t'* ]]; then
+      body="$body"$'\n'"tracked"$'\t'"1"$'\t'"-"
+    fi
     _sb_iv_write "$root" "$rec" "$state" "$body"
   elif [[ -f "$rec" ]] && _sb_iv_authentic "$rec" "$state" "$root"; then
     old="$_SB_IV_BODY"
@@ -595,6 +601,10 @@ sb_integrity_baseline() { # ROOT MODE [..]
       if [[ "$tag" == unlock && "$mode" == unlock ]]; then new_line="unlock"$'\t'"$skill"$'\t'"$(date +%s)"; fi
       body="${body:+$body$'\n'}$new_line"
     done <<<"$old"
+    if [[ "$mode" == tracked ]]; then
+      if [[ $'\n'"$body" == *$'\ntracked\t1\t'* ]]; then sb_state_seal_unlock; return 0; fi
+      body="$body"$'\n'"tracked"$'\t'"1"$'\t'"-"
+    fi
     _sb_iv_write "$root" "$rec" "$state" "$body"
   fi
   sb_state_seal_unlock
@@ -604,16 +614,24 @@ sb_integrity_baseline() { # ROOT MODE [..]
 # Record ONE key of the recorded config: .project.active_workflow = VALUE (the devops-cycle reset after a ship).
 # Only the recorded config changes, never the live file's other content: a drift stays a drift.
 sb_integrity_set_workflow() { # ROOT VALUE
-  local root="$1" value="$2" state rec body cfg new
+  local root="$1" value="$2" state rec body cfg new line
   state="$(_sb_iv_state_dir)/state"
   rec="$(_sb_iv_rec_file "$root")"
   sb_state_seal_lock "$rec"
   if [[ -f "$rec" ]] && _sb_iv_authentic "$rec" "$state" "$root"; then
     cfg="${_SB_IV_BODY#config$'\t'*$'\t'}"
     cfg="${cfg%%$'\n'*}"
-    new="$(jq -S -c --arg v "$value" '.project.active_workflow = $v' <<<"$cfg")"
-    body="$(awk -F'\t' -v OFS='\t' -v n="$new" '$1 == "config" { $3 = n } { print }' <<<"$_SB_IV_BODY")"
-    _sb_iv_write "$root" "$rec" "$state" "$body"
+    # jq does the one-key change (--arg), the body is rebuilt line by line: awk -v would eat the backslashes
+    # of the template's default patterns. The result must be valid JSON before the record is replaced.
+    new=""
+    if new="$(jq -S -c --arg v "$value" '.project.active_workflow = $v' <<<"$cfg" 2>/dev/null)" && [[ -n "$new" ]]; then
+      body=""
+      while IFS= read -r line; do
+        if [[ "$line" == config$'\t'* ]]; then line="config"$'\t'"-"$'\t'"$new"; fi
+        body="${body:+$body$'\n'}$line"
+      done <<<"$_SB_IV_BODY"
+      _sb_iv_write "$root" "$rec" "$state" "$body"
+    fi
   fi
   sb_state_seal_unlock
   return 0
@@ -623,14 +641,24 @@ sb_integrity_set_workflow() { # ROOT VALUE
 # removed Silver Bullet and committed) is no project any more. Called by session start, the trust anchor:
 # the record and its counter are retired, logged, and the root is printed for the user.
 sb_integrity_retire_if_uninstalled() { # DIR
-  local root rec
+  local root rec ref
   root="$(sb_integrity_record_root "${1:-$PWD}")"
   [[ -n "$root" ]] || return 1
+  rec="$(_sb_iv_rec_file "$root")"
+  # only a record that verifies is retired by anything: an untrusted one stays untrusted
+  _sb_iv_authentic "$rec" "$(_sb_iv_state_dir)/state" "$root" || return 1
   [[ ! -e "$root/.silver-bullet.json" && ! -L "$root/.silver-bullet.json" && ! -e "$root/silver-bullet.md" && ! -L "$root/silver-bullet.md" ]] || return 1
-  git -C "$root" rev-parse --git-dir >/dev/null 2>&1 || return 1
+  # HEAD must be a real commit (an orphan or unborn branch proves nothing) without either file
+  git -C "$root" rev-parse -q --verify "HEAD^{commit}" >/dev/null 2>&1 || return 1
   ! git -C "$root" cat-file -e HEAD:.silver-bullet.json 2>/dev/null || return 1
   ! git -C "$root" cat-file -e HEAD:silver-bullet.md 2>/dev/null || return 1
-  rec="$(_sb_iv_rec_file "$root")"
+  # ... and so must the default branch (the remote's HEAD, main, master) where it exists
+  for ref in refs/remotes/origin/HEAD refs/heads/main refs/heads/master; do
+    if git -C "$root" rev-parse -q --verify "$ref^{commit}" >/dev/null 2>&1; then
+      ! git -C "$root" cat-file -e "$ref:.silver-bullet.json" 2>/dev/null || return 1
+      ! git -C "$root" cat-file -e "$ref:silver-bullet.md" 2>/dev/null || return 1
+    fi
+  done
   rm -f -- "$rec" "$rec.hwm"
   _SB_IV_CACHE_KEY=""
   _sb_state_seal_log "$(_sb_iv_state_dir)/state" "integrity record retired: $root has no contract files in the tree or in git HEAD (Silver Bullet was removed)"

@@ -115,11 +115,13 @@ done
 if [[ -z "$sb_project_root" ]]; then
   # A record root whose contract files are gone from the tree and from git HEAD: Silver Bullet was removed on
   # purpose. Retire the record (the user sees it) so every edit is not a permanent false positive.
-  if [[ -f "$_lib_dir/integrity.sh" ]]; then
+  # Only a fresh session (startup, clear) retires: compact and resume continue a session that may have a
+  # checkout in an odd state.
+  if [[ ( "$sb_session_source" == startup || "$sb_session_source" == clear ) && -f "$_lib_dir/integrity.sh" ]]; then
     # shellcheck source=lib/integrity.sh
     source "$_lib_dir/integrity.sh"
     if sb_iv_retired="$(sb_integrity_retire_if_uninstalled "$PWD")"; then
-      printf '{"systemMessage":"SB INTEGRITY — Silver Bullet was removed from %s (no contract files in the tree or in git HEAD). Its integrity record was retired."}' "$sb_iv_retired"
+      printf '%s' "SB INTEGRITY — Silver Bullet was removed from ${sb_iv_retired} (no contract files in the tree, in git HEAD or on the default branch). Its integrity record was retired." | jq -Rs '{systemMessage: .}'
     fi
   fi
   # Non-SB workspace: clear stale global orchestrator markers from a prior SB session.

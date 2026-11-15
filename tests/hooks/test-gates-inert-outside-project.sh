@@ -26,4 +26,15 @@ for h in ci-status-check completion-audit stop-check workflow-chain-guard planni
   inert "$h.sh" "$(skill_pre 'sb:plan')" "$h (Skill, Pre)"
   inert "$h.sh" "$(write_pre)" "$h (Write, Pre)"
 done
+# the gates that decide nothing about MCP calls are not registered for them (each registration costs ~100 ms)
+for h in spec-floor-check forbidden-skill-check uat-gate; do
+  m="$(jq -r --arg h "$h.sh" '[.hooks.PreToolUse[] | select(any(.hooks[]; .command | endswith($h + "\""))) | .matcher] | join(",")' "$TL_REPO_ROOT/hooks/hooks.json")"
+  assert_eq "$h is not registered for MCP tools" "no" "$([[ "$m" == *mcp__* ]] && echo yes || echo no)"
+  assert_eq "$h is still registered" "yes" "$([[ -n "$m" ]] && echo yes || echo no)"
+done
+for h in completion-audit ci-status-check; do
+  m="$(jq -r --arg h "$h.sh" '[.hooks.PreToolUse[] | select(any(.hooks[]; .command | endswith($h + "\""))) | .matcher] | join(",")' "$TL_REPO_ROOT/hooks/hooks.json")"
+  assert_eq "$h still sees MCP delivery tools" "yes" "$([[ "$m" == *mcp__* ]] && echo yes || echo no)"
+done
+
 tl_results

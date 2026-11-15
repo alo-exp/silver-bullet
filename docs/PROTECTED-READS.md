@@ -27,10 +27,12 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | hooks/lib/integrity.sh:90 | config | `if [[ -f "$root/.silver-bullet.json" && -f "$root/silver-bullet.md" ]]; then` | A | the integrity machinery: reads the live files to verify and to record them |
 | hooks/lib/integrity.sh:96 | config | `if [[ -f "$d/.silver-bullet.json" && -f "$d/silver-bullet.md" ]]; then` | A | the integrity machinery: reads the live files to verify and to record them |
 | hooks/lib/integrity.sh:167 | config | `if canon="$(jq -S -c 'del(.recommended_tools, .sb_enforcement_tier)' "$cfg" 2>/dev/null)";` | A | the integrity machinery: reads the live files to verify and to record them |
-| hooks/lib/integrity.sh:614 | config | `new="$(jq -S -c --arg v "$value" '.project.active_workflow = $v' <<<"$cfg")"` | A | the integrity machinery: reads the live files to verify and to record them |
-| hooks/lib/integrity.sh:629 | config | `[[ ! -e "$root/.silver-bullet.json" && ! -L "$root/.silver-bullet.json" && ! -e "$root/sil` | A | the integrity machinery: reads the live files to verify and to record them |
-| hooks/lib/integrity.sh:631 | config | `! git -C "$root" cat-file -e HEAD:.silver-bullet.json 2>/dev/null \|\| return 1` | A | the integrity machinery: reads the live files to verify and to record them |
-| hooks/lib/integrity.sh:632 | md | `! git -C "$root" cat-file -e HEAD:silver-bullet.md 2>/dev/null \|\| return 1` | A | the integrity machinery: reads the live files to verify and to record them |
+| hooks/lib/integrity.sh:627 | config | `if new="$(jq -S -c --arg v "$value" '.project.active_workflow = $v' <<<"$cfg" 2>/dev/null)` | A | the integrity machinery: reads the live files to verify and to record them |
+| hooks/lib/integrity.sh:650 | config | `[[ ! -e "$root/.silver-bullet.json" && ! -L "$root/.silver-bullet.json" && ! -e "$root/sil` | A | the integrity machinery: reads the live files to verify and to record them |
+| hooks/lib/integrity.sh:653 | config | `! git -C "$root" cat-file -e HEAD:.silver-bullet.json 2>/dev/null \|\| return 1` | A | the integrity machinery: reads the live files to verify and to record them |
+| hooks/lib/integrity.sh:654 | md | `! git -C "$root" cat-file -e HEAD:silver-bullet.md 2>/dev/null \|\| return 1` | A | the integrity machinery: reads the live files to verify and to record them |
+| hooks/lib/integrity.sh:658 | config | `! git -C "$root" cat-file -e "$ref:.silver-bullet.json" 2>/dev/null \|\| return 1` | A | the integrity machinery: reads the live files to verify and to record them |
+| hooks/lib/integrity.sh:659 | md | `! git -C "$root" cat-file -e "$ref:silver-bullet.md" 2>/dev/null \|\| return 1` | A | the integrity machinery: reads the live files to verify and to record them |
 | hooks/lib/leanctx-gate.sh:73 | config | `ttl="$(jq -r '.recommended_tools.leanctx.usage_ttl_seconds // "" \| tostring' "$config_fil` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
 | hooks/lib/leanctx-gate.sh:82 | config | `configured="$(jq -r '.recommended_tools.leanctx.usage_state_file // "" \| strings' "$confi` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
 | hooks/lib/opt-in-gate.sh:91 | config | `trivial_cfg="$(jq -r '.state.trivial_file // "" \| strings' "$config_file" 2>/dev/null \|\` | X | the config trivial path is handed to sb_trivial_bypass, which ignores it once the project has a record (only an install without a record honours it) |
@@ -55,13 +57,13 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | hooks/record-skill.sh:394 | state | `if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
 | hooks/record-skill.sh:409 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
 | hooks/record-skill.sh:423 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:448 | state | `[[ -f "$STATE_FILE" ]] && state_contents="$(cat "$STATE_FILE" 2>/dev/null \|\| true)"` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:450 | state | `[[ -f "$STATE_FILE" ]] && state_contents="$(cat "$STATE_FILE" 2>/dev/null \|\| true)"` | A | sanctioned writer: keeps the record in step |
 | hooks/session-log-init.sh:68 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | X | session log bookkeeping, no gate decision |
 | hooks/session-start:106 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | A | the trust anchor: baselines the record at the end of session start |
-| hooks/session-start:169 | config | `if [[ -n "$_rt_hb_script" && -f "${sb_project_root}/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
-| hooks/session-start:170 | config | `_sb_initiated="$(jq -r '.sb_initiated // false' "${sb_project_root}/.silver-bullet.json" 2` | A | the trust anchor: baselines the record at the end of session start |
-| hooks/session-start:370 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
-| hooks/session-start:371 | config | `cfg_trivial=$(jq -r '.state.trivial_file // ""' "$search_dir/.silver-bullet.json" 2>/dev/n` | A | the trust anchor: baselines the record at the end of session start |
+| hooks/session-start:171 | config | `if [[ -n "$_rt_hb_script" && -f "${sb_project_root}/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
+| hooks/session-start:172 | config | `_sb_initiated="$(jq -r '.sb_initiated // false' "${sb_project_root}/.silver-bullet.json" 2` | A | the trust anchor: baselines the record at the end of session start |
+| hooks/session-start:372 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
+| hooks/session-start:373 | config | `cfg_trivial=$(jq -r '.state.trivial_file // ""' "$search_dir/.silver-bullet.json" 2>/dev/n` | A | the trust anchor: baselines the record at the end of session start |
 | scripts/deploy-gate-snippet.sh:50 | config | `if [[ -f "$_dw_search_dir/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/deploy-gate-snippet.sh:51 | config | `_dw_config_file="$_dw_search_dir/.silver-bullet.json"` | X | user-run or skill-run script, not a hook gate |
 | scripts/deploy-gate-snippet.sh:92 | config | `_val=$(jq -r '.state.state_file // ""' "$_dw_config_file")` | X | user-run or skill-run script, not a hook gate |

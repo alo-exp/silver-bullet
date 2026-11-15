@@ -35,12 +35,12 @@ Before a tool runs; a hook can deny the call.
 | # | Matcher | Script | Timeout |
 |---|---------|--------|---------|
 | 1 | `.*` | `debug-dump.sh` | 5 |
-| 2 | `Bash\|Skill\|exec_command\|mcp__.*` | `phase-archive.sh` | 10 |
+| 2 | `Bash\|Skill\|exec_command` | `phase-archive.sh` | 10 |
 | 3 | `Bash\|Skill\|exec_command\|mcp__.*` | `completion-audit.sh` | 15 |
 | 4 | `Bash\|Skill\|exec_command\|mcp__.*` | `ci-status-check.sh` | 30 |
-| 5 | `Bash\|Skill\|exec_command\|mcp__.*` | `spec-floor-check.sh` | 10 |
-| 6 | `Bash\|Skill\|exec_command\|mcp__.*` | `forbidden-skill-check.sh` | 10 |
-| 7 | `Bash\|Skill\|exec_command\|mcp__.*` | `uat-gate.sh` | 10 |
+| 5 | `Bash\|Skill\|exec_command` | `spec-floor-check.sh` | 10 |
+| 6 | `Bash\|Skill\|exec_command` | `forbidden-skill-check.sh` | 10 |
+| 7 | `Bash\|Skill\|exec_command` | `uat-gate.sh` | 10 |
 | 8 | `Edit\|Write\|MultiEdit\|apply_patch` | `orchestrator-directive-guard.sh` | 10 |
 | 9 | `Edit\|Write\|MultiEdit\|apply_patch` | `agent-delegation-guard.sh` | 10 |
 | 10 | `Edit\|Write\|MultiEdit\|apply_patch` | `phase-lock-claim.sh` | 10 |
@@ -180,7 +180,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `dependency-skill-check.sh` | PreToolUse `Skill` | Compatibility gate for dependency-skill invocations. Does not block SB-absorbed namespaces; forbidden execution modes are handled by `forbidden-skill-check.sh`. |
 | `dev-cycle-check.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save\|insert\|copy\|upload\|apply\|_mv\|mv_\|_put\|put_\|update\|modify\|set_\|touch\|truncate\|unlink\|_rm\|rm_)[A-Za-z0-9_]*`; PostToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save\|insert\|copy\|upload\|apply\|_mv\|mv_\|_put\|put_\|update\|modify\|set_\|touch\|truncate\|unlink\|_rm\|rm_)[A-Za-z0-9_]*` | Planning-floor gate: blocks source edits (file tools, `NotebookEdit`, MCP file writes, apply_patch, and shell writes resolved by the shell analysis) until workflow admission or the `required_planning` skills are recorded. Enforces nothing outside an SB project. Also blocks file-tool edits under the host plugin cache and the host plugin registry and shell writes it can see by name. It does not predict what other shell commands write: at every decision it verifies the keyed integrity record (`hooks/lib/integrity.sh`) of the skill state, the trivial marker, the contract and instruction files and reads the required lists and the trivial bypass from the record, so a change made any other way falls back to the strict defaults. patch / git apply / git am are tree writes that need the planning floor. Prints one JSON document per call; PostToolUse only invalidates the fresh-test-run record. |
 | `flow-advance.sh` | PostToolUse `Skill\|Bash\|exec_command` | Advances the autonomous orchestrator flow queue after a skill or tracked command completes. |
-| `forbidden-skill-check.sh` | PreToolUse `Bash\|Skill\|exec_command\|mcp__.*` | Blocks forbidden skills (the Skill tool or the Codex `invoke-skill` adapter): the built-in list (`executing-plans`, `subagent-driven-development`) plus `skills.forbidden`. |
+| `forbidden-skill-check.sh` | PreToolUse `Bash\|Skill\|exec_command` | Blocks forbidden skills (the Skill tool or the Codex `invoke-skill` adapter): the built-in list (`executing-plans`, `subagent-driven-development`) plus `skills.forbidden`. |
 | `graphify-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.graphify`): requires a recent Graphify query before substantive work. |
 | `industry-tooling-hint.sh` | PreToolUse `Bash\|exec_command` | Optional reminders about industry tooling for shell commands; active only when `hooks.industry_tooling.enabled` is true. |
 | `instruction-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save\|insert\|copy\|upload\|apply\|_mv\|mv_\|_put\|put_\|update\|modify\|set_\|touch\|truncate\|unlink\|_rm\|rm_)[A-Za-z0-9_]*` | Blocks creating a brand-new root `CLAUDE.md` or `AGENTS.md` (any case) with the file tools, MCP file-write tools, apply_patch or shell writes (unreadable commands are refused); existing files may be reconciled in place. |
@@ -189,7 +189,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `live-publish-evidence-gate.sh` | PreToolUse `Bash\|exec_command`; Stop `.*` | Requires fetched live-page evidence before a site publish is claimed LIVE (Stop) and before `git push` to main for site work. |
 | `orchestrator-directive-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch`; PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Orchestrator parent mode: blocks edits, shell commands and Task spawns until the skill named by the pending directive has been invoked. |
 | `outcomes-check.sh` | Stop `.*`; SubagentStop `.*`; UserPromptSubmit `.*` | Tracks the per-prompt outcome checklist; at Stop, blocks while outcomes are incomplete. |
-| `phase-archive.sh` | PreToolUse `Bash\|Skill\|exec_command\|mcp__.*` | Archives `.planning/phases/` directories before a real `phases clear` invocation (or a shell delete of the whole phases directory) runs; never skips new phases when an earlier archive exists. Fails closed: if archiving fails, the clear is denied. |
+| `phase-archive.sh` | PreToolUse `Bash\|Skill\|exec_command` | Archives `.planning/phases/` directories before a real `phases clear` invocation (or a shell delete of the whole phases directory) runs; never skips new phases when an earlier archive exists. Fails closed: if archiving fails, the clear is denied. |
 | `phase-lock-claim.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | Claims the `.planning/phases/<NNN>/` lock (via `.planning/scripts/phase-lock.sh`) before a session edits a phase's files. |
 | `phase-lock-heartbeat.sh` | PostToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Refreshes heartbeats for the phase locks this session holds (throttled to once per 5 minutes per phase). |
 | `phase-lock-release.sh` | Stop `.*`; SubagentStop `.*` | Releases this session's phase locks at Stop/SubagentStop. Never blocks. |
@@ -217,7 +217,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `site-preview-preflight.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Before `site/**` edits, checks that the local site preview server is healthy. |
 | `site-regression-gate.sh` | PreToolUse `Bash\|exec_command`; Stop `.*`; SubagentStop `.*` | Runs the site regression tests at Stop and before `git push` when `site/**` was touched in the session. |
 | `site-visual-evidence-gate.sh` | Stop `.*` | At Stop, requires 1280px visual evidence for active site sessions. |
-| `spec-floor-check.sh` | PreToolUse `Bash\|Skill\|exec_command\|mcp__.*` | Spec floor: blocks `sb:plan` (Skill tool or Codex `invoke-skill`) without a minimum viable `SPEC.md`; advisory for `sb:fast`. |
+| `spec-floor-check.sh` | PreToolUse `Bash\|Skill\|exec_command` | Spec floor: blocks `sb:plan` (Skill tool or Codex `invoke-skill`) without a minimum viable `SPEC.md`; advisory for `sb:fast`. |
 | `spec-session-record.sh` | SessionStart `startup\|clear\|compact` | Captures spec version and Jira ID from `.planning/SPEC.md` for `pr-traceability.sh`. |
 | `stack-compression-coordinator.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PreToolUse `Read\|Grep`; PreToolUse `WebFetch`; PreToolUse `CallMcpTool\|MCP`; PreToolUse `mcp__.*lean-?ctx.*\|mcp__.*context[-_]mode.*` | Five-tool stack coordinator: routes Read/Grep/shell/WebFetch/MCP surfaces to their owning tool and blocks double compression. |
 | `stop-check.sh` | Stop `.*`; SubagentStop `.*` | Stop/SubagentStop gate: blocks a task-complete declaration while `required_planning` skills are missing, and enforces doc-scheme finalization when `docs/doc-scheme.md` exists. |
@@ -227,7 +227,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `token-compression-tools-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in: requires recent RTK usage before commits, PRs and releases (shell delivery commands only), and enforces the stack mutex. |
 | `trivial-file-clear.sh` | PostToolUse `Write\|Edit\|MultiEdit\|apply_patch` | Deletes the legacy trivial-session marker after any file write. |
 | `trivial-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Blocks agents from creating the legacy trivial marker (any spelling of its path: `~`, `$HOME`, `cd` + relative, cp/mv/ln/tee/dd); small changes go through `/sb:fast`. |
-| `uat-gate.sh` | PreToolUse `Bash\|Skill\|exec_command\|mcp__.*` | Blocks `sb:release` (Skill tool or Codex `invoke-skill`) and milestone completion when `UAT.md` is missing, failing or stale against the spec version. |
+| `uat-gate.sh` | PreToolUse `Bash\|Skill\|exec_command` | Blocks `sb:release` (Skill tool or Codex `invoke-skill`) and milestone completion when `UAT.md` is missing, failing or stale against the spec version. |
 | `v-loop-rollup-gate.sh` | Stop `.*` | At Stop, blocks when active site-session V-loops lack evidence. |
 | `workflow-chain-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save\|insert\|copy\|upload\|apply\|_mv\|mv_\|_put\|put_\|update\|modify\|set_\|touch\|truncate\|unlink\|_rm\|rm_)[A-Za-z0-9_]*` | Inside a composed workflow (`.planning/workflows/<id>.md`), blocks implementation writes (file tools and shell writes into source) until the pre-execution chain is recorded; the planning skills' own artifacts (`.planning/**`, `docs/specs/**`) are never gated. |
 

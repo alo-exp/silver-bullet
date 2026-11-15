@@ -18,7 +18,7 @@
  },
  "counts": {
   "X": 118,
-  "A": 23
+  "A": 25
  },
  "rows": [
   {
@@ -207,15 +207,15 @@
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 614,
+   "line": 627,
    "kind": "config",
-   "snippet": "new=\"$(jq -S -c --arg v \"$value\" '.project.active_workflow = $v' <<<\"$cfg\")\"",
+   "snippet": "if new=\"$(jq -S -c --arg v \"$value\" '.project.active_workflow = $v' <<<\"$cfg\" 2>/dev/null)\" && [[ -n \"$new\" ]]; then",
    "record": "A",
    "reason": "the integrity machinery: reads the live files to verify and to record them"
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 629,
+   "line": 650,
    "kind": "config",
    "snippet": "[[ ! -e \"$root/.silver-bullet.json\" && ! -L \"$root/.silver-bullet.json\" && ! -e \"$root/silver-bullet.md\" && ! -L \"$root/silver-bullet.md\" ]] || return 1",
    "record": "A",
@@ -223,7 +223,7 @@
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 631,
+   "line": 653,
    "kind": "config",
    "snippet": "! git -C \"$root\" cat-file -e HEAD:.silver-bullet.json 2>/dev/null || return 1",
    "record": "A",
@@ -231,9 +231,25 @@
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 632,
+   "line": 654,
    "kind": "md",
    "snippet": "! git -C \"$root\" cat-file -e HEAD:silver-bullet.md 2>/dev/null || return 1",
+   "record": "A",
+   "reason": "the integrity machinery: reads the live files to verify and to record them"
+  },
+  {
+   "file": "hooks/lib/integrity.sh",
+   "line": 658,
+   "kind": "config",
+   "snippet": "! git -C \"$root\" cat-file -e \"$ref:.silver-bullet.json\" 2>/dev/null || return 1",
+   "record": "A",
+   "reason": "the integrity machinery: reads the live files to verify and to record them"
+  },
+  {
+   "file": "hooks/lib/integrity.sh",
+   "line": 659,
+   "kind": "md",
+   "snippet": "! git -C \"$root\" cat-file -e \"$ref:silver-bullet.md\" 2>/dev/null || return 1",
    "record": "A",
    "reason": "the integrity machinery: reads the live files to verify and to record them"
   },
@@ -431,7 +447,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 448,
+   "line": 450,
    "kind": "state",
    "snippet": "[[ -f \"$STATE_FILE\" ]] && state_contents=\"$(cat \"$STATE_FILE\" 2>/dev/null || true)\"",
    "record": "A",
@@ -455,7 +471,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 169,
+   "line": 171,
    "kind": "config",
    "snippet": "if [[ -n \"$_rt_hb_script\" && -f \"${sb_project_root}/.silver-bullet.json\" ]]; then",
    "record": "A",
@@ -463,7 +479,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 170,
+   "line": 172,
    "kind": "config",
    "snippet": "_sb_initiated=\"$(jq -r '.sb_initiated // false' \"${sb_project_root}/.silver-bullet.json\" 2>/dev/null || echo false)\"",
    "record": "A",
@@ -471,7 +487,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 370,
+   "line": 372,
    "kind": "config",
    "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]]; then",
    "record": "A",
@@ -479,7 +495,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 371,
+   "line": 373,
    "kind": "config",
    "snippet": "cfg_trivial=$(jq -r '.state.trivial_file // \"\"' \"$search_dir/.silver-bullet.json\" 2>/dev/null || true)",
    "record": "A",

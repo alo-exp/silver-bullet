@@ -326,5 +326,66 @@ OUT="$(ih_session_start_out startup)"
 assert_contains "a hidden change is still found" "$OUT" "differ from what git has committed"
 assert_contains "and goes out as a systemMessage the user sees" "$(jq -r '.systemMessage // ""' <<<"$OUT")" "SB INTEGRITY"
 
+# 43. the devops reset keeps the record valid JSON with backslashes, quotes and unicode in other keys
+for filt in '.project.active_workflow="devops-cycle" | .project.src_exclude_pattern="__tests__|\\.test\\."' '.project.active_workflow="devops-cycle" | .project.description="a \"quoted\" \\ back\\slash é"'; do
+  ih_project h43 "$filt"
+  ih_hook flow-advance.sh "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:"silver-ship"}}')"
+  assert_eq "devops ship: no drift" "" "$(ih_diverged)"
+  assert_eq "devops ship: the recorded config is valid JSON" "ok" "$(awk -F'\t' '$1 == "config" { print $3 }' "$(_sb_iv_rec_file "$PROJ")" | jq -e . >/dev/null 2>&1 && echo ok || echo bad)"
+  sb_integrity_forget; sb_integrity_verify "$PROJ" ""
+  assert_eq "devops ship: the backslashes survive" "$(jq -cS .project "$PROJ/.silver-bullet.json")" "$(sb_iv_jq -cS .project)"
+done
+ih_project h43t
+jq '.project.active_workflow="devops-cycle"' "$TL_REPO_ROOT/templates/silver-bullet.config.json.default" >"$PROJ/.silver-bullet.json"
+sb_integrity_baseline "$PROJ" session
+ih_hook flow-advance.sh "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:"silver-ship"}}')"
+assert_eq "the real template default config survives a devops ship without drift" "" "$(ih_diverged)"
+
+# 44. a session that never tracked a skill still ends quietly with a changed tree (HOOK-04), and the keyed record says so
+ih_project h44
+rm -f "$SD"/integrity-*
+sb_integrity_baseline "$PROJ" session
+rm -f "$STATE" "$STATE.hwm" "$STATE.seal"
+echo d >>"$PROJ/src/app.js"
+ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
+assert_eq "never tracked, nothing recorded: Stop exits quietly" "" "$TL_OUT"
+sb_integrity_forget; sb_integrity_verify "$PROJ" ""
+assert_eq "the record does not claim tracking" "false" "$SB_IV_TRACKED"
+sb_integrity_baseline "$PROJ" tracked
+sb_integrity_baseline "$PROJ" tracked
+sb_integrity_baseline "$PROJ" session
+sb_integrity_forget; sb_integrity_verify "$PROJ" ""
+assert_eq "tracking survives a session start" "true" "$SB_IV_TRACKED"
+
+# 45. retirement is for a fresh session on a real commit: not compact/resume, not an orphan checkout, not another branch
+uninstall_project() { # NAME: contract files removed and committed on the current branch
+  ih_project "$1"
+  git -C "$PROJ" rm -q --cached .silver-bullet.json silver-bullet.md >/dev/null 2>&1
+  rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
+  git -C "$PROJ" commit -q -m "remove SB" >/dev/null 2>&1
+}
+has_rec() { [[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no; }
+for src in compact resume; do
+  uninstall_project "h45-$src"
+  OUT="$(ih_session_start_out $src)"
+  assert_eq "$src never retires the record" "yes" "$(has_rec)"
+done
+uninstall_project h45-orphan
+git -C "$PROJ" checkout -q --orphan scratch >/dev/null 2>&1
+OUT="$(ih_session_start_out startup)"
+assert_eq "an orphan (unborn) checkout proves nothing: the record stays" "yes" "$(has_rec)"
+uninstall_project h45-default
+git -C "$PROJ" branch -f main HEAD~1 >/dev/null 2>&1
+OUT="$(ih_session_start_out startup)"
+assert_eq "the default branch still carries the contract: the record stays" "yes" "$(has_rec)"
+uninstall_project h45-untrusted
+rm -f "$SD/seal.key"
+OUT="$(ih_session_start_out startup)"
+assert_eq "a record that does not verify is not retired" "yes" "$(has_rec)"
+uninstall_project 'h45"q\path'
+OUT="$(ih_session_start_out startup)"
+assert_eq "the message is valid JSON whatever the path holds" "ok" "$(jq -e .systemMessage >/dev/null 2>&1 <<<"$OUT" && echo ok || echo bad)"
+assert_eq "and the record is retired" "no" "$(has_rec)"
+
 assert_eq "the honest corpus has at least 30 rows" "ok" "$([[ $(grep -c '^assert_\|^ok_cmd\|^  ok_cmd' "$0") -ge 30 ]] && echo ok || echo few)"
 tl_results
