@@ -72,6 +72,7 @@ Called by skills and hooks while Silver Bullet runs in a project.
 | Script | Purpose |
 |--------|---------|
 | `lint-shell.sh` | ShellCheck over all first-party Bash (`--all`, `--list`); used by `make lint` and CI |
+| `audit-protected-reads.py` | Protected-read audit: every place in hooks, scripts and skills that reads the state file, the trivial marker, the config, `silver-bullet.md`, the roadmap or an instruction file directly, classified Y/A/X/N (`--json`, `--markdown`, `--check FIXTURE`, `--rev REV`); `tests/hooks/test-integrity-audit.sh` fails on an N row, output in `docs/PROTECTED-READS.md` |
 | `check-repo-invariants.sh` | Repository invariants CI's `validate` job checks: manifests and versions, hook executability and references, template placeholders, required-skill lists, workflow mirror (`--list`, `--check NAME`) |
 | `check-git-key-drift.sh` | Non-blocking drift check: lists the `git help -c` keys of the installed git that the vendored snapshot lacks (so they get classified in the push-gate mechanism tables); `--update` rewrites the snapshot |
 | `validate-plugin-mirror.sh` | The plugin package mirrors source hooks and skills |
