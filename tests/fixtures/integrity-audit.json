@@ -207,7 +207,7 @@
   },
   {
    "file": "hooks/lib/integrity-anchor.sh",
-   "line": 99,
+   "line": 98,
    "kind": "config",
    "snippet": "if [[ -n \"$cfg\" && ( -e \"$cfg/.silver-bullet.json\" || -e \"$cfg/silver-bullet.md\" ) ]]; then printf '%s' \"$cfg\"; return 0; fi",
    "record": "A",
