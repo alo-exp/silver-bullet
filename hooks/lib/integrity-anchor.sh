@@ -187,7 +187,9 @@ _sb_iv_reg_lock() {
     fi
     sleep 0.05
   done
-  printf '%s' "$$" >"$lock/pid" 2>/dev/null || true
+  if printf '%s' "$$" >"$lock/pid" 2>/dev/null; then
+    return 0
+  fi
 }
 _sb_iv_reg_unlock() {
   rm -rf -- "$(_sb_iv_registry_file).lock"
@@ -310,7 +312,9 @@ _sb_iv_prune_unlocked() {
     fi
   done
   kept=""
-  for ((i = 0; i < n; i++)); do
+  i=-1
+  while [[ $((i + 1)) -lt $n ]]; do
+    i=$((i + 1))
     keep=1
     if [[ -n "${ids[$i]}" && -z "${live[$i]}" ]]; then
       if [[ "${cur[$i]}" != - ]]; then
