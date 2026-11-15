@@ -61,7 +61,7 @@ _SB_IV_VARS="STATUS DIVERGED WHY TRIVIAL_OK REQUIRED_PLANNING REQUIRED_PLANNING_
 _SB_IV_CACHE_KEY=""
 _SB_IV_EMPTY="{}"
 
-_sb_iv_state_dir() { printf '%s' "${SB_RUNTIME_STATE_DIR:-$HOME/.claude/.silver-bullet}"; }
+_sb_iv_state_dir() { printf '%s' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"; }
 
 _sb_iv_rec_file() { # ROOT
   local sum

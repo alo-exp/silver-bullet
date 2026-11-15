@@ -266,6 +266,7 @@ fi
 # truth. Legacy configs are normalized so old projects inherit current gates
 # and retired dependencies do not deadlock delivery.
 if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+  # shellcheck disable=SC2154  # config_file is the verified snapshot set by completion-audit.sh
   all_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "$DEFAULT_REQUIRED")"
 elif [[ -n "$required_deploy_cfg" ]]; then
   all_skills="$required_deploy_cfg"
