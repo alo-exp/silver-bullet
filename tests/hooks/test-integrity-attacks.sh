@@ -563,8 +563,22 @@ for keep in norec keeprec; do
   printf '%s' "$PROJ" >"$FX/pd.txt"
   if [[ "$keep" == norec ]]; then ih_run "$RMREC && $MVAWAY .silver-bullet.json silver-bullet.md"; else ih_run "$MVAWAY .silver-bullet.json silver-bullet.md"; fi; tally
   assert_eq "rename ($keep): the renamed directory is the root" "$PROJ" "$(sb_integrity_root "$PROJ/src")"
-  if [[ "$keep" == norec ]]; then setup_ok "rename ($keep)" norec .silver-bullet.json silver-bullet.md; fi
+  setup_ok "rename ($keep)" "$keep" .silver-bullet.json silver-bullet.md
   gates_deny "rename ($keep)"
+done
+# round 12: the record is named by the root's identity, so a rename plus ONE registry write still leaves the anchor
+tn=0
+for trunc in ': > "$SD/baselined-roots"' 'rm -f "$SD/baselined-roots"' 'printf "/nowhere\t1:1:1\n" > "$SD/baselined-roots"'; do
+  tn=$((tn + 1))
+  ih_project "r12-rename-trunc$tn"
+  OLDP="$PROJ"; NEWP="${OLDP}-moved"
+  echo d >>"$PROJ/src/app.js"
+  mv "$OLDP" "$NEWP"; PROJ="$NEWP"; export PROJ
+  printf '%s' "$PROJ" >"$FX/pd.txt"
+  ih_run "$trunc; cd \"\$(cat \$FX/pd.txt)\" && $MVAWAY .silver-bullet.json silver-bullet.md"; tally
+  setup_ok "rename then ($trunc)" keeprec .silver-bullet.json silver-bullet.md
+  assert_eq "rename then ($trunc): the registry no longer names the root" "no" "$([[ -s "$SD/baselined-roots" && "$(<"$SD/baselined-roots")" == *"$PROJ"* ]] && echo yes || echo no)"
+  gates_deny "rename then ($trunc)"
 done
 # the registry survives removing the records, and a record forged elsewhere does not become a root of its own
 ih_project r10-registry
@@ -572,8 +586,15 @@ rm -f "$SD"/integrity-*
 assert_eq "the registry names the root with every record gone" "$PROJ" "$(sb_integrity_root "$PROJ/src")"
 assert_eq "an unregistered sibling is no project" "" "$(sb_integrity_root "$TL_TMP")"
 
-# the advice for an honest user never suggests removing the record by hand
+# the advice for an honest user never suggests removing the record by hand, and never names it or the registry
+ih_project r10-advice
+rm -rf "$PROJ/.git"; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
+ih_edit
+assert_eq "advice guard: the edit is denied (the message below is this call's, not a stale one)" "deny" "$(decision)"
+assert_contains "advice guard: the advice is there" "$(message)" "not a git repository"
 assert_not_contains "no hand-removal of the record is suggested" "$(message)" "rm -f"
+assert_not_contains "the record file is not named to the agent" "$(message)" "integrity-"
+assert_not_contains "the registry file is not named to the agent" "$(message)" "baselined-roots"
 
 # a configured trivial path is ignored once the project has a record
 ih_project r7-trivial-path

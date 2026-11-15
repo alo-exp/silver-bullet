@@ -35,8 +35,61 @@ _sb_iv_cksum() { # STRING -> the CRC on stdout
   printf '%s' "$_SB_IV_SUM"
 }
 
+# The identity of a project root: device:inode:birth-time of the directory (GNU stat %W, BSD stat %B). A rename
+# keeps it; a directory created later in a deleted one's place does not (a reused inode has a new birth time).
+# Where the platform gives no birth time (0, ?, -, no support) it is device:inode only: an inode reused by a new
+# directory then looks like the old root (documented residual). "-" means the directory could not be read.
+_sb_iv_stat_raw() { # DIR..
+  if [[ -z "${_SB_IV_STATGNU:-}" ]]; then
+    if stat --version >/dev/null 2>&1; then _SB_IV_STATGNU=yes; else _SB_IV_STATGNU=no; fi
+  fi
+  if [[ "$_SB_IV_STATGNU" == yes ]]; then
+    stat -c '%d:%i:%W' -- "$@" 2>/dev/null
+  else
+    stat -f '%d:%i:%B' "$@" 2>/dev/null
+  fi
+}
+
+# One identity per argument, one per line, always line-aligned with the arguments ("-" where stat failed).
+_sb_iv_dir_ids() { # DIR..
+  local out="" tmp line d one
+  if out="$(_sb_iv_stat_raw "$@")"; then :; else out=""; fi
+  tmp="${out//[!$'\n']/}"
+  if [[ -z "$out" || $((${#tmp} + 1)) -ne $# ]]; then
+    out=""
+    for d in "$@"; do
+      if one="$(_sb_iv_stat_raw "$d")"; then :; else one=""; fi
+      out="${out:+$out$'\n'}${one:--}"
+    done
+  fi
+  while IFS= read -r line; do
+    case "$line" in
+      *:0 | *:- | *:\?) line="${line%:*}" ;;
+    esac
+    case "$line" in
+      [0-9]*:[0-9]*) printf '%s\n' "$line" ;;
+      *) printf -- '-\n' ;;
+    esac
+  done <<<"$out"
+}
+
+_sb_iv_dir_id() { # DIR -> identity or "-"
+  local id
+  id="$(_sb_iv_dir_ids "$1")"
+  printf '%s' "$id"
+}
+
+# What a record is bound to: the root's identity, else (identity unavailable) its path.
+_sb_iv_root_key() { # ROOT
+  local id
+  id="$(_sb_iv_dir_id "$1")"
+  if [[ "$id" == - ]]; then printf 'p:%s' "$1"; else printf '%s' "$id"; fi
+}
+
+# The record of ROOT is named by the CRC of its identity, so renaming the project keeps its record.
 _sb_iv_rec_file() { # ROOT
-  printf '%s/integrity-%s.rec' "$(_sb_iv_state_dir)" "$(_sb_iv_cksum "$1")"
+  _sb_iv_cksum_var "$(_sb_iv_root_key "$1")"
+  printf '%s/integrity-%s.rec' "$(_sb_iv_state_dir)" "$_SB_IV_SUM"
 }
 
 # The registry of baselined project roots: one line per root in a file next to the keys (not named
@@ -46,11 +99,6 @@ _sb_iv_rec_file() { # ROOT
 # inert). A directory is a root when it is registered (by inode, or by path when the path still holds the same
 # directory) OR has an integrity record; both have to be removed to lose the anchor.
 _sb_iv_registry_file() { printf '%s/baselined-roots' "$(_sb_iv_state_dir)"; }
-
-# device:inode of each given directory, one per line, in argument order (GNU stat, then BSD stat).
-_sb_iv_dir_ids() { # DIR..
-  stat -c '%d:%i' -- "$@" 2>/dev/null || stat -f '%d:%i' "$@" 2>/dev/null || true
-}
 
 # A project whose contract files were deleted or moved away is still a project: the nearest directory at or
 # above DIR that is a registered root or has a record is its root. A directory that does not exist yet is
@@ -72,44 +120,110 @@ sb_integrity_record_root() { # DIR
     d="${d%/*}"
     [[ -n "$d" ]] || d="/"
   done
-  if [[ "$reg" == *$'\t'* ]]; then
-    ids="$(_sb_iv_dir_ids "${anc[@]}")"
-    while IFS= read -r id; do idl+=("$id"); done <<<"$ids"
-  fi
+  ids="$(_sb_iv_dir_ids "${anc[@]}")"
+  while IFS= read -r id; do idl+=("$id"); done <<<"$ids"
   n=${#anc[@]}
   for ((i = 0; i < n; i++)); do
     d="${anc[$i]}"
-    id="${idl[$i]:-}"
+    id="${idl[$i]:--}"
     if [[ "$reg" == *$'\n'"$d"$'\n'* ]]; then printf '%s' "$d"; return 0; fi
-    if [[ -n "$id" && "$reg" == *$'\t'"$id"$'\n'* ]]; then printf '%s' "$d"; return 0; fi
+    if [[ "$id" != - && "$reg" == *$'\t'"$id"$'\n'* ]]; then printf '%s' "$d"; return 0; fi
     if [[ -n "$has_rec" ]]; then
-      _sb_iv_cksum_var "$d"
+      if [[ "$id" == - ]]; then _sb_iv_cksum_var "p:$d"; else _sb_iv_cksum_var "$id"; fi
       if [[ -f "$sd/integrity-$_SB_IV_SUM.rec" ]]; then printf '%s' "$d"; return 0; fi
     fi
   done
 }
 
-# Register ROOT as a baselined project root (idempotent).
+# Registry lines kept at most (the newest); every worktree, clone or rename adds a line.
+_SB_IV_REGISTRY_CAP=200
+
+# Register ROOT as a baselined project root (idempotent); the line carries the root's current path and identity,
+# so a renamed root gets a fresh line. The oldest lines go beyond the cap.
 sb_integrity_register_root() { # ROOT
-  local regf id
+  local regf id content
   regf="$(_sb_iv_registry_file)"
   [[ -n "$1" && ! -L "$regf" ]] || return 0
-  id="$(_sb_iv_dir_ids "$1")"
-  if [[ -f "$regf" && $'\n'"$(<"$regf")"$'\n' == *$'\n'"$1"$'\t'"$id"$'\n'* ]]; then return 0; fi
+  id="$(_sb_iv_dir_id "$1")"
+  content=""
+  if [[ -f "$regf" ]]; then content="$(<"$regf")"; fi
+  if [[ $'\n'"$content"$'\n' == *$'\n'"$1"$'\t'"$id"$'\n'* ]]; then return 0; fi
   printf '%s\t%s\n' "$1" "$id" >>"$regf" 2>/dev/null || true
+  _sb_iv_registry_cap "$regf"
 }
 
-# Remove ROOT from the registry (an honest retirement).
+# Keep the newest _SB_IV_REGISTRY_CAP lines.
+_sb_iv_registry_cap() { # FILE
+  local f="$1" content n tmp
+  content="$(<"$f")"
+  n="${content//[!$'\n']/}"
+  if [[ ${#n} -lt $_SB_IV_REGISTRY_CAP ]]; then return 0; fi
+  tmp="$f.$$"
+  if printf '%s\n' "$content" | tail -n "$_SB_IV_REGISTRY_CAP" >"$tmp" 2>/dev/null; then mv -f -- "$tmp" "$f"; fi
+  rm -f -- "$tmp"
+}
+
+# Remove ROOT from the registry (an honest retirement): every line of its path and every line of its identity
+# (a renamed root has lines under both of its names).
 sb_integrity_unregister_root() { # ROOT
-  local regf tmp line kept=""
+  local regf tmp line kept="" id lid
   regf="$(_sb_iv_registry_file)"
   [[ -f "$regf" && ! -L "$regf" ]] || return 0
+  id="$(_sb_iv_dir_id "$1")"
   tmp="$regf.$$"
   while IFS= read -r line || [[ -n "$line" ]]; do
-    if [[ "$line" != "$1" && "$line" != "$1"$'\t'* ]]; then kept="$kept$line"$'\n'; fi
+    lid="${line#*$'\t'}"
+    if [[ "$line" == "$1" || "$line" == "$1"$'\t'* ]]; then continue; fi
+    if [[ "$id" != - && "$line" == *$'\t'* && "$lid" == "$id" ]]; then continue; fi
+    kept="$kept$line"$'\n'
   done <"$regf"
   if printf '%s' "$kept" >"$tmp" 2>/dev/null; then mv -f -- "$tmp" "$regf"; fi
   rm -f -- "$tmp"
+}
+
+# Session start (startup, clear): drop the lines that can no longer matter. A line whose path now holds a
+# different directory is stale; so is a line whose path is gone when the same identity has a live line (the
+# root was renamed). A line whose path is gone and whose identity has no live line stays (the root may have
+# moved before it was seen again) until the cap drops it.
+sb_integrity_prune_registry() {
+  local regf lines=() paths=() ids=() line i n live=() cur kept="" ex=() exi=() j tmp ci k
+  regf="$(_sb_iv_registry_file)"
+  [[ -f "$regf" && ! -L "$regf" ]] || return 0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -n "$line" ]] || continue
+    lines+=("$line")
+    paths+=("${line%%$'\t'*}")
+    if [[ "$line" == *$'\t'* ]]; then ids+=("${line#*$'\t'}"); else ids+=(""); fi
+  done <"$regf"
+  n=${#lines[@]}
+  for ((i = 0; i < n; i++)); do
+    if [[ -d "${paths[$i]}" ]]; then ex+=("${paths[$i]}"); exi+=("$i"); fi
+  done
+  cur=()
+  for ((i = 0; i < n; i++)); do cur+=("-"); done
+  if [[ ${#ex[@]} -gt 0 ]]; then
+    k=0
+    while IFS= read -r ci; do
+      cur[${exi[$k]}]="$ci"
+      k=$((k + 1))
+    done <<<"$(_sb_iv_dir_ids "${ex[@]}")"
+  fi
+  for ((i = 0; i < n; i++)); do live+=(""); done
+  for ((i = 0; i < n; i++)); do
+    if [[ -n "${ids[$i]}" && "${cur[$i]}" == "${ids[$i]}" ]]; then live[i]=1; fi
+  done
+  for ((i = 0; i < n; i++)); do
+    if [[ -z "${ids[$i]}" || -n "${live[$i]}" ]]; then kept="$kept${lines[$i]}"$'\n'; continue; fi
+    if [[ "${cur[$i]}" != - ]]; then continue; fi
+    for ((j = 0; j < n; j++)); do
+      if [[ "${ids[$j]}" == "${ids[$i]}" && -n "${live[$j]}" ]]; then continue 2; fi
+    done
+    kept="$kept${lines[$i]}"$'\n'
+  done
+  tmp="$regf.$$"
+  if printf '%s' "$kept" >"$tmp" 2>/dev/null; then mv -f -- "$tmp" "$regf"; fi
+  rm -f -- "$tmp"
+  _sb_iv_registry_cap "$regf"
 }
 
 # The nearest directory at or above DIR holding BOTH contract files (the project boundary), stopping at a

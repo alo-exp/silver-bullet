@@ -173,7 +173,7 @@ _sb_iv_read() { # RECFILE
 
 # Is the record file authentic? Sets _SB_IV_WHY when not.
 _sb_iv_authentic() { # RECFILE STATE ROOT
-  local rec="$1" state="$2" root="$3" high now
+  local rec="$1" state="$2" root="$3" high now rk
   _SB_IV_WHY=""
   if [[ -L "$rec" ]]; then _SB_IV_WHY="the record is a symbolic link"; return 1; fi
   if ! _sb_iv_read "$rec"; then _SB_IV_WHY="the record is unreadable"; return 1; fi
@@ -189,7 +189,8 @@ _sb_iv_authentic() { # RECFILE STATE ROOT
   if [[ "$_SB_IV_KIND" == hmac ]] && ! _sb_state_seal_can_hmac; then
     _SB_IV_WHY="openssl or python3 is needed to verify the keyed record"; return 1
   fi
-  if [[ "$_SB_IV_DIGEST" != "$(_sb_iv_message "$root" "$_SB_IV_COUNTER" "$_SB_IV_BSUM" "$_SB_IV_BODY" | _sb_state_seal_digest "$_SB_IV_KIND" "$state")" ]]; then
+  rk="$(_sb_iv_root_key "$root")"
+  if [[ "$_SB_IV_DIGEST" != "$(_sb_iv_message "$rk" "$_SB_IV_COUNTER" "$_SB_IV_BSUM" "$_SB_IV_BODY" | _sb_state_seal_digest "$_SB_IV_KIND" "$state")" ]]; then
     _SB_IV_WHY="the record was changed or the key is missing"; return 1
   fi
   return 0
@@ -444,7 +445,7 @@ sb_integrity_restore_safe() {
 
 # Write a record: BODY is the full body text.
 _sb_iv_write() { # ROOT RECFILE STATE BODY
-  local root="$1" rec="$2" state="$3" body="$4" c prev kind bsum digest tmp
+  local root="$1" rec="$2" state="$3" body="$4" c prev kind bsum digest tmp rk
   [[ ! -L "$rec" && ! -L "$rec.hwm" ]] || return 0
   c="$(_sb_state_seal_number "$rec.hwm")"
   prev=0
@@ -459,7 +460,8 @@ _sb_iv_write() { # ROOT RECFILE STATE BODY
     _sb_state_seal_log "$state" "warning: the keyed record is unavailable (openssl, python3 or the key); recording with a plain checksum"
   fi
   bsum="$(_sb_state_seal_branch_sum "$state")"
-  digest="$(_sb_iv_message "$root" "$c" "$bsum" "$body" | _sb_state_seal_digest "$kind" "$state")" || return 0
+  rk="$(_sb_iv_root_key "$root")"
+  digest="$(_sb_iv_message "$rk" "$c" "$bsum" "$body" | _sb_state_seal_digest "$kind" "$state")" || return 0
   tmp="${rec}.$$"
   if printf 'v2\n%s\n%s\n%s\n%s\n%s\n' "$kind" "$c" "$bsum" "$digest" "$body" 2>/dev/null >"$tmp"; then mv -f -- "$tmp" "$rec"; fi
   rm -f -- "$tmp"
@@ -472,7 +474,7 @@ _sb_iv_write() { # ROOT RECFILE STATE BODY
 }
 
 sb_integrity_baseline() { # ROOT MODE [..]
-  local root="$1" mode="$2" state rec body tag entry old keep line new_line marker_state live_lines skill="" drift rec_cfg live_cfg skip_config="" active
+  local root="$1" mode="$2" state rec body tag entry old keep line new_line marker_state live_lines skill="" drift rec_cfg live_cfg skip_config="" active legacy
   shift 2
   state="$(_sb_iv_state_dir)/state"
   rec="$(_sb_iv_rec_file "$root")"
@@ -489,6 +491,11 @@ sb_integrity_baseline() { # ROOT MODE [..]
       body="$body"$'\n'"tracked"$'\t'"1"$'\t'"-"
     fi
     _sb_iv_write "$root" "$rec" "$state" "$body"
+    # a record from before records were named by identity (named by the CRC of the path): the session start has
+    # just recorded the project again, the old one goes
+    _sb_iv_cksum_var "$root"
+    legacy="$(_sb_iv_state_dir)/integrity-${_SB_IV_SUM}.rec"
+    rm -f -- "$legacy" "$legacy.hwm"
   elif [[ -f "$rec" ]] && _sb_iv_authentic "$rec" "$state" "$root"; then
     old="$_SB_IV_BODY"
     live_lines="$(_sb_iv_live_body "$root")"
@@ -625,12 +632,11 @@ _sb_iv_removal_state() { # ROOT
 # uninstall that no restart can retire, take this root out of the registry from a terminal (documented in
 # docs/ENFORCEMENT.md).
 _sb_iv_removal_advice() { # ROOT
-  local root="${1:-/}" reg
-  reg="$(_sb_iv_registry_file)"
+  local root="${1:-/}"
   case "$(_sb_iv_removal_state "$root")" in
     present) printf 'A contract file is missing while the other is still there: restore it and restart the session.' ;;
     norepo)
-      printf 'The contract files are gone and %s is not a git repository, so no committed removal can be shown: restore the files (from a backup or another checkout) and restart the session, or re-run /sb:init there. If Silver Bullet was removed on purpose, take this root out of Silver Bullet'"'"'s registry yourself, from a terminal outside the agent: delete the line that starts with %s in %s and the record %s, then start a new session.' "$root" "$root" "$reg" "$(_sb_iv_rec_file "$root")" ;;
+      printf 'The contract files are gone and %s is not a git repository, so no committed removal can be shown: restore the files (from a backup or another checkout) and restart the session, or re-run /sb:init there. If Silver Bullet was removed on purpose, the user retires the root as described under "Recovery" in Silver Bullet'"'"'s docs/ENFORCEMENT.md (a user action outside the agent).' "$root" ;;
     uncommitted)
       if _sb_iv_git -C "$root" rev-parse -q --verify "HEAD^{commit}" >/dev/null 2>&1; then
         printf 'The contract files are gone from the working tree but git HEAD still has them: if that was a mistake restore them (git checkout HEAD -- .silver-bullet.json silver-bullet.md) and restart the session; if Silver Bullet was removed on purpose, commit the removal and start a new session.'
@@ -641,7 +647,7 @@ _sb_iv_removal_advice() { # ROOT
       if [[ -f "$(_sb_iv_rec_file "$root")" ]]; then
         printf 'Silver Bullet was removed from this repository (the files are gone from the tree and from git HEAD): start a new session and the record is retired.'
       else
-        printf 'Silver Bullet was removed from this repository (the files are gone from the tree and from git HEAD) but its integrity record is gone too, so nothing can be verified and no restart retires the root: re-run /sb:init to record it again, or, if the removal is intended, take this root out of Silver Bullet'"'"'s registry yourself, from a terminal outside the agent: delete the line that starts with %s in %s, then start a new session.' "$root" "$reg"
+        printf 'Silver Bullet was removed from this repository (the files are gone from the tree and from git HEAD) but its integrity record is gone too, so nothing can be verified and no restart retires the root: re-run /sb:init to record it again, or, if the removal is intended, the user retires the root as described under "Recovery" in Silver Bullet'"'"'s docs/ENFORCEMENT.md (a user action outside the agent).'
       fi ;;
   esac
 }

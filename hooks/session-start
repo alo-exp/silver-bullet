@@ -123,6 +123,7 @@ if [[ -z "$sb_project_root" ]]; then
     if sb_iv_retired="$(sb_integrity_retire_if_uninstalled "$PWD")"; then
       printf '%s' "SB INTEGRITY — Silver Bullet was removed from ${sb_iv_retired} (no contract files in the tree or at git HEAD). Its integrity record was retired." | jq -Rs '{systemMessage: .}'
     fi
+    sb_integrity_prune_registry
   fi
   # Non-SB workspace: clear stale global orchestrator markers from a prior SB session.
   rm -f -- "${SB_STATE_DIR}/orchestrator-directive.json" \
@@ -702,6 +703,7 @@ if [[ "$sb_should_mutate" == true && -n "$sb_project_root" && -f "$_lib_dir/inte
   fi
   _sb_state_seal_log "${SB_STATE_DIR}/state" "integrity baseline recorded by session-start (source: ${sb_session_source}) for $sb_iv_root"
   sb_integrity_baseline "$sb_iv_root" session
+  if [[ "$sb_session_source" == startup || "$sb_session_source" == clear ]]; then sb_integrity_prune_registry; fi
 fi
 
 # Mark session rules injected (prompt-reminder uses compact ref instead of full re-injection).
