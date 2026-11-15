@@ -87,7 +87,7 @@ LINE_RULES = [
     ("hooks/lib/context-mode-read-deny.sh", re.compile(r'state_file|trivial_file'), "token-saving read gate: exempts the named runtime files from the read-size deny; it decides no planning or delivery gate"),
     ("hooks/lib/context-mode-read-deny.sh", re.compile(r'recommended_tools'), "tool consent key (.recommended_tools): kept by the hooks themselves and excluded from the record"),
     ("hooks/lib/orchestrator-parent.sh", re.compile(r'orchestrator_mode'), "orchestrator parent mode: an extra directive layer; the planning floor and the delivery gates do not depend on it"),
-    ("hooks/lib/enterprise-policy.sh", re.compile(r'active_profile|evidence_schema'), "receives the verified snapshot path from the delivery gates (completion-audit); session and prompt callers print advisory text with it"),
+    ("hooks/lib/enterprise-policy.sh", re.compile(r'active_profile|evidence_schema'), "handed the root's config path by the delivery tier only after the drift check proved it equals the record; session and prompt callers print advisory text with it"),
     ("hooks/lib/prerequisite-probe.sh", re.compile(r'silver-bullet'), "installer prerequisite probe: reports a missing contract file, decides no gate"),
     ("hooks/lib/required-skills.sh", re.compile(r'\$\{cfg\}'), "reads the TEMPLATE's default lists (templates/silver-bullet.config.json.default), not a project file"),
     ("hooks/lib/required-skills.sh", re.compile(r'"\$config_file"'), "only when no project was verified (a standalone caller); a verified gate reads the record"),

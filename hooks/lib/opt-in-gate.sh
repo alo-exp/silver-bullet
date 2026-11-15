@@ -88,8 +88,6 @@ sb_opt_in_hook_begin() {
   # A hook that must hold even for trivial work sets SB_OPT_IN_TRIVIAL_BYPASS=0 before the call.
   if [[ "${SB_OPT_IN_TRIVIAL_BYPASS:-1}" != 0 ]] && declare -f sb_trivial_bypass >/dev/null 2>&1; then
     local trivial_cfg
-    # Only an install without a record honours a path named in the config: sb_trivial_bypass ignores it once
-    # the project has a record and uses the marker the record blesses (hooks/lib/trivial-bypass.sh).
     trivial_cfg="$(jq -r '.state.trivial_file // "" | strings' "$config_file" 2>/dev/null || true)"
     trivial_cfg="${trivial_cfg/#\~/$HOME}"
     sb_trivial_bypass "${trivial_cfg:-${SB_RUNTIME_STATE_DIR}/trivial}"

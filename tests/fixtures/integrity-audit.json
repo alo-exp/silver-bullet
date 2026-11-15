@@ -171,7 +171,7 @@
    "kind": "config",
    "snippet": "profile=\"$(jq -r '.enterprise_policy.active_profile // empty' \"$config_file\" 2>/dev/null || true)\"",
    "record": "X",
-   "reason": "receives the verified snapshot path from the delivery gates (completion-audit); session and prompt callers print advisory text with it"
+   "reason": "handed the root's config path by the delivery tier only after the drift check proved it equals the record; session and prompt callers print advisory text with it"
   },
   {
    "file": "hooks/lib/enterprise-policy.sh",
@@ -179,7 +179,7 @@
    "kind": "config",
    "snippet": "hooks_strict=\"$(jq -r '.hooks.evidence_schema.strict | if . == null then \"true\" else tostring end' \"$config_file\" 2>/dev/null || echo true)\"",
    "record": "X",
-   "reason": "receives the verified snapshot path from the delivery gates (completion-audit); session and prompt callers print advisory text with it"
+   "reason": "handed the root's config path by the delivery tier only after the drift check proved it equals the record; session and prompt callers print advisory text with it"
   },
   {
    "file": "hooks/lib/integrity.sh",
@@ -255,7 +255,7 @@
   },
   {
    "file": "hooks/lib/opt-in-gate.sh",
-   "line": 93,
+   "line": 91,
    "kind": "config",
    "snippet": "trivial_cfg=\"$(jq -r '.state.trivial_file // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
    "record": "X",

@@ -259,6 +259,15 @@ sb_integrity_baseline "$R" session
 if sb_integrity_trivial_ok "$R"; then tl_pass "a blessed marker says yes"; else tl_fail "blessed"; fi
 rm -f "$SD/trivial"
 sb_integrity_baseline "$R" session
+# a second skill may start while the first one's own keys are mid-change (that is its work, not a predating drift)
+fresh
+sb_integrity_baseline "$R" session
+sb_integrity_baseline "$R" unlock silver-add
+jq '._github_project = {"number":9}' "$R/.silver-bullet.json" >"$R/t.json" && mv "$R/t.json" "$R/.silver-bullet.json"
+sb_integrity_baseline "$R" unlock silver-init
+verify
+assert_eq "silver-add's declared key does not stop the next skill's unlock" "silver-init" "$SB_IV_UNLOCK_SKILL"
+sb_integrity_baseline "$R" session
 # an unlock written into the record without the key is not a record any more
 sb_integrity_baseline "$R" session
 sb_integrity_baseline "$R" unlock silver-init

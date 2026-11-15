@@ -209,7 +209,7 @@ sb_enterprise_policy_human_deploy_approved() {
   [[ -n "$(find "$marker" -mmin "-${ttl}" -print 2>/dev/null)" ]] || return 1
   project="$(sed -n 's/^project=//p' "$marker" 2>/dev/null | head -1)"
   if [[ -n "$project" && -n "$config_file" ]]; then
-    [[ "$project" == "${SB_IV_ROOT:-$(dirname "$config_file")}" ]] || return 1
+    [[ "$project" == "$(dirname "$config_file")" ]] || return 1
   fi
   return 0
 }
