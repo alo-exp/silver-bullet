@@ -11,9 +11,9 @@ if [[ -f "$_gate_lib_dir/runtime-paths.sh" ]]; then
 fi
 
 # The record-aware root lookup (a root with a record is a project even when its contract files are gone).
-if ! declare -f sb_integrity_record_root >/dev/null 2>&1 && [[ -f "$_gate_lib_dir/integrity.sh" ]]; then
-  # shellcheck source=integrity.sh
-  source "$_gate_lib_dir/integrity.sh"
+if ! declare -f sb_integrity_record_root >/dev/null 2>&1 && [[ -f "$_gate_lib_dir/integrity-anchor.sh" ]]; then
+  # shellcheck source=integrity-anchor.sh
+  source "$_gate_lib_dir/integrity-anchor.sh"
 fi
 
 SB_PROJECT_ROOT_CACHE_FILE="${SB_RUNTIME_STATE_DIR}/project-root"

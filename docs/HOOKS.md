@@ -35,7 +35,7 @@ Before a tool runs; a hook can deny the call.
 | # | Matcher | Script | Timeout |
 |---|---------|--------|---------|
 | 1 | `.*` | `debug-dump.sh` | 5 |
-| 2 | `Bash\|Skill\|exec_command` | `phase-archive.sh` | 10 |
+| 2 | `Bash\|Skill\|exec_command\|mcp__.*` | `phase-archive.sh` | 10 |
 | 3 | `Bash\|Skill\|exec_command\|mcp__.*` | `completion-audit.sh` | 15 |
 | 4 | `Bash\|Skill\|exec_command\|mcp__.*` | `ci-status-check.sh` | 30 |
 | 5 | `Bash\|Skill\|exec_command` | `spec-floor-check.sh` | 10 |
@@ -189,7 +189,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `live-publish-evidence-gate.sh` | PreToolUse `Bash\|exec_command`; Stop `.*` | Requires fetched live-page evidence before a site publish is claimed LIVE (Stop) and before `git push` to main for site work. |
 | `orchestrator-directive-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch`; PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Orchestrator parent mode: blocks edits, shell commands and Task spawns until the skill named by the pending directive has been invoked. |
 | `outcomes-check.sh` | Stop `.*`; SubagentStop `.*`; UserPromptSubmit `.*` | Tracks the per-prompt outcome checklist; at Stop, blocks while outcomes are incomplete. |
-| `phase-archive.sh` | PreToolUse `Bash\|Skill\|exec_command` | Archives `.planning/phases/` directories before a real `phases clear` invocation (or a shell delete of the whole phases directory) runs; never skips new phases when an earlier archive exists. Fails closed: if archiving fails, the clear is denied. |
+| `phase-archive.sh` | PreToolUse `Bash\|Skill\|exec_command\|mcp__.*` | Archives `.planning/phases/` directories before a real `phases clear` invocation (or a shell delete of the whole phases directory) runs; never skips new phases when an earlier archive exists. Fails closed: if archiving fails, the clear is denied. |
 | `phase-lock-claim.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | Claims the `.planning/phases/<NNN>/` lock (via `.planning/scripts/phase-lock.sh`) before a session edits a phase's files. |
 | `phase-lock-heartbeat.sh` | PostToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Refreshes heartbeats for the phase locks this session holds (throttled to once per 5 minutes per phase). |
 | `phase-lock-release.sh` | Stop `.*`; SubagentStop `.*` | Releases this session's phase locks at Stop/SubagentStop. Never blocks. |
@@ -259,6 +259,6 @@ Hooks source these helpers; none of them is registered as a hook. Each file's he
 - **Orchestrator, delegation and review ladder:** `orchestrator-directive.sh`, `orchestrator-event-log.sh`, `orchestrator-parent.sh`, `orchestrator-scheduler.sh`, `orchestrator-skill-atom.sh`, `orchestrator-state.sh`, `agent-delegation-state.sh`, `review-fix-ladder-state.sh`, `rfl-policy-c-assert.sh`
 - **Opt-in recommended tools (five-tool stack):** `recommended-tools.sh`, `recommended-tools-registry.sh`, `graphify-gate.sh`, `agentmemory-gate.sh`, `alumnium-gate.sh`, `context-mode-gate.sh`, `context-mode-read-deny.sh`, `leanctx-gate.sh`, `rtk-gate.sh`, `token-compression-tools-gate.sh`, `stack-compression-coordinator.sh`, `stack-optimizer.sh`, `graphify-am-global.sh`, `rtk-cm-global.sh`
 - **Site sessions:** `site-session.sh`
-- **Other:** `contract-unlock.sh`, `integrity.sh`, `opt-in-gate.sh`, `planning-floor.sh`, `state-seal.sh`, `user-consent.sh`
+- **Other:** `contract-unlock.sh`, `integrity-anchor.sh`, `integrity.sh`, `opt-in-gate.sh`, `planning-floor.sh`, `state-seal.sh`, `user-consent.sh`
 
 `hooks/lib/completion-audit/` holds the modules `completion-audit.sh` sources (command classification, planning tier, deploy tier, change class, gate runners, state helpers). `hooks/lib/tool-input/` holds the Python helpers `tool-input.sh` calls to parse tool payloads (command strings, write targets, patch paths, RTK unwrapping); they share `shell_analysis.py`, the shell-command analyzer that `shell-analysis.sh` loads with `sb_tool_input_load` (delivery actions and tier, read-only verdict, write targets, opaque and unseen parts); completion-audit loads it once per call, the other gates start it through the accessors until they adopt the load.

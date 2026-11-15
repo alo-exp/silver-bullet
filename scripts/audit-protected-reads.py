@@ -36,6 +36,7 @@ LIVE_PATH = re.compile(r'\.silver-bullet\.json|silver-bullet\.md|\$\{?(?:config_
 # (path glob or exact path) -> (disposition, reason). First match wins.
 RULES = [
     ("hooks/lib/integrity.sh", "A", "the integrity machinery: reads the live files to verify and to record them"),
+    ("hooks/lib/integrity-anchor.sh", "A", "the integrity machinery: where the project is (record, contract files, git tracking)"),
     ("hooks/lib/state-seal.sh", "A", "the integrity machinery: the state seal"),
     ("hooks/lib/sb-project-gate.sh", "A", "activation helper: record-aware project lookup (root with a record wins)"),
     ("hooks/lib/project-active.sh", "A", "activation helper: record-aware"),

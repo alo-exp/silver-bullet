@@ -91,7 +91,9 @@ deny() {
 }
 
 # ── Exit early if project is not using Silver Bullet ─────────────────────────
-sb_integrity_gate "$PWD" || exit 0
+# The project is decided here; the record is verified only if a planning file is written (sb_integrity_trivial_ok).
+SB_IV_ROOT="$(sb_integrity_root "$PWD")"
+[[ -n "$SB_IV_ROOT" ]] || exit 0
 if declare -f sb_project_active >/dev/null 2>&1; then
   sb_project_active "$SB_IV_ROOT/.silver-bullet.json" || exit 0
 fi

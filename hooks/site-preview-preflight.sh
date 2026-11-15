@@ -24,7 +24,7 @@ case "$tool_name" in
   *) exit 0 ;;
 esac
 
-config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity.sh" && sb_integrity_activation_config "$PWD") 2>/dev/null; true)"
+config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity-anchor.sh" && sb_integrity_activation_config "$PWD") 2>/dev/null; true)"
 repo_root="${config_file%/*}"
 [[ -n "$config_file" ]] || exit 0
 sb_project_gate_or_exit 2>/dev/null || exit 0

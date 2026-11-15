@@ -38,19 +38,14 @@
         ]
       },
       {
-        "matcher": "Bash|Skill|exec_command",
+        "matcher": "Bash|Skill|exec_command|mcp__.*",
         "hooks": [
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-archive.sh\"",
             "async": false,
             "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|Skill|exec_command|mcp__.*",
-        "hooks": [
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
