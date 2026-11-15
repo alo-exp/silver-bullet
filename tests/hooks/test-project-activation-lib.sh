@@ -104,6 +104,10 @@ sb_integrity_register_root "$TL_TMP/plain/a"
 sb_integrity_unregister_root "$TL_TMP/plain/a"
 assert_eq "a symlinked registry is never written through" "no" "$([[ -e /nonexistent ]] && echo yes || echo no)"
 rm -f "$REG"
+mkdir "$REG"
+sb_integrity_register_root "$TL_TMP/plain/a"
+assert_eq "a registry that cannot be written is left alone (no failure)" "dir" "$([[ -d "$REG" ]] && echo dir || echo other)"
+rmdir "$REG"
 # an install whose registry is gone still finds a root by its record
 sb_integrity_baseline "$R" session
 rm -f "$REG"

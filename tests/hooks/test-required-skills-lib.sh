@@ -28,10 +28,14 @@ assert_eq "default version read" "9.9.9" "$out"
 printf '{}' >"$TL_TMP/empty.json"
 out="$(SB_DEFAULT_CONFIG="$TL_TMP/empty.json" bash -c 'source "$1"; printf "%s|%s|%s|%s|%s|%s|%s" "$DEFAULT_PLANNING" "$DEVOPS_DEFAULT_PLANNING" "$DEFAULT_REQUIRED" "$DEVOPS_DEFAULT_REQUIRED" "$DEFAULT_RELEASE_REQUIRED" "$DEVOPS_DEFAULT_RELEASE_REQUIRED" "$DEFAULT_ALL_TRACKED"' _ "$LIB")"
 assert_eq "empty config: built-in fallbacks" "silver-quality-gates silver-context silver-plan|silver-blast-radius devops-quality-gates silver-context silver-plan|silver-quality-gates silver-completion-audit verify-tests|silver-quality-gates silver-completion-audit verify-tests|silver-create-release|silver-create-release|silver-quality-gates silver-quality-gates-design silver-quality-gates-adversarial verify-tests" "$out"
+# a template that is not JSON: jq fails, every list keeps its fallback
+printf 'not json' >"$TL_TMP/bad.json"
+out="$(SB_DEFAULT_CONFIG="$TL_TMP/bad.json" bash -c 'source "$1"; printf "%s|%s" "$DEFAULT_PLANNING" "$DEFAULT_ALL_TRACKED"' _ "$LIB")"
+assert_eq "unreadable template: built-in fallbacks" "silver-quality-gates silver-context silver-plan|silver-quality-gates silver-quality-gates-design silver-quality-gates-adversarial verify-tests" "$out"
 # no jq: every lookup fails, fallbacks apply
 NOJQ="$(tl_path_without jq)"
-out="$(PATH="$NOJQ" bash -c 'source "$1"; printf "%s" "$DEFAULT_PLANNING"; __sb_rs_load_all_tracked || printf " tracked-fail"; __sb_rs_default_version || printf " version-fail"' _ "$LIB")"
-assert_eq "no jq: fallback planning, failing lookups" "silver-quality-gates silver-context silver-plan tracked-fail version-fail" "$out"
+out="$(PATH="$NOJQ" bash -c 'source "$1"; printf "%s" "$DEFAULT_PLANNING"; __sb_rs_default_version || printf " version-fail"' _ "$LIB")"
+assert_eq "no jq: fallback planning, failing lookups" "silver-quality-gates silver-context silver-plan version-fail" "$out"
 # the library copy without the templates directory next to it finds no default config
 mkdir -p "$TL_TMP/isolated/hooks/lib"
 cp "$LIB" "$TL_TMP/isolated/hooks/lib/required-skills.sh"

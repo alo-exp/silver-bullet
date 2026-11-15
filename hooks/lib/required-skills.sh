@@ -38,13 +38,6 @@ __sb_rs_find_default_config() {
   return 1
 }
 
-__sb_rs_load_all_tracked() {
-  local cfg
-  cfg="$(__sb_rs_find_default_config)" || return 1
-  command -v jq >/dev/null 2>&1 || return 1
-  jq -r '(.skills.all_tracked // []) | join(" ")' "${cfg}" 2>/dev/null | sed 's/ $//'
-}
-
 __sb_rs_default_version() {
   local cfg
   cfg="$(__sb_rs_find_default_config)" || return 1
@@ -238,10 +231,10 @@ __sb_rs_populate() {
   local cfg out="" v1="" v2="" v3="" v4="" v5="" v6="" v7=""
   if cfg="$(__sb_rs_find_default_config)" && command -v jq >/dev/null 2>&1; then
     out="$(jq -r '.skills | [.required_planning, .required_planning_devops, .required_deploy, .required_deploy_devops,
-      .required_release, .required_release_devops, .all_tracked][] | (if type == "array" then join(" ") else "" end)' "${cfg}" 2>/dev/null || true)"
+      .required_release, .required_release_devops, .all_tracked][] | (if type == "array" then join(" ") else "" end)' "${cfg}" 2>/dev/null)" || out=""
   fi
   {
-    IFS= read -r v1 || true
+    IFS= read -r v1
     IFS= read -r v2 || true
     IFS= read -r v3 || true
     IFS= read -r v4 || true

@@ -49,11 +49,14 @@ sb_integrity_register_root() { # ROOT
 
 # Remove ROOT from the registry (an honest retirement).
 sb_integrity_unregister_root() { # ROOT
-  local regf tmp
+  local regf tmp line kept=""
   regf="$(_sb_iv_registry_file)"
   [[ -f "$regf" && ! -L "$regf" ]] || return 0
   tmp="$regf.$$"
-  if grep -vxF -- "$1" "$regf" >"$tmp" 2>/dev/null || [[ ! -s "$tmp" ]]; then mv -f -- "$tmp" "$regf"; fi
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" != "$1" ]]; then kept="$kept$line"$'\n'; fi
+  done <"$regf"
+  if printf '%s' "$kept" >"$tmp" 2>/dev/null; then mv -f -- "$tmp" "$regf"; fi
   rm -f -- "$tmp"
 }
 
