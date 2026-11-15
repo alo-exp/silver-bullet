@@ -73,23 +73,35 @@ _sb_iv_dir_ids() { # DIR..
   done <<<"$out"
 }
 
+# The identity of one directory into _SB_IV_ID (one stat process, no nested substitutions).
+_sb_iv_dir_id_var() { # DIR
+  local one=""
+  if one="$(_sb_iv_stat_raw "$1")"; then :; else one=""; fi
+  case "$one" in
+    *:0 | *:- | *:\?) one="${one%:*}" ;;
+  esac
+  case "$one" in
+    [0-9]*:[0-9]*) _SB_IV_ID="$one" ;;
+    *) _SB_IV_ID="-" ;;
+  esac
+}
+
 _sb_iv_dir_id() { # DIR -> identity or "-"
-  local id
-  id="$(_sb_iv_dir_ids "$1")"
-  printf '%s' "$id"
+  _sb_iv_dir_id_var "$1"
+  printf '%s' "$_SB_IV_ID"
 }
 
 # What a record is bound to: the root's identity, else (identity unavailable) its path.
 _sb_iv_root_key() { # ROOT
-  local id
-  id="$(_sb_iv_dir_id "$1")"
-  if [[ "$id" == - ]]; then printf 'p:%s' "$1"; else printf '%s' "$id"; fi
+  _sb_iv_dir_id_var "$1"
+  if [[ "$_SB_IV_ID" == - ]]; then printf 'p:%s' "$1"; else printf '%s' "$_SB_IV_ID"; fi
 }
 
 # The record of ROOT is named by the CRC of its identity, so renaming the project keeps its record.
 _sb_iv_rec_file() { # ROOT
-  _sb_iv_cksum_var "$(_sb_iv_root_key "$1")"
-  printf '%s/integrity-%s.rec' "$(_sb_iv_state_dir)" "$_SB_IV_SUM"
+  _sb_iv_dir_id_var "$1"
+  if [[ "$_SB_IV_ID" == - ]]; then _sb_iv_cksum_var "p:$1"; else _sb_iv_cksum_var "$_SB_IV_ID"; fi
+  printf '%s/integrity-%s.rec' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}" "$_SB_IV_SUM"
 }
 
 # The registry of baselined project roots: one line per root in a file next to the keys (not named
