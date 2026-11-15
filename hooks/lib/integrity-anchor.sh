@@ -97,6 +97,7 @@ sb_integrity_root() {
   if [[ -f "$(_sb_iv_state_dir)/seal.key" ]]; then
     cfg="${SILVER_BULLET_PROJECT_ROOT:-}"; cfg="${cfg%/}"
     if [[ -n "$cfg" && ( -e "$cfg/.silver-bullet.json" || -e "$cfg/silver-bullet.md" ) ]]; then printf '%s' "$cfg"; return 0; fi
+    while [[ -n "$dir" && "$dir" != "/" && ! -d "$dir" ]]; do dir="$(dirname "$dir")"; done
     dir="$(cd "$dir" 2>/dev/null && pwd -P)" || return 0
     _sb_iv_anchor_walk "$dir" || true
     return 0
