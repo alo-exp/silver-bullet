@@ -466,6 +466,7 @@ _sb_iv_write() { # ROOT RECFILE STATE BODY
   tmp="${rec}.hwm.$$"
   if printf '%s\n' "$c" 2>/dev/null >"$tmp"; then mv -f -- "$tmp" "$rec.hwm"; fi
   rm -f -- "$tmp"
+  sb_integrity_register_root "$root"
   _SB_IV_CACHE_KEY=""
   return 0
 }
@@ -584,9 +585,11 @@ sb_integrity_set_workflow() { # ROOT VALUE
   return 0
 }
 
-# Honest uninstall: a record root whose contract files are gone from the tree AND from git HEAD (the user
-# removed Silver Bullet and committed) is no project any more. Called by session start, the trust anchor:
-# the record and its counter are retired, logged, and the root is printed for the user.
+# Honest uninstall: a registered root whose record verifies, whose contract files are gone from the working tree
+# AND which git HEAD (a real commit) does not track either, is no project any more (the user removed Silver
+# Bullet and committed). Called by session start on startup and clear: the record, its counter and the registry
+# entry are retired, logged, and the root is printed for the user. Nothing else is consulted: not origin/HEAD,
+# main or master.
 sb_integrity_retire_if_uninstalled() { # DIR
   local root rec
   root="$(sb_integrity_record_root "${1:-$PWD}")"
@@ -596,35 +599,36 @@ sb_integrity_retire_if_uninstalled() { # DIR
   _sb_iv_authentic "$rec" "$(_sb_iv_state_dir)/state" "$root" || return 1
   [[ "$(_sb_iv_removal_state "$root")" == ready ]] || return 1
   rm -f -- "$rec" "$rec.hwm"
+  sb_integrity_unregister_root "$root"
   _SB_IV_CACHE_KEY=""
-  _sb_state_seal_log "$(_sb_iv_state_dir)/state" "integrity record retired: $root has no contract files in the tree, at HEAD or on the default branch (Silver Bullet was removed)"
+  _sb_state_seal_log "$(_sb_iv_state_dir)/state" "integrity record retired: $root has no contract files in the tree or at git HEAD (Silver Bullet was removed)"
   printf '%s' "$root"
 }
 
+# git for the removal check: replace refs and grafts are ignored (a replaced object can make HEAD look empty).
+_sb_iv_git() { GIT_NO_REPLACE_OBJECTS=1 GIT_GRAFT_FILE=/dev/null git "$@"; }
+
 # Where an honest removal of Silver Bullet from ROOT stands: present (a contract file is still in the tree),
-# uncommitted (HEAD still tracks one, or HEAD is no commit), default (the default branch still tracks one),
-# unknown (no default branch can be determined: nothing is retired on a guess), ready (gone from the tree,
-# HEAD and every default-branch candidate).
+# uncommitted (HEAD still tracks one, or HEAD is no commit), ready (gone from the tree and from HEAD).
 _sb_iv_removal_state() { # ROOT
-  local root="$1" ref refs
+  local root="$1"
   if [[ -e "$root/.silver-bullet.json" || -L "$root/.silver-bullet.json" || -e "$root/silver-bullet.md" || -L "$root/silver-bullet.md" ]]; then printf 'present'; return 0; fi
-  if ! git -C "$root" rev-parse -q --verify "HEAD^{commit}" >/dev/null 2>&1; then printf 'uncommitted'; return 0; fi
-  if [[ -n "$(git -C "$root" ls-tree --name-only HEAD .silver-bullet.json silver-bullet.md 2>/dev/null)" ]]; then printf 'uncommitted'; return 0; fi
-  refs="$(_sb_iv_default_refs "$root")"
-  if [[ -z "$refs" ]]; then printf 'unknown'; return 0; fi
-  for ref in $refs; do
-    if [[ -n "$(git -C "$root" ls-tree --name-only "$ref" .silver-bullet.json silver-bullet.md 2>/dev/null)" ]]; then printf 'default'; return 0; fi
-  done
+  if ! _sb_iv_git -C "$root" rev-parse -q --verify "HEAD^{commit}" >/dev/null 2>&1; then printf 'uncommitted'; return 0; fi
+  if [[ -n "$(_sb_iv_git -C "$root" ls-tree --name-only HEAD -- .silver-bullet.json silver-bullet.md 2>/dev/null)" ]]; then printf 'uncommitted'; return 0; fi
   printf 'ready'
 }
 
 # What an honest user must do when the contract files are gone (printed into the gate messages).
 _sb_iv_removal_advice() { # ROOT
-  case "$(_sb_iv_removal_state "${1:-/}")" in
-    present) printf 'A contract file is missing while the other is still there: restore it (git checkout -- .silver-bullet.json silver-bullet.md) and restart the session.' ;;
-    uncommitted) printf 'The contract files are gone from the working tree but git HEAD still has them (or HEAD is no commit): if that was a mistake restore them (git checkout -- .silver-bullet.json silver-bullet.md); if Silver Bullet was removed on purpose, commit the removal, then start a new session.' ;;
-    default) printf 'The contract files are gone here but the default branch still has them: restore them (git checkout -- .silver-bullet.json silver-bullet.md), or merge or push the removal to the default branch and then start a new session (a new session retires the record only once HEAD and the default branch are free of them).' ;;
-    unknown) printf 'The contract files are gone, but this repository has no default branch Silver Bullet can recognise (main, master, init.defaultBranch or a remote HEAD), so nothing is retired on a guess: restore the files, or set git config init.defaultBranch to the default branch name and start a new session.' ;;
-    *) printf 'Silver Bullet was removed from this repository (the files are gone from the tree, HEAD and the default branch): start a new session and the record is retired.' ;;
+  local root="${1:-/}"
+  case "$(_sb_iv_removal_state "$root")" in
+    present) printf 'A contract file is missing while the other is still there: restore it and restart the session.' ;;
+    uncommitted)
+      if _sb_iv_git -C "$root" rev-parse -q --verify "HEAD^{commit}" >/dev/null 2>&1; then
+        printf 'The contract files are gone from the working tree but git HEAD still has them: if that was a mistake restore them (git checkout HEAD -- .silver-bullet.json silver-bullet.md) and restart the session; if Silver Bullet was removed on purpose, commit the removal and start a new session.'
+      else
+        printf 'The contract files are gone from the working tree and this repository has no commit that could restore them: restore them from a backup or another checkout and restart the session; if Silver Bullet was removed on purpose, commit the removal and start a new session.'
+      fi ;;
+    *) printf 'Silver Bullet was removed from this repository (the files are gone from the tree and from git HEAD): start a new session and the record is retired.' ;;
   esac
 }

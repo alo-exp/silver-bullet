@@ -2,10 +2,9 @@
 # Silver Bullet — where is the project? (the light half of hooks/lib/integrity.sh)
 #
 # Small on purpose: the hooks that only decide "is this an SB project" source this file and not the whole
-# integrity library. A project is (1) the nearest directory at or above DIR holding an integrity RECORD, else
-# (2) on a live install (one that has made its key) the nearest directory holding EITHER contract file, or whose
-# git HEAD / default branch tracks one: deleting the record and moving a file away leaves the root unbaselined
-# (strict), never inert; else (3) on an install that never made its key, the nearest directory holding both.
+# integrity library. A project is (1) the nearest directory at or above DIR that is a registered, baselined root
+# (or holds an integrity RECORD), else (2) the nearest directory holding BOTH contract files, stopping at a git
+# root. No git is read: a directory that was never baselined is judged by its files alone.
 
 _sb_iv_state_dir() { printf '%s' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"; }
 
@@ -15,16 +14,47 @@ _sb_iv_rec_file() { # ROOT
   printf '%s/integrity-%s.rec' "$(_sb_iv_state_dir)" "${sum%% *}"
 }
 
-# A project whose contract files were deleted or moved away is still a project: the nearest
-# directory above DIR that has a record is its root (deleting the files must not switch the gates off).
+# The registry of baselined project roots: one realpath per line in a file next to the keys (not named
+# integrity-*, so removing the records does not remove it). A root is added when it is first baselined and
+# removed only by an honest retirement. It never grants anything: it only keeps a root that was baselined once a
+# project (strict, never inert) when its record is gone.
+_sb_iv_registry_file() { printf '%s/baselined-roots' "$(_sb_iv_state_dir)"; }
+
+# A project whose contract files were deleted or moved away is still a project: the nearest directory at or
+# above DIR that is a registered root (or, on an install whose registry is gone, has a record) is its root.
+# A directory that does not exist yet is judged by its nearest existing ancestor. No git is read.
 sb_integrity_record_root() { # DIR
-  local d
-  d="$(cd "${1:-$PWD}" 2>/dev/null && pwd -P)" || return 0
+  local d reg="" regf legacy=""
+  d="${1:-$PWD}"
+  while [[ -n "$d" && "$d" != "/" && ! -d "$d" ]]; do d="$(dirname "$d")"; done
+  d="$(cd "$d" 2>/dev/null && pwd -P)" || return 0
+  regf="$(_sb_iv_registry_file)"
+  if [[ -f "$regf" ]]; then reg=$'\n'"$(<"$regf")"$'\n'; else legacy=1; fi
   while true; do
-    if [[ -f "$(_sb_iv_rec_file "$d")" ]]; then printf '%s' "$d"; return 0; fi
+    if [[ "$reg" == *$'\n'"$d"$'\n'* ]]; then printf '%s' "$d"; return 0; fi
+    if [[ -n "$legacy" ]] && compgen -G "$(_sb_iv_state_dir)/integrity-*.rec" >/dev/null && [[ -f "$(_sb_iv_rec_file "$d")" ]]; then printf '%s' "$d"; return 0; fi
     [[ "$d" != "/" ]] || return 0
     d="$(dirname "$d")"
   done
+}
+
+# Register ROOT as a baselined project root (idempotent).
+sb_integrity_register_root() { # ROOT
+  local regf
+  regf="$(_sb_iv_registry_file)"
+  [[ -n "$1" && ! -L "$regf" ]] || return 0
+  if [[ -f "$regf" && $'\n'"$(<"$regf")"$'\n' == *$'\n'"$1"$'\n'* ]]; then return 0; fi
+  printf '%s\n' "$1" >>"$regf" 2>/dev/null || true
+}
+
+# Remove ROOT from the registry (an honest retirement).
+sb_integrity_unregister_root() { # ROOT
+  local regf tmp
+  regf="$(_sb_iv_registry_file)"
+  [[ -f "$regf" && ! -L "$regf" ]] || return 0
+  tmp="$regf.$$"
+  if grep -vxF -- "$1" "$regf" >"$tmp" 2>/dev/null || [[ ! -s "$tmp" ]]; then mv -f -- "$tmp" "$regf"; fi
+  rm -f -- "$tmp"
 }
 
 # The nearest directory at or above DIR holding BOTH contract files (the project boundary), stopping at a
@@ -50,57 +80,12 @@ sb_integrity_live_config_walk() { # [DIR]
 }
 
 
-# Existing candidate refs of the repository's default branch: the branch the remotes' HEAD names, main, master and
-# init.defaultBranch, local and remote-tracking. One per line, nothing when none exists.
-_sb_iv_default_refs() { # ROOT
-  local root="$1" name pats=(refs/heads/main refs/heads/master "refs/remotes/*/main" "refs/remotes/*/master" "refs/remotes/*/HEAD")
-  name="$(git -C "$root" config --get init.defaultBranch 2>/dev/null)" || name=""
-  if [[ -n "$name" ]]; then pats+=("refs/heads/$name" "refs/remotes/*/$name"); fi
-  git -C "$root" for-each-ref --format='%(refname)' "${pats[@]}" 2>/dev/null
-}
-
-# True when the repository at ROOT tracks either contract file at HEAD or on a default-branch candidate.
-_sb_iv_git_tracks_contract() { # ROOT
-  local root="$1" ref
-  git -C "$root" rev-parse --git-dir >/dev/null 2>&1 || return 1
-  for ref in HEAD $(_sb_iv_default_refs "$root"); do
-    if [[ -n "$(git -C "$root" ls-tree --name-only "$ref" .silver-bullet.json silver-bullet.md 2>/dev/null)" ]]; then return 0; fi
-  done
-  return 1
-}
-
-# The anchor of a project without a record on a live install: the nearest directory (up to the git root) with
-# either contract file present, or whose git history at HEAD / the default branch tracks one.
-_sb_iv_anchor_walk() { # DIR
-  local d="$1"
-  while true; do
-    if [[ -e "$d/.silver-bullet.json" || -L "$d/.silver-bullet.json" || -e "$d/silver-bullet.md" || -L "$d/silver-bullet.md" ]]; then
-      printf '%s' "$d"
-      return 0
-    fi
-    if [[ -e "$d/.git" ]]; then
-      if _sb_iv_git_tracks_contract "$d"; then printf '%s' "$d"; return 0; fi
-      return 1
-    fi
-    [[ "$d" != "/" ]] || return 1
-    d="$(dirname "$d")"
-  done
-}
-
 # The SB project root of DIR ("" outside any project).
 sb_integrity_root() {
   local dir="${1:-$PWD}" cfg="" rec=""
   rec="$(sb_integrity_record_root "$dir")"
   if [[ -z "$rec" && -n "${SILVER_BULLET_PROJECT_ROOT:-}" ]]; then rec="$(sb_integrity_record_root "$SILVER_BULLET_PROJECT_ROOT")"; fi
   if [[ -n "$rec" ]]; then printf '%s' "$rec"; return 0; fi
-  if [[ -f "$(_sb_iv_state_dir)/seal.key" ]]; then
-    cfg="${SILVER_BULLET_PROJECT_ROOT:-}"; cfg="${cfg%/}"
-    if [[ -n "$cfg" && ( -e "$cfg/.silver-bullet.json" || -e "$cfg/silver-bullet.md" ) ]]; then printf '%s' "$cfg"; return 0; fi
-    while [[ -n "$dir" && "$dir" != "/" && ! -d "$dir" ]]; do dir="$(dirname "$dir")"; done
-    dir="$(cd "$dir" 2>/dev/null; pwd -P)"
-    _sb_iv_anchor_walk "$dir" || true
-    return 0
-  fi
   cfg="$(sb_integrity_live_config_walk "$dir")" || cfg=""
   if [[ -n "$cfg" ]]; then (cd "$(dirname "$cfg")" && pwd -P); fi
 }
