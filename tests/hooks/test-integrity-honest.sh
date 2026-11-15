@@ -429,6 +429,7 @@ rm -f "$PROJ/silver-bullet.md"
 ih_edit
 assert_contains "one file left: restore it" "$(message)" "restore it"
 
+reg_has() { [[ -f "$SD/baselined-roots" && $'\n'"$(<"$SD/baselined-roots")" == *$'\n'"$1"$'\t'* ]]; }
 # 48. the registry of baselined roots: honest flows are untouched, only a baselined root is anchored
 ih_project h48
 git -C "$PROJ" rm -q --cached .silver-bullet.json silver-bullet.md >/dev/null 2>&1 || true; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
@@ -438,11 +439,11 @@ assert_not_contains "uncommitted removal: no advice to push the removal" "$(mess
 git -C "$PROJ" commit -q -m rm >/dev/null 2>&1 || true
 OUT="$(ih_session_start_out startup)"
 assert_eq "uninstall: the record is retired" "no" "$(has_rec)"
-assert_eq "uninstall: the root leaves the registry" "no" "$(grep -qxF "$PROJ" "$SD/baselined-roots" && echo yes || echo no)"
+assert_eq "uninstall: the root leaves the registry" "no" "$(reg_has "$PROJ" && echo yes || echo no)"
 printf '# SB\n' >"$PROJ/silver-bullet.md"; cp "$FX/cfg.orig" "$PROJ/.silver-bullet.json"
 OUT="$(ih_session_start_out startup)"
 assert_eq "reinstall: session start baselines the project again" "yes" "$(has_rec)"
-assert_eq "reinstall: and registers it" "yes" "$(grep -qxF "$PROJ" "$SD/baselined-roots" && echo yes || echo no)"
+assert_eq "reinstall: and registers it" "yes" "$(reg_has "$PROJ" && echo yes || echo no)"
 # an unrelated repository with a doc called silver-bullet.md: allowed, as before
 U="$TL_TMP/blog"; mkdir -p "$U/posts/sub"; git -C "$U" init -q >/dev/null 2>&1
 printf 'hi\n' >"$U/posts/silver-bullet.md"; printf 'x\n' >"$U/posts/gen.js"
@@ -468,6 +469,47 @@ git -C "$PROJ" worktree remove --force "$WT" >/dev/null 2>&1 || true
 CL="$TL_TMP/h48b-clone"; git clone -q "$PROJ" "$CL" >/dev/null 2>&1 || true
 git -C "$CL" checkout -q pre-sb >/dev/null 2>&1 || true
 assert_eq "a fresh clone on the pre-adoption branch is no project: edits are allowed" "" "$(sb_integrity_root "$CL")"
+
+# 49. the advice names what is needed for every state a registered root can be in
+ih_project h49a
+rm -rf "$PROJ/.git"; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
+ih_edit
+assert_contains "not a git repository: says no committed removal can be shown" "$(message)" "not a git repository"
+assert_contains "not a git repository: re-run /sb:init" "$(message)" "/sb:init"
+assert_contains "not a git repository: the manual registry removal, outside the agent" "$(message)" "from a terminal outside the agent"
+assert_contains "not a git repository: names the registry file" "$(message)" "baselined-roots"
+OUT="$(ih_session_start_out startup)"
+assert_eq "not a git repository: a restart retires nothing" "yes" "$(has_rec)"
+ih_project h49b
+git -C "$PROJ" rm -q --cached .silver-bullet.json silver-bullet.md >/dev/null 2>&1; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
+git -C "$PROJ" commit -q -m rm >/dev/null 2>&1 || true
+rm -f "$(_sb_iv_rec_file "$PROJ")"*
+ih_edit
+assert_contains "committed removal, record gone: no restart retires it" "$(message)" "no restart retires the root"
+assert_contains "committed removal, record gone: re-run /sb:init" "$(message)" "/sb:init"
+assert_contains "committed removal, record gone: the manual removal" "$(message)" "baselined-roots"
+assert_not_contains "committed removal, record gone: no false promise of retirement" "$(message)" "the record is retired"
+OUT="$(ih_session_start_out startup)"
+assert_eq "record gone: a restart keeps the root registered" "yes" "$(reg_has "$PROJ" && echo yes || echo no)"
+# the documented recovery for an intentional uninstall: the user drops the registry line from a terminal
+python3 - "$SD/baselined-roots" "$PROJ" <<'PYE'
+import sys
+p, root = sys.argv[1:3]
+keep = [l for l in open(p).read().splitlines() if not l.startswith(root + "\t") and l != root]
+open(p, "w").write("".join(l + "\n" for l in keep))
+PYE
+assert_eq "after the documented removal the root is no project" "" "$(sb_integrity_root "$PROJ")"
+ih_edit
+assert_eq "and edits are allowed again" "none" "$(decision)"
+# the honest restore: the files back from HEAD, a restart records them again
+ih_project h49c
+git -C "$PROJ" rm -q --cached .silver-bullet.json silver-bullet.md >/dev/null 2>&1; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
+rm -f "$(_sb_iv_rec_file "$PROJ")"*
+cp "$FX/cfg.orig" "$PROJ/.silver-bullet.json"; printf '# SB\n' >"$PROJ/silver-bullet.md"
+OUT="$(ih_session_start_out startup)"
+assert_eq "restoring the files and restarting records the root again" "yes" "$(has_rec)"
+ih_edit
+assert_not_contains "and the gates judge it as a baselined project (the floor, not NOT BASELINED)" "$(message)" "NOT BASELINED"
 
 assert_eq "the honest corpus has at least 30 rows" "ok" "$([[ $(grep -c '^assert_\|^ok_cmd\|^  ok_cmd' "$0") -ge 30 ]] && echo ok || echo few)"
 tl_results

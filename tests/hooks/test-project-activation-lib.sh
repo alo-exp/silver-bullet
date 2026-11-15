@@ -90,7 +90,7 @@ assert_eq "no registry entry, no contract file: no project, the walk ends at the
 assert_eq "a path not created yet is judged by its nearest existing ancestor" "" "$(sb_integrity_root "$TL_TMP/plain/a/new/deeper")"
 sb_integrity_register_root "$TL_TMP/plain/a"
 sb_integrity_register_root "$TL_TMP/plain/a"
-assert_eq "registering twice lists the root once" "1" "$(grep -cxF "$TL_TMP/plain/a" "$REG")"
+assert_eq "registering twice lists the root once" "1" "$(grep -cF -- "$TL_TMP/plain/a"$'\t' "$REG")"
 assert_eq "a registered root anchors a deeper path" "$TL_TMP/plain/a" "$(sb_integrity_root "$TL_TMP/plain/a/b")"
 assert_eq "and a directory that does not exist yet beneath it" "$TL_TMP/plain/a" "$(sb_integrity_root "$TL_TMP/plain/a/new/deeper")"
 sb_integrity_unregister_root "$TL_TMP/plain/a"
@@ -114,6 +114,56 @@ rm -f "$REG"
 assert_eq "without a registry the record still names the root" "$R" "$(sb_integrity_record_root "$R/src")"
 assert_eq "and a directory without either is no root" "" "$(sb_integrity_record_root "$TL_TMP/plain")"
 mv "$REG.away" "$REG"
+
+# ── a root is registered OR has a record; the inode follows a renamed root ─────────────────────────
+RT="$TL_TMP/reg-matrix"; mkdir -p "$RT"
+rec_only() { sb_integrity_baseline "$1" session; }
+mkdir -p "$RT/p1/src" "$RT/p2/src" "$RT/p3/src"
+for q in p1 p2 p3; do printf '# SB\n' >"$RT/$q/silver-bullet.md"; printf '{"sb_initiated":true}\n' >"$RT/$q/.silver-bullet.json"; done
+P1="$(cd "$RT/p1" && pwd -P)"
+rm -f "$SB_RUNTIME_STATE_DIR"/integrity-*; rm -f "$REG"
+sb_integrity_baseline "$P1" session
+assert_eq "registered and recorded: the root" "$P1" "$(sb_integrity_root "$P1/src")"
+: >"$REG"
+assert_eq "registry emptied, record kept: still the root" "$P1" "$(sb_integrity_root "$P1/src")"
+printf '/somewhere/else\t1:2\n' >"$REG"
+assert_eq "registry replaced, record kept: still the root" "$P1" "$(sb_integrity_root "$P1/src")"
+rm -f "$REG"
+assert_eq "registry deleted, record kept: still the root" "$P1" "$(sb_integrity_record_root "$P1/src")"
+sb_integrity_register_root "$P1"
+rm -f "$SB_RUNTIME_STATE_DIR"/integrity-*
+assert_eq "record deleted, registry kept: still the root" "$P1" "$(sb_integrity_record_root "$P1/src")"
+: >"$REG"
+assert_eq "both gone: no anchor (the documented residual)" "" "$(sb_integrity_record_root "$P1/src")"
+# a plain registry line (no inode) is read too
+printf '%s\n' "$P1" >"$REG"
+assert_eq "a plain registry line names the root" "$P1" "$(sb_integrity_record_root "$P1/src")"
+# a renamed root is found by its inode; a stale entry (path gone, inode nowhere) is ignored
+rm -f "$REG"; sb_integrity_register_root "$P1"
+mv "$P1" "$RT/p1-moved"
+assert_eq "renamed root: recognised by its inode" "$RT/p1-moved" "$(sb_integrity_record_root "$RT/p1-moved/src")"
+assert_eq "an unrelated directory is no root beside the stale entry" "" "$(sb_integrity_record_root "$RT/p2/src")"
+# a different project later placed at the old path (the moved one is still alive, so the inode differs) is not that root
+mkdir -p "$RT/p1/src"
+assert_eq "a different directory at the old path: not the registered root" "" "$(sb_integrity_record_root "$RT/p1/src")"
+rm -rf "$RT/p1" "$RT/p1-moved"
+assert_eq "the project is gone: the stale entry anchors nothing and blocks nothing" "" "$(sb_integrity_record_root "$RT/p2/src")"
+# registered twice, nested roots, a symlinked path
+P2="$(cd "$RT/p2" && pwd -P)"
+rm -f "$REG"; sb_integrity_register_root "$P2"; sb_integrity_register_root "$P2"
+assert_eq "registered twice: one root" "$P2" "$(sb_integrity_record_root "$P2/src")"
+mkdir -p "$P2/inner/src"
+sb_integrity_register_root "$P2/inner"
+assert_eq "nested roots: the nearest wins" "$P2/inner" "$(sb_integrity_record_root "$P2/inner/src")"
+assert_eq "nested roots: the outer one still holds its other paths" "$P2" "$(sb_integrity_record_root "$P2/src")"
+ln -s "$P2" "$RT/link"
+assert_eq "a symlinked path resolves to the registered root" "$P2" "$(sb_integrity_record_root "$RT/link/src")"
+sb_integrity_unregister_root "$P2"
+assert_eq "retirement drops every line of a root" "0" "$(grep -cF -- "$P2"$'\t' "$REG" || true)"
+# the record name is the POSIX cksum of the root
+for str in "" "a" "$P2" "héllo/ü" "$(head -c 200 /dev/urandom | base64 -w0)"; do
+  assert_eq "bash cksum matches cksum(1) for '${str:0:20}'" "$(printf '%s' "$str" | cksum | cut -d' ' -f1)" "$(_sb_iv_cksum "$str")"
+done
 
 # ── the list helpers' empty-name edge ──────────────────────────────────────────────────────────────
 if sb_required_skill_is_recorded "a" ""; then tl_fail "empty skill"; else tl_pass "an empty skill name is never recorded"; fi

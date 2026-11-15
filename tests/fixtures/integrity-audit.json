@@ -183,7 +183,7 @@
   },
   {
    "file": "hooks/lib/integrity-anchor.sh",
-   "line": 69,
+   "line": 140,
    "kind": "config",
    "snippet": "if [[ -f \"$root/.silver-bullet.json\" && -f \"$root/silver-bullet.md\" ]]; then",
    "record": "A",
@@ -191,7 +191,7 @@
   },
   {
    "file": "hooks/lib/integrity-anchor.sh",
-   "line": 75,
+   "line": 146,
    "kind": "config",
    "snippet": "if [[ -f \"$d/.silver-bullet.json\" && -f \"$d/silver-bullet.md\" ]]; then",
    "record": "A",
@@ -223,7 +223,7 @@
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 615,
+   "line": 616,
    "kind": "config",
    "snippet": "if [[ -e \"$root/.silver-bullet.json\" || -L \"$root/.silver-bullet.json\" || -e \"$root/silver-bullet.md\" || -L \"$root/silver-bullet.md\" ]]; then printf 'present'; ",
    "record": "A",
