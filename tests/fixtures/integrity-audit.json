@@ -183,7 +183,7 @@
   },
   {
    "file": "hooks/lib/integrity-anchor.sh",
-   "line": 121,
+   "line": 235,
    "kind": "config",
    "snippet": "if [[ -f \"$root/.silver-bullet.json\" && -f \"$root/silver-bullet.md\" ]]; then",
    "record": "A",
@@ -191,7 +191,7 @@
   },
   {
    "file": "hooks/lib/integrity-anchor.sh",
-   "line": 127,
+   "line": 241,
    "kind": "config",
    "snippet": "if [[ -f \"$d/.silver-bullet.json\" && -f \"$d/silver-bullet.md\" ]]; then",
    "record": "A",
@@ -207,7 +207,7 @@
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 395,
+   "line": 396,
    "kind": "config",
    "snippet": "if [[ ! -e \"${1:-/}/.silver-bullet.json\" || ! -e \"${1:-/}/silver-bullet.md\" ]]; then advice=\" $(_sb_iv_removal_advice \"${1:-/}\")\"; fi",
    "record": "A",
@@ -215,7 +215,7 @@
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 575,
+   "line": 581,
    "kind": "config",
    "snippet": "if new=\"$(jq -S -c --arg v \"$value\" '.project.active_workflow = $v' <<<\"$cfg\" 2>/dev/null)\" && [[ -n \"$new\" ]]; then",
    "record": "A",
@@ -223,7 +223,7 @@
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 616,
+   "line": 622,
    "kind": "config",
    "snippet": "if [[ -e \"$root/.silver-bullet.json\" || -L \"$root/.silver-bullet.json\" || -e \"$root/silver-bullet.md\" || -L \"$root/silver-bullet.md\" ]]; then printf 'present'; ",
    "record": "A",
@@ -431,7 +431,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 171,
+   "line": 172,
    "kind": "config",
    "snippet": "if [[ -n \"$_rt_hb_script\" && -f \"${sb_project_root}/.silver-bullet.json\" ]]; then",
    "record": "A",
@@ -439,7 +439,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 172,
+   "line": 173,
    "kind": "config",
    "snippet": "_sb_initiated=\"$(jq -r '.sb_initiated // false' \"${sb_project_root}/.silver-bullet.json\" 2>/dev/null || echo false)\"",
    "record": "A",
@@ -447,7 +447,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 372,
+   "line": 373,
    "kind": "config",
    "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]]; then",
    "record": "A",
@@ -455,7 +455,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 373,
+   "line": 374,
    "kind": "config",
    "snippet": "cfg_trivial=$(jq -r '.state.trivial_file // \"\"' \"$search_dir/.silver-bullet.json\" 2>/dev/null || true)",
    "record": "A",

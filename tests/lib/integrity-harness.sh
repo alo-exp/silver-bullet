@@ -25,7 +25,7 @@ ih_project() {
   mkproj "$1" ".skills.all_tracked=[\"inst-a\",\"inst-b\"] | ${2:-.}"
   PROJ="$(cd "$PROJ" && pwd -P)"
   export PROJ
-  rm -rf "$SD/integrity-$(printf '%s' "$PROJ" | cksum | cut -d' ' -f1).rec"* "$SD/trivial" "$SD/unlock-hint" "$SD/seal-events.log" "$STATE" "$STATE.seal" "$STATE.hwm"
+  rm -rf "$(_sb_iv_rec_file "$PROJ")"* "$SD/trivial" "$SD/unlock-hint" "$SD/seal-events.log" "$STATE" "$STATE.seal" "$STATE.hwm"
   printf '{}\n' >"$PROJ/.silver-bullet.prompt.json"
   printf 'rules\n' >"$PROJ/CLAUDE.md"
   printf 'agents\n' >"$PROJ/AGENTS.md"

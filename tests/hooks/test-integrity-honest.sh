@@ -476,8 +476,9 @@ rm -rf "$PROJ/.git"; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
 ih_edit
 assert_contains "not a git repository: says no committed removal can be shown" "$(message)" "not a git repository"
 assert_contains "not a git repository: re-run /sb:init" "$(message)" "/sb:init"
-assert_contains "not a git repository: the manual registry removal, outside the agent" "$(message)" "from a terminal outside the agent"
-assert_contains "not a git repository: names the registry file" "$(message)" "baselined-roots"
+assert_contains "not a git repository: points to the Recovery section, a user action" "$(message)" 'under "Recovery"'
+assert_not_contains "not a git repository: no recipe for the agent (registry file)" "$(message)" "baselined-roots"
+assert_not_contains "not a git repository: no recipe for the agent (record file)" "$(message)" "integrity-"
 OUT="$(ih_session_start_out startup)"
 assert_eq "not a git repository: a restart retires nothing" "yes" "$(has_rec)"
 ih_project h49b
@@ -487,17 +488,14 @@ rm -f "$(_sb_iv_rec_file "$PROJ")"*
 ih_edit
 assert_contains "committed removal, record gone: no restart retires it" "$(message)" "no restart retires the root"
 assert_contains "committed removal, record gone: re-run /sb:init" "$(message)" "/sb:init"
-assert_contains "committed removal, record gone: the manual removal" "$(message)" "baselined-roots"
+assert_contains "committed removal, record gone: points to the Recovery section" "$(message)" 'under "Recovery"'
+assert_not_contains "committed removal, record gone: no recipe for the agent" "$(message)" "baselined-roots"
 assert_not_contains "committed removal, record gone: no false promise of retirement" "$(message)" "the record is retired"
 OUT="$(ih_session_start_out startup)"
 assert_eq "record gone: a restart keeps the root registered" "yes" "$(reg_has "$PROJ" && echo yes || echo no)"
-# the documented recovery for an intentional uninstall: the user drops the registry line from a terminal
-python3 - "$SD/baselined-roots" "$PROJ" <<'PYE'
-import sys
-p, root = sys.argv[1:3]
-keep = [l for l in open(p).read().splitlines() if not l.startswith(root + "\t") and l != root]
-open(p, "w").write("".join(l + "\n" for l in keep))
-PYE
+# the documented recovery for an intentional uninstall: the user retires the root from a terminal
+sb_integrity_unregister_root "$PROJ"
+rm -f "$(_sb_iv_rec_file "$PROJ")"*
 assert_eq "after the documented removal the root is no project" "" "$(sb_integrity_root "$PROJ")"
 ih_edit
 assert_eq "and edits are allowed again" "none" "$(decision)"
@@ -510,6 +508,66 @@ OUT="$(ih_session_start_out startup)"
 assert_eq "restoring the files and restarting records the root again" "yes" "$(has_rec)"
 ih_edit
 assert_not_contains "and the gates judge it as a baselined project (the floor, not NOT BASELINED)" "$(message)" "NOT BASELINED"
+
+# 50. identity is dev:ino:birth time: reuse of an inode, rename and uninstall, pruning, the cap
+# (a) a baselined project is deleted; a new directory takes its place in the registry's eyes (best effort: an
+# inode reuse, else a forged line holding the new directory's device:inode without the birth time)
+ih_project h50a
+OLDP="$PROJ"; OLDID="$(_sb_iv_dir_id "$OLDP")"
+rm -rf "$OLDP"
+sleep 1 # the birth time has a resolution of one second
+REUSED=""
+for n in $(seq 1 12); do
+  mkdir "$TL_TMP/h50a-new$n"
+  if [[ "$(_sb_iv_dir_id "$TL_TMP/h50a-new$n")" == "$OLDID" ]]; then REUSED="$TL_TMP/h50a-new$n"; break; fi
+done
+if [[ -z "$REUSED" ]]; then
+  REUSED="$TL_TMP/h50a-new1"
+  forged="$(stat -c '%d:%i' "$REUSED")"
+  printf '%s\t%s\n' "$OLDP" "$forged" >>"$SD/baselined-roots"
+fi
+mkdir -p "$REUSED/oss/src"; git -C "$REUSED/oss" init -q >/dev/null 2>&1
+assert_eq "an inode that is not the root's (no matching birth time) makes no project" "" "$(sb_integrity_root "$REUSED/oss/src")"
+run_dc "$(edit_json "$REUSED/oss/src/a.js" Write PreToolUse)"
+assert_eq "an unrelated repository in a reused inode's place is allowed" "none" "$(decision)"
+# (b) rename, restart, honest uninstall of the renamed project
+ih_project h50b
+OLDP="$PROJ"; NEWP="${OLDP}-ren"
+mv "$OLDP" "$NEWP"; PROJ="$NEWP"; export PROJ
+assert_eq "renamed: the record follows the identity" "$NEWP" "$(sb_integrity_root "$NEWP/src")"
+OUT="$(ih_session_start_out startup)"
+assert_eq "renamed: a session start registers the new path" "yes" "$(reg_has "$NEWP" && echo yes || echo no)"
+git -C "$PROJ" rm -q --cached .silver-bullet.json silver-bullet.md >/dev/null 2>&1; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
+git -C "$PROJ" commit -q -m rm >/dev/null 2>&1 || true
+OUT="$(ih_session_start_out startup)"
+assert_contains "renamed uninstall: reported" "$OUT" "was removed"
+assert_eq "renamed uninstall: no root" "" "$(sb_integrity_root "$NEWP/src")"
+assert_eq "renamed uninstall: no line of the old path is left" "no" "$(reg_has "$OLDP" && echo yes || echo no)"
+assert_eq "renamed uninstall: no line of the new path is left" "no" "$(reg_has "$NEWP" && echo yes || echo no)"
+ih_edit
+assert_eq "renamed uninstall: edits are allowed" "none" "$(decision)"
+# (c) stale lines are pruned at a fresh session, the cap keeps the newest
+ih_project h50c
+printf '%s\t%s\n' "$TL_TMP/gone-a" "9:9:9" >>"$SD/baselined-roots"
+printf '%s\t%s\n' "$TL_TMP" "9:8:7" >>"$SD/baselined-roots"
+printf '%s\n' "$TL_TMP/plain-line" >>"$SD/baselined-roots"
+OUT="$(ih_session_start_out startup)"
+assert_eq "prune: a line whose path now holds another directory goes" "no" "$(reg_has "$TL_TMP" && echo yes || echo no)"
+assert_eq "prune: a live line stays" "yes" "$(reg_has "$PROJ" && echo yes || echo no)"
+assert_eq "prune: a gone path with an unknown identity stays until the cap" "yes" "$(reg_has "$TL_TMP/gone-a" && echo yes || echo no)"
+for n in $(seq 1 210); do printf '%s\t%s\n' "$TL_TMP/cap$n" "8:$n:1" >>"$SD/baselined-roots"; done
+OUT="$(ih_session_start_out startup)"
+assert_eq "cap: the registry keeps at most 200 lines" "ok" "$([[ "$(grep -c . "$SD/baselined-roots")" -le 200 ]] && echo ok || echo big)"
+assert_eq "cap: the newest lines survive" "yes" "$(reg_has "$TL_TMP/cap210" && echo yes || echo no)"
+assert_eq "cap: the oldest are dropped" "no" "$(reg_has "$TL_TMP/cap1" && echo yes || echo no)"
+
+# (d) a record from before identity naming (named by the CRC of the path) is replaced by a session start
+ih_project h50d
+_sb_iv_cksum_var "$PROJ"; LEG="$SD/integrity-$_SB_IV_SUM.rec"
+printf 'v2\nhmac\n1\n-\nx\nconfig\t-\t{}\n' >"$LEG"; printf '1\n' >"$LEG.hwm"
+OUT="$(ih_session_start_out startup)"
+assert_eq "a legacy path-named record is removed by the session start" "no" "$([[ -e "$LEG" || -e "$LEG.hwm" ]] && echo yes || echo no)"
+assert_eq "and the identity-named record is there" "yes" "$(has_rec)"
 
 assert_eq "the honest corpus has at least 30 rows" "ok" "$([[ $(grep -c '^assert_\|^ok_cmd\|^  ok_cmd' "$0") -ge 30 ]] && echo ok || echo few)"
 tl_results

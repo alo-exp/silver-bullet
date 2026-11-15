@@ -28,7 +28,7 @@ fresh() {
   R="$(cd "$R" && pwd -P)"
   sb_integrity_forget
 }
-rec_of() { printf '%s/integrity-%s.rec' "$SD" "$(printf '%s' "${1:-$R}" | cksum | cut -d' ' -f1)"; }
+rec_of() { _sb_iv_rec_file "${1:-$R}"; }
 logged() { [[ -f "$LOG" ]] && cat "$LOG" || true; }
 verify() { sb_integrity_forget; sb_integrity_verify "${1:-$R}" ""; }
 GOOD='{"sb_initiated":true,"skills":{"required_planning":["a","b"],"required_deploy":["a","b","c"],"required_deploy_devops":["d"],"required_release":["r"],"required_release_devops":["rd"]},"state":{"state_file":"custom/s"}}'
