@@ -378,6 +378,13 @@ uninstall_project h45-default
 git -C "$PROJ" branch -f main HEAD~1 >/dev/null 2>&1
 OUT="$(ih_session_start_out startup)"
 assert_eq "the default branch still carries the contract: the record stays" "yes" "$(has_rec)"
+uninstall_project h45-default-md
+git -C "$PROJ" branch -f master HEAD~1 >/dev/null 2>&1
+git -C "$PROJ" checkout -q HEAD~1 -- silver-bullet.md >/dev/null 2>&1
+git -C "$PROJ" branch -f main "$(git -C "$PROJ" commit-tree -p HEAD -m md "$(git -C "$PROJ" write-tree)" 2>/dev/null)" >/dev/null 2>&1
+git -C "$PROJ" reset -q >/dev/null 2>&1; rm -f "$PROJ/silver-bullet.md"
+OUT="$(ih_session_start_out startup)"
+assert_eq "silver-bullet.md alone on the default branch keeps the record" "yes" "$(has_rec)"
 uninstall_project h45-untrusted
 rm -f "$SD/seal.key"
 OUT="$(ih_session_start_out startup)"
