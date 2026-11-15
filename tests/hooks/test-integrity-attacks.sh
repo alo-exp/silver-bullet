@@ -580,6 +580,26 @@ for trunc in ': > "$SD/baselined-roots"' 'rm -f "$SD/baselined-roots"' 'printf "
   assert_eq "rename then ($trunc): the registry no longer names the root" "no" "$([[ -s "$SD/baselined-roots" && "$(<"$SD/baselined-roots")" == *"$PROJ"* ]] && echo yes || echo no)"
   gates_deny "rename then ($trunc)"
 done
+# round 13: rename, put something at the old path, delete the record, move the files, then ANY fresh session
+# elsewhere (its prune must keep a birth-time line whose path now holds another directory)
+for variant in mkdir symlink; do
+  ih_project "r13-prune-$variant"
+  OLDP="$PROJ"; NEWP="${OLDP}2"
+  echo d >>"$PROJ/src/app.js"
+  mv "$OLDP" "$NEWP"
+  if [[ "$variant" == mkdir ]]; then mkdir "$OLDP"; else ln -s /tmp "$OLDP"; fi
+  PROJ="$NEWP"; export PROJ
+  printf '%s' "$PROJ" >"$FX/pd.txt"
+  ih_run "$RMREC && $MVAWAY .silver-bullet.json silver-bullet.md"; tally
+  setup_ok "prune ($variant)" norec .silver-bullet.json silver-bullet.md
+  assert_eq "prune ($variant): the old path holds another directory now" "yes" "$([[ -e "$OLDP" && "$(_sb_iv_dir_id "$OLDP")" != "$(_sb_iv_dir_id "$PROJ")" ]] && echo yes || echo no)"
+  mkdir -p "$TL_TMP/r13-elsewhere"
+  mkdir -p "$SB_RUNTIME_HOME_ROOT/plugins/cache/alo-labs/silver-bullet/test"
+  printf '{"hook_event_name":"SessionStart","source":"startup"}' | (cd "$TL_TMP/r13-elsewhere" && bash "$TL_REPO_ROOT/hooks/session-start") >/dev/null 2>&1 || true
+  assert_eq "prune ($variant): the renamed root survives an unrelated fresh session" "$PROJ" "$(sb_integrity_root "$PROJ/src")"
+  gates_deny "prune ($variant) after an unrelated fresh session"
+  rm -rf "$OLDP"
+done
 # the registry survives removing the records, and a record forged elsewhere does not become a root of its own
 ih_project r10-registry
 rm -f "$SD"/integrity-*

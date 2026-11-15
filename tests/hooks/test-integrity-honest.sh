@@ -549,10 +549,12 @@ assert_eq "renamed uninstall: edits are allowed" "none" "$(decision)"
 # (c) stale lines are pruned at a fresh session, the cap keeps the newest
 ih_project h50c
 printf '%s\t%s\n' "$TL_TMP/gone-a" "9:9:9" >>"$SD/baselined-roots"
-printf '%s\t%s\n' "$TL_TMP" "9:8:7" >>"$SD/baselined-roots"
+printf '%s\t%s\n' "$TL_TMP" "9:8" >>"$SD/baselined-roots"
+mkdir -p "$TL_TMP/h50c-bt"; printf '%s\t%s\n' "$TL_TMP/h50c-bt" "9:7:6" >>"$SD/baselined-roots"
 printf '%s\n' "$TL_TMP/plain-line" >>"$SD/baselined-roots"
 OUT="$(ih_session_start_out startup)"
-assert_eq "prune: a line whose path now holds another directory goes" "no" "$(reg_has "$TL_TMP" && echo yes || echo no)"
+assert_eq "prune: a dev:ino line whose path now holds another directory goes (an inode can be reused)" "no" "$(reg_has "$TL_TMP" && echo yes || echo no)"
+assert_eq "prune: a line with a birth time stays when its path holds another directory (it may anchor a renamed root)" "yes" "$(reg_has "$TL_TMP/h50c-bt" && echo yes || echo no)"
 assert_eq "prune: a live line stays" "yes" "$(reg_has "$PROJ" && echo yes || echo no)"
 assert_eq "prune: a gone path with an unknown identity stays until the cap" "yes" "$(reg_has "$TL_TMP/gone-a" && echo yes || echo no)"
 for n in $(seq 1 210); do printf '%s\t%s\n' "$TL_TMP/cap$n" "8:$n:1" >>"$SD/baselined-roots"; done
@@ -568,6 +570,31 @@ printf 'v2\nhmac\n1\n-\nx\nconfig\t-\t{}\n' >"$LEG"; printf '1\n' >"$LEG.hwm"
 OUT="$(ih_session_start_out startup)"
 assert_eq "a legacy path-named record is removed by the session start" "no" "$([[ -e "$LEG" || -e "$LEG.hwm" ]] && echo yes || echo no)"
 assert_eq "and the identity-named record is there" "yes" "$(has_rec)"
+
+# 51. the documented Recovery recipe, executed verbatim (GNU stat; BSD stat through a stub)
+RECIPE="$TL_TMP/recovery.sh"
+awk '/^```sb-recovery$/ {on=1; next} /^```$/ {on=0} on' "$TL_REPO_ROOT/docs/ENFORCEMENT.md" >"$RECIPE"
+assert_eq "the recipe is in the docs" "yes" "$([[ -s "$RECIPE" ]] && echo yes || echo no)"
+ih_project h51
+rm -rf "$PROJ/.git"; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
+assert_eq "recovery: the root is a project before the recipe" "$PROJ" "$(sb_integrity_root "$PROJ")"
+ROOT="$PROJ" SD="$SD" bash "$RECIPE"
+assert_eq "recovery (GNU stat): the registry lines of the root are gone" "no" "$(reg_has "$PROJ" && echo yes || echo no)"
+assert_eq "recovery (GNU stat): the record is gone" "no" "$(has_rec)"
+assert_eq "recovery (GNU stat): the root is no project" "" "$(sb_integrity_root "$PROJ")"
+ih_edit
+assert_eq "recovery (GNU stat): edits are allowed" "none" "$(decision)"
+# BSD stat, no birth time (a trailing :0): the identity is dev:ino and the recipe still finds the record
+BSD="$TL_TMP/bsdstub"; mkdir -p "$BSD"
+printf '#!/bin/bash\ncase "$1" in -c|--version) exit 1 ;; -f) echo "7:5:0" ;; esac\n' >"$BSD/stat"; chmod +x "$BSD/stat"
+BR="$TL_TMP/bsdroot"; mkdir -p "$BR"
+_sb_iv_cksum_var "7:5"; BREC="$SD/integrity-$_SB_IV_SUM.rec"
+printf 'x\n' >"$BREC"; printf '1\n' >"$BREC.hwm"
+printf '%s\t%s\n%s\t%s\n' "$BR" "7:5" "$TL_TMP/otherroot" "7:6" >"$SD/baselined-roots"
+PATH="$BSD:$PATH" ROOT="$BR" SD="$SD" bash "$RECIPE"
+assert_eq "recovery (BSD stat, no birth time): the record is gone" "no" "$([[ -e "$BREC" || -e "$BREC.hwm" ]] && echo yes || echo no)"
+assert_eq "recovery (BSD stat): the root's line is gone" "no" "$([[ "$(<"$SD/baselined-roots")" == *bsdroot* ]] && echo yes || echo no)"
+assert_eq "recovery (BSD stat): an unrelated line stays" "yes" "$([[ "$(<"$SD/baselined-roots")" == *otherroot* ]] && echo yes || echo no)"
 
 assert_eq "the honest corpus has at least 30 rows" "ok" "$([[ $(grep -c '^assert_\|^ok_cmd\|^  ok_cmd' "$0") -ge 30 ]] && echo ok || echo few)"
 tl_results
