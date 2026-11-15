@@ -73,7 +73,7 @@ _sb_iv_git_tracks_contract() { # ROOT
 # either contract file present, or whose git history at HEAD / the default branch tracks one.
 _sb_iv_anchor_walk() { # DIR
   local d="$1"
-  while [[ -n "$d" ]]; do
+  while true; do
     if [[ -e "$d/.silver-bullet.json" || -L "$d/.silver-bullet.json" || -e "$d/silver-bullet.md" || -L "$d/silver-bullet.md" ]]; then
       printf '%s' "$d"
       return 0
@@ -85,7 +85,6 @@ _sb_iv_anchor_walk() { # DIR
     [[ "$d" != "/" ]] || return 1
     d="$(dirname "$d")"
   done
-  return 1
 }
 
 # The SB project root of DIR ("" outside any project).
@@ -98,7 +97,7 @@ sb_integrity_root() {
     cfg="${SILVER_BULLET_PROJECT_ROOT:-}"; cfg="${cfg%/}"
     if [[ -n "$cfg" && ( -e "$cfg/.silver-bullet.json" || -e "$cfg/silver-bullet.md" ) ]]; then printf '%s' "$cfg"; return 0; fi
     while [[ -n "$dir" && "$dir" != "/" && ! -d "$dir" ]]; do dir="$(dirname "$dir")"; done
-    dir="$(cd "$dir" 2>/dev/null && pwd -P)" || return 0
+    dir="$(cd "$dir" 2>/dev/null; pwd -P)"
     _sb_iv_anchor_walk "$dir" || true
     return 0
   fi

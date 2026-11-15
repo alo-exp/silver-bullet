@@ -83,6 +83,12 @@ mv "$TL_TMP/md.away" "$R/silver-bullet.md"
 mv "$TL_TMP/cfg.away" "$R/.silver-bullet.json"
 (export SILVER_BULLET_PROJECT_ROOT="$R"; assert_eq "an explicit root holding both files is the live lookup's answer" "$R/.silver-bullet.json" "$(sb_integrity_live_config_walk "$TL_TMP")")
 
+# ── the anchor walk's edges (a live install, no record) ───────────────────────────────────────────
+mkdir -p "$TL_TMP/plain/a/b" "$TL_TMP/fakegit/.git" "$TL_TMP/fakegit/sub"
+assert_eq "no contract file, no git repository: no project, the walk ends at the filesystem root" "" "$(sb_integrity_root "$TL_TMP/plain/a/b")"
+assert_eq "a .git that is not a repository tracks nothing: no project" "" "$(sb_integrity_root "$TL_TMP/fakegit/sub")"
+assert_eq "a path not created yet anchors from its nearest existing ancestor" "" "$(sb_integrity_root "$TL_TMP/plain/a/new/deeper")"
+
 # ── the list helpers' empty-name edge ──────────────────────────────────────────────────────────────
 if sb_required_skill_is_recorded "a" ""; then tl_fail "empty skill"; else tl_pass "an empty skill name is never recorded"; fi
 assert_eq "its line is 0" "0" "$(sb_required_skill_line "a" "" | head -1)"
