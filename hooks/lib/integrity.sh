@@ -452,7 +452,7 @@ Ask the user to restart the session: session start records the project's contrac
   else
     printf '%s' "🚫 ENFORCEMENT CONTRACT CHANGED — ${SB_IV_DIVERGED:-the record} no longer matches what Silver Bullet recorded${SB_IV_WHY:+ ($SB_IV_WHY)}, so the gates use the last recorded values and the strict defaults.
 
-Do not try to re-record it yourself and do not run a skill to make it stick: a skill never adopts a change that was made before it. Ask the user to review the change (git diff) and either revert it (git checkout -- the file) or restart the session so session start records the files. If Silver Bullet was removed on purpose (the user deleted .silver-bullet.json and silver-bullet.md and committed), restarting the session retires the record; the user can also remove it by hand: rm -f $(_sb_iv_rec_file "${SB_IV_ROOT:-/}") $(_sb_iv_rec_file "${SB_IV_ROOT:-/}").hwm. Details: $(_sb_iv_state_dir)/seal-events.log"
+Do not try to re-record it yourself and do not run a skill to make it stick: a skill never adopts a change that was made before it. Ask the user to review the change (git diff) and either revert it (git checkout -- the file) or restart the session so session start records the files. If Silver Bullet was removed on purpose (the user deleted .silver-bullet.json and silver-bullet.md and committed), restarting the session retires the record; the user can also remove it by hand: rm -f -- $(_sb_iv_rec_file "${SB_IV_ROOT:-/}") $(_sb_iv_rec_file "${SB_IV_ROOT:-/}").hwm. Details: $(_sb_iv_state_dir)/seal-events.log"
   fi
 }
 

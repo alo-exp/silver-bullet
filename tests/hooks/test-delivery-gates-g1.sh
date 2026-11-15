@@ -115,6 +115,9 @@ mkdir -p "$TL_TMP/real-dir"; ln -s "$TL_TMP/real-dir" "$TL_TMP/link-dir"
 run_ca PreToolUse "gh pr create --fill" SB_RUNTIME_STATE_DIR="$TL_TMP/link-dir" SB_RUNTIME_PRESERVE_STATE_DIR=1 SILVER_BULLET_STATE_FILE="$TL_TMP/x-state"
 assert_eq "state dir replaced by a symlink: PR denied" "deny" "$(decision)"
 # an unexpected failure after classification: deny on PreToolUse, warn after the tool ran
+# an install that never ran a session reads the file as written: a config that is not JSON is an internal failure
+# (with a record it is a drift, which the gates report: test-integrity-attacks.sh)
+rm -f "$SB_RUNTIME_STATE_DIR/seal.key" "$SB_RUNTIME_STATE_DIR"/integrity-*
 printf '{ not json' >"$PROJ/.silver-bullet.json"
 run_ca PreToolUse "git commit -m x"
 assert_eq "unexpected internal failure before the tier runs: Pre denies" "deny" "$(decision)"

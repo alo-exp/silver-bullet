@@ -169,6 +169,7 @@ sb_pf_plain_read_only() {
 # VERIFIED record of the project (hooks/lib/integrity.sh), never from the live file: a config rewritten
 # outside a sanctioned writer cannot take files out of the floor, and an unbaselined or untrusted project
 # gets the defaults.
+# shellcheck disable=SC2153  # SB_IV_SRC_* / SB_IV_WORKFLOW are set by sb_integrity_verify
 sb_pf_src_load() {
   local root="${1:-}" value
   SB_PF_SRC_PATTERN="$SB_PF_DEFAULT_SRC_PATTERN"
@@ -176,7 +177,6 @@ sb_pf_src_load() {
   SB_PF_WORKFLOW="full-dev-cycle"
   [[ -n "$root" ]] || return 0
   # The verification already extracted pattern, exclusion and workflow (each with its default).
-  # shellcheck disable=SC2153  # SB_IV_SRC_* / SB_IV_WORKFLOW are set by sb_integrity_verify
   sb_integrity_verify "$root" ""
   value="$SB_IV_SRC_PATTERN"
   # Only safe path-segment patterns (no regex injection) and nothing that matches everything.

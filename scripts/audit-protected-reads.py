@@ -81,6 +81,7 @@ VERIFIED_LINE = re.compile(r'sb_iv_jq|SB_IV_|sb_integrity_|\$SB_IV_CONFIG_FILE|v
 
 # per-line exceptions: (file, regex on the line) -> reason. Each is a presence test that makes no trust decision.
 LINE_RULES = [
+    ("hooks/lib/opt-in-gate.sh", re.compile(r'trivial_file'), "the config trivial path is handed to sb_trivial_bypass, which ignores it once the project has a record (only an install without a record honours it)"),
     ("hooks/dev-cycle-check.sh", re.compile(r'post_work=true'), "wake-up test: the presence of the marker only makes PostToolUse run the verification; it never trusts the marker"),
     ("hooks/flow-advance.sh", re.compile(r'\.silver-bullet\.json'), "writes the one key (.project.active_workflow) in the live file after the RECORDED config said devops-cycle; the record changes by that key only"),
     ("hooks/lib/context-mode-read-deny.sh", re.compile(r'state_file|trivial_file'), "token-saving read gate: exempts the named runtime files from the read-size deny; it decides no planning or delivery gate"),

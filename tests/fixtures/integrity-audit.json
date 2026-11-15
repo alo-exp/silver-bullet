@@ -3,21 +3,21 @@
  "before": {
   "rev": "e532366",
   "counts": {
-   "X": 152,
+   "X": 153,
    "A": 19,
    "N": 1
   },
   "rows_N": [
    {
-    "file": "hooks/lib/opt-in-gate.sh",
-    "line": 91,
+    "file": "hooks/flow-advance.sh",
+    "line": 80,
     "kind": "config",
-    "snippet": "trivial_cfg=\"$(jq -r '.state.trivial_file // \"\" | strings' \"$config_file\" 2>/dev/null || true)\""
+    "snippet": "sb_integrity_baseline \"$(cd \"$repo_root\" && pwd -P)\" entry config"
    }
   ]
  },
  "counts": {
-  "X": 117,
+  "X": 118,
   "A": 23
  },
  "rows": [
@@ -252,6 +252,14 @@
    "snippet": "configured=\"$(jq -r '.recommended_tools.leanctx.usage_state_file // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
    "record": "X",
    "reason": "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"
+  },
+  {
+   "file": "hooks/lib/opt-in-gate.sh",
+   "line": 93,
+   "kind": "config",
+   "snippet": "trivial_cfg=\"$(jq -r '.state.trivial_file // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "the config trivial path is handed to sb_trivial_bypass, which ignores it once the project has a record (only an install without a record honours it)"
   },
   {
    "file": "hooks/lib/orchestrator-parent.sh",
