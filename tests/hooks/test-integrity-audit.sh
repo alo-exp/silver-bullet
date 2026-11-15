@@ -84,4 +84,7 @@ out="$(SB_AUDIT_ROOT="$M" python3 "$AUDIT" --json | jq -r '[.rows[].file] | join
 assert_contains "a skill's read is a row" "$out" "skills/x/SKILL.md"
 assert_contains "a python helper's read is a row" "$out" "hooks/lib/tool-input/p.py"
 
+# imported as a module (not run): nothing happens until main() is called
+assert_eq "the scanner can be imported without running" "ok" "$(python3 -c 'import importlib.util,sys;s=importlib.util.spec_from_file_location("apr",sys.argv[1]);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);print("ok" if callable(m.main) else "no")' "$AUDIT")"
+
 tl_results
