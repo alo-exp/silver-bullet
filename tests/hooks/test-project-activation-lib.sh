@@ -180,6 +180,45 @@ assert_eq "an unknown birth time is dropped, garbage is '-'" "3:4|-" "$(tr '\n' 
 # a root without an identity falls back to the path for its record name
 printf '#!/bin/bash\nexit 1\n' >"$STUB/stat"
 assert_eq "no identity: the record is keyed by the path" "$(_sb_iv_cksum "p:/nowhere/x")" "$(PATH="$STUB:$PATH" bash -c 'source "$1"; _sb_iv_cksum_var "$(_sb_iv_root_key /nowhere/x)"; printf "%s" "$_SB_IV_SUM"' _ "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh")"
+# the single-directory identity drops an unknown birth time in every spelling, and 'no identity' keys by the path
+for spelling in "1:2:0" "1:2:?" "1:2:-"; do
+  printf '#!/bin/bash\ncase "$1" in --version) exit 0 ;; *) echo "%s" ;; esac\n' "$spelling" >"$STUB/stat"
+  assert_eq "identity from '$spelling' is device:inode" "1:2" "$(PATH="$STUB:$PATH" bash -c 'source "$1"; _sb_iv_dir_id /tmp' _ "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh")"
+done
+printf '#!/bin/bash\nexit 1\n' >"$STUB/stat"
+assert_eq "no identity: the root key is the path" "p:/x/y" "$(PATH="$STUB:$PATH" bash -c 'source "$1"; _sb_iv_root_key /x/y' _ "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh")"
+NOID="$TL_TMP/noid-root"; mkdir -p "$NOID/src"
+sb_integrity_baseline "$R" session
+_sb_iv_cksum_var "p:$NOID"; : >"$SB_RUNTIME_STATE_DIR/integrity-$_SB_IV_SUM.rec"
+assert_eq "no identity: a record named by the path still anchors the root" "$NOID" "$(PATH="$STUB:$PATH" bash -c 'source "$1"; sb_integrity_record_root "$2"' _ "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh" "$NOID/src")"
+rm -f "$SB_RUNTIME_STATE_DIR/integrity-$_SB_IV_SUM.rec"
+# unregistering a root drops the lines of its identity under other paths too
+rm -f "$REG"
+mkdir -p "$TL_TMP/twin-a" "$TL_TMP/other-b"
+TID="$(_sb_iv_dir_id "$TL_TMP/twin-a")"
+printf '%s\t%s\n%s\t%s\n%s\t%s\n' "$TL_TMP/old-name" "$TID" "$TL_TMP/other-b" "$(_sb_iv_dir_id "$TL_TMP/other-b")" "$TL_TMP/twin-a" "$TID" >"$REG"
+sb_integrity_unregister_root "$TL_TMP/twin-a"
+assert_eq "a renamed root loses its old-path line as well" "no" "$([[ "$(<"$REG")" == *old-name* ]] && echo yes || echo no)"
+assert_eq "and keeps unrelated roots" "yes" "$([[ "$(<"$REG")" == *other-b* ]] && echo yes || echo no)"
+# pruning: blank lines, plain lines, live lines, a path that holds another directory, a renamed twin, the cap
+mkdir -p "$TL_TMP/pr-live" "$TL_TMP/pr-other"
+LID="$(_sb_iv_dir_id "$TL_TMP/pr-live")"
+printf '\n%s\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n' "$TL_TMP/pr-plain" "$TL_TMP/pr-live" "$LID" "$TL_TMP/pr-other" "9:9:9" "$TL_TMP/pr-gone-twin" "$LID" "$TL_TMP/pr-gone-alone" "8:8:8" >"$REG"
+sb_integrity_prune_registry
+pr="$(<"$REG")"
+assert_eq "prune keeps a plain line" "yes" "$([[ "$pr" == *pr-plain* ]] && echo yes || echo no)"
+assert_eq "prune keeps a live line" "yes" "$([[ "$pr" == *$'\n'"$TL_TMP/pr-live"* || "$pr" == "$TL_TMP/pr-live"* ]] && echo yes || echo no)"
+assert_eq "prune drops a path that now holds another directory" "no" "$([[ "$pr" == *pr-other* ]] && echo yes || echo no)"
+assert_eq "prune drops the old name of a root that lives on" "no" "$([[ "$pr" == *pr-gone-twin* ]] && echo yes || echo no)"
+assert_eq "prune keeps a gone path whose identity is nowhere else" "yes" "$([[ "$pr" == *pr-gone-alone* ]] && echo yes || echo no)"
+rm -f "$REG"; sb_integrity_prune_registry
+assert_eq "pruning without a registry is a no-op" "no" "$([[ -e "$REG" ]] && echo yes || echo no)"
+: >"$REG"
+for n in $(seq 1 230); do printf '%s\t%s\n' "$TL_TMP/cap$n" "8:$n:1" >>"$REG"; done
+sb_integrity_prune_registry
+assert_eq "the cap keeps at most 200 lines" "ok" "$([[ "$(grep -c . "$REG")" -le 200 ]] && echo ok || echo big)"
+assert_eq "the cap keeps the newest" "yes" "$([[ "$(<"$REG")" == *cap230* ]] && echo yes || echo no)"
+rm -f "$REG"
 # the record name is the POSIX cksum of the root
 for str in "" "a" "$P2" "héllo/ü" "$(head -c 200 /dev/urandom | base64 -w0)"; do
   assert_eq "bash cksum matches cksum(1) for '${str:0:20}'" "$(printf '%s' "$str" | cksum | cut -d' ' -f1)" "$(_sb_iv_cksum "$str")"

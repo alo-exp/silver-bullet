@@ -493,8 +493,7 @@ sb_integrity_baseline() { # ROOT MODE [..]
     _sb_iv_write "$root" "$rec" "$state" "$body"
     # a record from before records were named by identity (named by the CRC of the path): the session start has
     # just recorded the project again, the old one goes
-    _sb_iv_cksum_var "$root"
-    legacy="$(_sb_iv_state_dir)/integrity-${_SB_IV_SUM}.rec"
+    legacy="$(_sb_iv_state_dir)/integrity-$(_sb_iv_cksum "$root").rec"
     rm -f -- "$legacy" "$legacy.hwm"
   elif [[ -f "$rec" ]] && _sb_iv_authentic "$rec" "$state" "$root"; then
     old="$_SB_IV_BODY"
