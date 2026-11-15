@@ -120,7 +120,17 @@ trap '_ca_internal_error "$LINENO"' ERR
 # Everything below reads the VERIFIED record (hooks/lib/integrity.sh): a root with a record is a project
 # even when its contract files were moved away, and no gate value is read from the live files.
 source "$_lib_dir/integrity.sh"
-sb_integrity_gate "$PWD" || exit 0
+[[ -n "$(sb_integrity_root "$PWD")" ]] || exit 0
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
+if [[ -e "$SB_STATE_DIR" || -L "$SB_STATE_DIR" ]] && [[ ! -d "$SB_STATE_DIR" || -L "$SB_STATE_DIR" ]]; then
+  # a file or symlink where the state directory belongs: deny instead of skipping every tier (R1-09)
+  emit_block "🛑 COMPLETION AUDIT — the runtime state directory ${SB_STATE_DIR} is not a real directory (it is a file or a symlink), so recorded skills cannot be trusted. Restore it as a plain directory (rm the file, then run /sb:init or start a new session), then retry."
+  exit 0
+fi
+sb_integrity_gate "$PWD"
+# An install that never ran a session reads the live file as written: a config that is not JSON is an internal
+# failure (the error handler denies on PreToolUse). With a record it is a drift, which the gates report.
+if [[ "$SB_IV_STATUS" == none ]]; then sb_iv_jq -e '.invalid != true' >/dev/null || _ca_internal_error "$LINENO"; fi
 sb_integrity_config_snapshot
 config_file="$SB_IV_CONFIG_FILE"
 if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
@@ -130,12 +140,6 @@ if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
 fi
 
 # ── Read config values (from the verified record) ───────────────────────────────
-SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
-if [[ -e "$SB_STATE_DIR" || -L "$SB_STATE_DIR" ]] && [[ ! -d "$SB_STATE_DIR" || -L "$SB_STATE_DIR" ]]; then
-  # a file or symlink where the state directory belongs: deny instead of skipping every tier (R1-09)
-  emit_block "🛑 COMPLETION AUDIT — the runtime state directory ${SB_STATE_DIR} is not a real directory (it is a file or a symlink), so recorded skills cannot be trusted. Restore it as a plain directory (rm the file, then run /sb:init or start a new session), then retry."
-  exit 0
-fi
 mkdir -p "$SB_STATE_DIR"
 state_file="${SB_STATE_DIR}/state"
 trivial_file="${SB_STATE_DIR}/trivial"
