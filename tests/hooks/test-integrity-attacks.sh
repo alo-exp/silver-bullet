@@ -418,7 +418,7 @@ sb_integrity_config_snapshot; S2="$SB_IV_CONFIG_FILE"
 assert_eq "two snapshots are two fresh files" "yes" "$([[ -n "$S1" && "$S1" != "$S2" ]] && echo yes || echo no)"
 assert_eq "a snapshot is a regular file, not a link" "yes" "$([[ -f "$S1" && ! -L "$S1" ]] && echo yes || echo no)"
 assert_eq "and holds the record's config" "$(sb_iv_jq -cS .)" "$(jq -cS . "$S1")"
-for i in $(seq 1 20); do : >"$SD/vcfg.stale$i"; touch -d '10 minutes ago' "$SD/vcfg.stale$i"; done
+for i in $(seq 1 20); do : >"$SD/vcfg.stale$i"; python3 -c "import os,sys,time;t=time.time()-600;os.utime(sys.argv[1],(t,t))" "$SD/vcfg.stale$i"; done
 sb_integrity_config_snapshot
 assert_eq "old copies are collected once there are more than 16" "no" "$([[ -e "$SD/vcfg.stale1" ]] && echo yes || echo no)"
 rm -rf "$SD/vcfg.planted"
@@ -436,6 +436,15 @@ ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
 assert_contains "deleted state: Stop applies the floor" "$TL_OUT" "inst-a"
 ih_hook completion-audit.sh "$(bash_json 'git commit -am x' PreToolUse)"
 assert_eq "deleted state: the commit gate too" "deny" "$(decision)"
+
+# the counter file is not the evidence: removing it with the state, in every spelling, does not switch the Stop floor off
+for spell in 'rm -f "$STATE" "$STATE.hwm" "$STATE.seal"' ': > "$STATE"; : > "$STATE.hwm"; rm -f "$STATE.seal"' ': > "$STATE"; rm -f "$STATE.hwm" "$STATE.seal"' 'rm -f "$STATE.hwm" "$STATE.seal"; printf "inst-a\n" > "$STATE"' 'find "$SD" -name "state-test*" -delete' 'python3 -c "import os,sys;[os.path.exists(sys.argv[1]+e) and os.remove(sys.argv[1]+e) for e in (\"\",\".hwm\",\".seal\")]" "$STATE"'; do
+  ih_project r8-hwm
+  echo d >>"$PROJ/src/app.js"
+  ih_run "cd \"\$(cat \$FX/d.txt)\" && $spell"; tally
+  ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
+  assert_contains "state gone with its counter ($spell): Stop applies the floor" "$TL_OUT" "inst-a"
+done
 
 # a configured trivial path is ignored once the project has a record
 ih_project r7-trivial-path

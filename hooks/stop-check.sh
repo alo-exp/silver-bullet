@@ -419,9 +419,13 @@ fi
 # Fail-open by design: nothing to gate against.
 # A state file with content that nothing sealed is not an empty one: it is a forged or damaged state, and the
 # floor counts it as having recorded nothing.
-# A state that was sealed once (its counter file exists) and is now empty or gone was truncated or deleted: that is
-# not a session that never tracked anything, the floor applies to the empty state.
-if [[ -z "$state_contents" && ! -s "$state_file" && ! -s "${state_file}.hwm" ]]; then exit 0; fi
+# A state that was tracked once and is now empty or gone was truncated or deleted: that is not a session that
+# never tracked anything, the floor applies to the empty state. "Tracked once" is the keyed record's word
+# (SB_IV_TRACKED) or the counter file's; a project that is unbaselined or untrusted has no trustworthy evidence
+# either way, so it is held to the floor too.
+if [[ -z "$state_contents" && ! -s "$state_file" && ! -s "${state_file}.hwm" ]]; then
+  if ! sb_integrity_strict && [[ "$SB_IV_TRACKED" != true ]]; then exit 0; fi
+fi
 
 # Emit block JSON for Stop
 emit_stop_block() {

@@ -38,6 +38,8 @@ ih_project() {
   printf 'inst-b\n' >"$STATE"
   sb_state_seal_write "$STATE"
   sb_integrity_baseline "$PROJ" session
+  # the recorder has tracked a skill here (record-skill.sh marks the keyed record)
+  sb_integrity_baseline "$PROJ" tracked
   rm -rf "$FX"
   mkdir -p "$FX"
   printf '%s' "$SD" >"$FX/d.txt"

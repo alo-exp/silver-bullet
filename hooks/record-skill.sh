@@ -429,6 +429,8 @@ done
 
 if [[ "${recorded_any:-false}" == true ]]; then
   sb_state_seal_write "$STATE_FILE"
+  # the keyed record remembers that skills were tracked here (a deleted counter file proves nothing)
+  if declare -F sb_integrity_baseline >/dev/null 2>&1; then sb_integrity_baseline "$(sb_integrity_root "$PWD")" tracked; fi
 fi
 sb_state_seal_unlock
 

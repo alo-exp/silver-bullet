@@ -164,11 +164,9 @@ def main():
         return
     from collections import Counter
     c = Counter(r["record"] for r in rows)
-    if "--json" in args:
-        json.dump({"counts": c, "rows": rows}, sys.stdout, indent=1)
-    else:
-        n_rows = ["N  %s:%s [%s] %s" % (x["file"], x["line"], x["kind"], x["snippet"]) for x in rows if x["record"] == "N"]
-        print("\n".join(["%s %s" % (dict(c), len(rows))] + n_rows))
+    n_rows = ["N  %s:%s [%s] %s" % (x["file"], x["line"], x["kind"], x["snippet"]) for x in rows if x["record"] == "N"]
+    report = "\n".join(["%s %s" % (dict(c), len(rows))] + n_rows)
+    print(json.dumps({"counts": c, "rows": rows}, indent=1) if "--json" in args else report)
 
 
 if __name__ == "__main__":

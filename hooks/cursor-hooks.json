@@ -27,7 +27,7 @@
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/phase-archive.sh\"",
         "timeout": 10,
-        "matcher": "Shell|Skill|mcp__.*"
+        "matcher": "Shell|Skill"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
@@ -42,17 +42,17 @@
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
         "timeout": 10,
-        "matcher": "Shell|Skill|mcp__.*"
+        "matcher": "Shell|Skill"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
         "timeout": 10,
-        "matcher": "Shell|Skill|mcp__.*"
+        "matcher": "Shell|Skill"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
         "timeout": 10,
-        "matcher": "Shell|Skill|mcp__.*"
+        "matcher": "Shell|Skill"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",

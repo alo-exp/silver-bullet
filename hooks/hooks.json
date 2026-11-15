@@ -38,14 +38,19 @@
         ]
       },
       {
-        "matcher": "Bash|Skill|exec_command|mcp__.*",
+        "matcher": "Bash|Skill|exec_command",
         "hooks": [
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-archive.sh\"",
             "async": false,
             "timeout": 10
-          },
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Skill|exec_command|mcp__.*",
+        "hooks": [
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
@@ -57,7 +62,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
             "async": false,
             "timeout": 30
-          },
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Skill|exec_command",
+        "hooks": [
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
