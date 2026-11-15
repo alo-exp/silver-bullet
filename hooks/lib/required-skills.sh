@@ -228,20 +228,23 @@ __SB_RS_ALL_TRACKED_FALLBACK="silver-quality-gates silver-quality-gates-design s
 # literal fallback.
 # shellcheck disable=SC2034  # the lists are read by the hooks that source this file
 __sb_rs_populate() {
-  local cfg out="" v1="" v2="" v3="" v4="" v5="" v6="" v7=""
+  local cfg out="" line n=0 v1="" v2="" v3="" v4="" v5="" v6="" v7=""
   if cfg="$(__sb_rs_find_default_config)" && command -v jq >/dev/null 2>&1; then
     out="$(jq -r '.skills | [.required_planning, .required_planning_devops, .required_deploy, .required_deploy_devops,
       .required_release, .required_release_devops, .all_tracked][] | (if type == "array" then join(" ") else "" end)' "${cfg}" 2>/dev/null)" || out=""
   fi
-  {
-    IFS= read -r v1
-    IFS= read -r v2 || true
-    IFS= read -r v3 || true
-    IFS= read -r v4 || true
-    IFS= read -r v5 || true
-    IFS= read -r v6 || true
-    IFS= read -r v7 || true
-  } <<<"$out"
+  while IFS= read -r line; do
+    n=$((n + 1))
+    case "$n" in
+      1) v1="$line" ;;
+      2) v2="$line" ;;
+      3) v3="$line" ;;
+      4) v4="$line" ;;
+      5) v5="$line" ;;
+      6) v6="$line" ;;
+      7) v7="$line" ;;
+    esac
+  done <<<"$out"
   DEFAULT_PLANNING="${v1:-${__SB_RS_PLANNING_FALLBACK}}"
   DEVOPS_DEFAULT_PLANNING="${v2:-${__SB_RS_DEVOPS_PLANNING_FALLBACK}}"
   DEFAULT_REQUIRED="${v3:-${__SB_RS_FALLBACK}}"
