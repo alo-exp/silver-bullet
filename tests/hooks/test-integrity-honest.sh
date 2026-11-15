@@ -290,6 +290,14 @@ assert_eq "the record is retired" "no" "$([[ -f "$(_sb_iv_rec_file "$PROJ")" ]] 
 assert_contains "and it is logged" "$(cat "$SD/seal-events.log")" "integrity record retired"
 ih_edit
 assert_eq "edits are no longer held by a project that is gone" "ok" "$(not_deny)"
+# the markdown contract still committed: not an uninstall either
+ih_project h41e
+git -C "$PROJ" rm -q --cached .silver-bullet.json >/dev/null 2>&1
+rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
+git -C "$PROJ" commit -q -m "json only" >/dev/null 2>&1
+git -C "$PROJ" checkout -q HEAD~1 -- silver-bullet.md >/dev/null 2>&1; rm -f "$PROJ/silver-bullet.md"
+OUT="$(ih_session_start_out startup)"
+assert_eq "silver-bullet.md still in git HEAD: the record stays" "yes" "$([[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no)"
 # one file left: not an uninstall
 ih_project h41b
 rm -f "$PROJ/silver-bullet.md"

@@ -47,11 +47,14 @@ fi
 # shellcheck disable=SC2154  # _lib_dir is set by completion-audit.sh
 _ca_plugin_root="$(cd "${_lib_dir}/../.." && pwd)"
 # shellcheck disable=SC2154  # _lib_dir is set by completion-audit.sh
-if [[ -f "${_lib_dir}/enterprise-policy.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+# The enterprise policy binds its approval marker to the project root, so it is handed the root's config path;
+# the drift check above proved that file equals the record (any drift stopped delivery).
+_ca_policy_cfg="$SB_IV_ROOT/.silver-bullet.json"
+if [[ -f "${_lib_dir}/enterprise-policy.sh" && -f "$_ca_policy_cfg" ]]; then
   # shellcheck source=lib/enterprise-policy.sh
   source "${_lib_dir}/enterprise-policy.sh"
-  if sb_enterprise_policy_delivery_blocked "$config_file" "${cmd_first_line:-$cmd}"; then
-    emit_block "$(sb_enterprise_policy_delivery_block_message "$config_file")"
+  if sb_enterprise_policy_delivery_blocked "$_ca_policy_cfg" "${cmd_first_line:-$cmd}"; then
+    emit_block "$(sb_enterprise_policy_delivery_block_message "$_ca_policy_cfg")"
     exit 0
   fi
 fi
