@@ -203,12 +203,24 @@ assert_eq "and keeps unrelated roots" "yes" "$([[ "$(<"$REG")" == *other-b* ]] &
 # pruning: blank lines, plain lines, live lines, a path that holds another directory, a renamed twin, the cap
 mkdir -p "$TL_TMP/pr-live" "$TL_TMP/pr-other"
 LID="$(_sb_iv_dir_id "$TL_TMP/pr-live")"
-printf '\n%s\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n' "$TL_TMP/pr-plain" "$TL_TMP/pr-live" "$LID" "$TL_TMP/pr-other" "9:9:9" "$TL_TMP/pr-gone-twin" "$LID" "$TL_TMP/pr-gone-alone" "8:8:8" >"$REG"
+printf '\n%s\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n' "$TL_TMP/pr-plain" "$TL_TMP/pr-live" "$LID" "$TL_TMP/pr-other" "9:9" "$TL_TMP/pr-gone-twin" "$LID" "$TL_TMP/pr-gone-alone" "8:8:8" >"$REG"
 sb_integrity_prune_registry
 pr="$(<"$REG")"
 assert_eq "prune keeps a plain line" "yes" "$([[ "$pr" == *pr-plain* ]] && echo yes || echo no)"
 assert_eq "prune keeps a live line" "yes" "$([[ "$pr" == *$'\n'"$TL_TMP/pr-live"* || "$pr" == "$TL_TMP/pr-live"* ]] && echo yes || echo no)"
-assert_eq "prune drops a path that now holds another directory" "no" "$([[ "$pr" == *pr-other* ]] && echo yes || echo no)"
+assert_eq "prune drops a dev:ino line whose path now holds another directory" "no" "$([[ "$pr" == *pr-other* ]] && echo yes || echo no)"
+mkdir -p "$TL_TMP/pr-bt"
+printf '%s\t%s\n' "$TL_TMP/pr-bt" "9:9:5" >"$REG"
+sb_integrity_prune_registry
+assert_eq "prune keeps a line with a birth time whose path holds another directory" "yes" "$([[ "$(<"$REG")" == *pr-bt* ]] && echo yes || echo no)"
+# a directory that vanishes between listing and identity: no unbound read, the line is kept or dropped on its own
+printf '%s\t%s\n%s\t%s\n' "$TL_TMP/pr-bt" "9:9:5" "$TL_TMP/pr-live" "$LID" >"$REG"
+RACE="$TL_TMP/racestub"; mkdir -p "$RACE"
+printf '#!/bin/bash\ncase "$1" in --version) exit 0 ;; *) shift; shift; for d in "$@"; do case "$d" in *pr-bt) rmdir "$d" 2>/dev/null; echo "1:1:1" ;; *) echo "$(/usr/bin/stat -c %%d:%%i:%%W "$d")" ;; esac; done ;; esac\n' >"$RACE/stat"; chmod +x "$RACE/stat"
+PATH="$RACE:$PATH" bash -c 'set -u; source "$1"; sb_integrity_prune_registry' _ "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh"
+assert_eq "a directory vanishing mid-prune does not abort (set -u)" "0" "$?"
+assert_eq "and the line of the live directory survives" "yes" "$([[ "$(<"$REG")" == *pr-live* ]] && echo yes || echo no)"
+printf '%s\t%s\n' "$TL_TMP/pr-other" "9:9" >"$REG"
 assert_eq "prune drops the old name of a root that lives on" "no" "$([[ "$pr" == *pr-gone-twin* ]] && echo yes || echo no)"
 assert_eq "prune keeps a gone path whose identity is nowhere else" "yes" "$([[ "$pr" == *pr-gone-alone* ]] && echo yes || echo no)"
 rm -f "$REG"; sb_integrity_prune_registry
@@ -218,6 +230,31 @@ for n in $(seq 1 230); do printf '%s\t%s\n' "$TL_TMP/cap$n" "8:$n:1" >>"$REG"; d
 sb_integrity_prune_registry
 assert_eq "the cap keeps at most 200 lines" "ok" "$([[ "$(grep -c . "$REG")" -le 200 ]] && echo ok || echo big)"
 assert_eq "the cap keeps the newest" "yes" "$([[ "$(<"$REG")" == *cap230* ]] && echo yes || echo no)"
+rm -f "$REG"
+# concurrent writers: parallel registrations and prunes lose no line, and a dead lock owner is taken over
+rm -f "$REG"; rm -rf "$REG.lock"
+CC="$TL_TMP/conc"; mkdir -p "$CC"
+for w in 1 2 3 4 5 6; do
+  (
+    for n in 1 2 3 4 5; do
+      mkdir -p "$CC/w$w-r$n"
+      sb_integrity_register_root "$CC/w$w-r$n"
+      if [[ $n -eq 3 ]]; then sb_integrity_prune_registry; fi
+    done
+  ) &
+done
+wait
+assert_eq "30 parallel registrations, with prunes in between: every line is there" "30" "$(grep -c "$CC/" "$REG")"
+assert_eq "the lock is released" "no" "$([[ -e "$REG.lock" ]] && echo yes || echo no)"
+mkdir "$REG.lock"; printf '%s' 999999 >"$REG.lock/pid"
+sb_integrity_register_root "$CC/after-dead-owner"
+assert_eq "a lock whose owner is dead is taken over" "yes" "$([[ "$(<"$REG")" == *after-dead-owner* ]] && echo yes || echo no)"
+mkdir "$REG.lock"; printf '%s' "$$" >"$REG.lock/pid"
+sb_integrity_register_root "$CC/after-held-lock"
+assert_eq "a lock held past the bounded wait is taken over too" "yes" "$([[ "$(<"$REG")" == *after-held-lock* ]] && echo yes || echo no)"
+mkdir "$REG.lock"
+sb_integrity_register_root "$CC/after-pidless-lock"
+assert_eq "a lock with no owner file is taken over after the wait" "yes" "$([[ "$(<"$REG")" == *after-pidless-lock* ]] && echo yes || echo no)"
 rm -f "$REG"
 # the record name is the POSIX cksum of the root
 for str in "" "a" "$P2" "héllo/ü" "$(head -c 200 /dev/urandom | base64 -w0)"; do

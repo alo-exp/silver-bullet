@@ -162,9 +162,45 @@ sb_integrity_record_root() { # DIR
 # Registry lines kept at most (the newest); every worktree, clone or rename adds a line.
 _SB_IV_REGISTRY_CAP=200
 
+# Registry writers (register, unregister, prune, cap) take an atomic mkdir lock next to the file, so two
+# concurrent session starts cannot lose each other's line; the gates only read and never take it. The wait is
+# bounded (about 2 s); a lock whose owner is gone, or that is still held after the wait, is taken over.
+_sb_iv_reg_lock() {
+  local lock pid n=0
+  lock="$(_sb_iv_registry_file).lock"
+  while true; do
+    if mkdir "$lock" 2>/dev/null; then
+      break
+    fi
+    pid=""
+    if [[ -f "$lock/pid" ]]; then
+      pid="$(<"$lock/pid")"
+    fi
+    if [[ -n "$pid" ]] && ! kill -0 "$pid" 2>/dev/null; then
+      rm -rf -- "$lock"
+      continue
+    fi
+    n=$((n + 1))
+    if [[ $n -ge 40 ]]; then
+      rm -rf -- "$lock"
+      continue
+    fi
+    sleep 0.05
+  done
+  printf '%s' "$$" >"$lock/pid" 2>/dev/null || true
+}
+_sb_iv_reg_unlock() {
+  rm -rf -- "$(_sb_iv_registry_file).lock"
+}
+
 # Register ROOT as a baselined project root (idempotent); the line carries the root's current path and identity,
 # so a renamed root gets a fresh line. The oldest lines go beyond the cap.
 sb_integrity_register_root() { # ROOT
+  _sb_iv_reg_lock
+  _sb_iv_register_unlocked "$1"
+  _sb_iv_reg_unlock
+}
+_sb_iv_register_unlocked() { # ROOT
   local regf id content
   regf="$(_sb_iv_registry_file)"
   [[ -n "$1" && ! -L "$regf" ]] || return 0
@@ -194,6 +230,11 @@ _sb_iv_registry_cap() { # FILE
 # Remove ROOT from the registry (an honest retirement): every line of its path and every line of its identity
 # (a renamed root has lines under both of its names).
 sb_integrity_unregister_root() { # ROOT
+  _sb_iv_reg_lock
+  _sb_iv_unregister_unlocked "$1"
+  _sb_iv_reg_unlock
+}
+_sb_iv_unregister_unlocked() { # ROOT
   local regf tmp line kept="" id lid
   regf="$(_sb_iv_registry_file)"
   [[ -f "$regf" && ! -L "$regf" ]] || return 0
@@ -220,7 +261,12 @@ sb_integrity_unregister_root() { # ROOT
 # root was renamed). A line whose path is gone and whose identity has no live line stays (the root may have
 # moved before it was seen again) until the cap drops it.
 sb_integrity_prune_registry() {
-  local regf lines=() paths=() ids=() live=() cur=() ex=() exi=() line i j k n kept tmp ci out twin
+  _sb_iv_reg_lock
+  _sb_iv_prune_unlocked
+  _sb_iv_reg_unlock
+}
+_sb_iv_prune_unlocked() {
+  local regf isex=() lines=() paths=() ids=() live=() cur=() ex=() exi=() line i j k n kept tmp ci out keep
   regf="$(_sb_iv_registry_file)"
   [[ -f "$regf" && ! -L "$regf" ]] || return 0
   while IFS= read -r line || [[ -n "$line" ]]; do
@@ -235,8 +281,12 @@ sb_integrity_prune_registry() {
   done <"$regf"
   n=${#lines[@]}
   for ((i = 0; i < n; i++)); do
+    live+=("")
     if [[ -d "${paths[$i]}" ]]; then
       ex+=("${paths[$i]}")
+      isex+=(1)
+    else
+      isex+=(0)
     fi
   done
   if [[ ${#ex[@]} -gt 0 ]]; then
@@ -247,9 +297,8 @@ sb_integrity_prune_registry() {
   fi
   k=0
   for ((i = 0; i < n; i++)); do
-    live+=("")
-    if [[ -d "${paths[$i]}" ]]; then
-      cur+=("${exi[$k]}")
+    if [[ "${isex[$i]}" == 1 ]]; then
+      cur+=("${exi[$k]:--}")
       k=$((k + 1))
     else
       cur+=("-")
@@ -261,23 +310,25 @@ sb_integrity_prune_registry() {
     fi
   done
   kept=""
-  i=-1
-  while [[ $((i + 1)) -lt $n ]]; do
-    i=$((i + 1))
-    if [[ -z "${ids[$i]}" || -n "${live[$i]}" ]]; then
-      kept="$kept${lines[$i]}"$'\n'
-      continue
-    fi
-    if [[ "${cur[$i]}" != - ]]; then
-      continue
-    fi
-    twin=""
-    for ((j = 0; j < n; j++)); do
-      if [[ "${ids[$j]}" == "${ids[$i]}" && -n "${live[$j]}" ]]; then
-        twin=1
+  for ((i = 0; i < n; i++)); do
+    keep=1
+    if [[ -n "${ids[$i]}" && -z "${live[$i]}" ]]; then
+      if [[ "${cur[$i]}" != - ]]; then
+        # the path holds another directory: only a line without a birth time (dev:ino, where an inode can be
+        # reused) is dropped; one with a birth time can never match a new directory and may be the last anchor
+        # of a renamed root
+        if [[ "${ids[$i]}" != *:*:* ]]; then
+          keep=""
+        fi
+      else
+        for ((j = 0; j < n; j++)); do
+          if [[ "${ids[$j]}" == "${ids[$i]}" && -n "${live[$j]}" ]]; then
+            keep=""
+          fi
+        done
       fi
-    done
-    if [[ -z "$twin" ]]; then
+    fi
+    if [[ -n "$keep" ]]; then
       kept="$kept${lines[$i]}"$'\n'
     fi
   done
