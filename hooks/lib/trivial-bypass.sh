@@ -16,15 +16,23 @@ if [[ -f "$_sb_runtime_paths_dir/integrity.sh" ]]; then
 fi
 
 sb_trivial_bypass() {
-  local trivial_path="${1:-${SB_RUNTIME_STATE_DIR}/trivial}" root
-  if [[ -f "$trivial_path" && ! -L "$trivial_path" ]]; then
-    if [[ "$trivial_path" == "${SB_RUNTIME_STATE_DIR}/trivial" ]] && declare -f sb_integrity_verify >/dev/null 2>&1; then
-      root="$(sb_integrity_root "$PWD")"
-      if [[ -n "$root" ]]; then
-        sb_integrity_verify "$root" ""
-        sb_integrity_restore_safe
-        [[ "$SB_IV_TRIVIAL_OK" == true ]] || return 0
+  local trivial_path="${1:-${SB_RUNTIME_STATE_DIR}/trivial}" root="" verified=false
+  if declare -f sb_integrity_verify >/dev/null 2>&1; then
+    root="$(sb_integrity_root "$PWD")"
+    if [[ -n "$root" ]]; then
+      sb_integrity_verify "$root" ""
+      # Once the project has a record (or is unbaselined) the marker is the default one and only while the
+      # record blesses it: a path handed in (the config's) is ignored.
+      if [[ "$SB_IV_STATUS" != none ]]; then
+        trivial_path="${SB_RUNTIME_STATE_DIR}/trivial"
+        verified=true
       fi
+    fi
+  fi
+  if [[ -f "$trivial_path" && ! -L "$trivial_path" ]]; then
+    if [[ "$verified" == true ]]; then
+      sb_integrity_restore_safe
+      [[ "$SB_IV_TRIVIAL_OK" == true ]] || return 0
     fi
     exit 0
   fi

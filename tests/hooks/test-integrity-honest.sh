@@ -268,5 +268,55 @@ OUT="$(ih_session_start_out startup)"
 assert_contains "a session start over a deleted record says so" "$OUT" "SB INTEGRITY"
 assert_eq "and records the project again" "ok" "$(ih_status)"
 
+# 40. the devops reset after a ship follows the record, in the file and in the record
+ih_project h40 '.project.active_workflow="devops-cycle"'
+ih_hook flow-advance.sh "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:"silver-ship"}}')"
+assert_eq "the live file is reset" "full-dev-cycle" "$(jq -r .project.active_workflow "$PROJ/.silver-bullet.json")"
+assert_eq "the record is reset too, with no drift" "" "$(ih_diverged)"
+assert_eq "recorded workflow" "full-dev-cycle" "$(sb_iv_jq -r .project.active_workflow)"
+sb_integrity_set_workflow "$TL_TMP/no-such-root" full-dev-cycle
+tl_pass "setting the workflow of a root without a record does nothing"
+
+# 41. honest uninstall: the contract files are removed and committed, the next session retires the record
+ih_project h41
+rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
+OUT="$(ih_session_start_out startup)"
+assert_eq "removed but not committed: the record is kept" "yes" "$([[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no)"
+git -C "$PROJ" add -A >/dev/null 2>&1
+git -C "$PROJ" commit -q -m "remove SB" >/dev/null 2>&1
+OUT="$(ih_session_start_out startup)"
+assert_contains "the user is told" "$OUT" "was removed"
+assert_eq "the record is retired" "no" "$([[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no)"
+assert_contains "and it is logged" "$(cat "$SD/seal-events.log")" "integrity record retired"
+ih_edit
+assert_eq "edits are no longer held by a project that is gone" "ok" "$(not_deny)"
+# one file left: not an uninstall
+ih_project h41b
+rm -f "$PROJ/silver-bullet.md"
+git -C "$PROJ" add -A >/dev/null 2>&1; git -C "$PROJ" commit -q -m "half" >/dev/null 2>&1
+OUT="$(ih_session_start_out startup)"
+assert_eq "half a contract is not an uninstall: the record stays" "yes" "$([[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no)"
+# not a git repository: nothing proves a committed removal
+ih_project h41c
+rm -rf "$PROJ/.git" "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
+OUT="$(ih_session_start_out startup)"
+assert_eq "without git there is no proof: the record stays" "yes" "$([[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no)"
+# the CONTRACT CHANGED message tells the user how to remove a record by hand
+ih_project h41d
+printf '%s\n' "$CFG_NEW" >"$PROJ/.silver-bullet.json"
+ih_edit
+assert_contains "the message names the record path" "$(message)" "integrity-"
+assert_contains "and the removal command" "$(message)" "rm -f"
+
+# 42. first baseline of a worktree whose config is hidden from git status: compared by content, shown to the user
+ih_project h42
+git -C "$PROJ" branch -M main >/dev/null 2>&1
+rm -f "$SD"/integrity-*
+printf '%s\n' "$CFG_NEW" >"$PROJ/.silver-bullet.json"
+git -C "$PROJ" update-index --skip-worktree .silver-bullet.json
+OUT="$(ih_session_start_out startup)"
+assert_contains "a hidden change is still found" "$OUT" "differ from what git has committed"
+assert_contains "and goes out as a systemMessage the user sees" "$(jq -r '.systemMessage // ""' <<<"$OUT")" "SB INTEGRITY"
+
 assert_eq "the honest corpus has at least 30 rows" "ok" "$([[ $(grep -c '^assert_\|^ok_cmd\|^  ok_cmd' "$0") -ge 30 ]] && echo ok || echo few)"
 tl_results

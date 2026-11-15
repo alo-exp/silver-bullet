@@ -65,19 +65,17 @@ elif sb_orchestrator_is_flow_atom "$skill"; then
   [[ -n "$advance_msg" ]] && msg="$advance_msg"
 fi
 
-# Reset devops-cycle → full-dev-cycle after devops ship (F-04)
-if [[ "$skill" == "silver-ship" && -f "$repo_root/.silver-bullet.json" ]]; then
-  aw="$(jq -r '.project.active_workflow // "full-dev-cycle"' "$repo_root/.silver-bullet.json" 2>/dev/null || true)"
-  if [[ "$aw" == "devops-cycle" ]]; then
+# Reset devops-cycle → full-dev-cycle after devops ship (F-04). The decision is the RECORD's: only when the
+# recorded config says devops-cycle is the key reset, in the live file and in the record (one key; nothing else
+# the live file holds is ever adopted: hooks/lib/integrity.sh).
+if [[ "$skill" == "silver-ship" && -f "$_lib_dir/integrity.sh" ]]; then
+  # shellcheck source=lib/integrity.sh
+  source "$_lib_dir/integrity.sh"
+  if sb_integrity_gate "$repo_root" && [[ "$(sb_iv_jq -r '.project.active_workflow // "full-dev-cycle"')" == "devops-cycle" ]]; then
     tmp="$(mktemp)"
-    if jq '.project.active_workflow = "full-dev-cycle"' "$repo_root/.silver-bullet.json" >"$tmp" 2>/dev/null; then
+    if [[ -f "$repo_root/.silver-bullet.json" ]] && jq '.project.active_workflow = "full-dev-cycle"' "$repo_root/.silver-bullet.json" >"$tmp" 2>/dev/null; then
       mv "$tmp" "$repo_root/.silver-bullet.json"
-      # A sanctioned writer: the integrity record follows (hooks/lib/integrity.sh).
-      if [[ -f "$_lib_dir/integrity.sh" ]]; then
-        # shellcheck source=lib/integrity.sh
-        source "$_lib_dir/integrity.sh"
-        sb_integrity_baseline "$(cd "$repo_root" && pwd -P)" entry config
-      fi
+      sb_integrity_set_workflow "$SB_IV_ROOT" full-dev-cycle
       reset_note="SB ► active_workflow reset to full-dev-cycle after devops ship"
       msg="${msg:+$msg — }${reset_note}"
     else
