@@ -170,27 +170,24 @@ sb_pf_plain_read_only() {
 # outside a sanctioned writer cannot take files out of the floor, and an unbaselined or untrusted project
 # gets the defaults.
 sb_pf_src_load() {
-  local root="${1:-}" vals value rest
+  local root="${1:-}" value
   SB_PF_SRC_PATTERN="$SB_PF_DEFAULT_SRC_PATTERN"
   SB_PF_SRC_EXCLUDE="$SB_PF_DEFAULT_SRC_EXCLUDE"
   SB_PF_WORKFLOW="full-dev-cycle"
   [[ -n "$root" ]] || return 0
+  # The verification already extracted pattern, exclusion and workflow (each with its default).
+  # shellcheck disable=SC2153  # SB_IV_SRC_* / SB_IV_WORKFLOW are set by sb_integrity_verify
   sb_integrity_verify "$root" ""
-  # One jq call: pattern, exclusion, workflow (each with its default) on three lines.
-  vals=""
-  if vals="$(sb_iv_jq -r '[(.project.src_pattern // "/src/"), (.project.src_exclude_pattern // "__tests__|\\.test\\."), (.project.active_workflow // "full-dev-cycle")] | map(tostring) | .[]' 2>/dev/null)"; then :; fi
-  value="${vals%%$'\n'*}"
-  rest="${vals#*$'\n'}"
+  value="$SB_IV_SRC_PATTERN"
   # Only safe path-segment patterns (no regex injection) and nothing that matches everything.
   if grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$' <<<"$value" && ! grep -qE '^\.\*$|^\.\+$|^/$|^$' <<<"$value"; then
     SB_PF_SRC_PATTERN="$value"
   fi
-  value="${rest%%$'\n'*}"
+  value="$SB_IV_SRC_EXCLUDE"
   if [[ ${#value} -le 200 ]] && grep -qE '^[a-zA-Z0-9/_.\-|()\^$+?*]+$' <<<"$value"; then
     SB_PF_SRC_EXCLUDE="$value"
   fi
-  value="${rest#*$'\n'}"
-  SB_PF_WORKFLOW="${value:-full-dev-cycle}"
+  SB_PF_WORKFLOW="$SB_IV_WORKFLOW"
 }
 
 sb_pf_src_in_scope() {

@@ -15,16 +15,23 @@ import glob, json, os, re, subprocess, sys
 
 ROOT = os.environ.get("SB_AUDIT_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+CFGVAR = r'(?:config_file|cfg|sb_cfg|config|conf|_cfg|cfg_file|config_path|scope_config|[A-Za-z_]*_config|[A-Za-z_]*_cfg|[A-Za-z_]*config_file)'
 READ_PATTERNS = [
-    ("config", re.compile(r'\bjq\b[^\n]*"\$\{?(?:config_file|cfg|sb_cfg|config|_cfg|cfg_file|config_path|scope_config)\b')),
+    ("config", re.compile(r'\bjq\b[^\n]*"\$\{?' + CFGVAR + r'\b')),
     ("config", re.compile(r'\.silver-bullet\.json["\']?[^\n]*\|\s*jq|\bjq\b[^\n]*\.silver-bullet\.json|<\s*"?[^\s"]*\.silver-bullet\.json')),
     ("config", re.compile(r'-[fer]\s+"?\$\{?[A-Za-z_]*\}?/\.silver-bullet\.json|-[fer]\s+"[^"]*\.silver-bullet\.json')),
-    ("config", re.compile(r'\$search_dir/\.silver-bullet\.json')),
-    ("md", re.compile(r'-[fer]\s+"?[^\s"]*silver-bullet\.md')),
+    ("config", re.compile(r'\$[a-z_]*dir/\.silver-bullet\.json')),
+    ("config", re.compile(r'open\([^)]*silver-bullet\.json|json\.loads?\([^)]*(?:config|silver-bullet)|\b(?:cat|grep|head|sed|awk)\b[^\n]*\.silver-bullet\.json')),
+    ("md", re.compile(r'-[fer]\s+"?[^\s"]*silver-bullet\.md|\b(?:cat|grep|head|sed|awk)\b[^\n]*silver-bullet\.md|<\s*"?[^\s"]*silver-bullet\.md')),
+    ("roadmap", re.compile(r'\b(?:cat|grep|head|sed|awk|wc)\b[^\n]*ROADMAP\.md|-[fer]\s+"[^"]*ROADMAP\.md|<\s*"?[^\s"]*ROADMAP\.md')),
+    ("instruction", re.compile(r'\b(?:cat|grep|head|sed|awk)\b[^\n]*(?:CLAUDE|AGENTS)\.md|-[fer]\s+"[^"]*(?:CLAUDE|AGENTS)\.md')),
     ("state", re.compile(r'\b(?:cat|head|tail|wc -l\s*<|grep[^|]*)\s+"?\$\{?(?:state_file|STATE_FILE)\b|<\s*"?\$\{?(?:state_file|STATE_FILE)\b')),
+    ("state", re.compile(r'\b(?:cat|head|tail|grep|sed|awk)\b[^\n]*"?\$\{?(?:SB_RUNTIME_STATE_DIR|SB_STATE_DIR|_sb_state_dir)\}?/state["\s]')),
     ("trivial", re.compile(r'-[fe]\s+"?\$\{?(?:trivial_file|_trivial_file|TRIVIAL_FILE|_bypass_trivial)\b|-[fe]\s+"\$\{?SB_[A-Z_]*\}?/trivial')),
     ("unlock", re.compile(r'contract-unlock["\']?\s*(?:\]|\))|>\s*"?[^\s"]*contract-unlock')),
 ]
+# a line that also names a live path is never class Y
+LIVE_PATH = re.compile(r'\.silver-bullet\.json|silver-bullet\.md|\$\{?(?:config_file|cfg|state_file|STATE_FILE|trivial_file)\b|ROADMAP\.md|CLAUDE\.md|AGENTS\.md|SB_RUNTIME_STATE_DIR\}?/(?:state|trivial)')
 
 # (path glob or exact path) -> (disposition, reason). First match wins.
 RULES = [
@@ -38,10 +45,8 @@ RULES = [
     ("hooks/record-skill.sh", "A", "sanctioned writer: keeps the record in step"),
     ("hooks/flow-advance.sh", "A", "sanctioned writer: re-baselines the config it edits"),
     ("hooks/lib/enforcement-tier-gate.sh", "X", "the tier is min(configured, probed): a live value can only lower it; excluded from the record (hooks keep it)"),
-    ("hooks/lib/enterprise-policy.sh", "X", "receives the verified snapshot from the delivery gates (completion-audit); other callers print advisory text"),
-    ("hooks/lib/completion-audit/*", "X", "reads $config_file, which completion-audit.sh sets to the verified snapshot"),
-    ("hooks/lib/orchestrator-*.sh", "X", "orchestrator directives: an extra layer; absence of a directive never relaxes the planning floor"),
-    ("hooks/lib/agentmemory-gate.sh", "X", "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"),
+        ("hooks/lib/completion-audit/*", "X", "reads $config_file, which completion-audit.sh sets to the verified snapshot"),
+        ("hooks/lib/agentmemory-gate.sh", "X", "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"),
     ("hooks/lib/graphify-gate.sh", "X", "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"),
     ("hooks/lib/rtk-gate.sh", "X", "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"),
     ("hooks/lib/rtk-compat.sh", "X", "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"),
@@ -51,12 +56,7 @@ RULES = [
     ("hooks/lib/token-compression-tools-gate.sh", "X", "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"),
     ("hooks/lib/stack-*.sh", "X", "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"),
     ("hooks/lib/recommended-tools*.sh", "X", "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"),
-    ("hooks/lib/opt-in-gate.sh", "X", "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"),
-    ("hooks/lib/prerequisite-probe.sh", "X", "installer probe, no gate decision"),
-    ("hooks/lib/session-ledger.sh", "X", "session log bookkeeping, no gate decision"),
-    ("hooks/lib/site-session.sh", "X", "site-session bookkeeping; activation through the record-aware helper in the hook"),
-    ("hooks/lib/required-skills.sh", "X", "reads the template's default lists; reads the project's version through the verified record when one was verified"),
-    ("hooks/lib/planning-floor.sh", "X", "reads the verified record (sb_integrity_verify + sb_iv_jq)"),
+                        ("hooks/lib/planning-floor.sh", "X", "reads the verified record (sb_integrity_verify + sb_iv_jq)"),
     ("hooks/graphify-gate.sh", "X", "tool consent gate (.recommended_tools)"),
     ("hooks/agentmemory-gate.sh", "X", "tool consent gate (.recommended_tools)"),
     ("hooks/rtk-gate.sh", "X", "tool consent gate (.recommended_tools)"),
@@ -72,6 +72,7 @@ RULES = [
     ("hooks/compliance-status.sh", "X", "informational progress line, no gate decision"),
     ("hooks/session-log-init.sh", "X", "session log bookkeeping, no gate decision"),
     ("hooks/semantic-compress.sh", "X", "advisory, no gate decision"),
+    ("skills/*", "X", "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"),
     ("scripts/*", "X", "user-run or skill-run script, not a hook gate"),
 ]
 # lines matched anywhere that are fine because the value was already verified
@@ -81,6 +82,16 @@ VERIFIED_LINE = re.compile(r'sb_iv_jq|SB_IV_|sb_integrity_|\$SB_IV_CONFIG_FILE|v
 # per-line exceptions: (file, regex on the line) -> reason. Each is a presence test that makes no trust decision.
 LINE_RULES = [
     ("hooks/dev-cycle-check.sh", re.compile(r'post_work=true'), "wake-up test: the presence of the marker only makes PostToolUse run the verification; it never trusts the marker"),
+    ("hooks/flow-advance.sh", re.compile(r'\.silver-bullet\.json'), "writes the one key (.project.active_workflow) in the live file after the RECORDED config said devops-cycle; the record changes by that key only"),
+    ("hooks/lib/context-mode-read-deny.sh", re.compile(r'state_file|trivial_file'), "token-saving read gate: exempts the named runtime files from the read-size deny; it decides no planning or delivery gate"),
+    ("hooks/lib/context-mode-read-deny.sh", re.compile(r'recommended_tools'), "tool consent key (.recommended_tools): kept by the hooks themselves and excluded from the record"),
+    ("hooks/lib/orchestrator-parent.sh", re.compile(r'orchestrator_mode'), "orchestrator parent mode: an extra directive layer; the planning floor and the delivery gates do not depend on it"),
+    ("hooks/lib/enterprise-policy.sh", re.compile(r'active_profile|evidence_schema'), "receives the verified snapshot path from the delivery gates (completion-audit); session and prompt callers print advisory text with it"),
+    ("hooks/lib/prerequisite-probe.sh", re.compile(r'silver-bullet'), "installer prerequisite probe: reports a missing contract file, decides no gate"),
+    ("hooks/lib/required-skills.sh", re.compile(r'\$\{cfg\}'), "reads the TEMPLATE's default lists (templates/silver-bullet.config.json.default), not a project file"),
+    ("hooks/lib/required-skills.sh", re.compile(r'"\$config_file"'), "only when no project was verified (a standalone caller); a verified gate reads the record"),
+    ("hooks/lib/session-ledger.sh", re.compile(r'search_dir'), "session log bookkeeping: finds the project directory for the ledger file, decides no gate"),
+    ("hooks/lib/site-session.sh", re.compile(r'search_dir'), "site-session bookkeeping: finds the project directory, decides no gate"),
 ]
 
 
@@ -91,7 +102,7 @@ def classify(path, line):
     for pat, disp, why in RULES:
         if glob.fnmatch.fnmatch(path, pat):
             return disp, why
-    if VERIFIED_LINE.search(line):
+    if VERIFIED_LINE.search(line) and not LIVE_PATH.search(line):
         return "Y", "reads the verified record"
     return "N", "reads a protected value live"
 
@@ -104,10 +115,11 @@ def read(path, rev):
 
 def files(rev):
     if rev:
-        out = subprocess.run(["git", "-C", ROOT, "ls-tree", "-r", "--name-only", rev, "hooks", "scripts"], capture_output=True, text=True).stdout.split()
-        cands = [f for f in out if f.endswith(".sh") or f == "hooks/session-start"]
+        out = subprocess.run(["git", "-C", ROOT, "ls-tree", "-r", "--name-only", rev, "hooks", "scripts", "skills"], capture_output=True, text=True).stdout.split()
+        cands = [f for f in out if f.endswith((".sh", ".py")) or f == "hooks/session-start" or (f.startswith("skills/") and f.endswith("/SKILL.md"))]
     else:
-        cands = sorted(set(glob.glob("hooks/**/*.sh", root_dir=ROOT, recursive=True) + glob.glob("scripts/*.sh", root_dir=ROOT) + ["hooks/session-start"]))
+        cands = sorted(set(glob.glob("hooks/**/*.sh", root_dir=ROOT, recursive=True) + glob.glob("hooks/**/*.py", root_dir=ROOT, recursive=True)
+                           + glob.glob("scripts/*.sh", root_dir=ROOT) + glob.glob("skills/*/SKILL.md", root_dir=ROOT) + ["hooks/session-start"]))
         cands = [f for f in cands if os.path.isfile(os.path.join(ROOT, f))]
     return sorted(cands)
 

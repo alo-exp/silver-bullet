@@ -57,7 +57,7 @@ if ! declare -f sb_contract_unlocked >/dev/null 2>&1; then
 fi
 
 SB_IV_PLAN_FILES="ROADMAP.md STATE.md PROJECT.md"
-_SB_IV_VARS="STATUS DIVERGED WHY TRIVIAL_OK REQUIRED_PLANNING REQUIRED_PLANNING_DEVOPS REQUIRED_DEPLOY REQUIRED_DEPLOY_DEVOPS REQUIRED_RELEASE REQUIRED_RELEASE_DEVOPS STATE_FILE UNLOCK_SKILL CONFIG ROOT"
+_SB_IV_VARS="STATUS DIVERGED WHY TRIVIAL_OK REQUIRED_PLANNING REQUIRED_PLANNING_DEVOPS REQUIRED_DEPLOY REQUIRED_DEPLOY_DEVOPS REQUIRED_RELEASE REQUIRED_RELEASE_DEVOPS STATE_FILE UNLOCK_SKILL CONFIG ROOT SRC_PATTERN SRC_EXCLUDE WORKFLOW"
 _SB_IV_CACHE_KEY=""
 _SB_IV_EMPTY="{}"
 
@@ -252,7 +252,7 @@ _sb_iv_load_values() { # JSON
   SB_IV_CONFIG="${1:-$_SB_IV_EMPTY}"
   while IFS= read -r v; do
     vals+=("$v")
-  done < <(printf '%s' "$1" | jq -r 'def l: if type == "array" then join(" ") else "" end; (.skills.required_planning | l), (.skills.required_planning_devops | l), (.skills.required_deploy | l), (.skills.required_deploy_devops | l), (.skills.required_release | l), (.skills.required_release_devops | l), (.state.state_file // "" | tostring)')
+  done < <(printf '%s' "$1" | jq -r 'def l: if type == "array" then join(" ") else "" end; (.skills.required_planning | l), (.skills.required_planning_devops | l), (.skills.required_deploy | l), (.skills.required_deploy_devops | l), (.skills.required_release | l), (.skills.required_release_devops | l), (.state.state_file // "" | tostring), (.project.src_pattern // "/src/" | tostring), (.project.src_exclude_pattern // "__tests__|\\.test\\." | tostring), (.project.active_workflow // "full-dev-cycle" | tostring)')
   SB_IV_REQUIRED_PLANNING="${vals[0]:-}"
   SB_IV_REQUIRED_PLANNING_DEVOPS="${vals[1]:-}"
   SB_IV_REQUIRED_DEPLOY="${vals[2]:-}"
@@ -260,6 +260,9 @@ _sb_iv_load_values() { # JSON
   SB_IV_REQUIRED_RELEASE="${vals[4]:-}"
   SB_IV_REQUIRED_RELEASE_DEVOPS="${vals[5]:-}"
   SB_IV_STATE_FILE="${vals[6]:-}"
+  SB_IV_SRC_PATTERN="${vals[7]:-/src/}"
+  SB_IV_SRC_EXCLUDE="${vals[8]:-__tests__|\\.test\\.}"
+  SB_IV_WORKFLOW="${vals[9]:-full-dev-cycle}"
 }
 
 _sb_iv_cache_store() {
@@ -307,12 +310,6 @@ _sb_iv_line_equal() { # BODY-A BODY-B TAG
   [[ "$a" == "$b" ]]
 }
 
-# True when the record body holds a contract-skill unlock that is still in its window.
-_sb_iv_unlock_active_in() { # BODY
-  _sb_iv_unlock_from_body "$1"
-  [[ -n "$SB_IV_UNLOCK_SKILL" ]]
-}
-
 # Sets live_body and live_values (the config entry's JSON) in the caller: CONFIG<TAB>DIGEST<TAB>VALUES comes first.
 _sb_iv_live() { # ROOT
   live_body="$(_sb_iv_live_body "$1")"
@@ -326,6 +323,7 @@ sb_integrity_verify() { # ROOT [STATE]
   key="$root|$state"
   if [[ "$_SB_IV_CACHE_KEY" == "$key" ]]; then _sb_iv_cache_load; return 0; fi
   SB_IV_STATUS=none SB_IV_DIVERGED="" SB_IV_WHY="" SB_IV_TRIVIAL_OK=false SB_IV_CONFIG="$_SB_IV_EMPTY" SB_IV_ROOT="$root"
+  SB_IV_SRC_PATTERN="/src/" SB_IV_SRC_EXCLUDE='__tests__|\.test\.' SB_IV_WORKFLOW="full-dev-cycle"
   SB_IV_REQUIRED_PLANNING="" SB_IV_REQUIRED_PLANNING_DEVOPS="" SB_IV_REQUIRED_DEPLOY="" SB_IV_REQUIRED_DEPLOY_DEVOPS=""
   SB_IV_REQUIRED_RELEASE="" SB_IV_REQUIRED_RELEASE_DEVOPS="" SB_IV_STATE_FILE="" SB_IV_UNLOCK_SKILL=""
   [[ -n "$state" ]] || state="$(_sb_iv_state_dir)/state"
@@ -401,15 +399,20 @@ sb_iv_jq() { # JQ-ARGS (no file)
 }
 
 # A private copy of the VERIFIED config for the libraries that take a config path (enterprise policy,
-# change class, evidence schema...): sets SB_IV_CONFIG_FILE. It lives in the state directory, which the
-# planning floor protects, and holds the recorded values; the gates never name the project's own file.
+# change class, evidence schema...): sets SB_IV_CONFIG_FILE to a FRESH file made by mktemp (O_EXCL, an
+# unpredictable name) in the state directory, which the planning floor protects. It never names an existing
+# path, so a symlink or directory planted where a fixed name would be cannot change what the gates read.
+# Old copies are collected once more than 16 are lying around.
 sb_integrity_config_snapshot() {
-  local snap tmp
-  snap="$(_sb_iv_rec_file "${SB_IV_ROOT:-}")"
-  snap="${snap%.rec}.cfg.json"
-  tmp="$snap.$$"
-  if [[ ! -L "$snap" ]] && printf '%s\n' "${SB_IV_CONFIG:-$_SB_IV_EMPTY}" 2>/dev/null >"$tmp"; then mv -f -- "$tmp" "$snap"; fi
-  rm -f -- "$tmp"
+  local dir snap
+  local -a old
+  dir="$(_sb_iv_state_dir)"
+  snap=""
+  if snap="$(mktemp "$dir/vcfg.XXXXXX" 2>/dev/null)"; then
+    printf '%s\n' "${SB_IV_CONFIG:-$_SB_IV_EMPTY}" >"$snap"
+  fi
+  old=("$dir"/vcfg.*)
+  if [[ ${#old[@]} -gt 16 ]]; then if find "$dir" -maxdepth 1 -name 'vcfg.*' -mmin +2 -delete 2>/dev/null; then :; fi; fi
   SB_IV_CONFIG_FILE="$snap"
 }
 
@@ -449,7 +452,7 @@ Ask the user to restart the session: session start records the project's contrac
   else
     printf '%s' "🚫 ENFORCEMENT CONTRACT CHANGED — ${SB_IV_DIVERGED:-the record} no longer matches what Silver Bullet recorded${SB_IV_WHY:+ ($SB_IV_WHY)}, so the gates use the last recorded values and the strict defaults.
 
-Do not try to re-record it yourself and do not run a skill to make it stick: a skill never adopts a change that was made before it. Ask the user to review the change (git diff) and either revert it (git checkout -- the file) or restart the session so session start records the files. Details: $(_sb_iv_state_dir)/seal-events.log"
+Do not try to re-record it yourself and do not run a skill to make it stick: a skill never adopts a change that was made before it. Ask the user to review the change (git diff) and either revert it (git checkout -- the file) or restart the session so session start records the files. If Silver Bullet was removed on purpose (the user deleted .silver-bullet.json and silver-bullet.md and committed), restarting the session retires the record; the user can also remove it by hand: rm -f $(_sb_iv_rec_file "${SB_IV_ROOT:-/}") $(_sb_iv_rec_file "${SB_IV_ROOT:-/}").hwm. Details: $(_sb_iv_state_dir)/seal-events.log"
   fi
 }
 
@@ -520,7 +523,7 @@ _sb_iv_write() { # ROOT RECFILE STATE BODY
 }
 
 sb_integrity_baseline() { # ROOT MODE [..]
-  local root="$1" mode="$2" state rec body tag entry old keep line new_line marker_state live_lines skill="" drift rec_cfg live_cfg skip_config=""
+  local root="$1" mode="$2" state rec body tag entry old keep line new_line marker_state live_lines skill="" drift rec_cfg live_cfg skip_config="" active
   shift 2
   state="$(_sb_iv_state_dir)/state"
   rec="$(_sb_iv_rec_file "$root")"
@@ -543,12 +546,28 @@ sb_integrity_baseline() { # ROOT MODE [..]
     fi
     if [[ "$mode" == unlock ]]; then
       # A contract skill is declared to write its own files, not to bless what was changed before it ran:
-      # a drift that predates it is the user's to adopt (session start), so the skill gets no unlock.
+      # a drift that predates it is the user's to adopt (session start), so the skill gets no unlock. What a
+      # skill that is ALREADY running is declared to write is not a predating drift; anything else is, whether
+      # or not another unlock is active (running /sb:add and then weakening a list must not let /sb:init adopt it).
+      rec_cfg="${old#*config$'\t'*$'\t'}"
+      rec_cfg="${rec_cfg%%$'\n'*}"
+      live_cfg="${live_lines#config$'\t'*$'\t'}"
+      live_cfg="${live_cfg%%$'\n'*}"
+      _sb_iv_unlock_from_body "$old"
+      active="$SB_IV_UNLOCK_SKILL"
       drift=""
       for entry in "$@"; do
-        if ! _sb_iv_line_equal "$old" "$live_lines" "$entry"; then drift="${drift:+$drift }$entry"; fi
+        if _sb_iv_line_equal "$old" "$live_lines" "$entry"; then continue; fi
+        if [[ -n "$active" ]]; then
+          case " $(sb_contract_skill_tags "$active") " in
+            *" $entry "*)
+              if [[ "$entry" != config ]] || _sb_iv_config_within "$active" "$live_cfg" "$rec_cfg"; then continue; fi
+              ;;
+          esac
+        fi
+        drift="${drift:+$drift }$entry"
       done
-      if [[ -n "$drift" ]] && ! _sb_iv_unlock_active_in "$old"; then
+      if [[ -n "$drift" ]]; then
         _sb_state_seal_log "$state" "contract skill $skill got no unlock: $drift changed before it ran (a session start adopts it)"
         sb_state_seal_unlock
         return 0
@@ -580,4 +599,40 @@ sb_integrity_baseline() { # ROOT MODE [..]
   fi
   sb_state_seal_unlock
   return 0
+}
+
+# Record ONE key of the recorded config: .project.active_workflow = VALUE (the devops-cycle reset after a ship).
+# Only the recorded config changes, never the live file's other content: a drift stays a drift.
+sb_integrity_set_workflow() { # ROOT VALUE
+  local root="$1" value="$2" state rec body cfg new
+  state="$(_sb_iv_state_dir)/state"
+  rec="$(_sb_iv_rec_file "$root")"
+  sb_state_seal_lock "$rec"
+  if [[ -f "$rec" ]] && _sb_iv_authentic "$rec" "$state" "$root"; then
+    cfg="${_SB_IV_BODY#config$'\t'*$'\t'}"
+    cfg="${cfg%%$'\n'*}"
+    new="$(jq -S -c --arg v "$value" '.project.active_workflow = $v' <<<"$cfg")"
+    body="$(awk -F'\t' -v OFS='\t' -v n="$new" '$1 == "config" { $3 = n } { print }' <<<"$_SB_IV_BODY")"
+    _sb_iv_write "$root" "$rec" "$state" "$body"
+  fi
+  sb_state_seal_unlock
+  return 0
+}
+
+# Honest uninstall: a record root whose contract files are gone from the tree AND from git HEAD (the user
+# removed Silver Bullet and committed) is no project any more. Called by session start, the trust anchor:
+# the record and its counter are retired, logged, and the root is printed for the user.
+sb_integrity_retire_if_uninstalled() { # DIR
+  local root rec
+  root="$(sb_integrity_record_root "${1:-$PWD}")"
+  [[ -n "$root" ]] || return 1
+  [[ ! -e "$root/.silver-bullet.json" && ! -L "$root/.silver-bullet.json" && ! -e "$root/silver-bullet.md" && ! -L "$root/silver-bullet.md" ]] || return 1
+  git -C "$root" rev-parse --git-dir >/dev/null 2>&1 || return 1
+  ! git -C "$root" cat-file -e HEAD:.silver-bullet.json 2>/dev/null || return 1
+  ! git -C "$root" cat-file -e HEAD:silver-bullet.md 2>/dev/null || return 1
+  rec="$(_sb_iv_rec_file "$root")"
+  rm -f -- "$rec" "$rec.hwm"
+  _SB_IV_CACHE_KEY=""
+  _sb_state_seal_log "$(_sb_iv_state_dir)/state" "integrity record retired: $root has no contract files in the tree or in git HEAD (Silver Bullet was removed)"
+  printf '%s' "$root"
 }

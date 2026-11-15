@@ -383,6 +383,67 @@ assert_contains "the baseline records its source" "$(cat "$SD/seal-events.log")"
 ih_project r6-sha256
 assert_eq "the plan file digests in the record are 64 hex digits" "ok" "$(awk -F'\t' '$1 ~ /^(md|instr:CLAUDE.md)$/ && length($2) == 64 { n++ } END { print (n >= 1 ? "ok" : "bad") }' "$SD"/integrity-*.rec)"
 
+# ── round 7 ─────────────────────────────────────────────────────────────────────────────────────────
+skj() { jq -cn --arg e "$2" --arg s "$1" '{hook_event_name:$e,tool_name:"Skill",tool_input:{skill:$s}}'; }
+# flow-advance never baselines the live config: a weakening plus devops-cycle written by the agent stays a drift
+ih_project r7-flow-advance
+ih_run 'cd "$(cat $FX/pd.txt)" && jq ".skills.required_planning=[\"inst-b\"] | .skills.required_deploy=[\"inst-b\"] | .project.active_workflow=\"devops-cycle\"" .silver-bullet.json > /tmp/fa.$$ && cat /tmp/fa.$$ > .silver-bullet.json'; tally
+ih_rec silver-ship
+ih_hook flow-advance.sh "$(skj silver-ship PostToolUse)"
+assert_contains "after Skill(silver-ship) the weakening is still a drift" "$(ih_diverged)" "config"
+sb_integrity_forget; sb_integrity_verify "$PROJ" ""
+assert_eq "and the recorded planning list still applies" "inst-a" "$SB_IV_REQUIRED_PLANNING"
+ih_edit
+assert_eq "so source edits stay refused" "deny" "$(decision)"
+assert_eq "the live active_workflow was not rewritten (the record did not say devops-cycle)" "devops-cycle" "$(jq -r .project.active_workflow "$PROJ/.silver-bullet.json")"
+
+# an unlock never blesses a drift just because another skill's unlock is running
+ih_project r7-unlock-chain
+ih_rec silver-add
+ih_run 'cd "$(cat $FX/pd.txt)" && jq ".skills.required_planning=[\"inst-b\"]" .silver-bullet.json > /tmp/w.$$ && cat /tmp/w.$$ > .silver-bullet.json'; tally
+ih_rec silver-init
+run_dc "$(bash_json 'true' PostToolUse)"
+ih_lapse
+ih_edit
+assert_eq "silver-add running, a weakening outside its keys, then silver-init: still refused" "deny" "$(decision)"
+assert_contains "silver-init got no unlock" "$(cat "$SD/seal-events.log")" "contract skill silver-init got no unlock: config"
+assert_contains "the weakening is still a drift after the window" "$(ih_diverged)" "config"
+
+# the config snapshot is a fresh file each run: nothing planted at an old name is read
+ih_project r7-snapshot
+ih_run 'rm -f "$SD"/integrity-*.cfg.json; ln -s "$FX/new.json" "$SD/integrity-0.cfg.json"; mkdir -p "$SD/vcfg.planted"'; tally
+sb_integrity_forget; sb_integrity_verify "$PROJ" ""
+sb_integrity_config_snapshot; S1="$SB_IV_CONFIG_FILE"
+sb_integrity_config_snapshot; S2="$SB_IV_CONFIG_FILE"
+assert_eq "two snapshots are two fresh files" "yes" "$([[ -n "$S1" && "$S1" != "$S2" ]] && echo yes || echo no)"
+assert_eq "a snapshot is a regular file, not a link" "yes" "$([[ -f "$S1" && ! -L "$S1" ]] && echo yes || echo no)"
+assert_eq "and holds the record's config" "$(sb_iv_jq -cS .)" "$(jq -cS . "$S1")"
+for i in $(seq 1 20); do : >"$SD/vcfg.stale$i"; touch -d '10 minutes ago' "$SD/vcfg.stale$i"; done
+sb_integrity_config_snapshot
+assert_eq "old copies are collected once there are more than 16" "no" "$([[ -e "$SD/vcfg.stale1" ]] && echo yes || echo no)"
+rm -rf "$SD/vcfg.planted"
+
+# a truncated or deleted state whose seal counter exists is not a session that tracked nothing
+ih_project r7-state-trunc
+echo d >>"$PROJ/src/app.js"
+ih_run 'cd "$(cat $FX/d.txt)" && : > "$STATE"'; tally
+ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
+assert_contains "truncated state: Stop applies the floor" "$TL_OUT" "inst-a"
+ih_project r7-state-rm
+echo d >>"$PROJ/src/app.js"
+ih_run 'python3 -c "import os;os.remove(os.environ[\"STATE\"])"'; tally
+ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
+assert_contains "deleted state: Stop applies the floor" "$TL_OUT" "inst-a"
+ih_hook completion-audit.sh "$(bash_json 'git commit -am x' PreToolUse)"
+assert_eq "deleted state: the commit gate too" "deny" "$(decision)"
+
+# a configured trivial path is ignored once the project has a record
+ih_project r7-trivial-path
+: >"$SD/custom-trivial"
+jq ".state.trivial_file=\"$SD/custom-trivial\"" "$PROJ/.silver-bullet.json" >"$TL_TMP/c.json" && cat "$TL_TMP/c.json" >"$PROJ/.silver-bullet.json"
+out="$(cd "$PROJ" && bash -c "source '$TL_REPO_ROOT/hooks/lib/trivial-bypass.sh'; sb_trivial_bypass '$SD/custom-trivial'; echo continued")"
+assert_eq "sb_trivial_bypass ignores the path it is handed" "continued" "$out"
+
 # ── the documented residual: the key is readable by the same user ──────────────────────────────────
 ih_project residual-recorder-copy
 CP="$TL_TMP/copied-hooks"

@@ -419,7 +419,9 @@ fi
 # Fail-open by design: nothing to gate against.
 # A state file with content that nothing sealed is not an empty one: it is a forged or damaged state, and the
 # floor counts it as having recorded nothing.
-if [[ -z "$state_contents" && ! -s "$state_file" ]]; then exit 0; fi
+# A state that was sealed once (its counter file exists) and is now empty or gone was truncated or deleted: that is
+# not a session that never tracked anything, the floor applies to the empty state.
+if [[ -z "$state_contents" && ! -s "$state_file" && ! -s "${state_file}.hwm" ]]; then exit 0; fi
 
 # Emit block JSON for Stop
 emit_stop_block() {

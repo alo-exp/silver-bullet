@@ -86,11 +86,9 @@ sb_opt_in_hook_begin() {
   # shellcheck disable=SC2034  # read by the sourcing hook
   project_root="$(dirname "$config_file")"
   # A hook that must hold even for trivial work sets SB_OPT_IN_TRIVIAL_BYPASS=0 before the call.
-  if [[ "${SB_OPT_IN_TRIVIAL_BYPASS:-1}" != 0 ]] && declare -f sb_trivial_bypass >/dev/null 2>&1; then
-    local trivial_cfg
-    trivial_cfg="$(jq -r '.state.trivial_file // "" | strings' "$config_file" 2>/dev/null || true)"
-    trivial_cfg="${trivial_cfg/#\~/$HOME}"
-    sb_trivial_bypass "${trivial_cfg:-${SB_RUNTIME_STATE_DIR}/trivial}"
+  if [[ "${SB_OPT_IN_TRIVIAL_BYPASS:-1}" != 0 ]] && declare -f sb_integrity_trivial_ok >/dev/null 2>&1; then
+    # The user's marker, only while the integrity record blesses it; a trivial path named in the config is never honoured.
+    if sb_integrity_trivial_ok "$project_root"; then exit 0; fi
   fi
   hook_event="$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse" | strings' 2>/dev/null || true)"
   hook_event="${hook_event:-PreToolUse}"
