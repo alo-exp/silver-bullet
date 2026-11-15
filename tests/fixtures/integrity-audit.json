@@ -17,7 +17,7 @@
   ]
  },
  "counts": {
-  "X": 117,
+  "X": 116,
   "A": 22
  },
  "rows": [
@@ -183,7 +183,7 @@
   },
   {
    "file": "hooks/lib/integrity-anchor.sh",
-   "line": 66,
+   "line": 69,
    "kind": "config",
    "snippet": "if [[ -f \"$root/.silver-bullet.json\" && -f \"$root/silver-bullet.md\" ]]; then",
    "record": "A",
@@ -191,7 +191,7 @@
   },
   {
    "file": "hooks/lib/integrity-anchor.sh",
-   "line": 72,
+   "line": 75,
    "kind": "config",
    "snippet": "if [[ -f \"$d/.silver-bullet.json\" && -f \"$d/silver-bullet.md\" ]]; then",
    "record": "A",
@@ -297,21 +297,13 @@
    "file": "hooks/lib/required-skills.sh",
    "line": 45,
    "kind": "config",
-   "snippet": "jq -r '(.skills.all_tracked // []) | join(\" \")' \"${cfg}\" 2>/dev/null | sed 's/ $//'",
-   "record": "X",
-   "reason": "reads the TEMPLATE's default lists (templates/silver-bullet.config.json.default), not a project file"
-  },
-  {
-   "file": "hooks/lib/required-skills.sh",
-   "line": 52,
-   "kind": "config",
    "snippet": "jq -r '.config_version // .version // \"\"' \"${cfg}\" 2>/dev/null",
    "record": "X",
    "reason": "reads the TEMPLATE's default lists (templates/silver-bullet.config.json.default), not a project file"
   },
   {
    "file": "hooks/lib/required-skills.sh",
-   "line": 94,
+   "line": 87,
    "kind": "config",
    "snippet": "if project_version=$(jq -r '.config_version // .version // \"\"' \"$config_file\" 2>/dev/null); then :; fi",
    "record": "X",
