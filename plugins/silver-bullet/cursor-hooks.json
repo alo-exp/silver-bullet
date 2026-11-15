@@ -185,13 +185,6 @@
         "matcher": "Shell"
       }
     ],
-    "beforeShellExecution": [
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution \"${CURSOR_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
-        "matcher": ".*",
-        "timeout": 10
-      }
-    ],
     "postToolUse": [
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/record-site-session.sh\"",

@@ -454,6 +454,7 @@ run_bridge_event() {
     env HOME="$KAY_HOME" \
     KAY_HOME="$KAY_HOME" \
     SILVER_BULLET_RUNTIME=codex \
+    SB_ORCHESTRATOR_WORKER=1 \
     CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
     CODE_HOOK_EVENT="$event" \
     CODE_HOOK_SOURCE_CALL_ID="$call_id" \
@@ -463,6 +464,24 @@ run_bridge_event() {
 }
 
 : > "$KAY_HOME/.codex/.silver-bullet/state"
+# The gates enforce nothing outside a Silver Bullet project: the bridge workspace is one (the bridge runs as a
+# worker session, which the planning floor binds; a parent orchestrator may not use Bash at all).
+cat > "$BRIDGE_WORKSPACE/.silver-bullet.json" <<'EOF'
+{
+  "sb_initiated": true,
+  "state": {
+    "state_file": "~/.codex/.silver-bullet/state",
+    "trivial_file": "~/.codex/.silver-bullet/trivial"
+  },
+  "skills": {
+    "required_planning": ["silver-quality-gates"]
+  },
+  "project": {
+    "active_workflow": "full-dev-cycle"
+  }
+}
+EOF
+printf '# Bridge Fixture\n' > "$BRIDGE_WORKSPACE/silver-bullet.md"
 
 chmod_probe_command='set +m; chmod u+w src/routes/todos.js && printf '"'"'\n// chmod bridge probe\n'"'"' >> src/routes/todos.js'
 chmod_probe_payload="$(jq -nc --arg command "$chmod_probe_command" '{command:["bash","-lc",$command]}')"

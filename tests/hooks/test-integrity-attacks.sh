@@ -195,7 +195,7 @@ rec_row() {
   ih_run "$2"; tally
   ih_edit
   assert_eq "record $1: the next source edit is refused" "deny" "$(decision)"
-  assert_eq "record $1: as an unbaselined or untrusted project" "yes" "$(message | grep -qE 'ENFORCEMENT CONTRACT|NOT BASELINED' && echo yes || echo no)"
+  assert_eq "record $1: as an unbaselined or untrusted project" "yes" "$(grep -qE 'ENFORCEMENT CONTRACT|NOT BASELINED' <<<"$(message)" && echo yes || echo no)"
   assert_eq "record $1: no marker is left" "absent" "$([[ -e "$SD/trivial" || -L "$SD/trivial" ]] && echo present || echo absent)"
 }
 rec_row rm-both 'rm -f "$SD"/integrity-*; touch "$SD/trivial"'
