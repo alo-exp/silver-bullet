@@ -466,6 +466,66 @@ anchor_row json 'cd "$(cat $FX/d.txt)" && rm -f integrity-*; cd "$(cat $FX/pd.tx
 anchor_row both 'cd "$(cat $FX/d.txt)" && rm -f integrity-*; cd "$(cat $FX/pd.txt)" && python3 -c "import os;os.rename(\".silver-bullet.json\",\"/tmp/sbr9.json\");os.rename(\"silver-bullet.md\",\"/tmp/sbr9.md\")"'
 anchor_row record-only 'cd "$(cat $FX/d.txt)" && rm -f integrity-*'
 rm -f /tmp/sbr9.md /tmp/sbr9.json
+# round 10: the anchor is the registry of baselined roots, not git: ref, object and layout tricks do not move it
+gates_deny() { # LABEL
+  ih_edit
+  assert_eq "$1: source edits stop" "deny" "$(decision)"
+  ih_hook completion-audit.sh "$(bash_json 'git commit -am x' PreToolUse)"
+  assert_eq "$1: git commit is judged" "deny" "$(decision)"
+  ih_hook completion-audit.sh "$(bash_json 'gh pr create --fill' PreToolUse)"
+  assert_eq "$1: gh pr create is judged" "deny" "$(decision)"
+  ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
+  assert_contains "$1: Stop blocks" "$TL_OUT" '"decision":"block"'
+}
+unbase='cd "$(cat $FX/d.txt)" && rm -f integrity-*; cd "$(cat $FX/pd.txt)" && mkdir -p /tmp/sbr10 && mv .silver-bullet.json silver-bullet.md /tmp/sbr10/'
+# S4: an orphan checkout and the local default branch deleted
+ih_project r10-orphan
+git -C "$PROJ" branch -f main HEAD >/dev/null 2>&1 || true
+ih_run "$unbase; git checkout -q --orphan x; git branch -q -D main feature/test"; tally
+gates_deny "orphan checkout plus branch -D"
+rm -rf /tmp/sbr10
+# S4b: the same with the remote removed
+ih_project r10-remote
+git -C "$PROJ" branch -f main HEAD >/dev/null 2>&1 || true
+git init -q --bare "$TL_TMP/r10-remote.git"; git -C "$PROJ" remote add origin "$TL_TMP/r10-remote.git" || true
+git -C "$PROJ" push -q origin main >/dev/null 2>&1 || true; git -C "$PROJ" fetch -q origin >/dev/null 2>&1 || true
+ih_run "$unbase; git checkout -q --orphan x; git branch -q -D main feature/test; git remote remove origin"; tally
+gates_deny "orphan checkout, branch -D, remote removed"
+rm -rf /tmp/sbr10
+# S5: git replace makes every commit look empty
+ih_project r10-replace
+git -C "$PROJ" branch -f main HEAD >/dev/null 2>&1 || true
+ih_run "$unbase; git checkout -q -b feat; e=\$(git commit-tree -m e \$(git mktree </dev/null)); for r in main feat feature/test; do git replace -f \$r \$e; done"; tally
+gates_deny "git replace"
+rm -rf /tmp/sbr10
+# S3: a project below its git root
+ih_project r10-sub
+MONO="$TL_TMP/r10-mono"; rm -rf "$MONO"; mkdir -p "$MONO"; git -C "$MONO" init -q >/dev/null 2>&1
+mv "$PROJ" "$MONO/app"; rm -rf "$MONO/app/.git"; PROJ="$MONO/app"
+git -C "$MONO" add -A >/dev/null 2>&1; git -C "$MONO" -c user.email=a@b -c user.name=n commit -q -m a >/dev/null 2>&1 || true
+git -C "$MONO" checkout -q -b feature/test >/dev/null 2>&1 || true
+rm -f "$SD"/integrity-* "$SD/baselined-roots"; sb_integrity_baseline "$PROJ" session
+echo d >>"$PROJ/src/app.js"
+ih_run "$unbase"; tally
+gates_deny "a project below its git root"
+rm -rf /tmp/sbr10
+# R1: git replace plus a restart must not retire an authentic record (nothing was committed)
+ih_project r10-retire-replace
+git -C "$PROJ" branch -f main HEAD >/dev/null 2>&1 || true
+mkdir -p /tmp/sbr10; mv "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md" /tmp/sbr10/
+e="$(git -C "$PROJ" commit-tree -m e "$(git -C "$PROJ" mktree </dev/null)")"
+git -C "$PROJ" replace -f "$(git -C "$PROJ" rev-parse HEAD)" "$e" >/dev/null 2>&1 || true
+OUT="$(ih_session_start_out startup)"
+assert_eq "git replace plus restart does not retire the record" "yes" "$([[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no)"
+ih_edit
+assert_eq "and edits are still judged" "deny" "$(decision)"
+rm -rf /tmp/sbr10
+# the registry survives removing the records, and a record forged elsewhere does not become a root of its own
+ih_project r10-registry
+rm -f "$SD"/integrity-*
+assert_eq "the registry names the root with every record gone" "$PROJ" "$(sb_integrity_root "$PROJ/src")"
+assert_eq "an unregistered sibling is no project" "" "$(sb_integrity_root "$TL_TMP")"
+
 # the advice for an honest user never suggests removing the record by hand
 assert_not_contains "no hand-removal of the record is suggested" "$(message)" "rm -f"
 

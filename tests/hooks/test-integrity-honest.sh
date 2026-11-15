@@ -376,14 +376,13 @@ assert_eq "an orphan (unborn) checkout proves nothing: the record stays" "yes" "
 uninstall_project h45-default
 git -C "$PROJ" branch -f main HEAD~1 >/dev/null 2>&1
 OUT="$(ih_session_start_out startup)"
-assert_eq "the default branch still carries the contract: the record stays" "yes" "$(has_rec)"
-uninstall_project h45-default-md
-git -C "$PROJ" branch -f master HEAD~1 >/dev/null 2>&1
+assert_eq "only HEAD counts: a main that still carries the contract does not keep the record" "no" "$(has_rec)"
+uninstall_project h45-head-md
 git -C "$PROJ" checkout -q HEAD~1 -- silver-bullet.md >/dev/null 2>&1
-git -C "$PROJ" branch -f main "$(git -C "$PROJ" commit-tree -p HEAD -m md "$(git -C "$PROJ" write-tree)" 2>/dev/null)" >/dev/null 2>&1
-git -C "$PROJ" reset -q >/dev/null 2>&1; rm -f "$PROJ/silver-bullet.md"
+git -C "$PROJ" commit -q -m "md back" >/dev/null 2>&1 || true
+rm -f "$PROJ/silver-bullet.md"
 OUT="$(ih_session_start_out startup)"
-assert_eq "silver-bullet.md alone on the default branch keeps the record" "yes" "$(has_rec)"
+assert_eq "silver-bullet.md alone at HEAD keeps the record" "yes" "$(has_rec)"
 uninstall_project h45-untrusted
 rm -f "$SD/seal.key"
 OUT="$(ih_session_start_out startup)"
@@ -402,7 +401,7 @@ mkdir -p "$TL_TMP/plain/src"
 assert_eq "no record, no contract file, nothing tracked: no project" "" "$(sb_integrity_root "$TL_TMP/plain/src")"
 assert_eq "and a directory outside git too" "" "$(sb_integrity_root "$TL_TMP")"
 
-# 47. retirement only on a default branch Silver Bullet can recognise, from every candidate ref
+# 47. retirement consults HEAD only: not origin/HEAD, main or master
 has_rec() { [[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no; }
 uninst47() { git -C "$PROJ" rm -q --cached .silver-bullet.json silver-bullet.md >/dev/null 2>&1; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"; git -C "$PROJ" commit -q -m "remove SB" >/dev/null 2>&1; }
 ih_project h47c
@@ -410,38 +409,65 @@ git -C "$PROJ" branch -m trunk >/dev/null 2>&1; git -C "$PROJ" checkout -q -b fe
 git -C "$PROJ" branch -D main master >/dev/null 2>&1 || true
 uninst47
 OUT="$(ih_session_start_out startup)"
-assert_eq "default branch 'trunk', nothing to recognise: not retired" "yes" "$(has_rec)"
-ih_edit
-assert_contains "the advice says how to name the default branch" "$(message)" "init.defaultBranch"
-git -C "$PROJ" config init.defaultBranch trunk
-git -C "$PROJ" branch -f trunk HEAD >/dev/null 2>&1
-OUT="$(ih_session_start_out startup)"
-assert_eq "with init.defaultBranch naming a branch that is free of the files: retired" "no" "$(has_rec)"
+assert_eq "a repository whose default branch nobody can name: HEAD without the files retires" "no" "$(has_rec)"
 ih_project h47d
 git init -q --bare "$TL_TMP/h47d.git"; git -C "$PROJ" remote add origin "$TL_TMP/h47d.git" || true
 git -C "$PROJ" push -q origin HEAD:main >/dev/null 2>&1 || true; git -C "$PROJ" fetch -q origin >/dev/null 2>&1 || true
 git -C "$PROJ" checkout -q -b feat >/dev/null 2>&1 || true
 uninst47
-git -C "$PROJ" branch -D -q main >/dev/null 2>&1 || true; git -C "$PROJ" branch -D -q master >/dev/null 2>&1 || true
-git -C "$PROJ" remote set-head origin -d >/dev/null 2>&1 || true
 OUT="$(ih_session_start_out startup)"
-assert_eq "origin/main alone still carries the files: not retired" "yes" "$(has_rec)"
-ih_edit
-assert_contains "the advice says to merge or push the removal" "$(message)" "default branch still has them"
-git -C "$PROJ" push -q origin HEAD:main >/dev/null 2>&1 || true; git -C "$PROJ" fetch -q origin >/dev/null 2>&1 || true
-OUT="$(ih_session_start_out startup)"
-assert_eq "once the removal is on origin/main: retired" "no" "$(has_rec)"
+assert_eq "origin/main still carries the files: HEAD without them retires all the same" "no" "$(has_rec)"
 ih_project h47e
 git -C "$PROJ" rm -q --cached .silver-bullet.json silver-bullet.md >/dev/null 2>&1 || true; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
 ih_edit
 assert_contains "removed, not committed: the advice says to commit" "$(message)" "commit the removal"
 git -C "$PROJ" commit -q -m rm >/dev/null 2>&1 || true
 ih_edit
-assert_contains "committed everywhere: the advice says start a new session" "$(message)" "start a new session and the record is retired"
+assert_contains "committed: the advice says start a new session" "$(message)" "start a new session and the record is retired"
 ih_project h47f
 rm -f "$PROJ/silver-bullet.md"
 ih_edit
 assert_contains "one file left: restore it" "$(message)" "restore it"
+
+# 48. the registry of baselined roots: honest flows are untouched, only a baselined root is anchored
+ih_project h48
+git -C "$PROJ" rm -q --cached .silver-bullet.json silver-bullet.md >/dev/null 2>&1 || true; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
+ih_edit
+assert_not_contains "uncommitted removal: no advice to strip the default branch" "$(message)" "default branch"
+assert_not_contains "uncommitted removal: no advice to push the removal" "$(message)" "push"
+git -C "$PROJ" commit -q -m rm >/dev/null 2>&1 || true
+OUT="$(ih_session_start_out startup)"
+assert_eq "uninstall: the record is retired" "no" "$(has_rec)"
+assert_eq "uninstall: the root leaves the registry" "no" "$(grep -qxF "$PROJ" "$SD/baselined-roots" && echo yes || echo no)"
+printf '# SB\n' >"$PROJ/silver-bullet.md"; cp "$FX/cfg.orig" "$PROJ/.silver-bullet.json"
+OUT="$(ih_session_start_out startup)"
+assert_eq "reinstall: session start baselines the project again" "yes" "$(has_rec)"
+assert_eq "reinstall: and registers it" "yes" "$(grep -qxF "$PROJ" "$SD/baselined-roots" && echo yes || echo no)"
+# an unrelated repository with a doc called silver-bullet.md: allowed, as before
+U="$TL_TMP/blog"; mkdir -p "$U/posts/sub"; git -C "$U" init -q >/dev/null 2>&1
+printf 'hi\n' >"$U/posts/silver-bullet.md"; printf 'x\n' >"$U/posts/gen.js"
+git -C "$U" add -A >/dev/null 2>&1; git -C "$U" -c user.email=a@b -c user.name=n commit -q -m a >/dev/null 2>&1 || true
+for tgt in "$U/posts/gen.js" "$U/posts/new.js" "$U/posts/silver-bullet.md" "$U/posts/sub/deeper/x.ts"; do
+  run_dc "$(edit_json "$tgt" Write PreToolUse)"
+  assert_eq "unrelated repo, ${tgt#"$U"/}: allowed" "none" "$(decision)"
+done
+V="$TL_TMP/vend"; mkdir -p "$V/vendor/sb/hooks"; git -C "$V" init -q >/dev/null 2>&1
+printf '{}\n' >"$V/vendor/sb/.silver-bullet.json"; printf 'x\n' >"$V/vendor/sb/hooks/a.sh"
+run_dc "$(edit_json "$V/vendor/sb/hooks/a.sh" Edit PreToolUse)"
+assert_eq "a vendored .silver-bullet.json is no project" "none" "$(decision)"
+# a branch from before the adoption, a fresh clone and a new worktree of an adopted repository
+ih_project h48b
+git -C "$PROJ" branch -f adopted HEAD >/dev/null 2>&1
+git -C "$PROJ" checkout -q -b pre-sb >/dev/null 2>&1; git -C "$PROJ" rm -q .silver-bullet.json silver-bullet.md >/dev/null 2>&1; git -C "$PROJ" commit -q -m pre >/dev/null 2>&1 || true
+WT="$TL_TMP/h48b-wt"; git -C "$PROJ" worktree add -q "$WT" adopted >/dev/null 2>&1 || true
+assert_eq "a new worktree of the adopted repository is no registered root" "" "$(sb_integrity_record_root "$WT")"
+assert_eq "its files make it a project the session start baselines" "$WT" "$(sb_integrity_root "$WT")"
+OUT="$(PROJ="$WT" ih_session_start_out startup)"
+assert_eq "session start baselines the new worktree" "yes" "$([[ -f "$(_sb_iv_rec_file "$WT")" ]] && echo yes || echo no)"
+git -C "$PROJ" worktree remove --force "$WT" >/dev/null 2>&1 || true
+CL="$TL_TMP/h48b-clone"; git clone -q "$PROJ" "$CL" >/dev/null 2>&1 || true
+git -C "$CL" checkout -q pre-sb >/dev/null 2>&1 || true
+assert_eq "a fresh clone on the pre-adoption branch is no project: edits are allowed" "" "$(sb_integrity_root "$CL")"
 
 assert_eq "the honest corpus has at least 30 rows" "ok" "$([[ $(grep -c '^assert_\|^ok_cmd\|^  ok_cmd' "$0") -ge 30 ]] && echo ok || echo few)"
 tl_results

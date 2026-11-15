@@ -83,11 +83,33 @@ mv "$TL_TMP/md.away" "$R/silver-bullet.md"
 mv "$TL_TMP/cfg.away" "$R/.silver-bullet.json"
 (export SILVER_BULLET_PROJECT_ROOT="$R"; assert_eq "an explicit root holding both files is the live lookup's answer" "$R/.silver-bullet.json" "$(sb_integrity_live_config_walk "$TL_TMP")")
 
-# ── the anchor walk's edges (a live install, no record) ───────────────────────────────────────────
-mkdir -p "$TL_TMP/plain/a/b" "$TL_TMP/fakegit/.git" "$TL_TMP/fakegit/sub"
-assert_eq "no contract file, no git repository: no project, the walk ends at the filesystem root" "" "$(sb_integrity_root "$TL_TMP/plain/a/b")"
-assert_eq "a .git that is not a repository tracks nothing: no project" "" "$(sb_integrity_root "$TL_TMP/fakegit/sub")"
-assert_eq "a path not created yet anchors from its nearest existing ancestor" "" "$(sb_integrity_root "$TL_TMP/plain/a/new/deeper")"
+# ── the registry of baselined roots ────────────────────────────────────────────────────────────────────
+REG="$SB_RUNTIME_STATE_DIR/baselined-roots"
+mkdir -p "$TL_TMP/plain/a/b"
+assert_eq "no registry entry, no contract file: no project, the walk ends at the filesystem root" "" "$(sb_integrity_root "$TL_TMP/plain/a/b")"
+assert_eq "a path not created yet is judged by its nearest existing ancestor" "" "$(sb_integrity_root "$TL_TMP/plain/a/new/deeper")"
+sb_integrity_register_root "$TL_TMP/plain/a"
+sb_integrity_register_root "$TL_TMP/plain/a"
+assert_eq "registering twice lists the root once" "1" "$(grep -cxF "$TL_TMP/plain/a" "$REG")"
+assert_eq "a registered root anchors a deeper path" "$TL_TMP/plain/a" "$(sb_integrity_root "$TL_TMP/plain/a/b")"
+assert_eq "and a directory that does not exist yet beneath it" "$TL_TMP/plain/a" "$(sb_integrity_root "$TL_TMP/plain/a/new/deeper")"
+sb_integrity_unregister_root "$TL_TMP/plain/a"
+assert_eq "an unregistered root anchors nothing again" "" "$(sb_integrity_root "$TL_TMP/plain/a/b")"
+sb_integrity_unregister_root "$TL_TMP/never-listed"
+mv "$REG" "$REG.away"
+sb_integrity_unregister_root "$TL_TMP/plain/a"
+assert_eq "unregistering without a registry is a no-op" "no" "$([[ -e "$REG" ]] && echo yes || echo no)"
+ln -s /nonexistent "$REG"
+sb_integrity_register_root "$TL_TMP/plain/a"
+sb_integrity_unregister_root "$TL_TMP/plain/a"
+assert_eq "a symlinked registry is never written through" "no" "$([[ -e /nonexistent ]] && echo yes || echo no)"
+rm -f "$REG"
+# an install whose registry is gone still finds a root by its record
+sb_integrity_baseline "$R" session
+rm -f "$REG"
+assert_eq "without a registry the record still names the root" "$R" "$(sb_integrity_record_root "$R/src")"
+assert_eq "and a directory without either is no root" "" "$(sb_integrity_record_root "$TL_TMP/plain")"
+mv "$REG.away" "$REG"
 
 # ── the list helpers' empty-name edge ──────────────────────────────────────────────────────────────
 if sb_required_skill_is_recorded "a" ""; then tl_fail "empty skill"; else tl_pass "an empty skill name is never recorded"; fi
