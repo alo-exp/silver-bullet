@@ -41,6 +41,9 @@ mkdir -p "$TL_TMP/isolated/hooks/lib"
 cp "$LIB" "$TL_TMP/isolated/hooks/lib/required-skills.sh"
 out="$(bash -c 'source "$1"; printf "%s" "$DEFAULT_PLANNING"; __sb_rs_find_default_config || printf " no-config"' _ "$TL_TMP/isolated/hooks/lib/required-skills.sh")"
 assert_eq "no adjacent template: fallback planning" "silver-quality-gates silver-context silver-plan no-config" "$out"
+# without a template: the default version lookup fails, and so does the legacy-config check (jq is there)
+out="$(bash -c 'source "$1"; __sb_rs_default_version || printf "version-fail"; sb_required_skills_config_is_legacy "$2" || printf " legacy-no"' _ "$TL_TMP/isolated/hooks/lib/required-skills.sh" "$TL_TMP/empty.json")"
+assert_eq "no template: no default version, no legacy verdict" "version-fail legacy-no" "$out"
 
 # ---- version comparison -----------------------------------------------------
 lt() { __sb_rs_version_lt "$1" "$2"; }

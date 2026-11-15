@@ -8,43 +8,114 @@
 
 _sb_iv_state_dir() { printf '%s' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"; }
 
-_sb_iv_rec_file() { # ROOT
-  local sum
-  sum="$(printf '%s' "$1" | cksum)"
-  printf '%s/integrity-%s.rec' "$(_sb_iv_state_dir)" "${sum%% *}"
+# POSIX cksum of a string, in pure bash (the record name is derived per ancestor directory on every hook call;
+# a cksum process each would be the hook's largest fixed cost). Byte for byte what `printf %s STR | cksum` prints.
+_SB_IV_CRC=(
+  0 79764919 159529838 222504665 319059676 398814059 445009330 507990021
+  638119352 583659535 797628118 726387553 890018660 835552979 1015980042 944750013
+  1276238704 1221641927 1167319070 1095957929 1595256236 1540665371 1452775106 1381403509
+  1780037320 1859660671 1671105958 1733955601 2031960084 2111593891 1889500026 1952343757
+  2552477408 2632100695 2443283854 2506133561 2334638140 2414271883 2191915858 2254759653
+  3190512472 3135915759 3081330742 3009969537 2905550212 2850959411 2762807018 2691435357
+  3560074640 3505614887 3719321342 3648080713 3342211916 3287746299 3467911202 3396681109
+  4063920168 4143685023 4223187782 4286162673 3779000052 3858754371 3904687514 3967668269
+  881225847 809987520 1023691545 969234094 662832811 591600412 771767749 717299826
+  311336399 374308984 453813921 533576470 25881363 88864420 134795389 214552010
+  2023205639 2086057648 1897238633 1976864222 1804852699 1867694188 1645340341 1724971778
+  1587496639 1516133128 1461550545 1406951526 1302016099 1230646740 1142491917 1087903418
+  2896545431 2825181984 2770861561 2716262478 3215044683 3143675388 3055782693 3001194130
+  2326604591 2389456536 2200899649 2280525302 2578013683 2640855108 2418763421 2498394922
+  3769900519 3832873040 3912640137 3992402750 4088425275 4151408268 4197601365 4277358050
+  3334271071 3263032808 3476998961 3422541446 3585640067 3514407732 3694837229 3640369242
+  1762451694 1842216281 1619975040 1682949687 2047383090 2127137669 1938468188 2001449195
+  1325665622 1271206113 1183200824 1111960463 1543535498 1489069629 1434599652 1363369299
+  622672798 568075817 748617968 677256519 907627842 853037301 1067152940 995781531
+  51762726 131386257 177728840 240578815 269590778 349224269 429104020 491947555
+  4046411278 4126034873 4172115296 4234965207 3794477266 3874110821 3953728444 4016571915
+  3609705398 3555108353 3735388376 3664026991 3290680682 3236090077 3449943556 3378572211
+  3174993278 3120533705 3032266256 2961025959 2923101090 2868635157 2813903052 2742672763
+  2604032198 2683796849 2461293480 2524268063 2284983834 2364738477 2175806836 2238787779
+  1569362073 1498123566 1409854455 1355396672 1317987909 1246755826 1192025387 1137557660
+  2072149281 2135122070 1912620623 1992383480 1753615357 1816598090 1627664531 1707420964
+  295390185 358241886 404320391 483945776 43990325 106832002 186451547 266083308
+  932423249 861060070 1041341759 986742920 613929101 542559546 756411363 701822548
+  3316196985 3244833742 3425377559 3370778784 3601682597 3530312978 3744426955 3689838204
+  3819031489 3881883254 3928223919 4007849240 4037393693 4100235434 4180117107 4259748804
+  2310601993 2373574846 2151335527 2231098320 2596047829 2659030626 2470359227 2550115596
+  2947551409 2876312838 2788305887 2733848168 3165939309 3094707162 3040238851 2985771188
+)
+_sb_iv_cksum() { # STRING -> the CRC
+  local LC_ALL=C s="$1" crc=0 i len b n
+  len=${#s}
+  for ((i = 0; i < len; i++)); do
+    printf -v b '%d' "'${s:i:1}"
+    crc=$((((crc << 8) & 0xFFFFFFFF) ^ _SB_IV_CRC[((crc >> 24) ^ b) & 255]))
+  done
+  n=$len
+  while ((n > 0)); do
+    b=$((n & 255))
+    crc=$((((crc << 8) & 0xFFFFFFFF) ^ _SB_IV_CRC[((crc >> 24) ^ b) & 255]))
+    n=$((n >> 8))
+  done
+  printf '%s' "$(((~crc) & 0xFFFFFFFF))"
 }
 
-# The registry of baselined project roots: one realpath per line in a file next to the keys (not named
-# integrity-*, so removing the records does not remove it). A root is added when it is first baselined and
-# removed only by an honest retirement. It never grants anything: it only keeps a root that was baselined once a
-# project (strict, never inert) when its record is gone.
+_sb_iv_rec_file() { # ROOT
+  printf '%s/integrity-%s.rec' "$(_sb_iv_state_dir)" "$(_sb_iv_cksum "$1")"
+}
+
+# The registry of baselined project roots: one line per root in a file next to the keys (not named
+# integrity-*, so removing the records does not remove it): the realpath, a TAB and the root's device:inode
+# (a plain line without the inode is read too). A root is added when it is first baselined and removed only by
+# an honest retirement. It never grants anything: it keeps a root that was baselined once a project (strict, never
+# inert). A directory is a root when it is registered (by inode, or by path when the path still holds the same
+# directory) OR has an integrity record; both have to be removed to lose the anchor.
 _sb_iv_registry_file() { printf '%s/baselined-roots' "$(_sb_iv_state_dir)"; }
 
+# device:inode of each given directory, one per line, in argument order (GNU stat, then BSD stat).
+_sb_iv_dir_ids() { # DIR..
+  stat -c '%d:%i' -- "$@" 2>/dev/null || stat -f '%d:%i' "$@" 2>/dev/null
+}
+
 # A project whose contract files were deleted or moved away is still a project: the nearest directory at or
-# above DIR that is a registered root (or, on an install whose registry is gone, has a record) is its root.
-# A directory that does not exist yet is judged by its nearest existing ancestor. No git is read.
+# above DIR that is a registered root or has a record is its root. A directory that does not exist yet is
+# judged by its nearest existing ancestor. No git is read.
 sb_integrity_record_root() { # DIR
-  local d reg="" regf legacy=""
+  local d reg="" regf anc=() idl=() id ids="" i n has_rec=""
   d="${1:-$PWD}"
   while [[ -n "$d" && "$d" != "/" && ! -d "$d" ]]; do d="$(dirname "$d")"; done
-  d="$(cd "$d" 2>/dev/null && pwd -P)" || return 0
+  d="$(cd -- "$d" && pwd -P)"
   regf="$(_sb_iv_registry_file)"
-  if [[ -f "$regf" ]]; then reg=$'\n'"$(<"$regf")"$'\n'; else legacy=1; fi
+  if [[ -f "$regf" ]]; then reg=$'\n'"$(<"$regf")"$'\n'; fi
+  if compgen -G "$(_sb_iv_state_dir)/integrity-*.rec" >/dev/null; then has_rec=1; fi
+  [[ -n "$reg$has_rec" ]] || return 0
   while true; do
-    if [[ "$reg" == *$'\n'"$d"$'\n'* ]]; then printf '%s' "$d"; return 0; fi
-    if [[ -n "$legacy" ]] && compgen -G "$(_sb_iv_state_dir)/integrity-*.rec" >/dev/null && [[ -f "$(_sb_iv_rec_file "$d")" ]]; then printf '%s' "$d"; return 0; fi
-    [[ "$d" != "/" ]] || return 0
+    anc+=("$d")
+    [[ "$d" != "/" ]] || break
     d="$(dirname "$d")"
+  done
+  if [[ "$reg" == *$'\t'* ]]; then
+    ids="$(_sb_iv_dir_ids "${anc[@]}")"
+    while IFS= read -r id; do idl+=("$id"); done <<<"$ids"
+  fi
+  n=${#anc[@]}
+  for ((i = 0; i < n; i++)); do
+    d="${anc[$i]}"
+    id="${idl[$i]:-}"
+    if [[ "$reg" == *$'\n'"$d"$'\n'* ]]; then printf '%s' "$d"; return 0; fi
+    if [[ -n "$id" && "$reg" == *$'\t'"$id"$'\n'* ]]; then printf '%s' "$d"; return 0; fi
+    if [[ -n "$has_rec" && -f "$(_sb_iv_rec_file "$d")" ]]; then printf '%s' "$d"; return 0; fi
   done
 }
 
 # Register ROOT as a baselined project root (idempotent).
 sb_integrity_register_root() { # ROOT
-  local regf
+  local regf id
   regf="$(_sb_iv_registry_file)"
   [[ -n "$1" && ! -L "$regf" ]] || return 0
-  if [[ -f "$regf" && $'\n'"$(<"$regf")"$'\n' == *$'\n'"$1"$'\n'* ]]; then return 0; fi
-  printf '%s\n' "$1" >>"$regf" 2>/dev/null || true
+  id="$(_sb_iv_dir_ids "$1")"
+  if [[ -f "$regf" && $'\n'"$(<"$regf")"$'\n' == *$'\n'"$1"$'\t'"$id"$'\n'* ]]; then return 0; fi
+  printf '%s\t%s\n' "$1" "$id" >>"$regf" 2>/dev/null || true
 }
 
 # Remove ROOT from the registry (an honest retirement).
@@ -54,7 +125,7 @@ sb_integrity_unregister_root() { # ROOT
   [[ -f "$regf" && ! -L "$regf" ]] || return 0
   tmp="$regf.$$"
   while IFS= read -r line || [[ -n "$line" ]]; do
-    if [[ "$line" != "$1" ]]; then kept="$kept$line"$'\n'; fi
+    if [[ "$line" != "$1" && "$line" != "$1"$'\t'* ]]; then kept="$kept$line"$'\n'; fi
   done <"$regf"
   if printf '%s' "$kept" >"$tmp" 2>/dev/null; then mv -f -- "$tmp" "$regf"; fi
   rm -f -- "$tmp"

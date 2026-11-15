@@ -609,26 +609,39 @@ sb_integrity_retire_if_uninstalled() { # DIR
 _sb_iv_git() { GIT_NO_REPLACE_OBJECTS=1 GIT_GRAFT_FILE=/dev/null git "$@"; }
 
 # Where an honest removal of Silver Bullet from ROOT stands: present (a contract file is still in the tree),
-# uncommitted (HEAD still tracks one, or HEAD is no commit), ready (gone from the tree and from HEAD).
+# norepo (ROOT is not a git repository: nothing can show a committed removal), uncommitted (HEAD still tracks a
+# contract file, or HEAD is no commit), ready (gone from the tree and from HEAD).
 _sb_iv_removal_state() { # ROOT
   local root="$1"
   if [[ -e "$root/.silver-bullet.json" || -L "$root/.silver-bullet.json" || -e "$root/silver-bullet.md" || -L "$root/silver-bullet.md" ]]; then printf 'present'; return 0; fi
+  if ! _sb_iv_git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then printf 'norepo'; return 0; fi
   if ! _sb_iv_git -C "$root" rev-parse -q --verify "HEAD^{commit}" >/dev/null 2>&1; then printf 'uncommitted'; return 0; fi
   if [[ -n "$(_sb_iv_git -C "$root" ls-tree --name-only HEAD -- .silver-bullet.json silver-bullet.md 2>/dev/null)" ]]; then printf 'uncommitted'; return 0; fi
   printf 'ready'
 }
 
-# What an honest user must do when the contract files are gone (printed into the gate messages).
+# What an honest user must do when the contract files are gone (printed into the gate messages). The recoveries
+# never weaken enforcement: restore the files and restart (session start records them), or, for an intentional
+# uninstall that no restart can retire, take this root out of the registry from a terminal (documented in
+# docs/ENFORCEMENT.md).
 _sb_iv_removal_advice() { # ROOT
-  local root="${1:-/}"
+  local root="${1:-/}" reg
+  reg="$(_sb_iv_registry_file)"
   case "$(_sb_iv_removal_state "$root")" in
     present) printf 'A contract file is missing while the other is still there: restore it and restart the session.' ;;
+    norepo)
+      printf 'The contract files are gone and %s is not a git repository, so no committed removal can be shown: restore the files (from a backup or another checkout) and restart the session, or re-run /sb:init there. If Silver Bullet was removed on purpose, take this root out of Silver Bullet'"'"'s registry yourself, from a terminal outside the agent: delete the line that starts with %s in %s and the record %s, then start a new session.' "$root" "$root" "$reg" "$(_sb_iv_rec_file "$root")" ;;
     uncommitted)
       if _sb_iv_git -C "$root" rev-parse -q --verify "HEAD^{commit}" >/dev/null 2>&1; then
         printf 'The contract files are gone from the working tree but git HEAD still has them: if that was a mistake restore them (git checkout HEAD -- .silver-bullet.json silver-bullet.md) and restart the session; if Silver Bullet was removed on purpose, commit the removal and start a new session.'
       else
-        printf 'The contract files are gone from the working tree and this repository has no commit that could restore them: restore them from a backup or another checkout and restart the session; if Silver Bullet was removed on purpose, commit the removal and start a new session.'
+        printf 'The contract files are gone from the working tree and this repository has no commit that could restore them: restore them from a backup or another checkout and restart the session, or re-run /sb:init; if Silver Bullet was removed on purpose, commit the removal and start a new session.'
       fi ;;
-    *) printf 'Silver Bullet was removed from this repository (the files are gone from the tree and from git HEAD): start a new session and the record is retired.' ;;
+    *)
+      if [[ -f "$(_sb_iv_rec_file "$root")" ]]; then
+        printf 'Silver Bullet was removed from this repository (the files are gone from the tree and from git HEAD): start a new session and the record is retired.'
+      else
+        printf 'Silver Bullet was removed from this repository (the files are gone from the tree and from git HEAD) but its integrity record is gone too, so nothing can be verified and no restart retires the root: re-run /sb:init to record it again, or, if the removal is intended, take this root out of Silver Bullet'"'"'s registry yourself, from a terminal outside the agent: delete the line that starts with %s in %s, then start a new session.' "$root" "$reg"
+      fi ;;
   esac
 }

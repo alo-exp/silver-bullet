@@ -446,27 +446,19 @@ for spell in 'rm -f "$STATE" "$STATE.hwm" "$STATE.seal"' ': > "$STATE"; : > "$ST
   assert_contains "state gone with its counter ($spell): Stop applies the floor" "$TL_OUT" "inst-a"
 done
 
-# round 9: the record deleted and a contract file (or both) moved away leaves no inert project
-anchor_row() { # NAME CMD
-  ih_project "r9-$1"
-  echo d >>"$PROJ/src/app.js"
-  ih_run "$2"; tally
-  ih_edit
-  assert_eq "anchor $1: source edits stop" "deny" "$(decision)"
-  assert_contains "anchor $1: as an unbaselined project" "$(message)" "NOT BASELINED"
-  ih_hook completion-audit.sh "$(bash_json 'git commit -am x' PreToolUse)"
-  assert_eq "anchor $1: git commit is judged" "deny" "$(decision)"
-  ih_hook completion-audit.sh "$(bash_json 'gh pr create --fill' PreToolUse)"
-  assert_eq "anchor $1: gh pr create is judged" "deny" "$(decision)"
-  ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
-  assert_contains "anchor $1: Stop asks for the floor" "$TL_OUT" "missing required skills"
+# A setup step that fails silently would leave a row vacuous: every row proves that its setup took effect.
+setup_ok() { # LABEL REC(norec|keeprec) FILE..: the files are gone from the project, the record as the row says
+  local label="$1" rec="$2" f
+  shift 2
+  for f in "$@"; do
+    assert_eq "$label: setup moved $f out of the project" "no" "$([[ -e "$PROJ/$f" || -L "$PROJ/$f" ]] && echo yes || echo no)"
+  done
+  if [[ "$rec" == norec ]]; then
+    assert_eq "$label: setup removed the record" "no" "$([[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no)"
+  else
+    assert_eq "$label: the record is still there" "yes" "$([[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no)"
+  fi
 }
-anchor_row md 'cd "$(cat $FX/d.txt)" && rm -f integrity-*; cd "$(cat $FX/pd.txt)" && python3 -c "import os;os.rename(\"silver-bullet.md\",\"/tmp/sbr9.md\")"'
-anchor_row json 'cd "$(cat $FX/d.txt)" && rm -f integrity-*; cd "$(cat $FX/pd.txt)" && python3 -c "import os;os.rename(\".silver-bullet.json\",\"/tmp/sbr9.json\")"'
-anchor_row both 'cd "$(cat $FX/d.txt)" && rm -f integrity-*; cd "$(cat $FX/pd.txt)" && python3 -c "import os;os.rename(\".silver-bullet.json\",\"/tmp/sbr9.json\");os.rename(\"silver-bullet.md\",\"/tmp/sbr9.md\")"'
-anchor_row record-only 'cd "$(cat $FX/d.txt)" && rm -f integrity-*'
-rm -f /tmp/sbr9.md /tmp/sbr9.json
-# round 10: the anchor is the registry of baselined roots, not git: ref, object and layout tricks do not move it
 gates_deny() { # LABEL
   ih_edit
   assert_eq "$1: source edits stop" "deny" "$(decision)"
@@ -477,49 +469,103 @@ gates_deny() { # LABEL
   ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
   assert_contains "$1: Stop blocks" "$TL_OUT" '"decision":"block"'
 }
-unbase='cd "$(cat $FX/d.txt)" && rm -f integrity-*; cd "$(cat $FX/pd.txt)" && mkdir -p /tmp/sbr10 && mv .silver-bullet.json silver-bullet.md /tmp/sbr10/'
+# round 9: the record deleted and a contract file (or both) moved away leaves no inert project
+RMREC='cd "$(cat $FX/d.txt)" && rm -f integrity-*; cd "$(cat $FX/pd.txt)"'
+MVAWAY='mkdir -p "$FX/away" && python3 -c "import os,sys;[os.rename(f,os.environ[\"FX\"]+\"/away/\"+f) for f in sys.argv[1:]]"'
+anchor_row() { # NAME CMD FILE..
+  local name="$1" cmd="$2"
+  shift 2
+  ih_project "r9-$name"
+  echo d >>"$PROJ/src/app.js"
+  ih_run "$cmd"; tally
+  setup_ok "anchor $name" norec "$@"
+  ih_edit
+  assert_contains "anchor $name: as an unbaselined project" "$(message)" "NOT BASELINED"
+  gates_deny "anchor $name"
+  ih_hook stop-check.sh '{"hook_event_name":"Stop"}'
+  assert_contains "anchor $name: Stop asks for the floor" "$TL_OUT" "missing required skills"
+}
+anchor_row md "$RMREC && $MVAWAY silver-bullet.md" silver-bullet.md
+anchor_row json "$RMREC && $MVAWAY .silver-bullet.json" .silver-bullet.json
+anchor_row both "$RMREC && $MVAWAY .silver-bullet.json silver-bullet.md" .silver-bullet.json silver-bullet.md
+anchor_row record-only "$RMREC"
+# round 10: the anchor is the registry of baselined roots, not git: ref, object and layout tricks do not move it
+unbase="$RMREC && $MVAWAY .silver-bullet.json silver-bullet.md"
 # S4: an orphan checkout and the local default branch deleted
 ih_project r10-orphan
 git -C "$PROJ" branch -f main HEAD >/dev/null 2>&1 || true
 ih_run "$unbase; git checkout -q --orphan x; git branch -q -D main feature/test"; tally
+setup_ok "orphan checkout plus branch -D" norec .silver-bullet.json silver-bullet.md
+assert_eq "orphan checkout plus branch -D: the setup left no branch" "" "$(git -C "$PROJ" for-each-ref --format='%(refname)' refs/heads)"
 gates_deny "orphan checkout plus branch -D"
-rm -rf /tmp/sbr10
 # S4b: the same with the remote removed
 ih_project r10-remote
 git -C "$PROJ" branch -f main HEAD >/dev/null 2>&1 || true
 git init -q --bare "$TL_TMP/r10-remote.git"; git -C "$PROJ" remote add origin "$TL_TMP/r10-remote.git" || true
 git -C "$PROJ" push -q origin main >/dev/null 2>&1 || true; git -C "$PROJ" fetch -q origin >/dev/null 2>&1 || true
 ih_run "$unbase; git checkout -q --orphan x; git branch -q -D main feature/test; git remote remove origin"; tally
+setup_ok "orphan checkout, branch -D, remote removed" norec .silver-bullet.json silver-bullet.md
+assert_eq "orphan checkout, branch -D, remote removed: the setup left no remote" "" "$(git -C "$PROJ" remote)"
 gates_deny "orphan checkout, branch -D, remote removed"
-rm -rf /tmp/sbr10
 # S5: git replace makes every commit look empty
 ih_project r10-replace
 git -C "$PROJ" branch -f main HEAD >/dev/null 2>&1 || true
 ih_run "$unbase; git checkout -q -b feat; e=\$(git commit-tree -m e \$(git mktree </dev/null)); for r in main feat feature/test; do git replace -f \$r \$e; done"; tally
+setup_ok "git replace" norec .silver-bullet.json silver-bullet.md
+assert_eq "git replace: the setup replaced refs" "yes" "$([[ -n "$(git -C "$PROJ" replace -l 2>/dev/null)" ]] && echo yes || echo no)"
 gates_deny "git replace"
-rm -rf /tmp/sbr10
 # S3: a project below its git root
 ih_project r10-sub
 MONO="$TL_TMP/r10-mono"; rm -rf "$MONO"; mkdir -p "$MONO"; git -C "$MONO" init -q >/dev/null 2>&1
 mv "$PROJ" "$MONO/app"; rm -rf "$MONO/app/.git"; PROJ="$MONO/app"
+printf '%s' "$PROJ" >"$FX/pd.txt"
 git -C "$MONO" add -A >/dev/null 2>&1; git -C "$MONO" -c user.email=a@b -c user.name=n commit -q -m a >/dev/null 2>&1 || true
 git -C "$MONO" checkout -q -b feature/test >/dev/null 2>&1 || true
 rm -f "$SD"/integrity-* "$SD/baselined-roots"; sb_integrity_baseline "$PROJ" session
 echo d >>"$PROJ/src/app.js"
+assert_eq "a project below its git root: the contract files are there before the attack" "yes" "$([[ -f "$PROJ/.silver-bullet.json" && -f "$PROJ/silver-bullet.md" && -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no)"
 ih_run "$unbase"; tally
+setup_ok "a project below its git root" norec .silver-bullet.json silver-bullet.md
 gates_deny "a project below its git root"
-rm -rf /tmp/sbr10
 # R1: git replace plus a restart must not retire an authentic record (nothing was committed)
 ih_project r10-retire-replace
 git -C "$PROJ" branch -f main HEAD >/dev/null 2>&1 || true
-mkdir -p /tmp/sbr10; mv "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md" /tmp/sbr10/
+mkdir -p "$TL_TMP/r10-away" && mv "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md" "$TL_TMP/r10-away/"
+setup_ok "retire after git replace" keeprec .silver-bullet.json silver-bullet.md
 e="$(git -C "$PROJ" commit-tree -m e "$(git -C "$PROJ" mktree </dev/null)")"
 git -C "$PROJ" replace -f "$(git -C "$PROJ" rev-parse HEAD)" "$e" >/dev/null 2>&1 || true
 OUT="$(ih_session_start_out startup)"
 assert_eq "git replace plus restart does not retire the record" "yes" "$([[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no)"
 ih_edit
 assert_eq "and edits are still judged" "deny" "$(decision)"
-rm -rf /tmp/sbr10
+# round 11: a directory is a root when it is registered OR has a record; both must go to lose the anchor
+for tamper in ': > "$SD/baselined-roots"' 'printf "/nowhere\n" > "$SD/baselined-roots"' 'rm -f "$SD/baselined-roots"' 'rm -f "$SD/baselined-roots"; ln -s /dev/null "$SD/baselined-roots"'; do
+  ih_project r11-reg
+  echo d >>"$PROJ/src/app.js"
+  ih_run "$tamper; cd \"\$(cat \$FX/pd.txt)\" && $MVAWAY .silver-bullet.json silver-bullet.md"; tally
+  setup_ok "registry tamper ($tamper)" keeprec .silver-bullet.json silver-bullet.md
+  assert_eq "registry tamper ($tamper): the registry no longer names the root" "no" "$([[ -s "$SD/baselined-roots" && "$(<"$SD/baselined-roots")" == *"$PROJ"* ]] && echo yes || echo no)"
+  gates_deny "registry tamper ($tamper), record kept"
+  rm -f "$SD/baselined-roots"
+done
+# the record gone and the registry intact is the other half (the anchor rows above); an untouched registry survives
+# a deleted record file and a deleted counter
+ih_project r11-registry-only
+ih_run "$RMREC && $MVAWAY .silver-bullet.json silver-bullet.md"; tally
+setup_ok "registry only" norec .silver-bullet.json silver-bullet.md
+gates_deny "registry only"
+# the project directory renamed first: the inode keeps the root
+for keep in norec keeprec; do
+  ih_project "r11-rename-$keep"
+  OLDP="$PROJ"; NEWP="${OLDP}-moved"
+  echo d >>"$PROJ/src/app.js"
+  mv "$OLDP" "$NEWP"; PROJ="$NEWP"; export PROJ
+  printf '%s' "$PROJ" >"$FX/pd.txt"
+  if [[ "$keep" == norec ]]; then ih_run "$RMREC && $MVAWAY .silver-bullet.json silver-bullet.md"; else ih_run "$MVAWAY .silver-bullet.json silver-bullet.md"; fi; tally
+  assert_eq "rename ($keep): the renamed directory is the root" "$PROJ" "$(sb_integrity_root "$PROJ/src")"
+  if [[ "$keep" == norec ]]; then setup_ok "rename ($keep)" norec .silver-bullet.json silver-bullet.md; fi
+  gates_deny "rename ($keep)"
+done
 # the registry survives removing the records, and a record forged elsewhere does not become a root of its own
 ih_project r10-registry
 rm -f "$SD"/integrity-*
