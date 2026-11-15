@@ -94,13 +94,21 @@ _sb_iv_dir_id() { # DIR -> identity or "-"
 # What a record is bound to: the root's identity, else (identity unavailable) its path.
 _sb_iv_root_key() { # ROOT
   _sb_iv_dir_id_var "$1"
-  if [[ "$_SB_IV_ID" == - ]]; then printf 'p:%s' "$1"; else printf '%s' "$_SB_IV_ID"; fi
+  if [[ "$_SB_IV_ID" == - ]]; then
+    printf 'p:%s' "$1"
+  else
+    printf '%s' "$_SB_IV_ID"
+  fi
 }
 
 # The record of ROOT is named by the CRC of its identity, so renaming the project keeps its record.
 _sb_iv_rec_file() { # ROOT
   _sb_iv_dir_id_var "$1"
-  if [[ "$_SB_IV_ID" == - ]]; then _sb_iv_cksum_var "p:$1"; else _sb_iv_cksum_var "$_SB_IV_ID"; fi
+  if [[ "$_SB_IV_ID" == - ]]; then
+    _sb_iv_cksum_var "p:$1"
+  else
+    _sb_iv_cksum_var "$_SB_IV_ID"
+  fi
   printf '%s/integrity-%s.rec' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}" "$_SB_IV_SUM"
 }
 
@@ -141,7 +149,11 @@ sb_integrity_record_root() { # DIR
     if [[ "$reg" == *$'\n'"$d"$'\n'* ]]; then printf '%s' "$d"; return 0; fi
     if [[ "$id" != - && "$reg" == *$'\t'"$id"$'\n'* ]]; then printf '%s' "$d"; return 0; fi
     if [[ -n "$has_rec" ]]; then
-      if [[ "$id" == - ]]; then _sb_iv_cksum_var "p:$d"; else _sb_iv_cksum_var "$id"; fi
+      if [[ "$id" == - ]]; then
+        _sb_iv_cksum_var "p:$d"
+      else
+        _sb_iv_cksum_var "$id"
+      fi
       if [[ -f "$sd/integrity-$_SB_IV_SUM.rec" ]]; then printf '%s' "$d"; return 0; fi
     fi
   done
@@ -169,9 +181,13 @@ _sb_iv_registry_cap() { # FILE
   local f="$1" content n tmp
   content="$(<"$f")"
   n="${content//[!$'\n']/}"
-  if [[ ${#n} -lt $_SB_IV_REGISTRY_CAP ]]; then return 0; fi
+  if [[ ${#n} -lt $_SB_IV_REGISTRY_CAP ]]; then
+    return 0
+  fi
   tmp="$f.$$"
-  if printf '%s\n' "$content" | tail -n "$_SB_IV_REGISTRY_CAP" >"$tmp" 2>/dev/null; then mv -f -- "$tmp" "$f"; fi
+  if printf '%s\n' "$content" | tail -n "$_SB_IV_REGISTRY_CAP" >"$tmp" 2>/dev/null; then
+    mv -f -- "$tmp" "$f"
+  fi
   rm -f -- "$tmp"
 }
 
@@ -185,11 +201,17 @@ sb_integrity_unregister_root() { # ROOT
   tmp="$regf.$$"
   while IFS= read -r line || [[ -n "$line" ]]; do
     lid="${line#*$'\t'}"
-    if [[ "$line" == "$1" || "$line" == "$1"$'\t'* ]]; then continue; fi
-    if [[ "$id" != - && "$line" == *$'\t'* && "$lid" == "$id" ]]; then continue; fi
+    if [[ "$line" == "$1" || "$line" == "$1"$'\t'* ]]; then
+      continue
+    fi
+    if [[ "$id" != - && "$line" == *$'\t'* && "$lid" == "$id" ]]; then
+      continue
+    fi
     kept="$kept$line"$'\n'
   done <"$regf"
-  if printf '%s' "$kept" >"$tmp" 2>/dev/null; then mv -f -- "$tmp" "$regf"; fi
+  if printf '%s' "$kept" >"$tmp" 2>/dev/null; then
+    mv -f -- "$tmp" "$regf"
+  fi
   rm -f -- "$tmp"
 }
 
@@ -198,42 +220,71 @@ sb_integrity_unregister_root() { # ROOT
 # root was renamed). A line whose path is gone and whose identity has no live line stays (the root may have
 # moved before it was seen again) until the cap drops it.
 sb_integrity_prune_registry() {
-  local regf lines=() paths=() ids=() line i n live=() cur kept="" ex=() exi=() j tmp ci k
+  local regf lines=() paths=() ids=() live=() cur=() ex=() exi=() line i j k n kept tmp ci out twin
   regf="$(_sb_iv_registry_file)"
   [[ -f "$regf" && ! -L "$regf" ]] || return 0
   while IFS= read -r line || [[ -n "$line" ]]; do
     [[ -n "$line" ]] || continue
     lines+=("$line")
     paths+=("${line%%$'\t'*}")
-    if [[ "$line" == *$'\t'* ]]; then ids+=("${line#*$'\t'}"); else ids+=(""); fi
+    if [[ "$line" == *$'\t'* ]]; then
+      ids+=("${line#*$'\t'}")
+    else
+      ids+=("")
+    fi
   done <"$regf"
   n=${#lines[@]}
   for ((i = 0; i < n; i++)); do
-    if [[ -d "${paths[$i]}" ]]; then ex+=("${paths[$i]}"); exi+=("$i"); fi
+    if [[ -d "${paths[$i]}" ]]; then
+      ex+=("${paths[$i]}")
+    fi
   done
-  cur=()
-  for ((i = 0; i < n; i++)); do cur+=("-"); done
   if [[ ${#ex[@]} -gt 0 ]]; then
-    k=0
+    out="$(_sb_iv_dir_ids "${ex[@]}")"
     while IFS= read -r ci; do
-      cur[${exi[$k]}]="$ci"
-      k=$((k + 1))
-    done <<<"$(_sb_iv_dir_ids "${ex[@]}")"
+      exi+=("$ci")
+    done <<<"$out"
   fi
-  for ((i = 0; i < n; i++)); do live+=(""); done
+  k=0
   for ((i = 0; i < n; i++)); do
-    if [[ -n "${ids[$i]}" && "${cur[$i]}" == "${ids[$i]}" ]]; then live[i]=1; fi
+    live+=("")
+    if [[ -d "${paths[$i]}" ]]; then
+      cur+=("${exi[$k]}")
+      k=$((k + 1))
+    else
+      cur+=("-")
+    fi
   done
   for ((i = 0; i < n; i++)); do
-    if [[ -z "${ids[$i]}" || -n "${live[$i]}" ]]; then kept="$kept${lines[$i]}"$'\n'; continue; fi
-    if [[ "${cur[$i]}" != - ]]; then continue; fi
+    if [[ -n "${ids[$i]}" && "${cur[$i]}" == "${ids[$i]}" ]]; then
+      live[i]=1
+    fi
+  done
+  kept=""
+  i=-1
+  while [[ $((i + 1)) -lt $n ]]; do
+    i=$((i + 1))
+    if [[ -z "${ids[$i]}" || -n "${live[$i]}" ]]; then
+      kept="$kept${lines[$i]}"$'\n'
+      continue
+    fi
+    if [[ "${cur[$i]}" != - ]]; then
+      continue
+    fi
+    twin=""
     for ((j = 0; j < n; j++)); do
-      if [[ "${ids[$j]}" == "${ids[$i]}" && -n "${live[$j]}" ]]; then continue 2; fi
+      if [[ "${ids[$j]}" == "${ids[$i]}" && -n "${live[$j]}" ]]; then
+        twin=1
+      fi
     done
-    kept="$kept${lines[$i]}"$'\n'
+    if [[ -z "$twin" ]]; then
+      kept="$kept${lines[$i]}"$'\n'
+    fi
   done
   tmp="$regf.$$"
-  if printf '%s' "$kept" >"$tmp" 2>/dev/null; then mv -f -- "$tmp" "$regf"; fi
+  if printf '%s' "$kept" >"$tmp" 2>/dev/null; then
+    mv -f -- "$tmp" "$regf"
+  fi
   rm -f -- "$tmp"
   _sb_iv_registry_cap "$regf"
 }
