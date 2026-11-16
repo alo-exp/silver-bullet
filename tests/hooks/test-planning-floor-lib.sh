@@ -136,6 +136,14 @@ assert_contains "targets: paths only" "$(sb_pf_write_targets "x")" "$P/src/b.js"
 PAYLOAD='{"tool_name":"mcp__fs__write_file","tool_input":{"path":"src/m.js","file_paths":["src/n.js"],"destination":"src/d.js"}}'
 SB_TI_TOOL_KIND=mcp
 assert_contains "records: MCP path field" "$(SB_TI_FILE_PATH="" SB_TI_PATCH_PATHS="" sb_pf_write_records "$PAYLOAD")" "edit	$PWD/src/m.js"
+# the payload's cwd joins a relative path, and the logical spelling is recorded next to the resolved one
+mkdir -p "$TL_TMP/lg/real/src"; ln -s "$TL_TMP/lg/real" "$TL_TMP/lg/link"
+LGP='{"tool_name":"Write","cwd":"'"$TL_TMP/lg/link"'","tool_input":{"file_path":"src/x.js"}}'
+out="$(SB_TI_TOOL_KIND=edit SB_TI_FILE_PATH="" SB_TI_PATCH_PATHS="" sb_pf_write_records "$LGP")"
+assert_contains "records: relative path joined to the payload cwd (resolved)" "$out" "edit	$(cd "$TL_TMP/lg/real" && pwd -P)/src/x.js"
+assert_contains "records: relative path joined to the payload cwd (logical)" "$out" "edit	$TL_TMP/lg/link/src/x.js"
+out="$(SB_TI_TOOL_KIND=edit SB_TI_FILE_PATH="" SB_TI_PATCH_PATHS="" sb_pf_write_records '{"cwd": "broken')" || true
+assert_eq "records: a payload that is not JSON yields no record and no failure" "" "$out"
 assert_contains "records: file_paths list" "$(SB_TI_FILE_PATH="" SB_TI_PATCH_PATHS="" sb_pf_write_records "$PAYLOAD")" "src/n.js"
 assert_contains "records: destination" "$(SB_TI_FILE_PATH="" SB_TI_PATCH_PATHS="" sb_pf_write_records "$PAYLOAD")" "src/d.js"
 SB_TI_TOOL_KIND=patch SB_TI_PATCH_PATHS=$'a/one.js\nb/two.js' SB_TI_FILE_PATH="a/one.js"
