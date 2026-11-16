@@ -282,6 +282,10 @@ assert_eq "and quickly" "ok" "$([[ $SECONDS -le 3 ]] && echo ok || echo slow)"
 out="$(bash -c 'set -eu; source "$1"; lock="$2/baselined-roots.lock"; mkdir -p "$2"; mkdir "$lock"; (sleep 0.2; rm -rf "$lock") & sb_integrity_register_root /y; echo done' _ "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh" "$TL_TMP/vanish-state" 2>&1)"
 assert_eq "an owner file vanishing under the reader does not abort" "done" "$out"
 rm -f "$REG"
+# a relative directory is judged from the working directory
+sb_integrity_register_root "$P2"
+assert_eq "a relative directory resolves against the working directory" "$P2" "$(cd "$P2" && sb_integrity_record_root src)"
+sb_integrity_unregister_root "$P2"
 # the record name is the POSIX cksum of the root
 for str in "" "a" "$P2" "héllo/ü" "$(head -c 200 /dev/urandom | base64 -w0)"; do
   assert_eq "bash cksum matches cksum(1) for '${str:0:20}'" "$(printf '%s' "$str" | cksum | cut -d' ' -f1)" "$(_sb_iv_cksum "$str")"
