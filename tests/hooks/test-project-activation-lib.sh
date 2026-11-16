@@ -357,6 +357,71 @@ rm -f "$REG" "$SB_RUNTIME_STATE_DIR"/integrity-*
 mv "$LM/root" "$LM/root.o"; ln -s "$LM/elsewhere" "$LM/root"
 assert_eq "a symlink at a marked path is still the marked root (logical spelling)" "$LMR" "$(sb_integrity_record_root "$LM/root/src")"
 rm -f "$SB_RUNTIME_STATE_DIR"/root-*
+# ancestors in one pass: the CRC of every ancestor equals the cksum of that string
+for str in "/" "/a" "/a/b" "/a/b/c" "/a b/c d/e" "$P2" "$P2/src/deep/er" "/héllo/ü/x" "$(printf '/seg%s' 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)"; do
+  _sb_iv_cksum_ancestors "$str"
+  want=""; d="$str"
+  while true; do
+    want+="$(printf '%s' "$d" | cksum | cut -d' ' -f1) "
+    [[ "$d" != "/" ]] || break
+    d="${d%/*}"; [[ -n "$d" ]] || d="/"
+  done
+  assert_eq "ancestor sums of '${str:0:24}' equal the cksum of each ancestor" "$want" "${_SB_IV_ASUM[*]} "
+done
+# markers hold a path: a second path with the SAME CRC is no anchor, never displaces the first one's marker, and the
+# first one stays anchored (two colliding names are built at run time by a birthday search over same-length paths)
+rm -f "$SB_RUNTIME_STATE_DIR"/root-* "$REG" "$SB_RUNTIME_STATE_DIR"/integrity-*
+CP="$(python3 - "$TL_TMP/col" <<'PYE'
+import random, sys
+def table():
+    out = []
+    for i in range(256):
+        c = i << 24
+        for _ in range(8):
+            c = ((c << 1) ^ 0x04C11DB7) & 0xFFFFFFFF if c & 0x80000000 else (c << 1) & 0xFFFFFFFF
+        out.append(c)
+    return out
+T = table()
+def cksum(data):
+    crc = 0
+    for b in data:
+        crc = ((crc << 8) & 0xFFFFFFFF) ^ T[((crc >> 24) ^ b) & 0xFF]
+    n = len(data)
+    while n:
+        crc = ((crc << 8) & 0xFFFFFFFF) ^ T[((crc >> 24) ^ n) & 0xFF]
+        n >>= 8
+    return ~crc & 0xFFFFFFFF
+base = sys.argv[1]
+seen = {}
+rng = random.Random(7)  # fixed seed: the same two paths every run (a change of the last four bytes alone never collides)
+while True:
+    name = "".join(rng.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(8))
+    path = "%s/%s" % (base, name)
+    key = cksum(path.encode())
+    if key in seen and seen[key] != path:
+        print(seen[key] + "\n" + path)
+        break
+    seen[key] = path
+PYE
+)"
+CA="${CP%%$'\n'*}"; CB="${CP##*$'\n'}"
+assert_eq "the search found two different paths" "yes" "$([[ -n "$CA" && -n "$CB" && "$CA" != "$CB" ]] && echo yes || echo no)"
+assert_eq "and they have the same cksum" "$(printf '%s' "$CA" | cksum | cut -d' ' -f1)" "$(printf '%s' "$CB" | cksum | cut -d' ' -f1)"
+mkdir -p "$CA/src" "$CB/src"
+sb_integrity_register_root "$CA"
+: >"$REG"; rm -f "$SB_RUNTIME_STATE_DIR"/integrity-*
+assert_eq "collision: the marked path is still found" "$CA" "$(sb_integrity_record_root "$CA/src")"
+assert_eq "collision: the other path is no false anchor" "" "$(sb_integrity_record_root "$CB/src")"
+sb_integrity_register_root "$CB"
+assert_eq "collision: registering the second path leaves the first one's marker alone" "1" "$(ls "$SB_RUNTIME_STATE_DIR"/root-* | wc -l | tr -d ' ')"
+assert_eq "collision: the marker still names the first path" "$CA" "$(cut -f1 "$SB_RUNTIME_STATE_DIR"/root-*)"
+sb_integrity_unregister_root "$CB"
+assert_eq "collision: retiring the second path leaves the first one's marker" "$CA" "$(sb_integrity_record_root "$CA/src")"
+printf 'garbage without a tab' >"$SB_RUNTIME_STATE_DIR/root-$(printf '%s' "$CA" | cksum | cut -d' ' -f1)"
+assert_eq "a damaged marker (no stored path) anchors nothing" "" "$(sb_integrity_record_root "$CA/src")"
+sb_integrity_register_root "$CA"
+assert_eq "a damaged marker is rewritten by the next registration" "$CA" "$(cut -f1 "$SB_RUNTIME_STATE_DIR"/root-*)"
+rm -f "$SB_RUNTIME_STATE_DIR"/root-* "$REG" "$SB_RUNTIME_STATE_DIR"/integrity-*
 # the record name is the POSIX cksum of the root
 for str in "" "a" "$P2" "héllo/ü" "$(head -c 200 /dev/urandom | base64 -w0)"; do
   assert_eq "bash cksum matches cksum(1) for '${str:0:20}'" "$(printf '%s' "$str" | cksum | cut -d' ' -f1)" "$(_sb_iv_cksum "$str")"

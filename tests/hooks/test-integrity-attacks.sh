@@ -651,9 +651,71 @@ for lose in registry-deleted registry-capped record-deleted marker-deleted; do
   gates_deny "anchors ($lose), then a swapped copy at the path"
   rm -rf "$P.o"
 done
+with_cwd() { jq -c --arg c "$1" '. + {cwd:$c}'; }
+codex_json() { jq -cn --arg c "$1" --arg w "${2:-}" '{hook_event_name:"PreToolUse",tool_name:"exec_command",tool_input:({cmd:$c} + (if $w == "" then {} else {workdir:$w} end))}'; }
+# round 16: the record is an IDENTITY anchor (it follows a rename, it cannot hold a copy put at the path); the path
+# anchors are the registry line and the marker. The state-directory guard refuses every agent write to them, like the
+# records, so removing them takes a means the hooks cannot see.
+ih_project r16-guard
+P="$PROJ"; echo d >>"$P/src/app.js"
+assert_eq "anchor guard: setup: the registry names the root" "yes" "$([[ -f "$SD/baselined-roots" && "$(<"$SD/baselined-roots")" == *"$P"$'\t'* ]] && echo yes || echo no)"
+assert_eq "anchor guard: setup: a marker exists" "yes" "$(compgen -G "$SD/root-*" >/dev/null && echo yes || echo no)"
+MKN="$(basename "$(ls "$SD"/root-* | head -1)")"
+printf '%s' "$P" >"$FX/pd.txt"
+# every row is judged by the pre-command hook alone (nothing runs): the unguarded rows would come back "none"
+for g in "rm -f $SD/baselined-roots $SD/root-*" "rm -f $SD/baselined-roots" "rm -f $SD/$MKN" "unlink $SD/$MKN" \
+  "cd $SD && rm -f baselined-roots root-*" "cd $SD; rm -f -- baselined-roots" "cd $SD && rm $MKN" "pushd $SD >/dev/null && rm baselined-roots" \
+  ": > $SD/baselined-roots" "> $SD/baselined-roots" "cd $SD && : > baselined-roots" "cd $SD && > $MKN" "truncate -s 0 $SD/baselined-roots" \
+  "mv $SD/baselined-roots $FX/away" "mv $SD/$MKN $FX/away" "cd $SD && mv root-* $FX/" "cp /dev/null $SD/baselined-roots" "cp $FX/pd.txt $SD/$MKN" \
+  "tee $SD/baselined-roots </dev/null" "printf x | tee -a $SD/$MKN" "sed -i d $SD/baselined-roots" "sed -i s/a/b/ $SD/$MKN" \
+  "find $SD -name 'root-*' -delete" "cd $SD && find . -maxdepth 1 -name 'root-*' -delete" "find $SD -name baselined-roots -exec rm {} +" \
+  "rm -rf $SD/baselined-roots.lock" "mkdir $SD/baselined-roots.lock" "ln -sf /dev/null $SD/baselined-roots" "dd if=/dev/null of=$SD/baselined-roots" \
+  "install -m 600 /dev/null $SD/$MKN" "rm -rf $SD" "mv $SD $SD.away" "echo '/x' >> $SD/baselined-roots"; do
+  run_dc "$(bash_json "$g")"
+  assert_eq "anchor guard (Claude): $g" "deny" "$(decision)"
+  assert_contains "anchor guard (Claude): $g: the state guard says so" "$(message)" "STATE TAMPER"
+  run_dc "$(codex_json "$g")"
+  assert_eq "anchor guard (Codex): $g" "deny" "$(decision)"
+done
+for tool in Edit Write MultiEdit NotebookEdit; do
+  for f in baselined-roots "$MKN" baselined-roots.lock root-1; do
+    run_dc "$(edit_json "$SD/$f" "$tool" PreToolUse "$BIG_OLD" "$BIG_NEW")"
+    assert_eq "anchor guard: $tool of $f" "deny" "$(decision)"
+  done
+done
+run_dc "$(jq -cn --arg p "*** Begin Patch
+*** Update File: $SD/baselined-roots
+@@
+-a
++b
+*** End Patch" '{hook_event_name:"PreToolUse",tool_name:"apply_patch",tool_input:{input:$p}}')"
+assert_eq "anchor guard: apply_patch of the registry" "deny" "$(decision)"
+# honest: reading the anchors, and writing next to them in the project, stay open
+for g in "cat $SD/baselined-roots" "ls -l $SD" "grep -c . $SD/baselined-roots" "cd $SD && cat baselined-roots" "echo x > $PROJ/docs/notes.md" "rm -f $PROJ/docs/gone.md"; do
+  run_dc "$(bash_json "$g")"
+  assert_eq "anchor guard honest: $g" "none" "$(decision)"
+done
+# the sanctioned writers are the hooks themselves, outside the agent's tool path: the registry and the marker are written
+rm -f "$SD/baselined-roots" "$SD"/root-*
+ih_session_start startup
+assert_eq "the session start writes the registry line again" "yes" "$([[ -f "$SD/baselined-roots" && "$(<"$SD/baselined-roots")" == *"$P"$'\t'* ]] && echo yes || echo no)"
+assert_eq "and the marker" "yes" "$(compgen -G "$SD/root-*" >/dev/null && echo yes || echo no)"
+# the documented residual: a path the shell builds at run time, or an interpreter, is not read by the guard. With the
+# registry and the marker gone and ONLY the record kept, a copy swapped in at the path is no longer held (the record is
+# keyed by the directory's identity)
+ih_project r16-residual
+P="$PROJ"; echo d >>"$P/src/app.js"
+run_dc "$(bash_json 'cd "$(cat $FX/d.txt)" && rm -f baselined-roots root-*')"
+assert_eq "RESIDUAL: a cd to a run-time path then rm of the path anchors is not read by the guard" "none" "$(decision)"
+ih_run 'python3 -c "import os,glob;[os.remove(f) for f in glob.glob(os.environ[\"SD\"]+\"/root-*\")+[os.environ[\"SD\"]+\"/baselined-roots\"]]"'
+assert_eq "RESIDUAL: an interpreter one-liner is not read either" "none" "$IH_PRE"
+assert_eq "RESIDUAL: both path anchors are gone, the record is kept" "yes" "$([[ ! -f "$SD/baselined-roots" ]] && ! compgen -G "$SD/root-*" >/dev/null && [[ -f "$(_sb_iv_rec_file "$P")" ]] && echo yes || echo no)"
+ih_run "$swap"
+assert_eq "RESIDUAL: the swap put a copy at the path" "yes" "$([[ -d "$P" && -d "$P.o" && ! -e "$P/silver-bullet.md" ]] && echo yes || echo no)"
+assert_eq "RESIDUAL: the record alone does not hold the swapped copy" "" "$(sb_integrity_root "$P/src")"
+rm -rf "$P.o"
 # round 15: every write is judged under its LOGICAL spelling as well as its resolved one, so a source folder
 # symlinked outside the project is still the project's source
-with_cwd() { jq -c --arg c "$1" '. + {cwd:$c}'; }
 sl_n=0
 for chain in direct chain; do
   sl_n=$((sl_n + 1))
@@ -683,6 +745,34 @@ for chain in direct chain; do
   assert_eq "link ($chain): a shell redirect relative to the payload cwd is judged" "deny" "$(decision)"
   RUN_DIR="$P" run_dc "$(bash_json 'cp /dev/null src/app.js; tee src/app.js </dev/null')"
   assert_eq "link ($chain): cp and tee targets are judged" "deny" "$(decision)"
+  # round 16: a cd keeps the logical spelling (and the payload cwd starts the walk), for Claude Bash and Codex alike
+  mkdir -p "$X/sub"
+  RUN_DIR="$P/src" run_dc "$(bash_json 'echo x > app.js')"
+  assert_eq "cd ($chain): setup: from inside the symlinked src a plain redirect is judged" "deny" "$(decision)"
+  for cdc in 'cd . && echo x > app.js' 'cd sub && echo x > ../app.js' 'cd .. && echo x > src/app.js' 'cd ./sub; cd ..; echo x > app.js' \
+    'pushd . >/dev/null && echo x > app.js' 'pushd sub >/dev/null && popd >/dev/null && echo x > app.js' 'cd sub && cd - >/dev/null && echo x > app.js' \
+    'cd /tmp && cd - >/dev/null && echo x > app.js' 'cd -L sub && echo x > ../app.js' 'cd sub && tee ../app.js </dev/null'; do
+    RUN_DIR="$P/src" run_dc "$(bash_json "$cdc")"
+    assert_eq "cd ($chain, Claude, cwd in the symlinked src): $cdc" "deny" "$(decision)"
+    RUN_DIR="$P/src" run_dc "$(bash_json "$cdc" | with_cwd "$P/src")"
+    assert_eq "cd ($chain, Claude, payload cwd = src): $cdc" "deny" "$(decision)"
+    RUN_DIR="$P/src" run_dc "$(codex_json "$cdc")"
+    assert_eq "cd ($chain, Codex, cwd in the symlinked src): $cdc" "deny" "$(decision)"
+  done
+  for cdc in 'cd src && echo x > app.js' 'cd src; echo x > app.js' 'pushd src && echo x > app.js' 'cd ./src && tee app.js </dev/null' \
+    'cd docs && echo x > ../src/app.js' 'cd src && cd .. && cd src && echo x > app.js' 'cd src && echo x > "$PWD/app.js"'; do
+    RUN_DIR="$TL_TMP/r15-elsewhere" run_dc "$(bash_json "$cdc" | with_cwd "$P")"
+    assert_eq "cd ($chain, Claude, payload cwd = project, process cwd elsewhere): $cdc" "deny" "$(decision)"
+    RUN_DIR="$TL_TMP/r15-elsewhere" run_dc "$(codex_json "$cdc" | with_cwd "$P")"
+    assert_eq "cd ($chain, Codex, payload cwd = project, process cwd elsewhere): $cdc" "deny" "$(decision)"
+  done
+  RUN_DIR="$TL_TMP/r15-elsewhere" run_dc "$(codex_json 'echo x > app.js' src | with_cwd "$P")"
+  assert_eq "cd ($chain, Codex, workdir = the symlinked src under the payload cwd)" "deny" "$(decision)"
+  # honest variants of the same shapes stay open
+  for cdc in 'cd /tmp && echo x > f.txt' 'cd .. && echo x > docs/n.md' 'cd ../docs && echo x > n.md' 'pushd /tmp >/dev/null && popd >/dev/null && echo x > /tmp/f.txt'; do
+    RUN_DIR="$P/src" run_dc "$(bash_json "$cdc")"
+    assert_eq "cd ($chain, honest): $cdc" "none" "$(decision)"
+  done
 done
 # honest: a symlink pointing INTO a project from an unrelated place is judged by the resolved path (the project's floor)
 ih_project r15-alias
@@ -745,4 +835,11 @@ assert_eq "RESIDUAL (documented): an agent that reads the key and recomputes the
 
 assert_eq "the corpus has at least 60 real-modification rows" "ok" "$([[ $ROWS -ge 60 ]] && echo ok || echo "only $ROWS")"
 tl_pass "rows run: $ROWS; rows the command-time hook did not itself refuse: $UNSEEN"
+# the docs say what the anchors are: two path anchors (registry line, marker) and one identity anchor (the record)
+ENF="$(<"$TL_REPO_ROOT/docs/ENFORCEMENT.md")"
+assert_not_contains "docs: no claim that any one of the three anchors is enough" "$ENF" "any one of them is enough"
+assert_not_contains "docs: the residual does not require all three anchors to be deleted" "$ENF" "deleting ALL THREE"
+assert_not_contains "docs: the twin-rule residual is not claimed to be covered by the other anchors" "$ENF" "which the other anchors cover"
+assert_contains "docs: the record is an identity anchor that cannot hold a copy at the path" "$ENF" "cannot hold a replaced one"
+assert_contains "docs: the guard covers the anchor files" "$ENF" "the registry, its lock, a marker or a record"
 tl_results
