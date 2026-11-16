@@ -600,6 +600,28 @@ for variant in mkdir symlink; do
   gates_deny "prune ($variant) after an unrelated fresh session"
   rm -rf "$OLDP"
 done
+# round 14: a registered path anchors by path as well as by identity, whatever now stands at it
+for variant in copy symlink recreated; do
+  for rec in keeprec norec; do
+    ih_project "r14-$variant-$rec"
+    P="$PROJ"; echo d >>"$P/src/app.js"
+    case "$variant" in
+      copy) ih_run "cp -a \"$P\" \"$P.n\" && rm -f \"$P.n/.silver-bullet.json\" \"$P.n/silver-bullet.md\" && mv \"$P\" \"$P.o\" && mv \"$P.n\" \"$P\"" ;;
+      symlink) ih_run "cp -a \"$P\" \"$P.x\" && rm -f \"$P.x/.silver-bullet.json\" \"$P.x/silver-bullet.md\" && mv \"$P\" \"$P.o\" && ln -s \"$P.x\" \"$P\"" ;;
+      recreated) ih_run "rm -rf \"$P\" && mkdir -p \"$P/src\" && cd \"$P\" && git init -q && echo d > src/app.js" ;;
+    esac
+    tally
+    if [[ "$rec" == norec ]]; then ih_run "cd \"\$(cat \$FX/d.txt)\" && rm -f integrity-*"; tally; fi
+    assert_eq "path anchor ($variant, $rec): a directory stands at the registered path" "yes" "$([[ -d "$P/src" ]] && echo yes || echo no)"
+    assert_eq "path anchor ($variant, $rec): it holds no contract file" "no" "$([[ -e "$P/.silver-bullet.json" || -e "$P/silver-bullet.md" ]] && echo yes || echo no)"
+    mkdir -p "$TL_TMP/r14-elsewhere"
+    mkdir -p "$SB_RUNTIME_HOME_ROOT/plugins/cache/alo-labs/silver-bullet/test"
+    printf '{"hook_event_name":"SessionStart","source":"startup"}' | (cd "$TL_TMP/r14-elsewhere" && bash "$TL_REPO_ROOT/hooks/session-start") >/dev/null 2>&1 || true
+    assert_eq "path anchor ($variant, $rec): the registered path is still a root after a fresh session elsewhere" "$P" "$(sb_integrity_root "$P/src")"
+    gates_deny "path anchor ($variant, $rec)"
+    rm -rf "$P.o" "$P.x"
+  done
+done
 # the registry survives removing the records, and a record forged elsewhere does not become a root of its own
 ih_project r10-registry
 rm -f "$SD"/integrity-*

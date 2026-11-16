@@ -395,6 +395,9 @@ sb_integrity_drift_message() { # ROOT
   # deleting the record by hand (that would be the way to switch the gates off)
   if [[ ! -e "${1:-/}/.silver-bullet.json" || ! -e "${1:-/}/silver-bullet.md" ]]; then advice=" $(_sb_iv_removal_advice "${1:-/}")"; fi
   if [[ "${SB_IV_STATUS:-none}" == unbaselined ]]; then
+    if [[ -n "$advice" ]]; then
+      advice="$advice If this directory is not (or no longer) a Silver Bullet project, for example a different repository at the path of a removed one, the user retires the registered root as described under \"Recovery\" in Silver Bullet's docs/ENFORCEMENT.md (a user action outside the agent)."
+    fi
     printf '%s' "🚫 PROJECT NOT BASELINED — Silver Bullet has no integrity record for ${1:-this project}, so the strict defaults apply (planning floor unsatisfied, the template's required lists, no trivial bypass).
 
 Ask the user to restart the session: session start records the project's contract files.${advice} Details: $(_sb_iv_state_dir)/seal-events.log"

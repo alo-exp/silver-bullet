@@ -301,8 +301,18 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
   # The root is the nearest directory with a RECORD (a nested project written under it is not a new
   # root); without any record the nearest directory with both files (an unbaselined project).
   config_for_dir() {
-    local found
+    local found pw pc
     found="$(sb_integrity_root "$1")"
+    if [[ -z "$found" ]]; then
+      # a symlink put at a registered path resolves elsewhere: the working directory's own (logical) name is judged too
+      pw="$(sb_integrity_root "$PWD")"
+      if [[ -n "$pw" ]]; then
+        pc="$(sb_pf_canon "$pw")"
+        case "$1/" in
+          "$pc"/*) found="$pw" ;;
+        esac
+      fi
+    fi
     [[ -z "$found" ]] || found="$found/.silver-bullet.json"
     printf '%s' "$found"
   }
