@@ -120,11 +120,44 @@ _sb_iv_rec_file() { # ROOT
 # directory) OR has an integrity record; both have to be removed to lose the anchor.
 _sb_iv_registry_file() { printf '%s/baselined-roots' "$(_sb_iv_state_dir)"; }
 
+# A third, independent anchor: one marker file per baselined path, root-<CRC of the path> in the state directory,
+# holding "path TAB identity". Its presence anchors the path (it is not verified, not capped, not rewritten);
+# the registry line and the identity-named record are the other two. A root is lost only when all three are gone.
+_sb_iv_marker_write() { # ROOT
+  local sd id
+  sd="$(_sb_iv_state_dir)"
+  id="$(_sb_iv_dir_id "$1")"
+  _sb_iv_cksum_var "$1"
+  if [[ -L "$sd/root-$_SB_IV_SUM" ]]; then
+    return 0
+  fi
+  if printf '%s\t%s\n' "$1" "$id" 2>/dev/null >"$sd/root-$_SB_IV_SUM"; then
+    :
+  fi
+}
+
+# Remove ROOT's marker and every marker of its identity (a renamed root has one under each of its names).
+_sb_iv_marker_remove() { # ROOT
+  local sd id m mp mi
+  sd="$(_sb_iv_state_dir)"
+  id="$(_sb_iv_dir_id "$1")"
+  for m in "$sd"/root-*; do
+    if [[ -f "$m" && ! -L "$m" ]]; then
+      mp=""
+      mi=""
+      IFS=$'\t' read -r mp mi <"$m" || true
+      if [[ "$mp" == "$1" || ( "$id" != - && "$mi" == "$id" ) ]]; then
+        rm -f -- "$m"
+      fi
+    fi
+  done
+}
+
 # A project whose contract files were deleted or moved away is still a project: the nearest directory at or
 # above DIR that is a registered root or has a record is its root. A directory that does not exist yet is
 # judged by its nearest existing ancestor. No git is read.
 sb_integrity_record_root() { # DIR
-  local d lg reg="" regf sd anc=() idl=() id ids="" i n has_rec=""
+  local d lg reg="" regf sd anc=() idl=() id ids="" i n has_rec="" has_mk=""
   d="${1:-$PWD}"
   lg="$d"
   if [[ "$lg" != /* ]]; then
@@ -137,7 +170,8 @@ sb_integrity_record_root() { # DIR
   regf="$sd/baselined-roots"
   if [[ -f "$regf" ]]; then reg=$'\n'"$(<"$regf")"$'\n'; fi
   if compgen -G "$sd/integrity-*.rec" >/dev/null; then has_rec=1; fi
-  [[ -n "$reg$has_rec" ]] || return 0
+  if compgen -G "$sd/root-*" >/dev/null; then has_mk=1; fi
+  [[ -n "$reg$has_rec$has_mk" ]] || return 0
   while true; do
     anc+=("$d")
     [[ "$d" != "/" ]] || break
@@ -157,6 +191,13 @@ sb_integrity_record_root() { # DIR
     if [[ "$id" != - && "$reg" == *$'\t'"$id"$'\n'* ]]; then
       printf '%s' "$d"
       return 0
+    fi
+    if [[ -n "$has_mk" ]]; then
+      _sb_iv_cksum_var "$d"
+      if [[ -f "$sd/root-$_SB_IV_SUM" ]]; then
+        printf '%s' "$d"
+        return 0
+      fi
     fi
     if [[ -n "$has_rec" ]]; then
       if [[ "$id" == - ]]; then
@@ -178,6 +219,13 @@ sb_integrity_record_root() { # DIR
       printf '%s' "$d"
       return 0
     fi
+    if [[ -n "$has_mk" ]]; then
+      _sb_iv_cksum_var "$d"
+      if [[ -f "$sd/root-$_SB_IV_SUM" ]]; then
+        printf '%s' "$d"
+        return 0
+      fi
+    fi
     d="${d%/*}"
   done
 }
@@ -192,12 +240,13 @@ _SB_IV_REGISTRY_CAP=200
 # taker wins). When the lock cannot be had the rewrite is skipped and retried at the next session; registration
 # still appends its line with a single write, which needs no lock.
 _sb_iv_reg_lock() { # 0 = held, 1 = not obtained
-  local lock pid dead n=0
+  local lock pid stamp now dead n=0
   lock="$(_sb_iv_registry_file).lock"
   while [[ $n -lt 60 ]]; do
     n=$((n + 1))
     if mkdir "$lock" 2>/dev/null; then
-      if printf '%s' "$$" >"$lock/pid" 2>/dev/null; then
+      now="$(date +%s)"
+      if printf '%s %s\n' "$$" "$now" 2>/dev/null >"$lock/pid"; then
         :
       fi
       return 0
@@ -206,10 +255,12 @@ _sb_iv_reg_lock() { # 0 = held, 1 = not obtained
       return 1
     fi
     pid=""
-    if [[ -f "$lock/pid" ]]; then
-      { pid="$(<"$lock/pid")"; } 2>/dev/null || pid=""
-    fi
-    if { [[ -n "$pid" ]] && ! kill -0 "$pid" 2>/dev/null; } || { [[ -z "$pid" && $n -ge 40 ]]; }; then
+    stamp=""
+    read -r pid stamp 2>/dev/null <"$lock/pid" || :
+    now="$(date +%s)"
+    # a dead owner, an owner file that never appeared, or a lock older than 30 s (a reused PID keeps a lock
+    # "alive"; the critical sections last milliseconds) is stale; a young live owner is never robbed
+    if { [[ -n "$pid" ]] && ! kill -0 "$pid" 2>/dev/null; } || { [[ -z "$pid" && $n -ge 40 ]]; } || { [[ "$stamp" =~ ^[0-9]+$ ]] && [[ $((now - stamp)) -gt 30 ]]; }; then
       dead="$lock.dead.$$"
       if mv "$lock" "$dead" 2>/dev/null; then
         rm -rf -- "$dead"
@@ -227,6 +278,7 @@ _sb_iv_reg_unlock() {
 # Register ROOT as a baselined project root (idempotent); the line carries the root's current path and identity,
 # so a renamed root gets a fresh line. The oldest lines go beyond the cap.
 sb_integrity_register_root() { # ROOT
+  _sb_iv_marker_write "$1"
   if _sb_iv_reg_lock; then
     _sb_iv_register_unlocked "$1" cap
     _sb_iv_reg_unlock
@@ -242,7 +294,7 @@ _sb_iv_register_unlocked() { # ROOT [cap]
   content=""
   if [[ -f "$regf" ]]; then content="$(<"$regf")"; fi
   if [[ $'\n'"$content"$'\n' == *$'\n'"$1"$'\t'"$id"$'\n'* ]]; then return 0; fi
-  printf '%s\t%s\n' "$1" "$id" >>"$regf" 2>/dev/null || true
+  printf '%s\t%s\n' "$1" "$id" 2>/dev/null >>"$regf" || true
   if [[ -n "${2:-}" ]]; then
     _sb_iv_registry_cap "$regf"
   fi
@@ -257,7 +309,7 @@ _sb_iv_registry_cap() { # FILE
     return 0
   fi
   tmp="$f.$$"
-  if printf '%s\n' "$content" | tail -n "$_SB_IV_REGISTRY_CAP" >"$tmp" 2>/dev/null; then
+  if printf '%s\n' "$content" | tail -n "$_SB_IV_REGISTRY_CAP" 2>/dev/null >"$tmp"; then
     mv -f -- "$tmp" "$f"
   fi
   rm -f -- "$tmp"
@@ -266,6 +318,7 @@ _sb_iv_registry_cap() { # FILE
 # Remove ROOT from the registry (an honest retirement): every line of its path and every line of its identity
 # (a renamed root has lines under both of its names).
 sb_integrity_unregister_root() { # ROOT
+  _sb_iv_marker_remove "$1"
   if _sb_iv_reg_lock; then
     _sb_iv_unregister_unlocked "$1"
     _sb_iv_reg_unlock
@@ -287,10 +340,50 @@ _sb_iv_unregister_unlocked() { # ROOT
     fi
     kept="$kept$line"$'\n'
   done <"$regf"
-  if printf '%s' "$kept" >"$tmp" 2>/dev/null; then
+  if printf '%s' "$kept" 2>/dev/null >"$tmp"; then
     mv -f -- "$tmp" "$regf"
   fi
   rm -f -- "$tmp"
+}
+
+# The twin rule for markers: the old-name marker of a renamed root (its path is gone, its identity is live under
+# another marker) goes. A marker whose path holds another directory stays, like its registry line.
+_sb_iv_marker_prune() {
+  local sd m p q ms=() mp=() mi=() n i j cur="" live=() gone
+  sd="$(_sb_iv_state_dir)"
+  for m in "$sd"/root-*; do
+    if [[ -f "$m" && ! -L "$m" ]]; then
+      p=""
+      q=""
+      IFS=$'\t' read -r p q <"$m" || true
+      ms+=("$m")
+      mp+=("$p")
+      mi+=("$q")
+    fi
+  done
+  n=${#ms[@]}
+  for ((i = 0; i < n; i++)); do
+    live+=("")
+    if [[ -d "${mp[$i]}" && -n "${mi[$i]}" ]]; then
+      cur="$(_sb_iv_dir_id "${mp[$i]}")"
+      if [[ "$cur" == "${mi[$i]}" ]]; then
+        live[i]=1
+      fi
+    fi
+  done
+  for ((i = 0; i < n; i++)); do
+    if [[ -z "${live[$i]}" && -n "${mi[$i]}" && ! -d "${mp[$i]}" ]]; then
+      gone=""
+      for ((j = 0; j < n; j++)); do
+        if [[ "${mi[$j]}" == "${mi[$i]}" && -n "${live[$j]}" ]]; then
+          gone=1
+        fi
+      done
+      if [[ -n "$gone" ]]; then
+        rm -f -- "${ms[$i]}"
+      fi
+    fi
+  done
 }
 
 # Session start (startup, clear): drop the lines that can no longer matter. A line whose path now holds a
@@ -298,6 +391,7 @@ _sb_iv_unregister_unlocked() { # ROOT
 # root was renamed). A line whose path is gone and whose identity has no live line stays (the root may have
 # moved before it was seen again) until the cap drops it.
 sb_integrity_prune_registry() {
+  _sb_iv_marker_prune
   if _sb_iv_reg_lock; then
     _sb_iv_prune_unlocked
     _sb_iv_reg_unlock
@@ -366,7 +460,7 @@ _sb_iv_prune_unlocked() {
     fi
   done
   tmp="$regf.$$"
-  if printf '%s' "$kept" >"$tmp" 2>/dev/null; then
+  if printf '%s' "$kept" 2>/dev/null >"$tmp"; then
     mv -f -- "$tmp" "$regf"
   fi
   rm -f -- "$tmp"
