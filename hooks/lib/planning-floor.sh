@@ -83,7 +83,7 @@ sb_pf_write_records() {
   # (joined to the payload's cwd, else the process cwd; '.' and '..' collapsed lexically, symlinks not followed).
   # A source folder symlinked outside the project is then still inside it by name.
   if [[ "${SB_TI_TOOL_KIND:-shell}" != shell && "$input" == *'"cwd"'* ]]; then
-    cwdp="$(printf '%s' "$input" | jq -r '.cwd // empty | strings' 2>/dev/null)" || cwdp=""
+    cwdp="$(printf '%s' "$input" | jq -r '.cwd // empty | strings' 2>/dev/null || :)"
   fi
   {
     case "${SB_TI_TOOL_KIND:-shell}" in
