@@ -30,6 +30,43 @@ _sb_iv_cksum_var() { # STRING -> _SB_IV_SUM (no subshell: the hot path calls thi
   done
   _SB_IV_SUM=$(((~crc) & 0xFFFFFFFF))
 }
+# _sb_iv_cksum_ancestors PATH -> _SB_IV_ASUM[]: the cksum of PATH itself, then of every prefix that ends before a "/"
+# (its ancestors, deepest first), then of "/" last. One pass over the bytes serves all of them: the running CRC
+# at a "/" is the state of that prefix, and only the length bytes are added to finish each one.
+_sb_iv_cksum_ancestors() {
+  local LC_ALL=C s="$1" crc=0 i len b idx tv fin pre=() k root=""
+  len=${#s}
+  for ((i = 0; i < len; i++)); do
+    if [[ "${s:i:1}" == / && i -gt 0 ]]; then
+      _sb_iv_crc_finish "$crc" "$i"
+      pre+=("$fin")
+    fi
+    printf -v b '%d' \'"${s:i:1}"
+    idx=$((((crc / 16777216) ^ b) % 256))
+    tv="${_SB_IV_CRC[idx]}"
+    crc=$((((crc * 256) % 4294967296) ^ tv))
+    if [[ $i -eq 0 ]]; then
+      _sb_iv_crc_finish "$crc" 1
+      root="$fin"
+    fi
+  done
+  _sb_iv_crc_finish "$crc" "$len"
+  _SB_IV_ASUM=("$fin")
+  for ((k = ${#pre[@]} - 1; k >= 0; k--)); do _SB_IV_ASUM+=("${pre[k]}"); done
+  if [[ $len -gt 1 ]]; then _SB_IV_ASUM+=("$root"); fi
+}
+# _sb_iv_crc_finish CRC LENGTH -> fin: the cksum of a string of LENGTH bytes whose running CRC is CRC
+_sb_iv_crc_finish() {
+  local crc="$1" n="$2" b idx tv
+  while ((n > 0)); do
+    b=$((n % 256))
+    idx=$((((crc / 16777216) ^ b) % 256))
+    tv="${_SB_IV_CRC[idx]}"
+    crc=$((((crc * 256) % 4294967296) ^ tv))
+    n=$((n / 256))
+  done
+  fin=$(((~crc) & 0xFFFFFFFF))
+}
 _sb_iv_cksum() { # STRING -> the CRC on stdout
   _sb_iv_cksum_var "$1"
   printf '%s' "$_SB_IV_SUM"
@@ -117,23 +154,43 @@ _sb_iv_rec_file() { # ROOT
 # (a plain line without the inode is read too). A root is added when it is first baselined and removed only by
 # an honest retirement. It never grants anything: it keeps a root that was baselined once a project (strict, never
 # inert). A directory is a root when it is registered (by inode, or by path when the path still holds the same
-# directory) OR has an integrity record; both have to be removed to lose the anchor.
+# directory), when its path has a marker, OR when it has an integrity record. Only the registry line and the marker
+# name a PATH; the record is keyed by the directory's identity, so it holds a renamed or moved root but not a copy
+# put at the old path (a new identity at the same path).
 _sb_iv_registry_file() { printf '%s/baselined-roots' "$(_sb_iv_state_dir)"; }
 
-# A third, independent anchor: one marker file per baselined path, root-<CRC of the path> in the state directory,
-# holding "path TAB identity". Its presence anchors the path (it is not verified, not capped, not rewritten);
-# the registry line and the identity-named record are the other two. A root is lost only when all three are gone.
+# The path anchor next to the registry line: one marker file per baselined path, root-<CRC of the path> in the
+# state directory, holding "path TAB identity". Its presence (and its stored path) anchors the path; it is not
+# verified, not capped, not rewritten. Like every file of the state directory (the registry, its lock, the markers)
+# the agent's file tools and shell commands may not write it (dev-cycle-check.sh, "STATE TAMPER BLOCKED").
 _sb_iv_marker_write() { # ROOT
-  local sd id
+  local sd id line
   sd="$(_sb_iv_state_dir)"
   id="$(_sb_iv_dir_id "$1")"
   _sb_iv_cksum_var "$1"
   if [[ -L "$sd/root-$_SB_IV_SUM" ]]; then
     return 0
   fi
+  # the name is a CRC of the path: another path with the same CRC keeps the marker it has (checked by its content)
+  if [[ -f "$sd/root-$_SB_IV_SUM" ]]; then
+    line=""
+    IFS= read -r line <"$sd/root-$_SB_IV_SUM" || :
+    if [[ "$line" == *$'\t'* && "$line" != "$1"$'\t'* ]]; then
+      return 0
+    fi
+  fi
   if printf '%s\t%s\n' "$1" "$id" 2>/dev/null >"$sd/root-$_SB_IV_SUM"; then
     :
   fi
+}
+
+# _sb_iv_marker_is FILE PATH: FILE is a plain marker file whose stored path is PATH. The file is named by a CRC of
+# the path, so two paths can share a name: a marker anchors only the path it holds.
+_sb_iv_marker_is() {
+  local line=""
+  [[ -f "$1" && ! -L "$1" ]] || return 1
+  IFS= read -r line <"$1" || :
+  [[ "$line" == "$2"$'\t'* ]]
 }
 
 # Remove ROOT's marker and every marker of its identity (a renamed root has one under each of its names).
@@ -181,6 +238,7 @@ sb_integrity_record_root() { # DIR
   ids="$(_sb_iv_dir_ids "${anc[@]}")"
   while IFS= read -r id; do idl+=("$id"); done <<<"$ids"
   n=${#anc[@]}
+  if [[ -n "$has_mk" ]]; then _sb_iv_cksum_ancestors "${anc[0]}"; fi
   for ((i = 0; i < n; i++)); do
     d="${anc[$i]}"
     id="${idl[$i]:--}"
@@ -192,12 +250,9 @@ sb_integrity_record_root() { # DIR
       printf '%s' "$d"
       return 0
     fi
-    if [[ -n "$has_mk" ]]; then
-      _sb_iv_cksum_var "$d"
-      if [[ -f "$sd/root-$_SB_IV_SUM" ]]; then
-        printf '%s' "$d"
-        return 0
-      fi
+    if [[ -n "$has_mk" ]] && _sb_iv_marker_is "$sd/root-${_SB_IV_ASUM[i]}" "$d"; then
+      printf '%s' "$d"
+      return 0
     fi
     if [[ -n "$has_rec" ]]; then
       if [[ "$id" == - ]]; then
@@ -214,19 +269,20 @@ sb_integrity_record_root() { # DIR
   # A registered path stays registered whatever it resolves to now: a symlink put at it is judged by its own
   # (logical) name as well.
   d="${lg%/}"
+  if [[ "$d" == "${anc[0]}" ]]; then return 0; fi  # no symlink in the way: the first walk judged these names
+  i=0
+  if [[ -n "$has_mk" ]]; then _sb_iv_cksum_ancestors "$d"; fi
   while [[ -n "$d" ]]; do
     if [[ "$reg" == *$'\n'"$d"$'\n'* || "$reg" == *$'\n'"$d"$'\t'* ]]; then
       printf '%s' "$d"
       return 0
     fi
-    if [[ -n "$has_mk" ]]; then
-      _sb_iv_cksum_var "$d"
-      if [[ -f "$sd/root-$_SB_IV_SUM" ]]; then
-        printf '%s' "$d"
-        return 0
-      fi
+    if [[ -n "$has_mk" ]] && _sb_iv_marker_is "$sd/root-${_SB_IV_ASUM[i]}" "$d"; then
+      printf '%s' "$d"
+      return 0
     fi
     d="${d%/*}"
+    i=$((i + 1))
   done
 }
 

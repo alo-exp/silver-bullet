@@ -226,7 +226,8 @@ class WalkerTest(Base):
         self.assertEqual(self.actions("G=git; unset G; $G push"), [])
         self.assertEqual(self.actions("f() { git push; }; unset -f f; true"), ["push"])
         self.assertEqual(self.writes("cd /tmp; cd -; echo x > f"), [self.p("f")])
-        self.assertEqual(self.run_("pushd /tmp; popd; echo x > f")["writes"][0]["dynamic"], True)
+        self.assertEqual(self.writes("pushd /tmp; popd; echo x > f"), [self.p("f")])  # popd returns to the pushd origin
+        self.assertEqual(self.run_("popd; echo x > f")["writes"][0]["dynamic"], True)
         self.assertEqual(self.writes("cd; echo x > f"), [str(self.home / "f")])
         self.assertEqual(self.ro("cd src; set -e; shift; true"), (True, True))
 

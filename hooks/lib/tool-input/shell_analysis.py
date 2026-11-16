@@ -1028,9 +1028,10 @@ class Env:
 
     def __init__(self, cwd, home, logical=None):
         self.vars = {}
-        self.cwd = cwd
-        self.cwd_text = logical or cwd
-        self.oldpwd = None
+        self.cwd = cwd              # where the kernel has the shell: symlinks resolved (None: not known)
+        self.cwd_text = logical or cwd  # where the shell thinks it is ($PWD): joined lexically, symlinks kept
+        self.oldpwd = None          # the logical previous directory ($OLDPWD), None when not known
+        self.dirstack = []          # pushd: logical directories (None: not known)
         self.home = home
         self.aliases = {}
         self.functions = {}
@@ -1046,6 +1047,7 @@ class Env:
         new.vars = dict(self.vars)
         new.cwd_text = self.cwd_text
         new.oldpwd = self.oldpwd
+        new.dirstack = list(self.dirstack)
         new.aliases = dict(self.aliases)
         new.functions = dict(self.functions)
         new.git_aliases = dict(self.git_aliases)
@@ -1078,21 +1080,34 @@ class Env:
                 return "", False
             value = self.positional[index - 1]
             return _lit(value), isinstance(value, Dyn) and value.tainted
-        return {"HOME": self.home, "PWD": self.cwd, "OLDPWD": self.oldpwd}.get(name), False
+        return {"HOME": self.home, "PWD": self.logical_cwd(), "OLDPWD": self.oldpwd}.get(name), False
 
     def get(self, name):
         return self.lookup(name)[0]
 
-    def chdir(self, item):
-        """cd to an argv item; an unknown target makes the directory dynamic."""
-        self.oldpwd = self.cwd
+    def logical_cwd(self):
+        """The logical working directory ($PWD), None when it is not known."""
+        return None if self.cwd is None else self.cwd_text
+
+    def chdir(self, item, physical=False):
+        """cd to an argv item; an unknown target makes the directory dynamic. The logical directory joins the
+        target lexically ('.' and '..' collapsed, symlinks kept, as bash -L does); the resolved one is where the
+        kernel ends up. ``physical`` (cd -P) makes both the resolved path."""
+        self.oldpwd = self.logical_cwd()
         target = _lit(item)
         if target is None or (self.cwd is None and not target.startswith(("/", "~"))):
             self.cwd = None
             self.cwd_text = os.path.join(self.cwd_text, _text(item))
             return
-        self.cwd = os.path.normpath(os.path.join(self.cwd or "/", os.path.expanduser(target)))
-        self.cwd_text = self.cwd
+        logical = os.path.normpath(os.path.join(self.cwd_text, os.path.expanduser(target)))
+        self.cwd = os.path.realpath(logical)
+        self.cwd_text = self.cwd if physical else logical
+
+    def unknown_dir(self):
+        """The directory is no longer known (popd or pushd with a stack the analysis does not model)."""
+        self.oldpwd = self.logical_cwd()
+        self.cwd = None
+        self.cwd_text = os.path.join(self.cwd_text, "$DIRSTACK")
 
 
 # `eval "$(tool init)"` setup lines: the whole substitution is one well-known environment tool with plain
@@ -1885,6 +1900,20 @@ def _positionals(args, value_short="", value_long=()):
     return out
 
 
+def _cd_physical(args):
+    """True when ``cd -P`` is in effect (the last of -L and -P wins)."""
+    physical = False
+    for item in args:
+        token = _lit(item)
+        if token == "--":
+            break
+        if token is not None and token.startswith("-") and token != "-":
+            for flag in token[1:]:
+                if flag in "LP":
+                    physical = flag == "P"
+    return physical
+
+
 def _option_values(args, wanted_short="", wanted_long=(), value_short="", value_long=()):
     """Values given to the wanted options, with the same option grammar as _positionals."""
     values, i = [], 0
@@ -2430,7 +2459,7 @@ class _Analysis:
 
     def tilde(self, text, env):
         head, sep, tail = text.partition("/")
-        replacement = {"~": env.home, "~+": env.cwd, "~-": env.oldpwd}.get(head)
+        replacement = {"~": env.home, "~+": env.logical_cwd(), "~-": env.oldpwd}.get(head)
         return text if replacement is None else replacement + sep + tail
 
     def static_output(self, script, env):
@@ -2452,7 +2481,7 @@ class _Analysis:
         if argv[0] == "printf" and len(argv) > 1:
             return _printf_output(argv[1], argv[2:])
         if argv[0] == "pwd" and env.cwd is not None:
-            return env.cwd + "\n"
+            return (env.cwd if "-P" in argv[1:] else env.cwd_text) + "\n"
         return None
 
     def literal_text(self, word, env):
@@ -3106,12 +3135,23 @@ class _Analysis:
                 self.unseen("%s evaluates text that holds a command substitution" % name)
         if name in ("cd", "pushd"):
             positionals = _positionals(args)
+            if name == "pushd":
+                # `pushd`, `pushd +1`, `pushd -n d`: the stack is rotated or left alone, which is not modelled
+                if not positionals or any(_lit(a) is not None and re.match(r"\+|-\w*n", _lit(a)) for a in args):
+                    env.dirstack.append(None)
+                    env.unknown_dir()
+                    return
+                env.dirstack.append(env.logical_cwd())
             target = positionals[0] if positionals else (env.home or Dyn("~"))
             if _lit(target) == "-":
                 target = env.oldpwd or Dyn("$OLDPWD")
-            env.chdir(target)
+            env.chdir(target, _cd_physical(args))
         elif name == "popd":
-            env.chdir(Dyn("$DIRSTACK"))
+            top = env.dirstack.pop() if env.dirstack and not args else None
+            if top is None:
+                env.unknown_dir()
+            else:
+                env.chdir(top)
         elif name in _DECLARATIONS:
             integer = _has_flag(args, "i")
             for item in _positionals(args):
@@ -4556,15 +4596,17 @@ def _guarded(analysis, walk):
         analysis.unseen(analysis.failed)
 
 
-def analyze_command(command, base_dir=None, lookups=True, environ=None, scope_base=None, scope_logical=None):
+def analyze_command(command, base_dir=None, lookups=True, environ=None, scope_base=None, scope_logical=None,
+                    walk_logical=None):
     """Analyze one shell command string (see the module docstring for the result).
 
     ``scope_base`` is the verified directory the push scope runs git in (the payload cwd); it defaults to
-    ``base_dir``. ``environ`` stands in for the Bash tool's environment (default: the process environment)."""
+    ``base_dir``. ``walk_logical`` is the logical (symlinks kept) spelling of ``base_dir`` the walk starts from.
+    ``environ`` stands in for the Bash tool's environment (default: the process environment)."""
     text = (command or "").replace("\x00", "")
     base = os.path.realpath(base_dir or os.getcwd())
     analysis = _Analysis(base, lookups)
-    logical = os.path.abspath(scope_logical or base_dir or os.getcwd())
+    logical = os.path.abspath(walk_logical or scope_logical or base_dir or os.getcwd())
     if len(text) > MAX_INPUT_CHARS:
         analysis.unseen("command too large to analyze")
         return _result(analysis, Script([], ""), text[:4096])
@@ -4579,13 +4621,14 @@ def analyze_command(command, base_dir=None, lookups=True, environ=None, scope_ba
     return result
 
 
-def analyze_argv(argv, base_dir=None, lookups=True, environ=None, scope_base=None, scope_logical=None):
+def analyze_argv(argv, base_dir=None, lookups=True, environ=None, scope_base=None, scope_logical=None,
+                 walk_logical=None):
     """Analyze a command given as an argv list (Codex exec_command ``cmd``), run without a shell."""
     argv = [str(part).replace("\x00", "") for part in argv]
     text = " ".join(shlex.quote(part) for part in argv)
     base = os.path.realpath(base_dir or os.getcwd())
     analysis = _Analysis(base, lookups)
-    logical = os.path.abspath(scope_logical or base_dir or os.getcwd())
+    logical = os.path.abspath(walk_logical or scope_logical or base_dir or os.getcwd())
     if len(text) > MAX_INPUT_CHARS:
         analysis.unseen("command too large to analyze")
         return _result(analysis, Script([], ""), text[:4096])
@@ -4681,14 +4724,22 @@ def analyze_payload(text, base_dir=None, lookups=True, environ=None):
     workdir = fields.get("workdir")
     scope_base = _payload_scope_base(payload.get("cwd"), workdir, base)
     raw_cwd = payload.get("cwd")
-    scope_logical = os.path.abspath(raw_cwd) if isinstance(raw_cwd, str) and raw_cwd else None
+    scope_logical = None
+    walk_logical = os.path.abspath(base_dir or os.getcwd())
+    if isinstance(raw_cwd, str) and raw_cwd and os.path.isdir(raw_cwd):
+        # the host runs the command in the payload's cwd, wherever this hook process happens to be: the walk starts
+        # there, with the payload's own spelling as its logical directory
+        base = os.path.realpath(raw_cwd)
+        scope_logical = walk_logical = os.path.abspath(raw_cwd)
     if isinstance(workdir, str) and workdir:
+        scope_logical = os.path.normpath(os.path.join(walk_logical, workdir)) if scope_logical else None
+        walk_logical = os.path.normpath(os.path.join(walk_logical, workdir))
         base = os.path.realpath(os.path.join(base, workdir))
     if kind == "shell" and isinstance(command, list):
-        result = analyze_argv(command, base, lookups, environ, scope_base, scope_logical)
+        result = analyze_argv(command, base, lookups, environ, scope_base, scope_logical, walk_logical)
     else:
         result = analyze_command(command if kind == "shell" and isinstance(command, str) else "", base, lookups,
-                                 environ, scope_base, scope_logical)
+                                 environ, scope_base, scope_logical, walk_logical)
     command_text = command if isinstance(command, str) else \
         " ".join(shlex.quote(str(part)) for part in command) if isinstance(command, list) else ""
     paths = patch_paths(tool_input) if tool_input is not None else []
@@ -4720,7 +4771,7 @@ def analyze_payload(text, base_dir=None, lookups=True, environ=None):
         result["legacy_first_line"] = " ; ".join(
             r["canonical"] for r in result["delivery"] if r["tier"] == result["tier"])
     targets = paths if kind == "patch" else [file_path] if kind == "edit" and file_path else []
-    logical_base = scope_logical or os.path.abspath(base_dir or os.getcwd())
+    logical_base = walk_logical
     for target in targets:
         result["writes"].append({"path": os.path.realpath(os.path.join(base, os.path.expanduser(target))),
                                  "lpath": os.path.abspath(os.path.join(logical_base, os.path.expanduser(target))),
