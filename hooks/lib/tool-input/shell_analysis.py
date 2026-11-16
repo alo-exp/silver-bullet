@@ -1026,10 +1026,10 @@ def _lit(item):
 class Env:
     """What the walker knows about the shell at one point of the command."""
 
-    def __init__(self, cwd, home):
+    def __init__(self, cwd, home, logical=None):
         self.vars = {}
         self.cwd = cwd
-        self.cwd_text = cwd
+        self.cwd_text = logical or cwd
         self.oldpwd = None
         self.home = home
         self.aliases = {}
@@ -2263,7 +2263,9 @@ class _Analysis:
             env.files[key] = None  # rewritten by something else: what it holds now is not known
         dynamic = isinstance(item, Dyn) or (env.cwd is None and not os.path.isabs(path))
         full = os.path.join(env.cwd_text, path) if dynamic else os.path.realpath(os.path.join(env.cwd or "/", path))
-        self.writes.append({"path": full, "raw": text, "dynamic": dynamic, "via": via, "scope": scope})
+        # the logical (symlinks unresolved, lexically normalised) spelling is judged next to the resolved one
+        lpath = os.path.normpath(os.path.join(env.cwd_text or env.cwd or "/", path))
+        self.writes.append({"path": full, "lpath": lpath, "raw": text, "dynamic": dynamic, "via": via, "scope": scope})
 
     def opaque_writer(self, program, reason):
         self.mark("no")
@@ -4562,12 +4564,13 @@ def analyze_command(command, base_dir=None, lookups=True, environ=None, scope_ba
     text = (command or "").replace("\x00", "")
     base = os.path.realpath(base_dir or os.getcwd())
     analysis = _Analysis(base, lookups)
+    logical = os.path.abspath(scope_logical or base_dir or os.getcwd())
     if len(text) > MAX_INPUT_CHARS:
         analysis.unseen("command too large to analyze")
         return _result(analysis, Script([], ""), text[:4096])
     script = parse(text)
     analysis.deadline = time.monotonic() + MAX_SECONDS  # the walk's own budget starts after the parse
-    _guarded(analysis, lambda: analysis.walk_script(script, Env(base, _home())))
+    _guarded(analysis, lambda: analysis.walk_script(script, Env(base, _home(), logical)))
     result = _result(analysis, script, text)
     scope_dir = base if scope_base is None else scope_base or None
     if lookups and analysis.push:
@@ -4582,11 +4585,12 @@ def analyze_argv(argv, base_dir=None, lookups=True, environ=None, scope_base=Non
     text = " ".join(shlex.quote(part) for part in argv)
     base = os.path.realpath(base_dir or os.getcwd())
     analysis = _Analysis(base, lookups)
+    logical = os.path.abspath(scope_logical or base_dir or os.getcwd())
     if len(text) > MAX_INPUT_CHARS:
         analysis.unseen("command too large to analyze")
         return _result(analysis, Script([], ""), text[:4096])
     if argv:
-        _guarded(analysis, lambda: analysis.execute(argv, Env(base, _home()), {}, None))
+        _guarded(analysis, lambda: analysis.execute(argv, Env(base, _home(), logical), {}, None))
     script = parse(text)
     result = _result(analysis, script, text)
     scope_dir = base if scope_base is None else scope_base or None
@@ -4716,8 +4720,10 @@ def analyze_payload(text, base_dir=None, lookups=True, environ=None):
         result["legacy_first_line"] = " ; ".join(
             r["canonical"] for r in result["delivery"] if r["tier"] == result["tier"])
     targets = paths if kind == "patch" else [file_path] if kind == "edit" and file_path else []
+    logical_base = scope_logical or os.path.abspath(base_dir or os.getcwd())
     for target in targets:
         result["writes"].append({"path": os.path.realpath(os.path.join(base, os.path.expanduser(target))),
+                                 "lpath": os.path.abspath(os.path.join(logical_base, os.path.expanduser(target))),
                                  "raw": target, "dynamic": False, "via": tool_name, "scope": "path"})
     if kind != "shell":
         result["read_only"] = result["read_only_legacy"] = False

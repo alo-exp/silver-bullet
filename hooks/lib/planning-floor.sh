@@ -78,13 +78,20 @@ sb_pf_canon() {
 # sb_pf_write_records INPUT: "<via><TAB><canonical path>" per write. via is the operation for
 # shell writes (redirect, tee, cp, mv, mv source, rm, ...) and "edit" for the file tools.
 sb_pf_write_records() {
-  local input="${1:-}" via raw
+  local input="${1:-}" via raw cwdp=""
+  # Every write is judged under BOTH spellings: the resolved path (symlinks followed) and the logical one
+  # (joined to the payload's cwd, else the process cwd; '.' and '..' collapsed lexically, symlinks not followed).
+  # A source folder symlinked outside the project is then still inside it by name.
+  if [[ "${SB_TI_TOOL_KIND:-shell}" != shell && "$input" == *'"cwd"'* ]]; then
+    cwdp="$(printf '%s' "$input" | jq -r '.cwd // empty | strings' 2>/dev/null)" || cwdp=""
+  fi
   {
     case "${SB_TI_TOOL_KIND:-shell}" in
       shell)
         printf '%s' "${SB_SA_JSON:-}" | jq -r --arg tree "$SB_PF_TREE_VIAS" '
           .writes[]? | select((.scope // "path") == "path" or (.via as $v | $tree | split("|") | index($v)))
-          | select((.dynamic | not) or (.path | startswith("/"))) | [.via, .path] | @tsv' 2>/dev/null
+          | select((.dynamic | not) or (.path | startswith("/")))
+          | ([.via, .path], (if .lpath and .lpath != .path then [.via, .lpath] else empty end)) | @tsv' 2>/dev/null
         ;;
       *)
         {
@@ -103,9 +110,21 @@ sb_pf_write_records() {
         done
         ;;
     esac
-  } | while IFS=$'\t' read -r via raw; do
-    [[ -n "$raw" ]] && printf '%s\t%s\n' "$via" "$(sb_pf_canon "$raw")"
+  } | awk 'NF && !seen[$0]++' | while IFS=$'\t' read -r via raw; do
+    if [[ -n "$raw" ]]; then
+      printf '%s\t%s\n' "$via" "$(sb_pf_canon "$raw" "${cwdp:-$PWD}")"
+      sb_pf_logical_var "$raw" "${cwdp:-$PWD}"
+      printf '%s\t%s\n' "$via" "$_SB_PF_LOGICAL"
+    fi
   done | awk 'NF && !seen[$0]++'
+}
+
+# The logical spelling of a path into _SB_PF_LOGICAL: joined to BASE, '.' and '..' collapsed, symlinks left alone
+# (no subshell: it runs for every write).
+sb_pf_logical_var() {
+  _sb_path_abs "$1" "${2:-$PWD}"
+  _sb_path_lex "$_SB_PATH_OUT"
+  _SB_PF_LOGICAL="$_SB_PATH_OUT"
 }
 
 # Tree-scope writes (the whole work tree at a path) that G2 gates: extractors. Patch appliers are

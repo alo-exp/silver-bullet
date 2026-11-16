@@ -316,6 +316,8 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
     [[ -z "$found" ]] || found="$found/.silver-bullet.json"
     printf '%s' "$found"
   }
+  croot_cfg=""
+  croot=""
   targets_in_scope=""
   targets_all_non_logic=true
   scope_config=""
@@ -342,7 +344,19 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
       last_cfg="$cfg"
     fi
     [[ -n "$cfg" ]] || continue
-    root="$(sb_pf_canon "$(dirname "$cfg")")"
+    if [[ "$cfg" != "$croot_cfg" ]]; then
+      croot_cfg="$cfg"
+      croot="$(sb_pf_canon "$(dirname "$cfg")")"
+    fi
+    root="$(dirname "$cfg")"
+    root_logical=false
+    case "$target" in
+      "$root" | "$root"/*)
+        # a target spelled under the root as found (possibly a symlinked name): the root stays in that spelling
+        if [[ "$root" != "$croot" ]]; then root_logical=true; fi
+        ;;
+      *) root="$croot" ;;
+    esac
     a_root="$root"
     case "$target" in
       "$root/.silver-bullet.json") a_tags="${a_tags:+$a_tags }config" ;;
@@ -354,7 +368,7 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
     # The enforcement contract files: changing them rewrites every gate (R1-07, R2-04). A
     # directory-capable write into a directory above them counts.
     while IFS= read -r cf; do
-      cf="$(sb_pf_canon "$cf")"
+      if [[ "$root_logical" != true ]]; then cf="$(sb_pf_canon "$cf")"; fi
       if [[ "$target" == "$cf" ]]; then protected_hit="$target"; protected_root="$root"; fi
       if sb_pf_extract_via "$via" && [[ "$cf" == "$target"/* ]]; then protected_hit="$cf"; protected_root="$root"; fi
     done < <(sb_pf_config_files "$root")
