@@ -529,7 +529,20 @@ fi
 mkdir -p "$REUSED/oss/src"; git -C "$REUSED/oss" init -q >/dev/null 2>&1
 assert_eq "an inode that is not the root's (no matching birth time) makes no project" "" "$(sb_integrity_root "$REUSED/oss/src")"
 run_dc "$(edit_json "$REUSED/oss/src/a.js" Write PreToolUse)"
-assert_eq "an unrelated repository in a reused inode's place is allowed" "none" "$(decision)"
+assert_eq "an unrelated repository in a reused inode's place (another path) is allowed" "none" "$(decision)"
+# the same path again, as an unrelated repository: strict by design until the user retires the root (Recovery)
+mkdir -p "$OLDP/src"; git -C "$OLDP" init -q >/dev/null 2>&1
+assert_eq "a registered path holding another directory is still the registered root" "$OLDP" "$(sb_integrity_root "$OLDP/src")"
+run_dc "$(edit_json "$OLDP/src/a.js" Write PreToolUse)"
+assert_eq "an unrelated repository at a retired project's path is held strict" "deny" "$(decision)"
+assert_contains "and the message says what to do (the Recovery section, no recipe for the agent)" "$(message)" 'under "Recovery"'
+assert_not_contains "and it prints no bypass recipe" "$(message)" "baselined-roots"
+RECIPE0="$TL_TMP/recovery0.sh"
+awk '/^```sb-recovery$/ {on=1; next} /^```$/ {on=0} on' "$TL_REPO_ROOT/docs/ENFORCEMENT.md" >"$RECIPE0"
+ROOT="$OLDP" SD="$SD" bash "$RECIPE0"
+assert_eq "after the Recovery recipe the path is no project" "" "$(sb_integrity_root "$OLDP/src")"
+run_dc "$(edit_json "$OLDP/src/a.js" Write PreToolUse)"
+assert_eq "and the unrelated repository can be edited" "none" "$(decision)"
 # (b) rename, restart, honest uninstall of the renamed project
 ih_project h50b
 OLDP="$PROJ"; NEWP="${OLDP}-ren"
@@ -553,7 +566,7 @@ printf '%s\t%s\n' "$TL_TMP" "9:8" >>"$SD/baselined-roots"
 mkdir -p "$TL_TMP/h50c-bt"; printf '%s\t%s\n' "$TL_TMP/h50c-bt" "9:7:6" >>"$SD/baselined-roots"
 printf '%s\n' "$TL_TMP/plain-line" >>"$SD/baselined-roots"
 OUT="$(ih_session_start_out startup)"
-assert_eq "prune: a dev:ino line whose path now holds another directory goes (an inode can be reused)" "no" "$(reg_has "$TL_TMP" && echo yes || echo no)"
+assert_eq "prune: a dev:ino line whose path now holds another directory stays (the path stays registered)" "yes" "$(reg_has "$TL_TMP" && echo yes || echo no)"
 assert_eq "prune: a line with a birth time stays when its path holds another directory (it may anchor a renamed root)" "yes" "$(reg_has "$TL_TMP/h50c-bt" && echo yes || echo no)"
 assert_eq "prune: a live line stays" "yes" "$(reg_has "$PROJ" && echo yes || echo no)"
 assert_eq "prune: a gone path with an unknown identity stays until the cap" "yes" "$(reg_has "$TL_TMP/gone-a" && echo yes || echo no)"
@@ -584,6 +597,19 @@ assert_eq "recovery (GNU stat): the record is gone" "no" "$(has_rec)"
 assert_eq "recovery (GNU stat): the root is no project" "" "$(sb_integrity_root "$PROJ")"
 ih_edit
 assert_eq "recovery (GNU stat): edits are allowed" "none" "$(decision)"
+# the recipe refuses an empty or mistyped ROOT and touches nothing
+cp "$SD/baselined-roots" "$SD/baselined-roots.keep" 2>/dev/null || : >"$SD/baselined-roots.keep"
+printf '%s\n' "/plain/line/root" >>"$SD/baselined-roots"; cp "$SD/baselined-roots" "$SD/baselined-roots.before"
+for bad in "" "$TL_TMP/no-such-dir"; do
+  rc=0; ROOT="$bad" SD="$SD" bash "$RECIPE" >/dev/null 2>&1 || rc=$?
+  assert_eq "recipe with ROOT='${bad##*/}' aborts" "1" "$rc"
+  assert_eq "recipe with ROOT='${bad##*/}' leaves the registry alone" "same" "$(cmp -s "$SD/baselined-roots" "$SD/baselined-roots.before" && echo same || echo changed)"
+done
+# red proof of the guard: without it an empty ROOT deletes other roots' plain lines
+sed '/^\[ -d /d; /^\[ -n /d' "$RECIPE" >"$RECIPE.noguard"
+ROOT="" SD="$SD" bash "$RECIPE.noguard" >/dev/null 2>&1 || true
+assert_eq "without the guard the same input deletes a plain line (the guard is what protects it)" "no" "$([[ "$(<"$SD/baselined-roots")" == */plain/line/root* ]] && echo yes || echo no)"
+cp "$SD/baselined-roots.keep" "$SD/baselined-roots"
 # BSD stat, no birth time (a trailing :0): the identity is dev:ino and the recipe still finds the record
 BSD="$TL_TMP/bsdstub"; mkdir -p "$BSD"
 printf '#!/bin/bash\ncase "$1" in -c|--version) exit 1 ;; -f) echo "7:5:0" ;; esac\n' >"$BSD/stat"; chmod +x "$BSD/stat"

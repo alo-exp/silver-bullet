@@ -183,7 +183,7 @@
   },
   {
    "file": "hooks/lib/integrity-anchor.sh",
-   "line": 353,
+   "line": 382,
    "kind": "config",
    "snippet": "if [[ -f \"$root/.silver-bullet.json\" && -f \"$root/silver-bullet.md\" ]]; then",
    "record": "A",
@@ -191,7 +191,7 @@
   },
   {
    "file": "hooks/lib/integrity-anchor.sh",
-   "line": 359,
+   "line": 388,
    "kind": "config",
    "snippet": "if [[ -f \"$d/.silver-bullet.json\" && -f \"$d/silver-bullet.md\" ]]; then",
    "record": "A",
@@ -215,7 +215,7 @@
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 581,
+   "line": 584,
    "kind": "config",
    "snippet": "if new=\"$(jq -S -c --arg v \"$value\" '.project.active_workflow = $v' <<<\"$cfg\" 2>/dev/null)\" && [[ -n \"$new\" ]]; then",
    "record": "A",
@@ -223,7 +223,7 @@
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 622,
+   "line": 625,
    "kind": "config",
    "snippet": "if [[ -e \"$root/.silver-bullet.json\" || -L \"$root/.silver-bullet.json\" || -e \"$root/silver-bullet.md\" || -L \"$root/silver-bullet.md\" ]]; then printf 'present'; ",
    "record": "A",
