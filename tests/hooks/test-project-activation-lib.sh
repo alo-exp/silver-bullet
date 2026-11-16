@@ -348,6 +348,15 @@ printf 'not-a-marker-with-tabs' >"$SB_RUNTIME_STATE_DIR/root-1"
 sb_integrity_prune_registry
 sb_integrity_unregister_root "$MK/b"
 rm -f "$SB_RUNTIME_STATE_DIR"/root-* "$REG"
+# a marker anchors through the LOGICAL spelling too: the registered path is a symlink now, the registry and the record are gone
+rm -f "$SB_RUNTIME_STATE_DIR"/root-* "$REG" "$SB_RUNTIME_STATE_DIR"/integrity-*
+LM="$TL_TMP/lm"; mkdir -p "$LM/root/src" "$LM/elsewhere/src"
+LMR="$(cd "$LM/root" && pwd -P)"
+sb_integrity_register_root "$LMR"
+rm -f "$REG" "$SB_RUNTIME_STATE_DIR"/integrity-*
+mv "$LM/root" "$LM/root.o"; ln -s "$LM/elsewhere" "$LM/root"
+assert_eq "a symlink at a marked path is still the marked root (logical spelling)" "$LMR" "$(sb_integrity_record_root "$LM/root/src")"
+rm -f "$SB_RUNTIME_STATE_DIR"/root-*
 # the record name is the POSIX cksum of the root
 for str in "" "a" "$P2" "héllo/ü" "$(head -c 200 /dev/urandom | base64 -w0)"; do
   assert_eq "bash cksum matches cksum(1) for '${str:0:20}'" "$(printf '%s' "$str" | cksum | cut -d' ' -f1)" "$(_sb_iv_cksum "$str")"

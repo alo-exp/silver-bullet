@@ -371,7 +371,9 @@ _sb_iv_marker_prune() {
       fi
     fi
   done
-  for ((i = 0; i < n; i++)); do
+  i=-1
+  while [[ $((i + 1)) -lt $n ]]; do
+    i=$((i + 1))
     if [[ -z "${live[$i]}" && -n "${mi[$i]}" && ! -d "${mp[$i]}" ]]; then
       gone=""
       for ((j = 0; j < n; j++)); do
