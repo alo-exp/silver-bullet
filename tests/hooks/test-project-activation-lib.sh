@@ -327,6 +327,27 @@ rm -f "$REG"
 sb_integrity_register_root "$P2"
 assert_eq "a relative directory resolves against the working directory" "$P2" "$(cd "$P2" && sb_integrity_record_root src)"
 sb_integrity_unregister_root "$P2"
+# markers: written with the identity, removed by identity and by path, pruned by the twin rule only
+rm -f "$SB_RUNTIME_STATE_DIR"/root-*; rm -f "$REG"
+MK="$TL_TMP/mk"; mkdir -p "$MK/a" "$MK/b"
+sb_integrity_register_root "$MK/a"; sb_integrity_register_root "$MK/b"
+assert_eq "a marker is written per registered path" "2" "$(ls "$SB_RUNTIME_STATE_DIR"/root-* | wc -l | tr -d ' ')"
+mv "$MK/a" "$MK/a2"; sb_integrity_register_root "$MK/a2"
+sb_integrity_prune_registry
+assert_eq "the twin rule drops the old-name marker of a renamed root" "2" "$(ls "$SB_RUNTIME_STATE_DIR"/root-* | wc -l | tr -d ' ')"
+mkdir "$MK/a"
+assert_eq "a different directory at the old path is not held once the old marker is gone" "" "$(sb_integrity_record_root "$MK/a")"
+rm -rf "$MK/b"; mkdir "$MK/b"
+assert_eq "a marker whose path holds another directory stays (the path stays held)" "$MK/b" "$(sb_integrity_record_root "$MK/b")"
+sb_integrity_prune_registry
+assert_eq "and survives the prune" "$MK/b" "$(sb_integrity_record_root "$MK/b")"
+sb_integrity_unregister_root "$MK/a2"
+assert_eq "unregistering removes the marker" "" "$(sb_integrity_record_root "$MK/a2")"
+assert_eq "and only that root's" "$MK/b" "$(sb_integrity_record_root "$MK/b")"
+printf 'not-a-marker-with-tabs' >"$SB_RUNTIME_STATE_DIR/root-1"
+sb_integrity_prune_registry
+sb_integrity_unregister_root "$MK/b"
+rm -f "$SB_RUNTIME_STATE_DIR"/root-* "$REG"
 # the record name is the POSIX cksum of the root
 for str in "" "a" "$P2" "héllo/ü" "$(head -c 200 /dev/urandom | base64 -w0)"; do
   assert_eq "bash cksum matches cksum(1) for '${str:0:20}'" "$(printf '%s' "$str" | cksum | cut -d' ' -f1)" "$(_sb_iv_cksum "$str")"

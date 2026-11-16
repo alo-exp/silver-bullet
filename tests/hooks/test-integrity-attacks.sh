@@ -651,6 +651,49 @@ for lose in registry-deleted registry-capped record-deleted marker-deleted; do
   gates_deny "anchors ($lose), then a swapped copy at the path"
   rm -rf "$P.o"
 done
+# round 15: every write is judged under its LOGICAL spelling as well as its resolved one, so a source folder
+# symlinked outside the project is still the project's source
+with_cwd() { jq -c --arg c "$1" '. + {cwd:$c}'; }
+sl_n=0
+for chain in direct chain; do
+  sl_n=$((sl_n + 1))
+  ih_project "r15-link-$chain"
+  P="$PROJ"; B="$(basename "$P")"; PAR="$(dirname "$P")"
+  X="$TL_TMP/r15-xsrc-$sl_n"
+  mv "$P/src" "$X"
+  if [[ "$chain" == chain ]]; then ln -s "$X" "$TL_TMP/r15-hop-$sl_n"; ln -s "$TL_TMP/r15-hop-$sl_n" "$P/src"; else ln -s "$X" "$P/src"; fi
+  assert_eq "link ($chain): setup left a symlink for src that resolves outside the project" "yes" "$([[ -L "$P/src" && "$(cd "$P/src" && pwd -P)" == "$X" ]] && echo yes || echo no)"
+  mkdir -p "$TL_TMP/r15-elsewhere"
+  ED() { edit_json "$1" Edit PreToolUse "$BIG_OLD" "$BIG_NEW"; }
+  RUN_DIR="$P" run_dc "$(ED "$P/src/app.js")"
+  assert_eq "link ($chain): an absolute path through the symlink, cwd = project, is judged" "deny" "$(decision)"
+  RUN_DIR="$PAR" run_dc "$(ED "$B/src/app.js")"
+  assert_eq "link ($chain): a relative path from the parent folder is judged" "deny" "$(decision)"
+  RUN_DIR="$TL_TMP/r15-elsewhere" run_dc "$(ED "src/app.js" | with_cwd "$P")"
+  assert_eq "link ($chain): the payload cwd (not the process cwd) joins a relative path" "deny" "$(decision)"
+  RUN_DIR="$P/docs" run_dc "$(ED "../src/app.js")"
+  assert_eq "link ($chain): a .. escape from a subfolder is judged" "deny" "$(decision)"
+  RUN_DIR="$TL_TMP/r15-elsewhere" run_dc "$(ED "../$B/src/app.js")"
+  assert_eq "link ($chain): a .. detour through the parent is judged" "deny" "$(decision)"
+  RUN_DIR="$P" run_dc "$(bash_json 'echo x >> src/app.js')"
+  assert_eq "link ($chain): a shell redirect through the symlink is judged" "deny" "$(decision)"
+  RUN_DIR="$PAR" run_dc "$(bash_json "echo x > $B/src/app.js")"
+  assert_eq "link ($chain): a shell redirect from the parent folder is judged" "deny" "$(decision)"
+  RUN_DIR="$TL_TMP/r15-elsewhere" run_dc "$(bash_json 'echo x >> src/app.js' | with_cwd "$P")"
+  assert_eq "link ($chain): a shell redirect relative to the payload cwd is judged" "deny" "$(decision)"
+  RUN_DIR="$P" run_dc "$(bash_json 'cp /dev/null src/app.js; tee src/app.js </dev/null')"
+  assert_eq "link ($chain): cp and tee targets are judged" "deny" "$(decision)"
+done
+# honest: a symlink pointing INTO a project from an unrelated place is judged by the resolved path (the project's floor)
+ih_project r15-alias
+P="$PROJ"; ln -s "$P" "$TL_TMP/r15-alias-link"
+assert_eq "alias: setup made a symlink to the project" "yes" "$([[ -L "$TL_TMP/r15-alias-link" ]] && echo yes || echo no)"
+RUN_DIR="$TL_TMP/r15-elsewhere" run_dc "$(edit_json "$TL_TMP/r15-alias-link/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
+assert_eq "alias: an edit through a symlink into the project is judged by where it lands" "deny" "$(decision)"
+# honest: a symlink from an unrelated repository to an unrelated place stays outside every project
+mkdir -p "$TL_TMP/r15-free/real/src" "$TL_TMP/r15-free-link"; ln -s "$TL_TMP/r15-free/real/src" "$TL_TMP/r15-free-link/src"
+RUN_DIR="$TL_TMP/r15-free-link" run_dc "$(edit_json "$TL_TMP/r15-free-link/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
+assert_eq "free: an edit through a symlink between two non-project places is allowed" "none" "$(decision)"
 # the registry survives removing the records, and a record forged elsewhere does not become a root of its own
 ih_project r10-registry
 rm -f "$SD"/integrity-*
