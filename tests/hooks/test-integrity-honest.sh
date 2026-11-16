@@ -606,10 +606,20 @@ for bad in "" "$TL_TMP/no-such-dir"; do
   assert_eq "recipe with ROOT='${bad##*/}' leaves the registry alone" "same" "$(cmp -s "$SD/baselined-roots" "$SD/baselined-roots.before" && echo same || echo changed)"
 done
 # red proof of the guard: without it an empty ROOT deletes other roots' plain lines
-sed '/^\[ -d /d; /^\[ -n /d' "$RECIPE" >"$RECIPE.noguard"
+sed '/\[ -n "\$ROOT_IN" \]/d; /\[ -n "\$ID" \]/d; s/^  ROOT=\$(cd -P.*$/  ROOT="$ROOT_IN"/' "$RECIPE" >"$RECIPE.noguard"
 ROOT="" SD="$SD" bash "$RECIPE.noguard" >/dev/null 2>&1 || true
 assert_eq "without the guard the same input deletes a plain line (the guard is what protects it)" "no" "$([[ "$(<"$SD/baselined-roots")" == */plain/line/root* ]] && echo yes || echo no)"
 cp "$SD/baselined-roots.keep" "$SD/baselined-roots"
+# a symlink or a trailing slash is normalised to the real directory, and pasting never ends the shell
+ih_project h51b
+rm -rf "$PROJ/.git"; rm -f "$PROJ/.silver-bullet.json" "$PROJ/silver-bullet.md"
+ln -s "$PROJ" "$TL_TMP/h51b-link"
+assert_eq "recovery: the project is held before" "$PROJ" "$(sb_integrity_root "$PROJ")"
+out="$(ROOT="$TL_TMP/h51b-link/" SD="$SD" bash -c 'source "$1"; echo "alive rc=$?"' _ "$RECIPE")"
+assert_eq "recovery via a symlink with a trailing slash removes the root, and the shell stays alive" "alive rc=0" "$out"
+assert_eq "recovery via a symlink: the root is no project" "" "$(sb_integrity_root "$PROJ")"
+out="$(ROOT="" SD="$SD" bash -c 'source "$1"; echo "alive rc=$?"' _ "$RECIPE" 2>/dev/null)"
+assert_eq "a refused recipe returns, it does not exit the shell it was pasted into" "alive rc=1" "$out"
 # BSD stat, no birth time (a trailing :0): the identity is dev:ino and the recipe still finds the record
 BSD="$TL_TMP/bsdstub"; mkdir -p "$BSD"
 printf '#!/bin/bash\ncase "$1" in -c|--version) exit 1 ;; -f) echo "7:5:0" ;; esac\n' >"$BSD/stat"; chmod +x "$BSD/stat"

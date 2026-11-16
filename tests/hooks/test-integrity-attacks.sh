@@ -453,7 +453,9 @@ setup_ok() { # LABEL REC(norec|keeprec) FILE..: the files are gone from the proj
   for f in "$@"; do
     assert_eq "$label: setup moved $f out of the project" "no" "$([[ -e "$PROJ/$f" || -L "$PROJ/$f" ]] && echo yes || echo no)"
   done
-  if [[ "$rec" == norec ]]; then
+  if [[ "$rec" == any ]]; then
+    :
+  elif [[ "$rec" == norec ]]; then
     assert_eq "$label: setup removed the record" "no" "$([[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no)"
   else
     assert_eq "$label: the record is still there" "yes" "$([[ -f "$(_sb_iv_rec_file "$PROJ")" ]] && echo yes || echo no)"
@@ -621,6 +623,33 @@ for variant in copy symlink recreated; do
     gates_deny "path anchor ($variant, $rec)"
     rm -rf "$P.o" "$P.x"
   done
+done
+# round 15: three independent anchors (registry line, identity-named record, path-named marker); losing any ONE
+# of them, then swapping the directory for a copy, leaves the path held
+swap='cp -a "$PROJ" "$PROJ.n" && rm -f "$PROJ.n/.silver-bullet.json" "$PROJ.n/silver-bullet.md" && mv "$PROJ" "$PROJ.o" && mv "$PROJ.n" "$PROJ"'
+junk() { for n in $(seq 1 210); do printf '/tmp/junk-root-%s\t9:%s:1\n' "$n" "$n"; done; }
+for lose in registry-deleted registry-capped record-deleted marker-deleted; do
+  ih_project "r15-$lose"
+  P="$PROJ"; echo d >>"$P/src/app.js"
+  case "$lose" in
+    registry-deleted) rm -f "$SD/baselined-roots" ;;
+    registry-capped)
+      { junk; } >>"$SD/baselined-roots"
+      printf '{"hook_event_name":"SessionStart","source":"startup"}' | (cd "$TL_TMP" && bash "$TL_REPO_ROOT/hooks/session-start") >/dev/null 2>&1 || true ;;
+    record-deleted) rm -f "$(_sb_iv_rec_file "$P")"* ;;
+    marker-deleted) rm -f "$SD"/root-* ;;
+  esac
+  case "$lose" in
+    registry-deleted | registry-capped)
+      assert_eq "anchors ($lose): the registry no longer names the root" "no" "$([[ -f "$SD/baselined-roots" && "$(<"$SD/baselined-roots")" == *"$P"$'\t'* ]] && echo yes || echo no)" ;;
+    record-deleted) assert_eq "anchors ($lose): the record is gone" "no" "$([[ -f "$(_sb_iv_rec_file "$P")" ]] && echo yes || echo no)" ;;
+    marker-deleted) assert_eq "anchors ($lose): the marker is gone" "no" "$(compgen -G "$SD/root-*" >/dev/null && echo yes || echo no)" ;;
+  esac
+  ih_run "$swap"; tally
+  assert_eq "anchors ($lose): the swap put a copy at the path" "yes" "$([[ -d "$P" && -d "$P.o" ]] && echo yes || echo no)"
+  setup_ok "anchors ($lose)" any .silver-bullet.json silver-bullet.md
+  gates_deny "anchors ($lose), then a swapped copy at the path"
+  rm -rf "$P.o"
 done
 # the registry survives removing the records, and a record forged elsewhere does not become a root of its own
 ih_project r10-registry
