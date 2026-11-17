@@ -102,6 +102,7 @@ SCHEMA_VERSION = 1
 MAX_DEPTH = 24
 MAX_EXPANSIONS = 64
 MAX_LOOP_VALUES = 16
+MAX_ALTS = 8                  # other directories a shell may be in after cds that may not have run
 # Analysis budget: exceeding any limit ends the walk and reports unseen code (strictest tier),
 # so a crafted command can neither stall a hook until its timeout nor crash the analyzer.
 MAX_INPUT_CHARS = 512 * 1024
@@ -1032,6 +1033,11 @@ class Env:
         self.cwd_text = logical or cwd  # where the shell thinks it is ($PWD): joined lexically, symlinks kept
         self.oldpwd = None          # the logical previous directory ($OLDPWD), None when not known
         self.dirstack = []          # pushd: logical directories (None: not known)
+        self.cdn = 0                # directory changes seen (a function or a chain that changed it left it unknown)
+        self.maybe = 0              # > 0 while the walk is in code that may not run (|| side, if/case/loop bodies)
+        self.cdable = False         # shopt -s cdable_vars: a cd target may name a variable
+        self.made = set()           # directories an earlier mkdir of this command made
+        self.alts = []              # other (resolved, logical) directories the shell may be in (a cd that may not have run)
         self.home = home
         self.aliases = {}
         self.functions = {}
@@ -1048,6 +1054,11 @@ class Env:
         new.cwd_text = self.cwd_text
         new.oldpwd = self.oldpwd
         new.dirstack = list(self.dirstack)
+        new.cdn = self.cdn
+        new.maybe = self.maybe
+        new.cdable = self.cdable
+        new.made = set(self.made)
+        new.alts = list(self.alts)
         new.aliases = dict(self.aliases)
         new.functions = dict(self.functions)
         new.git_aliases = dict(self.git_aliases)
@@ -1089,25 +1100,74 @@ class Env:
         """The logical working directory ($PWD), None when it is not known."""
         return None if self.cwd is None else self.cwd_text
 
-    def chdir(self, item, physical=False):
-        """cd to an argv item; an unknown target makes the directory dynamic. The logical directory joins the
-        target lexically ('.' and '..' collapsed, symlinks kept, as bash -L does); the resolved one is where the
-        kernel ends up. ``physical`` (cd -P) makes both the resolved path."""
+    def made_dir(self, path):
+        """True when an earlier mkdir of this command made PATH (or, with -p, a directory on the way to it)."""
+        return path in self.made
+
+    def chdir(self, item, physical=False, tainted=False):
+        """cd to an argv item. The logical directory joins the target lexically ('.' and '..' collapsed, symlinks
+        kept, as bash -L does); the resolved one is where the kernel ends up (-P: '..' follows the symlinks it
+        passes). The directory becomes unknown (dynamic) when the effect of the cd cannot be read: a target
+        computed at run time, a cd the environment redirects (CDPATH, cdable_vars, HOME, OLDPWD, PWD:
+        ``tainted``). A cd that may not take effect (the target is no directory now and no mkdir of this command
+        made it, or the code may not run: ``maybe``) leaves the directory before it among ``alts``."""
+        self.cdn += 1
         self.oldpwd = self.logical_cwd()
         target = _lit(item)
         if target is None or (self.cwd is None and not target.startswith(("/", "~"))):
             self.cwd = None
             self.cwd_text = os.path.join(self.cwd_text, _text(item))
+            self.alts = []
             return
-        logical = os.path.normpath(os.path.join(self.cwd_text, os.path.expanduser(target)))
-        self.cwd = os.path.realpath(logical)
-        self.cwd_text = self.cwd if physical else logical
+        relative = not target.startswith(("/", "~"))
+        if tainted and target.startswith("~") or relative and (
+                tainted or self.cdable or (os.environ.get("CDPATH") and not re.match(r"\.\.?(/|$)", target))):
+            self.cwd = None
+            self.cwd_text = os.path.join(self.cwd_text, target)
+            self.alts = []
+            return
+        target = os.path.expanduser(target)
+        before = [(self.cwd, self.cwd_text)] + self.alts
+        moved = [_cd_to(c, t, target, physical) for c, t in before]
+        sure = self.maybe == 0 and (os.path.isdir(moved[0][0]) or self.made_dir(moved[0][0]))
+        self.cwd, self.cwd_text = moved[0]
+        candidates = moved[1:] if sure else moved[1:] + before
+        self.alts = []
+        for candidate in candidates:
+            if candidate != moved[0] and candidate not in self.alts:
+                self.alts.append(candidate)
+        if len(self.alts) > MAX_ALTS:
+            self.unknown_dir()
+
+    def add_alts(self, state):
+        """The shell may also be in the directories of STATE (``(cwd, cwd_text, alts)``): a cd before it may not have run."""
+        cwd, text, alts = state
+        for candidate in [(cwd, text)] + alts:
+            if candidate[0] is None:
+                self.unknown_dir()
+                return
+            if candidate != (self.cwd, self.cwd_text) and candidate not in self.alts:
+                self.alts.append(candidate)
+        if len(self.alts) > MAX_ALTS:
+            self.unknown_dir()
 
     def unknown_dir(self):
-        """The directory is no longer known (popd or pushd with a stack the analysis does not model)."""
+        """The directory is no longer known (popd or pushd with a stack the analysis does not model, a function or
+        a chain that may have changed it)."""
+        self.cdn += 1
         self.oldpwd = self.logical_cwd()
         self.cwd = None
         self.cwd_text = os.path.join(self.cwd_text, "$DIRSTACK")
+        self.alts = []
+
+
+def _cd_to(cwd, text, target, physical):
+    """``(resolved, logical)`` after a cd to the expanded TARGET from the directory ``(cwd, text)``."""
+    if physical:
+        resolved = os.path.realpath(os.path.join(cwd, target))
+        return resolved, resolved
+    logical = os.path.normpath(os.path.join(text, target))
+    return os.path.realpath(logical), logical
 
 
 # `eval "$(tool init)"` setup lines: the whole substitution is one well-known environment tool with plain
@@ -1900,6 +1960,10 @@ def _positionals(args, value_short="", value_long=()):
     return out
 
 
+# variables that redirect or rewrite a cd: a cd after one of them is assigned is not read
+_CD_ENV = ("CDPATH", "HOME", "OLDPWD", "PWD")
+
+
 def _cd_physical(args):
     """True when ``cd -P`` is in effect (the last of -L and -P wins)."""
     physical = False
@@ -2294,7 +2358,18 @@ class _Analysis:
         full = os.path.join(env.cwd_text, path) if dynamic else os.path.realpath(os.path.join(env.cwd or "/", path))
         # the logical (symlinks unresolved, lexically normalised) spelling is judged next to the resolved one
         lpath = os.path.normpath(os.path.join(env.cwd_text or env.cwd or "/", path))
-        self.writes.append({"path": full, "lpath": lpath, "raw": text, "dynamic": dynamic, "via": via, "scope": scope})
+        if via == "mkdir" and not dynamic:
+            made = full
+            while made != "/" and not os.path.isdir(made):  # mkdir -p makes every directory on the way
+                env.made.add(made)
+                made = os.path.dirname(made)
+        record = {"path": full, "lpath": lpath, "raw": text, "dynamic": dynamic, "via": via, "scope": scope,
+                  "relative": not os.path.isabs(path), "cwd_dynamic": env.cwd is None}
+        if env.alts and not dynamic and record["relative"]:
+            # where else the same name lands when a cd before it did not take effect
+            record["alts"] = [{"path": os.path.realpath(os.path.join(c, path)),
+                               "lpath": os.path.normpath(os.path.join(t, path))} for c, t in env.alts]
+        self.writes.append(record)
 
     def opaque_writer(self, program, reason):
         self.mark("no")
@@ -2506,15 +2581,28 @@ class _Analysis:
             self.unseen("parse error: " + script.error)
         for andor, background in script.items:
             scope = env.copy() if background else env
-            for pipeline in andor:
-                if len(pipeline) == 1:
-                    self.walk_command(pipeline[0], scope, stdin)
-                    continue
-                feed = stdin
-                for node in pipeline:
-                    feed = self.walk_command(node, scope.copy(), feed)
-                    if feed is None:  # a pipe carries output this analysis cannot see
-                        feed = _UNKNOWN_FEED
+            skipped, chained, before = False, None, None
+            for index, pipeline in enumerate(andor):
+                if index:
+                    skipped = skipped or andor.ops[index - 1] == "||"
+                    if chained is None:
+                        chained, before = scope.cdn, (scope.cwd, scope.cwd_text, list(scope.alts))
+                if skipped:  # the right side of ||: it may not run, nor may a cd in it take effect
+                    scope.maybe += 1
+                try:
+                    if len(pipeline) == 1:
+                        self.walk_command(pipeline[0], scope, stdin)
+                        continue
+                    feed = stdin
+                    for node in pipeline:
+                        feed = self.walk_command(node, scope.copy(), feed)
+                        if feed is None:  # a pipe carries output this analysis cannot see
+                            feed = _UNKNOWN_FEED
+                finally:
+                    if skipped:
+                        scope.maybe -= 1
+            if chained is not None and scope.cdn != chained:
+                scope.add_alts(before)  # a cd after && or || may not have run: the next command may be in either place
 
     def scan_word(self, word, env):
         """Expansions that evaluate or execute a variable's value (arithmetic, ${!n}, ${x@P})."""
@@ -2603,8 +2691,14 @@ class _Analysis:
                 self.scan_conditional(node, env)
             for word in node.extra or ():
                 self.walk_nested(word, env)
-            for part in node.parts:
-                self.walk_script(part, env, stdin)
+            # if, while, until and case bodies may run zero times: a cd in them is not known to have happened
+            conditional = node.kind == "case" or node.kind == "group" and len(node.parts) > 1
+            env.maybe += conditional
+            try:
+                for part in node.parts:
+                    self.walk_script(part, env, stdin)
+            finally:
+                env.maybe -= conditional
         return None
 
     def walk_for(self, node, env, stdin):
@@ -2616,14 +2710,18 @@ class _Analysis:
             self.walk_nested(word, env)
             items.extend(self.expand(word, env))
         body = node.parts[0]
-        if name and items and len(items) <= MAX_LOOP_VALUES and not any(isinstance(i, Dyn) for i in items):
-            for value in items:
-                env.vars[name] = str(value)
-                self.walk_script(body, env, stdin)
-            return
-        if name:
-            env.vars[name] = None
-        self.walk_script(body, env, stdin)
+        env.maybe += 1  # a loop may run zero times
+        try:
+            if name and items and len(items) <= MAX_LOOP_VALUES and not any(isinstance(i, Dyn) for i in items):
+                for value in items:
+                    env.vars[name] = str(value)
+                    self.walk_script(body, env, stdin)
+                return
+            if name:
+                env.vars[name] = None
+            self.walk_script(body, env, stdin)
+        finally:
+            env.maybe -= 1
 
     def walk_simple(self, cmd, env, stdin):
         for assign in cmd.assigns:
@@ -2753,6 +2851,8 @@ class _Analysis:
             scope.positional = list(argv[1:])
             self.walk_script(env.functions[name], scope)
             self.active.discard(name)
+            if scope.cdn != env.cdn:
+                env.unknown_dir()  # the function changed the directory of the shell that called it
         handler = _HANDLERS.get(name) or ("interpreter" if _INTERPRETER.match(name) else "unknown")
         result = getattr(self, "h_" + handler)(argv, env, prefix, stdin)
         if handler in _ARGUMENT_COMMANDS and name not in _NOT_COMMAND_ARGS:
@@ -3109,7 +3209,10 @@ class _Analysis:
                     j += 1
                 inner = [Dyn("{}", roots) if _text(a) == "{}" else a for a in args[i + 1:j]]
                 if inner:
-                    self.execute(inner, env.copy(), {}, None)
+                    scope = env.copy()
+                    if token in ("-execdir", "-okdir"):
+                        scope.unknown_dir()  # runs in the directory of each match
+                    self.execute(inner, scope, {}, None)
                 i = j + 1
             elif token == "-delete":
                 for root in roots:
@@ -3143,9 +3246,13 @@ class _Analysis:
                     return
                 env.dirstack.append(env.logical_cwd())
             target = positionals[0] if positionals else (env.home or Dyn("~"))
+            if not positionals and ("HOME" in prefix or "HOME" in env.vars):
+                target = Dyn("~")
             if _lit(target) == "-":
-                target = env.oldpwd or Dyn("$OLDPWD")
-            env.chdir(target, _cd_physical(args))
+                target = Dyn("$OLDPWD") if "OLDPWD" in prefix or "OLDPWD" in env.vars else env.oldpwd or Dyn("$OLDPWD")
+            env.chdir(target, _cd_physical(args), any(v in prefix or v in env.vars for v in _CD_ENV))
+        elif name == "shopt" and "cdable_vars" in [_lit(a) for a in args]:
+            env.cdable = "-s" in [_lit(a) for a in args]
         elif name == "popd":
             top = env.dirstack.pop() if env.dirstack and not args else None
             if top is None:
@@ -3528,6 +3635,10 @@ class _Analysis:
             self.write(target, env, name)
         for source in positionals if name == "mv" else ():
             self.write(source, env, "mv source")
+        # a hard link shares the file: writing through the new name writes the source
+        hard = name == "ln" and not _has_flag(args, "s", ("--symbolic",)) or name == "cp" and _has_flag(args, "l", ("--link",))
+        for source in positionals if hard else ():
+            self.write(source, env, "link source")
         return None
 
     def h_operands(self, argv, env, prefix, stdin):
@@ -3721,13 +3832,17 @@ class _Analysis:
     def h_git(self, argv, env, prefix, stdin, depth=0):
         args = argv[1:]
         scope, config, i, info = env, self.git_env_config(prefix, env), 0, False
+        tree = prefix["GIT_WORK_TREE"] if "GIT_WORK_TREE" in prefix else env.vars.get("GIT_WORK_TREE", "")
+        if tree or "GIT_WORK_TREE" in prefix or "GIT_WORK_TREE" in env.vars:
+            scope = env.copy()
+            scope.chdir(tree if tree else Dyn("$GIT_WORK_TREE"))  # the work tree git cleans or resets
         while i < len(args):
             token = _lit(args[i])
             if token is None or not token.startswith("-"):
                 break
             if token in _GIT_GLOBAL_VALUE and i + 1 < len(args):
                 value = args[i + 1]
-                if token == "-C":
+                if token in ("-C", "--work-tree"):
                     scope = scope.copy()
                     scope.chdir(value)
                 elif token == "-c":
@@ -3741,6 +3856,9 @@ class _Analysis:
                 continue
             if token.startswith("--config-env="):
                 self.config_unknown = True
+            if token.startswith("--work-tree="):
+                scope = scope.copy()
+                scope.chdir(token.partition("=")[2])
             info = info or token in _GIT_INFO_FLAGS
             i += 1
         if not all(_git_config_safe(key, value) for key, value in config.items()):
@@ -4007,7 +4125,8 @@ class _Analysis:
             paths = _positionals(rest, "e", ("--exclude",))
             for path in paths or ["."]:
                 self.write(path, env, "git clean", "path" if paths else "tree")
-        elif sub == "stash" and (literal[0] if rest else "push") in ("push", "save", "pop", "apply"):
+        elif sub == "stash" and not (_positionals(rest, "m", ("--message",)) or ["push"])[0] in (
+                "list", "show", "drop", "clear", "branch", "create", "store"):
             self.write(".", env, "git stash", "tree")
         elif sub == "mv" or sub == "rm" and "--cached" not in literal:
             for path in _positionals(rest):

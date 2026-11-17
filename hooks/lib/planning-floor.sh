@@ -91,7 +91,9 @@ sb_pf_write_records() {
         printf '%s' "${SB_SA_JSON:-}" | jq -r --arg tree "$SB_PF_TREE_VIAS" '
           .writes[]? | select((.scope // "path") == "path" or (.via as $v | $tree | split("|") | index($v)))
           | select((.dynamic | not) or (.path | startswith("/")))
-          | ([.via, .path], (if .lpath and .lpath != .path then [.via, .lpath] else empty end)) | @tsv' 2>/dev/null
+          | .via as $v
+          | ([$v, .path], (if .lpath and .lpath != .path then [$v, .lpath] else empty end),
+             (.alts[]? | [$v, .path], [$v, .lpath])) | @tsv' 2>/dev/null
         ;;
       *)
         {
@@ -144,6 +146,92 @@ sb_pf_tree_via() {
 
 sb_pf_write_targets() {
   sb_pf_write_records "$@" | cut -f2- | awk 'NF && !seen[$0]++'
+}
+
+# Tree-scope writes of commands that delete or rewrite a whole work tree (git clean, reset, stash): judged by the
+# state-directory guard only (not by the planning floor, which never gated them), "via<TAB>path" like the records.
+SB_PF_STATE_TREE_VIAS='git clean|git reset|git stash'
+sb_pf_state_tree_records() {
+  printf '%s' "${SB_SA_JSON:-}" | jq -r --arg tree "$SB_PF_STATE_TREE_VIAS" '
+    .writes[]? | select(.scope == "tree" and (.via as $v | $tree | split("|") | index($v)))
+    | select((.dynamic | not) or (.path | startswith("/")))
+    | .via as $v | ([$v, .path], [$v, .lpath // .path], (.alts[]? | [$v, .path], [$v, .lpath])) | @tsv' 2>/dev/null
+}
+
+# Writes with a RELATIVE name made where the shell's directory is not known (a cd the analysis cannot read):
+# "via<TAB>the name as written". Judged by name (sb_pf_state_violation).
+sb_pf_dynamic_records() {
+  printf '%s' "${SB_SA_JSON:-}" | jq -r '
+    .writes[]? | select(.cwd_dynamic == true and .relative == true) | [.via, .raw] | @tsv' 2>/dev/null
+}
+
+# The names the state-tamper guard protects: every entry of the state directory except the four sentinels, and the
+# enforcement contract files.
+SB_PF_STATE_SENTINELS='session-init|stack-compression-mutex|sb-friction-log.md|roadmap-edit-override'
+sb_pf_state_sentinel() {
+  case "|$SB_PF_STATE_SENTINELS|" in *"|$1|"*) return 0 ;; esac
+  return 1
+}
+
+# sb_pf_protected_name PATTERN STATE_DIR: PATTERN (a name, or a glob) can name a protected file
+sb_pf_protected_name() {
+  local pat="$1" sd="$2" entry name
+  [[ -n "$pat" ]] || return 1
+  for name in .silver-bullet.json silver-bullet.md .silver-bullet.prompt.json; do
+    # shellcheck disable=SC2053  # the pattern is a glob on purpose
+    [[ "$name" == $pat ]] && return 0
+  done
+  for entry in "$sd"/* "$sd"/.[!.]*; do
+    [[ -e "$entry" || -L "$entry" ]] || continue
+    name="${entry##*/}"
+    sb_pf_state_sentinel "$name" && continue
+    # shellcheck disable=SC2053
+    [[ "$name" == $pat ]] && return 0
+  done
+  return 1
+}
+
+# sb_pf_nlink FILE: the link count of FILE (GNU stat, then BSD); 2 (shared) when it cannot be read
+sb_pf_nlink() {
+  local n=""
+  n="$(stat -c %h -- "$1" 2>/dev/null)" || n=""
+  [[ "$n" =~ ^[0-9]+$ ]] || n="$(stat -f %l "$1" 2>/dev/null)" || n=""
+  [[ "$n" =~ ^[0-9]+$ ]] || n=2
+  printf '%s' "$n"
+}
+
+# sb_pf_state_violation VIA TARGET STATE_DIR: this write is one the state-tamper guard refuses. The state directory
+# is written only by the hooks. The four sentinels stay open to the agent, by a plain write only (never as a link,
+# a copy, a move or an install), and only while the name is a plain file nobody else has linked, a directory, or not
+# there yet: a hard link or a symlink under a sentinel name would be a way to write the registry through it.
+sb_pf_state_violation() {
+  local via="$1" target="$2" sd="$3" within=false
+  if sb_path_is_within "$target" "$sd"; then within=true; fi
+  case "$via" in
+    rm | rmdir | unlink | "git rm" | "find -delete" | "mv source" | "git clean")
+      case "$sd/" in "$target"/*) within=true ;; esac
+      ;;
+  esac
+  [[ "$within" == true ]] || return 1
+  if [[ "$target" == "$sd" && "$via" == mkdir ]]; then return 1; fi
+  if sb_pf_state_sentinel "${target##*/}" && [[ "${target%/*}" == "$sd" ]]; then
+    case "$via" in
+      redirect | tee | touch | mkdir | rm | rmdir | unlink | truncate | edit) ;;
+      *) return 0 ;;
+    esac
+    if [[ -L "$target" ]]; then return 0; fi
+    if [[ -f "$target" && "$(sb_pf_nlink "$target")" != 1 ]]; then return 0; fi
+    return 1
+  fi
+  return 0
+}
+
+# sb_pf_dynamic_violation VIA NAME STATE_DIR: a write of NAME made in a directory nobody can name statically names a
+# protected file (by name or by glob), or is a git clean (it cleans whatever work tree that directory is in).
+sb_pf_dynamic_violation() {
+  local via="$1" raw="${2%/}" sd="$3"
+  [[ "$via" == "git clean" ]] && return 0
+  sb_pf_protected_name "${raw##*/}" "$sd"
 }
 
 sb_pf_unanalysable_message() {

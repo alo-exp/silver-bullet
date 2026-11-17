@@ -214,6 +214,12 @@ main() {
     [[ -e "${sb_plugin_root}/.git" ]] && sb_source_checkout=true
     installed_copy=false
     if [[ "$_sb_hooks_script" == "${SB_RUNTIME_HOME_ROOT}"* ]] && [[ "$sb_source_checkout" != true ]]; then installed_copy=true; fi
+    state_tamper_message="🚫 STATE TAMPER BLOCKED — Silver Bullet state files are written only by its hooks; writing, moving or deleting them bypasses workflow enforcement.
+
+Skills are recorded automatically when invoked through the active runtime's SB-recognized skill invocation channel. Overrides and the trivial marker are the user's to create, from their own terminal.
+
+To reset workflow state intentionally, run in your terminal (not from the agent):
+      rm ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"
     cache_targets=()
     while IFS=$'\t' read -r via target; do
       [[ -n "$target" ]] || continue
@@ -251,36 +257,39 @@ See CLAUDE.md §8 for details."
       fi
 
       # State tamper prevention (SB-008): the state directory holds the skill records and every
-      # gate's memory. Only the hooks write there; a few benign sentinels stay open to the agent.
-      # Deleting a directory above it counts as deleting it.
-      in_state=false
-      if sb_path_is_within "$target" "$state_dir_canon"; then in_state=true; fi
-      case "$via" in
-        rm | rmdir | unlink | "git rm" | "find -delete" | "mv source")
-          case "$state_dir_canon/" in "$target"/*) in_state=true ;; esac
-          ;;
-      esac
-      if [[ "$in_state" == true ]]; then
-        sentinel_ok=false
-        if [[ "$target" == "$state_dir_canon" && "$via" == "mkdir" ]]; then sentinel_ok=true; fi
-        case "${target##*/}" in
-          session-init | stack-compression-mutex | sb-friction-log.md | roadmap-edit-override)
-            [[ "$(dirname "$target")" == "$state_dir_canon" ]] && sentinel_ok=true
-            ;;
-        esac
-        if [[ "$sentinel_ok" != true ]]; then
-          emit_block "🚫 STATE TAMPER BLOCKED — Silver Bullet state files are written only by its hooks; writing, moving or deleting them bypasses workflow enforcement.
-
-Skills are recorded automatically when invoked through the active runtime's SB-recognized skill invocation channel. Overrides and the trivial marker are the user's to create, from their own terminal.
-
-To reset workflow state intentionally, run in your terminal (not from the agent):
-      rm ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"
-          exit 0
-        fi
+      # gate's memory (the integrity records, the registry of baselined roots and the markers beside it).
+      # Only the hooks write there; a few benign sentinels stay open to a plain write (planning-floor.sh,
+      # sb_pf_state_violation). Deleting a directory above it counts as deleting it.
+      if sb_pf_state_violation "$via" "$target" "$state_dir_canon"; then
+        emit_block "$state_tamper_message"
+        exit 0
       fi
     done <<<"$records"
 
     if [[ "$is_shell" == true ]]; then
+      # A git clean, reset or stash of a whole work tree reaches the state directory when it is inside the tree.
+      tree_records="$(sb_pf_state_tree_records)"
+      dynamic_records="$(sb_pf_dynamic_records)"
+      while IFS=$'\t' read -r via target; do
+        [[ -n "$target" ]] || continue
+        audit_target="$target"
+        if sb_pf_state_violation "$via" "$target" "$state_dir_canon"; then
+          emit_block "$state_tamper_message"
+          exit 0
+        fi
+      done <<<"$tree_records"
+      # A relative name written where the shell's directory is not known (a cd the analysis cannot read, a
+      # function or a variable that changed it) could be a state file: judged by name.
+      while IFS=$'\t' read -r via target; do
+        [[ -n "$target" ]] || continue
+        audit_target="$target"
+        if sb_pf_dynamic_violation "$via" "$target" "$state_dir_canon"; then
+          emit_block "$state_tamper_message
+
+(The command changes directory in a way that cannot be read before it runs, and then writes ${target##*/}, a name Silver Bullet protects. Use an absolute path, or a plain cd to a directory that exists.)"
+          exit 0
+        fi
+      done <<<"$dynamic_records"
       if [[ ${#cache_targets[@]} -gt 0 ]]; then
         uninstall_ok=false
         if declare -f sb_plugin_cache_command_is_uninstall_cleanup >/dev/null 2>&1 \
