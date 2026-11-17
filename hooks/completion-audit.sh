@@ -116,36 +116,30 @@ _ca_internal_error() {
 }
 trap '_ca_internal_error "$LINENO"' ERR
 
-# ── Resolve config file by walking up from $PWD ──────────────────────────────
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir=$(dirname "$search_dir")
-done
-
-# No config → project not set up with Silver Bullet — silent exit
-[[ -z "$config_file" ]] && exit 0
-
-if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
-  # shellcheck source=lib/sb-project-gate.sh
-  source "$_lib_dir/sb-project-gate.sh"
-  sb_project_is_initiated "$config_file" || exit 0
-fi
-
-# ── Read config values ────────────────────────────────────────────────────────
+# ── The project: the nearest root with a record, else the nearest directory holding both contract files ──
+# Everything below reads the VERIFIED record (hooks/lib/integrity.sh): a root with a record is a project
+# even when its contract files were moved away, and no gate value is read from the live files.
+source "$_lib_dir/integrity.sh"
+[[ -n "$(sb_integrity_root "$PWD")" ]] || exit 0
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 if [[ -e "$SB_STATE_DIR" || -L "$SB_STATE_DIR" ]] && [[ ! -d "$SB_STATE_DIR" || -L "$SB_STATE_DIR" ]]; then
   # a file or symlink where the state directory belongs: deny instead of skipping every tier (R1-09)
   emit_block "🛑 COMPLETION AUDIT — the runtime state directory ${SB_STATE_DIR} is not a real directory (it is a file or a symlink), so recorded skills cannot be trusted. Restore it as a plain directory (rm the file, then run /sb:init or start a new session), then retry."
   exit 0
 fi
+sb_integrity_gate "$PWD"
+# An install that never ran a session reads the live file as written: a config that is not JSON is an internal
+# failure (the error handler denies on PreToolUse). With a record it is a drift, which the gates report.
+if [[ "$SB_IV_STATUS" == none ]]; then sb_iv_jq -e '.invalid != true' >/dev/null || _ca_internal_error "$LINENO"; fi
+sb_integrity_config_snapshot
+config_file="$SB_IV_CONFIG_FILE"
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+  sb_project_is_initiated "$config_file" || exit 0
+fi
+
+# ── Read config values (from the verified record) ───────────────────────────────
 mkdir -p "$SB_STATE_DIR"
 state_file="${SB_STATE_DIR}/state"
 trivial_file="${SB_STATE_DIR}/trivial"
@@ -162,7 +156,8 @@ release_require_rc_matrix="false"
 
 sb_default_state="${SB_STATE_DIR}/state"
 sb_default_trivial="${SB_STATE_DIR}/trivial"
-config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
+# shellcheck disable=SC2016  # the jq program
+config_vals=$(sb_iv_jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
   (.state.state_file // $ds),
   (.state.trivial_file // $dt),
   ((.skills.required_planning // []) | join(" ")),
@@ -175,7 +170,7 @@ config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" 
   ((.release.require_pre_release_quality_gate // false) | tostring),
   ((.release.require_rc_matrix // false) | tostring),
   (.project.push_to_default_branch_tier // "completion")
-] | join("\n")' "$config_file")
+] | join("\n")')
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
 state_file="$(sb_expand_state_config_path "$state_file")"
@@ -199,6 +194,8 @@ release_require_plugin_runtime_matrix=$(printf '%s' "$config_vals" | sed -n '9p'
 release_require_pre_release_quality_gate=$(printf '%s' "$config_vals" | sed -n '10p')
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 release_require_rc_matrix=$(printf '%s' "$config_vals" | sed -n '11p')
+# The trivial marker is the user's, at the default path: the config does not name another one.
+if [[ "$SB_IV_STATUS" != none ]]; then trivial_file="$sb_default_trivial"; fi
 
 push_to_default_branch_tier=$(printf '%s' "$config_vals" | sed -n '12p')
 
@@ -223,10 +220,9 @@ if ! sb_runtime_path_is_state_scoped "$verify_tests_state_file"; then
   verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
 fi
 
-# ── Trivial bypass (reject symlinks) ─────────────────────────────────────────
-if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
-  exit 0
-fi
+# ── Trivial bypass (reject symlinks; the default marker only counts while the record blesses it) ──
+source "$_lib_dir/trivial-bypass.sh"
+sb_trivial_bypass "$trivial_file"
 # ── Detect current git branch ─────────────────────────────────────────────────
 current_branch=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
@@ -243,7 +239,11 @@ fi
 # ── Read state file ───────────────────────────────────────────────────────────
 state_contents=""
 # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/*.sh
-[[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
+if [[ -f "$state_file" ]]; then
+  # Only what the recorder sealed counts (hooks/lib/state-seal.sh): a state edited by anything else yields nothing.
+  source "$_lib_dir/integrity.sh"
+  state_contents=$(sb_integrity_state_contents "$state_file")
+fi
 
 # A push to the default branch (or any tag, --all, --mirror) is final delivery in every project (R1-22);
 # project.push_to_default_branch_tier = "intermediate" is the explicit opt-out.

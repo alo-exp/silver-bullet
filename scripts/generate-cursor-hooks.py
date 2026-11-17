@@ -42,6 +42,7 @@ SHELL_DUPLICATE_SKIP_BASENAMES = frozenset({
     "site-preview-preflight.sh",
     "roadmap-freshness.sh",
     "spec-floor-check.sh",
+    "forbidden-skill-check.sh",  # registered on Bash for the invoke-skill receipts; the Shell preToolUse already runs it
     "industry-tooling-hint.sh",
     # postToolUse|Shell already records usage — afterShell duplicates are redundant
     "record-skill.sh",
