@@ -202,6 +202,12 @@ assert_file_absent "r2: a host that sends no transcript_path (session_id only) i
 assert_contains "r2: the docs say the transcript is checked when the host sends one" "$(cat "$TL_REPO_ROOT/silver-bullet.md")" "when the host sends one"
 assert_contains "r2: ... in the template as well" "$(cat "$TL_REPO_ROOT/templates/silver-bullet.md.base")" "when the host sends one"
 
+# the helper itself: an unusable runtime root and a bare relative file name are refused, not trusted
+tok() { bash -c 'source "$1"; SB_RUNTIME_HOME_ROOT="$2"; sb_orchestrator_transcript_ok "$3"' _ "$TL_REPO_ROOT/hooks/lib/orchestrator-directive.sh" "$1" "$2"; }
+if tok "$SB_RUNTIME_HOME_ROOT/projects/t.jsonl" "$SB_RUNTIME_HOME_ROOT/projects/t.jsonl"; then tl_fail "r2: a runtime root that is a file is not a root"; else tl_pass "r2: a runtime root that is a file is not a root"; fi
+(cd "$SB_RUNTIME_HOME_ROOT/projects" && if tok "$SB_RUNTIME_HOME_ROOT" "t.jsonl"; then tl_fail "r2: a bare relative transcript name is refused"; else tl_pass "r2: a bare relative transcript name is refused"; fi)
+if tok "$SB_RUNTIME_HOME_ROOT" "$SB_RUNTIME_HOME_ROOT/projects/t.jsonl"; then tl_pass "r2: the real transcript is accepted by the helper"; else tl_fail "r2: the real transcript is accepted by the helper"; fi
+
 # ---- r2 #2 a stale worker marker: accurate refusal, and the parent's own prompt gets through ---------------------
 MARK="$SD/orchestrator-worker-active.json"
 PARENT="$SD/orchestrator-parent-session.json"
