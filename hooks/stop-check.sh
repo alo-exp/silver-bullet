@@ -449,11 +449,11 @@ sb_stop_agent_wrote_source() {
   fi
   [[ "$epoch" =~ ^[0-9]+$ ]] || return 1
   (( $(sb_stop_mtime "$marker") >= epoch )) || return 1
-  src_pattern=$(jq -r '.project.src_pattern // "/src/"' "$config_file" 2>/dev/null)
+  src_pattern=$(sb_iv_jq -r '.project.src_pattern // "/src/"' 2>/dev/null)
   if ! grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$' <<<"$src_pattern" || grep -qE '^\.\*$|^\.\+$|^/$|^$' <<<"$src_pattern"; then
     src_pattern="/src/"
   fi
-  src_exclude=$(jq -r '.project.src_exclude_pattern // ""' "$config_file" 2>/dev/null)
+  src_exclude=$(sb_iv_jq -r '.project.src_exclude_pattern // ""' 2>/dev/null)
   grep -qE '^[a-zA-Z0-9/_.|()\\-]*$' <<<"$src_exclude" || src_exclude=""
   while IFS= read -r line; do
     path="/${line:3}"
