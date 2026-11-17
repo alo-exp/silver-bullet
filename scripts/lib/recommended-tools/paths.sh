@@ -101,28 +101,21 @@ rt_reload_receipt_lock_dir() {
   printf '%s/.lock' "$(rt_reload_receipt_scope_dir "$host" "$project_id" "$worktree_id" "$scope")"
 }
 
-# Resolve scripts/lib/<rel> from project root, plugin root, or reconciler repo.
+# Resolve scripts/lib/<rel> from Silver Bullet itself: the plugin root, the reconciler's repository
+# or the checkout this library lives in. Never from the project that is open - a cloned repository
+# could otherwise supply the script - and never by walking up from $PWD. The second argument is
+# accepted for compatibility and ignored.
 rt_resolve_lib_script() {
-  local rel="${1:-}" project_root="${2:-${RT_PROJECT_ROOT:-}}"
+  local rel="${1:-}" own_root
   local candidate=""
   [[ -n "$rel" ]] || return 1
-  if [[ -n "$project_root" && -f "${project_root}/scripts/lib/${rel}" ]]; then
-    candidate="${project_root}/scripts/lib/${rel}"
-  elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -f "${CLAUDE_PLUGIN_ROOT}/scripts/lib/${rel}" ]]; then
+  own_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+  if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -f "${CLAUDE_PLUGIN_ROOT}/scripts/lib/${rel}" ]]; then
     candidate="${CLAUDE_PLUGIN_ROOT}/scripts/lib/${rel}"
   elif [[ -n "${RT_REPO_ROOT:-}" && -f "${RT_REPO_ROOT}/scripts/lib/${rel}" ]]; then
     candidate="${RT_REPO_ROOT}/scripts/lib/${rel}"
-  elif [[ -n "${REPO_ROOT:-}" && -f "${REPO_ROOT}/scripts/lib/${rel}" ]]; then
-    candidate="${REPO_ROOT}/scripts/lib/${rel}"
-  else
-    local walk="${project_root:-$PWD}"
-    while [[ -n "$walk" && "$walk" != "/" ]]; do
-      if [[ -f "${walk}/scripts/lib/${rel}" ]]; then
-        candidate="${walk}/scripts/lib/${rel}"
-        break
-      fi
-      walk="$(dirname "$walk")"
-    done
+  elif [[ -n "$own_root" && -f "${own_root}/scripts/lib/${rel}" ]]; then
+    candidate="${own_root}/scripts/lib/${rel}"
   fi
   [[ -n "$candidate" && -f "$candidate" ]] || return 1
   printf '%s' "$candidate"

@@ -298,6 +298,11 @@ EOF
   touch "$TMPGIT/.gitkeep"
   git -C "$TMPGIT" add .gitkeep
   git -C "$TMPGIT" commit -q -m "init" 2>/dev/null || true
+  # an origin whose default branch is known locally: the push scope needs refs/remotes/origin/HEAD
+  base_branch="$(git -C "$TMPGIT" symbolic-ref --short HEAD)"
+  git -C "$TMPGIT" remote add origin https://example.test/acme/app.git
+  git -C "$TMPGIT" update-ref "refs/remotes/origin/${base_branch}" HEAD
+  git -C "$TMPGIT" symbolic-ref refs/remotes/origin/HEAD "refs/remotes/origin/${base_branch}"
   git -C "$TMPGIT" checkout -q -b feature/test 2>/dev/null || true
   write_cfg "full-dev-cycle"
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
@@ -518,7 +523,12 @@ teardown
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook "PreToolUse" "RTK_DISABLED=1 git push origin feature/test")
-assert_passes "RTK_DISABLED git push allowed with planning skill" "$out"
+assert_passes "RTK_DISABLED=1 git push allowed with planning skill (allowlisted assignment)" "$out"
+out=$(run_hook "PreToolUse" "FOO=1 git push origin feature/test")
+assert_blocks "FOO=1 git push: any other assignment is final delivery (push scope)" "$out"
+assert_contains "FOO=1 git push: the block message names the assignment" "$out" "variable assignment"
+out=$(run_hook "PreToolUse" "git push origin feature/test")
+assert_passes "git push allowed with planning skill (RTK not involved)" "$out"
 teardown
 
 # Test 6: gh pr create blocked without full required_deploy

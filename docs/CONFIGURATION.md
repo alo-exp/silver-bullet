@@ -22,7 +22,7 @@ This page lists every key in the template, which code reads it, and the keys the
 | `project.src_pattern` | `/src/` | Path-segment pattern for files that count as source and trigger the planning-floor gate; it is matched against the project-relative path, so `tools/src-gen.py` does not match `/src/`. Must look like a path segment pattern (`^/[a-zA-Z0-9/_.\|()-]*/?$`); unsafe or match-everything values fall back to `/src/` |
 | `project.src_exclude_pattern` | `__tests__\|\.test\.` | Regex for source-like files to exempt (tests), matched against the project-relative path. Limited to 200 safe characters, otherwise the default is used. Built-in test layouts (`tests/`, `test/`, `__tests__/`, `*_test.*`, `test_*.py`, `*Test.java`) are always exempt |
 | `project.active_workflow` | `full-dev-cycle` | `full-dev-cycle` or `devops-cycle`; selects the workflow doc and the `_devops` skill lists. In `devops-cycle`, `.yml`, `.yaml`, `.json` and `.toml` files count as infrastructure code |
-| `project.push_to_default_branch_tier` | `completion` | `completion` (default): a push to the default branch, of a tag, or with `--all`/`--mirror` needs the full `required_deploy` floor. `intermediate`: such pushes need only the planning floor (the explicit opt-out) |
+| `project.push_to_default_branch_tier` | `completion` | `completion` (default): a push to the default branch, of a tag, or with `--all`/`--mirror` needs the full `required_deploy` floor. `intermediate`: such pushes need only the planning floor (the explicit opt-out). A push is intermediate only when it is proved to be a feature-branch push; the remote's default branch must be known locally (`refs/remotes/<remote>/HEAD`, set by `git clone` or `git remote set-head <remote> --auto`), otherwise the push counts as final delivery |
 
 `dev-cycle-check.sh` reads the patterns; `completion-audit.sh` uses them to classify a change set.
 
@@ -82,11 +82,11 @@ Common fields:
 
 | Field | Meaning |
 |-------|---------|
-| `enabled_by_user` | `null` = consent pending (advisory), `true` = opted in (gates enforce), `false` = opted out |
+| `enabled_by_user` | `null` = no preference, `true` = the project recommends the tool, `false` = the project turns it off. Never consent: consent is per user ([CONSENT.md](CONSENT.md)) |
 | `enforcement_suspended` | `true` after a failed install, so the gate stays advisory |
 | `install_status`, `install_failure_reason` | Written by the installers and reconciler |
 | `required_when_enabled` | Whether an opted-in tool is mandatory (all but `search_cli`) |
-| `install_commands`, `platform_install_commands.<host>.pre_index` / `post_index` | Install steps per host (`claude`, `codex`, `cursor`, `opencode`, `pi`, `goose`, `hermes`) |
+| `install_commands`, `platform_install_commands` | Ignored (repository content is never run or shown as an instruction); install steps come from the built-in tables in `hooks/lib/recommended-tools.sh` |
 | `benefits_summary` | Text shown when asking for consent |
 
 Tool-specific fields:

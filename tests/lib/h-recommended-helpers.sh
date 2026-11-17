@@ -6,6 +6,11 @@
 # "repo" the libraries resolve helper scripts from is a staged copy whose helper
 # scripts only log their invocations.
 
+# The probes enable a tool only with the user's own consent (docs/CONSENT.md); hr_project records
+# consent for every tool its config recommends, as a user who answered "yes" would have.
+# shellcheck source=consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/consent-helpers.sh"
+
 export HR_RTLIB="$TL_REPO_ROOT/scripts/lib/recommended-tools"
 HR_STAGE="$TL_TMP/hr-repo"
 HR_LOG="$TL_TMP/hr-calls.log"
@@ -58,6 +63,8 @@ hr_project() {
     tl_git_repo "$HR_PROJ"
   fi
   printf '%s\n' "${1:-{\}}" >"$HR_PROJ/.silver-bullet.json"
+  # The user's answers follow the recommendations in the file (a user who said yes to each one).
+  sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" install,wire,enforce
   export RT_PROJECT_ROOT="$HR_PROJ"
 }
 
@@ -94,8 +101,12 @@ hr_bin() {
   printf '#!/usr/bin/env bash\n%s\n' "${2:-exit 0}" >"$HR_BIN/$1"
   chmod +x "$HR_BIN/$1"
   hash -r
+  hr_forget_health
 }
-hr_nobin() { rm -f "$HR_BIN/$1"; hash -r; }
+hr_nobin() { rm -f "$HR_BIN/$1"; hash -r; hr_forget_health; }
+
+# The agentmemory health answer is cached for 30 seconds; a test that swaps a stub expects the new answer.
+hr_forget_health() { rm -f -- "${SB_RUNTIME_STATE_DIR:-$HOME/.silver-bullet}/agentmemory-health"; }
 
 # hr_state <probe-json>: component state summary "canonical|activation|evidence,csv|repairable"
 hr_state() {

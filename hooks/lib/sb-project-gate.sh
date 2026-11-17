@@ -10,6 +10,12 @@ if [[ -f "$_gate_lib_dir/runtime-paths.sh" ]]; then
   source "$_gate_lib_dir/runtime-paths.sh"
 fi
 
+# The record-aware root lookup (a root with a record is a project even when its contract files are gone).
+if ! declare -f sb_integrity_record_root >/dev/null 2>&1 && [[ -f "$_gate_lib_dir/integrity-anchor.sh" ]]; then
+  # shellcheck source=integrity-anchor.sh
+  source "$_gate_lib_dir/integrity-anchor.sh"
+fi
+
 SB_PROJECT_ROOT_CACHE_FILE="${SB_RUNTIME_STATE_DIR}/project-root"
 
 # Persist a validated project root for CWD-independent hook resolution (#232).
@@ -29,38 +35,25 @@ sb_project_root_cache_write() {
 sb_project_root_cache_read() {
   local cached=""
   [[ -f "$SB_PROJECT_ROOT_CACHE_FILE" ]] || return 1
-  cached="$(sed -n '1p' "$SB_PROJECT_ROOT_CACHE_FILE" 2>/dev/null || true)"
+  if cached="$(sed -n '1p' "$SB_PROJECT_ROOT_CACHE_FILE" 2>/dev/null)"; then :; fi
   [[ -n "$cached" && -f "$cached/.silver-bullet.json" && -f "$cached/silver-bullet.md" ]] || return 1
   printf '%s' "$cached"
 }
 
 # Walk upward from start_dir only — no project-root cache fallback.
 # Use for deny/guard decisions so stale cache cannot affect non-SB workspaces.
+_sb_find_project_live_config_walk_from() {
+  sb_integrity_live_config_walk "$@"
+}
+
+# The project's config path: the nearest root with a RECORD wins (the files may have been moved away, or a
+# nested project written beneath it), else the nearest directory holding both contract files.
 _sb_find_project_config_walk_from() {
-  local search_dir="${1:-$PWD}"
-  local root=""
-
-  if [[ -n "${SILVER_BULLET_PROJECT_ROOT:-}" ]]; then
-    root="${SILVER_BULLET_PROJECT_ROOT%/}"
-    if [[ -f "$root/.silver-bullet.json" && -f "$root/silver-bullet.md" ]]; then
-      printf '%s/.silver-bullet.json' "$root"
-      return 0
-    fi
-  fi
-
-  while [[ -n "$search_dir" ]]; do
-    if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-      printf '%s/.silver-bullet.json' "$search_dir"
-      return 0
-    fi
-    if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-      break
-    fi
-    search_dir="${search_dir%/*}"
-    [[ -n "$search_dir" ]] || search_dir="/"
-  done
-
-  return 1
+  local rec
+  rec="$(sb_integrity_record_root "${1:-$PWD}")"
+  if [[ -z "$rec" && -n "${SILVER_BULLET_PROJECT_ROOT:-}" ]]; then rec="$(sb_integrity_record_root "$SILVER_BULLET_PROJECT_ROOT")"; fi
+  if [[ -n "$rec" ]]; then printf '%s/.silver-bullet.json' "$rec"; return 0; fi
+  _sb_find_project_live_config_walk_from "$@"
 }
 
 sb_find_project_config_walk_only_from() {

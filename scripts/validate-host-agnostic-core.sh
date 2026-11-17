@@ -189,6 +189,7 @@ SCRIPTS_HOST_TOOLING_PREFIXES = (
     "scripts/silver-scan.py",
     "scripts/lib/enterprise-e2e",
     "scripts/agent-",
+    "scripts/lib/agent-adapters/",  # the per-host /sb:agent-* adapters name their own host by design
     "scripts/diagnose-cursor-picker-duplicates.sh",
     "scripts/enumerate-cursor-slash-picker.sh",
     "scripts/install-cursor-sb-agents.sh",

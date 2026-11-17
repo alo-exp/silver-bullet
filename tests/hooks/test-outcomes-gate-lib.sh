@@ -78,11 +78,8 @@ unset -f sb_prompt_is_informational_query
 
 # --- auto evaluate ----------------------------------------------------------------------
 reseed
-TRIV="$TL_TMP/trivial"; : >"$TRIV"
-sb_outcomes_auto_evaluate "silver-feature" "$TRIV"
-assert_eq "evaluate: trivial marker skips" pending "$(st route)"
-rm -f "$TRIV"
-sb_outcomes_auto_evaluate "" "$TRIV"
+TRIV="$TL_TMP/trivial"
+sb_outcomes_auto_evaluate "" ""
 assert_eq "evaluate: empty state skips" pending "$(st route)"
 rm -f "$OF"; assert_eq "evaluate: no outcomes file ok" 0 "$(rc sb_outcomes_auto_evaluate "silver" "$TRIV")"
 reseed

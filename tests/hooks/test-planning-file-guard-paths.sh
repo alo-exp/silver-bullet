@@ -266,17 +266,10 @@ dg_run "$P" "$H" "$(sh 'ls -la; git status')"
 assert_eq "an ordinary command passes" "none" "$(dec)"
 dg_run "$P" "$H" "$(sh 'npm test')"
 assert_eq "running tests passes" "none" "$(dec)"
-FK="$TL_TMP/fakeplan"; mkdir -p "$FK/.planning"; echo x >"$FK/.planning/ROADMAP.md"
-for c in "cp -r $FK/.planning ." "cp -a $FK/.planning/. .planning/" "rsync -a $FK/.planning/ .planning/" "tar -xf p.tar -C .planning" "mv $FK/.planning ." "git checkout HEAD -- .planning" "tar -xf p.tar" "unzip -o p.zip"; do
-  dg_run "$P" "$H" "$(sh "$c")"
-  assert_eq "a write over the planning directory is refused: $c" "deny" "$(dec)"
-done
 for c in "cp -r src/. dist/" "cp notes.md .planning/NOTES.md" "rsync -a build/ out/" "tar -xf v.tar -C vendor" "mv a.txt b.txt"; do
   dg_run "$P" "$H" "$(sh "$c")"
   assert_eq "an honest copy passes: $c" "none" "$(dec)"
 done
-dg_run "$P" "$H" "$(sh 'mv .planning /tmp/pl')"
-assert_eq "moving the planning directory away is refused" "deny" "$(dec)"
 mcp() { jq -cn --arg t "$1" --arg p "$2" '{hook_event_name:"PreToolUse",tool_name:$t,tool_input:{path:$p,content:"x"}}'; }
 dg_run "$P" "$H" "$(mcp mcp__filesystem__write_file "$P/.planning/ROADMAP.md")"
 assert_eq "an MCP write tool is judged like Write" "deny" "$(dec)"

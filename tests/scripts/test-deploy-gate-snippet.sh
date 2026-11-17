@@ -181,6 +181,19 @@ assert_contains "state-scoped custom trivial file is honoured" "$TL_OUT" "Trivia
 assert_file_absent "the validated trivial file is consumed" "$SB_RUNTIME_STATE_DIR/sub/trivial"
 rm -f "$SB_RUNTIME_STATE_DIR/sub/trivial" "$STATE" "$TRIVIAL"
 
+# --- a snippet copied without the plugin libraries fails CLOSED -------------------------------
+# Simulated on the real file (so coverage counts it): `source` is a no-op in the child, which is what a copy
+# of the file next to nothing sees. Without a state dir it blocks with a message; with one, the config paths
+# are ignored and the defaults apply.
+TPLP2="$TL_TMP/tplproj2"; mkdir -p "$TPLP2/.git"; cp "$TL_REPO_ROOT/templates/silver-bullet.config.json.default" "$TPLP2/.silver-bullet.json"
+tl_run env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source() { :; }; export -f source; cd "$1" && bash "$2"; echo "rc=$?"' _ "$TPLP2" "$SNIP"
+assert_contains "no libraries and no state dir: blocks (rc 1)" "$TL_OUT" "rc=1"
+assert_contains "no libraries: says the libraries were not found" "$TL_OUT" "runtime libraries were not found"
+rm -f "$STATE"
+tl_run env bash -c 'source() { :; }; export -f source; cd "$1" && bash "$2"; echo "rc=$?"' _ "$TPLP2" "$SNIP"
+assert_contains "no libraries but a state dir: still blocks without a state file" "$TL_OUT" "rc=1"
+assert_contains "no libraries but a state dir: config paths are ignored, the default state path is reported" "$TL_OUT" "No workflow state file found at $STATE"
+
 # --- legacy config: defaults + configured list, retired skills dropped (required-skills lib) ---
 LEG="$TL_TMP/leg"; mkdir -p "$LEG/.git"
 echo '{"skills":{"required_deploy":["legacy-extra","code-review"]}}' >"$LEG/.silver-bullet.json"

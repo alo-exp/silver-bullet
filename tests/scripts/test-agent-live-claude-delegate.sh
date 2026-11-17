@@ -66,7 +66,7 @@ assert_contains "claude delegate --mode auto message" "$TL_ERR" "permission-mode
 run_cd
 assert_eq "claude delegate without a prompt exits 2" "2" "$TL_STATUS"
 assert_contains "claude delegate without a prompt message" "$TL_ERR" "provide --prompt, --prompt-file, or --brief-file"
-run_cd --prompt 'use token=abc123 please'
+run_cd --prompt "use GITLAB_TOKEN=$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYQwErTyUiOp1') please"
 assert_eq "claude delegate refuses a prompt with secrets" "2" "$TL_STATUS"
 assert_contains "claude delegate secret prompt message" "$TL_ERR" "prompt contains secret patterns"
 run_cd --prompt-file "$TL_TMP/no-such-prompt"
@@ -101,11 +101,11 @@ pushd "$TL_TMP/rel" >/dev/null
 run_cd --prompt-file prompt.txt
 popd >/dev/null
 assert_contains "prompt file content became the prompt" "$(alh_rec)" "prompt=prompt from file"
-printf 'secret=hunter2\n' >"$TL_TMP/rel/bad-brief.txt"
+printf 'secret=%s\n' "$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYQwErTyUiOp1')" >"$TL_TMP/rel/bad-brief.txt"
 run_cd --brief-file "$TL_TMP/rel/bad-brief.txt"
 assert_eq "claude delegate refuses a brief with secrets" "2" "$TL_STATUS"
 assert_contains "claude delegate secret brief message" "$TL_ERR" "brief contains secret patterns"
-printf 'api_key: zzz\n' >"$TL_TMP/rel/bad-prompt.txt"
+printf 'api_key: %s\n' "$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYQwErTyUiOp1')" >"$TL_TMP/rel/bad-prompt.txt"
 run_cd --prompt-file "$TL_TMP/rel/bad-prompt.txt"
 assert_eq "claude delegate refuses a prompt file with secrets" "2" "$TL_STATUS"
 assert_contains "claude delegate secret prompt file message" "$TL_ERR" "prompt file contains secret patterns"
@@ -132,7 +132,7 @@ assert_eq "auto NI delegation exits 0" "0" "$TL_STATUS"
 assert_eq "delegate prints the adapter output" "ok-output" "$TL_OUT"
 assert_eq "adapter ran once" "1" "$(alh_attempts)"
 assert_contains "adapter preflight ran" "$(alh_rec)" "preflight"
-assert_contains "adapter got the mode and prompt" "$(alh_rec)" "invoke n=1 mode=permissive prompt=do the thing"
+assert_contains "adapter got the mode and prompt" "$(alh_rec)" "invoke n=1 mode=strict prompt=do the thing"
 assert_eq "NI delegation disables the interactive TUI" "0" "$(alh_env CLAUDE_USE_INTERACTIVE)"
 assert_eq "lightweight delegate flag exported" "1" "$(alh_env SB_AGENT_CLAUDE_DELEGATE)"
 assert_eq "orchestrator worker flag exported" "1" "$(alh_env SB_ORCHESTRATOR_WORKER)"
@@ -145,7 +145,11 @@ assert_eq "no cert permission mode outside cert runs" "<unset>" "$(alh_env CLAUD
 cfg_seen="$(alh_env CLAUDE_CONFIG_DIR)"
 assert_match "adapter ran with an ephemeral CLAUDE_CONFIG_DIR" "^$TL_TMP/tmp/agent-claude-config-" "$cfg_seen"
 assert_contains "the config dir existed while the adapter ran" "$(alh_rec)" "config-dir-present yes"
-assert_contains "the folder trust file existed while the adapter ran" "$(alh_rec)" "config-trust-present yes"
+assert_contains "strict (the default outside the project) pre-accepts no folder trust" "$(alh_rec)" "config-trust-present no"
+alh_script "0|ok-output"
+run_cd --prompt "do the thing" --mode permissive
+assert_contains "permissive pre-accepts folder trust in the ephemeral config" "$(alh_rec)" "config-trust-present yes"
+alh_script "0|ok-output"
 assert_file_absent "ephemeral CLAUDE_CONFIG_DIR is removed afterwards" "$cfg_seen"
 assert_contains "task artifacts are written under the work dir" "$(ls "$W/.planning/agent-claude")" "task-"
 
@@ -215,7 +219,7 @@ tl_tmp_cache="$TL_TMP/cache-calls"
 tl_run timeout 60 env SB_AGENT_CERT_RUN=1 bash "$DELEGATE" --sb-root "$SB" --work-dir "$W" --prompt p
 assert_eq "cert run asks the plugin cache check about the staged root" "$SB" "$(cat "$tl_tmp_cache")"
 assert_contains "cert run reports the plugin cache ready" "$TL_ERR" "Claude plugin cache ready"
-rm -rf "$W/.silver-bullet" "$SB/scripts"
+rm -rf "$W/.silver-bullet" "$SB/scripts/enterprise-e2e"
 # an exported sb_cert_run_touch_marker takes over marker creation
 alh_script "0|cert-ok"
 sb_cert_run_touch_marker() { printf '%s\n' "$1" >"$TL_TMP/touch-marker-arg"; }
@@ -256,16 +260,18 @@ tl_run timeout 60 env PREFLIGHT_RC=1 bash "$DELEGATE" --sb-root "$SB" --work-dir
 assert_eq "preflight failure exits 2" "2" "$TL_STATUS"
 assert_contains "preflight failure message" "$TL_ERR" "recommended-tools preflight failed"
 assert_eq "preflight failure never reaches the adapter" "0" "$(alh_attempts)"
-rm -rf "$SB/scripts"
+rm -rf "$SB/scripts/enterprise-e2e"
 
 # ---------------------------------------------------------------- missing adapter
 MISSING_SB="$TL_TMP/sb-missing"
 mkdir -p "$MISSING_SB"
 tl_run timeout 60 bash "$DELEGATE" --sb-root "$MISSING_SB" --skip-preflight --work-dir "$W" --prompt p
 assert_eq "missing adapter exits 1" "1" "$TL_STATUS"
-assert_contains "missing adapter message" "$TL_ERR" "missing Claude live adapter at $MISSING_SB/tests/live/agents/claude/agent.sh"
+assert_contains "missing adapter message" "$TL_ERR" "missing Claude live adapter at $MISSING_SB/scripts/lib/agent-adapters/claude.sh"
 
 # ---------------------------------------------------------------- quota retry loop (bounded by env, sleep is a stub)
+# an untouched git work dir lets the delegate re-run a quota failure without --quota-retry (R4-20)
+git -C "$W" init -q 2>/dev/null
 rm -f "$TL_TMP/sleep.log"
 alh_script "1|HTTP 429 rate limit hit"
 tl_run timeout 60 env AGENT_CLAUDE_QUOTA_RETRY_MAX=2 AGENT_CLAUDE_QUOTA_RETRY_INTERVAL=3 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p

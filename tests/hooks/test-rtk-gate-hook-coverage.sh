@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for hooks/rtk-gate.sh (PreToolUse RTK install/wiring gate)
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 # shellcheck source=../lib/c-toolgates-2-helpers.sh
@@ -43,11 +47,17 @@ assert_denied "rtk without a working gain command is the wrong binary" "RTK WRON
 run "$EDIT" RTK_STUB_HELP="Rust Type Kit - checks"
 assert_denied "Rust Type Kit help text is the wrong binary" "RTK WRONG BINARY"
 run "$EDIT" RTK_STUB_VERSION="rtk 0.1.0"
-assert_denied "outdated rtk version is rejected" "RTK REQUIRED"
+assert_denied "outdated rtk version is rejected as too old (not as not installed)" "RTK TOO OLD"
+run "$EDIT" RTK_STUB_VERSION="rtk 0.40.0"
+assert_denied "0.40 is below the 0.42.0 minimum (R5-18)" "RTK TOO OLD"
+run "$EDIT" RTK_STUB_VERSION="rtk 0.41.9"
+assert_denied "0.41 is below the 0.42.0 minimum (R5-18)" "RTK TOO OLD"
+run "$EDIT" RTK_STUB_VERSION="rtk 0.42.0"
+assert_silent_ok "0.42.0 meets the minimum"
 run "$EDIT" RTK_STUB_VERSION="rtk 9.0.0"
 assert_silent_ok "newer major version passes"
 run "$EDIT" RTK_STUB_VERSION="not a version"
-assert_denied "unparsable version is rejected" "RTK REQUIRED"
+assert_denied "unparsable version is rejected" "RTK TOO OLD"
 jq '.recommended_tools.rtk.min_version="0.1.0"' <<<"$RTK_CFG" >"$TG2_CFG"
 run "$EDIT" RTK_STUB_VERSION="rtk 1.0.0"
 assert_silent_ok "configured min_version is honoured"

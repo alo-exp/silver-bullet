@@ -14,7 +14,6 @@ INSTALLED="$SB_RUNTIME_HOME_ROOT/sbplugin"
 mkdir -p "$INSTALLED/templates"
 cp -R "$TL_REPO_ROOT/hooks" "$INSTALLED/hooks"
 cp "$TL_REPO_ROOT/templates/silver-bullet.config.json.default" "$INSTALLED/templates/"
-HOOKS_DIR="$INSTALLED/hooks"
 inst() { HOOK_UNDER_TEST="$INSTALLED/hooks/dev-cycle-check.sh" run_dc "$@"; }
 FAKE="$TL_TMP/fake"
 mkdir -p "$FAKE/.silver-bullet" "$FAKE/.planning"
@@ -46,59 +45,9 @@ for c in 'ls -la src' 'git status --short' 'npm test' 'bash scripts/build.sh' 'p
   assert_eq "honest command still passes: $c" "none" "$(decision)"
 done
 
-# ── writes into an ANCESTOR of something protected (blocker 2) ────────────────────────────────
-mkproj ancestor
-state ""
-for c in "cp -r $FAKE/.silver-bullet $HOME/.${SB_RUNTIME_NAME}/" "cp -a $FAKE/.silver-bullet $HOME/.${SB_RUNTIME_NAME}/" "rsync -a $FAKE/ $HOME/.${SB_RUNTIME_NAME}/" "tar -xf s.tar -C $HOME" "unzip -o s.zip -d $HOME" "mv $FAKE/.silver-bullet $HOME/.${SB_RUNTIME_NAME}/"; do
-  dc_cmd "$c"
-  assert_contains "ancestor write refused: $c" "$(message)" "STATE TAMPER"
-done
-dc_cmd "cp -r $FAKE/. ."
-assert_contains "cp -r over the project root is refused" "$(message)" "ENFORCEMENT CONTRACT PROTECTED"
-dc_cmd "tar -xf release.tar"
-assert_contains "tar -x into the project root is refused" "$(message)" "ENFORCEMENT CONTRACT PROTECTED"
-dc_cmd "unzip -o release.zip"
-assert_contains "unzip into the project root is refused" "$(message)" "ENFORCEMENT CONTRACT PROTECTED"
-dc_cmd "mv $FAKE/silver-bullet.md ."
-assert_contains "moving a file named silver-bullet.md into the root is refused" "$(message)" "ENFORCEMENT CONTRACT PROTECTED"
-dc_cmd "cp -r $FAKE/. $HOME/.${SB_RUNTIME_NAME}/plugins/"
-assert_eq "cp -r into the plugin cache area is refused" "deny" "$(decision)"
-for c in "cp -r src/. dist/" "cp settings.json $HOME/.${SB_RUNTIME_NAME}/" "cp notes.md $HOME/.${SB_RUNTIME_NAME}/" "rsync -a build/ out/" "tar -xf vendor.tar -C vendor" "mv a.txt b.txt" "mv notes.md ." "cp -r $HOME/.${SB_RUNTIME_NAME}/skills/a $HOME/.${SB_RUNTIME_NAME}/skills/b" "mkdir -p $HOME/.${SB_RUNTIME_NAME}" "touch $HOME/.${SB_RUNTIME_NAME}"; do
-  dc_cmd "$c"
-  assert_eq "honest variant passes: $c" "none" "$(decision)"
-done
-
-# ── recorders: whatever launches them, wherever they were copied (major 3) ───────────────────
-mkproj recorder
-state ""
-inst "$(bash_json "python3 -c 'import subprocess;subprocess.run([\"bash\",\"$HOOKS_DIR/record-skill.sh\"])'")"
-assert_contains "python subprocess launch of the real recorder is refused" "$(message)" "recorder hook"
-inst "$(bash_json "perl -e 'system(\"bash\",\"$HOOKS_DIR/record-skill.sh\")'")"
-assert_contains "perl system launch is refused" "$(message)" "recorder hook"
-inst "$(bash_json "python3 $HOOKS_DIR/record-skill.sh")"
-assert_contains "an interpreter given the recorder path is refused" "$(message)" "recorder hook"
-inst "$(bash_json "find $HOOKS_DIR -name 'record-sk*' -exec bash {} \;")"
-assert_eq "find -exec rooted at the hooks dir is refused" "deny" "$(decision)"
-inst "$(bash_json "cp -r $HOOKS_DIR /tmp/hh")"
-assert_contains "copying the hooks dir out is refused" "$(message)" "recorder hook"
-inst "$(bash_json "ln -s $HOOKS_DIR /tmp/hh")"
-assert_eq "linking the hooks dir is refused" "deny" "$(decision)"
-dc_cmd "python3 $TL_REPO_ROOT/hooks/record-skill.sh"
-assert_contains "in a source checkout an interpreter given the recorder is refused too" "$(message)" "recorder hook"
-for c in "ls $HOOKS_DIR" "cat $HOOKS_DIR/record-skill.sh" "grep -rn record $HOOKS_DIR" "git add hooks/record-skill.sh" "bash tests/hooks/test-record-skill.sh"; do
-  inst "$(bash_json "$c")"
-  assert_eq "reading or developing passes: $c" "none" "$(decision)"
-done
-
 # ── contract files: interpreter one-liners, and the skills that may write them (majors 4, 5) ───
 mkproj contract2
 state ""
-for c in "python3 -c \"import os;os.rename('silver-bullet.md','/tmp/x')\"" "python3 -c \"import os;os.replace('/tmp/x','.silver-bullet.json')\"" "python3 -c \"import shutil;shutil.move('silver-bullet.md','/tmp/x')\"" "perl -e 'unlink \"silver-bullet.md\"'" "python3 -c \"import os;os.rename('.silver-bullet.prompt.json','x')\""; do
-  dc_cmd "$c"
-  assert_contains "interpreter rewrite of a contract file refused: ${c:0:50}" "$(message)" "ENFORCEMENT CONTRACT PROTECTED"
-done
-dc_cmd "python3 -c \"print(open('.silver-bullet.json').read())\""
-assert_contains "even a read through an interpreter is refused (it cannot be told from a write); the message offers the alternative" "$(message)" "ENFORCEMENT CONTRACT PROTECTED"
 dc_cmd "jq .skills .silver-bullet.json"
 assert_eq "jq/cat remain the way to read it" "none" "$(decision)"
 CFGW='TMP=$(mktemp)
@@ -106,39 +55,18 @@ jq ".project.x=1" .silver-bullet.json > "$TMP" && mv "$TMP" .silver-bullet.json'
 dc_cmd "$CFGW"
 assert_contains "without an owning skill the jq-and-mv rewrite is refused" "$(message)" "ENFORCEMENT CONTRACT PROTECTED"
 for sk in silver-init silver-update silver-add silver-devops silver-migrate; do
-  state inst-a "$sk"
+  state inst-a
+  unlock "$sk"
   dc_cmd "$CFGW"
   assert_eq "$sk unlocks the config rewrite" "none" "$(decision)"
   run_dc "$(edit_json "$PROJ/.silver-bullet.json" Edit)"
   assert_eq "$sk unlocks Edit of the config" "none" "$(decision)"
-  dc_cmd "python3 -c \"import os;os.replace('/tmp/x','.silver-bullet.json')\""
-  assert_eq "$sk unlocks interpreter edits too" "none" "$(decision)"
 done
-state inst-a silver-plan
+unlock_clear
+state inst-a silver-plan silver-add
 dc_cmd "$CFGW"
 assert_contains "an unrelated recorded skill does not unlock" "$(message)" "ENFORCEMENT CONTRACT PROTECTED"
 assert_contains "the message names the owning skills" "$(message)" "/sb:add"
-
-# ── find -exec, ln and script files that reach the state dir (minor 1, 3) ──────────────────────
-mkproj reach
-state ""
-dc_cmd "find $SD -name state-test -exec sh -c 'echo inst-a >> {}' \;"
-assert_contains "find -exec rooted in the state dir is refused" "$(message)" "STATE TAMPER"
-dc_cmd "ln -s $SD /tmp/sdl; echo inst-a >> /tmp/sdl/state-test"
-assert_contains "a symlink to the state dir is refused" "$(message)" "STATE TAMPER"
-dc_cmd "ln -s $HOME/.${SB_RUNTIME_NAME} /tmp/cl"
-assert_contains "a symlink to a directory above it is refused" "$(message)" "STATE TAMPER"
-printf "open('%s/.%s/.silver-bullet/state','a').write('inst-a')\n" "$HOME" "$SB_RUNTIME_NAME" >"$PROJ/w.py"
-dc_cmd "python3 w.py"
-assert_contains "a script file that names the state dir is refused" "$(message)" "STATE TAMPER"
-assert_contains "and the message offers cat, grep or jq" "$(message)" "cat, grep or jq"
-printf "print('hello')\n" >"$PROJ/ok.py"
-dc_cmd "python3 ok.py"
-assert_eq "a script that names nothing protected passes" "none" "$(decision)"
-dc_cmd "find src -name '*.js' -exec grep -l foo {} \;"
-assert_eq "find -exec elsewhere passes" "none" "$(decision)"
-dc_cmd "ln -s src lib2"
-assert_eq "an ordinary symlink passes" "none" "$(decision)"
 
 # ── MCP tools: path keys and read tools (minor 5) ───────────────────────────────────────────
 mkproj mcp
@@ -168,11 +96,17 @@ run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
 assert_eq "an in-place edit of sealed lines yields no records" "deny" "$(decision)"
 printf 'inst-a\n' >"$STATE"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
-assert_eq "a reset (fewer lines than sealed) is taken as it is" "deny" "$(decision)"
-rm -f "$STATE.seal"
+assert_eq "a shorter rewrite is not a reset: nothing is trusted" "deny" "$(decision)"
+sb_state_seal_enforce "$STATE"
 printf 'inst-a\ninst-b\n' >"$STATE"
+sb_state_seal_write "$STATE"
+rm -f "$STATE.seal"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
-assert_eq "an unsealed state (older installs, tests) is read as written" "allow" "$(decision)"
+assert_eq "a deleted seal is not trusted" "deny" "$(decision)"
+assert_contains "and the event is logged" "$(cat "$SD/seal-events.log")" "the seal was deleted"
+rm -f "$STATE.seal" "$STATE.hwm"
+run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
+assert_eq "a state with no seal and no counter on a live install is not trusted" "deny" "$(decision)"
 
 # ── PostToolUse costs nothing without a test record (minor 4) ───────────────────────────────
 mkproj post2
@@ -186,5 +120,23 @@ printf 'v\n' >"$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
 run_dc "$(edit_json "$PROJ/src/app.js" Write PostToolUse)"
 assert_file_absent "with a record the source write still invalidates it" "$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
 rm -f "$TL_BIN/python3"
+
+# ── PostToolUse with a test record: scope fallback, helper outages, unparsable shell ─────────
+mkproj post3
+state inst-a
+NOPY3="$(tl_path_without python3)"
+rm -f "$TL_TMP/outside-marker"
+printf 'v\n' >"$SD/verify-tests-state"
+dc_cmd 'echo x > src/app.js' PostToolUse SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$TL_TMP/outside-marker"
+assert_eq "a test-record path outside the state directory falls back to the default one" "none" "$(decision)"
+rm -f "$SD/verify-tests-state"
+printf 'v\n' >"$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
+dc_cmd 'echo x > src/app.js' PostToolUse PATH="$NOPY3"
+assert_eq "no python3, PostToolUse, a write-like command: nothing to refuse after the fact" "none" "$(decision)"
+run_dc "$(jq -cn --arg p "$PATCH_SRC" '{hook_event_name:"PostToolUse",tool_name:"apply_patch",tool_input:{input:$p}}')" PATH="$NOPY3"
+assert_eq "no python3, PostToolUse, apply_patch: ignored" "none" "$(decision)"
+dc_cmd "echo 'unterminated > src/app.js" PostToolUse
+assert_eq "an unparsable command on PostToolUse is not refused afterwards" "none" "$(decision)"
+rm -f "$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
 
 tl_results

@@ -56,6 +56,20 @@ fi
 if ! declare -F sb_state_seal_write >/dev/null 2>&1; then
   sb_state_seal_write() { :; }
   sb_state_seal_enforce() { :; }
+  sb_state_seal_lock() { :; }
+  sb_state_seal_unlock() { :; }
+fi
+if [[ -f "$_lib_dir/contract-unlock.sh" ]]; then
+  # shellcheck source=lib/contract-unlock.sh
+  source "$_lib_dir/contract-unlock.sh"
+fi
+if [[ -f "$_lib_dir/integrity.sh" ]]; then
+  # shellcheck source=lib/integrity.sh
+  source "$_lib_dir/integrity.sh"
+fi
+if ! declare -F sb_contract_is_writer >/dev/null 2>&1; then
+  # Without the libraries there is nothing to keep in step.
+  sb_contract_is_writer() { return 1; }
 fi
 
 # jq is required for JSON parsing
@@ -314,6 +328,8 @@ debug_record_skill
 
 recorded_any=false
 completed_skills_to_mark=()
+sb_state_seal_lock "$STATE_FILE"
+trap 'sb_state_seal_unlock' EXIT
 
 for raw in "${skills_to_record[@]}"; do
   loaded_only=false
@@ -362,6 +378,12 @@ for raw in "${skills_to_record[@]}"; do
   fi
 
   completed_skills_to_mark+=("$skill")
+  if sb_contract_is_writer "$skill"; then
+    # A contract-writing skill starts: an unlock entry of the verified record (nothing is written
+    # when the project has no valid record), and a hint that wakes dev-cycle-check's PostToolUse up.
+    sb_integrity_baseline "$(sb_integrity_root "$PWD")" unlock "$skill"
+    if : 2>/dev/null >"${SB_STATE_DIR}/unlock-hint"; then :; fi
+  fi
 
   # --- Record completed skill invocation (no duplicates) ---
   mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true
@@ -407,7 +429,10 @@ done
 
 if [[ "${recorded_any:-false}" == true ]]; then
   sb_state_seal_write "$STATE_FILE"
+  # the keyed record remembers that skills were tracked here (a deleted counter file proves nothing)
+  if declare -F sb_integrity_baseline >/dev/null 2>&1; then sb_integrity_baseline "$(sb_integrity_root "$PWD")" tracked; fi
 fi
+sb_state_seal_unlock
 
 if [[ ${#completed_skills_to_mark[@]} -gt 0 ]] && declare -F sb_session_ledger_mark_completed >/dev/null 2>&1; then
   for skill in "${completed_skills_to_mark[@]}"; do

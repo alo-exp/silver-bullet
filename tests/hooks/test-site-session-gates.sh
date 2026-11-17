@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # test-site-session-gates.sh — Wave 1 site session hooks (instruction ledger + site gates).
 set -euo pipefail
+# The opt-in tools act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -58,7 +62,7 @@ teardown() {
 
 setup_with_agentmemory() {
   setup
-  AM_STATE="${SB_TEST_DIR}/agentmemory-usage-$$"
+  AM_STATE="${SB_TEST_DIR}/t$$-agentmemory-usage"
   CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
   cat >"$TMPDIR_TEST/.silver-bullet.json" <<EOF
 {"sb_initiated":true,"config_version":"${CURRENT_CONFIG_VERSION}","orchestrator_mode":"parent","project":{"name":"test","active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"]},"recommended_tools":{"agentmemory":{"enabled_by_user":true,"usage_state_file":"${AM_STATE}"}}}
@@ -303,8 +307,8 @@ teardown
 
 echo "--- record-recommended-mcp ---"
 setup_with_agentmemory
-EXPECTED_AM_STATE="${SB_TEST_DIR}/agentmemory-usage"
-out=$(run_hook "$MCP_RECORD_HOOK" PostToolUse "$(jq -n '{hook_event_name:"PostToolUse",tool_name:"CallMcpTool",tool_input:{server:"user-agentmemory",toolName:"save_memory"}}')")
+EXPECTED_AM_STATE="$AM_STATE"
+out=$(run_hook "$MCP_RECORD_HOOK" PostToolUse "$(jq -n '{hook_event_name:"PostToolUse",tool_name:"CallMcpTool",tool_input:{server:"user-agentmemory",toolName:"memory_recall"}}')")
 if [[ -f "$EXPECTED_AM_STATE" ]] && grep -qE '^[0-9]+$' "$EXPECTED_AM_STATE"; then
   echo "  ok: records agentmemory MCP usage"
   PASS=$((PASS + 1))
@@ -312,7 +316,7 @@ else
   echo "  FAIL: agentmemory MCP usage not recorded"
   FAIL=$((FAIL + 1))
 fi
-if grep -q 'recommended MCP usage recorded' <<<"$out"; then
+if grep -q 'agentmemory usage recorded' <<<"$out"; then
   echo "  ok: emits recorded confirmation message"
   PASS=$((PASS + 1))
 else
