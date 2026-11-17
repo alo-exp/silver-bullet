@@ -102,8 +102,10 @@ sb_subagent_bash_invokes_audit() {
   return 1
 }
 
-# The audit invocation is the ONLY command of the call (a chained write is not covered).
+# The audit invocation is the ONLY command of the call and writes nothing: a chained write is not covered,
+# and neither is a redirection on the audit invocation itself (`invoke-skill ... > src/a.js`).
 sb_subagent_audit_command_alone() {
+  [[ -z "${SB_SA_WRITE_PATHS:-}" ]] || return 1
   printf '%s' "${SB_SA_JSON:-}" | jq -e '[.commands[]?] | length == 1' >/dev/null 2>&1
 }
 

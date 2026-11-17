@@ -85,6 +85,7 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
   fi
   # An SB OVERRIDE is the user's decision to abandon the queue, so it is handled first.
   override_rc=1
+  declare -f sb_orchestrator_note_parent_prompt >/dev/null 2>&1 && sb_orchestrator_note_parent_prompt "$input"
   if declare -f sb_orchestrator_override_apply >/dev/null 2>&1; then
     override_rc=0
     sb_orchestrator_override_apply "$input" "$prompt" "$(dirname "$config_file")" || override_rc=$?

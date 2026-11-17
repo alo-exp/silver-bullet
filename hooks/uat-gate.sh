@@ -79,34 +79,43 @@ if [[ ! -f "$UAT" ]]; then
 fi
 
 # Checks 2 and 3: result cells (R2-25, R10-03). Case-insensitive and column-aware: when the table has
-# a header naming a Result/Status column, only that column of each row is read, so an "expected: pass"
-# column next to a fail result is still a failure; without a header any cell that is exactly
-# fail/failed or not-run (any spacing: |FAIL|, | Fail |, `not run`) counts unless the row names several
-# result words (a legend). Summary rows (#, Total, Legend) never count.
+# a header naming Result and/or Status columns, EVERY such column of each row is read (a FAIL in either
+# blocks), so an "expected: pass" column next to a fail result is still a failure; without a header any
+# cell that is exactly fail/failed or not-run (any spacing: |FAIL|, | Fail |, `not run`) counts. A
+# headerless row that names several result words is a legend only when it is made of result words alone or
+# its first cell is a label (`Legend`, `Result values`, `Key`): `| AC-1 | login | pass | fail |` is a real
+# row whose fail cell counts. Summary rows (#, Total, Legend) never count.
 read -r fail_count not_run_count < <(awk -F'|' '
   function trim(x) { x = tolower(x); gsub(/^[ \t\r]+|[ \t\r]+$/, "", x); return x }
-  !/^[[:space:]]*\|/ { col = 0 }
+  function isword(c) { return c == "fail" || c == "failed" || c == "pass" || c == "passed" || c ~ /^not[-_ ]?run$/ }
+  !/^[[:space:]]*\|/ { delete cols; ncols = 0 }
   /^[[:space:]]*\|/ {
     first = trim($2)
     if (first == "#" || first == "total" || first == "legend" || first == "summary") {
-      for (i = 2; i <= NF; i++) { c = trim($i); if (c == "result" || c == "status") col = i }
+      for (i = 2; i <= NF; i++) { c = trim($i); if ((c == "result" || c == "status") && !(i in cols)) { cols[i] = 1; ncols++ } }
       next
     }
-    for (i = 2; i <= NF; i++) { c = trim($i); if ((c == "result" || c == "status") && col == 0) { col = i; hdr = 1 } }
-    if (hdr) { hdr = 0; next }
-    fail = 0; nr = 0; pass = 0
-    if (col > 0) {
-      c = trim($col)
-      if (c == "fail" || c == "failed") fail = 1
-      else if (c ~ /^not[-_ ]?run$/) nr = 1
+    hdr = 0
+    if (ncols == 0) {
+      for (i = 2; i <= NF; i++) { c = trim($i); if (c == "result" || c == "status") { cols[i] = 1; ncols++; hdr = 1 } }
+    }
+    if (hdr) next
+    fail = 0; nr = 0; words = 0; other = 0; nw = 0
+    if (ncols > 0) {
+      for (i in cols) {
+        c = trim($i)
+        if (c == "fail" || c == "failed") fail = 1
+        else if (c ~ /^not[-_ ]?run$/) nr = 1
+      }
     } else {
       for (i = 2; i <= NF; i++) {
         c = trim($i)
+        if (c == "") continue
         if (c == "fail" || c == "failed") fail = 1
         if (c ~ /^not[-_ ]?run$/) nr = 1
-        if (c == "pass" || c == "passed") pass = 1
+        if (isword(c)) nw++; else other++
       }
-      if (fail + nr + pass > 1) next
+      if (nw > 1 && (other == 0 || first ~ /^(result|results|status|key|values|outcome|outcomes)([ :]|$)/ || first ~ /(values|legend|key)$/)) next
     }
     if (fail) f++
     else if (nr) n++
