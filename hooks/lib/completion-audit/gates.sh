@@ -242,7 +242,10 @@ run_evidence_schema_delivery_gate() {
 }
 
 run_enforcement_tier_delivery_gate() {
-  local cfg="${config_file:-}"
+  # The tier is min(configured, probed): the live file can only LOWER it, so it is read as written (class X in
+  # docs/PROTECTED-READS.md); everything else in this gate comes from the verified record.
+  local cfg="${SB_IV_ROOT:+$SB_IV_ROOT/.silver-bullet.json}"
+  cfg="${cfg:-${config_file:-}}"
   [[ -n "$cfg" && -f "$cfg" ]] || return 0
   # test switch, honoured only in a throw-away sandbox (R1-36)
   if [[ "${SILVER_BULLET_SKIP_ENFORCEMENT_TIER_GATE:-0}" == "1" ]] && sb_github_overrides_allowed; then

@@ -63,7 +63,7 @@ ca_run_planning_tier_gate() {
       emit_block "$(printf '🛑 PLAN SEAL BLOCKED — Phase completion requires /sb:verify recorded this session.\n\nRun /sb:verify and refresh VERIFICATION.md before plan-seal commit.')"
       exit 0
     fi
-    _pr="$(dirname "$config_file")"
+    _pr="$SB_IV_ROOT"
     vfile=""
     for candidate in "$_pr/.planning/VERIFICATION.md" "$_pr/.planning/phases"/*/*-VERIFICATION.md; do
       [[ -f "$candidate" && ! -L "$candidate" ]] || continue

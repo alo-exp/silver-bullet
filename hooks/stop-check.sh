@@ -58,27 +58,24 @@ fi
 # knows something unexpected occurred rather than seeing a clean block/allow.
 trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️  stop-check.sh: unexpected error — skipping check\"}}" ; exit 0' ERR
 
-# ── Resolve config file by walking up from $PWD ──────────────────────────────
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir=$(dirname "$search_dir")
-done
-
-# No config → project not set up with Silver Bullet.
-# Fail-open by design: stop-check is a no-op for non-SB projects.
-[[ -z "$config_file" ]] && exit 0
-
-if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+# ── The project: nearest root with a record, else nearest directory holding both contract files ──
+# A root whose contract files were deleted or moved is still a project (hooks/lib/integrity.sh).
+lib_dir="${_lib_dir:-$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)}"
+if [[ -f "$lib_dir/integrity.sh" ]]; then
+  # shellcheck source=lib/integrity.sh
+  source "$lib_dir/integrity.sh"
+fi
+if [[ -f "$lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
-  source "$_lib_dir/sb-project-gate.sh"
+  source "$lib_dir/sb-project-gate.sh"
+fi
+_iv_root="$(sb_integrity_root "$PWD")"
+
+# No project → not set up with Silver Bullet. Fail-open by design: stop-check is a no-op for non-SB projects.
+[[ -z "$_iv_root" ]] && exit 0
+config_file="$_iv_root/.silver-bullet.json"
+search_dir="$_iv_root"
+if declare -f sb_project_is_initiated >/dev/null 2>&1; then
   sb_project_is_initiated "$config_file" || exit 0
 fi
 
@@ -95,20 +92,24 @@ PY
   exit 0
 fi
 
-# ── Read config values ────────────────────────────────────────────────────────
+# ── Read config values (from the verified record) ─────────────────────────────
+sb_integrity_gate "$_iv_root"
+sb_integrity_config_snapshot
+config_file="$SB_IV_CONFIG_FILE"
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_STATE_DIR"
 
 sb_default_state="${SB_STATE_DIR}/state"
 sb_default_trivial="${SB_STATE_DIR}/trivial"
-config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
+# shellcheck disable=SC2016  # the jq program
+config_vals=$(sb_iv_jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
   (.state.state_file // $ds),
   (.state.trivial_file // $dt),
   ((.skills.required_deploy // []) | join(" ")),
   (.project.active_workflow // "full-dev-cycle"),
   ((.skills.required_planning // []) | join(" ")),
   ((.skills.required_planning_devops // []) | join(" "))
-] | join("\n")' "$config_file")
+] | join("\n")')
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
 state_file="${state_file/#\~/$HOME}"
@@ -117,6 +118,8 @@ trivial_file="${trivial_file/#\~/$HOME}"
 active_workflow=$(printf '%s' "$config_vals" | sed -n '4p')
 required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '5p')
 required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
+# The trivial marker is the user's, at the default path: the config does not name another one.
+if [[ "$SB_IV_STATUS" != none ]]; then trivial_file="$sb_default_trivial"; fi
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
@@ -130,7 +133,6 @@ if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
 fi
 
 # ── Resolve lib dir (needed for trivial-bypass and required-skills helpers) ───
-lib_dir="${_lib_dir:-$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)}"
 
 if [[ -f "$lib_dir/required-skills.sh" ]]; then
   # shellcheck source=lib/required-skills.sh
@@ -229,7 +231,7 @@ fi
       exit 0
     fi
   fi
-  _stop_project_root="$(dirname "$config_file")"
+  _stop_project_root="$SB_IV_ROOT"
   if sb_orchestrator_is_parent_session 2>/dev/null \
     && sb_orchestrator_state_applies_to_project "$_stop_project_root" 2>/dev/null; then
     cur_flow=""
@@ -313,21 +315,10 @@ if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # Built-in transient-artifact patterns (extended-grep, anchored to
     # status-line shape `XX path`).
     sb_transient_re="(\.${SB_RUNTIME_NAME}/scheduled_tasks\.lock|\.${SB_RUNTIME_NAME}/settings\.local\.json|\.superpowers/|\.planning/workflows/|REVIEW\.md)"
-    # Project-configured additional patterns (newline-separated, ERE-escaped
-    # by the user). Resolved via .silver-bullet.json walk-up.
-    sb_cfg_search="$PWD"
-    sb_cfg=""
-    while true; do
-      if [[ -f "$sb_cfg_search/.silver-bullet.json" ]]; then
-        sb_cfg="$sb_cfg_search/.silver-bullet.json"
-        break
-      fi
-      # Stop at the repository root or /: the config can vanish while the hook runs.
-      if [[ -d "$sb_cfg_search/.git" ]] || [[ "$sb_cfg_search" == "/" ]]; then break; fi
-      sb_cfg_search=$(dirname "$sb_cfg_search")
-    done
+    # Project-configured additional patterns (newline-separated, ERE-escaped by the user): the recorded ones.
+    sb_cfg="$config_file"
     if [[ -n "$sb_cfg" ]] && command -v jq >/dev/null 2>&1; then
-      sb_extra=$(jq -r '.hooks.stop_check.transient_path_ignore_patterns // [] | join("|")' "$sb_cfg" 2>/dev/null)
+      sb_extra=$(sb_iv_jq -r '.hooks.stop_check.transient_path_ignore_patterns // [] | join("|")' 2>/dev/null)
       if [[ -n "$sb_extra" ]]; then
         # Validate: reject overly-broad patterns that match a single printable char.
         # Sentinel is ASCII SOH (\001) — never present in a real file path, so
@@ -418,11 +409,23 @@ fi
 
 # ── Read state file ───────────────────────────────────────────────────────────
 state_contents=""
-[[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
+if [[ -f "$state_file" ]]; then
+  # Only what the recorder sealed counts (hooks/lib/state-seal.sh): a state edited by anything else yields nothing.
+  source "$lib_dir/integrity.sh"
+  state_contents=$(sb_integrity_state_contents "$state_file")
+fi
 
 # HOOK-04: empty state file means no skills were tracked — non-dev session.
 # Fail-open by design: nothing to gate against.
-[[ -z "$state_contents" ]] && exit 0
+# A state file with content that nothing sealed is not an empty one: it is a forged or damaged state, and the
+# floor counts it as having recorded nothing.
+# A state that was tracked once and is now empty or gone was truncated or deleted: that is not a session that
+# never tracked anything, the floor applies to the empty state. "Tracked once" is the keyed record's word
+# (SB_IV_TRACKED) or the counter file's; a project that is unbaselined or untrusted has no trustworthy evidence
+# either way, so it is held to the floor too.
+if [[ -z "$state_contents" && ! -s "$state_file" && ! -s "${state_file}.hwm" ]]; then
+  if ! sb_integrity_strict && [[ "$SB_IV_TRACKED" != true ]]; then exit 0; fi
+fi
 
 # Emit block JSON for Stop
 emit_stop_block() {

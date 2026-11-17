@@ -162,13 +162,18 @@ integration_setup
 write_default_config
 
 # No planning skills — normally would block
-# Create trivial file: bypass active
+# A trivial file named by the config never arms the bypass (only the default marker does)
 touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
+assert_blocked "S9.0: a configured trivial file does not bypass" "$out"
+rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+# The default marker (the user's, made before the session) bypasses
+touch "${SB_TEST_DIR}/trivial"
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_allowed "S9.1: edit allowed when trivial file exists" "$out"
 
 # Delete trivial file: enforcement back
-rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+rm -f "${SB_TEST_DIR}/trivial"
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_blocked "S9.2: edit blocked after trivial file removed" "$out"
 

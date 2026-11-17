@@ -34,10 +34,9 @@ run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
 assert_eq "no planning recorded: PreToolUse deny" "deny" "$(decision)"
 assert_contains "stage A names the missing skill" "$(message)" "❌ inst-a"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PostToolUse "$BIG_OLD" "$BIG_NEW")"
-assert_eq "PostToolUse uses a block decision" "block" "$(decision)"
-run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")" SB_KAY_HOOK_BRIDGE_INVOKED=1
-assert_eq "kay bridge: deny exits 2" 2 "$TL_STATUS"
-assert_contains "kay bridge: reason goes to stderr" "$TL_ERR" "HARD STOP"
+assert_eq "PostToolUse never denies: the edit has already landed" "none" "$(decision)"
+run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
+assert_eq "the PreToolUse deny is exactly one JSON document" 1 "$(jq -s length <<<"$TL_OUT")"
 
 # apply_patch
 PATCH_DOC=$'*** Begin Patch\n*** Update File: notes/readme.txt\n@@\n-a\n+b\n*** End Patch'
@@ -103,6 +102,18 @@ assert_contains "branch mismatch is advisory" "$(message)" "Branch mismatch"
 printf '' >"$BRANCHF"
 edit
 assert_not_contains "empty stored branch gives no mismatch warning" "$(message)" "Branch mismatch"
+# R3-13: the production branch file is two lines (branch, git toplevel)
+TOP="$(git -C "$PROJ" rev-parse --show-toplevel)"
+printf 'feature/test\n%s\n' "$TOP" >"$BRANCHF"
+edit
+assert_not_contains "same branch and toplevel (production format): no mismatch" "$(message)" "Branch mismatch"
+printf 'other/branch\n%s\n' "$TOP" >"$BRANCHF"
+edit
+assert_contains "another branch (production format) warns" "$(message)" "state recorded for [other/branch]"
+printf 'feature/test\n/somewhere/else\n' >"$BRANCHF"
+edit
+assert_contains "another worktree toplevel warns" "$(message)" "Branch mismatch"
+printf 'feature/test\n' >"$BRANCHF"
 SB_OUTSIDE="$TL_TMP/outside-branch"; printf 'x\n' >"$SB_OUTSIDE"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")" SILVER_BULLET_BRANCH_FILE="$SB_OUTSIDE" SILVER_BULLET_VERIFY_TESTS_STATE_FILE=/tmp/outside-vt SILVER_BULLET_STATE_FILE=/tmp/outside-state
 assert_eq "paths outside the runtime root fall back to defaults" "deny" "$(decision)"

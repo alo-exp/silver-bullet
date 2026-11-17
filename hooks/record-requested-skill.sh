@@ -56,18 +56,10 @@ prompt="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)"
 # exists, so we must still record route markers even when there is no local
 # `.silver-bullet.json` yet. If a project config exists, we use it to honor a
 # custom state file path; otherwise we fall back to the shared SB state file.
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]] || [[ -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir=$(dirname "$search_dir")
-done
+# The project: the nearest root with a record, else the nearest directory with both contract files.
+config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity-anchor.sh" && sb_integrity_activation_config "$PWD") 2>/dev/null; true)"
+search_dir="${config_file:+${config_file%/*}}"
+search_dir="${search_dir:-$PWD}"
 
 if [[ -n "$config_file" && -f "$config_file" ]]; then
   if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
@@ -87,9 +79,9 @@ mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
 
 STATE_FILE="${SILVER_BULLET_STATE_FILE:-}"
 if [[ -z "$STATE_FILE" ]]; then
-  # Expand ~ to $HOME (config stores literal tilde)
-  STATE_FILE="$(jq -r '.state.state_file // ""' "$config_file" 2>/dev/null || true)"
-  STATE_FILE="${STATE_FILE/#\~/$HOME}"
+  # The verified project's state file (hooks/lib/integrity.sh); ~ is expanded (the config stores a literal tilde).
+  STATE_FILE=""
+  if [[ -n "$config_file" ]] && source "$_lib_dir/integrity.sh" && sb_integrity_gate "$PWD"; then STATE_FILE="${SB_IV_STATE_FILE/#\~/$HOME}"; fi
 fi
 STATE_FILE="${STATE_FILE:-${SB_STATE_DIR}/state}"
 

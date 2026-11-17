@@ -84,11 +84,10 @@ sb_outcomes_seed_for_prompt() {
 # Auto-evaluate outcomes from session evidence; returns non-zero when block required.
 sb_outcomes_auto_evaluate() {
   local state_contents="$1"
-  local trivial_file="$2"
   local outfile
   outfile="$(sb_outcomes_session_file)"
 
-  [[ -f "$trivial_file" && ! -L "$trivial_file" ]] && return 0
+  # The trivial marker is judged by the caller (outcomes-check.sh: sb_trivial_bypass, which verifies it).
   [[ -z "$state_contents" ]] && return 0
   [[ -f "$outfile" ]] || return 0
   command -v jq >/dev/null 2>&1 || return 0

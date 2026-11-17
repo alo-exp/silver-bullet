@@ -113,6 +113,18 @@ while true; do
   search_dir=$(dirname "$search_dir")
 done
 if [[ -z "$sb_project_root" ]]; then
+  # A record root whose contract files are gone from the tree and from git HEAD: Silver Bullet was removed on
+  # purpose. Retire the record (the user sees it) so every edit is not a permanent false positive.
+  # Only a fresh session (startup, clear) retires: compact and resume continue a session that may have a
+  # checkout in an odd state.
+  if [[ ( "$sb_session_source" == startup || "$sb_session_source" == clear ) && -f "$_lib_dir/integrity.sh" ]]; then
+    # shellcheck source=lib/integrity.sh
+    source "$_lib_dir/integrity.sh"
+    if sb_iv_retired="$(sb_integrity_retire_if_uninstalled "$PWD")"; then
+      printf '%s' "SB INTEGRITY — Silver Bullet was removed from ${sb_iv_retired} (no contract files in the tree or at git HEAD). Its integrity record was retired." | jq -Rs '{systemMessage: .}'
+    fi
+    sb_integrity_prune_registry
+  fi
   # Non-SB workspace: clear stale global orchestrator markers from a prior SB session.
   rm -f -- "${SB_STATE_DIR}/orchestrator-directive.json" \
         "${SB_STATE_DIR}/orchestrator-worker-active.json" \
@@ -292,7 +304,7 @@ elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branc
   # trigger a wipe — that was the v0.27.x mid-session state-loss path.
   SB_BRANCH_RESET_BANNER="⚠️ SB: git scope changed (${stored_branch}@${stored_git_toplevel:-?} → ${current_branch}@${current_git_toplevel:-?}). Skill state was reset — re-run planning/quality-gates for this branch before delivery."
   sb_safe_write "$state_file"
-  rm -f -- "$state_file" 2>/dev/null || true
+  rm -f -- "$state_file" "${state_file}.seal" "${state_file}.hwm" "${SB_STATE_DIR}/unlock-hint" 2>/dev/null || true
   rm -f -- "${SB_STATE_DIR}/orchestrator.json" \
         "${SB_STATE_DIR}/orchestrator-directive.json" \
         "${SB_STATE_DIR}/orchestrator-worker-active.json" \
@@ -375,7 +387,7 @@ if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
   trivial_file="${SB_STATE_DIR}/trivial"
 fi
 [[ -L "$trivial_file" ]] && trivial_file="${SB_STATE_DIR}/trivial"
-rm -f -- "$trivial_file" 2>/dev/null || true
+rm -f -- "$trivial_file" "${SB_STATE_DIR}/trivial" 2>/dev/null || true
 rm -f -- "${SB_STATE_DIR}/release-live-matrix" 2>/dev/null || true
 rm -f -- "${SB_STATE_DIR}/e2e-live-matrix" 2>/dev/null || true
 if [[ "$sb_should_mutate" == true ]]; then
@@ -642,6 +654,58 @@ if [[ -f "$_lib_dir/recommended-tools.sh" && -n "${sb_project_root:-}" ]]; then
   fi
 fi
 
+# Integrity: a fresh session is the trust anchor. Record the contract files, the instruction and
+# planning files and the (now absent) trivial marker as they are, so that anything that changes
+# them outside a sanctioned writer shows up at the next gate decision (hooks/lib/integrity.sh).
+sb_iv_user_msg=""
+if [[ "$sb_should_mutate" == true && -n "$sb_project_root" && -f "$_lib_dir/integrity.sh" ]]; then
+  # shellcheck source=lib/integrity.sh
+  source "$_lib_dir/integrity.sh"
+  sb_iv_root="$(cd "$sb_project_root" && pwd -P)"
+  # Recording what is there now blesses it, so say what changed since the last record: the user
+  # sees it in the session's first message and in seal-events.log (hooks/lib/integrity.sh).
+  sb_integrity_verify "$sb_iv_root" ""
+  sb_iv_changed=""
+  for sb_iv_tag in $SB_IV_DIVERGED; do
+    case "$sb_iv_tag" in config | md | prompt | record) sb_iv_changed="${sb_iv_changed:+$sb_iv_changed, }$sb_iv_tag" ;; esac
+  done
+  if [[ "$SB_IV_STATUS" == ok && -n "$sb_iv_changed" ]] || [[ "$SB_IV_STATUS" == untrusted ]]; then
+    _sb_state_seal_log "${SB_STATE_DIR}/state" "integrity re-baselined at session start over: ${sb_iv_changed:-the record}${SB_IV_WHY:+ ($SB_IV_WHY)}"
+    sb_iv_banner="⚠️ SB INTEGRITY — since the last record of this project, ${sb_iv_changed:-the integrity record} changed outside a sanctioned writer${SB_IV_WHY:+ ($SB_IV_WHY)}. It is recorded as it is now. If you did not change it, revert it with git (git diff shows the change)."
+    combined="${combined:+$combined
+
+---
+
+}${sb_iv_banner}"
+    sb_iv_user_msg="${sb_iv_user_msg:+$sb_iv_user_msg }${sb_iv_banner}"
+  fi
+  # A first baseline (a new worktree, a fresh clone) adopts whatever the files hold: say when they differ
+  # from what git has committed (the agent may have changed them before this session start).
+  if [[ "$SB_IV_STATUS" == unbaselined ]]; then
+    # Compare with the committed CONTENT (git show HEAD:file), not git status: skip-worktree and
+    # assume-unchanged hide a changed file from status.
+    sb_iv_git_diff=""
+    for sb_iv_f in .silver-bullet.json silver-bullet.md .silver-bullet.prompt.json; do
+      if [[ -f "$sb_iv_root/$sb_iv_f" ]] && [[ "$(cat -- "$sb_iv_root/$sb_iv_f")" != "$(git -C "$sb_iv_root" show "HEAD:$sb_iv_f" 2>/dev/null)" ]]; then
+        sb_iv_git_diff="${sb_iv_git_diff:+$sb_iv_git_diff, }$sb_iv_f"
+      fi
+    done
+    if [[ -n "$sb_iv_git_diff" ]]; then
+      _sb_state_seal_log "${SB_STATE_DIR}/state" "integrity first baseline adopted files that differ from git HEAD: $sb_iv_git_diff"
+      sb_iv_banner="⚠️ SB INTEGRITY — this project had no record yet and its contract files differ from what git has committed (${sb_iv_git_diff}). They are recorded as they are now. If you did not change them, revert them with git (git diff HEAD shows the change) and restart the session."
+      combined="${combined:+$combined
+
+---
+
+}${sb_iv_banner}"
+      sb_iv_user_msg="${sb_iv_user_msg:+$sb_iv_user_msg }${sb_iv_banner}"
+    fi
+  fi
+  _sb_state_seal_log "${SB_STATE_DIR}/state" "integrity baseline recorded by session-start (source: ${sb_session_source}) for $sb_iv_root"
+  sb_integrity_baseline "$sb_iv_root" session
+  if [[ "$sb_session_source" == startup || "$sb_session_source" == clear ]]; then sb_integrity_prune_registry; fi
+fi
+
 # Mark session rules injected (prompt-reminder uses compact ref instead of full re-injection).
 sb_guard_nofollow "${SB_STATE_DIR}/session-rules-injected" 2>/dev/null
 date +%s 2>/dev/null >"${SB_STATE_DIR}/session-rules-injected" || true
@@ -653,7 +717,11 @@ date +%s 2>/dev/null >"${SB_STATE_DIR}/session-rules-injected" || true
 content=""
 content=$(printf '%s' "$combined" | jq -Rs . 2>/dev/null || true)
 if [[ -n "$content" ]]; then
-  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "$content"
+  # What the user must see (a changed contract adopted at session start) also goes out as systemMessage,
+  # which the user sees; additionalContext is the model's.
+  sb_iv_user_json=""
+  if [[ -n "$sb_iv_user_msg" ]]; then sb_iv_user_json="$(printf '%s' "$sb_iv_user_msg" | jq -Rs .)"; fi
+  printf '{%s"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "${sb_iv_user_json:+\"systemMessage\":$sb_iv_user_json,}" "$content"
 fi
 
 
