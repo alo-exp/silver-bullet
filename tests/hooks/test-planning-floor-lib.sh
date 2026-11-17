@@ -22,20 +22,26 @@ assert_eq "canon of an empty path is empty" "" "$(sb_pf_canon "")"
 assert_eq "canon of a Windows spelling (msys)" "/c/proj/src/a.js" "$(OSTYPE=msys sb_pf_canon 'C:\proj\src\a.js')"
 
 # ── sb_pf_src_load / sb_pf_src_in_scope ──────────────────────────────────────
-printf '{"project":{"src_pattern":"/src/|/lib/","src_exclude_pattern":"generated","active_workflow":"devops-cycle"}}\n' >"$P/cfg.json"
-sb_pf_src_load "$P/cfg.json"
+# The source scope comes from the verified project (a root with a live config on an install that never ran
+# a session reads it as written; hooks/lib/integrity.sh).
+SPR="$P/srcproj"
+mkdir -p "$SPR"
+printf '# SB\n' >"$SPR/silver-bullet.md"
+sf_cfg() { printf '%s\n' "$1" >"$SPR/.silver-bullet.json"; sb_integrity_forget; }
+sf_cfg '{"project":{"src_pattern":"/src/|/lib/","src_exclude_pattern":"generated","active_workflow":"devops-cycle"}}'
+sb_pf_src_load "$SPR"
 assert_eq "a valid multi-segment pattern is honoured" "/src/|/lib/" "$SB_PF_SRC_PATTERN"
 assert_eq "a valid exclusion is honoured" "generated" "$SB_PF_SRC_EXCLUDE"
 assert_eq "the workflow is read" "devops-cycle" "$SB_PF_WORKFLOW"
-printf '{"project":{"src_pattern":".*","src_exclude_pattern":"a b;c"}}\n' >"$P/cfg.json"
-sb_pf_src_load "$P/cfg.json"
+sf_cfg '{"project":{"src_pattern":".*","src_exclude_pattern":"a b;c"}}'
+sb_pf_src_load "$SPR"
 assert_eq "a match-everything pattern falls back" "/src/" "$SB_PF_SRC_PATTERN"
 assert_eq "an unsafe exclusion falls back" '__tests__|\.test\.' "$SB_PF_SRC_EXCLUDE"
-sb_pf_src_load "$P/missing.json"
-assert_eq "a missing config gives the defaults" "/src/" "$SB_PF_SRC_PATTERN"
+sb_pf_src_load "$P/no-such-project"
+assert_eq "a missing project gives the defaults" "/src/" "$SB_PF_SRC_PATTERN"
 assert_eq "and the default workflow" "full-dev-cycle" "$SB_PF_WORKFLOW"
-printf 'not json\n' >"$P/cfg.json"
-sb_pf_src_load "$P/cfg.json"
+sf_cfg 'not json'
+sb_pf_src_load "$SPR"
 assert_eq "an unreadable config gives the default workflow" "full-dev-cycle" "$SB_PF_WORKFLOW"
 sb_pf_src_load ""
 check_scope() { # path expected label
@@ -114,17 +120,6 @@ assert_eq "skill_calls: an unparsable command that is no skill call" 1 "$rc"
 rc=0; sb_pf_skill_calls '{"tool_name":"Bash"}' || rc=$?
 assert_eq "skill_calls: an empty command" 1 "$rc"
 
-load "bash $TL_REPO_ROOT/hooks/record-skill.sh"
-if sb_pf_runs_sb_recorder; then tl_pass "recorder: bash record-skill.sh"; else tl_fail "recorder: bash record-skill.sh"; fi
-load "./hooks/record-flow.sh"
-if sb_pf_runs_sb_recorder; then tl_pass "recorder: direct record-flow.sh"; else tl_fail "recorder: direct"; fi
-load "source hooks/record-skill.sh"
-if sb_pf_runs_sb_recorder; then tl_pass "recorder: source"; else tl_fail "recorder: source"; fi
-load "cat hooks/record-skill.sh"
-if sb_pf_runs_sb_recorder; then tl_fail "recorder: cat is not execution"; else tl_pass "recorder: cat is not execution"; fi
-load "bash -x"
-if sb_pf_runs_sb_recorder; then tl_fail "recorder: bash with no script"; else tl_pass "recorder: bash with no script"; fi
-
 cd "$P"
 load "python3 -c \"open('src/x.py','w')\""
 assert_contains "opaque targets: a relative path in code" "$(sb_pf_opaque_targets)" "$P/src/x.py"
@@ -133,12 +128,6 @@ assert_eq "opaque targets: nothing without an opaque writer" "" "$(sb_pf_opaque_
 assert_contains "opaque targets: all mode lists words of any command" "$(sb_pf_opaque_targets all)" "$P/src"
 load "echo hello"
 assert_eq "opaque targets: no path-like word, no target" "" "$(sb_pf_opaque_targets all)"
-load "python3 -c \"open('.silver-bullet/state','a')\""
-if sb_pf_opaque_mentions ".silver-bullet/" "x"; then tl_pass "opaque mentions: state dir"; else tl_fail "opaque mentions"; fi
-if sb_pf_opaque_mentions "nothing-here"; then tl_fail "opaque mentions: absent needle"; else tl_pass "opaque mentions: absent needle"; fi
-load "echo .silver-bullet/"
-if sb_pf_opaque_mentions ".silver-bullet/"; then tl_fail "opaque mentions: needs an opaque writer"; else tl_pass "opaque mentions: needs an opaque writer"; fi
-
 # write records / targets for every tool kind
 load "echo x > src/a.js && rm src/b.js"
 assert_contains "records: shell redirect" "$(sb_pf_write_records "x")" "redirect	$P/src/a.js"
@@ -147,6 +136,14 @@ assert_contains "targets: paths only" "$(sb_pf_write_targets "x")" "$P/src/b.js"
 PAYLOAD='{"tool_name":"mcp__fs__write_file","tool_input":{"path":"src/m.js","file_paths":["src/n.js"],"destination":"src/d.js"}}'
 SB_TI_TOOL_KIND=mcp
 assert_contains "records: MCP path field" "$(SB_TI_FILE_PATH="" SB_TI_PATCH_PATHS="" sb_pf_write_records "$PAYLOAD")" "edit	$PWD/src/m.js"
+# the payload's cwd joins a relative path, and the logical spelling is recorded next to the resolved one
+mkdir -p "$TL_TMP/lg/real/src"; ln -s "$TL_TMP/lg/real" "$TL_TMP/lg/link"
+LGP='{"tool_name":"Write","cwd":"'"$TL_TMP/lg/link"'","tool_input":{"file_path":"src/x.js"}}'
+out="$(SB_TI_TOOL_KIND=edit SB_TI_FILE_PATH="" SB_TI_PATCH_PATHS="" sb_pf_write_records "$LGP")"
+assert_contains "records: relative path joined to the payload cwd (resolved)" "$out" "edit	$(cd "$TL_TMP/lg/real" && pwd -P)/src/x.js"
+assert_contains "records: relative path joined to the payload cwd (logical)" "$out" "edit	$TL_TMP/lg/link/src/x.js"
+out="$(SB_TI_TOOL_KIND=edit SB_TI_FILE_PATH="" SB_TI_PATCH_PATHS="" sb_pf_write_records '{"cwd": "broken')" || true
+assert_eq "records: a payload that is not JSON yields no record and no failure" "" "$out"
 assert_contains "records: file_paths list" "$(SB_TI_FILE_PATH="" SB_TI_PATCH_PATHS="" sb_pf_write_records "$PAYLOAD")" "src/n.js"
 assert_contains "records: destination" "$(SB_TI_FILE_PATH="" SB_TI_PATCH_PATHS="" sb_pf_write_records "$PAYLOAD")" "src/d.js"
 SB_TI_TOOL_KIND=patch SB_TI_PATCH_PATHS=$'a/one.js\nb/two.js' SB_TI_FILE_PATH="a/one.js"
@@ -196,61 +193,6 @@ SB_SA_READ_ONLY=false SB_SA_UNSEEN_REASONS=""
 assert_contains "the unseen message names the reason and the way forward" "$(sb_pf_unseen_message "boom")" "cannot inspect this command: boom"
 assert_contains "and offers a split" "$(sb_pf_unseen_message "boom")" "Split it into smaller commands"
 
-mkdir -p "$P/d"
-load "cp -r /tmp/a $P/d"
-if sb_pf_dir_capable_via cp; then tl_pass "cp -r is directory-capable"; else tl_fail "cp -r is directory-capable"; fi
-load "cp -a /tmp/a $P/d"
-if sb_pf_dir_capable_via cp; then tl_pass "cp -a is directory-capable"; else tl_fail "cp -a"; fi
-load "cp notes.md $P/d"
-if sb_pf_dir_capable_via cp; then tl_fail "cp of a plain file"; else tl_pass "cp of a plain file is not"; fi
-load "cp silver-bullet.md $P/d"
-if sb_pf_dir_capable_via cp; then tl_pass "cp of a protected name is"; else tl_fail "cp of a protected name"; fi
-load "mv $P/d /tmp/dd"
-if sb_pf_dir_capable_via mv; then tl_pass "mv of a directory is"; else tl_fail "mv of a directory"; fi
-load "mv a.txt b.txt"
-if sb_pf_dir_capable_via mv; then tl_fail "mv of a plain file"; else tl_pass "mv of a plain file is not"; fi
-load "install -m 644 notes.md $P/d"
-if sb_pf_dir_capable_via install; then tl_fail "install of a plain file"; else tl_pass "install of a plain file is not"; fi
-for v in rsync "tar -x" unzip "unzip -d" "git checkout" "git restore"; do
-  if sb_pf_dir_capable_via "$v"; then tl_pass "$v is directory-capable"; else tl_fail "$v"; fi
-done
-for v in redirect tee touch mkdir rm edit "sed -i"; do
-  if sb_pf_dir_capable_via "$v"; then tl_fail "$v is not"; else tl_pass "$v is not directory-capable"; fi
-done
-rec=$'rsync\t/h\nredirect\t/h/x\ncp\t/elsewhere'
-load "rsync -a /tmp/a /h"
-exp="$(sb_pf_expand_ancestors "$rec" /h/.sb/state /h/.sb/trivial /other)"
-assert_contains "an rsync into /h covers /h/.sb/state" "$exp" $'rsync\t/h/.sb/state'
-assert_contains "and /h/.sb/trivial" "$exp" $'rsync\t/h/.sb/trivial'
-assert_not_contains "but not an unrelated path" "$exp" "/other"
-assert_not_contains "a plain redirect covers nothing" "$exp" $'redirect\t/h/.sb'
-assert_contains "the records themselves are kept" "$exp" $'cp\t/elsewhere'
-assert_eq "no path under a file target" "" "$(sb_pf_expand_ancestors $'rsync\t/h/.sb/state' /h/.sb/state | tail -n +2 | grep -v '^$' || true)"
-
-load "ln -s /h/sd /tmp/l"
-if sb_pf_argv_touches_dir /h/sd; then tl_pass "ln of the protected dir"; else tl_fail "ln of the protected dir"; fi
-if sb_pf_argv_touches_dir /h/other; then tl_fail "a sibling directory is not named"; else tl_pass "ln source in a sibling"; fi
-load "ln -s /h /tmp/l"
-if sb_pf_argv_touches_dir /h/sd; then tl_pass "ln of a directory above the protected dir"; else tl_fail "ln above"; fi
-load "find /h/sd -name x -exec sh -c 'echo {}' \;"
-if sb_pf_argv_touches_dir /h/sd; then tl_pass "find -exec rooted in the protected dir"; else tl_fail "find -exec"; fi
-load "find /h/sd -name x"
-if sb_pf_argv_touches_dir /h/sd; then tl_fail "find without -exec"; else tl_pass "find without -exec reads only"; fi
-load "find src -name x -exec ls {} \;"
-if sb_pf_argv_touches_dir /h/sd; then tl_fail "find elsewhere"; else tl_pass "find -exec elsewhere"; fi
-if sb_pf_argv_touches_dir; then tl_fail "no dir given"; else tl_pass "no dir given"; fi
-
-printf "print('x')\n" >"$P/ok.py"
-printf "open('/h/.claude/.silver-bullet/state')\n" >"$P/bad.py"
-load "python3 ok.py"
-if sb_pf_script_mentions ".claude/.silver-bullet"; then tl_fail "script mentions"; else tl_pass "a script that names nothing"; fi
-load "python3 bad.py"
-if sb_pf_script_mentions ".claude/.silver-bullet"; then tl_pass "a script that names the state dir"; else tl_fail "script mentions state dir"; fi
-load "python3 missing.py"
-if sb_pf_script_mentions "x"; then tl_fail "missing script"; else tl_pass "a missing script file"; fi
-load "ls bad.py"
-if sb_pf_script_mentions ".claude/.silver-bullet"; then tl_fail "ls is no interpreter"; else tl_pass "ls is no interpreter"; fi
-
 for n in mcp__fs__write_file mcp__fs__edit_file mcp__fs__create_directory mcp__fs__move_file mcp__fs__fs_mv mcp__x__save_note mcp__x__apply_patch mcp__x__copy_file mcp__x__rename; do
   if sb_pf_mcp_write_tool "$n"; then tl_pass "$n writes"; else tl_fail "$n writes"; fi
 done
@@ -258,33 +200,25 @@ for n in mcp__fs__read_file mcp__fs__list_directory mcp__x__search Read Bash; do
   if sb_pf_mcp_write_tool "$n"; then tl_fail "$n does not write"; else tl_pass "$n does not write"; fi
 done
 
-load "python3 -c 'import subprocess;subprocess.run([\"bash\",\"/i/hooks/record-skill.sh\"])'"
-if sb_pf_text_names_recorder; then tl_pass "inline code spelling a recorder path"; else tl_fail "inline recorder path"; fi
-load "cat /i/hooks/record-skill.sh"
-if sb_pf_text_names_recorder; then tl_fail "reading a recorder"; else tl_pass "reading a recorder is fine"; fi
-load "python3 /i/hooks/record-skill.sh"
-if sb_pf_names_sb_recorder; then tl_pass "an interpreter given a recorder"; else tl_fail "interpreter recorder"; fi
-load "python3 /i/hooks/record-skill"
-if sb_pf_names_sb_recorder; then tl_pass "a recorder without .sh"; else tl_fail "recorder without .sh"; fi
-load "cat /i/hooks/record-skill.sh"
-if sb_pf_names_sb_recorder; then tl_fail "cat names a recorder"; else tl_pass "cat is a reader"; fi
-load "git add hooks/record-skill.sh"
-if sb_pf_names_sb_recorder; then tl_fail "git add"; else tl_pass "git add is a reader"; fi
-load "cp -r /i/hooks /tmp/hh"
-if sb_pf_names_sb_recorder /i/hooks; then tl_pass "copying the hooks dir out (installed copy)"; else tl_fail "cp hooks dir"; fi
-if sb_pf_names_sb_recorder; then tl_fail "cp hooks dir without a hooks guard"; else tl_pass "no hooks guard in a source checkout"; fi
-load "ls /i/hooks"
-if sb_pf_names_sb_recorder /i/hooks; then tl_fail "ls hooks dir"; else tl_pass "ls of the hooks dir"; fi
-
 # the unlock list: every skill that rewrites the contract files through the agent is on it
 for sk in silver-init silver-update silver-add silver-devops silver-migrate; do
   case " $SB_PF_CONTRACT_WRITER_SKILLS " in *" $sk "*) tl_pass "$sk may rewrite the contract";; *) tl_fail "$sk missing from the unlock list";; esac
 done
-export SILVER_BULLET_STATE_FILE="$SB_RUNTIME_STATE_DIR/state"
-printf 'silver-plan\n' >"$SILVER_BULLET_STATE_FILE"
-if sb_pf_contract_unlocked; then tl_fail "silver-plan unlocks"; else tl_pass "an unrelated skill does not unlock"; fi
-printf 'silver-add\n' >"$SILVER_BULLET_STATE_FILE"
-if sb_pf_contract_unlocked; then tl_pass "silver-add unlocks"; else tl_fail "silver-add unlocks"; fi
+SB_IV_UNLOCK_SKILL=""
+if sb_pf_contract_unlocked; then tl_fail "no unlock in force unlocks"; else tl_pass "without an unlock entry nothing unlocks"; fi
+SB_IV_UNLOCK_SKILL=silver-add
+if sb_pf_contract_unlocked json; then tl_pass "silver-add unlocks the JSON configuration"; else tl_fail "silver-add unlocks json"; fi
+if sb_pf_contract_unlocked md; then tl_fail "silver-add unlocks silver-bullet.md"; else tl_pass "silver-add leaves silver-bullet.md locked"; fi
+assert_eq "silver-add covers the JSON configuration" "config prompt" "$(sb_contract_skill_tags silver-add)"
+assert_eq "silver-add is declared to write its tracker keys only" "_github_project issue_tracker issue_tracker_adapter" "$(sb_contract_skill_config_keys silver-add)"
+assert_eq "silver-devops is declared to write the active workflow only" "project.active_workflow" "$(sb_contract_skill_config_keys silver-devops)"
+assert_eq "silver-init may write any key" "" "$(sb_contract_skill_config_keys silver-init)"
+SB_IV_UNLOCK_SKILL=silver-init
+if sb_pf_contract_unlocked md; then tl_pass "silver-init unlocks silver-bullet.md"; else tl_fail "silver-init unlocks md"; fi
+assert_eq "silver-init covers the contract and the instruction files" "config prompt md instr:CLAUDE.md instr:AGENTS.md" "$(sb_contract_skill_tags silver-init)"
+SB_IV_UNLOCK_SKILL=""
+if sb_contract_is_writer silver-add; then tl_pass "silver-add is a writer"; else tl_fail "silver-add is a writer"; fi
+if sb_contract_is_writer silver-plan; then tl_fail "silver-plan is not a writer"; else tl_pass "silver-plan is not a writer"; fi
 # drift: a skill that rewrites .silver-bullet.json with jq and mv must be on the list
 while IFS= read -r f; do
   name="$(basename "$(dirname "$f")")"
@@ -296,5 +230,67 @@ for h in planning-file-guard instruction-file-guard workflow-chain-guard dev-cyc
   n="$(jq -r --arg h "$h.sh" '[.hooks.PreToolUse[] | select(.matcher | test("mcp__")) | .hooks[] | select(.command | endswith($h + "\""))] | length' "$TL_REPO_ROOT/hooks/hooks.json")"
   assert_eq "$h is registered for MCP write tools" 1 "$n"
 done
+
+# tree writes
+if sb_pf_extract_via "tar -x" && sb_pf_extract_via unzip; then tl_pass "tar -x and unzip extract"; else tl_fail "extractors"; fi
+if sb_pf_extract_via patch; then tl_fail "patch is not an extractor"; else tl_pass "patch is not an extractor"; fi
+if sb_pf_tree_via patch && sb_pf_tree_via "git apply" && sb_pf_tree_via "git am" && sb_pf_tree_via unzip; then tl_pass "patch appliers and extractors write the tree"; else tl_fail "tree vias"; fi
+if sb_pf_tree_via cp; then tl_fail "cp is not a tree write"; else tl_pass "cp is not a tree write"; fi
+
+
+# ── the state-tamper guard (sb_pf_state_violation, sb_pf_dynamic_violation, sb_pf_protected_name, sb_pf_nlink) ───────
+source "$TL_REPO_ROOT/hooks/lib/path-canonical.sh"
+SD17="$TL_TMP/sd17"
+mkdir -p "$SD17/dir.d"
+printf 'x\n' >"$SD17/baselined-roots"; printf 'x\n' >"$SD17/root-123"; printf 'k\n' >"$SD17/seal.key"; printf 's\n' >"$SD17/.hidden-state"
+v() { if sb_pf_state_violation "$1" "$2" "$SD17"; then echo violation; else echo ok; fi; }
+assert_eq "an ordinary file in the state dir is guarded" "violation" "$(v redirect "$SD17/baselined-roots")"
+assert_eq "a file outside it is not" "ok" "$(v redirect "$TL_TMP/other")"
+assert_eq "the state dir itself may be made" "ok" "$(v mkdir "$SD17")"
+assert_eq "but not removed" "violation" "$(v rm "$SD17")"
+assert_eq "a directory above it counts as deleting it (rm)" "violation" "$(v rm "$TL_TMP")"
+assert_eq "git clean above it counts" "violation" "$(v "git clean" "$TL_TMP")"
+assert_eq "git reset above it does not (only within)" "ok" "$(v "git reset" "$TL_TMP")"
+assert_eq "git reset within it does" "violation" "$(v "git reset" "$SD17")"
+# sentinels: a plain write only, and only while the name is a plain file nobody linked, a directory, or absent
+for sn in session-init stack-compression-mutex sb-friction-log.md roadmap-edit-override; do
+  assert_eq "$sn absent: a redirect is open" "ok" "$(v redirect "$SD17/$sn")"
+  assert_eq "$sn absent: a link under the name is not" "violation" "$(v ln "$SD17/$sn")"
+  assert_eq "$sn absent: a copy onto it is not" "violation" "$(v cp "$SD17/$sn")"
+done
+printf 'x\n' >"$SD17/session-init"
+assert_eq "a plain sentinel file: tee, touch, rm, truncate and the file tools are open" "ok ok ok ok ok" \
+  "$(v tee "$SD17/session-init") $(v touch "$SD17/session-init") $(v rm "$SD17/session-init") $(v truncate "$SD17/session-init") $(v edit "$SD17/session-init")"
+ln "$SD17/baselined-roots" "$SD17/stack-compression-mutex"
+assert_eq "a sentinel hard-linked to another file is guarded" "violation" "$(v redirect "$SD17/stack-compression-mutex")"
+ln -s baselined-roots "$SD17/sb-friction-log.md"
+assert_eq "a sentinel that is a symlink is guarded" "violation" "$(v redirect "$SD17/sb-friction-log.md")"
+mkdir "$SD17/roadmap-edit-override"
+assert_eq "a sentinel that is a directory is open" "ok" "$(v mkdir "$SD17/roadmap-edit-override")"
+assert_eq "a sentinel under a subdirectory of the state dir is guarded by name" "violation" "$(v redirect "$SD17/dir.d/session-init")"
+# the link count: GNU stat, then BSD stat, then "shared" when neither answers
+assert_eq "sb_pf_nlink of a plain file" "1" "$(sb_pf_nlink "$SD17/dir.d/../seal.key")"
+assert_eq "sb_pf_nlink of a linked file" "2" "$(sb_pf_nlink "$SD17/baselined-roots")"
+STUBD="$TL_TMP/statstub"; mkdir -p "$STUBD"
+printf '#!/bin/sh\ncase "$1" in -c) exit 1 ;; -f) echo 1 ;; esac\n' >"$STUBD/stat"; chmod +x "$STUBD/stat"
+assert_eq "sb_pf_nlink falls back to BSD stat" "1" "$(PATH="$STUBD:$PATH" sb_pf_nlink "$SD17/seal.key")"
+printf '#!/bin/sh\nexit 1\n' >"$STUBD/stat"
+assert_eq "sb_pf_nlink without a stat that answers counts the file as shared" "2" "$(PATH="$STUBD:$PATH" sb_pf_nlink "$SD17/seal.key")"
+# names: entries of the state dir (not sentinels), the contract files, globs
+pn() { if sb_pf_protected_name "$1" "$SD17"; then echo yes; else echo no; fi; }
+assert_eq "an entry of the state dir" "yes" "$(pn baselined-roots)"
+assert_eq "a glob that matches an entry" "yes" "$(pn 'root-*')"
+assert_eq "a glob that matches a hidden entry" "yes" "$(pn '.hid*')"
+assert_eq "a contract file name" "yes" "$(pn silver-bullet.md)"
+assert_eq "a contract file glob" "yes" "$(pn '.silver-bullet.*')"
+assert_eq "a sentinel is not protected by name" "no" "$(pn session-init)"
+assert_eq "an ordinary name" "no" "$(pn notes.txt)"
+assert_eq "an empty name" "no" "$(pn '')"
+assert_eq "no state directory, an ordinary glob" "no" "$(sb_pf_protected_name 'root-*' "$TL_TMP/no-such-dir" && echo yes || echo no)"
+dv() { if sb_pf_dynamic_violation "$1" "$2" "$SD17"; then echo violation; else echo ok; fi; }
+assert_eq "a dynamic write of a protected name" "violation" "$(dv rm "sub/dir/baselined-roots")"
+assert_eq "a trailing slash is ignored" "violation" "$(dv rm "root-123/")"
+assert_eq "a dynamic write of an ordinary name" "ok" "$(dv rm "notes.txt")"
+assert_eq "a dynamic git clean" "violation" "$(dv "git clean" ".")"
 
 tl_results

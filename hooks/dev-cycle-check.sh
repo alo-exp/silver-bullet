@@ -77,12 +77,19 @@ main() {
   hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PostToolUse"' 2>/dev/null) || payload_invalid=true
   [[ -n "$hook_event" ]] || hook_event="PostToolUse"
 
-  # PostToolUse only drops the fresh-test-run record: with no record there is nothing to do, so the
-  # call costs no analysis at all.
+  # PostToolUse has three jobs, each with a cheap precondition: drop the fresh-test-run record,
+  # remove an unblessed trivial marker, and keep the integrity record in step with what the
+  # sanctioned writers (the file tools, a running contract-writing skill) changed. Nothing to do
+  # for any of them: no analysis at all.
   if [[ "$hook_event" != "PreToolUse" && "$payload_invalid" != true ]]; then
     marker_early="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-${SB_RUNTIME_STATE_DIR}/verify-tests-state}"
     sb_runtime_path_is_state_scoped "$marker_early" || marker_early="${SB_RUNTIME_STATE_DIR}/verify-tests-state"
-    [[ -e "$marker_early" ]] || exit 0
+    post_work=false
+    [[ -e "$marker_early" || -e "${SB_RUNTIME_STATE_DIR}/unlock-hint" || -e "${SB_RUNTIME_STATE_DIR}/trivial" || -L "${SB_RUNTIME_STATE_DIR}/trivial" ]] && post_work=true
+    case "$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null)" in
+      Edit | Write | MultiEdit | NotebookEdit | apply_patch | mcp__*) post_work=true ;;
+    esac
+    [[ "$post_work" == true ]] || exit 0
   fi
 
   # Advisory-only output: collected, emitted once with the verdict (or alone at exit)
@@ -99,7 +106,7 @@ main() {
   }
 
   # --- Analyse the call once --------------------------------------------------
-  sb_tool_input_load "$input" "$PWD"
+  sb_pf_tool_input_load "$input"
   tool_name="${SB_TI_TOOL_NAME:-}"
   [[ -n "$tool_name" ]] || tool_name="$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null)"
   tool_kind="${SB_TI_TOOL_KIND:-}"
@@ -107,7 +114,7 @@ main() {
   if [[ "${SB_TI_STATUS:-}" == "parse_failed" && -z "${SB_TI_TOOL_NAME:-}" ]]; then
     # The payload itself is not valid JSON: the host's call cannot be judged. Inside an SB project
     # that is a deny with a message, not a silent allow.
-    [[ -n "$(sb_find_project_config_walk_only 2>/dev/null)" ]] || exit 0
+    [[ -n "$(sb_integrity_root "$PWD")" ]] || exit 0
     hook_event="PreToolUse"
     emit_block "$(sb_pf_unanalysable_message)"
     exit 0
@@ -121,7 +128,7 @@ main() {
     *)
       if [[ "$is_shell" != true ]]; then
         # An MCP tool counts only when its name says it writes (a read tool carries paths too).
-        [[ "$tool_kind" == mcp ]] || exit 0
+        [[ "$tool_kind" == mcp || "$tool_name" == mcp__* ]] || exit 0
         sb_pf_mcp_write_tool "$tool_name" || exit 0
       fi
       ;;
@@ -135,7 +142,7 @@ main() {
     elif [[ "$is_shell" == true ]]; then
       # python3 is missing, or the payload is not valid: the planning floor cannot tell what the
       # command writes. Inside an SB project that is a deny — except for a plainly read-only command.
-      [[ -n "$(sb_find_project_config_walk_only 2>/dev/null || true)" ]] || exit 0
+      [[ -n "$(sb_integrity_root "$PWD")" ]] || exit 0
       cmd_fallback="$(printf '%s' "$input" | jq -r '.tool_input | objects | (.command // .cmd // "") | strings' 2>/dev/null)"
       sb_pf_plain_read_only "$cmd_fallback" && exit 0
       [[ "$hook_event" == "PreToolUse" ]] || exit 0
@@ -144,7 +151,7 @@ main() {
     elif [[ "$tool_name" == "apply_patch" ]]; then
       # A patch needs the helper; the file tools' path fields are plain JSON.
       [[ "$hook_event" == "PreToolUse" ]] || exit 0
-      [[ -n "$(sb_find_project_config_walk_only 2>/dev/null || true)" ]] || exit 0
+      [[ -n "$(sb_integrity_root "$PWD")" ]] || exit 0
       emit_block "$(sb_pf_unanalysable_message)"
       exit 0
     else
@@ -157,7 +164,7 @@ main() {
   # plainly read-only (R1-06, review blocker 1).
   if [[ "$is_shell" == true && "$hook_event" == "PreToolUse" ]]; then
     unseen_why="$(sb_pf_unseen_reason)"
-    if [[ -n "$unseen_why" ]] && [[ -n "$(sb_find_project_config_walk_only 2>/dev/null)" ]]; then
+    if [[ -n "$unseen_why" ]] && [[ -n "$(sb_integrity_root "$PWD")" ]]; then
       emit_block "$(sb_pf_unseen_message "$unseen_why")"
       exit 0
     fi
@@ -166,18 +173,10 @@ main() {
   # Everything this call writes: "via<TAB>canonical path"
   records="$(sb_pf_write_records "$input")"
   opaque_records=""
-  runs_recorder=false
-  opaque_state=false
-  opaque_contract=false
   script_records=""
   if [[ "$is_shell" == true ]]; then
     opaque_records="$(sb_pf_opaque_records)"
     if [[ "$parse_failed_shell" == true ]]; then opaque_records="$(sb_pf_opaque_records all)"; fi
-    state_tail="${SB_RUNTIME_STATE_DIR#"$HOME"/}"
-    state_tail="$(printf '%s' "$state_tail" | tr '[:upper:]' '[:lower:]')"
-    if sb_pf_runs_sb_recorder; then runs_recorder=true; fi
-    if sb_pf_opaque_mentions "$state_tail" "silver-bullet/state" || sb_pf_script_mentions "$state_tail"; then opaque_state=true; fi
-    if sb_pf_opaque_mentions silver-bullet.md .silver-bullet.json .silver-bullet.prompt.json || sb_pf_script_mentions silver-bullet.md .silver-bullet.json .silver-bullet.prompt.json; then opaque_contract=true; fi
     skill_adapter="${SB_SA_SKILL_ADAPTER:-false}"
     shell_command="${SB_TI_COMMAND:-}"
     invoked_script="${SB_SA_INVOKED_SCRIPT:-}"
@@ -198,7 +197,6 @@ main() {
     shell_command=""
   fi
   records="$(printf '%s\n' "$records" | awk 'NF && !seen[$0]++')"
-
   # --- Third-party plugin boundary (§8) — HARD STOP on upstream plugin edits ---------------
   plugin_cache="${SB_RUNTIME_PLUGIN_CACHE_ROOT}"
   audit_target=""
@@ -209,9 +207,6 @@ main() {
     sb_plugin_root="${SB_PLUGIN_ROOT:-$(cd "${_sb_hooks_script}/.." && pwd)}"
     sb_plugin_root="$(sb_pf_canon "$sb_plugin_root")"
     runtime_root="$(sb_pf_canon "${SB_RUNTIME_HOME_ROOT}")"
-    # A directory-capable write (cp -r, rsync, tar -x, unzip, mv, git checkout) into a directory
-    # that contains something protected writes it just the same.
-    records="$(sb_pf_expand_ancestors "$records" "$state_dir_canon" "$registry_canon" "$(sb_pf_canon "$plugin_cache")")"
     # A source checkout can live inside a host runtime worktree, so runtime-root ancestry alone is
     # not proof that this is an installed plugin copy. A direct .git marker identifies the source
     # checkout while preserving protection for packaged installations.
@@ -219,7 +214,12 @@ main() {
     [[ -e "${sb_plugin_root}/.git" ]] && sb_source_checkout=true
     installed_copy=false
     if [[ "$_sb_hooks_script" == "${SB_RUNTIME_HOME_ROOT}"* ]] && [[ "$sb_source_checkout" != true ]]; then installed_copy=true; fi
+    state_tamper_message="🚫 STATE TAMPER BLOCKED — Silver Bullet state files are written only by its hooks; writing, moving or deleting them bypasses workflow enforcement.
 
+Skills are recorded automatically when invoked through the active runtime's SB-recognized skill invocation channel. Overrides and the trivial marker are the user's to create, from their own terminal.
+
+To reset workflow state intentionally, run in your terminal (not from the agent):
+      rm ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"
     cache_targets=()
     while IFS=$'\t' read -r via target; do
       [[ -n "$target" ]] || continue
@@ -257,47 +257,39 @@ See CLAUDE.md §8 for details."
       fi
 
       # State tamper prevention (SB-008): the state directory holds the skill records and every
-      # gate's memory. Only the hooks write there; a few benign sentinels stay open to the agent.
-      # Deleting a directory above it counts as deleting it.
-      in_state=false
-      if sb_path_is_within "$target" "$state_dir_canon"; then in_state=true; fi
-      case "$via" in
-        rm | rmdir | unlink | "git rm" | "find -delete" | "mv source")
-          case "$state_dir_canon/" in "$target"/*) in_state=true ;; esac
-          ;;
-      esac
-      if [[ "$in_state" == true ]]; then
-        sentinel_ok=false
-        if [[ "$target" == "$state_dir_canon" && "$via" == "mkdir" ]]; then sentinel_ok=true; fi
-        case "${target##*/}" in
-          session-init | stack-compression-mutex | sb-friction-log.md | roadmap-edit-override)
-            [[ "$(dirname "$target")" == "$state_dir_canon" ]] && sentinel_ok=true
-            ;;
-        esac
-        if [[ "$sentinel_ok" != true ]]; then
-          emit_block "🚫 STATE TAMPER BLOCKED — Silver Bullet state files are written only by its hooks; writing, moving or deleting them bypasses workflow enforcement.
-
-Skills are recorded automatically when invoked through the active runtime's SB-recognized skill invocation channel. Overrides and the trivial marker are the user's to create, from their own terminal.
-
-To reset workflow state intentionally, run in your terminal (not from the agent):
-      rm ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"
-          exit 0
-        fi
+      # gate's memory (the integrity records, the registry of baselined roots and the markers beside it).
+      # Only the hooks write there; a few benign sentinels stay open to a plain write (planning-floor.sh,
+      # sb_pf_state_violation). Deleting a directory above it counts as deleting it.
+      if sb_pf_state_violation "$via" "$target" "$state_dir_canon"; then
+        emit_block "$state_tamper_message"
+        exit 0
       fi
     done <<<"$records"
 
     if [[ "$is_shell" == true ]]; then
-      hooks_guard=""
-      [[ "$installed_copy" == true ]] && hooks_guard="${sb_plugin_root}/hooks"
-      if [[ "$runs_recorder" == true ]] || sb_pf_names_sb_recorder "$hooks_guard" \
-        || { [[ "$installed_copy" == true ]] && sb_pf_text_names_recorder; }; then
-        emit_block "🚫 STATE TAMPER BLOCKED — Running, naming or copying a Silver Bullet recorder hook (record-*.sh) from the shell forges workflow state, whichever interpreter launches it. Skills are recorded when the host invokes them through its skill channel."
-        exit 0
-      fi
-      if [[ "$opaque_state" == true ]] || sb_pf_argv_touches_dir "$state_dir_canon" ${hooks_guard:+"$hooks_guard"}; then
-        emit_block "🚫 STATE TAMPER BLOCKED — This command names the Silver Bullet state directory in code or arguments Silver Bullet cannot inspect (inline interpreter code, a script file, ln, find -exec); state files are written only by hooks. To read them, use cat, grep or jq."
-        exit 0
-      fi
+      # A git clean, reset or stash of a whole work tree reaches the state directory when it is inside the tree.
+      tree_records="$(sb_pf_state_tree_records)"
+      dynamic_records="$(sb_pf_dynamic_records)"
+      while IFS=$'\t' read -r via target; do
+        [[ -n "$target" ]] || continue
+        audit_target="$target"
+        if sb_pf_state_violation "$via" "$target" "$state_dir_canon"; then
+          emit_block "$state_tamper_message"
+          exit 0
+        fi
+      done <<<"$tree_records"
+      # A relative name written where the shell's directory is not known (a cd the analysis cannot read, a
+      # function or a variable that changed it) could be a state file: judged by name.
+      while IFS=$'\t' read -r via target; do
+        [[ -n "$target" ]] || continue
+        audit_target="$target"
+        if sb_pf_dynamic_violation "$via" "$target" "$state_dir_canon"; then
+          emit_block "$state_tamper_message
+
+(The command changes directory in a way that cannot be read before it runs, and then writes ${target##*/}, a name Silver Bullet protects. Use an absolute path, or a plain cd to a directory that exists.)"
+          exit 0
+        fi
+      done <<<"$dynamic_records"
       if [[ ${#cache_targets[@]} -gt 0 ]]; then
         uninstall_ok=false
         if declare -f sb_plugin_cache_command_is_uninstall_cleanup >/dev/null 2>&1 \
@@ -309,20 +301,32 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
           exit 0
         fi
       fi
-      # Silver Bullet's own installed hooks: an inline interpreter that names them.
-      if [[ "$installed_copy" == true ]] && sb_pf_opaque_mentions "$(printf '%s' "${sb_plugin_root}/hooks" | tr '[:upper:]' '[:lower:]')"; then
-        emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /sb:init."
-        exit 0
-      fi
     fi
   fi
 
   # --- Which project do these writes belong to? ---------------------------------------------
   # A project is a directory holding BOTH .silver-bullet.json and silver-bullet.md (a stale
   # project-root cache never counts). Outside one this hook enforces nothing (R2-06).
+  # The root is the nearest directory with a RECORD (a nested project written under it is not a new
+  # root); without any record the nearest directory with both files (an unbaselined project).
   config_for_dir() {
-    sb_find_project_config_walk_only_from "$1" 2>/dev/null || true
+    local found pw pc
+    found="$(sb_integrity_root "$1")"
+    if [[ -z "$found" ]]; then
+      # a symlink put at a registered path resolves elsewhere: the working directory's own (logical) name is judged too
+      pw="$(sb_integrity_root "$PWD")"
+      if [[ -n "$pw" ]]; then
+        pc="$(sb_pf_canon "$pw")"
+        case "$1/" in
+          "$pc"/*) found="$pw" ;;
+        esac
+      fi
+    fi
+    [[ -z "$found" ]] || found="$found/.silver-bullet.json"
+    printf '%s' "$found"
   }
+  croot_cfg=""
+  croot=""
   targets_in_scope=""
   targets_all_non_logic=true
   scope_config=""
@@ -330,6 +334,9 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
   scope_workflow="full-dev-cycle"
   logic_edit=false
   protected_hit=""
+  protected_root=""
+  a_root=""
+  a_tags=""
   last_cfg_dir=""
   last_cfg=""
   loaded_cfg=""
@@ -337,7 +344,7 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
     [[ -n "$target" ]] || continue
     tdir="$(dirname "$target")"
     # A directory a tree-writing command fills is looked up as itself: it may BE a project root.
-    if [[ -d "$target" ]] && sb_pf_covering_via "$via"; then tdir="$target"; fi
+    if [[ -d "$target" ]] && sb_pf_tree_via "$via"; then tdir="$target"; fi
     if [[ "$tdir" == "$last_cfg_dir" ]]; then
       cfg="$last_cfg"
     else
@@ -346,17 +353,45 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
       last_cfg="$cfg"
     fi
     [[ -n "$cfg" ]] || continue
-    root="$(sb_pf_canon "$(dirname "$cfg")")"
+    if [[ "$cfg" != "$croot_cfg" ]]; then
+      croot_cfg="$cfg"
+      croot="$(sb_pf_canon "$(dirname "$cfg")")"
+    fi
+    root="$(dirname "$cfg")"
+    root_logical=false
+    case "$target" in
+      "$root" | "$root"/*)
+        # a target spelled under the root as found (possibly a symlinked name): the root stays in that spelling
+        if [[ "$root" != "$croot" ]]; then root_logical=true; fi
+        ;;
+      *) root="$croot" ;;
+    esac
+    a_root="$root"
+    case "$target" in
+      "$root/.silver-bullet.json") a_tags="${a_tags:+$a_tags }config" ;;
+      "$root/silver-bullet.md") a_tags="${a_tags:+$a_tags }md" ;;
+      "$root/.silver-bullet.prompt.json") a_tags="${a_tags:+$a_tags }prompt" ;;
+      "$root/CLAUDE.md" | "$root/AGENTS.md") a_tags="${a_tags:+$a_tags }instr:${target##*/}" ;;
+      "$root/.planning/ROADMAP.md" | "$root/.planning/STATE.md" | "$root/.planning/PROJECT.md") a_tags="${a_tags:+$a_tags }plan:${target##*/}" ;;
+    esac
     # The enforcement contract files: changing them rewrites every gate (R1-07, R2-04). A
     # directory-capable write into a directory above them counts.
     while IFS= read -r cf; do
-      cf="$(sb_pf_canon "$cf")"
-      if [[ "$target" == "$cf" ]]; then protected_hit="$target"; fi
-      if sb_pf_covering_via "$via" && [[ "$cf" == "$target"/* ]]; then protected_hit="$cf"; fi
+      if [[ "$root_logical" != true ]]; then cf="$(sb_pf_canon "$cf")"; fi
+      if [[ "$target" == "$cf" ]]; then protected_hit="$target"; protected_root="$root"; fi
+      if sb_pf_extract_via "$via" && [[ "$cf" == "$target"/* ]]; then protected_hit="$cf"; protected_root="$root"; fi
     done < <(sb_pf_config_files "$root")
     if [[ "$cfg" != "$loaded_cfg" ]]; then
-      sb_pf_src_load "$cfg"
+      sb_pf_src_load "$root"
       loaded_cfg="$cfg"
+    fi
+    # A tree written at the project root (tar -x, unzip, patch, git apply, git am) is production source.
+    if sb_pf_tree_via "$via" && [[ "$target" == "$root" ]]; then
+      [[ -z "$scope_config" ]] && { scope_config="$cfg"; scope_root="$root"; scope_workflow="$SB_PF_WORKFLOW"; }
+      targets_in_scope="$targets_in_scope"$'\n'"$target"
+      targets_all_non_logic=false
+      logic_edit=true
+      continue
     fi
     sb_pf_src_in_scope "$target" "$root" || continue
     [[ -z "$scope_config" ]] && { scope_config="$cfg"; scope_root="$root"; scope_workflow="$SB_PF_WORKFLOW"; }
@@ -369,14 +404,14 @@ To reset workflow state intentionally, run in your terminal (not from the agent)
     fi
   done <<<"$records$nl$opaque_records"
 
-  cmd_cfg="$(config_for_dir "$PWD")"
-  if [[ "$opaque_contract" == true && -n "$cmd_cfg" ]]; then
-    protected_hit="$(dirname "$cmd_cfg")/silver-bullet.md"
-  fi
   if [[ -n "$protected_hit" && "$hook_event" == "PreToolUse" ]]; then
     # The skills that legitimately rewrite these files (sb:init, sb:update, sb:add, sb:devops,
     # sb:migrate: SB_PF_CONTRACT_WRITER_SKILLS) unlock them; nobody else changes them.
-    if ! sb_pf_contract_unlocked; then
+    unlock_kind=md
+    case "$protected_hit" in */.silver-bullet.json) unlock_kind=json ;; esac
+    # The unlock is an entry of the verified record, not a file anyone can write.
+    sb_integrity_verify "$protected_root" ""
+    if ! sb_pf_contract_unlocked "$unlock_kind"; then
       audit_target="$protected_hit"
       emit_block "🚫 ENFORCEMENT CONTRACT PROTECTED — $(basename "$protected_hit") defines which gates run and what they require; rewriting, moving or deleting it disables process compliance.
 
@@ -385,28 +420,45 @@ Change it through the owning skill (/sb:init, /sb:update, /sb:add, /sb:devops, /
     fi
   fi
 
+  # --- PostToolUse: keep the integrity record in step with the sanctioned writers -----------
+  if [[ "$hook_event" != "PreToolUse" ]]; then
+    post_root="$(sb_integrity_root "$PWD")"
+    if [[ -n "$post_root" ]]; then
+      sb_integrity_verify "$post_root" ""
+      # A file tool wrote an artifact: the gates that allowed it vouch for it. A shell command never does.
+      if [[ "$is_shell" != true && -n "$a_tags" && "$a_root" == "$post_root" ]]; then
+        # shellcheck disable=SC2086  # the tags are a word list
+        sb_integrity_baseline "$post_root" entry $a_tags
+      fi
+      # A contract-writing skill is running: what it is declared to write is adopted, nothing else.
+      if [[ -n "$SB_IV_UNLOCK_SKILL" ]]; then
+        sb_integrity_baseline "$post_root" adopt
+      fi
+      sb_integrity_verify "$post_root" ""
+      sb_integrity_restore_safe
+      # The hint only wakes this hook up; the unlock itself lives in the record.
+      if [[ -z "$SB_IV_UNLOCK_SKILL" ]]; then rm -f -- "${SB_RUNTIME_STATE_DIR}/unlock-hint"; fi
+    fi
+  fi
+
   [[ -n "$targets_in_scope" ]] || exit 0
   [[ "$skill_adapter" == true ]] && exit 0
   targets_in_scope="$(printf '%s\n' "$targets_in_scope" | awk 'NF && !seen[$0]++')"
 
-  # --- Read config values with defaults ----------------------------------------------------
+  # --- Read the gate values from the integrity record (never from the live file) --------------
   config_file="$scope_config"
   active_workflow="$scope_workflow"
-  required_planning=""
   SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
   state_file="${SB_STATE_DIR}/state"
-  # The legacy trivial marker: the DEFAULT path only. A configured state.trivial_file is never
-  # honoured (R2-04): pointing it at any file under the state root would arm the bypass.
-  trivial_file="${SB_STATE_DIR}/trivial"
+  # The legacy trivial marker (the DEFAULT path only) counts only while the record blesses it (R2-04).
   verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
+  sb_integrity_verify "$scope_root" ""
   if [[ "$active_workflow" == "devops-cycle" ]]; then
-    custom_planning=$(jq -r '(.skills.required_planning_devops // .skills.required_planning // []) | join(" ")' "$config_file" 2>/dev/null)
+    required_planning="${SB_IV_REQUIRED_PLANNING_DEVOPS:-$SB_IV_REQUIRED_PLANNING}"
   else
-    custom_planning=$(jq -r '(.skills.required_planning // []) | join(" ")' "$config_file" 2>/dev/null)
+    required_planning="$SB_IV_REQUIRED_PLANNING"
   fi
-  [[ -n "$custom_planning" ]] && required_planning="$custom_planning"
-  cfg_state=$(jq -r '.state.state_file // ""' "$config_file" 2>/dev/null)
-  [[ -n "$cfg_state" ]] && state_file="${cfg_state/#\~/$HOME}"
+  [[ -z "$SB_IV_STATE_FILE" ]] || state_file="${SB_IV_STATE_FILE/#\~/$HOME}"
 
   # Current-version configs can explicitly set the planning floor. Legacy
   # configs are normalized to inherit the current default SB planning gates.
@@ -428,9 +480,26 @@ Change it through the owning skill (/sb:init, /sb:update, /sb:add, /sb:devops, /
     verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
   fi
 
-  # --- Check trivial file override ---------------------------------------------------------
-  if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
+  # --- Trivial marker: honoured only while the record blesses it -------------------------------
+  sb_integrity_restore_safe
+  if [[ "$SB_IV_TRIVIAL_OK" == true ]]; then
     exit 0
+  fi
+
+  # --- The contract the record vouches for changed outside a sanctioned skill -------------------
+  if [[ "$hook_event" == "PreToolUse" ]]; then
+    if sb_integrity_contract_drift; then
+      audit_target="$scope_root"
+      emit_block "$(sb_integrity_drift_message "$scope_root")"
+      exit 0
+    fi
+    for _div in $SB_IV_DIVERGED; do
+      case "$_div" in
+        instr:* | plan:*)
+          emit_advisory "ℹ️ ${_div#*:} changed outside a file tool since it was recorded (logged in seal-events.log)."
+          ;;
+      esac
+    done
   fi
 
   # --- PostToolUse: the edit has landed — the fresh-test-run record is stale ---------------
@@ -596,20 +665,13 @@ Change it through the owning skill (/sb:init, /sb:update, /sb:add, /sb:devops, /
   # hardcoded defaults. Context/plan/execute/verify/review are normal lifecycle
   # lifecycle markers and must not be treated as phase-skip evidence.
   finalization_skills="silver-branch-finish silver-create-release silver-completion-audit tdd"
-  cfg_finalization=$(jq -r '(.skills.required_deploy // []) | map(select(
-    . != "silver-quality-gates"
-    and . != "silver-blast-radius"
-    and . != "devops-quality-gates"
-    and . != "silver-context"
-    and . != "silver-plan"
-    and . != "silver-execute"
-    and . != "silver-verify"
-    and . != "silver-review"
-    and . != "silver-review-request"
-    and . != "silver-review-triage"
-    and . != "requesting-code-review"
-    and . != "receiving-code-review"
-  )) | join(" ")' "$config_file" 2>/dev/null || true)
+  cfg_finalization=""
+  for _fs in $SB_IV_REQUIRED_DEPLOY; do
+    case "$_fs" in
+      silver-quality-gates | silver-blast-radius | devops-quality-gates | silver-context | silver-plan | silver-execute | silver-verify | silver-review | silver-review-request | silver-review-triage | requesting-code-review | receiving-code-review) ;;
+      *) cfg_finalization="${cfg_finalization:+$cfg_finalization }$_fs" ;;
+    esac
+  done
   [[ -n "$cfg_finalization" ]] && finalization_skills="$cfg_finalization"
   has_finalization=false
   for fs in $finalization_skills; do

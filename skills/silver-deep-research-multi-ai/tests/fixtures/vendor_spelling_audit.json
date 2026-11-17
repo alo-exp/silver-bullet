@@ -1,0 +1,401 @@
+{
+ "agentgpt": {
+  "distinctive": [
+   "agentgpt"
+  ],
+  "prose_spellings": [
+   "agentgpt"
+  ]
+ },
+ "agenthub": {
+  "distinctive": [
+   "agenthub"
+  ],
+  "prose_spellings": [
+   "agenthub"
+  ]
+ },
+ "agentsys": {
+  "distinctive": [
+   "agentsys"
+  ],
+  "prose_spellings": [
+   "agentsys"
+  ]
+ },
+ "ai-dlc": {
+  "distinctive": [
+   "ai-dlc"
+  ],
+  "prose_spellings": [
+   "ai-dlc"
+  ]
+ },
+ "aider": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "amazon-q-developer": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "ateam": {
+  "distinctive": [
+   "ateam"
+  ],
+  "prose_spellings": [
+   "ateam"
+  ]
+ },
+ "augment-cosmos": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "autogen": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "axonflow": {
+  "distinctive": [
+   "axonflow"
+  ],
+  "prose_spellings": [
+   "axonflow"
+  ]
+ },
+ "barkain-workflow-orchestrator": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "bmad": {
+  "distinctive": [
+   "bmad-method"
+  ],
+  "prose_spellings": [
+   "bmad-method"
+  ]
+ },
+ "cavekit-v31": {
+  "distinctive": [
+   "cavekit",
+   "v3.1"
+  ],
+  "prose_spellings": [
+   "cavekit",
+   "cavekit v3",
+   "cavekit v3.1",
+   "cavekit v31",
+   "cavekit-v3",
+   "cavekit-v3.1",
+   "cavekit-v31"
+  ]
+ },
+ "cavekit-v4": {
+  "distinctive": [
+   "cavekit",
+   "v4"
+  ],
+  "prose_spellings": [
+   "cavekit v4",
+   "cavekit-v4"
+  ]
+ },
+ "cc10x": {
+  "distinctive": [
+   "cc10x"
+  ],
+  "prose_spellings": [
+   "cc10x"
+  ]
+ },
+ "claude-code": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "claude-code-expert": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "claude-harness": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "cline": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "coderabbit": {
+  "distinctive": [
+   "coderabbit"
+  ],
+  "prose_spellings": [
+   "coderabbit"
+  ]
+ },
+ "codex": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "cognition-scout": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "conductor": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "continue": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "copilot-workspace": {
+  "distinctive": [
+   "github"
+  ],
+  "prose_spellings": [
+   "github copilot workspace"
+  ]
+ },
+ "crewai": {
+  "distinctive": [
+   "crewai"
+  ],
+  "prose_spellings": [
+   "crewai"
+  ]
+ },
+ "cursor": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "cursor-agents": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "cursor-background-agents": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "deepwork": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "devika": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "devin": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "director": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "factory-ai": {
+  "distinctive": [
+   "factory.ai"
+  ],
+  "prose_spellings": [
+   "factory.ai"
+  ]
+ },
+ "github-copilot": {
+  "distinctive": [
+   "github"
+  ],
+  "prose_spellings": [
+   "github copilot",
+   "github-copilot"
+  ]
+ },
+ "github-copilot-enterprise": {
+  "distinctive": [
+   "github"
+  ],
+  "prose_spellings": [
+   "github copilot enterprise",
+   "github-copilot-enterprise"
+  ]
+ },
+ "gsd": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "jetbrains-ai-assistant": {
+  "distinctive": [
+   "jetbrains"
+  ],
+  "prose_spellings": [
+   "jetbrains ai assistant",
+   "jetbrains-ai-assistant"
+  ]
+ },
+ "langchain": {
+  "distinctive": [
+   "langchain"
+  ],
+  "prose_spellings": [
+   "langchain"
+  ]
+ },
+ "langgraph": {
+  "distinctive": [
+   "langgraph"
+  ],
+  "prose_spellings": [
+   "langgraph"
+  ]
+ },
+ "langgraph-platform": {
+  "distinctive": [
+   "langgraph"
+  ],
+  "prose_spellings": [
+   "langgraph",
+   "langgraph platform",
+   "langgraph-platform"
+  ]
+ },
+ "linear": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "linear-agent": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "magic-dev": {
+  "distinctive": [
+   "magic.dev"
+  ],
+  "prose_spellings": [
+   "magic.dev"
+  ]
+ },
+ "metagpt": {
+  "distinctive": [
+   "metagpt"
+  ],
+  "prose_spellings": [
+   "metagpt"
+  ]
+ },
+ "oh-my-pi": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "open-interpreter": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "openhands": {
+  "distinctive": [
+   "openhands"
+  ],
+  "prose_spellings": [
+   "openhands"
+  ]
+ },
+ "poolside": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "replit-agent": {
+  "distinctive": [
+   "replit"
+  ],
+  "prose_spellings": [
+   "replit agent",
+   "replit-agent"
+  ]
+ },
+ "ruflo": {
+  "distinctive": [
+   "ruflo"
+  ],
+  "prose_spellings": [
+   "ruflo",
+   "ruflo / claude flow"
+  ]
+ },
+ "silver-bullet": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "sourcegraph-cody": {
+  "distinctive": [
+   "sourcegraph"
+  ],
+  "prose_spellings": [
+   "sourcegraph cody",
+   "sourcegraph-cody"
+  ]
+ },
+ "spec-kit": {
+  "distinctive": [
+   "github"
+  ],
+  "prose_spellings": [
+   "github spec kit",
+   "github spec-kit",
+   "github-spec-kit"
+  ]
+ },
+ "superclaude": {
+  "distinctive": [
+   "superclaude"
+  ],
+  "prose_spellings": [
+   "superclaude"
+  ]
+ },
+ "superpowers": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "swe-agent": {
+  "distinctive": [
+   "swe-agent"
+  ],
+  "prose_spellings": [
+   "swe-agent"
+  ]
+ },
+ "sweep": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "sweep-ai": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "tembo": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "turboshovel": {
+  "distinctive": [
+   "turboshovel"
+  ],
+  "prose_spellings": [
+   "turboshovel"
+  ]
+ },
+ "windsurf": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "workflow-manager": {
+  "distinctive": [],
+  "prose_spellings": []
+ },
+ "zuvo": {
+  "distinctive": [
+   "zuvo"
+  ],
+  "prose_spellings": [
+   "zuvo"
+  ]
+ }
+}

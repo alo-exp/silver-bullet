@@ -34,10 +34,11 @@ fi
 hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"' 2>/dev/null || echo "PreToolUse")
 [[ "$hook_event" == "PreToolUse" ]] || exit 0
 
-config_file="$(sb_find_project_config_walk_only 2>/dev/null || true)"
-[[ -n "$config_file" ]] || exit 0
+# The project is decided here; the record is verified only if a write lands in the state directory (below).
+SB_IV_ROOT="$(sb_integrity_root "$PWD")"
+[[ -n "$SB_IV_ROOT" ]] || exit 0
 if declare -f sb_project_active >/dev/null 2>&1; then
-  sb_project_active "$config_file" || exit 0
+  sb_project_active "$SB_IV_ROOT/.silver-bullet.json" || exit 0
 fi
 
 emit_block() {
@@ -63,31 +64,28 @@ if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]]; then
 fi
 
 # The default marker, and the one the project config names (it is not honoured by the gates,
-# but writing it is still an attempt to arm the bypass).
+# but writing it is still an attempt to arm the bypass). A configured path must sit in the state directory to
+# stand for the marker at all, so the record is only read when a write lands there.
 default_trivial="${SB_RUNTIME_STATE_DIR}/trivial"
-cfg_trivial="$(jq -r '.state.trivial_file // ""' "$config_file" 2>/dev/null || true)"
-cfg_trivial="${cfg_trivial/#\~/$HOME}"
-guarded=$(sb_pf_canon "$default_trivial")
-if [[ -n "$cfg_trivial" ]]; then
-  guarded="$guarded"$'\n'"$(sb_pf_canon "$cfg_trivial")"
-fi
-
-guard_args=()
-while IFS= read -r g; do
-  guard_args+=("$g")
-done <<<"$guarded"
+state_canon="$(sb_pf_canon "$SB_RUNTIME_STATE_DIR")"
+guarded="$(sb_pf_canon "$default_trivial")"
+guarded_full=false
 
 while IFS=$'\t' read -r via target; do
   # Removing the marker only disarms the bypass.
   case "$via" in rm | rmdir | unlink | "git rm") continue ;; esac
+  if [[ "$guarded_full" != true && "$target" == "$state_canon"/* ]]; then
+    guarded_full=true
+    sb_integrity_gate "$PWD"
+    cfg_trivial=""
+    if cfg_trivial="$(sb_iv_jq -r '.state.trivial_file // ""' 2>/dev/null)"; then :; fi
+    cfg_trivial="${cfg_trivial/#\~/$HOME}"
+    if [[ -n "$cfg_trivial" ]]; then guarded="$guarded"$'\n'"$(sb_pf_canon "$cfg_trivial")"; fi
+  fi
   if grep -qxF -- "$target" <<<"$guarded"; then
     emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Agents must not write or arm the trivial marker file. Use /sb:fast for trivial work instead."
     exit 0
   fi
-done < <(sb_pf_expand_ancestors "$(sb_pf_write_records "$input")" "${guard_args[@]}")
-
-if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]] && sb_pf_opaque_mentions silver-bullet/trivial; then
-  emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Agents must not write or arm the trivial marker file. Use /sb:fast for trivial work instead."
-fi
+done < <(sb_pf_write_records "$input")
 
 exit 0

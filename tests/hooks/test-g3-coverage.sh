@@ -146,7 +146,5 @@ sb_outcomes_reject_tampered
 assert_eq "deleted checklist restored although the tamper log is unwritable" pending "$(jq -r '.outcomes[0].status' "$OF")"
 rmdir "$SD/outcomes-tamper.log"; rm -f "$OF" "$OF.sha256"
 
-# ---- required-skills cache: an unknown list name ------------------------------------------------------------
-assert_eq "required-skills: unknown list" 1 "$(bash -c 'source "$1"; __sb_rs_load bogus >/dev/null 2>&1; echo $?' _ "$TL_REPO_ROOT/hooks/lib/required-skills.sh")"
 
 tl_results

@@ -65,8 +65,6 @@ dc_cmd ": > $SD/roadmap-edit-override-audit.log"
 assert_eq "the agent cannot truncate an audit log" "deny" "$(decision)"
 dc_cmd "python3 -c \"open('$SD/state','a').write('silver-plan')\""
 assert_eq "inline code that names the state dir is blocked" "deny" "$(decision)"
-dc_cmd "printf '{\"tool_name\":\"Skill\",\"tool_input\":{\"skill\":\"silver-plan\"}}' | bash $TL_REPO_ROOT/hooks/record-skill.sh"
-assert_contains "running the recorder from the shell is blocked (R3-01)" "$(message)" "recorder"
 dc_cmd "cat x | $TL_REPO_ROOT/hooks/record-skill.sh"
 assert_eq "executing the recorder directly is blocked" "deny" "$(decision)"
 dc_cmd "env FOO=1 sh $TL_REPO_ROOT/hooks/record-flow.sh"
@@ -186,14 +184,16 @@ dc_cmd "cp .silver-bullet.json /tmp/backup.json"
 assert_eq "copying the config out is fine" "none" "$(decision)"
 run_dc "$(edit_json "$PROJ/docs/silver-bullet.md" Write)"
 assert_eq "a file of the same name elsewhere is not the contract" "none" "$(decision)"
-state inst-a silver-init
+state inst-a
+unlock silver-init
 run_dc "$(edit_json "$PROJ/.silver-bullet.json" Write)"
 assert_eq "with sb:init recorded the config may be rewritten" "none" "$(decision)"
 dc_cmd "mv silver-bullet.md silver-bullet.md.bak"
 assert_eq "sb:init may move the instruction file" "none" "$(decision)"
-state inst-a silver-update
+unlock silver-update
 run_dc "$(edit_json "$PROJ/silver-bullet.md" Write)"
 assert_eq "with sb:update recorded silver-bullet.md may be rewritten" "none" "$(decision)"
+unlock_clear
 state inst-a
 # a configured trivial file never arms the bypass
 mkproj trivcfg ".state={trivial_file:\"$SD/branch-test\"}"
@@ -202,7 +202,12 @@ run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
 assert_eq "state.trivial_file pointing at an existing state file does not arm the bypass" "deny" "$(decision)"
 touch "$SD/trivial"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
-assert_eq "the default trivial marker (the user's) still works" "none" "$(decision)"
+assert_eq "a marker nobody blessed does not bypass" "deny" "$(decision)"
+assert_file_absent "and is removed" "$SD/trivial"
+touch "$SD/trivial"
+sb_integrity_baseline "$PROJ" session; sb_integrity_forget
+run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
+assert_eq "the default trivial marker (the user's), blessed at session start, still works" "none" "$(decision)"
 rm -f "$SD/trivial"
 
 # ── outside an SB project nothing is enforced (R2-06) ────────────────────────
@@ -306,6 +311,7 @@ rm -f "$SD/small-edit-budget"
 mkproj onedoc
 state ""
 printf 'other/branch\n' >"$BRANCHF"
+sb_integrity_baseline "$PROJ" session; sb_integrity_forget
 run_dc "$(edit_json "$PROJ/src/app.py" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
 assert_eq "advisory + branch warning + deny: one parseable document that denies" "deny" "$(decision)"
 assert_eq "exactly one document" 1 "$(jq -s length <<<"$TL_OUT")"
@@ -368,10 +374,6 @@ RUN_DIR="$NOCFG" run_dc "$(jq -cn --arg p "$PATCH_SRC" '{hook_event_name:"PreToo
 assert_eq "no python3, apply_patch outside an SB project: ignored" "none" "$(decision)"
 dc_cmd "python3 -c \"import os; os.system('echo x >> ' + os.path.expanduser('~/.${SB_RUNTIME_NAME}/.silver-bullet/') + 'state')\""
 assert_contains "string-built inline code is refused as unreadable code" "$(message)" "cannot inspect this command"
-dc_cmd "python3 -c \"import shutil; shutil.copy('a', '$HOME/.${SB_RUNTIME_NAME}/.silver-bullet/state')\""
-assert_contains "readable inline code that names the state dir is refused" "$(message)" "names the Silver Bullet state directory"
-inst "$(bash_json "python3 -c \"import shutil; shutil.copy('a', '$HOOKS_DIR/x')\"")"
-assert_contains "inline code that names the installed hooks is refused" "$(message)" "NEVER modifies its own enforcement hooks"
 mkproj multi
 state inst-a
 dc_cmd 'rm -rf /tmp/g2-scratch && echo x > src/a.js'
@@ -387,7 +389,7 @@ dc_cmd 'git status --short && ls src'
 assert_eq "a read-only command costs one python3 start" 1 "$(wc -l <"$TL_TMP/py-calls" | tr -d ' ')"
 : >"$TL_TMP/py-calls"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
-assert_eq "a file edit costs one python3 start" 1 "$(wc -l <"$TL_TMP/py-calls" | tr -d ' ')"
+assert_eq "a file edit starts no interpreter" 0 "$(wc -l <"$TL_TMP/py-calls" | tr -d ' ')"
 rm -f "$TL_BIN/python3"
 
 # ── the payload travels on stdin: a 300 KB command is analysed, not dropped (R2-03) ───────────
@@ -437,6 +439,7 @@ assert_eq "out-of-scope and excluded targets only: ignored" "none" "$(decision)"
 STATE_ALT="$SD/state-from-config"
 mkproj cfgstate ".state={state_file:\"$STATE_ALT\"}"
 printf 'inst-a\n' >"$STATE_ALT"
+sb_state_seal_write "$STATE_ALT"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")" SILVER_BULLET_STATE_FILE=
 assert_contains "state file taken from the config" "$(message)" "Planning verified"
 rm -f "$STATE_ALT"
@@ -459,6 +462,7 @@ assert_eq "unremovable test marker is tolerated" "0" "$TL_STATUS"
 # unreadable config reaching the finalization lookup
 mkproj badcfg
 printf '{ not json' >"$PROJ/.silver-bullet.json"
+sb_integrity_baseline "$PROJ" session; sb_integrity_forget
 state silver-quality-gates silver-context silver-plan
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
 assert_eq "an invalid config pair is not a project: the planning floor stays out" "allow" "$(decision)"

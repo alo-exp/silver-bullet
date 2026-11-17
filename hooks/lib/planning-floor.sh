@@ -19,7 +19,7 @@
 #   sb_pf_unanalysable_message           why the call could not be analysed and how to proceed
 #   sb_pf_plain_read_only COMMAND        pure-Bash verdict (no helper needed) for a plainly
 #                                        read-only single command
-#   sb_pf_src_load CONFIG                SB_PF_SRC_PATTERN / SB_PF_SRC_EXCLUDE / SB_PF_WORKFLOW
+#   sb_pf_src_load ROOT                  SB_PF_SRC_PATTERN / SB_PF_SRC_EXCLUDE / SB_PF_WORKFLOW
 #   sb_pf_src_in_scope ABS ROOT          ABS is production source: inside ROOT, matches the source
 #                                        pattern as a path-segment pattern on its project-relative
 #                                        form, and is not a test file
@@ -31,18 +31,8 @@
 #                                        check SB_PF_SKILLS; 1: not a skill invocation channel;
 #                                        2: an invoke-skill command that cannot be analysed (deny
 #                                        with sb_pf_unanalysable_message)
-#   sb_pf_runs_sb_recorder               the command runs a Silver Bullet record-*.sh hook script
-#   sb_pf_names_sb_recorder              any non-reader command names a record-*.sh script or, in an
-#                                        installed copy, copies/links the plugin hooks directory
-#   sb_pf_text_names_recorder            the (non read-only) command text spells out /hooks/record-...
 #   sb_pf_unseen_reason                  why the loaded shell command cannot be inspected ("" when
 #                                        it can, or when it is plainly read-only)
-#   sb_pf_expand_ancestors RECORDS PATH...  RECORDS plus a "via<TAB>PATH" record for every PATH a
-#                                        directory-capable write (cp -r, rsync, tar -x, unzip, mv,
-#                                        git checkout) or a deletion/move-away covers because it is
-#                                        at or below the target
-#   sb_pf_argv_touches_dir DIR...        a command (ln, find -exec) names a path in or above DIR
-#   sb_pf_script_mentions NEEDLE...      an interpreter script file the command runs names a NEEDLE
 #   sb_pf_mcp_write_tool NAME            an MCP tool name that writes files
 #   sb_pf_contract_unlocked              a skill that legitimately writes the contract files is recorded
 #   sb_pf_state_has_skill SKILL...       one of the skills is recorded in this session's state
@@ -52,17 +42,26 @@
 #                                        opaque writer (python -c, awk system(), ...), else nothing;
 #                                        with `all` for any command (a command that did not parse)
 #   sb_pf_opaque_records [all]           the same as "opaque<TAB>path" records (like sb_pf_write_records)
-#   sb_pf_opaque_mentions NEEDLE...      an opaque writer (interpreter one-liner, awk system(),
-#                                        sed w) whose command text names one of the lower-case
-#                                        NEEDLEs (case-insensitive): its writes cannot be listed
 
 _sb_pf_dir="${BASH_SOURCE[0]:-$0}"
 _sb_pf_dir="${_sb_pf_dir%/*}"
-for _sb_pf_lib in runtime-paths.sh path-canonical.sh hook-output.sh tool-input.sh required-skills.sh skill-discovery.sh state-seal.sh; do
+# A library the caller already loaded is not loaded again: required-skills.sh reads the default lists
+# with jq on every load, which costs about 35 ms on the hot path of every edit.
+for _sb_pf_lib in runtime-paths.sh path-canonical.sh hook-output.sh tool-input.sh required-skills.sh skill-discovery.sh state-seal.sh contract-unlock.sh integrity.sh; do
+  case "$_sb_pf_lib" in
+    required-skills.sh) _sb_pf_probe=sb_required_skill_is_recorded ;;
+    skill-discovery.sh) _sb_pf_probe=sb_skill_is_installed ;;
+    state-seal.sh) _sb_pf_probe=sb_state_seal_write ;;
+    contract-unlock.sh) _sb_pf_probe=sb_contract_is_writer ;;
+    integrity.sh) _sb_pf_probe=sb_integrity_verify ;;
+    path-canonical.sh) _sb_pf_probe=sb_canonical_path ;;
+    *) _sb_pf_probe="" ;;
+  esac
+  if [[ -n "$_sb_pf_probe" ]] && declare -F "$_sb_pf_probe" >/dev/null 2>&1; then continue; fi
   # shellcheck source=/dev/null
   [[ -f "$_sb_pf_dir/$_sb_pf_lib" ]] && source "$_sb_pf_dir/$_sb_pf_lib"
 done
-unset _sb_pf_lib
+unset _sb_pf_lib _sb_pf_probe
 
 SB_PF_DEFAULT_SRC_PATTERN='/src/'
 SB_PF_DEFAULT_SRC_EXCLUDE='__tests__|\.test\.'
@@ -79,13 +78,22 @@ sb_pf_canon() {
 # sb_pf_write_records INPUT: "<via><TAB><canonical path>" per write. via is the operation for
 # shell writes (redirect, tee, cp, mv, mv source, rm, ...) and "edit" for the file tools.
 sb_pf_write_records() {
-  local input="${1:-}" via raw
+  local input="${1:-}" via raw cwdp=""
+  # Every write is judged under BOTH spellings: the resolved path (symlinks followed) and the logical one
+  # (joined to the payload's cwd, else the process cwd; '.' and '..' collapsed lexically, symlinks not followed).
+  # A source folder symlinked outside the project is then still inside it by name.
+  if [[ "${SB_TI_TOOL_KIND:-shell}" != shell && "$input" == *'"cwd"'* ]]; then
+    cwdp="$(printf '%s' "$input" | jq -r '.cwd // empty | strings' 2>/dev/null || :)"
+  fi
   {
     case "${SB_TI_TOOL_KIND:-shell}" in
       shell)
-        printf '%s' "${SB_SA_JSON:-}" | jq -r '
-          .writes[]? | select((.scope // "path") == "path" or .via == "tar -x" or .via == "unzip")
-          | select((.dynamic | not) or (.path | startswith("/"))) | [.via, .path] | @tsv' 2>/dev/null
+        printf '%s' "${SB_SA_JSON:-}" | jq -r --arg tree "$SB_PF_TREE_VIAS" '
+          .writes[]? | select((.scope // "path") == "path" or (.via as $v | $tree | split("|") | index($v)))
+          | select((.dynamic | not) or (.path | startswith("/")))
+          | .via as $v
+          | ([$v, .path], (if .lpath and .lpath != .path then [$v, .lpath] else empty end),
+             (.alts[]? | [$v, .path], [$v, .lpath])) | @tsv' 2>/dev/null
         ;;
       *)
         {
@@ -94,20 +102,136 @@ sb_pf_write_records() {
             .tool_input | objects
             | ([.file_path, .notebook_path, .path, .filePath, .destination, .source, .target,
                 .from, .to, .old_path, .new_path, .oldPath, .newPath, .src, .dst, .sourcePath,
-                .destinationPath] | .[] | strings),
+                .destinationPath, .relative_path, .relativePath] | .[] | strings),
+              ([.. | objects | to_entries[] | select((.value | type) == "string")
+               | select(.key | test("^(content|text|body|data|old_string|new_string|old_str|new_str|input|command|code|patch|diff)$") | not)
+               | select(.key | test("(path|file|dest|src|source|target|uri|name)"; "i")) | .value] | .[]),
               ((.file_paths // .paths // []) | arrays | .[] | strings)' 2>/dev/null
         } | while IFS= read -r raw; do
           [[ -n "$raw" ]] && printf 'edit\t%s\n' "$raw"
         done
         ;;
     esac
-  } | while IFS=$'\t' read -r via raw; do
-    [[ -n "$raw" ]] && printf '%s\t%s\n' "$via" "$(sb_pf_canon "$raw")"
+  } | awk 'NF && !seen[$0]++' | while IFS=$'\t' read -r via raw; do
+    if [[ -n "$raw" ]]; then
+      printf '%s\t%s\n' "$via" "$(sb_pf_canon "$raw" "${cwdp:-$PWD}")"
+      sb_pf_logical_var "$raw" "${cwdp:-$PWD}"
+      printf '%s\t%s\n' "$via" "$_SB_PF_LOGICAL"
+    fi
   done | awk 'NF && !seen[$0]++'
 }
 
+# The logical spelling of a path into _SB_PF_LOGICAL: joined to BASE, '.' and '..' collapsed, symlinks left alone
+# (no subshell: it runs for every write).
+sb_pf_logical_var() {
+  _sb_path_abs "$1" "${2:-$PWD}"
+  _sb_path_lex "$_SB_PATH_OUT"
+  _SB_PF_LOGICAL="$_SB_PATH_OUT"
+}
+
+# Tree-scope writes (the whole work tree at a path) that G2 gates: extractors. Patch appliers are
+# judged by sb_pf_patch_verdict and recorded by the paths of their diff.
+SB_PF_TREE_VIAS='tar -x|unzip|patch|git apply|git am'
+# Extractors write whatever their archive holds, so they can also cover the contract files.
+sb_pf_extract_via() {
+  case "$1" in "tar -x" | unzip) return 0 ;; esac
+  return 1
+}
+
+sb_pf_tree_via() {
+  case "|$SB_PF_TREE_VIAS|" in *"|$1|"*) return 0 ;; esac
+  return 1
+}
+# Names Silver Bullet protects wherever they sit (basenames), and the planning files below .planning/.
+
 sb_pf_write_targets() {
   sb_pf_write_records "$@" | cut -f2- | awk 'NF && !seen[$0]++'
+}
+
+# Tree-scope writes of commands that delete or rewrite a whole work tree (git clean, reset, stash): judged by the
+# state-directory guard only (not by the planning floor, which never gated them), "via<TAB>path" like the records.
+SB_PF_STATE_TREE_VIAS='git clean|git reset|git stash'
+sb_pf_state_tree_records() {
+  printf '%s' "${SB_SA_JSON:-}" | jq -r --arg tree "$SB_PF_STATE_TREE_VIAS" '
+    .writes[]? | select(.scope == "tree" and (.via as $v | $tree | split("|") | index($v)))
+    | select((.dynamic | not) or (.path | startswith("/")))
+    | .via as $v | ([$v, .path], [$v, .lpath // .path], (.alts[]? | [$v, .path], [$v, .lpath])) | @tsv' 2>/dev/null
+}
+
+# Writes with a RELATIVE name made where the shell's directory is not known (a cd the analysis cannot read):
+# "via<TAB>the name as written". Judged by name (sb_pf_state_violation).
+sb_pf_dynamic_records() {
+  printf '%s' "${SB_SA_JSON:-}" | jq -r '
+    .writes[]? | select(.cwd_dynamic == true and .relative == true) | [.via, .raw] | @tsv' 2>/dev/null
+}
+
+# The names the state-tamper guard protects: every entry of the state directory except the four sentinels, and the
+# enforcement contract files.
+SB_PF_STATE_SENTINELS='session-init|stack-compression-mutex|sb-friction-log.md|roadmap-edit-override'
+sb_pf_state_sentinel() {
+  case "|$SB_PF_STATE_SENTINELS|" in *"|$1|"*) return 0 ;; esac
+  return 1
+}
+
+# sb_pf_protected_name PATTERN STATE_DIR: PATTERN (a name, or a glob) can name a protected file
+sb_pf_protected_name() {
+  local pat="$1" sd="$2" entry name
+  [[ -n "$pat" ]] || return 1
+  for name in .silver-bullet.json silver-bullet.md .silver-bullet.prompt.json; do
+    # shellcheck disable=SC2053  # the pattern is a glob on purpose
+    [[ "$name" == $pat ]] && return 0
+  done
+  for entry in "$sd"/* "$sd"/.[!.]*; do
+    [[ -e "$entry" || -L "$entry" ]] || continue
+    name="${entry##*/}"
+    sb_pf_state_sentinel "$name" && continue
+    # shellcheck disable=SC2053
+    [[ "$name" == $pat ]] && return 0
+  done
+  return 1
+}
+
+# sb_pf_nlink FILE: the link count of FILE (GNU stat, then BSD); 2 (shared) when it cannot be read
+sb_pf_nlink() {
+  local n=""
+  n="$(stat -c %h -- "$1" 2>/dev/null)" || n=""
+  [[ "$n" =~ ^[0-9]+$ ]] || n="$(stat -f %l "$1" 2>/dev/null)" || n=""
+  [[ "$n" =~ ^[0-9]+$ ]] || n=2
+  printf '%s' "$n"
+}
+
+# sb_pf_state_violation VIA TARGET STATE_DIR: this write is one the state-tamper guard refuses. The state directory
+# is written only by the hooks. The four sentinels stay open to the agent, by a plain write only (never as a link,
+# a copy, a move or an install), and only while the name is a plain file nobody else has linked, a directory, or not
+# there yet: a hard link or a symlink under a sentinel name would be a way to write the registry through it.
+sb_pf_state_violation() {
+  local via="$1" target="$2" sd="$3" within=false
+  if sb_path_is_within "$target" "$sd"; then within=true; fi
+  case "$via" in
+    rm | rmdir | unlink | "git rm" | "find -delete" | "mv source" | "git clean")
+      case "$sd/" in "$target"/*) within=true ;; esac
+      ;;
+  esac
+  [[ "$within" == true ]] || return 1
+  if [[ "$target" == "$sd" && "$via" == mkdir ]]; then return 1; fi
+  if sb_pf_state_sentinel "${target##*/}" && [[ "${target%/*}" == "$sd" ]]; then
+    case "$via" in
+      redirect | tee | touch | mkdir | rm | rmdir | unlink | truncate | edit) ;;
+      *) return 0 ;;
+    esac
+    if [[ -L "$target" ]]; then return 0; fi
+    if [[ -f "$target" && "$(sb_pf_nlink "$target")" != 1 ]]; then return 0; fi
+    return 1
+  fi
+  return 0
+}
+
+# sb_pf_dynamic_violation VIA NAME STATE_DIR: a write of NAME made in a directory nobody can name statically names a
+# protected file (by name or by glob), or is a git clean (it cleans whatever work tree that directory is in).
+sb_pf_dynamic_violation() {
+  local via="$1" raw="${2%/}" sd="$3"
+  [[ "$via" == "git clean" ]] && return 0
+  sb_pf_protected_name "${raw##*/}" "$sd"
 }
 
 sb_pf_unanalysable_message() {
@@ -148,24 +272,29 @@ sb_pf_plain_read_only() {
   return 0
 }
 
-# sb_pf_src_load CONFIG: the project's source pattern, exclusion and workflow, validated.
+# sb_pf_src_load ROOT: the project's source pattern, exclusion and workflow, validated. They come from the
+# VERIFIED record of the project (hooks/lib/integrity.sh), never from the live file: a config rewritten
+# outside a sanctioned writer cannot take files out of the floor, and an unbaselined or untrusted project
+# gets the defaults.
+# shellcheck disable=SC2153  # SB_IV_SRC_* / SB_IV_WORKFLOW are set by sb_integrity_verify
 sb_pf_src_load() {
-  local config="${1:-}"
+  local root="${1:-}" value
   SB_PF_SRC_PATTERN="$SB_PF_DEFAULT_SRC_PATTERN"
   SB_PF_SRC_EXCLUDE="$SB_PF_DEFAULT_SRC_EXCLUDE"
   SB_PF_WORKFLOW="full-dev-cycle"
-  [[ -n "$config" && -f "$config" ]] || return 0
-  local value
-  value="$(jq -r '.project.src_pattern // "/src/"' "$config" 2>/dev/null || true)"
+  [[ -n "$root" ]] || return 0
+  # The verification already extracted pattern, exclusion and workflow (each with its default).
+  sb_integrity_verify "$root" ""
+  value="$SB_IV_SRC_PATTERN"
   # Only safe path-segment patterns (no regex injection) and nothing that matches everything.
   if grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$' <<<"$value" && ! grep -qE '^\.\*$|^\.\+$|^/$|^$' <<<"$value"; then
     SB_PF_SRC_PATTERN="$value"
   fi
-  value="$(jq -r '.project.src_exclude_pattern // "__tests__|\\.test\\."' "$config" 2>/dev/null || true)"
+  value="$SB_IV_SRC_EXCLUDE"
   if [[ ${#value} -le 200 ]] && grep -qE '^[a-zA-Z0-9/_.\-|()\^$+?*]+$' <<<"$value"; then
     SB_PF_SRC_EXCLUDE="$value"
   fi
-  SB_PF_WORKFLOW="$(jq -r '.project.active_workflow // "full-dev-cycle"' "$config" 2>/dev/null || echo full-dev-cycle)"
+  SB_PF_WORKFLOW="$SB_IV_WORKFLOW"
 }
 
 sb_pf_src_in_scope() {
@@ -220,16 +349,6 @@ sb_pf_opaque_records() {
   done < <(sb_pf_opaque_targets "$@")
 }
 
-sb_pf_opaque_mentions() {
-  local text needle
-  printf '%s' "${SB_SA_JSON:-}" | jq -e '(.opaque_writers // []) | length > 0' >/dev/null 2>&1 || return 1
-  text="$(printf '%s' "${SB_TI_COMMAND:-}" | tr '[:upper:]' '[:lower:]')"
-  for needle in "$@"; do
-    [[ "$text" == *"$needle"* ]] && return 0
-  done
-  return 1
-}
-
 sb_pf_invoked_skills() {
   local skill input="${1:-}" mode="${2:-}" tool
   tool="$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null)"
@@ -274,37 +393,7 @@ sb_pf_skill_calls() {
   return 0
 }
 
-# sb_pf_runs_sb_recorder: a command word (or the script an interpreter runs) is a hook script
-# that records state (record-skill.sh and its siblings). Reading one (cat, grep) does not count.
-sb_pf_runs_sb_recorder() {
-  printf '%s' "${SB_SA_JSON:-}" | jq -e '
-    [.commands[]? | .argv as $a
-     | (if ($a[0] | split("/") | last | test("^(bash|sh|zsh|dash|source|\\.)$")) and ($a | length) > 1
-        then ($a[1:] | map(select(startswith("-") | not)) | .[0] // "") else $a[0] end)
-     | split("/") | last | select(test("^record-[A-Za-z0-9-]+(\\.sh)?$"))]
-    | length > 0' >/dev/null 2>&1
-}
-
 # Programs that only read, list or inspect: naming a recorder script to them is not running it.
-SB_PF_READER_PROGRAMS='^(cat|grep|egrep|fgrep|rg|sed|awk|head|tail|wc|diff|cmp|ls|stat|file|git|shellcheck|nl|less|more|jq|sha256sum|shasum|cksum|md5sum|realpath|readlink|basename|dirname|test|\[|echo|printf|which|type)$'
-
-sb_pf_names_sb_recorder() {
-  local hooks_dir="${1:-}"
-  printf '%s' "${SB_SA_JSON:-}" | jq -e --arg re "$SB_PF_READER_PROGRAMS" --arg hooks "$hooks_dir" '
-    [.commands[]? | .argv as $a | ($a[0] | split("/") | last) as $prog
-     | select(($prog | test($re)) | not)
-     | ( ($a[1:] | map(split("/") | last | select(test("^record-[A-Za-z0-9-]+(\\.sh)?$"))) | length > 0)
-         or ($hooks != "" and ($prog | test("^(cp|mv|rsync|ln|install|tar|unzip|ditto)$"))
-             and ($a[1:] | map(select(. == $hooks or startswith($hooks + "/") or startswith($hooks + "/../"))) | length > 0)) )
-     | select(.)]
-    | length > 0' >/dev/null 2>&1
-}
-
-# Inline code (python -c, perl -e, find -exec ...) that spells out a recorder's real path. Only
-# meaningful in an installed copy, where nothing but the host has a reason to name one.
-sb_pf_text_names_recorder() {
-  [[ "${SB_SA_READ_ONLY:-false}" != "true" && "${SB_TI_COMMAND:-}" == */hooks/record-* ]]
-}
 
 # Why the loaded shell command cannot be inspected: the analyser's unseen reasons (an exceeded
 # budget, eval of computed text, a shell fed by a pipe, ...). Empty when the command is plainly
@@ -316,121 +405,45 @@ sb_pf_unseen_reason() {
   printf '%s' "$(printf '%s' "$reasons" | head -n 3 | tr '\n' ';')"
 }
 
+# sb_pf_tool_input_load INPUT: sb_tool_input_load, except that a plain Edit/Write/MultiEdit call with a
+# file_path needs no shell analysis, so it skips starting the helper (the common, latency-sensitive case).
+sb_pf_tool_input_load() {
+  local input="${1:-}" tn fp
+  tn="$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null)" || tn=""
+  case "$tn" in
+    Edit | Write | MultiEdit)
+      fp="$(printf '%s' "$input" | jq -r '.tool_input | objects | .file_path | strings' 2>/dev/null)"
+      if [[ -n "$fp" ]]; then
+        SB_TI_STATUS=ok SB_TI_ERROR="" SB_TI_TOOL_NAME="$tn" SB_TI_TOOL_KIND=edit SB_TI_COMMAND=""
+        SB_TI_FILE_PATH="$fp" SB_TI_PATCH_PATHS="" SB_SA_JSON="{}" SB_SA_READ_ONLY=false
+        SB_SA_UNSEEN_REASONS="" SB_SA_SKILL_ADAPTER=false SB_SA_INVOKED_SCRIPT=""
+        return 0
+      fi
+      ;;
+  esac
+  sb_tool_input_load "$input" "$PWD"
+}
+
 sb_pf_unseen_message() {
   printf '🛑 Silver Bullet cannot inspect this command: %s.\n\nCode that cannot be read could write the state directory, the enforcement files or the planning files, so it is refused. Split it into smaller commands, write the script to a file and run that file, or ask the user to run it from their own terminal.' "$1"
 }
 
 # Names whose copy or move into a directory replaces something Silver Bullet protects.
-SB_PF_PROTECTED_NAMES='^(silver-bullet\.md|\.silver-bullet\.json|\.silver-bullet\.prompt\.json|\.silver-bullet|state|trivial|branch|ROADMAP\.md|STATE\.md|PROJECT\.md|RELEASE\.md|REQUIREMENTS\.md|UAT\.md|\.planning)$'
 
-# cp/mv/install: recursive, or a source that is a directory or carries a protected name.
-_sb_pf_sources_capable() {
-  local prog="$1" recursive="$2" src
-  while IFS= read -r src; do
-    [[ -n "$src" ]] || continue
-    [[ -d "$src" ]] && return 0
-    [[ "${src##*/}" =~ $SB_PF_PROTECTED_NAMES ]] && return 0
-  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r --arg p "$prog" --arg rec "$recursive" '
-    .commands[]? | select((.argv[0] | split("/") | last) == $p)
-    | (.argv[1:] | map(select(startswith("-") | not))) as $a
-    | if $rec == "1" and ([.argv[1:][] | select(test("^-[A-Za-z]*[rRa]") or . == "--recursive" or . == "--archive")] | length > 0)
-      then "/" else empty end,
-      ($a[0:(($a | length) - 1)][])' 2>/dev/null)
-  return 1
-}
-
-# Directory-capable write: the target may be a directory the command fills with a whole tree.
-sb_pf_dir_capable_via() {
-  case "$1" in
-    rsync | "tar -x" | unzip | "unzip -d" | "git checkout" | "git restore") return 0 ;;
-    cp) _sb_pf_sources_capable cp 1 ;;
-    mv) _sb_pf_sources_capable mv 0 ;;
-    install) _sb_pf_sources_capable install 0 ;;
-    *) return 1 ;;
-  esac
-}
-
-# A write that covers everything below its target: a tree written (dir-capable) or deleted/moved away.
-sb_pf_covering_via() {
-  case "$1" in
-    rm | rmdir | unlink | "git rm" | "find -delete" | "mv source") return 0 ;;
-  esac
-  sb_pf_dir_capable_via "$1"
-}
-
-sb_pf_expand_ancestors() {
-  local records="${1:-}" via target path
-  shift
-  printf '%s\n' "$records"
-  while IFS=$'\t' read -r via target; do
-    [[ -n "$target" ]] || continue
-    sb_pf_covering_via "$via" || continue
-    for path in "$@"; do
-      [[ "$path" != "$target" ]] || continue
-      case "$path" in
-        "$target"/*) printf '%s\t%s\n' "$via" "$path" ;;
-      esac
-    done
-  done <<<"$records"
-}
-
-# A command (ln, find -exec/-execdir/-ok) names a path in, or above, one of the protected DIRs.
-sb_pf_argv_touches_dir() {
-  local dir arg prog hit=""
-  [[ $# -gt 0 ]] || return 1
-  while IFS=$'\t' read -r prog arg; do
-    [[ -n "$arg" ]] || continue
-    arg="$(sb_pf_canon "$arg")"
-    for dir in "$@"; do
-      case "$arg/" in
-        "$dir"/* | "$dir/") hit=1 ;;
-      esac
-      case "$dir/" in
-        "$arg"/*) hit=1 ;;
-      esac
-      [[ -z "${hit:-}" ]] || return 0
-    done
-  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '
-    .commands[]? | (.argv[0] | split("/") | last) as $p
-    | if $p == "ln" then (.argv[1:][] | select(startswith("-") | not) | [$p, .] | @tsv)
-      elif $p == "find" and (.argv | map(select(. == "-exec" or . == "-execdir" or . == "-ok" or . == "-okdir")) | length > 0)
-      then (.argv[1:] as $r | ($r | map(startswith("-")) | index(true)) as $i | $r[0:($i // ($r | length))][] | [$p, .] | @tsv)
-      else empty end' 2>/dev/null)
-  return 1
-}
-
-# An interpreter script file the command runs (python3 w.py, node x.js, perl p.pl, ruby r.rb)
-# whose body names a NEEDLE (lower-case, case-insensitive). Bodies are read up to 64 KiB.
-sb_pf_script_mentions() {
-  local script body needle
-  while IFS= read -r script; do
-    [[ -f "$script" ]] || continue
-    body="$(head -c 65536 "$script" | tr '[:upper:]' '[:lower:]')"
-    for needle in "$@"; do
-      [[ "$body" == *"$needle"* ]] && return 0
-    done
-  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '
-    .commands[]? | select((.argv[0] | split("/") | last) | test("^(python[0-9.]*|node|nodejs|perl|ruby|php|deno|bun)$"))
-    | (.argv[1:] | map(select(startswith("-") | not)) | .[0] // empty)' 2>/dev/null)
-  return 1
-}
-
+# MCP tools that write files, by name (the hooks.json matcher carries the same verbs; a test
+# compares the two): write edit create move rename patch replace delete append save insert copy
+# upload apply update modify set_ touch truncate unlink, and mv / put / rm as words.
 sb_pf_mcp_write_tool() {
   case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')" in
-    mcp__*__*write* | mcp__*__*edit* | mcp__*__*create* | mcp__*__*move* | mcp__*__*rename* | mcp__*__*patch* | mcp__*__*replace* | mcp__*__*delete* | mcp__*__*append* | mcp__*__*save* | mcp__*__*_mv* | mcp__*__*copy*) return 0 ;;
+    mcp__*write* | mcp__*edit* | mcp__*create* | mcp__*move* | mcp__*rename* | mcp__*patch* | mcp__*replace* | mcp__*delete* | mcp__*append* | mcp__*save* | mcp__*insert* | mcp__*copy* | mcp__*upload* | mcp__*apply* | mcp__*_mv* | mcp__*mv_* | mcp__*_put* | mcp__*put_* | mcp__*update* | mcp__*modify* | mcp__*set_* | mcp__*touch* | mcp__*truncate* | mcp__*unlink* | mcp__*_rm* | mcp__*rm_*) return 0 ;;
   esac
   return 1
 }
 
-# Skills that legitimately rewrite .silver-bullet.json / silver-bullet.md through the agent
-# (documented in docs/ENFORCEMENT.md; tests/hooks/test-planning-floor-lib.sh checks the skills
-# directory for writers outside this list).
-SB_PF_CONTRACT_WRITER_SKILLS="silver-init silver-update silver-add silver-devops silver-migrate"
-
-sb_pf_contract_unlocked() {
-  # shellcheck disable=SC2086  # word splitting of the skill list is intended
-  sb_pf_state_has_skill $SB_PF_CONTRACT_WRITER_SKILLS
-}
+# The skills that legitimately rewrite .silver-bullet.json / silver-bullet.md through the agent
+# (hooks/lib/contract-unlock.sh; documented in docs/ENFORCEMENT.md): `json` for the JSON
+# configuration, `md` (default) for silver-bullet.md.
+sb_pf_contract_unlocked() { sb_contract_unlocked "$@"; }
 
 sb_pf_state_has_skill() {
   local state_file contents skill

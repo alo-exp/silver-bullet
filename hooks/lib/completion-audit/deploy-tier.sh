@@ -3,38 +3,20 @@
 
 # ca_release_commit_sha ROOT: the commit `gh release create` will release, resolved the way gh does:
 # an existing tag wins (--target is ignored for it), else --target (the remote branch, then a local ref),
-# else the remote default branch, else HEAD. The tag and target come from the analysed command's argv:
-# `gh release create TAG --target X`, `gh api .../releases -f tag_name=TAG -f target_commitish=X` (also -F,
-# --field, --raw-field), or the MCP create_release payload (tool_input.tag_name / target_commitish).
-# Called as the condition of an `if`, so a failing helper makes the gate deny instead of tripping the ERR trap.
-# Prints the sha; status 1 when --target names nothing that resolves (R13-08, R1-19).
+# else the remote default branch, else HEAD. The tag and target are read by release_scope.py (SB_SA_JSON
+# .release: `gh release create TAG --target X`, `gh api .../releases -f tag_name=TAG -f target_commitish=X` in
+# every flag spelling, or the MCP create_release payload); it also says when they cannot be read with certainty
+# (several releases in one command, another tool or repository, a repeated or computed value): the reason is left
+# on stdout. Called as the condition of an `if`, so a failing helper makes the gate deny instead of tripping
+# the ERR trap. Prints the sha; status 1 when the release cannot be read (the reason is printed instead of a sha)
+# or --target names nothing that resolves (nothing is printed) (R13-08, R1-19).
 ca_release_commit_sha() {
-  local root="$1" parsed tag="" target="" sha="" ref
-  parsed="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '
-    def vflags: ["-t","--title","-n","--notes","-F","--notes-file","--target","--discussion-category","--notes-start-tag","-R","--repo"];
-    ([.commands[]? | select((.program | split("/") | last) == "gh")
-      | select((.argv | index("release")) != null and (.argv | index("create")) != null)] | first // {argv: []}) .argv as $a
-    | (($a | index("create")) // -1) as $i
-    | ($a[($i + 1):]) as $r
-    | ([range(0; $r | length) as $k
-        | select(($r[$k] | startswith("-") | not) and ($k == 0 or (vflags | index($r[$k - 1])) == null))
-        | $r[$k]] | first // "") as $tag
-    | ([range(0; $r | length) as $k
-        | if $r[$k] == "--target" then ($r[$k + 1] // "")
-          elif ($r[$k] | startswith("--target=")) then ($r[$k] | ltrimstr("--target="))
-          else empty end] | first // "") as $target
-    | ([.commands[]? | select((.program | split("/") | last) == "gh")
-        | select((.argv | index("api")) != null)] | first // {argv: []}) .argv as $ap
-    | ([range(0; $ap | length) as $k
-        | select($ap[$k] | IN("-f", "-F", "--field", "--raw-field"))
-        | ($ap[$k + 1] // "") | capture("^(?<k>[^=]+)=(?<v>.*)$")]) as $f
-    | (if $tag == "" then ([$f[] | select(.k == "tag_name") | .v] | first // "") else $tag end) as $tag
-    | (if $target == "" then ([$f[] | select(.k == "target_commitish") | .v] | first // "") else $target end) as $target
-    | $tag + "\u001f" + $target' 2>/dev/null)"
-  IFS=$'\037' read -r tag target <<<"$parsed"
-  if [[ -z "$tag$target" && -n "${mcp_payload:-}" ]]; then
-    parsed="$(printf '%s' "$mcp_payload" | jq -r '(.tool_input // {}) | ((.tag_name // .tag // "") + "\u001f" + (.target_commitish // .target // ""))' 2>/dev/null)"
-    IFS=$'\037' read -r tag target <<<"$parsed"
+  local root="$1" parsed ok="" reason="" tag="" target="" sha="" ref
+  parsed="$(printf '%s' "${SB_SA_JSON:-}" | jq -rR 'try (fromjson | (.release // {}) | [(.ok // false | tostring), (.reason // ""), (.tag // ""), (.target // "")] | join("\u001f")) catch ""' 2>/dev/null)"
+  IFS=$'\037' read -r ok reason tag target <<<"$parsed"
+  if [[ "$ok" != "true" ]]; then
+    printf '%s' "${reason:-the release command could not be read}"
+    return 1
   fi
   if [[ -n "$tag" ]]; then
     sha="$(git -C "$root" rev-parse -q --verify "refs/tags/${tag}^{commit}" 2>/dev/null || true)"
@@ -54,16 +36,25 @@ ca_release_commit_sha() {
 }
 
 ca_run_deploy_tier_gate() {
-project_root="$(dirname "$config_file")"
+project_root="$SB_IV_ROOT"
+# Final delivery stands on the verified contract: any drift of a gate-relevant file, or a project that is
+# unbaselined or untrusted, stops it (the planning tier is already strict in those cases).
+if sb_integrity_contract_drift; then
+  emit_block "$(sb_integrity_drift_message "$SB_IV_ROOT")"
+  exit 0
+fi
 # the plugin's own scripts (validators, RC predicate) live next to hooks/: hooks/lib/.. /..
 # shellcheck disable=SC2154  # _lib_dir is set by completion-audit.sh
 _ca_plugin_root="$(cd "${_lib_dir}/../.." && pwd)"
 # shellcheck disable=SC2154  # _lib_dir is set by completion-audit.sh
-if [[ -f "${_lib_dir}/enterprise-policy.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+# The enterprise policy binds its approval marker to the project root, so it is handed the root's config path;
+# the drift check above proved that file equals the record (any drift stopped delivery).
+_ca_policy_cfg="$SB_IV_ROOT/.silver-bullet.json"
+if [[ -f "${_lib_dir}/enterprise-policy.sh" && -f "$_ca_policy_cfg" ]]; then
   # shellcheck source=lib/enterprise-policy.sh
   source "${_lib_dir}/enterprise-policy.sh"
-  if sb_enterprise_policy_delivery_blocked "$config_file" "${cmd_first_line:-$cmd}"; then
-    emit_block "$(sb_enterprise_policy_delivery_block_message "$config_file")"
+  if sb_enterprise_policy_delivery_blocked "$_ca_policy_cfg" "${cmd_first_line:-$cmd}"; then
+    emit_block "$(sb_enterprise_policy_delivery_block_message "$_ca_policy_cfg")"
     exit 0
   fi
 fi
@@ -78,7 +69,11 @@ e2e_live_matrix_file="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
 inline_e2e_matrix_file="${SB_RUNTIME_STATE_DIR}/inline-e2e-matrix"
 if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
   if ! release_commit_sha="$(ca_release_commit_sha "$project_root")"; then
-    emit_block "$(printf '🛑 RELEASE BLOCKED — the release target named in the command does not resolve to a commit in this checkout.\n\nFetch it (git fetch origin) or name an existing branch, tag or commit with --target, then retry.' )"
+    if [[ -n "$release_commit_sha" ]]; then
+      emit_block "$(printf '🛑 RELEASE BLOCKED — cannot determine release commit: %s\n\nCreate one release per command with gh release create TAG --target <branch|sha>, or gh api repos/{owner}/{repo}/releases -f tag_name=TAG -f target_commitish=<sha> (literal values, no --input body), in this repository. Then retry.' "$release_commit_sha")"
+    else
+      emit_block "$(printf '🛑 RELEASE BLOCKED — the release target named in the command does not resolve to a commit in this checkout (cannot determine release commit).\n\nFetch it (git fetch origin) or name an existing branch, tag or commit with --target; for gh api use a literal -f target_commitish=<sha>, one releases call and no --input body. Then retry.' )"
+    fi
     exit 0
   fi
   if [[ -z "$release_commit_sha" ]]; then
@@ -214,7 +209,6 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
   if [[ -n "$blocked_runs" ]]; then
     blocked_lines=""
     while IFS=$'\t' read -r wf status conclusion created_at; do
-      [[ -z "$wf" ]] && continue
       line=$(printf '  • %s — status=%s conclusion=%s created=%s' "$wf" "$status" "$conclusion" "$created_at")
       if [[ -n "$blocked_lines" ]]; then
         blocked_lines+=$'\n'"$line"
@@ -238,7 +232,7 @@ if [[ "$active_workflow" == "devops-cycle" ]]; then
   delivery_uses_devops_deploy=true
   DEFAULT_REQUIRED="$DEVOPS_DEFAULT_REQUIRED"
 else
-  project_root_for_composer="$(dirname "$config_file")"
+  project_root_for_composer="$SB_IV_ROOT"
   wf_dir_for_composer="$project_root_for_composer/.planning/workflows"
   composer_wf_id="${SB_WORKFLOW_ID:-}"
   if [[ -z "$composer_wf_id" ]]; then
@@ -272,6 +266,7 @@ fi
 # truth. Legacy configs are normalized so old projects inherit current gates
 # and retired dependencies do not deadlock delivery.
 if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+  # shellcheck disable=SC2154  # config_file is the verified snapshot set by completion-audit.sh
   all_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "$DEFAULT_REQUIRED")"
 elif [[ -n "$required_deploy_cfg" ]]; then
   all_skills="$required_deploy_cfg"
@@ -285,14 +280,9 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
   if [[ "$delivery_uses_devops_deploy" == true ]]; then
     release_defaults="${DEVOPS_DEFAULT_RELEASE_REQUIRED:-silver-create-release}"
   fi
-  release_cfg=""
-  if command -v jq >/dev/null 2>&1 && [[ -f "$config_file" ]]; then
-    if [[ "$delivery_uses_devops_deploy" == true ]]; then
-      release_cfg=$(jq -r '(.skills.required_release_devops // .skills.required_release // []) | join(" ")' "$config_file" 2>/dev/null || true)
-    else
-      release_cfg=$(jq -r '(.skills.required_release // []) | join(" ")' "$config_file" 2>/dev/null || true)
-    fi
-  fi
+  # The recorded list, never the live config's (hooks/lib/integrity.sh).
+  release_cfg="$SB_IV_REQUIRED_RELEASE"
+  if [[ "$delivery_uses_devops_deploy" == true ]]; then release_cfg="${SB_IV_REQUIRED_RELEASE_DEVOPS:-$SB_IV_REQUIRED_RELEASE}"; fi
   if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
     release_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$release_cfg" "$release_defaults")"
   elif [[ -n "$release_cfg" ]]; then
@@ -340,7 +330,7 @@ done
 # Pre-ship quality-gates must record adversarial mode when VERIFICATION.md passed.
 if declare -f sb_qg_repo_requires_pre_ship_marker >/dev/null 2>&1 \
    && declare -f sb_qg_pre_ship_marker_recorded >/dev/null 2>&1; then
-  project_root_qg="$(dirname "$config_file")"
+  project_root_qg="$SB_IV_ROOT"
   if sb_qg_repo_requires_pre_ship_marker "$project_root_qg"; then
     if [[ "$delivery_uses_devops_deploy" == true ]] \
        && declare -f sb_dqg_pre_ship_marker_recorded >/dev/null 2>&1; then
@@ -392,7 +382,7 @@ fi
 # Verifies that key SB lifecycle phases produced expected output files.
 # These checks prove the work was done, not just that the skill was invoked.
 artifact_blocks=""
-project_root=$(dirname "$config_file")
+project_root=$SB_IV_ROOT
 
 find_planning_artifact() {
   local pattern="$1"
@@ -468,6 +458,9 @@ if [[ -n "$missing" ]]; then
     unseen_note="$(sb_enterprise_policy_unseen_note)"$'\n\n'
   fi
   msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\n%sChange class: %s\nYou are attempting to create a PR/deploy but these required steps are missing:\n%s%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "$unseen_note" "${ca_change_class:-mixed}" "$missing_lines" "$ordering_note")
+  if [[ -n "${ca_push_scope_reason:-}" ]]; then
+    msg="${msg}"$'\n\n'"Why this push counts as final delivery: ${ca_push_scope_reason}. A push stays an intermediate commit when it runs as its own command, \`git push [-u] [<remote>] [<branch>|HEAD]\` (optionally after \`cd <dir> &&\` or \`git checkout -b <new> &&\`), from a checkout of a non-default branch."
+  fi
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do

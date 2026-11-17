@@ -18,12 +18,6 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stack-compression-lifecycle.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-quota-retry-due.sh\"",
             "async": false,
             "timeout": 10
@@ -40,29 +34,6 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/debug-dump.sh\"",
             "async": false,
             "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|Skill|exec_command",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
-            "async": false,
-            "timeout": 10
           }
         ]
       },
@@ -90,6 +61,29 @@
         ]
       },
       {
+        "matcher": "Bash|Skill|exec_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Edit|Write|MultiEdit|apply_patch",
         "hooks": [
           {
@@ -113,7 +107,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*",
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*(write|edit|create|move|rename|patch|replace|delete|append|save|insert|copy|upload|apply|_mv|mv_|_put|put_|update|modify|set_|touch|truncate|unlink|_rm|rm_)[A-Za-z0-9_]*",
         "hooks": [
           {
             "type": "command",
@@ -271,7 +265,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*",
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*(write|edit|create|move|rename|patch|replace|delete|append|save|insert|copy|upload|apply|_mv|mv_|_put|put_|update|modify|set_|touch|truncate|unlink|_rm|rm_)[A-Za-z0-9_]*",
         "hooks": [
           {
             "type": "command",
@@ -311,6 +305,17 @@
       },
       {
         "matcher": "CallMcpTool|MCP",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stack-compression-coordinator.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*lean-?ctx.*|mcp__.*context[-_]mode.*",
         "hooks": [
           {
             "type": "command",
@@ -470,7 +475,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*",
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*(write|edit|create|move|rename|patch|replace|delete|append|save|insert|copy|upload|apply|_mv|mv_|_put|put_|update|modify|set_|touch|truncate|unlink|_rm|rm_)[A-Za-z0-9_]*",
         "hooks": [
           {
             "type": "command",
@@ -553,12 +558,6 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-site-visual-evidence.sh\"",
             "async": false,
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
-            "async": false,
-            "timeout": 10
           }
         ]
       },
@@ -576,10 +575,21 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
             "async": false,
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*agentmemory.*|mcp__.*graphify.*|mcp__.*lean-?ctx.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-leanctx-usage.sh\"",
+            "async": false,
+            "timeout": 10
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-agentmemory-usage.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
             "async": false,
             "timeout": 10
           }

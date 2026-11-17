@@ -62,8 +62,11 @@ tl_cleanup() {
 tl_fake_plugin_root() {
   local dest="$TL_TMP/plugin" stub
   if [[ ! -d "$dest/hooks" ]]; then
-    mkdir -p "$dest/scripts/lib"
+    mkdir -p "$dest/scripts/lib" "$dest/tests"
     cp -a "$TL_REPO_ROOT/hooks" "$dest/hooks"
+    # the coverage tracer (BASH_ENV of run-coverage.sh) is the one startup file the push scope accepts, and only
+    # as the file the hook's own root names
+    ln -s "$TL_REPO_ROOT/tests/coverage" "$dest/tests/coverage"
     for stub in skills agents templates host-bundles; do
       [[ -d "$TL_REPO_ROOT/$stub" ]] && ln -s "$TL_REPO_ROOT/$stub" "$dest/$stub"
     done

@@ -27,19 +27,28 @@ run_tool() { # run_tool EVENT TOOL INPUT-JSON [env...]
   json="$(jq -cn --arg e "$event" --arg t "$tool" --argjson i "$input" '{hook_event_name:$e,tool_name:$t,tool_input:$i}')"
   tl_run_stdin "$json" env "$@" bash -c 'cd "$1" && exec bash "$2"' _ "${RUN_DIR:-$PROJ}" "$HOOK"
 }
+# add_origin DIR: an origin remote whose default branch (main) is known locally, without a network (the push
+# scope needs refs/remotes/origin/HEAD: a checkout that does not know its remote's default branch is strict)
+add_origin() {
+  git -C "$1" remote add origin https://github.com/acme/app.git
+  git -C "$1" update-ref refs/remotes/origin/main "$(git -C "$1" rev-parse main)"
+  git -C "$1" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main
+}
+
 approve() { : >"$SD/enterprise-human-deploy-approved"; }
 unapprove() { rm -f "$SD/enterprise-human-deploy-approved"; }
 
 # ── R1-04 / R3-09: MCP delivery tools are gated ──────────────────────────────
 approve
 mkproj mcp
+add_origin "$PROJ"
 state
 run_tool PreToolUse mcp__github__create_pull_request '{"title":"x"}' -u SB_AGENT_CERT_RUN
 assert_eq "MCP create_pull_request with nothing recorded: denied" "deny" "$(decision)"
 assert_contains "MCP create_pull_request names the deploy floor" "$(message)" "COMPLETION BLOCKED"
 run_tool PreToolUse mcp__github__merge_pull_request '{"pullNumber":1}'
 assert_eq "MCP merge_pull_request: denied" "deny" "$(decision)"
-run_tool PreToolUse mcp__github__push_files '{"branch":"b","files":[]}'
+run_tool PreToolUse mcp__github__push_files '{"owner":"acme","repo":"app","branch":"b","files":[]}'
 assert_eq "MCP push_files needs the planning floor" "deny" "$(decision)"
 assert_contains "MCP push_files: planning message" "$(message)" "COMMIT BLOCKED"
 run_tool PreToolUse mcp__github__actions_run_trigger '{"method":"run_workflow"}'
@@ -49,7 +58,7 @@ assert_eq "MCP read tool: silent" "none" "$(decision)"
 run_tool PreToolUse mcp__filesystem__read_file '{"path":"x"}'
 assert_eq "MCP tool of another server that is not a delivery: silent" "none" "$(decision)"
 state inst-a
-run_tool PreToolUse mcp__github__push_files '{"branch":"b","files":[]}'
+run_tool PreToolUse mcp__github__push_files '{"owner":"acme","repo":"app","branch":"b","files":[]}'
 assert_eq "MCP push_files with the planning floor recorded: allowed" "allow" "$(decision)"
 state inst-a inst-b verify-tests
 run_tool PreToolUse mcp__github__create_pull_request '{"title":"x"}'
@@ -59,9 +68,9 @@ tl_stub python3 'exit 1'
 state
 run_tool PreToolUse mcp__github__merge_pull_request '{"pullNumber":1}'
 assert_eq "helper unavailable: MCP merge_pull_request still denied by name" "deny" "$(decision)"
-run_tool PreToolUse mcp__github__push_files '{"branch":"b"}'
-assert_eq "helper unavailable: MCP push_files still needs planning" "deny" "$(decision)"
-assert_contains "helper unavailable: push_files is a planning-tier block" "$(message)" "COMMIT BLOCKED"
+run_tool PreToolUse mcp__github__push_files '{"owner":"acme","repo":"app","branch":"b"}'
+assert_eq "helper unavailable: MCP push_files cannot be scoped" "deny" "$(decision)"
+assert_contains "helper unavailable: push_files is final delivery (its target is unknown)" "$(message)" "COMPLETION BLOCKED"
 run_tool PreToolUse mcp__github__list_issues '{}'
 assert_eq "helper unavailable: MCP read tool passes" "none" "$(decision)"
 rm -f "$TL_BIN/python3"
@@ -71,7 +80,8 @@ matcher="$(jq -r '[.hooks.PreToolUse[] | select(any(.hooks[]; .command | test("c
 for name in Bash exec_command mcp__github__create_pull_request mcp__github__merge_pull_request mcp__github__push_files; do
   assert_eq "completion-audit matcher '$matcher' matches $name" "yes" "$(grep -qE "^(${matcher})\$" <<<"$name" && echo yes || echo no)"
 done
-assert_eq "forbidden-skill-check still sees Skill calls (G2 merge hazard guard)" "yes" "$(jq -r '[.hooks.PreToolUse[] | select(any(.hooks[]; .command | test("forbidden-skill-check"))) | .matcher] | .[0]' "$TL_REPO_ROOT/hooks/hooks.json" | grep -qE 'Skill' && echo yes || echo no)"
+forbidden_matcher="$(jq -r '[.hooks.PreToolUse[] | select(any(.hooks[]; .command | test("forbidden-skill-check"))) | .matcher] | .[0]' "$TL_REPO_ROOT/hooks/hooks.json")"
+assert_eq "forbidden-skill-check still sees Skill calls (G2 merge hazard guard)" "yes" "$([[ "$forbidden_matcher" == *Skill* ]] && echo yes || echo no)"
 
 # ── helper unavailable: say so, and let plainly read-only commands through ─────
 mkproj nohelper
@@ -105,6 +115,9 @@ mkdir -p "$TL_TMP/real-dir"; ln -s "$TL_TMP/real-dir" "$TL_TMP/link-dir"
 run_ca PreToolUse "gh pr create --fill" SB_RUNTIME_STATE_DIR="$TL_TMP/link-dir" SB_RUNTIME_PRESERVE_STATE_DIR=1 SILVER_BULLET_STATE_FILE="$TL_TMP/x-state"
 assert_eq "state dir replaced by a symlink: PR denied" "deny" "$(decision)"
 # an unexpected failure after classification: deny on PreToolUse, warn after the tool ran
+# an install that never ran a session reads the file as written: a config that is not JSON is an internal failure
+# (with a record it is a drift, which the gates report: test-integrity-attacks.sh)
+rm -f "$SB_RUNTIME_STATE_DIR/seal.key" "$SB_RUNTIME_STATE_DIR"/integrity-*
 printf '{ not json' >"$PROJ/.silver-bullet.json"
 run_ca PreToolUse "git commit -m x"
 assert_eq "unexpected internal failure before the tier runs: Pre denies" "deny" "$(decision)"
@@ -131,7 +144,7 @@ assert_eq "sb_cert_run_bypass exits inside a sandbox" "" "$TL_OUT"
 tl_run bash -c 'source "$1"; SB_RUNTIME_STATE_DIR="/home/u/.claude/.silver-bullet"; SB_AGENT_CERT_RUN=1; sb_cert_run_bypass; echo continued' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
 assert_eq "sb_cert_run_bypass continues outside a sandbox" "continued" "$TL_OUT"
 for t in / "$HOME" /home; do
-  tl_run env TMPDIR="$t" bash -c 'source "$1"; SB_RUNTIME_STATE_DIR="/home/fake/.claude/.silver-bullet"; SB_AGENT_CERT_RUN=1; sb_cert_run_bypass_active && echo yes || echo no' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
+  tl_run env TMPDIR="$t" bash -c 'source "$1"; SB_RUNTIME_STATE_DIR="/home/u/.claude/.silver-bullet"; SB_AGENT_CERT_RUN=1; sb_cert_run_bypass_active && echo yes || echo no' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
   assert_eq "TMPDIR=$t does not make a real-home state dir a sandbox (R4-01)" "no" "$TL_OUT"
 done
 tl_run bash -c 'source "$1"; SB_RUNTIME_STATE_DIR="/opt/scratch/h/.claude/.silver-bullet"; TMPDIR=/opt/scratch; sb_runtime_in_test_sandbox && echo yes || echo no' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
@@ -217,6 +230,7 @@ unapprove
 approve
 mkproj pushtier
 state inst-a
+add_origin "$PROJ"
 git -C "$PROJ" checkout -q -b feat
 run_ca PreToolUse "git push origin feat"
 assert_eq "default tier: a feature-branch push stays intermediate" "allow" "$(decision)"
@@ -241,12 +255,11 @@ assert_eq "default tier: refs/tags/<t> is a tag push" "deny" "$(decision)"
 git -C "$PROJ" branch v2.0.0
 run_ca PreToolUse "git push origin v2.0.0"
 assert_eq "default tier: a name that is a branch and not a tag stays intermediate" "allow" "$(decision)"
-git -C "$PROJ" update-ref refs/remotes/origin/HEAD "$(git -C "$PROJ" rev-parse HEAD)" 2>/dev/null || true
-git -C "$PROJ" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/trunk 2>/dev/null || true
 git -C "$PROJ" update-ref refs/remotes/origin/trunk "$(git -C "$PROJ" rev-parse HEAD)"
+git -C "$PROJ" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/trunk
 run_ca PreToolUse "git push origin HEAD:trunk"
 assert_eq "default tier: the remote's default branch name counts" "deny" "$(decision)"
-git -C "$PROJ" update-ref -d refs/remotes/origin/trunk; git -C "$PROJ" symbolic-ref --delete refs/remotes/origin/HEAD 2>/dev/null || true
+git -C "$PROJ" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main; git -C "$PROJ" update-ref -d refs/remotes/origin/trunk
 git -C "$PROJ" config init.defaultBranch develop
 run_ca PreToolUse "git push origin HEAD:develop"
 assert_eq "default tier: init.defaultBranch counts" "deny" "$(decision)"
@@ -425,18 +438,35 @@ echo two >"$PROJ/two.txt"; git -C "$PROJ" add two.txt; git -C "$PROJ" commit -q 
 SHA2="$(git -C "$PROJ" rev-parse HEAD)"
 git -C "$PROJ" update-ref refs/remotes/origin/main "$SHA2"
 GREEN_OLD="$(jq -cn --arg s "$SHA" '[{workflowName:"CI",status:"completed",conclusion:"success",headSha:$s,createdAt:"1"}]')"
-run_ca PreToolUse "gh api repos/o/r/releases -f tag_name=v9 -f target_commitish=$SHA" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+run_ca PreToolUse "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$SHA" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
 assert_eq "gh api releases with target_commitish: CI is checked for that commit" "allow" "$(decision)"
-run_ca PreToolUse "gh api repos/o/r/releases --raw-field target_commitish=$SHA -f tag_name=v9" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+run_ca PreToolUse "gh api repos/{owner}/{repo}/releases --raw-field target_commitish=$SHA -f tag_name=v9" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
 assert_eq "gh api releases with --raw-field" "allow" "$(decision)"
-run_ca PreToolUse "gh api repos/o/r/releases -f tag_name=v9 -f target_commitish=no-such-ref" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+run_ca PreToolUse "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=no-such-ref" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
 assert_contains "gh api releases with an unresolvable target denies" "$(message)" "does not resolve to a commit"
-run_ca PreToolUse "gh api repos/o/r/releases -f tag_name=v9" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+run_ca PreToolUse "gh api repos/{owner}/{repo}/releases -f tag_name=v9" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
 assert_contains "gh api releases without a target: the default branch commit (no CI for it) denies" "$(message)" "$SHA2"
-run_tool PreToolUse mcp__github__create_release "{\"tag_name\":\"v9\",\"target_commitish\":\"$SHA\"}" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+git -C "$PROJ" remote add origin https://github.com/acme/app.git
+run_tool PreToolUse mcp__github__create_release "{\"owner\":\"acme\",\"repo\":\"app\",\"tag_name\":\"v9\",\"target_commitish\":\"$SHA\"}" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
 assert_eq "MCP create_release with target_commitish: CI is checked for that commit" "allow" "$(decision)"
-run_tool PreToolUse mcp__github__create_release '{"tag_name":"v9","target_commitish":"no-such-ref"}' GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+run_tool PreToolUse mcp__github__create_release '{"owner":"acme","repo":"app","tag_name":"v9","target_commitish":"no-such-ref"}' GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
 assert_contains "MCP create_release with an unresolvable target denies" "$(message)" "does not resolve to a commit"
+run_tool PreToolUse mcp__github__create_release '{"owner":"other","repo":"lib","tag_name":"v9","target_commitish":"main"}' GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+assert_contains "MCP create_release in another repository: the commit cannot be read from this checkout" "$(message)" "another repository"
+run_tool PreToolUse mcp__github__create_release '{"tag_name":"v9"}' GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+assert_contains "MCP create_release without owner and repo denies" "$(message)" "cannot determine release commit"
+unapprove
+
+# ── review repair: helper failure with an MCP tool that is neither a delivery nor a read ──
+mkproj mcp3
+state
+approve
+tl_stub python3 'exit 1'
+run_tool PreToolUse mcp__github__fork_repository '{"owner":"o"}'
+assert_eq "helper failure: an MCP tool that does not deliver passes (judged by name)" "none" "$(decision)"
+run_tool PreToolUse mcp__github__create_tag '{"tag":"v1"}'
+assert_eq "helper failure: MCP create_tag is judged intermediate and needs the planning floor" "deny" "$(decision)"
+rm -f "$TL_BIN/python3"
 unapprove
 
 # ── review repair: MCP read-only prefilter, copilot PR tool, helper-failure wording ──
@@ -457,6 +487,7 @@ tl_stub python3 'exit 1'
 unapprove
 run_ca PreToolUse "npm test"
 assert_contains "helper failure: enterprise message blames the helper" "$(message)" "shell analysis helper failed"
+assert_not_contains "helper failure: the reason is not wrapped twice" "$(message)" "failed (the shell analysis helper failed"
 assert_not_contains "helper failure: no advice to rewrite a plain command" "$(message)" "Rewrite it as plain"
 approve
 run_ca PreToolUse "git diff HEAD~1"
@@ -487,14 +518,120 @@ assert_contains "a failure inside a tier function denies instead of exiting 1" "
 cp "$TL_TMP/gates.sh.bak" "$PLUGIN/hooks/lib/completion-audit/gates.sh"
 unapprove
 
-# ── review repair: a copied deploy-gate snippet fails closed ──
-mkdir -p "$TL_TMP/copied"; cp "$TL_REPO_ROOT/scripts/deploy-gate-snippet.sh" "$TL_TMP/copied/"
-TPLP2="$TL_TMP/tplproj2"; mkdir -p "$TPLP2/.git"; cp "$TL_REPO_ROOT/templates/silver-bullet.config.json.default" "$TPLP2/.silver-bullet.json"
-tl_run env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'cd "$1" && bash "$2"; echo "rc=$?"' _ "$TPLP2" "$TL_TMP/copied/deploy-gate-snippet.sh"
-assert_contains "a copied snippet without the libraries blocks (rc 1)" "$TL_OUT" "rc=1"
-assert_contains "a copied snippet says the libraries were not found" "$TL_OUT" "runtime libraries were not found"
-tl_run env SB_RUNTIME_STATE_DIR="$SB_RUNTIME_STATE_DIR" bash -c 'cd "$1" && bash "$2"; echo "rc=$?"' _ "$TPLP2" "$TL_TMP/copied/deploy-gate-snippet.sh"
-assert_contains "a copied snippet with a state dir but no libraries still blocks without a state file" "$TL_OUT" "rc=1"
-rm -f "$SB_RUNTIME_STATE_DIR/state"
+
+# ── review repair r3: pushes are an ALLOWLIST (explicit, named, existing, non-default branch) ──
+approve
+mkproj pushallow
+state inst-a
+add_origin "$PROJ"
+git -C "$PROJ" checkout -q -b feat
+mkdir -p "$PROJ/sub"
+OTHER="$TL_TMP/otherrepo"; tl_git_repo "$OTHER"
+allow_push() { run_ca PreToolUse "$1"; assert_eq "feature push stays intermediate: $1" "allow" "$(decision)"; }
+deny_push() { run_ca PreToolUse "$1"; assert_eq "not provably a feature push, so final delivery: $1" "deny" "$(decision)"; }
+allow_push 'git push origin feat'
+allow_push 'git push -u origin HEAD'
+allow_push 'git push origin HEAD:refs/heads/feature/x'
+allow_push 'git push origin refs/heads/feat:refs/heads/feat'
+allow_push 'git push --force-with-lease origin feat'
+allow_push "cd $PROJ/sub && git push origin feat"
+allow_push "git -C $PROJ/sub push origin feat"
+deny_push 'git push origin :'
+deny_push 'git push origin :feat'
+deny_push 'git push origin refs/heads/*:refs/heads/*'
+deny_push 'git push origin *'
+deny_push 'git push --all'
+deny_push 'git push origin feat && ./run.sh'
+deny_push "cd $TL_TMP && git push origin feat"
+deny_push "git push origin feat && git -C $OTHER push origin main"
+allow_push "cd $PROJ && git -C sub push origin feat"
+allow_push "git -C $PROJ/sub -C .. push origin feat"
+deny_push 'git push origin $B'
+deny_push 'git push origin $(git rev-parse --abbrev-ref HEAD)'
+deny_push 'git push origin newbranch'
+deny_push 'git push origin refs/tags/v1'
+deny_push 'git push origin HEAD:refs/for/main'
+deny_push 'git push --force-with-lease=main:abc origin main'
+deny_push "git -C $OTHER push origin feat"
+deny_push "cd $OTHER && git push origin feat"
+deny_push "cd $TL_TMP/no-such-dir && git push origin feat"
+deny_push "GIT_DIR=$OTHER/.git git push origin feat"
+deny_push "git --git-dir=$OTHER/.git push origin feat"
+deny_push 'git config alias.p push && git p origin feat'
+deny_push 'git push origin feat && git push origin main'
+deny_push 'git commit -m x && git push origin HEAD:main'
+git -C "$PROJ" checkout -q main
+deny_push 'git push -u origin HEAD'
+deny_push 'git push'
+git -C "$PROJ" checkout -q --detach
+deny_push 'git push origin HEAD'
+git -C "$PROJ" checkout -q feat
+# MCP writes: only an explicit non-default branch is intermediate
+state inst-a
+run_tool PreToolUse mcp__github__push_files '{"owner":"acme","repo":"app","branch":"feat","files":[]}'
+assert_eq "MCP push_files to a feature branch: planning floor only" "allow" "$(decision)"
+run_tool PreToolUse mcp__github__create_or_update_file '{"owner":"acme","repo":"app","branch":"feat","path":"a"}'
+assert_eq "MCP create_or_update_file to a feature branch: planning floor only" "allow" "$(decision)"
+run_tool PreToolUse mcp__github__create_branch '{"owner":"ACME","repo":"App","branch":"feat2"}'
+assert_eq "MCP create_branch of a feature branch: planning floor only" "allow" "$(decision)"
+for c in 'mcp__github__push_files|{"owner":"acme","repo":"app","branch":"main","files":[]}' 'mcp__github__create_or_update_file|{"owner":"acme","repo":"app","branch":"master"}' 'mcp__github__delete_file|{"owner":"acme","repo":"app","branch":"main"}' 'mcp__github__push_files|{"owner":"acme","repo":"app","files":[]}' 'mcp__github__push_files|{"owner":"acme","repo":"app","branch":""}' 'mcp__github__push_files|{"owner":"acme","repo":"app","branch":"refs/heads/*"}' 'mcp__github__push_files|{"owner":"acme","repo":"app","branch":7}' 'mcp__github__push_files|{"branch":"feat"}' 'mcp__github__push_files|{"owner":"other","repo":"lib","branch":"feat"}' 'mcp__github__create_tag|{"owner":"acme","repo":"app","tag":"v1","branch":"feat"}' 'mcp__github__update_pull_request_branch|{"pullNumber":1}'; do
+  run_tool PreToolUse "${c%%|*}" "${c#*|}"
+  assert_eq "MCP write is final delivery: $c" "deny" "$(decision)"
+  assert_contains "MCP write reports the deploy gate: $c" "$(message)" "COMPLETION BLOCKED"
+done
+# the MCP prefilter reads the TOP-LEVEL tool_name only
+run_tool PreToolUse mcp__github__actions_run_trigger '{"method":"run_workflow","inputs":{"tool_name":"mcp__x__get_y"}}'
+assert_eq "a nested tool_name key cannot turn a deploy into a read" "deny" "$(decision)"
+tl_run_stdin '{ not json' bash -c 'cd "$1" && exec bash "$2"' _ "$PROJ" "$HOOK"
+assert_eq "an unparseable payload does not crash the prefilter" "0" "$TL_STATUS"
+unapprove
+
+# ── review repair r3: the cert switch needs HOME and the runtime home under a fixed temp root too ──
+for envs in "HOME=/home/u SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR=/tmp/x/.claude/.silver-bullet" "HOME= SB_RUNTIME_STATE_DIR=/tmp/x/.claude/.silver-bullet" "HOME=/tmp/h SB_RUNTIME_HOME_ROOT=/home/u/.claude SB_RUNTIME_STATE_DIR=/tmp/h/.claude/.silver-bullet"; do
+  tl_run env $envs SB_AGENT_CERT_RUN=1 bash -c 'source "$1"; sb_cert_run_bypass_active && echo yes || echo no' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
+  assert_eq "cert switch stays off: $envs" "no" "$TL_OUT"
+done
+tl_run env HOME=/tmp/h SB_RUNTIME_HOME_ROOT=/tmp/h/.claude SB_RUNTIME_STATE_DIR=/tmp/h/.claude/.silver-bullet SB_AGENT_CERT_RUN=1 bash -c 'source "$1"; sb_cert_run_bypass_active && echo yes || echo no' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
+assert_eq "cert switch on when HOME, runtime home and state dir are all under /tmp" "yes" "$TL_OUT"
+tl_run bash -c 'source "$1"; a="$(_sb_passwd_home)"; PATH="$2" ; b="$(_sb_passwd_home)"; [[ "$a" == "$b" && -n "$a" ]] && echo same || echo "differ:$a:$b"' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh" "$(tl_path_without getent)"
+assert_eq "the passwd home is found with and without getent" "same" "$TL_OUT"
+tl_run bash -c 'source "$1"; PATH=/nonexistent; _sb_passwd_home; echo "[$?]"' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
+assert_eq "no getent and no python3: unknown home, no failure" "[0]" "$TL_OUT"
+
+# ── review repair r3: release target in every gh api spelling; unreadable targets deny ──
+mkproj relapi2 '.release={}'
+git -C "$PROJ" remote add origin https://github.com/acme/app.git
+state inst-a inst-b verify-tests silver-create-release
+approve
+SHA="$(git -C "$PROJ" rev-parse HEAD)"
+echo three >"$PROJ/three.txt"; git -C "$PROJ" add three.txt; git -C "$PROJ" commit -q -m three
+git -C "$PROJ" update-ref refs/remotes/origin/main "$(git -C "$PROJ" rev-parse HEAD)"
+GREEN_OLD="$(jq -cn --arg s "$SHA" '[{workflowName:"CI",status:"completed",conclusion:"success",headSha:$s,createdAt:"1"}]')"
+for sp in "-f tag_name=v9 --field=target_commitish=$SHA" "-f tag_name=v9 -ftarget_commitish=$SHA" "-f tag_name=v9 -Ftarget_commitish=$SHA" "--raw-field=target_commitish=$SHA -f tag_name=v9" "-X POST -f tag_name=v9 --field target_commitish=$SHA"; do
+  run_ca PreToolUse "gh api $sp repos/{owner}/{repo}/releases" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+  assert_eq "gh api spelling resolves the target: $sp" "allow" "$(decision)"
+done
+for sp in 'repos/{owner}/{repo}/releases --input body.json' 'repos/{owner}/{repo}/releases --input=body.json' 'repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$T' 'repos/{owner}/{repo}/releases -f target_commitish=abc && gh api repos/{owner}/{repo}/releases -f target_commitish=def'; do
+  run_ca PreToolUse "gh api $sp" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+  assert_contains "unreadable release target denies: $sp" "$(message)" "cannot determine release commit"
+done
+# the release is read the way gh reads it (release_scope.py): preview flag, clusters, trailing slash, one release
+RED="$(jq -cn --arg s "$(git -C "$PROJ" rev-parse HEAD)" '[{workflowName:"CI",status:"completed",conclusion:"failure",headSha:$s,createdAt:"1"}]')"
+GREEN_RED="$(jq -cn --arg s "$SHA" --arg r "$(git -C "$PROJ" rev-parse HEAD)" '[{workflowName:"CI",status:"completed",conclusion:"success",headSha:$s,createdAt:"1"},{workflowName:"CI",status:"completed",conclusion:"failure",headSha:$r,createdAt:"2"}]')"
+HEADSHA="$(git -C "$PROJ" rev-parse HEAD)"
+for sp in "-p corsair repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$HEADSHA" "--preview corsair repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$HEADSHA" "-pcorsair repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$HEADSHA" "repos/{owner}/{repo}/releases -p corsair -f target_commitish=$HEADSHA -f tag_name=v9" "repos/{owner}/{repo}/releases/ -f target_commitish=$HEADSHA -f tag_name=v9" "-if target_commitish=$HEADSHA repos/{owner}/{repo}/releases -f tag_name=v9" "-XPOST repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$HEADSHA" "https://api.github.com/repos/acme/app/releases -f tag_name=v9 -f target_commitish=$HEADSHA"; do
+  run_ca PreToolUse "gh api $sp" GH_RUN_LIST_OVERRIDE="$GREEN_RED"
+  assert_contains "release commit is the red one in spelling: $sp" "$(message)" "not green"
+done
+run_ca PreToolUse "gh release create v9 --target $SHA -p" GH_RUN_LIST_OVERRIDE="$GREEN_RED"
+assert_eq "-p is prerelease for release create: the green --target commit is checked" "allow" "$(decision)"
+for sp in "gh release create v9 --target $SHA && gh api repos/{owner}/{repo}/releases -f tag_name=v10 -f target_commitish=$HEADSHA" "gh release create v9 --target $SHA && gh release create v10 --target $HEADSHA" "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$SHA -f target_commitish=$HEADSHA" "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -f target_commitish=$SHA -F target_commitish=$HEADSHA" "gh release create v9 --target $HEADSHA --target $SHA" "gh release create v9 -R other/repo --target $SHA" "gh release create v9 --bogus x" "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -F target_commitish={branch}" "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -F target_commitish=@f" "gh api repos/{owner}/{repo}/releases -f tag_name=v9 -f 'target_commitish[]=x'" "hub release create -t $SHA v9"; do
+  run_ca PreToolUse "$sp" GH_RUN_LIST_OVERRIDE="$GREEN_RED"
+  assert_eq "unreadable or ambiguous release denies: $sp" "deny" "$(decision)"
+done
+assert_contains "the reason is part of the release block" "$(message)" "cannot determine release commit"
+run_ca PreToolUse "gh release create v9 --target $SHA" GH_RUN_LIST_OVERRIDE="$GREEN_RED" GH_REPO=other/x
+assert_contains "GH_REPO in the environment redirects the release: denied with the reason" "$(message)" "GH_REPO"
+unapprove
 
 tl_results

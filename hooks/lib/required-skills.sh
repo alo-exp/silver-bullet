@@ -38,47 +38,6 @@ __sb_rs_find_default_config() {
   return 1
 }
 
-# One jq call reads every default list (R2-23: the prompt hook runs on every prompt, so it must not
-# spawn a jq per list). The result is cached per template path for the life of the process.
-__SB_RS_CACHE_CFG=""
-__sb_rs_cache() {
-  local cfg out
-  cfg="$(__sb_rs_find_default_config)" || return 1
-  [[ "$cfg" == "$__SB_RS_CACHE_CFG" ]] && return 0
-  command -v jq >/dev/null 2>&1 || return 1
-  out="$(jq -r '[.skills.required_planning, .skills.required_planning_devops, .skills.required_deploy,
-    .skills.required_deploy_devops, .skills.required_release, .skills.required_release_devops,
-    .skills.all_tracked] | map((. // []) | join(" ")) | .[]' "${cfg}" 2>/dev/null)" || return 1
-  {
-    IFS= read -r __SB_RS_C_required_planning
-    IFS= read -r __SB_RS_C_required_planning_devops
-    IFS= read -r __SB_RS_C_required_deploy
-    IFS= read -r __SB_RS_C_required_deploy_devops
-    IFS= read -r __SB_RS_C_required_release
-    IFS= read -r __SB_RS_C_required_release_devops
-    IFS= read -r __SB_RS_C_all_tracked
-  } <<<"$out" || true
-  __SB_RS_CACHE_CFG="$cfg"
-}
-
-__sb_rs_load() {
-  __sb_rs_cache || return 1
-  case "$1" in
-    required_planning) printf '%s' "$__SB_RS_C_required_planning" ;;
-    required_planning_devops) printf '%s' "$__SB_RS_C_required_planning_devops" ;;
-    required_deploy) printf '%s' "$__SB_RS_C_required_deploy" ;;
-    required_deploy_devops) printf '%s' "$__SB_RS_C_required_deploy_devops" ;;
-    required_release) printf '%s' "$__SB_RS_C_required_release" ;;
-    required_release_devops) printf '%s' "$__SB_RS_C_required_release_devops" ;;
-    *) return 1 ;;
-  esac
-}
-
-__sb_rs_load_all_tracked() {
-  __sb_rs_cache || return 1
-  printf '%s' "$__SB_RS_C_all_tracked"
-}
-
 __sb_rs_default_version() {
   local cfg
   cfg="$(__sb_rs_find_default_config)" || return 1
@@ -115,11 +74,18 @@ __sb_rs_version_lt() {
 sb_required_skills_config_is_legacy() {
   local config_file="$1"
   local project_version default_version
-  [[ -n "$config_file" && -f "$config_file" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
   default_version="$(__sb_rs_default_version 2>/dev/null || true)"
   [[ -n "$default_version" ]] || return 1
-  project_version=$(jq -r '.config_version // .version // ""' "$config_file" 2>/dev/null || true)
+  if declare -F sb_iv_jq >/dev/null 2>&1 && [[ -n "${SB_IV_ROOT:-}" ]]; then
+    # A gate that verified its project reads the recorded config, not the live file (hooks/lib/integrity.sh).
+    project_version=""
+    if project_version=$(sb_iv_jq -r '.config_version // .version // ""' 2>/dev/null); then :; fi
+  else
+    [[ -n "$config_file" && -f "$config_file" ]] || return 1
+    project_version=""
+    if project_version=$(jq -r '.config_version // .version // ""' "$config_file" 2>/dev/null); then :; fi
+  fi
   if [[ -z "$project_version" ]]; then
     return 0
   fi
@@ -258,60 +224,34 @@ __SB_RS_PLANNING_FALLBACK="silver-quality-gates silver-context silver-plan"
 __SB_RS_DEVOPS_PLANNING_FALLBACK="silver-blast-radius devops-quality-gates silver-context silver-plan"
 __SB_RS_ALL_TRACKED_FALLBACK="silver-quality-gates silver-quality-gates-design silver-quality-gates-adversarial verify-tests"
 
+# One jq pass fills every default list (seven lists, one fork): an unreadable template or an empty list keeps the
+# literal fallback.
+# shellcheck disable=SC2034  # the lists are read by the hooks that source this file
 __sb_rs_populate() {
-  local value
-  # Prime the cache in THIS shell: the `$(...)` loads below run in subshells and would each re-read it.
-  __sb_rs_cache || true
-  value="$(__sb_rs_load required_planning || true)"
-  if [ -z "${value}" ]; then
-    DEFAULT_PLANNING="${__SB_RS_PLANNING_FALLBACK}"
-  else
-    # shellcheck disable=SC2034  # sourced by hook scripts
-    DEFAULT_PLANNING="${value}"
+  local cfg out="" line n=0 v1="" v2="" v3="" v4="" v5="" v6="" v7=""
+  if cfg="$(__sb_rs_find_default_config)" && command -v jq >/dev/null 2>&1; then
+    out="$(jq -r '.skills | [.required_planning, .required_planning_devops, .required_deploy, .required_deploy_devops,
+      .required_release, .required_release_devops, .all_tracked][] | (if type == "array" then join(" ") else "" end)' "${cfg}" 2>/dev/null)" || out=""
   fi
-  value="$(__sb_rs_load required_planning_devops || true)"
-  if [ -z "${value}" ]; then
-    DEVOPS_DEFAULT_PLANNING="${__SB_RS_DEVOPS_PLANNING_FALLBACK}"
-  else
-    # shellcheck disable=SC2034  # sourced by hook scripts
-    DEVOPS_DEFAULT_PLANNING="${value}"
-  fi
-  value="$(__sb_rs_load required_deploy || true)"
-  if [ -z "${value}" ]; then
-    DEFAULT_REQUIRED="${__SB_RS_FALLBACK}"
-  else
-    # shellcheck disable=SC2034  # sourced by hook scripts
-    DEFAULT_REQUIRED="${value}"
-  fi
-  value="$(__sb_rs_load required_deploy_devops || true)"
-  if [ -z "${value}" ]; then
-    DEVOPS_DEFAULT_REQUIRED="${__SB_RS_FALLBACK}"
-  else
-    # shellcheck disable=SC2034  # sourced by hook scripts
-    DEVOPS_DEFAULT_REQUIRED="${value}"
-  fi
-  value="$(__sb_rs_load required_release || true)"
-  if [ -z "${value}" ]; then
-    DEFAULT_RELEASE_REQUIRED="silver-create-release"
-  else
-    # shellcheck disable=SC2034
-    DEFAULT_RELEASE_REQUIRED="${value}"
-  fi
-  value="$(__sb_rs_load required_release_devops || true)"
-  if [ -z "${value}" ]; then
-    DEVOPS_DEFAULT_RELEASE_REQUIRED="silver-create-release"
-  else
-    # shellcheck disable=SC2034
-    DEVOPS_DEFAULT_RELEASE_REQUIRED="${value}"
-  fi
-  value="$(__sb_rs_load_all_tracked || true)"
-  if [ -z "${value}" ]; then
-    # shellcheck disable=SC2034
-    DEFAULT_ALL_TRACKED="${__SB_RS_ALL_TRACKED_FALLBACK}"
-  else
-    # shellcheck disable=SC2034
-    DEFAULT_ALL_TRACKED="${value}"
-  fi
+  while IFS= read -r line; do
+    n=$((n + 1))
+    case "$n" in
+      1) v1="$line" ;;
+      2) v2="$line" ;;
+      3) v3="$line" ;;
+      4) v4="$line" ;;
+      5) v5="$line" ;;
+      6) v6="$line" ;;
+      7) v7="$line" ;;
+    esac
+  done <<<"$out"
+  DEFAULT_PLANNING="${v1:-${__SB_RS_PLANNING_FALLBACK}}"
+  DEVOPS_DEFAULT_PLANNING="${v2:-${__SB_RS_DEVOPS_PLANNING_FALLBACK}}"
+  DEFAULT_REQUIRED="${v3:-${__SB_RS_FALLBACK}}"
+  DEVOPS_DEFAULT_REQUIRED="${v4:-${__SB_RS_FALLBACK}}"
+  DEFAULT_RELEASE_REQUIRED="${v5:-silver-create-release}"
+  DEVOPS_DEFAULT_RELEASE_REQUIRED="${v6:-silver-create-release}"
+  DEFAULT_ALL_TRACKED="${v7:-${__SB_RS_ALL_TRACKED_FALLBACK}}"
 }
 
 __sb_rs_populate

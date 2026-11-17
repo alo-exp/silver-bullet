@@ -91,12 +91,13 @@ deny() {
 }
 
 # ── Exit early if project is not using Silver Bullet ─────────────────────────
-config_file="$(sb_find_project_config_walk_only 2>/dev/null || true)"
-[[ -n "$config_file" ]] || exit 0
+# The project is decided here; the record is verified only if a planning file is written (sb_integrity_trivial_ok).
+SB_IV_ROOT="$(sb_integrity_root "$PWD")"
+[[ -n "$SB_IV_ROOT" ]] || exit 0
 if declare -f sb_project_active >/dev/null 2>&1; then
-  sb_project_active "$config_file" || exit 0
+  sb_project_active "$SB_IV_ROOT/.silver-bullet.json" || exit 0
 fi
-project_root="$(sb_pf_canon "$(dirname "$config_file")")"
+project_root="$(sb_pf_canon "$SB_IV_ROOT")"
 
 # (An unparsable payload has no tool name: it goes on to the analysis, which fails closed.)
 tool_name="$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null || true)"
@@ -105,7 +106,7 @@ case "$tool_name" in
   *) sb_tool_is_shell_like "$tool_name" || sb_pf_mcp_write_tool "$tool_name" || exit 0 ;;
 esac
 
-sb_tool_input_load "$input" "$PWD"
+sb_pf_tool_input_load "$input"
 if ! sb_tool_input_ok; then
   [[ "${SB_TI_STATUS:-}" == "empty" ]] && exit 0
   # The call cannot be analysed: refuse only what names the planning directory.
@@ -149,7 +150,6 @@ note() {
 
 _override="${SB_RUNTIME_STATE_DIR}/planning-edit-override"
 _roadmap_override="${SB_RUNTIME_STATE_DIR}/roadmap-edit-override"
-_trivial_file="${SB_RUNTIME_STATE_DIR}/trivial"
 
 while IFS=$'\t' read -r via target; do
   planning_rel=""
@@ -185,7 +185,7 @@ while IFS=$'\t' read -r via target; do
   fi
 
   # ── Trivial bypass (user-created marker; the configured path is never honoured) ──
-  if [[ -f "$_trivial_file" && ! -L "$_trivial_file" ]]; then
+  if sb_integrity_trivial_ok "$SB_IV_ROOT"; then
     continue
   fi
 
@@ -237,9 +237,7 @@ ${skill_hint}
 
 A one-off doc fix is the user's decision: only the user can allow it, from their own terminal
 (\`touch ${SB_RUNTIME_STATE_DIR}/planning-edit-override\`, removed when done)." "$target"
-done < <(sb_pf_expand_ancestors "$(sb_pf_write_records "$input")" \
-  "$project_root/.planning/ROADMAP.md" "$project_root/.planning/STATE.md" "$project_root/.planning/PROJECT.md" \
-  "$project_root/.planning/RELEASE.md" "$project_root/.planning/REQUIREMENTS.md" "$project_root/.planning/UAT.md")
+done < <(sb_pf_write_records "$input")
 
 if [[ -n "$notices" ]]; then
   sb_emit_hook_message PreToolUse "$notices"

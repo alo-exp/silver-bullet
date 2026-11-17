@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for hooks/lib/rtk-gate.sh, rtk-compat.sh and rtk-cm-global.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 unset RTK_DISABLED SILVER_BULLET SB_RTK_COMPAT_MODE SB_RTK_COMPAT_ENABLED SB_RTK_HOOK_ARTIFACT SB_GLOBAL_TOOLSTACK_MANIFEST SB_GLOBAL_TOOLSTACK_HOME
@@ -17,6 +21,12 @@ no_t() { local n="$1"; shift; if "$@"; then tl_fail "$n"; else tl_pass "$n"; fi;
 w '{"recommended_tools":{"rtk":{"enabled_by_user":true,"min_version":"1.2.3"}}}'
 yes_t "rtk required" sb_rtk_required "$CFG"
 assert_eq "min_version from config" "1.2.3" "$(sb_rtk_min_version "$CFG")"
+# R5-02: min_version is repository data and must never reach arithmetic evaluation
+for bad in 'a[$(touch '"$TL_TMP"'/pwned-rtk)]' '1;2' '$(id)' '-1' '1.2.3.4' '1..2' ' 1.2 '; do
+  w "$(jq -n --arg v "$bad" '{recommended_tools:{rtk:{min_version:$v}}}')"
+  assert_eq "min_version rejects: [$bad]" "0.42.0" "$(sb_rtk_min_version "$CFG")"
+done
+[[ ! -e "$TL_TMP/pwned-rtk" ]] && tl_pass "a hostile min_version is never executed" || tl_fail "a hostile min_version is never executed"
 assert_eq "min_version default without config" "0.42.0" "$(sb_rtk_min_version)"
 assert_eq "min_version default for missing file" "0.42.0" "$(sb_rtk_min_version "$TL_TMP/none.json")"
 w '{"recommended_tools":{}}'
@@ -121,11 +131,14 @@ no_t "edit not exempt src" sb_rtk_edit_path_is_exempt /p/src/app.py "$CFG"
 yes_t "cmd exempt empty" sb_rtk_command_is_exempt ""
 yes_t "cmd exempt rtk word" sb_rtk_command_is_exempt "rtk git status"
 yes_t "cmd exempt path rtk" sb_rtk_command_is_exempt "/usr/bin/rtk gain"
-yes_t "cmd exempt enable script" sb_rtk_command_is_exempt "bash enable-rtk-context-mode.sh"
-yes_t "cmd exempt brew" sb_rtk_command_is_exempt "brew install foo"
+yes_t "cmd exempt enable script (the plugin's)" sb_rtk_command_is_exempt "bash $TL_REPO_ROOT/scripts/enable-rtk-context-mode.sh"
+no_t "cmd not exempt: a project script of the same name" sb_rtk_command_is_exempt "bash enable-rtk-context-mode.sh > out.log"
+no_t "cmd not exempt: brew install of anything" sb_rtk_command_is_exempt "brew install foo"
+yes_t "cmd exempt: the documented install line" sb_rtk_command_is_exempt "brew tap rtk-ai/rtk && brew install rtk"
+yes_t "cmd exempt: the documented wrong-binary remedy" sb_rtk_command_is_exempt "brew uninstall rtk 2>/dev/null; brew tap rtk-ai/rtk && brew install rtk"
 yes_t "cmd exempt cat" sb_rtk_command_is_exempt "cat file"
 no_t "cmd not exempt git commit" sb_rtk_command_is_exempt "git commit -m x"
-no_t "cmd not exempt artisan (rtk substring)" sb_rtk_command_is_exempt "xrtkx do"
+no_t "cmd not exempt artisan (rtk substring)" sb_rtk_command_is_exempt "xrtkx do > out.log"
 
 # ---------- messages ----------
 w '{"recommended_tools":{"rtk":{"enabled_by_user":true}}}'
@@ -153,8 +166,8 @@ assert_contains "no_hook commands" "$m" "rtk init -g"
 ) && tl_pass "no_hook message survives command-lookup failure" || tl_fail "no_hook message survives command-lookup failure"
 
 # ---------- prompt reminder ----------
-w '{}'
-assert_contains "reminder pending" "$(sb_rtk_prompt_reminder_line "$CFG")" "consent pending"
+w '{"recommended_tools":{"rtk":{"enabled_by_user":true}}}'
+assert_contains "reminder pending (a project recommendation is not consent)" "$(XDG_CONFIG_HOME="$TL_TMP/none" sb_rtk_prompt_reminder_line "$CFG")" "consent pending"
 w '{"recommended_tools":{"rtk":{"enabled_by_user":false}}}'
 assert_contains "reminder disabled" "$(sb_rtk_prompt_reminder_line "$CFG")" "opted out"
 w '{"recommended_tools":{"rtk":{"enabled_by_user":true,"enforcement_suspended":true}}}'

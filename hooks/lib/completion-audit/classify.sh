@@ -13,13 +13,13 @@ if ! declare -f sb_shell_analysis_load >/dev/null 2>&1 && [[ -f "$_ca_lib_dir/sh
   source "$_ca_lib_dir/shell-analysis.sh"
 fi
 
-# _ca_analyse COMMAND: make SB_* describe COMMAND (reusing a load of the same command).
+# _ca_analyse COMMAND [BASE]: make SB_* describe COMMAND (reusing a load of the same command and base).
 _ca_analyse() {
   if ! declare -f sb_shell_analysis_load >/dev/null 2>&1; then
     SB_TI_STATUS="helper_unavailable"
     return 0
   fi
-  _sb_sa_loaded_command "$1" || sb_shell_analysis_load "$1"
+  _sb_sa_loaded_command "$1" ${2:+"$2"} || sb_shell_analysis_load "$1" ${2:+"$2"}
 }
 
 shell_payload_is_sb_skill_adapter_invocation() {
@@ -107,8 +107,9 @@ _ca_mcp_name_tier() {
   esac
 }
 
-# ca_classify_command <full-cmd> [<hook payload JSON>]
-# With a payload (an MCP tool call) the payload is analysed instead of the command text.
+# ca_classify_command <full-cmd> [<hook payload JSON> [<base dir>]]
+# With a payload (an MCP tool call) the payload is analysed instead of the command text. The base dir is the
+# directory the command runs in (ca_payload_base_dir: the payload cwd joined with workdir); it defaults to $PWD.
 # Sets globals: is_intermediate, is_completion, cmd_first_line.
 #   The class is the highest tier across all commands in the payload, so
 #   `git push && gh pr create` is completion (is_intermediate=false, is_completion=true).
@@ -127,7 +128,7 @@ _ca_mcp_name_tier() {
 # Returns 0 when the command matches a delivery gate; 1 to skip (no gate).
 # shellcheck disable=SC2034  # the globals are outputs, read by completion-audit.sh and its tiers
 ca_classify_command() {
-  local cmd="$1" payload="${2:-}" fallback tool_name=""
+  local cmd="$1" payload="${2:-}" base="${3:-}" fallback tool_name=""
   is_intermediate=false
   is_completion=false
   cmd_first_line=$(printf '%s' "$cmd" | head -1)
@@ -135,10 +136,10 @@ ca_classify_command() {
   ca_unseen_reasons=""
 
   if [[ -z "$payload" ]]; then
-    _ca_analyse "$cmd"
+    _ca_analyse "$cmd" "$base"
   else
     # an MCP call: the payload (not a command text) is analysed; the hook has already parsed it with jq
-    sb_tool_input_load "$payload"
+    sb_tool_input_load "$payload" ${base:+"$base"}
     tool_name="$(printf '%s' "$payload" | jq -r '.tool_name // ""')"
   fi
   ca_analysis_status="${SB_TI_STATUS:-helper_unavailable}"
@@ -197,33 +198,53 @@ ca_classify_command() {
   return 0
 }
 
-# ca_push_targets_default_branch: an analysed push updates the default branch (main, master, init.defaultBranch,
-# the remote's default), any tag, or mirrors/pushes everything. Each destination is resolved through git
-# before matching: HEAD and @ are the current branch, refs/heads/x is x, and a bare name that is a tag (and
-# not a branch) is a tag push. A bare `git push` counts when the current branch is a default branch.
-# Needs the analysis of the command (SB_SA_JSON).
+# ca_payload_base_dir INPUT: the directory a tool call runs in, on stdout: the payload `cwd` (else $PWD) joined
+# with `tool_input.workdir` (Codex). Returns 1 when the payload names a cwd or workdir that is not a directory:
+# the push scope then treats the push as final delivery. The hook's own $PWD is used only without a cwd field.
+ca_payload_base_dir() {
+  local input="$1" cwd workdir base="$PWD"
+  if printf '%s' "$input" | jq -e 'type == "object" and has("cwd")' >/dev/null 2>&1; then
+    cwd="$(printf '%s' "$input" | jq -r '.cwd | if type == "string" then . else "" end')"
+    [[ -n "$cwd" && -d "$cwd" ]] || return 1
+    base="$(cd "$cwd" && pwd -P)"
+  fi
+  workdir="$(printf '%s' "$input" | jq -r '.tool_input | if type == "object" and (.workdir | type) == "string" then .workdir else "" end' 2>/dev/null)"
+  if [[ -n "$workdir" ]]; then
+    case "$workdir" in
+      /*) ;;
+      *) workdir="$base/$workdir" ;;
+    esac
+    [[ -d "$workdir" ]] || return 1
+    base="$(cd "$workdir" && pwd -P)"
+  fi
+  printf '%s' "$base"
+}
+
+# ca_push_scope_verdict: true when the shell analysis (SB_SA_JSON) proved the push is a feature-branch push
+# (push_scope.py). Otherwise false, with the one-sentence reason in ca_push_scope_reason. A missing verdict is
+# strict.
+ca_push_scope_verdict() {
+  local verdict
+  ca_push_scope_reason=""
+  verdict="$(printf '%s' "${SB_SA_JSON:-}" | jq -rR 'try (fromjson | .push_scope.verdict // "strict") catch "strict"' 2>/dev/null)"
+  [[ "$verdict" == "feature" ]] && return 0
+  ca_push_scope_reason="$(printf '%s' "${SB_SA_JSON:-}" | jq -rR 'try (fromjson | .push_scope.reason // "") catch ""' 2>/dev/null)"
+  [[ -n "$ca_push_scope_reason" ]] || ca_push_scope_reason="the push could not be analysed"
+  return 1
+}
+
+# ca_push_targets_default_branch: the intermediate-tier command must be treated as final delivery (R1-22): a
+# shell push or an MCP write that push_scope.py did not prove to be a feature-branch push (Invariants P and M).
+# Sets ca_push_scope_reason (one sentence) for the block message.
 ca_push_targets_default_branch() {
-  local names="main master" ref cur dst
-  ref="$(git symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null || true)"
-  [[ -z "$ref" ]] || names="$names ${ref#origin/}"
-  names="$names $(git config --get init.defaultBranch 2>/dev/null || true)"
-  cur="$(git symbolic-ref -q --short HEAD 2>/dev/null || true)"
-  if printf '%s' "${SB_SA_JSON:-}" | jq -e '(.push // []) | any(.[]; (.tags // false) or (.mirror // false) or (.all // false))' >/dev/null 2>&1; then
+  ca_push_scope_reason=""
+  if [[ "${ca_base_bad:-0}" == 1 ]]; then
+    ca_push_scope_reason="the working directory of the command does not exist"
     return 0
   fi
-  if printf '%s' "${SB_SA_JSON:-}" | jq -e '(.push // []) | any(.[]; .default // false)' >/dev/null 2>&1; then
-    [[ " $names " == *" $cur "* ]] && return 0
+  if [[ -n "${mcp_payload:-}" ]] || sb_shell_analysis_has_action push; then
+    ! ca_push_scope_verdict
+  else
+    return 1
   fi
-  while IFS= read -r dst; do
-    case "$dst" in
-      HEAD | @) dst="$cur" ;;
-      refs/tags/*) return 0 ;;
-    esac
-    dst="${dst#refs/heads/}"
-    [[ -n "$dst" && " $names " == *" $dst "* ]] && return 0
-    if git show-ref --verify -q "refs/tags/$dst" 2>/dev/null && ! git show-ref --verify -q "refs/heads/$dst" 2>/dev/null; then
-      return 0
-    fi
-  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '(.push // [])[] | (.refspecs // [])[] | (sub("^\\+"; "") | split(":") | last)' 2>/dev/null)
-  return 1
 }

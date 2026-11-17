@@ -19,9 +19,9 @@ Alumnium is **not** token compression. It complements Graphify (retrieval), agen
 
 | `enabled_by_user` | Behavior |
 |-------------------|----------|
-| `null` | Consent pending — no hook enforcement |
-| `true` | Hooks verify npm package reachability and MCP wiring |
-| `false` | Advisory only — host browser MCP fallback per §8.1 |
+| `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project .`) |
+| `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 Core workflows do **not** hard-block when Alumnium is absent; when opted in, hooks verify MCP is wired before substantive edits.
 

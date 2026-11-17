@@ -8,10 +8,12 @@ if ! declare -f sb_find_project_config >/dev/null 2>&1; then
   source "$_pa_lib_dir/sb-project-gate.sh"
 fi
 
-# Returns 0 when the project config file exists.
+# Returns 0 when the project config file exists, or when its root has an integrity record or another anchor
+# (hooks/lib/integrity-anchor.sh): a root whose contract files were moved away or deleted is still a project.
 sb_project_active() {
   local config_file="${1:-}"
-  [[ -n "$config_file" && -f "$config_file" ]] || return 1
+  [[ -n "$config_file" ]] || return 1
+  [[ -f "$config_file" ]] || [[ -f "$(_sb_iv_rec_file "$(dirname "$config_file")")" ]] || [[ -n "$(sb_integrity_root "$(dirname "$config_file")")" ]]
 }
 
 # Fail-open: exit 0 when no project config; proceed when config is present.

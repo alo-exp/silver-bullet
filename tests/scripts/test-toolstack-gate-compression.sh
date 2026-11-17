@@ -26,8 +26,10 @@ no_jq() { # <script> <json>
 }
 sbp="$TL_TMP/sbp"; tl_git_repo "$sbp"
 ts_sb_project "$sbp"
-mkdir -p "$sbp/scripts/lib/recommended-tools"
-cat >"$sbp/scripts/lib/recommended-tools/heartbeat.sh" <<'HB'
+# Silver Bullet's own checkout, as the installer recorded it - the bridge heartbeat is read from
+# there, never from the project (a cloned repository could ship its own heartbeat.sh).
+ts_sb_bridge "$TL_TMP/sbroot"
+cat >"$TL_TMP/sbroot/scripts/lib/recommended-tools/heartbeat.sh" <<'HB'
 rt_project_id() { echo p; }
 rt_worktree_id() { echo w; }
 rt_current_session_id() { echo s; }
@@ -46,6 +48,27 @@ printf '{"enforcement":"always","tools":{}}' >"$TL_TMP/nr.json"
 r=rtk-gate.sh
 no_jq $r "$edit"; expect_silent "rtk: jq missing"
 ts_gate $r "$edit" "$sbp"; expect_silent "rtk: defers to a live SB bridge"
+# R6-02: a heartbeat.sh shipped by the opened project is never sourced, whatever it claims
+evil="$TL_TMP/evilproj"; tl_git_repo "$evil"; ts_sb_project "$evil"
+mkdir -p "$evil/scripts/lib/recommended-tools"
+cat >"$evil/scripts/lib/recommended-tools/heartbeat.sh" <<'EVIL'
+touch "$HOME/evil-heartbeat-ran"
+rt_project_id() { echo p; }
+rt_worktree_id() { echo w; }
+rt_current_session_id() { echo s; }
+rt_heartbeat_path() { echo /hb; }
+rt_heartbeat_is_valid() { return 0; }
+EVIL
+rm -f "$HOME/.cursor/state/toolstack/repo-root"
+ts_gate $r "$edit" "$evil"
+assert_file_absent "rtk: the project's heartbeat.sh did not run" "$HOME/evil-heartbeat-ran"
+ts_sb_bridge "$TL_TMP/sbroot"
+ts_gate $r "$edit" "$evil"
+assert_file_absent "rtk: the project's heartbeat.sh still did not run with a recorded SB root" "$HOME/evil-heartbeat-ran"
+printf '%s\n' "relative/root" >"$HOME/.cursor/state/toolstack/repo-root"
+ts_gate $r "$edit" "$sbp"
+assert_file_absent "rtk: a relative recorded root is not trusted" "$HOME/evil-heartbeat-ran"
+ts_sb_bridge "$TL_TMP/sbroot"
 TS_CONFIG="$TL_TMP/none.json" ts_gate $r "$edit" "$repo"; expect_silent "rtk: no config"
 TS_CONFIG="$TL_TMP/off.json" ts_gate $r "$edit" "$repo"; expect_silent "rtk: enforcement off"
 TS_CONFIG="$TL_TMP/nr.json" ts_gate $r "$edit" "$repo"; expect_silent "rtk: not required"
@@ -96,7 +119,20 @@ TS_CONFIG="$TL_TMP/nr.json" ts_gate $t "$commit" "$repo"; expect_silent "token: 
 
 ts_gate $t "$commit" "$repo"; expect_deny "token: CLI missing" "RTK USAGE REQUIRED"
 tl_stub rtk 'exit 0'
+rm -f "$sdir/rtk-usage"
 ts_gate $t "$commit" "$repo"; expect_deny "token: no usage recorded" "RTK USAGE STALE"
+# R6-08: a shell command that went through the wired RTK hook records the usage the commit gate needs
+mkdir -p "$HOME/.cursor"; printf '{"hooks":{"preToolUse":[{"command":"rtk hook cursor"}]}}' >"$HOME/.cursor/hooks.json"
+ts_gate rtk-gate.sh "$shell" "$repo"; expect_silent "rtk gate: wired shell allowed"
+assert_file_exists "the rtk gate recorded the usage" "$sdir/rtk-usage"
+ts_gate $t "$commit" "$repo"; expect_silent "token: usage recorded by the rtk gate allows the commit"
+rm -f "$sdir/rtk-usage"
+ts_gate rtk-gate.sh "$edit" "$repo"; expect_silent "rtk gate: an edit is allowed"
+# a usage record that cannot be written never turns a passing shell command into a block
+rm -rf "$HOME/st"; printf 'file\n' >"$HOME/st"
+ts_gate rtk-gate.sh "$shell" "$repo"; expect_silent "rtk gate: an unwritable state dir does not block the command"
+rm -f "$HOME/st"
+assert_file_absent "an edit is not RTK usage" "$sdir/rtk-usage"
 mkdir -p "$sdir"; echo 1 >"$sdir/rtk-usage"
 for c in "git commit -m x" "gh pr create --fill" "gh release create v1"; do
   ts_gate $t "$(ts_payload Bash "" "$c")" "$repo"; expect_deny "token: stale usage for '$c'" "RTK USAGE STALE"

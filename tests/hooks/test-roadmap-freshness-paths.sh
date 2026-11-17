@@ -83,7 +83,8 @@ printf 's' >"$EC_PROJ/.planning/phases/07-pad/07-02-03-SUMMARY.md"
 git -C "$EC_PROJ" add -f .planning
 rm -f "$EC_PROJ/.planning/ROADMAP.md"
 run_rf "$EC_PROJ" "$HOOK" "$(cmd "git commit -m x")"
-assert_eq "no ROADMAP.md: nothing to check" "" "$TL_OUT"
+assert_contains "no ROADMAP.md: a staged summary is refused" "$TL_OUT" "ROADMAP FRESHNESS VIOLATION"
+assert_contains "and the message says it is missing" "$TL_OUT" "is missing"
 
 # a repository without any commit: `commit -a` has no HEAD to diff against
 EMPTY="$TL_TMP/emptyrepo"; mkdir -p "$EMPTY"; git -C "$EMPTY" init -q -b main
