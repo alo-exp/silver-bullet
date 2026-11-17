@@ -76,6 +76,35 @@ for row in '| 5 | a | not-run |' '| 6 | b | NOT RUN |' '|7|c|Not_Run|'; do
 done
 assert_contains "UAT denial no longer advertises an SB OVERRIDE waiver" "$TL_OUT" "NOT-RUN"
 assert_not_contains "UAT denial: no override promise" "$TL_OUT" "OVERRIDE"
+# r2: a header naming both Status and Result evaluates both columns; a headerless row with an expected
+# "pass" cell next to a fail cell is a real result row, a legend is not.
+uat_file '| ID | Status | Result |' '|---|---|---|' '| A | done | FAIL |'
+rel
+assert_eq "r2: FAIL in the Result column of a Status+Result table denies" deny "$(decision)"
+uat_file '| ID | Status | Result |' '|---|---|---|' '| A | FAIL | pass |'
+rel
+assert_eq "r2: FAIL in the Status column of a Status+Result table denies" deny "$(decision)"
+uat_file '| ID | Status | Result |' '|---|---|---|' '| A | done | not-run |'
+rel
+assert_eq "r2: NOT-RUN in the Result column of a Status+Result table denies" deny "$(decision)"
+uat_file '| ID | Status | Result |' '|---|---|---|' '| A | done | pass |' '| B | complete | PASS |'
+rel
+assert_not_contains "r2: Status+Result all-pass table allowed (honest variant)" "$TL_OUT" '"deny"'
+uat_file '| AC-1 | login | pass | fail |'
+rel
+assert_eq "r2: headerless row with an expected-pass cell and a fail cell denies" deny "$(decision)"
+uat_file '| AC-2 | login | pass | not-run |'
+rel
+assert_eq "r2: headerless row with pass and not-run denies" deny "$(decision)"
+uat_file '| AC-3 | login | pass | pass |'
+rel
+assert_not_contains "r2: headerless all-pass row allowed (honest variant)" "$TL_OUT" '"deny"'
+uat_file '| Result values | pass | fail | not-run |' '| AC-4 | login | pass |'
+rel
+assert_not_contains "r2: a headerless legend row of result words is not a result (honest variant)" "$TL_OUT" '"deny"'
+uat_file '| pass | fail | not-run |' '| AC-4 | login | pass |'
+rel
+assert_not_contains "r2: a legend made only of result words is not a result" "$TL_OUT" '"deny"'
 uat_file '| # | Criterion | Result |' '|---|---|---|' '| 1 | a | pass |' '| 2 | b | PASS |' '| Total | 2 | PASS |' '| Legend | PASS | FAIL | NOT-RUN |'
 rel
 assert_not_contains "all-pass table incl. legend rows allowed (honest variant)" "$TL_OUT" '"deny"'

@@ -35,8 +35,10 @@ sb_prompt_is_informational_query() {
   if grep -Eq "(and|then|also|but|plus|[,;])[[:space:]]+(please[[:space:]]+)?(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$first"; then
     return 1
   fi
-  # A later sentence on the same line ("What is going on with CI? Fix it.") is judged like a later line.
-  sentences="$(printf '%s' "$first" | sed -E 's/^[^.?!]*[.?!][[:space:]]+//')"
+  # A later sentence on the same line ("What is going on with CI? Fix it.", "...CI?Fix it", "going on... fix it") is judged
+  # like a later line: split at the first run of terminators (`?`/`!` runs, an ellipsis, or a full stop before
+  # whitespace or the end), whitespace after it optional. A dot inside a name (`config.test.js`) is no boundary.
+  sentences="$(printf '%s' "$first" | sed -E 's/^([^.?!]|\.[^[:space:].?!])*(\.*[?!]+|\.\.+|\.([[:space:]]|$))[[:space:]]*//')"
   if [[ "$sentences" != "$first" ]] && grep -Eq "(^|[^[:alnum:]_])(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$sentences"; then
     return 1
   fi

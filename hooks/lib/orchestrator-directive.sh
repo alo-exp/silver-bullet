@@ -359,18 +359,37 @@ sb_orchestrator_prompt_has_override() {
   [[ -n "$(sb_orchestrator_extract_override_reason "${1:-}")" ]]
 }
 
+# sb_orchestrator_transcript_ok PATH
+# A transcript_path is acceptable when it is a regular file (not a symlink) whose REAL location (every
+# directory component resolved) is under the host's real runtime root, with no `..` in the given path.
+sb_orchestrator_transcript_ok() {
+  local path="${1:-}" root dir real
+  [[ -n "${SB_RUNTIME_HOME_ROOT:-}" && "$path" != *".."* && ! -L "$path" && -f "$path" ]] || return 1
+  root="$(cd "$SB_RUNTIME_HOME_ROOT" 2>/dev/null && pwd -P)" || return 1
+  dir="$(cd "${path%/*}" 2>/dev/null && pwd -P)" || return 1
+  real="$dir/${path##*/}"
+  [[ "$real" == "$root/"* ]]
+}
+
+# The recorded parent session (written at honest top-level prompts, see sb_orchestrator_note_parent_prompt).
+sb_orchestrator_parent_session_file() {
+  printf '%s/orchestrator-parent-session.json' "${SB_RUNTIME_STATE_DIR:-/tmp}"
+}
+
 # sb_orchestrator_prompt_provenance_ok INPUT_JSON
 # A prompt event is only acted on (override, queue clear) when it looks like the host's own
 # UserPromptSubmit for a PARENT session (R4-07, R4-08):
-#   - not a worker/delegate session (SB_ORCHESTRATOR_WORKER, the worker marker, or an agent_id);
+#   - not a worker/delegate session (SB_ORCHESTRATOR_WORKER, SB_ORCHESTRATOR_PARENT=0 or an agent_id);
 #   - the host's session_id is present;
-#   - a transcript_path, when given, is a regular file (not a symlink) under the host's runtime
-#     root, with no `..` (so /etc/hostname does not count).
+#   - a transcript_path, WHEN THE HOST SENDS ONE (Codex may not), is a regular file under the host's
+#     runtime root after symlinks are resolved (so /etc/hostname, or a symlinked directory, does not count);
+#   - while a Task worker marker is fresh (TTL 2 h, it outlives an interrupted subagent) the prompt must
+#     also be provably the recorded parent's: the same session_id and a valid transcript_path.
 # Status 0 ok; 1 refused (SB_PROVENANCE_REFUSAL says why).
 sb_orchestrator_prompt_provenance_ok() {
-  local input="${1:-}" sid transcript agent
+  local input="${1:-}" sid transcript agent recorded spawned
   SB_PROVENANCE_REFUSAL=""
-  if [[ "${SB_ORCHESTRATOR_WORKER:-}" == "1" ]] || sb_orchestrator_is_worker_session 2>/dev/null; then
+  if [[ "${SB_ORCHESTRATOR_WORKER:-}" == "1" || "${SB_ORCHESTRATOR_WORKER:-}" == "true" || "${SB_ORCHESTRATOR_PARENT:-}" == "0" ]]; then
     SB_PROVENANCE_REFUSAL="this is a worker or delegate session; only the parent session's own user prompts count"
     return 1
   fi
@@ -385,9 +404,35 @@ sb_orchestrator_prompt_provenance_ok() {
     return 1
   fi
   transcript="$(printf '%s' "$input" | jq -r '.transcript_path // ""' 2>/dev/null)"
-  if [[ -n "$transcript" ]] && { [[ "$transcript" != "${SB_RUNTIME_HOME_ROOT:-/nonexistent}/"* || "$transcript" == *".."* || -L "$transcript" || ! -f "$transcript" ]]; }; then
+  if [[ -n "$transcript" ]] && ! sb_orchestrator_transcript_ok "$transcript"; then
     SB_PROVENANCE_REFUSAL="the payload's transcript_path is not a regular file under ${SB_RUNTIME_HOME_ROOT:-the host runtime root}"
     return 1
+  fi
+  if sb_orchestrator_is_worker_session 2>/dev/null; then
+    recorded="$(jq -r '.session_id // ""' "$(sb_orchestrator_parent_session_file)" 2>/dev/null)"
+    if [[ -z "$transcript" || -z "$recorded" || "$recorded" != "$sid" ]]; then
+      spawned="$(jq -r '.spawned_at // "unknown time"' "$(sb_orchestrator_worker_marker_file)" 2>/dev/null)"
+      SB_PROVENANCE_REFUSAL="a Task worker marker is active (spawned ${spawned}; it lapses after 2 hours or when the worker finishes) and this prompt cannot be tied to the recorded parent session; if the subagent was interrupted, delete $(sb_orchestrator_worker_marker_file) and retry"
+      return 1
+    fi
+  fi
+  return 0
+}
+
+# sb_orchestrator_note_parent_prompt INPUT_JSON
+# Record the session of an honest top-level prompt so that a stale worker marker cannot lock the parent out of
+# its own override. Nothing is recorded for a worker/delegate payload, an unsafe session id, a transcript that
+# fails the check, or while a worker marker is fresh (a forged payload cannot register itself as the parent).
+sb_orchestrator_note_parent_prompt() {
+  local input="${1:-}" sid tmp file
+  sb_orchestrator_prompt_provenance_ok "$input" || return 0
+  sb_orchestrator_is_worker_session 2>/dev/null && return 0
+  sid="$(printf '%s' "$input" | jq -r '.session_id // ""' 2>/dev/null)"
+  [[ "$sid" =~ ^[A-Za-z0-9_-]{1,64}$ ]] || return 0
+  file="$(sb_orchestrator_parent_session_file)"
+  tmp="${file}.$$"
+  if jq -n --arg sid "$sid" --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '{session_id:$sid, noted_at:$at}' >"$tmp" 2>/dev/null; then
+    mv -f -- "$tmp" "$file" 2>/dev/null || rm -f -- "$tmp"
   fi
   return 0
 }

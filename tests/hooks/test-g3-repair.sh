@@ -181,4 +181,91 @@ run "$LG" "$(ups $'Do these:\n- add login form\n- add logout button\n- add sessi
 tl_run bash -c 'cd "$1" && exec bash "$2" list' _ "$EC_PROJ" "$TL_REPO_ROOT/scripts/resolve-instruction-ledger.sh"
 assert_contains "resolver CLI lists the session's ledger" "$TL_OUT" "add login form"
 
+# ---- r2 #1 provenance: a transcript is resolved without symlink escape; absent is accepted (documented) ----------
+mkdir -p "$SB_RUNTIME_HOME_ROOT/projects"
+ln -sfn /etc "$SB_RUNTIME_HOME_ROOT/projects/y"
+seed
+run "$OC" "$(ups 'SB OVERRIDE: prod outage hotfix' "{\"session_id\":\"s\",\"transcript_path\":\"$SB_RUNTIME_HOME_ROOT/projects/y/hostname\"}")"
+assert_file_exists "r2: a transcript reached through a symlinked directory is refused (directive kept)" "$DIRF"
+assert_file_exists "r2: ... and the queue is kept" "$ORCH"
+seed
+run "$OC" "$(ups 'add a small readme note now' "{\"session_id\":\"s\",\"transcript_path\":\"$SB_RUNTIME_HOME_ROOT/projects/y/hostname\"}")"
+assert_file_exists "r2: a new-goal queue clear through a symlinked directory is refused" "$ORCH"
+rm -f "$SB_RUNTIME_HOME_ROOT/projects/y"
+mkdir -p "$SB_RUNTIME_HOME_ROOT/projects/real"; printf 'x\n' >"$SB_RUNTIME_HOME_ROOT/projects/real/t2.jsonl"
+seed
+run "$OC" "$(ups 'SB OVERRIDE: prod outage hotfix' "{\"session_id\":\"s\",\"transcript_path\":\"$SB_RUNTIME_HOME_ROOT/projects/real/t2.jsonl\"}")"
+assert_file_absent "r2: a real nested transcript is honoured (honest variant)" "$DIRF"
+seed
+run "$OC" "$(ups 'SB OVERRIDE: prod outage hotfix' '{"session_id":"s"}')"
+assert_file_absent "r2: a host that sends no transcript_path (session_id only) is still honoured" "$DIRF"
+assert_contains "r2: the docs say the transcript is checked when the host sends one" "$(cat "$TL_REPO_ROOT/silver-bullet.md")" "when the host sends one"
+assert_contains "r2: ... in the template as well" "$(cat "$TL_REPO_ROOT/templates/silver-bullet.md.base")" "when the host sends one"
+
+# ---- r2 #2 a stale worker marker: accurate refusal, and the parent's own prompt gets through ---------------------
+MARK="$SD/orchestrator-worker-active.json"
+PARENT="$SD/orchestrator-parent-session.json"
+stale_marker() { jq -n --arg at "$(date -u -d '30 minutes ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-30M +%Y-%m-%dT%H:%M:%SZ)" '{spawned_at:$at,skill:"silver-plan"}' >"$MARK"; }
+seed; rm -f "$PARENT"; stale_marker
+run "$OC" "$(ups 'SB OVERRIDE: the planning step is already done manually' "$GOOD")"
+assert_file_exists "r2: marker only, no recorded parent: override refused (directive kept)" "$DIRF"
+assert_contains "r2: the refusal names the marker, not a worker session" "$TL_OUT" "worker marker"
+assert_not_contains "r2: ... and does not claim this is a worker session" "$TL_OUT" "this is a worker or delegate session"
+assert_contains "r2: ... and says how to proceed" "$TL_OUT" "orchestrator-worker-active.json"
+# the parent's own earlier prompt (before any marker) records the session
+rm -f "$MARK" "$PARENT"; seed
+run "$OC" "$(ups 'what is the status of the queue' "$GOOD")"
+assert_file_exists "r2: an honest prompt records the parent session" "$PARENT"
+assert_eq "r2: ... with its session id" sess-1 "$(jq -r .session_id "$PARENT")"
+stale_marker
+run "$OC" "$(ups 'SB OVERRIDE: the planning step is already done manually' "$GOOD")"
+assert_file_absent "r2: the recorded parent gets through a stale marker (directive cleared)" "$DIRF"
+assert_file_absent "r2: ... queue cleared" "$ORCH"
+assert_eq "r2: ... audited" sess-1 "$(jq -r .session_id "$LOG" | tail -1)"
+seed; stale_marker
+run "$OC" "$(ups 'SB OVERRIDE: the planning step is already done manually' "{\"session_id\":\"other\",\"transcript_path\":\"$SB_RUNTIME_HOME_ROOT/projects/t.jsonl\"}")"
+assert_file_exists "r2: another session id behind the marker is still refused" "$DIRF"
+run "$OC" "$(ups 'SB OVERRIDE: the planning step is already done manually' '{"session_id":"sess-1"}')"
+assert_file_exists "r2: the parent's id without a transcript behind a marker is refused" "$DIRF"
+run "$OC" "$(ups 'add a small readme note now' "$GOOD")"
+assert_file_absent "r2: a new-goal queue clear from the recorded parent behind a stale marker works" "$ORCH"
+seed; stale_marker
+runenv SB_ORCHESTRATOR_WORKER=1 "$OC" "$(ups 'SB OVERRIDE: the planning step is already done manually' "$GOOD")"
+assert_file_exists "r2: SB_ORCHESTRATOR_WORKER=1 stays refused even for the recorded parent" "$DIRF"
+assert_contains "r2: ... with the worker wording" "$TL_OUT" "worker or delegate session"
+run "$OC" "$(ups 'SB OVERRIDE: the planning step is already done manually' "$(jq -cn --arg t "$SB_RUNTIME_HOME_ROOT/projects/t.jsonl" '{session_id:"sess-1",agent_id:"a1",transcript_path:$t}')")"
+assert_file_exists "r2: agent_id stays refused behind a marker" "$DIRF"
+rm -f "$MARK" "$PARENT"
+# a worker's forged prompt does not register itself as the parent while the marker is fresh
+seed; stale_marker
+run "$OC" "$(ups 'what is the status of the queue' '{"session_id":"forger","transcript_path":"'"$SB_RUNTIME_HOME_ROOT"'/projects/t.jsonl"}')"
+assert_file_absent "r2: no parent record is written while a marker is fresh" "$PARENT"
+rm -f "$MARK"
+run "$OC" "$(ups 'what is the status of the queue' '{"session_id":"x y"}')"
+assert_file_absent "r2: an unsafe session id is not recorded" "$PARENT"
+run "$OC" "$(ups 'what is the status of the queue' '{"session_id":"s1","transcript_path":"/etc/hostname"}')"
+assert_file_absent "r2: a payload whose transcript fails provenance is not recorded" "$PARENT"
+
+# ---- r2 #3 the audit exemption does not cover a redirection of the audit command itself ------------------------
+task_return
+run "$SUB" "$(jq -cn --arg c "$AUD > src/a.js" '{hook_event_name:"PreToolUse",tool_name:"exec_command",tool_input:{cmd:$c,command:$c}}')"
+assert_contains "r2: 'invoke-skill audit > src/a.js' is not exempt" "$TL_OUT" "deny"
+run "$SUB" "$(jq -cn --arg c "$AUD" '{hook_event_name:"PreToolUse",tool_name:"exec_command",tool_input:{cmd:$c,command:$c}}')"
+assert_not_contains "r2: the bare audit invocation stays exempt (honest variant)" "$TL_OUT" "deny"
+
+# ---- r2 #6 deleting checklist + sidecar with no ledger leaves a trace and still blocks -------------------------
+seed; printf 'silver-context\n' >"$SD/state"; rm -f "$SD/outcomes-tamper.log"
+run "$OC" "$(ups 'update the readme' '{"session_id":"sB"}')"
+F6="$SD/outcomes-session-sB.json"
+assert_file_exists "r2: the work prompt seeded a checklist" "$F6"
+rm -f "$F6" "$F6.sha256" "$SD"/instruction-ledger*.json
+run "$OC" '{"hook_event_name":"Stop","session_id":"sB"}'
+assert_contains "r2: deleted checklist + sidecar, no ledger: Stop blocks" "$(reason)" "outcome checklist incomplete"
+assert_file_exists "r2: ... and leaves a trace" "$SD/outcomes-tamper.log"
+assert_contains "r2: ... naming the deletion" "$(cat "$SD/outcomes-tamper.log")" "deleted"
+seed; printf 'silver-feature\nsilver-verify\nsilver-execute\n' >"$SD/state"; rm -f "$SD/outcomes-tamper.log"
+run "$OC" '{"hook_event_name":"Stop","session_id":"sC"}'
+assert_eq "r2: a session that never saw a prompt is not blocked (honest variant)" "0:" "$TL_STATUS:$TL_OUT"
+assert_file_absent "r2: ... and leaves no trace" "$SD/outcomes-tamper.log"
+
 tl_results

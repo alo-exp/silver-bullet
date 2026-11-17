@@ -32,12 +32,18 @@ sb_outcomes_seal() {
   printf '%s\n' "$digest" >"${outfile}.sha256" 2>/dev/null || true
 }
 
-# A deleted checklist is tamper, not "never created" (R2-19): the seal or the instruction ledger
-# of the same session proves a prompt was seeded. The checklist comes back all pending.
+# The hook-written trace that a prompt of this session was seeded (a deleted checklist plus its sidecar
+# leaves it behind even when no instruction ledger exists for a single-step prompt).
+sb_outcomes_seeded_marker() {
+  printf '%s/outcomes-seeded%s' "${SB_RUNTIME_STATE_DIR:-/tmp}" "${SB_SESSION_KEY:+-$SB_SESSION_KEY}"
+}
+
+# A deleted checklist is tamper, not "never created" (R2-19): the seal, the seeded marker or the
+# instruction ledger of the same session proves a prompt was seeded. The checklist comes back all pending.
 sb_outcomes_restore_deleted() {
   local outfile="$1" ledger
   ledger="${SB_RUNTIME_STATE_DIR}/instruction-ledger${SB_SESSION_KEY:+-$SB_SESSION_KEY}.json"
-  [[ -f "${outfile}.sha256" || -f "$ledger" ]] || return 0
+  [[ -f "${outfile}.sha256" || -f "$(sb_outcomes_seeded_marker)" || -f "$ledger" ]] || return 0
   printf '%s\toutcomes-session.json deleted; checklist restored as pending\n' \
     "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"${SB_RUNTIME_STATE_DIR}/outcomes-tamper.log" 2>/dev/null || true
   jq -n --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '{
@@ -112,6 +118,7 @@ sb_outcomes_seed_for_prompt() {
 
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   if command -v jq >/dev/null 2>&1; then
+    printf '%s\n' "$now" >"$(sb_outcomes_seeded_marker)" 2>/dev/null || true
     if declare -f sb_prompt_is_informational_query >/dev/null 2>&1 \
       && sb_prompt_is_informational_query "$prompt"; then
       jq -n \
