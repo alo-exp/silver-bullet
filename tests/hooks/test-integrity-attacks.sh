@@ -676,11 +676,14 @@ for g in "rm -f $SD/baselined-roots $SD/root-*" "rm -f $SD/baselined-roots" "rm 
   assert_contains "anchor guard (Claude): $g: the state guard says so" "$(message)" "STATE TAMPER"
   run_dc "$(codex_json "$g")"
   assert_eq "anchor guard (Codex): $g" "deny" "$(decision)"
+  assert_contains "anchor guard (Codex): $g: the state guard says so" "$(message)" "STATE TAMPER"
+  assert_not_contains "anchor guard (Codex): $g: not an unrelated rule" "$(message)" "Planning incomplete"
 done
 for tool in Edit Write MultiEdit NotebookEdit; do
   for f in baselined-roots "$MKN" baselined-roots.lock root-1; do
     run_dc "$(edit_json "$SD/$f" "$tool" PreToolUse "$BIG_OLD" "$BIG_NEW")"
     assert_eq "anchor guard: $tool of $f" "deny" "$(decision)"
+    assert_contains "anchor guard: $tool of $f: the state guard says so" "$(message)" "STATE TAMPER"
   done
 done
 run_dc "$(jq -cn --arg p "*** Begin Patch
@@ -690,6 +693,7 @@ run_dc "$(jq -cn --arg p "*** Begin Patch
 +b
 *** End Patch" '{hook_event_name:"PreToolUse",tool_name:"apply_patch",tool_input:{input:$p}}')"
 assert_eq "anchor guard: apply_patch of the registry" "deny" "$(decision)"
+assert_contains "anchor guard: apply_patch of the registry: the state guard says so" "$(message)" "STATE TAMPER"
 # honest: reading the anchors, and writing next to them in the project, stay open
 for g in "cat $SD/baselined-roots" "ls -l $SD" "grep -c . $SD/baselined-roots" "cd $SD && cat baselined-roots" "echo x > $PROJ/docs/notes.md" "rm -f $PROJ/docs/gone.md"; do
   run_dc "$(bash_json "$g")"
@@ -706,7 +710,10 @@ assert_eq "and the marker" "yes" "$(compgen -G "$SD/root-*" >/dev/null && echo y
 ih_project r16-residual
 P="$PROJ"; echo d >>"$P/src/app.js"
 run_dc "$(bash_json 'cd "$(cat $FX/d.txt)" && rm -f baselined-roots root-*')"
-assert_eq "RESIDUAL: a cd to a run-time path then rm of the path anchors is not read by the guard" "none" "$(decision)"
+assert_eq "a cd to a run-time path then rm of a protected name is refused by its name" "deny" "$(decision)"
+printf '%s' "baselined-roots" >"$FX/n.txt"
+run_dc "$(bash_json 'cd "$(cat $FX/d.txt)" && rm -f "$(cat $FX/n.txt)"')"
+assert_eq "RESIDUAL: a cd to a run-time path then rm of a name read at run time is not read by the guard" "none" "$(decision)"
 ih_run 'python3 -c "import os,glob;[os.remove(f) for f in glob.glob(os.environ[\"SD\"]+\"/root-*\")+[os.environ[\"SD\"]+\"/baselined-roots\"]]"'
 assert_eq "RESIDUAL: an interpreter one-liner is not read either" "none" "$IH_PRE"
 assert_eq "RESIDUAL: both path anchors are gone, the record is kept" "yes" "$([[ ! -f "$SD/baselined-roots" ]] && ! compgen -G "$SD/root-*" >/dev/null && [[ -f "$(_sb_iv_rec_file "$P")" ]] && echo yes || echo no)"
@@ -714,6 +721,144 @@ ih_run "$swap"
 assert_eq "RESIDUAL: the swap put a copy at the path" "yes" "$([[ -d "$P" && -d "$P.o" && ! -e "$P/silver-bullet.md" ]] && echo yes || echo no)"
 assert_eq "RESIDUAL: the record alone does not hold the swapped copy" "" "$(sb_integrity_root "$P/src")"
 rm -rf "$P.o"
+# round 17: a row is an attack only when its command really does the damage, so every row below RUNS the command for
+# real in the sandbox after the hooks have judged it, and asserts that the registry or the markers are gone, empty or
+# the whole state directory is deleted. The guard must have said STATE TAMPER (Claude and Codex) before that.
+anchors_damaged() {
+  [[ ! -d "$SD" ]] || [[ ! -s "$SD/baselined-roots" ]] || ! compgen -G "$SD/root-*" >/dev/null || [[ -z "$(cat "$SD"/root-* 2>/dev/null)" ]]
+}
+g17_n=0
+g17_setup() {
+  g17_n=$((g17_n + 1))
+  mkdir -p "$SD"
+  rm -f "$SD"/session-init "$SD"/stack-compression-mutex "$SD"/sb-friction-log.md "$SD"/roadmap-edit-override
+  ih_project "r17-$g17_n"
+  P="$PROJ"; echo d >>"$P/src/app.js"
+  mkdir -p "$SD/sub" "$TL_TMP/lk17"
+  rm -f "$TL_TMP/lk17/s"; ln -s "$SD/sub" "$TL_TMP/lk17/s"
+  H17="$(dirname "$(dirname "$SD")")"
+  printf '%s' "$H17" >"$FX/hd.txt"
+  assert_eq "r17 setup $g17_n: the anchors are intact" "no" "$(anchors_damaged && echo yes || echo no)"
+}
+g17_expand() { local c="$1"; c="${c//@SD@/$SD}"; c="${c//@FX@/$FX}"; c="${c//@H@/$H17}"; c="${c//@LK@/$TL_TMP/lk17}"; c="${c//@PROJ@/$PROJ}"; c="${c//@TL@/$TL_TMP}"; printf '%s' "$c"; }
+# guard17 LABEL CMD: both hosts are refused by the state guard, and the command is a real attack
+guard17() {
+  g17_setup
+  local label="$1" cmd="$2" host
+  cmd="$(g17_expand "$cmd")"
+  for host in Claude Codex; do
+    if [[ "$host" == Claude ]]; then run_dc "$(bash_json "$cmd")"; else run_dc "$(codex_json "$cmd")"; fi
+    assert_eq "guard ($host): $label" "deny" "$(decision)"
+    assert_contains "guard ($host): $label: the state guard says so" "$(message)" "STATE TAMPER"
+    assert_not_contains "guard ($host): $label: not an unrelated rule" "$(message)" "Planning incomplete"
+  done
+  (cd "$PROJ" && env SD="$SD" FX="$FX" PROJ="$PROJ" LK="$TL_TMP/lk17" H="$H17" bash -c "$cmd" >/dev/null 2>&1) || true
+  assert_eq "guard: $label: run for real the command damages the anchors (the row is no bluff)" "yes" "$(anchors_damaged && echo yes || echo no)"
+}
+# honest17 LABEL CMD: neither host is refused
+honest17() {
+  g17_setup
+  local label="$1" cmd="$2"
+  cmd="$(g17_expand "$cmd")"
+  run_dc "$(bash_json "$cmd")"
+  assert_eq "honest (Claude): $label" "none" "$(decision)"
+  run_dc "$(codex_json "$cmd")"
+  assert_eq "honest (Codex): $label" "none" "$(decision)"
+}
+g17_setup
+g17_cd() { printf 'cd %s; ' "$SD"; }
+# (a) the four sentinels are open to a plain write only: no link, no symlink, no copy under their name
+guard17 "hard link under a sentinel name, then emptied" "ln @SD@/baselined-roots @SD@/session-init && : > @SD@/session-init"
+guard17 "hard link (ln -f) under another sentinel, truncate" "ln -f @SD@/baselined-roots @SD@/stack-compression-mutex; truncate -s0 @SD@/stack-compression-mutex"
+guard17 "a marker linked under a sentinel name, in a loop" 'for m in @SD@/root-*; do ln -f $m @SD@/roadmap-edit-override; : > @SD@/roadmap-edit-override; done'
+guard17 "symlink under a sentinel name, then emptied" "ln -sf baselined-roots @SD@/session-init && : > @SD@/session-init"
+guard17 "cp -l under a sentinel name" "cp -l @SD@/baselined-roots @SD@/sb-friction-log.md && : > @SD@/sb-friction-log.md"
+guard17 "link(1) under a sentinel name" "link @SD@/baselined-roots @SD@/session-init && : > @SD@/session-init"
+guard17 "a hard link made OUTSIDE the state directory from a state file, then emptied" 'ln @SD@/baselined-roots @FX@/lnk17 && : > @FX@/lnk17'
+guard17 "cp --link out of the state directory, then emptied" 'cp --link @SD@/baselined-roots @FX@/lnk17b && : > @FX@/lnk17b'
+# the file tools see a link that exists already (made by a command the hooks refused, run here for real)
+g17_setup
+ln "$SD/baselined-roots" "$SD/session-init"; ln -s baselined-roots "$SD/sb-friction-log.md"; ln -f "$(ls "$SD"/root-* | head -1)" "$SD/roadmap-edit-override"
+for tool in Write Edit MultiEdit NotebookEdit; do
+  for f in session-init sb-friction-log.md roadmap-edit-override; do
+    run_dc "$(edit_json "$SD/$f" "$tool" PreToolUse "$BIG_OLD" "$BIG_NEW")"
+    assert_eq "linked sentinel: $tool of $f" "deny" "$(decision)"
+    assert_contains "linked sentinel: $tool of $f: the state guard says so" "$(message)" "STATE TAMPER"
+  done
+done
+run_dc "$(jq -cn --arg p "*** Begin Patch
+*** Update File: $SD/session-init
+@@
+-a
++b
+*** End Patch" '{hook_event_name:"PreToolUse",tool_name:"apply_patch",tool_input:{input:$p}}')"
+assert_eq "linked sentinel: apply_patch" "deny" "$(decision)"
+assert_contains "linked sentinel: apply_patch: the state guard says so" "$(message)" "STATE TAMPER"
+# honest: a plain sentinel (not linked) is still open to a plain write, and a sentinel can be removed
+g17_setup
+for tool in Write Edit; do
+  run_dc "$(edit_json "$SD/session-init" "$tool" PreToolUse "$BIG_OLD" "$BIG_NEW")"
+  assert_eq "plain sentinel: $tool of session-init is allowed" "none" "$(decision)"
+done
+honest17 "a plain redirect into a sentinel" ': > @SD@/session-init'
+honest17 "touch and append on a sentinel" 'touch @SD@/sb-friction-log.md; echo hi >> @SD@/sb-friction-log.md'
+honest17 "removing a sentinel" 'rm -f @SD@/roadmap-edit-override'
+# (b) git clean and its relatives: the state directory is inside the work tree that is cleaned
+guard17 "git init . and git clean -fdx from HOME" 'cd @H@ && git init -q . && git clean -fdxq'
+guard17 "git clean -fdx with git -C HOME" 'git init -q @H@; git -C @H@ clean -fdxq'
+guard17 "git clean inside the state directory" 'git init -q @H@; cd @SD@ && git clean -fdxq'
+guard17 "git clean with --work-tree=" 'git init -q @H@; git --git-dir=@H@/.git --work-tree=@H@ clean -fdxq'
+guard17 "git clean with --work-tree and a separate argument" 'git init -q @H@; git --git-dir @H@/.git --work-tree @H@ clean -fdxq'
+guard17 "git clean with GIT_WORK_TREE" 'git init -q @H@; GIT_WORK_TREE=@H@ git --git-dir=@H@/.git clean -fdxq'
+guard17 "git clean naming the work tree" 'git init -q @H@; cd @PROJ@ && git -C @H@ clean -fdxq @H@'
+guard17 "git clean in a directory computed at run time" 'git init -q @H@; cd "$(cat @FX@/hd.txt)" && git clean -fdxq'
+g17_setup
+git init -q "$H17"
+for c in "cd $SD && git reset --hard" "cd $SD && git checkout -- ." "cd $SD && git restore ." "cd $SD && git rm -rf ." "cd $SD && git stash -u" "git -C $SD clean -fdx"; do
+  run_dc "$(bash_json "$c")"
+  assert_eq "git inside the state directory: $c" "deny" "$(decision)"
+  assert_contains "git inside the state directory: $c: the state guard says so" "$(message)" "STATE TAMPER"
+done
+honest17 "a dry run of git clean" 'git init -q @H@; cd @H@ && git clean -nd'
+honest17 "git clean -fdx in a project that is not above the state directory" 'git init -q @PROJ@; cd @PROJ@ && git clean -fdxq'
+honest17 "git reset --hard in a project" 'cd @PROJ@ && git reset --hard'
+# (c) a cd whose effect cannot be proven leaves a relative write where it may land, or makes it dynamic
+guard17 "false && cd elsewhere; rm" 'cd @SD@; false && cd /tmp; rm -f baselined-roots root-*'
+guard17 "false || cd elsewhere; rm" 'cd @SD@; true || cd /tmp; rm -f baselined-roots root-*'
+guard17 "a cd to a directory that does not exist" 'cd @SD@; cd /nonexistent-dir-17 2>/dev/null; rm -f baselined-roots root-*'
+guard17 "a cd to a file" 'cd @SD@; cd @SD@/seal.key 2>/dev/null; rm -f baselined-roots root-*'
+guard17 "if false; then cd; fi" 'cd @SD@; if false; then cd /tmp; fi; rm -f baselined-roots root-*'
+guard17 "while false; do cd; done" 'cd @SD@; while false; do cd /tmp; done; rm -f baselined-roots root-*'
+guard17 "a loop over nothing" 'cd @SD@; for i in; do cd /tmp; done; rm -f baselined-roots root-*'
+guard17 "an unmatched case" 'cd @SD@; case x in y) cd /tmp;; esac; rm -f baselined-roots root-*'
+guard17 "CDPATH assigned for one cd" 'cd /tmp; CDPATH=$(dirname @SD@) cd $(basename @SD@) >/dev/null && rm -f baselined-roots root-*'
+guard17 "CDPATH exported" 'cd /tmp; export CDPATH=$(dirname @SD@); cd $(basename @SD@) >/dev/null && rm -f baselined-roots root-*'
+guard17 "cdable_vars" 'cd /tmp; shopt -s cdable_vars; v=@SD@; cd v >/dev/null && rm -f baselined-roots root-*'
+guard17 "a cd inside a function" 'go() { cd @SD@; }; go; rm -f baselined-roots root-*'
+guard17 "OLDPWD assigned, cd -" 'cd /tmp; OLDPWD=@SD@; cd - >/dev/null && rm -f baselined-roots root-*'
+guard17 "HOME assigned, bare cd" 'cd /tmp; HOME=@SD@; cd && rm -f baselined-roots root-*'
+guard17 "pushd -n then pushd" 'cd /tmp; pushd -n @SD@ >/dev/null; pushd >/dev/null; rm -f baselined-roots root-*'
+guard17 "find -execdir" 'find @SD@ -maxdepth 1 -name sub -execdir rm -f baselined-roots root-1 \;'
+guard17 "cd -P through a symlink then .." 'cd -P @LK@/s/.. && rm -f baselined-roots root-*'
+guard17 "cd into a symlink then cd -P .." 'cd @LK@/s; cd -P ..; rm -f baselined-roots root-*'
+guard17 "a directory computed at run time" 'cd "$(cat @FX@/d.txt)" && rm -f baselined-roots root-*'
+guard17 "a computed directory and a glob" 'cd "$(cat @FX@/d.txt)" && rm -f r*'
+# honest relative writes under the same shapes stay open
+honest17 "cd || exit, then rm of an ordinary name" 'cd /tmp || exit 1; rm -f x17.txt'
+honest17 "cd && rm of an ordinary name" 'cd /tmp && rm -f x17.txt'
+honest17 "a conditional cd, then an ordinary name" 'cd /tmp; if true; then cd /tmp; fi; rm -f x17.txt'
+honest17 "a function that changes directory, then an ordinary name" 'go() { cd /tmp; }; go; rm -f x17.txt'
+honest17 "a computed directory, an ordinary name" 'cd "$(cat @FX@/d.txt)" && rm -f x17.txt'
+honest17 "mkdir, cd into it, write" 'mkdir -p @TL@/hn17 && cd @TL@/hn17 && echo x > f.txt'
+honest17 "test -d, cd, write a note" 'test -d docs && cd docs && echo x > n17.md'
+honest17 "cd -P to an ordinary directory" 'cd -P /tmp && rm -f x17.txt'
+# the planning floor still judges what a chain leaves behind: no regression for source writes
+g17_setup
+for c in 'test -d src && cd src && echo x > app.js' 'false && cd src; echo x > app.js' 'cd /nonexistent-17 2>/dev/null; echo x > src/app.js' 'if false; then cd docs; fi; echo x > src/app.js'; do
+  run_dc "$(bash_json "$c")"
+  assert_eq "floor: $c" "deny" "$(decision)"
+  assert_contains "floor: $c: the planning floor says so" "$(message)" "Planning incomplete"
+done
 # round 15: every write is judged under its LOGICAL spelling as well as its resolved one, so a source folder
 # symlinked outside the project is still the project's source
 sl_n=0
@@ -841,5 +986,10 @@ assert_not_contains "docs: no claim that any one of the three anchors is enough"
 assert_not_contains "docs: the residual does not require all three anchors to be deleted" "$ENF" "deleting ALL THREE"
 assert_not_contains "docs: the twin-rule residual is not claimed to be covered by the other anchors" "$ENF" "which the other anchors cover"
 assert_contains "docs: the record is an identity anchor that cannot hold a copy at the path" "$ENF" "cannot hold a replaced one"
-assert_contains "docs: the guard covers the anchor files" "$ENF" "the registry, its lock, a marker or a record"
+assert_contains "docs: the guard covers the anchor files" "$ENF" "state-tamper guard"
+assert_contains "docs: sentinels are open to a plain write only" "$ENF" "a hard link or a symlink under a sentinel name"
+assert_contains "docs: git clean is covered" "$ENF" "\`git clean\` (without a dry run) is refused"
+assert_contains "docs: a cd that may not take effect" "$ENF" "may not take effect"
+assert_contains "docs: the dynamic directory is judged by name" "$ENF" "judged by its NAME"
+assert_contains "docs: the remaining limits are listed" "$ENF" "**Remaining limits**"
 tl_results

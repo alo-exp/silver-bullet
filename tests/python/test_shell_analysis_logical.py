@@ -201,5 +201,157 @@ class CdTrackingTest(unittest.TestCase):
         self.assertEqual(self.lp("env -C src tee app.js", self.proj, self.proj), [os.path.join(self.src, "app.js")])
 
 
+class UncertainCdTest(unittest.TestCase):
+    """A cd whose effect cannot be proven does not hide the directory a relative write lands in: a cd that may not
+    have run leaves the directory before it among ``alts``; a cd the analysis cannot read makes it dynamic."""
+
+    def setUp(self):
+        self.tmp = os.path.realpath(tempfile.mkdtemp())
+        self.sd = os.path.join(self.tmp, "state")
+        self.other = os.path.join(self.tmp, "other")
+        os.makedirs(self.sd)
+        os.makedirs(self.other)
+        os.symlink(self.sd, os.path.join(self.tmp, "link"))
+
+    def write0(self, command, base=None):
+        res = sa.analyze_command(command, base_dir=base or self.sd)
+        return res["writes"][-1]
+
+    def places(self, command, base=None):
+        write = self.write0(command, base)
+        return {write["path"]} | {a["path"] for a in write.get("alts", [])}
+
+    def test_a_cd_after_and_may_not_have_run(self):
+        for command in ("false && cd %s; rm -f baselined-roots" % self.other,
+                        "test -d x && cd %s; rm -f baselined-roots" % self.other,
+                        "false || cd %s; rm -f baselined-roots" % self.other):
+            self.assertEqual(self.places(command), {os.path.join(self.sd, "baselined-roots"),
+                                                    os.path.join(self.other, "baselined-roots")}, command)
+
+    def test_a_chain_of_and_keeps_the_directory_for_what_follows_the_cd(self):
+        write = self.write0("true && cd %s && rm -f baselined-roots" % self.other)
+        self.assertEqual(write["path"], os.path.join(self.other, "baselined-roots"))
+        self.assertNotIn("alts", write)
+
+    def test_a_cd_on_the_or_side_is_not_certain_inside_the_chain(self):
+        places = self.places("false || cd %s && rm -f baselined-roots" % self.other)
+        self.assertIn(os.path.join(self.sd, "baselined-roots"), places)
+
+    def test_a_failing_cd_leaves_the_directory(self):
+        for command in ("cd /nonexistent-dir 2>/dev/null; rm -f baselined-roots",
+                        "cd %s/missing; rm -f baselined-roots" % self.other):
+            self.assertIn(os.path.join(self.sd, "baselined-roots"), self.places(command), command)
+
+    def test_a_directory_made_earlier_is_proven(self):
+        write = self.write0("mkdir newdir && cd newdir && rm -f baselined-roots")
+        self.assertEqual(write["path"], os.path.join(self.sd, "newdir", "baselined-roots"))
+        self.assertNotIn("alts", write)
+        self.assertIn(os.path.join(self.sd, "x"), self.places("mkdir newdir; cd newdir/sub; rm -f x"))
+        write = self.write0("mkdir -p a/b/c && cd a/b && rm -f x")
+        self.assertEqual(write["path"], os.path.join(self.sd, "a", "b", "x"))
+
+    def test_a_cd_in_code_that_may_not_run(self):
+        for command in ("if false; then cd %s; fi; rm -f baselined-roots" % self.other,
+                        "while false; do cd %s; done; rm -f baselined-roots" % self.other,
+                        "for i in a b; do cd %s; done; rm -f baselined-roots" % self.other,
+                        "case x in y) cd %s;; esac; rm -f baselined-roots" % self.other,
+                        "if true; then cd %s; else cd %s; fi; rm -f baselined-roots" % (self.other, self.other)):
+            self.assertIn(os.path.join(self.sd, "baselined-roots"), self.places(command), command)
+
+    def test_a_cd_that_a_variable_redirects_is_dynamic(self):
+        for command in ("CDPATH=%s cd state && rm -f baselined-roots" % self.tmp,
+                        "CDPATH=%s; cd state && rm -f baselined-roots" % self.tmp,
+                        "shopt -s cdable_vars; v=%s; cd v && rm -f baselined-roots" % self.sd,
+                        "OLDPWD=%s; cd - && rm -f baselined-roots" % self.sd,
+                        "cd %s; OLDPWD=%s; cd - && rm -f baselined-roots" % (self.other, self.sd),
+                        "cd %s; OLDPWD=%s pushd - && rm -f baselined-roots" % (self.other, self.sd),
+                        "HOME=%s; cd && rm -f baselined-roots" % self.sd,
+                        "PWD=%s; cd sub && rm -f baselined-roots" % self.sd,
+                        "go() { cd %s; }; go; rm -f baselined-roots" % self.other,
+                        "pushd -n %s >/dev/null; pushd >/dev/null; rm -f baselined-roots" % self.sd,
+                        "find %s -name state -execdir rm -f baselined-roots \\;" % self.tmp):
+            write = self.write0(command)
+            self.assertTrue(write["dynamic"] and write["relative"], command)
+
+    def test_cd_through_command_builtin_and_eval_still_moves(self):
+        for command in ("command cd %s && rm -f x", "builtin cd %s && rm -f x", "eval 'cd %s' && rm -f x",
+                        "eval cd %s; rm -f x"):
+            write = self.write0(command % self.other)
+            self.assertEqual(write["path"], os.path.join(self.other, "x"), command)
+
+    def test_a_child_shell_does_not_move_this_one(self):
+        for command in ("bash -c 'cd %s'; rm -f x", "env -C %s true; rm -f x", "(cd %s); rm -f x"):
+            self.assertEqual(self.write0(command % self.other)["path"], os.path.join(self.sd, "x"), command)
+
+    def test_cdable_vars_can_be_switched_off(self):
+        write = self.write0("shopt -s cdable_vars; shopt -u cdable_vars; cd . && rm -f x")
+        self.assertFalse(write["dynamic"])
+
+    def test_a_cdpath_in_the_environment_is_dynamic_for_plain_names_only(self):
+        os.environ["CDPATH"] = self.tmp
+        try:
+            self.assertTrue(self.write0("cd state && rm -f x")["dynamic"])
+            self.assertFalse(self.write0("cd ./ && rm -f x")["dynamic"])
+        finally:
+            del os.environ["CDPATH"]
+
+    def test_the_absolute_cd_clears_the_alternatives(self):
+        write = self.write0("false && cd %s; cd %s; rm -f x" % (self.other, self.sd))
+        self.assertNotIn("alts", write)
+
+    def test_a_relative_cd_moves_the_alternatives_along(self):
+        os.makedirs(os.path.join(self.sd, "sub"))
+        os.makedirs(os.path.join(self.other, "sub"))
+        places = self.places("false && cd %s; cd sub; rm -f x" % self.other)
+        self.assertEqual(places, {os.path.join(self.sd, "sub", "x"), os.path.join(self.other, "sub", "x")})
+
+    def test_too_many_alternatives_make_the_directory_unknown(self):
+        command = "; ".join("false && cd %s/d%d" % (self.tmp, i) for i in range(12)) + "; rm -f x"
+        self.assertTrue(self.write0(command)["dynamic"])
+
+    def test_add_alts_with_a_dynamic_origin(self):
+        write = self.write0("cd \"$(cat f)\"; true && cd %s; rm -f x" % self.other)
+        self.assertTrue(write["dynamic"])
+
+    def test_cd_P_follows_symlinks_before_dotdot(self):
+        real = os.path.join(self.tmp, "real")
+        os.makedirs(os.path.join(real, "deep", "d"))
+        os.makedirs(os.path.join(self.tmp, "parent"))
+        os.symlink(os.path.join(real, "deep", "d"), os.path.join(self.tmp, "parent", "l"))
+        res = sa.analyze_command("cd -P parent/l/.. && echo x > f", base_dir=self.tmp)
+        self.assertEqual((res["writes"][0]["path"], res["writes"][0]["lpath"]),
+                         (os.path.join(real, "deep", "f"), os.path.join(real, "deep", "f")))
+        res = sa.analyze_command("cd parent/l; cd -P ..; echo x > f", base_dir=self.tmp)
+        self.assertEqual(res["writes"][0]["path"], os.path.join(real, "deep", "f"))
+        res = sa.analyze_command("cd parent/l/.. && echo x > f", base_dir=self.tmp)  # logical: lexical
+        self.assertEqual(res["writes"][0]["path"], os.path.join(self.tmp, "parent", "f"))
+
+    def test_hard_link_sources_are_writes(self):
+        for command in ("ln %s/baselined-roots x", "ln -f %s/root-1 x", "cp -l %s/baselined-roots x",
+                        "cp --link %s/root-1 x", "link %s/baselined-roots x"):
+            res = sa.analyze_command(command % self.sd, base_dir=self.other)
+            self.assertIn("link source" if not command.startswith("link") else "link",
+                          {w["via"] for w in res["writes"]}, command)
+        res = sa.analyze_command("ln -s %s/baselined-roots x; cp %s/root-1 x" % (self.sd, self.sd), base_dir=self.other)
+        self.assertNotIn("link source", {w["via"] for w in res["writes"]})
+
+    def test_git_stash_options_do_not_hide_the_stash(self):
+        for command in ("git stash -u", "git stash -m note", "git stash push -u", "git stash save x", "git stash pop"):
+            res = sa.analyze_command(command, base_dir=self.sd)
+            self.assertEqual([(w["via"], w["scope"]) for w in res["writes"]], [("git stash", "tree")], command)
+        for command in ("git stash list", "git stash show", "git stash drop", "git stash clear"):
+            self.assertEqual(sa.analyze_command(command, base_dir=self.sd)["writes"], [], command)
+
+    def test_git_work_tree_is_where_git_works(self):
+        for command in ("git --work-tree %s clean -fdx" % self.sd, "git --work-tree=%s clean -fdx" % self.sd,
+                        "GIT_WORK_TREE=%s git clean -fdx" % self.sd, "GIT_WORK_TREE=%s; git clean -fdx" % self.sd):
+            res = sa.analyze_command(command, base_dir=self.other)
+            self.assertEqual([w["path"] for w in res["writes"]], [self.sd], command)
+        res = sa.analyze_command('git --work-tree "$X" clean -fdx', base_dir=self.other)
+        self.assertTrue(res["writes"][0]["dynamic"])
+        res = sa.analyze_command('GIT_WORK_TREE="$(cat f)" git clean -fdx', base_dir=self.other)
+        self.assertTrue(res["writes"][0]["dynamic"])
+
+
 if __name__ == "__main__":
     unittest.main()

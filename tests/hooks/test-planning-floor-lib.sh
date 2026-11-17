@@ -237,4 +237,60 @@ if sb_pf_extract_via patch; then tl_fail "patch is not an extractor"; else tl_pa
 if sb_pf_tree_via patch && sb_pf_tree_via "git apply" && sb_pf_tree_via "git am" && sb_pf_tree_via unzip; then tl_pass "patch appliers and extractors write the tree"; else tl_fail "tree vias"; fi
 if sb_pf_tree_via cp; then tl_fail "cp is not a tree write"; else tl_pass "cp is not a tree write"; fi
 
+
+# ── the state-tamper guard (sb_pf_state_violation, sb_pf_dynamic_violation, sb_pf_protected_name, sb_pf_nlink) ───────
+source "$TL_REPO_ROOT/hooks/lib/path-canonical.sh"
+SD17="$TL_TMP/sd17"
+mkdir -p "$SD17/dir.d"
+printf 'x\n' >"$SD17/baselined-roots"; printf 'x\n' >"$SD17/root-123"; printf 'k\n' >"$SD17/seal.key"; printf 's\n' >"$SD17/.hidden-state"
+v() { if sb_pf_state_violation "$1" "$2" "$SD17"; then echo violation; else echo ok; fi; }
+assert_eq "an ordinary file in the state dir is guarded" "violation" "$(v redirect "$SD17/baselined-roots")"
+assert_eq "a file outside it is not" "ok" "$(v redirect "$TL_TMP/other")"
+assert_eq "the state dir itself may be made" "ok" "$(v mkdir "$SD17")"
+assert_eq "but not removed" "violation" "$(v rm "$SD17")"
+assert_eq "a directory above it counts as deleting it (rm)" "violation" "$(v rm "$TL_TMP")"
+assert_eq "git clean above it counts" "violation" "$(v "git clean" "$TL_TMP")"
+assert_eq "git reset above it does not (only within)" "ok" "$(v "git reset" "$TL_TMP")"
+assert_eq "git reset within it does" "violation" "$(v "git reset" "$SD17")"
+# sentinels: a plain write only, and only while the name is a plain file nobody linked, a directory, or absent
+for sn in session-init stack-compression-mutex sb-friction-log.md roadmap-edit-override; do
+  assert_eq "$sn absent: a redirect is open" "ok" "$(v redirect "$SD17/$sn")"
+  assert_eq "$sn absent: a link under the name is not" "violation" "$(v ln "$SD17/$sn")"
+  assert_eq "$sn absent: a copy onto it is not" "violation" "$(v cp "$SD17/$sn")"
+done
+printf 'x\n' >"$SD17/session-init"
+assert_eq "a plain sentinel file: tee, touch, rm, truncate and the file tools are open" "ok ok ok ok ok" \
+  "$(v tee "$SD17/session-init") $(v touch "$SD17/session-init") $(v rm "$SD17/session-init") $(v truncate "$SD17/session-init") $(v edit "$SD17/session-init")"
+ln "$SD17/baselined-roots" "$SD17/stack-compression-mutex"
+assert_eq "a sentinel hard-linked to another file is guarded" "violation" "$(v redirect "$SD17/stack-compression-mutex")"
+ln -s baselined-roots "$SD17/sb-friction-log.md"
+assert_eq "a sentinel that is a symlink is guarded" "violation" "$(v redirect "$SD17/sb-friction-log.md")"
+mkdir "$SD17/roadmap-edit-override"
+assert_eq "a sentinel that is a directory is open" "ok" "$(v mkdir "$SD17/roadmap-edit-override")"
+assert_eq "a sentinel under a subdirectory of the state dir is guarded by name" "violation" "$(v redirect "$SD17/dir.d/session-init")"
+# the link count: GNU stat, then BSD stat, then "shared" when neither answers
+assert_eq "sb_pf_nlink of a plain file" "1" "$(sb_pf_nlink "$SD17/dir.d/../seal.key")"
+assert_eq "sb_pf_nlink of a linked file" "2" "$(sb_pf_nlink "$SD17/baselined-roots")"
+STUBD="$TL_TMP/statstub"; mkdir -p "$STUBD"
+printf '#!/bin/sh\ncase "$1" in -c) exit 1 ;; -f) echo 1 ;; esac\n' >"$STUBD/stat"; chmod +x "$STUBD/stat"
+assert_eq "sb_pf_nlink falls back to BSD stat" "1" "$(PATH="$STUBD:$PATH" sb_pf_nlink "$SD17/seal.key")"
+printf '#!/bin/sh\nexit 1\n' >"$STUBD/stat"
+assert_eq "sb_pf_nlink without a stat that answers counts the file as shared" "2" "$(PATH="$STUBD:$PATH" sb_pf_nlink "$SD17/seal.key")"
+# names: entries of the state dir (not sentinels), the contract files, globs
+pn() { if sb_pf_protected_name "$1" "$SD17"; then echo yes; else echo no; fi; }
+assert_eq "an entry of the state dir" "yes" "$(pn baselined-roots)"
+assert_eq "a glob that matches an entry" "yes" "$(pn 'root-*')"
+assert_eq "a glob that matches a hidden entry" "yes" "$(pn '.hid*')"
+assert_eq "a contract file name" "yes" "$(pn silver-bullet.md)"
+assert_eq "a contract file glob" "yes" "$(pn '.silver-bullet.*')"
+assert_eq "a sentinel is not protected by name" "no" "$(pn session-init)"
+assert_eq "an ordinary name" "no" "$(pn notes.txt)"
+assert_eq "an empty name" "no" "$(pn '')"
+assert_eq "no state directory, an ordinary glob" "no" "$(sb_pf_protected_name 'root-*' "$TL_TMP/no-such-dir" && echo yes || echo no)"
+dv() { if sb_pf_dynamic_violation "$1" "$2" "$SD17"; then echo violation; else echo ok; fi; }
+assert_eq "a dynamic write of a protected name" "violation" "$(dv rm "sub/dir/baselined-roots")"
+assert_eq "a trailing slash is ignored" "violation" "$(dv rm "root-123/")"
+assert_eq "a dynamic write of an ordinary name" "ok" "$(dv rm "notes.txt")"
+assert_eq "a dynamic git clean" "violation" "$(dv "git clean" ".")"
+
 tl_results
