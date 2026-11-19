@@ -36,6 +36,9 @@
 #   sb_aw_wrote_source ROOT STATE_DIR   status 0 when the record holds a write that can be under ROOT's source
 #                                       (needs sb_pf_src_load / sb_pf_src_in_scope from planning-floor.sh)
 
+# shellcheck source=tool-path-fields.sh
+source "${BASH_SOURCE[0]%/*}/tool-path-fields.sh"
+
 SB_AW_MAX=500
 
 sb_aw_session_epoch() {
@@ -64,18 +67,18 @@ _sb_aw_path_entries() {
   fi
 }
 
-# The local paths a file tool names, one per line: only real path fields (never cell, body or content text), no
-# value with a newline. TOOL decides the fields: NotebookEdit its notebook_path, the Edit family its file_path, an
-# MCP tool the keys the dev-cycle write guard reads; the tools of a known remote service name no local path.
+# The local paths a file tool names, one per line (never cell, body or content text). TOOL decides the fields:
+# NotebookEdit its notebook_path, the Edit family its file_path, a local MCP tool the shared key list of
+# sb_tool_input_path_fields (the one the dev-cycle write guard reads); the tools of a known remote service (the
+# server name is the segment after mcp__) name no local path.
 _sb_aw_tool_paths() {
-  local tool="$1" input="$2" filter
+  local tool="$1" input="$2"
   case "$tool" in
-    NotebookEdit) filter='.notebook_path' ;;
-    Edit | Write | MultiEdit) filter='.file_path' ;;
-    mcp__github__* | mcp__gitlab__* | mcp__bitbucket__* | mcp__*Google* | mcp__*Gmail* | mcp__*slack* | mcp__*Slack* | mcp__*notion* | mcp__*linear* | mcp__*Figma* | mcp__*shopify* | mcp__*quickbooks* | mcp__*asana* | mcp__*jira* | mcp__*atlassian*) return 0 ;;
-    *) filter='[.file_path, .notebook_path, .path, .filePath, .destination, .source, .target, .from, .to, .old_path, .new_path, .oldPath, .newPath, .src, .dst, .sourcePath, .destinationPath, .relative_path, .relativePath] | .[], ((.file_paths // .paths // []) | arrays | .[])' ;;
+    NotebookEdit) printf '%s' "$input" | jq -r '.tool_input | objects | .notebook_path | strings | select(contains("\n") | not)' 2>/dev/null ;;
+    Edit | Write | MultiEdit) printf '%s' "$input" | jq -r '.tool_input | objects | .file_path | strings | select(contains("\n") | not)' 2>/dev/null ;;
+    mcp__github__* | mcp__gitlab__* | mcp__bitbucket__* | mcp__slack__* | mcp__notion__* | mcp__linear__* | mcp__asana__* | mcp__jira__* | mcp__atlassian__* | mcp__Figma__* | mcp__figma__* | mcp__Gmail__* | mcp__Google_* | mcp__plugin_*) return 0 ;;
+    *) sb_tool_input_path_fields "$input" ;;
   esac
-  printf '%s' "$input" | jq -r ".tool_input | objects | ($filter) | strings | select(contains(\"\\n\") | not)" 2>/dev/null
 }
 
 sb_aw_entries() {
@@ -152,12 +155,15 @@ sb_aw_entries() {
         .writes[]? | ., (.alts[]? | . + {scope: "path"})
         | select((.path // "") != "")
         | [(.scope // "path"), (.dynamic // false | tostring), (.path // ""), (.lpath // ""), (.raw // ""), (.cwd_dynamic // false | tostring)] | @tsv' 2>/dev/null)
-      # What the analysis itself marks as unknowable: a dynamic command word ("$BASH" -c ...), eval of computed
-      # text, inline interpreter code, a program read from stdin. A plain script, module or project-task run
-      # ("contents not analysed", "runs ...") is not: it counts only for the paths the analysis names.
+      # What the analysis itself marks as unknowable (a positive list of local-write unknowns): unseen code, a dynamic
+      # command word, eval of computed text, a dynamic script path or git subcommand, inline interpreter code, a
+      # program or shell read from stdin, a dynamic or executing sed/awk program. Not: a plain script, module or
+      # project-task run ("contents not analysed", "runs ...": counted only for the paths the analysis names), a
+      # sed/awk program FILE, GitHub/HTTP delivery reasons, or an interpreter asked only for its version.
       if printf '%s' "${SB_SA_JSON:-}" | jq -e '
-          ([.opaque_reasons[]? | select(test("contents not analysed") | not)] | length > 0)
-          or ([.opaque_writers[]? | select(.reason | test("^(runs|sources) ") | not)] | length > 0)' >/dev/null 2>&1; then
+          ([.unseen_reasons[]?] | length > 0)
+          or ([.opaque_reasons[]? | select(test("^(dynamic command word|eval |script path is dynamic|trap with|dynamic inline|dynamic git|git aliases|shell reads commands from stdin)"))] | length > 0)
+          or ([.opaque_writers[]? | select(.reason | test("^(inline .* code|.* reads its program from stdin|dynamic sed script|sed e command|unrecognised sed script|dynamic awk program|awk system)"))] | length > 0)' >/dev/null 2>&1; then
         printf '*\n'
       fi
       ;;
@@ -186,10 +192,12 @@ sb_aw_record() {
     # the first record of a session: the regular files of earlier sessions' traces go (other names, so no
     # concurrent appender of this session is affected)
     base="${marker##*/}"
-    find "$sd" -maxdepth 1 -type f -name 'files-written*' ! -name "$base" -delete
+    find "$sd" -maxdepth 1 -type f -name 'files-written*' ! -name "$base" -delete 2>/dev/null || true
   fi
   n="$(printf '%s' "$content" | grep -c . || true)"
   while IFS= read -r entry; do
+    # a glob that can name the state directory or its files (rm ~/.c*/.s*/files-written*) may erase this very trace
+    case "$entry" in f*[\*\?\[]*) ! _sb_aw_glob_hits_dir "${entry:1}" "$sd" || entry='*' ;; esac
     case $'\n'"$content"$'\n' in *$'\n'"$entry"$'\n'*) continue ;; esac
     if (( n >= SB_AW_MAX )); then
       # the cap: one `*` says "anything", then nothing more is recorded
@@ -201,6 +209,15 @@ sb_aw_record() {
     n=$((n + 1))
   done <<<"$entries"
   return 0
+}
+
+# _sb_aw_glob_hits_dir GLOB DIR: the glob, or a file in the directory it names, can be DIR or inside it
+_sb_aw_glob_hits_dir() {
+  local pre="${1%%[\*\?\[]*}"
+  pre="${pre%/*}"
+  case "$2/" in "${pre%/}"/*) ;; *) return 1 ;; esac
+  [[ "$pre" == "${2%/}" ]] && return 0
+  _sb_aw_glob_reaches "$1" "$pre" "$2"
 }
 
 # _sb_aw_covers_root BODY ROOT: BODY is ROOT or a directory above it (a write there reaches the whole tree)
