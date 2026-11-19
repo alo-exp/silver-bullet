@@ -114,6 +114,39 @@ assert_not_contains "the word fail inside a longer cell is not a result" "$TL_OU
 uat_file '| 1 | a | FAIL |'
 rel sb:release "$EC_PROJ/sub"
 assert_eq "run from a subdirectory: .planning/UAT.md found at the project root" deny "$(decision)"
+# r4: a cell holding a markdown-escaped pipe, or a row whose cell count differs from the header's, must not move
+# the Result column off a FAIL (REVF p12): column alignment is not needed to see an exact fail cell.
+uat_file '| # | Criterion | Result |' '|---|---|---|' '| 1 | `ls \| wc -l` prints 3 | FAIL |'
+rel
+assert_eq "r4: an escaped pipe inside a criterion keeps the Result column: FAIL denies" deny "$(decision)"
+uat_file '| # | Criterion | Result |' '|---|---|---|' '| 1 | run ls | wc | FAIL |'
+rel
+assert_eq "r4: a raw pipe in a criterion (extra cell): FAIL denies" deny "$(decision)"
+uat_file '| # | Criterion | Result |' '|---|---|---|' '| 1 | login | PASS |' '| 2 | x | y | FAIL |'
+rel
+assert_eq "r4: an extra cell on a later row: FAIL denies" deny "$(decision)"
+uat_file '| # | Criterion | Result |' '|---|---|---|' '| 1 | login | PASS |' '| 2 | FAIL |'
+rel
+assert_eq "r4: a short row with FAIL denies" deny "$(decision)"
+uat_file '| # | Criterion | Result |' '|---|---|---|' '| 1 | run ls | wc | NOT RUN |'
+rel
+assert_eq "r4: an extra cell and NOT-RUN denies" deny "$(decision)"
+uat_file '| # | Criterion | Result |' '|---|---|---|' '| 1 | `ls \| wc -l` prints 3 | PASS |' '| 2 | a \| b \| c | pass |'
+rel
+assert_not_contains "r4: escaped pipes with PASS allowed (honest variant)" "$TL_OUT" '"deny"'
+uat_file '| # | Criterion | Result |' '|---|---|---|' '| 1 | login | PASS' '| 2 | logout | pass'
+rel
+assert_not_contains "r4: rows without a trailing pipe, all pass, allowed (honest variant)" "$TL_OUT" '"deny"'
+uat_file '| # | Criterion | Result |' '|---|---|---|' '| 1 | run ls | wc | PASS |' '| 2 | fail-safe | b | pass |'
+rel
+assert_not_contains "r4: an extra cell with PASS and the word fail inside a cell allowed (honest variant)" "$TL_OUT" '"deny"'
+uat_file '| # | Criterion | Result |' '|---|---|---|' '| 1 | login | PASS |' '| Legend | PASS | FAIL | NOT-RUN | extra |'
+rel
+assert_not_contains "r4: a legend row with a different cell count is still a legend (honest variant)" "$TL_OUT" '"deny"'
+# a FAIL under another header column (Notes) is documented as not a result: only Result/Status columns decide
+uat_file '| # | Criterion | Result | Notes |' '|---|---|---|---|' '| 1 | login | PASS | FAIL path tested |' '| 2 | x | PASS | FAIL |'
+rel
+assert_not_contains "r4: an aligned row's Notes column is not a result column (documented)" "$TL_OUT" '"deny"'
 rm -f "$EC_PROJ/.planning/UAT.md"
 rel
 assert_eq "no UAT.md denies" deny "$(decision)"

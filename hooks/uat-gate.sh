@@ -85,23 +85,28 @@ fi
 # headerless row that names several result words is a legend only when it is made of result words alone or
 # its first cell is a label (`Legend`, `Result values`, `Key`): `| AC-1 | login | pass | fail |` is a real
 # row whose fail cell counts. Summary rows (#, Total, Legend) never count.
+# R3 minor: a markdown-escaped pipe (`\|`) is part of its cell, and a row whose cell count differs from the
+# header's (a raw pipe in a criterion, a short row) is read like a headerless one, so column alignment is never
+# needed to see an exact fail / not-run cell. A fail under another header column (Notes) is not a result.
 read -r fail_count not_run_count < <(awk -F'|' '
   function trim(x) { x = tolower(x); gsub(/^[ \t\r]+|[ \t\r]+$/, "", x); return x }
+  function lastcell(   n) { n = NF; if (trim($NF) == "") n--; return n }
   function isword(c) { return c == "fail" || c == "failed" || c == "pass" || c == "passed" || c ~ /^not[-_ ]?run$/ }
+  { gsub(/\\\|/, "\001") }
   !/^[[:space:]]*\|/ { delete cols; ncols = 0 }
   /^[[:space:]]*\|/ {
     first = trim($2)
     if (first == "#" || first == "total" || first == "legend" || first == "summary") {
-      for (i = 2; i <= NF; i++) { c = trim($i); if ((c == "result" || c == "status") && !(i in cols)) { cols[i] = 1; ncols++ } }
+      for (i = 2; i <= NF; i++) { c = trim($i); if ((c == "result" || c == "status") && !(i in cols)) { cols[i] = 1; ncols++; hl = lastcell() } }
       next
     }
     hdr = 0
     if (ncols == 0) {
-      for (i = 2; i <= NF; i++) { c = trim($i); if (c == "result" || c == "status") { cols[i] = 1; ncols++; hdr = 1 } }
+      for (i = 2; i <= NF; i++) { c = trim($i); if (c == "result" || c == "status") { cols[i] = 1; ncols++; hdr = 1; hl = lastcell() } }
     }
     if (hdr) next
     fail = 0; nr = 0; words = 0; other = 0; nw = 0
-    if (ncols > 0) {
+    if (ncols > 0 && lastcell() == hl) {
       for (i in cols) {
         c = trim($i)
         if (c == "fail" || c == "failed") fail = 1
