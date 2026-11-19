@@ -86,13 +86,15 @@ run_stop '{"hook_event_name":"SubagentStop"}'
 assert_file_absent "R2-22: SubagentStop clears a stale coalesce file" "$SD/stop-coalesce-block"
 
 # ---- R2-36: agent-written source with an empty state --------------------------------
+# the trace (hooks/lib/agent-writes.sh): a header with the session start, then what the agent wrote
+mark() { printf '#%s\nf%s/src/app.py\n' "$(cat "$SESSION_FILE")" "$EC_PROJ" >"$SD/files-written"; }
 reset
 : >"$SD/state"
 mkdir -p "$EC_PROJ/src"
 printf 'a\n' >"$EC_PROJ/src/app.py"
 run_stop
 assert_eq "R2-36: user's own pending src edits, no agent writes: allowed" "0:" "$TL_STATUS:$TL_OUT"
-: >"$SD/files-written"
+mark
 run_stop
 assert_contains "R2-36: agent wrote src this session, no skills: planning floor blocks" "$(reason)" "missing required skills"
 rm -f "$EC_PROJ/src/app.py"
@@ -106,10 +108,10 @@ assert_eq "R2-36: excluded test paths do not count as source" "0:" "$TL_STATUS:$
 rm -rf "$EC_PROJ/src"
 mkdir -p "$EC_PROJ/src"
 printf 'a\n' >"$EC_PROJ/src/app.py"
-touch -t 202001010000 "$SD/files-written"
+printf '#1\nf%s/src/app.py\n' "$EC_PROJ" >"$SD/files-written"
 run_stop
-assert_eq "R2-36: a marker older than the session start is ignored" "0:" "$TL_STATUS:$TL_OUT"
-: >"$SD/files-written"
+assert_eq "R2-36: a trace from another session is ignored" "0:" "$TL_STATUS:$TL_OUT"
+mark
 rm -f "$SESSION_FILE"
 run_stop
 assert_eq "R2-36: unknown session start: marker not trusted" "0:" "$TL_STATUS:$TL_OUT"
@@ -118,7 +120,7 @@ run_stop
 assert_eq "R2-36: non-numeric session start: marker not trusted" "0:" "$TL_STATUS:$TL_OUT"
 ec_cfg '{"config_version":"0.40.0","sb_initiated":true,"project":{"src_pattern":".*","src_exclude_pattern":"$(x)"},"skills":{}}'
 date +%s >"$SESSION_FILE"
-: >"$SD/files-written"
+mark
 run_stop
 assert_contains "R2-36: invalid src_pattern falls back to /src/" "$(reason)" "missing required skills"
 reset
@@ -128,7 +130,7 @@ unset SILVER_BULLET_SESSION_START_FILE
 date +%s >"$SD/session-start-time"
 mkdir -p "$EC_PROJ/src"
 printf 'a\n' >"$EC_PROJ/src/app.py"
-: >"$SD/files-written"
+printf '#%s\nf%s/src/app.py\n' "$(cat "$SD/session-start-time")" "$EC_PROJ" >"$SD/files-written"
 run_stop
 assert_contains "R2-36: default session-start-time file is honoured" "$(reason)" "missing required skills"
 rm -f "$SD/session-start-time"
@@ -186,11 +188,12 @@ ec_cfg "{\"config_version\":\"0.40.0\",\"sb_initiated\":true,\"state\":{\"trivia
 run_stop
 assert_eq "R3-02: a state-scoped file named trivial is honoured" "0:" "$TL_STATUS:$TL_OUT"
 # trivial-file-clear leaves the files-written trace even when it cannot be refreshed
+WPAY='{"hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"src/app.py","content":"x"}}'
 mkdir "$SD/files-written"
-tl_run_stdin '{}' bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_REPO_ROOT/hooks/trivial-file-clear.sh"
+tl_run_stdin "$WPAY" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_REPO_ROOT/hooks/trivial-file-clear.sh"
 assert_eq "R2-36: an unwritable marker is tolerated" 0 "$TL_STATUS"
 rmdir "$SD/files-written"
-tl_run_stdin '{}' bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_REPO_ROOT/hooks/trivial-file-clear.sh"
+tl_run_stdin "$WPAY" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_REPO_ROOT/hooks/trivial-file-clear.sh"
 assert_file_exists "R2-36: Write/Edit leaves the files-written marker" "$SD/files-written"
 reset
 

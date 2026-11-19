@@ -436,31 +436,23 @@ if [[ -f "$state_file" ]]; then
   state_contents=$(sb_integrity_state_contents "$state_file")
 fi
 
-# R2-36: true when this session's agent wrote a file (trivial-file-clear.sh leaves the
-# `files-written` marker after every Write/Edit) AND a still-dirty path is project source.
-# A chat-only session over the user's own pending edits stays allowed.
+# R2-36: true when this session's agent wrote a file that can be under the project's source (trivial-file-clear.sh
+# records what every Write/Edit and shell write touched, hooks/lib/agent-writes.sh) AND a still-dirty path is
+# project source. A chat-only session over the user's own pending edits stays allowed, also when the agent wrote
+# scratch files elsewhere. The source pattern and exclusions are the ones the other gates use (sb_pf_src_load).
 sb_stop_agent_wrote_source() {
-  local marker="${SB_STATE_DIR}/files-written" epoch="" src_pattern src_exclude line path
-  [[ -f "$marker" && ! -L "$marker" && -n "$sb_dirty_filtered" ]] || return 1
-  if [[ -n "${SILVER_BULLET_SESSION_START_FILE:-}" && -f "${SILVER_BULLET_SESSION_START_FILE}" ]]; then
-    epoch=$(cat "${SILVER_BULLET_SESSION_START_FILE}" 2>/dev/null)
-  elif [[ -f "${SB_STATE_DIR}/session-start-time" ]]; then
-    epoch=$(cat "${SB_STATE_DIR}/session-start-time" 2>/dev/null)
-  fi
-  [[ "$epoch" =~ ^[0-9]+$ ]] || return 1
-  (( $(sb_stop_mtime "$marker") >= epoch )) || return 1
-  src_pattern=$(sb_iv_jq -r '.project.src_pattern // "/src/"' 2>/dev/null)
-  if ! grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$' <<<"$src_pattern" || grep -qE '^\.\*$|^\.\+$|^/$|^$' <<<"$src_pattern"; then
-    src_pattern="/src/"
-  fi
-  src_exclude=$(sb_iv_jq -r '.project.src_exclude_pattern // ""' 2>/dev/null)
-  grep -qE '^[a-zA-Z0-9/_.|()\\-]*$' <<<"$src_exclude" || src_exclude=""
+  local root line path
+  [[ -n "$sb_dirty_filtered" && -f "${SB_STATE_DIR}/files-written" ]] || return 1
+  root="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)" || return 1
+  source "$lib_dir/planning-floor.sh"
+  source "$lib_dir/agent-writes.sh"
+  sb_pf_src_load "$root"
   while IFS= read -r line; do
-    path="/${line:3}"
+    path="${line:3}"
     path="${path##* -> }"
-    grep -qE "$src_pattern" <<<"$path" || continue
-    [[ -n "$src_exclude" ]] && grep -qE "$src_exclude" <<<"$path" && continue
-    return 0
+    sb_pf_src_in_scope "$root/$path" "$root" || continue
+    sb_aw_wrote_source "$root" "${SB_STATE_DIR}" && return 0
+    return 1
   done <<<"$sb_dirty_filtered"
   return 1
 }

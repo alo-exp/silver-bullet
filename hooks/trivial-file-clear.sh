@@ -15,21 +15,19 @@ if [[ -f "$_sb_runtime_paths_dir/sb-project-gate.sh" ]]; then
   sb_project_active_or_exit
 fi
 
-# Edit/Write tools always mean a file write. A shell call (R2-36: `echo x > src/app.js` is a write
-# the Edit gates never see) counts only when the F2 classifier lists a path the command writes.
-if [[ -f "$_sb_runtime_paths_dir/shell-analysis.sh" ]]; then
-  # shellcheck source=lib/shell-analysis.sh
-  source "$_sb_runtime_paths_dir/shell-analysis.sh"
-  sb_tool_input_load "$(cat 2>/dev/null)"
-  if [[ "${SB_TI_STATUS:-}" == "ok" && "${SB_TI_TOOL_KIND:-}" == "shell" && -z "${SB_SA_WRITE_PATHS:-}" ]]; then
-    exit 0
-  fi
+# R2-36: record WHAT this call wrote (hooks/lib/agent-writes.sh), so the Stop planning floor can tell the agent's
+# own source edits from the user's pending changes. A shell call counts only when the analysis lists a path it
+# writes; the file tools always write. The legacy trivial marker is cleared by any write, wherever it lands.
+# shellcheck source=lib/shell-analysis.sh
+source "$_sb_runtime_paths_dir/shell-analysis.sh"
+# shellcheck source=lib/plain-read-only.sh
+source "$_sb_runtime_paths_dir/plain-read-only.sh"
+# shellcheck source=lib/agent-writes.sh
+source "$_sb_runtime_paths_dir/agent-writes.sh"
+_tfc_input="$(cat 2>/dev/null || true)"
+_tfc_entries="$(sb_aw_entries "$_tfc_input")"
+if [[ -n "$_tfc_entries" ]]; then
+  rm -f -- "${SB_RUNTIME_STATE_DIR}/trivial"
+  sb_aw_record "${SB_RUNTIME_STATE_DIR}" "$_tfc_entries"
 fi
-
-rm -f -- "${SB_RUNTIME_STATE_DIR}/trivial"
-
-# R2-36: leave a hook-written trace that the agent itself wrote a file this session, so the
-# Stop planning floor can tell the agent's edits from the user's own pending changes.
-if [[ -d "${SB_RUNTIME_STATE_DIR}" && ! -L "${SB_RUNTIME_STATE_DIR}/files-written" ]]; then
-  : >"${SB_RUNTIME_STATE_DIR}/files-written" 2>/dev/null || true
-fi
+exit 0
