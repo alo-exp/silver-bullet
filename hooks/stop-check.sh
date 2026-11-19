@@ -443,7 +443,7 @@ fi
 sb_stop_agent_wrote_source() {
   local root line path
   [[ -n "$sb_dirty_filtered" && -f "${SB_STATE_DIR}/files-written" ]] || return 1
-  root="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)" || return 1
+  root="$(git -C "$PWD" rev-parse --show-toplevel)"
   source "$lib_dir/planning-floor.sh"
   source "$lib_dir/agent-writes.sh"
   sb_pf_src_load "$root"

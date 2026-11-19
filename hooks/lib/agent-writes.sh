@@ -28,25 +28,22 @@
 SB_AW_MAX=500
 
 sb_aw_session_epoch() {
-  local sd="${1:-}" epoch=""
-  if [[ -n "${SILVER_BULLET_SESSION_START_FILE:-}" && -f "${SILVER_BULLET_SESSION_START_FILE}" ]]; then
-    epoch="$(cat "${SILVER_BULLET_SESSION_START_FILE}" 2>/dev/null)" || epoch=""
-  elif [[ -f "$sd/session-start-time" ]]; then
-    epoch="$(cat "$sd/session-start-time" 2>/dev/null)" || epoch=""
-  fi
-  [[ "$epoch" =~ ^[0-9]+$ ]] && printf '%s' "$epoch"
+  local sd="${1:-}" file="${SILVER_BULLET_SESSION_START_FILE:-}" epoch=""
+  [[ -n "$file" && -f "$file" ]] || file="$sd/session-start-time"
+  [[ ! -f "$file" ]] || epoch="$(<"$file")"
+  [[ ! "$epoch" =~ ^[0-9]+$ ]] || printf '%s' "$epoch"
   return 0
 }
 
 # _sb_aw_path_entries KIND PATH LOGICAL: the entries of one written path, in both spellings
 _sb_aw_path_entries() {
   local kind="$1" path="$2" logical="${3:-}" canon
-  canon="$(sb_canonical_path "$path" "$PWD" 2>/dev/null)" || canon=""
-  [[ -n "$canon" ]] || canon="$(sb_path_normalize "$path" "$PWD" 2>/dev/null)" || canon="$path"
+  # the physical spelling; a path that cannot be resolved (a symlink loop) is taken lexically
+  canon="$(sb_canonical_path "$path" "$PWD" 2>/dev/null || sb_path_normalize "$path" "$PWD")"
   printf '%s%s\n' "$kind" "$canon"
-  if [[ -n "$logical" && "$logical" != "$path" ]]; then
-    logical="$(sb_path_normalize "$logical" "$PWD" 2>/dev/null)" || logical=""
-    [[ -z "$logical" || "$logical" == "$canon" ]] || printf '%s%s\n' "$kind" "$logical"
+  if [[ -n "$logical" ]]; then
+    logical="$(sb_path_normalize "$logical" "$PWD")"
+    [[ "$logical" == "$canon" ]] || printf '%s%s\n' "$kind" "$logical"
   fi
 }
 
@@ -62,13 +59,18 @@ sb_aw_entries() {
     [(.tool_name // ""), (.cwd // ""), (.tool_input | objects | .file_path // ""), (.tool_input | objects | .command // .cmd // "")]
     | map(strings + "\u0000") | add // ""' 2>/dev/null) || true
   case "$tool" in
+    "")
+      # no tool name (an empty or unreadable payload): what was written cannot be known
+      printf '*\n'
+      return 0
+      ;;
     Edit | Write | MultiEdit)
       # a plain file tool needs no shell analysis: skip starting python3
       if [[ -z "$fp" ]]; then
         printf '*\n'
         return 0
       fi
-      ( [[ -z "$cwd" ]] || cd "$cwd" 2>/dev/null; _sb_aw_path_entries f "$fp" )
+      ( cd "${cwd:-.}" 2>/dev/null; _sb_aw_path_entries f "$fp" )
       return 0
       ;;
     Bash | exec_command)
@@ -87,7 +89,6 @@ sb_aw_entries() {
         return 0
       fi
       while IFS= read -r path; do
-        [[ -n "$path" ]] || continue
         kind=f
         case "$path" in *'$'* | *'`'*) kind=d ;; esac
         _sb_aw_path_entries "$kind" "$path" ""
@@ -102,13 +103,13 @@ sb_aw_entries() {
   case "${SB_TI_TOOL_KIND:-}" in
     shell)
       while IFS=$'\t' read -r scope dyn path logical; do
-        [[ -n "$path" ]] || continue
         kind=f
         [[ "$scope" == tree ]] && kind=t
         [[ "$dyn" == true ]] && kind=d
         _sb_aw_path_entries "$kind" "$path" "$logical"
       done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '
         .writes[]? | ., (.alts[]? | . + {scope: "path"})
+        | select((.path // "") != "")
         | [(.scope // "path"), (.dynamic // false | tostring), (.path // ""), (.lpath // "")] | @tsv' 2>/dev/null)
       ;;
     *)
@@ -131,12 +132,12 @@ sb_aw_record() {
   [[ -d "$sd" && ! -L "$marker" && ! -d "$marker" && -n "$entries" ]] || return 0
   header="#$(sb_aw_session_epoch "$sd")"
   content=""
-  [[ ! -f "$marker" ]] || content="$(<"$marker")" || content=""
+  [[ ! -f "$marker" ]] || content="$(<"$marker")"
   if [[ "${content%%$'\n'*}" != "$header" ]]; then
     # another session's record (or none): start this session's with a rename, so a reader never sees a torn file
-    tmp="$(mktemp "$sd/.files-written.XXXXXX")" || return 0
+    tmp="$(mktemp "$sd/.files-written.XXXXXX")"
     printf '%s\n' "$header" >"$tmp"
-    mv -f -- "$tmp" "$marker" || { rm -f -- "$tmp"; return 0; }
+    mv -f -- "$tmp" "$marker"
     content="$header"
   fi
   n="${content//[!$'\n']/}"
@@ -148,7 +149,7 @@ sb_aw_record() {
       entry='*'
       case $'\n'"$content"$'\n' in *$'\n*\n'*) continue ;; esac
     fi
-    printf '%s\n' "$entry" >>"$marker" 2>/dev/null || true
+    printf '%s\n' "$entry" >>"$marker"
     content="${content}"$'\n'"${entry}"
     n=$((n + 1))
   done <<<"$entries"
@@ -156,11 +157,12 @@ sb_aw_record() {
 }
 
 sb_aw_wrote_source() {
-  local root="${1%/}" sd="${2:-}" marker epoch entry body logical_root
+  local root="${1%/}" sd="${2:-}" marker epoch entry body first
   marker="$sd/files-written"
   [[ -f "$marker" && ! -L "$marker" && -n "$root" ]] || return 1
   epoch="$(sb_aw_session_epoch "$sd")"
-  [[ -n "$epoch" && "$(head -n 1 "$marker" 2>/dev/null)" == "#${epoch}" ]] || return 1
+  first="$(sed -n 1p "$marker")"
+  [[ -n "$epoch" && "$first" == "#${epoch}" ]] || return 1
   while IFS= read -r entry; do
     body="${entry:1}"
     case "$entry" in
