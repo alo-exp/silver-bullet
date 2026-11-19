@@ -339,6 +339,17 @@ class ReadOnlyAndWritesTest(Base):
             with self.subTest(cmd=cmd):
                 self.assertEqual(self.writes(cmd), sorted(self.p(e) for e in expected))
 
+    def test_an_interpreter_asked_only_for_its_version_runs_no_program(self):
+        for cmd in ("node --version", "node -v", "python3 -V", "python --version", "perl -v", "ruby -v", "php -v",
+                    "lua -v", "node --help", "python3 -h", "bash --version", "zsh --help"):
+            with self.subTest(cmd=cmd):
+                res = self.run_(cmd)
+                self.assertEqual((res["opaque_writers"], res["opaque_reasons"], res["read_only"]), ([], [], True))
+        for cmd in ("python3 script.py", "node -v x.js", "python3 -c 'print(1)'", "bash"):
+            with self.subTest(cmd=cmd):
+                res = self.run_(cmd)
+                self.assertTrue(res["opaque_writers"] or res["opaque_reasons"])
+
     def test_tree_scope_writes_are_not_legacy_paths(self):
         for cmd in ("tar -xf a.tar", "bsdtar -xf a.tar", "gtar xf a.tar", "unzip x.zip", "git reset --hard", "git stash pop", "git merge x",
                     "patch -p1", "git clean -f", "git apply"):

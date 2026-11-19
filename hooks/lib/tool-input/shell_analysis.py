@@ -1837,6 +1837,14 @@ _NODE_VALUE_LONG = {"--require", "--import", "--loader", "--experimental-loader"
                     "--conditions", "--title"}
 
 
+_INFO_FLAGS = frozenset(("-v", "-V", "--version", "-version", "-h", "-help", "--help"))
+
+
+def _only_info_flags(args):
+    """True when every argument is a version/help flag: the program prints and exits without running code."""
+    return bool(args) and all(_lit(a) in _INFO_FLAGS for a in args)
+
+
 def _interpreter_kind(name):
     for prefix, kind in (("python", "python"), ("pypy", "python"), ("node", "node"), ("ruby", "ruby"),
                          ("perl", "perl"), ("php", "php")):
@@ -3468,6 +3476,8 @@ class _Analysis:
 
     def h_shell(self, argv, env, prefix, stdin):
         args = argv[1:]
+        if _only_info_flags(args):  # bash --version: no program runs
+            return None
         i, command_mode, stdin_mode = 0, False, False
         while i < len(args):
             token = _lit(args[i])
@@ -3531,6 +3541,8 @@ class _Analysis:
         kind = _interpreter_kind(os.path.basename(argv[0]))
         code_flags, value_flags, attached_only = _INTERPRETER_FLAGS.get(kind, ("e", "", False))
         args = argv[1:]
+        if _only_info_flags(args):  # node --version, python3 -V: no program runs
+            return None
         codes, module, test, i = [], None, False, 0
         while i < len(args):
             token = _lit(args[i])

@@ -366,6 +366,76 @@ fresh
 run "$TF" "$(jq -cn --arg d "$TMPD/elsewhere" '{hook_event_name:"PostToolUse",tool_name:"Bash",cwd:$d,tool_input:{command:"echo x > out.txt"}}')"
 if stopped; then fail "a plain relative write from that cwd is not source"; else pass "a plain relative write from that cwd is not source"; fi
 
+# ---- r6: everyday read-only commands never count (an allowlist of the reasons that do) ---------------------------------
+for c in 'node --version' 'node -v && npm -v' 'python3 --version' 'python3 -V' 'python --version' 'bash --version' 'zsh --version' 'perl -v' 'ruby -v' 'php -v' 'lua -v' 'node --help' 'python3 -h' \
+  'curl -s https://api.github.com/repos/o/r/pulls' 'curl -sI https://example.com' 'wget -qO- https://example.com/x.json | jq .name' 'gh api graphql -F query=@q.graphql' 'gh api repos/o/r/pulls' 'gh pr list' 'gh pr view 1' \
+  'sed -f s.sed f' 'awk -f p.awk f' 'awk "BEGIN{print 1}"' 'sed -n 1p README.md' 'git log --oneline | head -5' 'git diff HEAD~1 -- src' 'git status --short' 'git show HEAD:src/app.js' \
+  'grep -rn foo src' 'cat src/app.js | wc -l' 'jq . package.json' 'docker ps' 'kubectl get pods' 'make -n' 'npm ls' 'npm test' 'pytest -q' 'cargo test' 'go test ./...' 'ls -la' 'find src -name "*.js"' 'diff a b' 'tree src' 'wc -l src/*.js' 'which node' 'echo hello' 'date' 'env | sort' 'git rev-parse HEAD' 'git branch --show-current' 'npx tsc --noEmit' 'terraform plan' 'uname -a'; do
+  for tool in Bash exec_command; do
+    fresh
+    run "$TF" "$(sbash "$c" "$tool")"
+    if stopped; then fail "everyday read-only command via $tool ($c): Stop must pass"; else pass "everyday read-only command via $tool ($c): Stop passes"; fi
+  done
+done
+# the blocked unknowns stay blocked (positive list): variable program, eval, inline code of every interpreter, stdin programs
+for c in '"$BASH" -c "x"' 'python3 -c "print(1)"' 'node -p "1+1"' 'php -r "echo 1;"' 'ruby -e "1"' 'lua -e "x=1"' 'perl -e "1"' 'sed -e "e echo x" f' 'awk "BEGIN{system(\"touch a\")}"' 'node < prog.js' 'cat p.js | node' 'bash -s' 'eval "$X"'; do
+  fresh
+  run "$TF" "$(sbash "$c")"
+  if stopped; then pass "unknown program ($c): counted"; else fail "unknown program ($c): must count"; fi
+done
+
+# ---- r6: rotation with earlier traces present never loses an append ----------------------------------------------------
+A="$(jq -cn --arg p "$EC_PROJ/src/a.js" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$p}}')"
+B="$(jq -cn --arg p "$TMPD/zz" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$p}}')"
+lost=0
+for t in $(seq 100); do
+  fresh
+  for e in 1 2 3 4 5 6 7 8; do printf 'f/old%s\n' "$e" >"$MARKBASE.$e"; done
+  (cd "$EC_PROJ" && printf '%s' "$A" | bash "$TF" >/dev/null 2>&1) & p1=$!
+  (cd "$EC_PROJ" && printf '%s' "$B" | bash "$TF" >/dev/null 2>&1) & p2=$!
+  (cd "$EC_PROJ" && printf '%s' "$B" | bash "$TF" >/dev/null 2>&1) & p3=$!
+  wait "$p1" "$p2" "$p3"
+  grep -q "src/a.js" "$MARK" || lost=$((lost + 1))
+done
+assert_eq "100 trials with 8 earlier traces: no src entry lost" 0 "$lost"
+
+# ---- r6: a glob spelling of the state directory is an unknown write ------------------------------------------------------
+fresh
+run "$TF" "$(swrite "$EC_PROJ/src/app.js")"
+rm -f "$MARK"
+run "$TF" "$(sbash 'rm ~/.c*/.s*/files-written*')"
+if stopped; then pass "an erase of the trace by a glob spelling of the state dir: unknown, the floor applies"; else fail "glob erase of the trace"; fi
+SDH="${SD%/*}"
+fresh
+run "$TF" "$(sbash "rm $SDH/.s*/files-w*")"
+if stopped; then pass "a glob inside the state dir's parent that can match it counts"; else fail "glob into the state dir"; fi
+fresh
+run "$TF" "$(sbash "rm $SDH/.q*/files-w*")"
+if stopped; then fail "a glob that cannot match the state dir is not an erase"; else pass "a glob that cannot match the state dir is not an erase"; fi
+fresh
+run "$TF" "$(sbash 'rm /tmp/*.log')"
+if stopped; then fail "/tmp/*.log cannot reach the state dir"; else pass "/tmp/*.log cannot reach the state dir"; fi
+
+# ---- r6: local MCP tools use the same path keys as the PreToolUse write guard -------------------------------------------
+for pl in '{pathInProject:$p,text:"x"}' '{filename:$p,content:"x"}' '{file:$p}' '{uri:$p}' '{edits:[{path:$p,newText:"x"}]}' '{params:{target_file:$p}}'; do
+  fresh
+  run "$TF" "$(jq -cn --arg p "$EC_PROJ/src/m.js" "{hook_event_name:\"PostToolUse\",tool_name:\"mcp__jetbrains__replace_file_text_by_path\",tool_input:$pl}")"
+  if stopped; then pass "local MCP write ($pl): the planning floor applies"; else fail "local MCP write ($pl) must count"; fi
+done
+fresh
+run "$TF" "$(jq -cn --arg p "$EC_PROJ/src/m.js" '{hook_event_name:"PostToolUse",tool_name:"mcp__localGoogleSync__write_file",tool_input:{path:$p}}')"
+if stopped; then pass "a local server whose name merely contains Google is not remote"; else fail "mcp__localGoogleSync__ is local"; fi
+fresh
+run "$TF" "$(jq -cn --arg p "$EC_PROJ/src/m.js" '{hook_event_name:"PostToolUse",tool_name:"mcp__fs__write_file",tool_input:{content:$p,body:$p}}')"
+if stopped; then fail "content and body are never paths"; else pass "content and body are never paths"; fi
+# a single-line notebook cell: the newline filter alone cannot make this pass; only notebook_path is read
+fresh
+run "$TF" "$(jq -cn --arg p "$EC_PROJ/analysis.ipynb" '{hook_event_name:"PostToolUse",tool_name:"NotebookEdit",tool_input:{notebook_path:$p,new_source:"* accuracy improved"}}')"
+if stopped; then fail "a single-line notebook cell is not a path"; else pass "a single-line notebook cell is not a path"; fi
+fresh
+run "$TF" "$(jq -cn --arg p "$EC_PROJ/docs/n.ipynb" '{hook_event_name:"PostToolUse",tool_name:"NotebookEdit",tool_input:{notebook_path:$p,new_source:"what is the mean?"}}')"
+if stopped; then fail "a single-line question cell is not a path"; else pass "a single-line question cell is not a path"; fi
+
 # ---- concurrent recorders never lose an entry (header-less append-only trace) --------------------------------------
 A="$(jq -cn --arg p "$EC_PROJ/src/a.js" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$p}}')"
 B="$(jq -cn --arg p "$TMPD/zz" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$p}}')"
