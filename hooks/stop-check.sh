@@ -441,11 +441,14 @@ fi
 # project source. A chat-only session over the user's own pending edits stays allowed, also when the agent wrote
 # scratch files elsewhere. The source pattern and exclusions are the ones the other gates use (sb_pf_src_load).
 sb_stop_agent_wrote_source() {
-  local root line path
-  [[ -n "$sb_dirty_filtered" && ( -e "${SB_STATE_DIR}/files-written" || -L "${SB_STATE_DIR}/files-written" ) ]] || return 1
+  local root line path marker
+  [[ -n "$sb_dirty_filtered" ]] || return 1
   root="$(git -C "$PWD" rev-parse --show-toplevel)"
   source "$lib_dir/planning-floor.sh"
   source "$lib_dir/agent-writes.sh"
+  # nothing was written (no trace at all, not even a planted link) or the session start is unknown
+  marker="$(sb_aw_trace_file "${SB_STATE_DIR}")"
+  [[ -e "$marker" || -L "$marker" ]] || return 1
   sb_pf_src_load "$root"
   while IFS= read -r line; do
     path="${line:3}"

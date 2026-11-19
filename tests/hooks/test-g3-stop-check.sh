@@ -17,7 +17,7 @@ run_stop() { # [json]
   tl_run_stdin "${1:-{\"hook_event_name\":\"Stop\"\}}" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$HOOK"
 }
 reset() {
-  rm -f "$SD/orchestrator.json" "$SD/branch" "$SD/stall-block" "$SD/files-written" "$SD/trivial" \
+  rm -f "$SD/orchestrator.json" "$SD/branch" "$SD/stall-block" "$SD"/files-written* "$SD/trivial" \
     "$SD/stop-loop-release.log" "$SD/e2e-matrix-routing-row"
   git -C "$EC_PROJ" reset -q --hard
   git -C "$EC_PROJ" clean -qfd
@@ -86,8 +86,8 @@ run_stop '{"hook_event_name":"SubagentStop"}'
 assert_file_absent "R2-22: SubagentStop clears a stale coalesce file" "$SD/stop-coalesce-block"
 
 # ---- R2-36: agent-written source with an empty state --------------------------------
-# the trace (hooks/lib/agent-writes.sh): one line per write, `<session start><TAB><entry>`
-mark() { printf '%s\tf%s/src/app.py\n' "$(cat "$SESSION_FILE")" "$EC_PROJ" >"$SD/files-written"; }
+# the trace (hooks/lib/agent-writes.sh): one entry per line in files-written.<session start>
+mark() { printf 'f%s/src/app.py\n' "$EC_PROJ" >"$SD/files-written.$(cat "$SESSION_FILE")"; }
 reset
 : >"$SD/state"
 mkdir -p "$EC_PROJ/src"
@@ -108,7 +108,7 @@ assert_eq "R2-36: excluded test paths do not count as source" "0:" "$TL_STATUS:$
 rm -rf "$EC_PROJ/src"
 mkdir -p "$EC_PROJ/src"
 printf 'a\n' >"$EC_PROJ/src/app.py"
-printf '1\tf%s/src/app.py\n' "$EC_PROJ" >"$SD/files-written"
+printf 'f%s/src/app.py\n' "$EC_PROJ" >"$SD/files-written.1"
 run_stop
 assert_eq "R2-36: a trace from another session is ignored" "0:" "$TL_STATUS:$TL_OUT"
 mark
@@ -130,7 +130,7 @@ unset SILVER_BULLET_SESSION_START_FILE
 date +%s >"$SD/session-start-time"
 mkdir -p "$EC_PROJ/src"
 printf 'a\n' >"$EC_PROJ/src/app.py"
-printf '%s\tf%s/src/app.py\n' "$(cat "$SD/session-start-time")" "$EC_PROJ" >"$SD/files-written"
+printf 'f%s/src/app.py\n' "$EC_PROJ" >"$SD/files-written.$(cat "$SD/session-start-time")"
 run_stop
 assert_contains "R2-36: default session-start-time file is honoured" "$(reason)" "missing required skills"
 rm -f "$SD/session-start-time"
@@ -189,12 +189,12 @@ run_stop
 assert_eq "R3-02: a state-scoped file named trivial is honoured" "0:" "$TL_STATUS:$TL_OUT"
 # trivial-file-clear leaves the files-written trace even when it cannot be refreshed
 WPAY='{"hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":"src/app.py","content":"x"}}'
-mkdir "$SD/files-written"
+mkdir "$SD/files-written.$(cat "$SESSION_FILE")"
 tl_run_stdin "$WPAY" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_REPO_ROOT/hooks/trivial-file-clear.sh"
 assert_eq "R2-36: an unwritable marker is tolerated" 0 "$TL_STATUS"
-rmdir "$SD/files-written"
+rmdir "$SD/files-written.$(cat "$SESSION_FILE")"
 tl_run_stdin "$WPAY" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_REPO_ROOT/hooks/trivial-file-clear.sh"
-assert_file_exists "R2-36: Write/Edit leaves the files-written marker" "$SD/files-written"
+assert_file_exists "R2-36: Write/Edit leaves the files-written marker" "$SD/files-written.$(cat "$SESSION_FILE")"
 reset
 
 # ---- R3-02 hand-off helpers (shared with the delivery gates) ------------------------------------------

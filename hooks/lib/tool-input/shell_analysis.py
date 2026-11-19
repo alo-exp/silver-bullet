@@ -4491,7 +4491,7 @@ _OPERAND_WRITERS = {
     "shred": ("ns", ("--iterations", "--size", "--random-source")),
     "touch": ("rtd", ("--reference", "--date")), "mkdir": ("m", ("--mode", "--context")),
     "chmod": ("", ("--reference",)), "chown": ("", ("--reference", "--from")), "chgrp": ("", ("--reference",)),
-    "truncate": ("sr", ("--size", "--reference")), "mkfifo": ("m", ("--mode",)), "chattr": ("pv", ()),
+    "truncate": ("sr", ("--size", "--reference")), "mkfifo": ("m", ("--mode",)), "mknod": ("m", ("--mode",)), "chattr": ("pv", ()),
 }
 _HANDLERS = {}
 for _names, _handler in (
@@ -4513,7 +4513,7 @@ _RUNNERS = {"script": ("cIOBETm", ("--command", "--log-in", "--log-out", "--log-
                                    "--whitelist-environment"))}
 _HANDLERS.update({
     "echo": "echo", "eval": "eval", "source": "source", ".": "source", "trap": "trap", "command": "command",
-    "env": "env", "rtk": "rtk", "xargs": "xargs", "dd": "dd", "curl": "curl", "wget": "wget", "tar": "tar",
+    "env": "env", "rtk": "rtk", "xargs": "xargs", "dd": "dd", "curl": "curl", "wget": "wget", "tar": "tar", "bsdtar": "tar", "gtar": "tar",
     "glab": "forge", "tea": "forge", "lab": "forge", "jj": "forge", "sl": "forge",
     "ssh": "ssh", "sftp": "ssh", "http": "httpie", "https": "httpie", "xh": "httpie", "xhs": "httpie", "script": "runner", "su": "runner", "runuser": "runner", "unzip": "unzip", "patch": "patch", "split": "split", "git": "git", "gh": "gh", "hub": "hub",
 })

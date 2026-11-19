@@ -326,7 +326,7 @@ class ReadOnlyAndWritesTest(Base):
             ("curl -O https://h/a/b.txt?x=1", ["b.txt"]), ("curl --output-dir out -O https://h/c.txt", ["out/c.txt"]),
             ("wget https://h/f.tgz", ["f.tgz"]), ("wget -P dl https://h/", ["dl/index.html"]),
             ("wget --spider https://h/x", []), ("wget -o log https://h/x", ["log", "x"]),
-            ("tar xzf a.tgz", []), ("tar -czf out.tgz src", ["out.tgz"]), ("tar -tf a.tar", []),
+            ("tar xzf a.tgz", []), ("mknod fifo p", ["fifo", "p"]), ("bsdtar -tf a.tar", []), ("tar -czf out.tgz src", ["out.tgz"]), ("tar -tf a.tar", []),
             ("unzip x.zip", []), ("unzip -l x.zip", []), ("gzip -c f > f.gz", ["f.gz"]),
             ("patch --dry-run -p1 < p.diff", []), ("patch -d sub -o out.txt", ["sub/out.txt"]),
             ("patch -p1 -i p.diff", ["src/x.py"]), ("patch -p1 -i big.diff", []), ('patch -i "$P"', []),
@@ -340,7 +340,7 @@ class ReadOnlyAndWritesTest(Base):
                 self.assertEqual(self.writes(cmd), sorted(self.p(e) for e in expected))
 
     def test_tree_scope_writes_are_not_legacy_paths(self):
-        for cmd in ("tar -xf a.tar", "unzip x.zip", "git reset --hard", "git stash pop", "git merge x",
+        for cmd in ("tar -xf a.tar", "bsdtar -xf a.tar", "gtar xf a.tar", "unzip x.zip", "git reset --hard", "git stash pop", "git merge x",
                     "patch -p1", "git clean -f", "git apply"):
             with self.subTest(cmd=cmd):
                 res = self.run_(cmd)

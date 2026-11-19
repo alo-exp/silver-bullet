@@ -91,16 +91,16 @@ assert_not_contains "planned session: not blocked" "$TL_OUT" '"decision"'
 git -C "$EC_PROJ" checkout -q feature/test; rm -f "$SD/branch" "$EC_PROJ/dirty.txt"
 
 # ---- #5 R2-36: a source file written from Bash counts like an Edit --------------------------------------
-rm -f "$SD/files-written"; : >"$SD/state"
+rm -f "$SD"/files-written*; : >"$SD/state"
 mkdir -p "$EC_PROJ/src"
 printf 'evil\n' >"$EC_PROJ/src/app.js"
 run "$TF" "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Bash",tool_input:{command:"echo evil > src/app.js"}}')"
-assert_file_exists "Bash redirect into src leaves the files-written marker" "$SD/files-written"
+assert_eq "Bash redirect into src leaves a files-written trace" yes "$(compgen -G "$SD/files-written*" >/dev/null && echo yes || echo no)"
 run "$SC" '{"hook_event_name":"Stop"}'
 assert_contains "empty state + Bash-written source: planning floor blocks" "$(reason)" "missing required skills"
-rm -f "$SD/files-written"
+rm -f "$SD"/files-written*
 run "$TF" "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Bash",tool_input:{command:"git status --short && ls src"}}')"
-assert_file_absent "read-only Bash leaves no marker" "$SD/files-written"
+assert_eq "read-only Bash leaves no trace" no "$(compgen -G "$SD/files-written*" >/dev/null && echo yes || echo no)"
 : >"$SD/trivial"
 run "$TF" "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Bash",tool_input:{command:"cat src/app.js"}}')"
 assert_file_exists "read-only Bash keeps the trivial marker" "$SD/trivial"

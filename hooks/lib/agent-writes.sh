@@ -6,23 +6,28 @@
 # unless the agent wrote project source. Only a write that can be under the project's source counts, so
 # `git diff > /tmp/x`, `tee ~/log` or an edit of docs/ never puts a chat-only session behind the planning floor.
 #
-# The record is `${state dir}/files-written`: append-only, one line per entry, `<session start epoch><TAB><entry>`.
-# A line is one O_APPEND write, so concurrent hooks never lose each other's entries, and a reader takes only the
-# lines of the current session (older ones are ignored; a file past 256 KB is rewritten with the current ones).
-#   f<abs path>   a file the agent wrote (resolved path; the logical spelling too when it differs)
+# The record is `${state dir}/files-written.<session start epoch>`: append-only, one entry per line. A line is one
+# O_APPEND write, so concurrent hooks never lose each other's entries, and a live trace is never rewritten. A new
+# session starts a new file (the first recorder of a session removes the regular files of earlier ones), and a
+# trace holds at most SB_AW_MAX entries: past that one `*` is recorded and nothing more (fail closed).
+#   f<abs path>   a file the agent wrote (resolved path; the logical spelling too when it differs); a glob is a pattern
+#   l<abs path>   a file a file tool wrote: the path is literal (`*` and `?` are part of the name, never a pattern)
 #   d<abs path>   a path with an unresolved part ($VAR, `cmd`): the static prefix is kept, the rest can be anything
 #   t<abs path>   a whole tree written at that directory (tar -x, unzip, patch, git apply)
 #   *             a write whose target cannot be known (an unreadable payload or command, an unresolved first path
-#                 component or xargs input, a file tool without a path, more than SB_AW_MAX targets)
+#                 component or xargs input, a dynamic command word such as "$BASH" -c, inline interpreter code
+#                 (python3 -c, node -e, perl -e, a program read from stdin), a file tool without a path, more than
+#                 SB_AW_MAX targets)
 # Paths come from the shell analysis (hooks/lib/shell-analysis.sh), the same source the dev-cycle write guard
 # uses, resolved by hooks/lib/path-canonical.sh. The reader counts a target that IS the project root or an ancestor
 # of it (find . -exec sed -i, git checkout -- ., cp -r x .), a glob that can reach source (expanded against the
 # tree, and any glob whose static directory is the root or an ancestor) and every `d` / `*` entry. The file lives
 # in the state directory, which only hooks may write (the G2 state-tamper guard refuses an agent's write there); it
-# is never written through a symlink, and one that is not a regular file (a planted link or directory) counts as
-# an unknown write: the reader fails closed.
+# is never written through a symlink and never opened when it is not a regular file (a FIFO would block), and one
+# that is not a regular file (a planted link, directory or FIFO) counts as an unknown write: the reader fails closed.
 #
 # API:
+#   sb_aw_trace_file STATE_DIR          the trace file of the current session
 #   sb_aw_session_epoch STATE_DIR       the session start epoch (SILVER_BULLET_SESSION_START_FILE, else
 #                                       STATE_DIR/session-start-time); empty when unknown
 #   sb_aw_entries INPUT                 (needs shell-analysis.sh, plain-read-only.sh) the entries for one PostToolUse
@@ -41,6 +46,12 @@ sb_aw_session_epoch() {
   return 0
 }
 
+sb_aw_trace_file() {
+  local epoch
+  epoch="$(sb_aw_session_epoch "$1")"
+  printf '%s/files-written.%s' "$1" "${epoch:--}"
+}
+
 # _sb_aw_path_entries KIND PATH LOGICAL [BASE]: the entries of one written path (relative to BASE, default $PWD), in both spellings
 _sb_aw_path_entries() {
   local kind="$1" path="$2" logical="${3:-}" base="${4:-$PWD}" canon
@@ -53,17 +64,18 @@ _sb_aw_path_entries() {
   fi
 }
 
-# The file-like fields of a file tool's input (the keys the dev-cycle write guard reads, sb_pf_write_records).
+# The local paths a file tool names, one per line: only real path fields (never cell, body or content text), no
+# value with a newline. TOOL decides the fields: NotebookEdit its notebook_path, the Edit family its file_path, an
+# MCP tool the keys the dev-cycle write guard reads; the tools of a known remote service name no local path.
 _sb_aw_tool_paths() {
-  printf '%s' "$1" | jq -r '
-    .tool_input | objects
-    | ([.file_path, .notebook_path, .path, .filePath, .destination, .source, .target,
-        .from, .to, .old_path, .new_path, .oldPath, .newPath, .src, .dst, .sourcePath,
-        .destinationPath, .relative_path, .relativePath] | .[] | strings),
-      ([.. | objects | to_entries[] | select((.value | type) == "string")
-       | select(.key | test("^(content|text|body|data|old_string|new_string|old_str|new_str|input|command|code|patch|diff)$") | not)
-       | select(.key | test("(path|file|dest|src|source|target|uri|name)"; "i")) | .value] | .[]),
-      ((.file_paths // .paths // []) | arrays | .[] | strings)' 2>/dev/null
+  local tool="$1" input="$2" filter
+  case "$tool" in
+    NotebookEdit) filter='.notebook_path' ;;
+    Edit | Write | MultiEdit) filter='.file_path' ;;
+    mcp__github__* | mcp__gitlab__* | mcp__bitbucket__* | mcp__*Google* | mcp__*Gmail* | mcp__*slack* | mcp__*Slack* | mcp__*notion* | mcp__*linear* | mcp__*Figma* | mcp__*shopify* | mcp__*quickbooks* | mcp__*asana* | mcp__*jira* | mcp__*atlassian*) return 0 ;;
+    *) filter='[.file_path, .notebook_path, .path, .filePath, .destination, .source, .target, .from, .to, .old_path, .new_path, .oldPath, .newPath, .src, .dst, .sourcePath, .destinationPath, .relative_path, .relativePath] | .[], ((.file_paths // .paths // []) | arrays | .[])' ;;
+  esac
+  printf '%s' "$input" | jq -r ".tool_input | objects | ($filter) | strings | select(contains(\"\\n\") | not)" 2>/dev/null
 }
 
 sb_aw_entries() {
@@ -87,8 +99,8 @@ sb_aw_entries() {
       any=false
       while IFS= read -r path; do
         any=true
-        _sb_aw_path_entries f "$path" "" "${cwd:-$PWD}"
-      done < <(_sb_aw_tool_paths "$input")
+        _sb_aw_path_entries l "$path" "" "${cwd:-$PWD}"
+      done < <(_sb_aw_tool_paths "$tool" "$input")
       # a file tool without a path cannot be placed; an MCP tool without one (an API call) writes no local file
       [[ "$any" == true || "$tool" == mcp__* ]] || printf '*\n'
       return 0
@@ -140,6 +152,14 @@ sb_aw_entries() {
         .writes[]? | ., (.alts[]? | . + {scope: "path"})
         | select((.path // "") != "")
         | [(.scope // "path"), (.dynamic // false | tostring), (.path // ""), (.lpath // ""), (.raw // ""), (.cwd_dynamic // false | tostring)] | @tsv' 2>/dev/null)
+      # What the analysis itself marks as unknowable: a dynamic command word ("$BASH" -c ...), eval of computed
+      # text, inline interpreter code, a program read from stdin. A plain script, module or project-task run
+      # ("contents not analysed", "runs ...") is not: it counts only for the paths the analysis names.
+      if printf '%s' "${SB_SA_JSON:-}" | jq -e '
+          ([.opaque_reasons[]? | select(test("contents not analysed") | not)] | length > 0)
+          or ([.opaque_writers[]? | select(.reason | test("^(runs|sources) ") | not)] | length > 0)' >/dev/null 2>&1; then
+        printf '*\n'
+      fi
       ;;
     *)
       # apply_patch and other tools the analysis reads: the paths of the patch, else the file path, from the payload's cwd
@@ -155,28 +175,26 @@ sb_aw_entries() {
 }
 
 sb_aw_record() {
-  local sd="${1:-}" entries="${2:-}" marker pre content entry n tmp
-  marker="$sd/files-written"
-  # never through a link, never into a directory
-  [[ -d "$sd" && ! -L "$marker" && ! -d "$marker" && -n "$entries" ]] || return 0
-  pre="$(sb_aw_session_epoch "$sd")"
-  pre="${pre:--}"$'\t'
+  local sd="${1:-}" entries="${2:-}" marker content entry n base
+  marker="$(sb_aw_trace_file "$sd")"
+  # never through a link, never into (or opening) anything but a regular file: a FIFO would block the hook
+  [[ -d "$sd" && ! -L "$marker" && ( ! -e "$marker" || -f "$marker" ) && -n "$entries" ]] || return 0
   content=""
-  [[ ! -f "$marker" ]] || content="$(<"$marker")"
-  if (( ${#content} > 262144 )); then
-    # keep only this session's lines (an atomic replace; a concurrent append in this instant may be lost)
-    tmp="$(mktemp "$sd/.files-written.XXXXXX")"
-    grep -F -- "$pre" "$marker" >"$tmp" || true
-    mv -f -- "$tmp" "$marker"
+  if [[ -f "$marker" ]]; then
     content="$(<"$marker")"
+  else
+    # the first record of a session: the regular files of earlier sessions' traces go (other names, so no
+    # concurrent appender of this session is affected)
+    base="${marker##*/}"
+    find "$sd" -maxdepth 1 -type f -name 'files-written*' ! -name "$base" -delete
   fi
-  n="$(grep -c -F -- "$pre" <<<"$content" || true)"
+  n="$(printf '%s' "$content" | grep -c . || true)"
   while IFS= read -r entry; do
-    entry="${pre}${entry}"
     case $'\n'"$content"$'\n' in *$'\n'"$entry"$'\n'*) continue ;; esac
     if (( n >= SB_AW_MAX )); then
-      entry="${pre}*"
-      case $'\n'"$content"$'\n' in *$'\n'"$entry"$'\n'*) continue ;; esac
+      # the cap: one `*` says "anything", then nothing more is recorded
+      entry='*'
+      case $'\n'"$content"$'\n' in *$'\n*\n'*) return 0 ;; esac
     fi
     printf '%s\n' "$entry" >>"$marker"
     content="${content}"$'\n'"${entry}"
@@ -189,6 +207,21 @@ sb_aw_record() {
 _sb_aw_covers_root() {
   case "$2/" in "${1%/}"/*) return 0 ;; esac
   return 1
+}
+
+# _sb_aw_glob_reaches GLOB DIR ROOT: the components of GLOB below DIR (an ancestor of ROOT) can match ROOT's own
+# path components in turn (a `**` matches anything)
+_sb_aw_glob_reaches() {
+  local gr="${1#"$2"}" rr="${3#"$2"}" i
+  local -a g r
+  IFS=/ read -ra g <<<"${gr#/}"
+  IFS=/ read -ra r <<<"${rr#/}"
+  for ((i = 0; i < ${#g[@]} && i < ${#r[@]}; i++)); do
+    [[ "${g[i]}" != *'**'* ]] || return 0
+    # shellcheck disable=SC2053  # the glob component is a pattern on purpose
+    [[ "${r[i]}" == ${g[i]} ]] || return 1
+  done
+  return 0
 }
 
 # _sb_aw_entry_source KIND BODY ROOT: this entry can be a write of project source
@@ -205,13 +238,20 @@ _sb_aw_entry_source() {
   esac
   _sb_aw_covers_root "$body" "$root" && return 0
   sb_pf_src_in_scope "$body" "$root" && return 0
+  [[ "$kind" != l ]] || return 1
   case "$body" in
     *[\*\?\[]*)
       # a glob: its static directory reaches source when it is the root or above it; below that, the matches
       # that exist now decide (a glob inside a source directory is already source by name)
       pre="${body%%[\*\?\[]*}"
       pre="${pre%/*}"
-      _sb_aw_covers_root "$pre" "$root" && return 0
+      if _sb_aw_covers_root "$pre" "$root"; then
+        # the root itself or inside it: the glob reaches the tree; above it, only when its components can match the
+        # root's own path (/tmp/*.log cannot lead to /tmp/x/proj)
+        [[ "$pre" != "${root%/}" && "$root/" == "${pre%/}"/* ]] || return 0
+        _sb_aw_glob_reaches "$body" "$pre" "$root" && return 0
+        return 1
+      fi
       while IFS= read -r m; do
         sb_pf_src_in_scope "$m" "$root" && return 0
       done < <(compgen -G "$body" | head -n 1000)
@@ -221,15 +261,13 @@ _sb_aw_entry_source() {
 }
 
 sb_aw_wrote_source() {
-  local root="${1%/}" sd="${2:-}" marker epoch e entry
-  marker="$sd/files-written"
-  # a trace that is not a regular file (a planted link or directory) cannot be read: an unknown write
+  local root="${1%/}" sd="${2:-}" marker entry
+  marker="$(sb_aw_trace_file "$sd")"
+  # a trace that is not a regular file (a planted link, dangling or not, a directory, a FIFO) cannot be read: an
+  # unknown write
   if [[ -L "$marker" || ( -e "$marker" && ! -f "$marker" ) ]]; then return 0; fi
-  [[ -f "$marker" ]] || return 1
-  epoch="$(sb_aw_session_epoch "$sd")"
-  [[ -n "$epoch" ]] || return 1
-  while IFS=$'\t' read -r e entry; do
-    [[ "$e" == "$epoch" ]] || continue
+  [[ -f "$marker" && -n "$(sb_aw_session_epoch "$sd")" ]] || return 1
+  while IFS= read -r entry; do
     [[ "$entry" != '*' ]] || return 0
     _sb_aw_entry_source "${entry:0:1}" "${entry:1}" "$root" && return 0
   done <"$marker"

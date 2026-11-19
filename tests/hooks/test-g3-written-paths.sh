@@ -12,7 +12,8 @@ ec_project
 SD="${SB_RUNTIME_STATE_DIR:?}"
 SC="$TL_REPO_ROOT/hooks/stop-check.sh"
 TF="$TL_REPO_ROOT/hooks/trivial-file-clear.sh"
-MARK="$SD/files-written"
+MARKBASE="$SD/files-written"
+MARK="$MARKBASE.x"
 run() { tl_run_stdin "$2" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$1"; }
 reason() { jq -r '.reason // ""' <<<"$TL_OUT"; }
 sbash() { jq -cn --arg c "$1" --arg t "${2:-Bash}" '{hook_event_name:"PostToolUse",tool_name:$t,tool_input:{command:$c,cmd:$c},tool_response:{}}'; }
@@ -23,8 +24,9 @@ stopped() { run "$SC" "${1:-"{\"hook_event_name\":\"Stop\",\"session_id\":\"s\"}
 SESSION_FILE="$SD/session-start-time"
 export SILVER_BULLET_SESSION_START_FILE="$SESSION_FILE"
 fresh() {
-  rm -f "$MARK" "$SD/trivial" "$SD/state" "$SD/stall-block" "$SD"/.files-written.*
+  rm -rf "$SD"/files-written* "$SD/trivial" "$SD/state" "$SD/stall-block" "$SD"/.files-written.*
   date +%s >"$SESSION_FILE"
+  MARK="$MARKBASE.$(cat "$SESSION_FILE")"
   : >"$SD/state"
 }
 git -C "$EC_PROJ" config user.email a@b; git -C "$EC_PROJ" config user.name n
@@ -152,52 +154,89 @@ if stopped; then pass "a Write without a path: counted as possible source"; else
 # ---- the trace: format, tamper safety, session scoping ----------------------------------------------------------
 fresh
 run "$TF" "$(sbash "echo x > $TMPD/a; echo y > $TMPD/a")"
-assert_eq 'an entry is <session start><TAB>f<path>' "$(cat "$SESSION_FILE")"$'\t'"f$(cd "$TMPD" && pwd -P)/a" "$(head -n1 "$MARK")"
+assert_eq "an entry is f<path>, in the file of the session" "f$(cd "$TMPD" && pwd -P)/a" "$(head -n1 "$MARK")"
 assert_eq "a repeated target is recorded once" 1 "$(grep -c -F "f$(cd "$TMPD" && pwd -P)/a" "$MARK")"
 # a link at the trace path is never written through, and is read as an unknown write (fail closed)
 fresh
-printf '%s\tf%s/docs/a.txt\n' "$(cat "$SESSION_FILE")" "$EC_PROJ" >"$TMPD/target"
+printf 'f%s/docs/a.txt\n' "$EC_PROJ" >"$TMPD/target"
 cp "$TMPD/target" "$TMPD/target.orig"
 ln -s "$TMPD/target" "$MARK"
 run "$TF" "$(sbash 'echo x > src/a.js')"
 assert_eq "a symlinked trace is not written through" "" "$(cmp "$TMPD/target" "$TMPD/target.orig" 2>&1)"
 if stopped; then pass "a symlinked trace counts as an unknown write: Stop applies the floor"; else fail "a symlinked trace fails closed"; fi
-rm -f "$MARK"
+# a dangling link: the recorder leaves it alone, Stop still treats it as a write
+fresh
+ln -s "$TMPD/nowhere" "$MARK"
+run "$TF" "$(sbash 'echo x > src/a.js')"
+assert_file_absent "a dangling symlinked trace is not created through" "$TMPD/nowhere"
+if stopped; then pass "a dangling symlinked trace counts as an unknown write"; else fail "a dangling symlinked trace fails closed"; fi
 fresh
 mkdir "$MARK"
 run "$TF" "$(sbash 'echo x > '"$TMPD"'/a')"
 assert_eq "a trace that is a directory is tolerated by the recorder" 0 "$TL_STATUS"
 if stopped; then pass "a trace that is a directory counts as an unknown write"; else fail "a directory trace fails closed"; fi
-rmdir "$MARK"
-# a trace from an earlier session never counts; this session's lines are appended after it
+# a FIFO at the trace path must not block the recorder (opening it would hang), and counts as an unknown write
 fresh
-printf '1\tf%s/src/app.js\n' "$EC_PROJ" >"$MARK"
+mkfifo "$MARK"
+( cd "$EC_PROJ" && printf '%s' "$(sbash 'echo x > src/a.js')" | bash "$TF" >/dev/null 2>&1 ) & fp=$!
+waited=0; while kill -0 "$fp" 2>/dev/null && (( waited < 100 )); do sleep 0.1; waited=$((waited + 1)); done
+if kill -0 "$fp" 2>/dev/null; then kill -TERM "$fp" 2>/dev/null; fail "a FIFO at the trace path hangs the recorder"; else pass "a FIFO at the trace path does not hang the recorder"; fi
+wait "$fp" 2>/dev/null || true
+if stopped; then pass "a FIFO trace counts as an unknown write"; else fail "a FIFO trace fails closed"; fi
+rm -f "$MARK"
+# a trace from an earlier session never counts; the first record of this session removes it
+fresh
+printf 'f%s/src/app.js\n' "$EC_PROJ" >"$MARKBASE.1"
 if stopped; then fail "a trace from an earlier session is ignored"; else pass "a trace from an earlier session is ignored"; fi
 run "$TF" "$(sbash "echo x > $TMPD/a")"
-assert_eq "the old line is kept, this session's is added" 2 "$(wc -l <"$MARK" | tr -d ' ')"
-if stopped; then fail "the old session's source write still does not count"; else pass "the old session's source write still does not count"; fi
-# a file past 256 KB is rewritten with this session's lines only
+assert_file_absent "the first record of a session removes the earlier trace" "$MARKBASE.1"
+assert_eq "this session's trace holds its own entry only" 1 "$(wc -l <"$MARK" | tr -d ' ')"
 fresh
-head -c 300000 /dev/zero | tr '\0' 'x' | sed 's/^/1\t/' >"$MARK"; printf '\n' >>"$MARK"
+printf 'f%s/src/app.js\n' "$EC_PROJ" >"$MARKBASE.1"; mkdir "$MARKBASE.3"
 run "$TF" "$(sbash "echo x > $TMPD/a")"
-assert_eq "an oversized trace is pruned to this session" 1 "$(wc -l <"$MARK" | tr -d ' ')"
+assert_file_absent "an earlier regular trace goes" "$MARKBASE.1"
+assert_file_exists "an earlier directory under a trace name is left alone" "$MARKBASE.3"
+rmdir "$MARKBASE.3"
+# rotation, not rewriting: a trace this session already has is never replaced (its inode stays)
+fresh
+run "$TF" "$(sbash "echo x > $TMPD/a")"
+ino1="$(ls -i "$MARK" | awk '{print $1}')"
+for i in $(seq 30); do run "$TF" "$(sbash "echo x > $TMPD/b$i")"; done
+assert_eq "a live trace is appended to, never rewritten" "$ino1" "$(ls -i "$MARK" | awk '{print $1}')"
 fresh
 rm -f "$SESSION_FILE"
 run "$TF" "$(sbash 'echo x > src/a.js')"
 if stopped; then fail "unknown session start: the trace is not trusted"; else pass "unknown session start: the trace is not trusted"; fi
+rm -f "$MARKBASE".-
 date +%s >"$SESSION_FILE"
 # a hook-written trace cannot be forged by a shell command (G2 state-tamper guard)
 DCC="$TL_REPO_ROOT/hooks/dev-cycle-check.sh"
-run "$DCC" "$(jq -cn --arg c "echo 'f$EC_PROJ/src/app.js' >> $MARK" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}')"
+run "$DCC" "$(jq -cn --arg c "echo 'f$EC_PROJ/src/app.js' >> $MARKBASE.$(cat "$SESSION_FILE")" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}')"
 assert_contains "the trace is in the guarded state directory" "$TL_OUT" "deny"
-# the number of distinct targets is bounded; past the bound the trace says "anywhere"
+run "$DCC" "$(jq -cn --arg c "mknod $MARKBASE.$(cat "$SESSION_FILE") p" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}')"
+assert_contains "mknod into the state directory is refused too" "$TL_OUT" "deny"
+# the number of distinct targets is bounded; past the bound the trace says "anywhere" and records nothing more
 fresh
 lines=""; i=0; while (( i < 520 )); do lines="${lines}echo x > $TMPD/f$i; "; i=$((i+1)); done
 run "$TF" "$(sbash "$lines")"
-assert_eq "past the bound the trace says anywhere" 1 "$(awk -F'\t' '$2 == "*"' "$MARK" | wc -l | tr -d ' ')"
+assert_eq "past the bound the trace says anywhere" 1 "$(grep -c -Fx '*' "$MARK")"
+assert_eq "and stops growing at the bound" 501 "$(wc -l <"$MARK" | tr -d ' ')"
 if stopped; then pass "past the bound: fail closed"; else fail "past the bound: fail closed"; fi
 run "$TF" "$(sbash 'echo x > '"$TMPD"'/more')"
-assert_eq "the 'anywhere' line is not repeated" 1 "$(awk -F'\t' '$2 == "*"' "$MARK" | wc -l | tr -d ' ')"
+assert_eq "the 'anywhere' line is not repeated" 1 "$(grep -c -Fx '*' "$MARK")"
+assert_eq "nothing more is recorded past the bound" 501 "$(wc -l <"$MARK" | tr -d ' ')"
+# parallel writers over a trace near the bound keep their entries (no rewrite in the way)
+fresh
+i=0; : >"$MARK"; while (( i < 495 )); do printf 'f%s/pad%s\n' "$TMPD" "$i" >>"$MARK"; i=$((i+1)); done
+lost=0
+for t in $(seq 30); do
+  cp "$MARK" "$TMPD/near.bak"
+  for w in 1 2 3; do ( cd "$EC_PROJ" && printf '%s' "$(sbash "echo x > $TMPD/w$t$w")" | bash "$TF" >/dev/null 2>&1 ) & done
+  wait
+  [[ "$(grep -c -F "w${t}1" "$MARK")" == 1 || "$(grep -c -Fx '*' "$MARK")" == 1 ]] || lost=$((lost + 1))
+  cp "$TMPD/near.bak" "$MARK"
+done
+assert_eq "parallel writers near the bound lose no entry" 0 "$lost"
 
 # ---- r4: bulk edits through the root, globs, unresolved first components, other cwds --------------------------------
 sbashc() { jq -cn --arg c "$1" --arg d "$2" '{hook_event_name:"PostToolUse",tool_name:"Bash",cwd:$d,tool_input:{command:$c},tool_response:{}}'; }
@@ -267,18 +306,79 @@ run "$TF" "$(sbash 'sed -i s/a/b/ lib/o*/x.js')"
 if stopped; then fail "a glob that expands outside source does not count"; else pass "a glob that expands outside source does not count"; fi
 ec_cfg '{"config_version":"0.40.0","sb_initiated":true,"skills":{}}'
 
+# ---- r5: what the analysis cannot know counts as unknown --------------------------------------------------------------
+for c in '"$BASH" -c '"'"'echo x > src/a.js'"'" '${SHELL} -c '"'"'echo x > src/a.js'"'" '"$(command -v bash)" -c '"'"'echo x > src/a.js'"'" \
+  'exec "$BASH" -c '"'"'echo x > src/a.js'"'" 'env "$BASH" -c '"'"'echo x > src/a.js'"'" \
+  'python3 -c "import shutil; shutil.copy(\"/tmp/x\", \"src\")"' "node -e \"require('fs').cpSync('/tmp/d','.',{recursive:true})\"" \
+  "perl -e 'open F, \">src/a.js\"'" 'python3 -c "print(1)"' $'python3 - <<X\nprint(1)\nX' 'eval "$X"' 'bsdtar -xf /tmp/a.tar' 'gtar xf /tmp/a.tar'; do
+  fresh
+  run "$TF" "$(sbash "$c")"
+  if stopped; then pass "unknowable write ($c): the planning floor applies"; else fail "unknowable write ($c): the floor must apply"; fi
+done
+# a plain script, module or task run names no write: not counted (documented residual); a provably read-only bash -c is not either
+for c in 'python3 script.py' './run.sh' 'make' 'npm test' 'sh script.sh' 'bash -c "echo hi"' 'python3 -m pytest' 'bsdtar -tf /tmp/a.tar'; do
+  fresh
+  run "$TF" "$(sbash "$c")"
+  if stopped; then fail "no write evidence ($c): Stop must pass"; else pass "no write evidence ($c): Stop passes"; fi
+done
+
+# ---- r5: an ancestor glob counts only when it can lead to the project ----------------------------------------------
+PARENT="$(dirname "$EC_PROJ")"
+for c in "sed -i s/a/b/ $PARENT/*.log" "echo x > $PARENT/*.txt" 'sed -i s/a/b/ ~/Downloads/*.zip' 'sed -i s/a/b/ /tmp/*.log' "sed -i s/a/b/ /*.conf"; do
+  fresh
+  run "$TF" "$(sbash "$c")"
+  if stopped; then fail "ancestor glob that cannot reach the project ($c): Stop must pass"; else pass "ancestor glob that cannot reach the project ($c): Stop passes"; fi
+done
+STARS="$(printf '%s' "$EC_PROJ" | sed 's|[^/][^/]*|*|g')"
+for c in "rm -f $PARENT/*" "cp x $PARENT/${EC_PROJ##*/}*/s*/a.js" "cp x $PARENT/p*/a.js" "sed -i s/a/b/ $PARENT/**/*.js" "sed -i s/a/b/ $STARS/src/*.js"; do
+  fresh
+  run "$TF" "$(sbash "$c")"
+  if stopped; then pass "ancestor glob that can reach the project ($c): the planning floor applies"; else fail "ancestor glob that can reach the project ($c)"; fi
+done
+
+# ---- r5: only real path fields of a file tool; a remote service's paths are not local --------------------------------
+NB="$(jq -cn --arg p "$EC_PROJ/analysis.ipynb" --arg t $'# Results\n* accuracy improved\nWhat is the mean?' '{hook_event_name:"PostToolUse",tool_name:"NotebookEdit",tool_input:{notebook_path:$p,new_source:$t}}')"
+fresh
+run "$TF" "$NB"
+if stopped; then fail "notebook cell text is not a path: a root-level notebook edit is not source"; else pass "notebook cell text is not a path"; fi
+fresh
+run "$TF" "$(jq -cn --arg t "$(seq 600 | sed 's/^/line /')" --arg p "$EC_PROJ/docs/n.ipynb" '{hook_event_name:"PostToolUse",tool_name:"NotebookEdit",tool_input:{notebook_path:$p,new_source:$t}}')"
+assert_eq "a 600-line notebook cell records one entry" 1 "$(wc -l <"$MARK" | tr -d ' ')"
+for t in mcp__github__create_or_update_file mcp__github__push_files mcp__Figma__upload_assets; do
+  fresh
+  run "$TF" "$(jq -cn --arg t "$t" '{hook_event_name:"PostToolUse",tool_name:$t,tool_input:{path:"src/app.js",name:"src",content:"x"}}')"
+  if stopped; then fail "a remote service's path ($t) is not a local file"; else pass "a remote service's path ($t) is not a local file"; fi
+done
+fresh
+run "$TF" "$(jq -cn --arg p "$EC_PROJ/s*/a?.js" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$p,content:"x"}}')"
+if stopped; then fail "a file tool does not expand globs: * and ? are part of the name"; else pass "a file tool path is literal"; fi
+fresh
+run "$TF" "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Write",cwd:"/tmp",tool_input:{file_path:"src/a.js",content:"x"}}')"
+if stopped; then fail "a relative Write from a cwd outside the project is not source"; else pass "a relative Write from another cwd is outside the project"; fi
+
+# ---- r5: an unresolved cwd is an unknown target, even when no ancestor rule would catch it ---------------------------
+# (the path is rooted at a directory that is not an ancestor of the project)
+mkdir -p "$TMPD/elsewhere"
+fresh
+run "$TF" "$(jq -cn --arg d "$TMPD/elsewhere" '{hook_event_name:"PostToolUse",tool_name:"Bash",cwd:$d,tool_input:{command:"cd \"$P\" && echo x > src/a.js"}}')"
+if stopped; then pass "an unresolved cwd under a directory that is no ancestor: unknown, counted"; else fail "unresolved cwd rule"; fi
+fresh
+run "$TF" "$(jq -cn --arg d "$TMPD/elsewhere" '{hook_event_name:"PostToolUse",tool_name:"Bash",cwd:$d,tool_input:{command:"echo x > out.txt"}}')"
+if stopped; then fail "a plain relative write from that cwd is not source"; else pass "a plain relative write from that cwd is not source"; fi
+
 # ---- concurrent recorders never lose an entry (header-less append-only trace) --------------------------------------
 A="$(jq -cn --arg p "$EC_PROJ/src/a.js" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$p}}')"
 B="$(jq -cn --arg p "$TMPD/zz" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$p}}')"
-lost=0; N=40
+lost=0; N=60
 for i in $(seq "$N"); do
   fresh
   (cd "$EC_PROJ" && printf '%s' "$A" | bash "$TF" >/dev/null 2>&1) & p1=$!
   (cd "$EC_PROJ" && printf '%s' "$B" | bash "$TF" >/dev/null 2>&1) & p2=$!
-  wait "$p1" "$p2"
+  (cd "$EC_PROJ" && printf '%s' "$B" | bash "$TF" >/dev/null 2>&1) & p3=$!
+  wait "$p1" "$p2" "$p3"
   grep -q "src/a.js" "$MARK" || lost=$((lost + 1))
 done
-assert_eq "40 concurrent first writes: no src entry lost" 0 "$lost"
+assert_eq "60 concurrent first writes by 3 hooks: no src entry lost" 0 "$lost"
 
 # ---- read-only chains skip the analysis ----------------------------------------------------------------------------
 source "$TL_REPO_ROOT/hooks/lib/plain-read-only.sh"
