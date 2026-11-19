@@ -19,6 +19,8 @@ _ca_tpl() {
 mkproj() {
   PROJ="$TL_TMP/$1"
   _ca_tpl
+  # a name used twice is a fresh project (cp -a into an existing directory would nest the template, and fails for a non-root user: its objects are read-only)
+  rm -rf "$PROJ"
   cp -a "$_CA_TPL" "$PROJ"
   printf '# Silver Bullet\n' >"$PROJ/silver-bullet.md"
   jq -n --arg v "$CFG_VERSION" "{config_version:\$v, sb_initiated:true,
