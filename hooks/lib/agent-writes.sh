@@ -35,14 +35,14 @@ sb_aw_session_epoch() {
   return 0
 }
 
-# _sb_aw_path_entries KIND PATH LOGICAL: the entries of one written path, in both spellings
+# _sb_aw_path_entries KIND PATH LOGICAL [BASE]: the entries of one written path (relative to BASE, default $PWD), in both spellings
 _sb_aw_path_entries() {
-  local kind="$1" path="$2" logical="${3:-}" canon
+  local kind="$1" path="$2" logical="${3:-}" base="${4:-$PWD}" canon
   # the physical spelling; a path that cannot be resolved (a symlink loop) is taken lexically
-  canon="$(sb_canonical_path "$path" "$PWD" 2>/dev/null || sb_path_normalize "$path" "$PWD")"
+  canon="$(sb_canonical_path "$path" "$base" 2>/dev/null || sb_path_normalize "$path" "$base")"
   printf '%s%s\n' "$kind" "$canon"
   if [[ -n "$logical" ]]; then
-    logical="$(sb_path_normalize "$logical" "$PWD")"
+    logical="$(sb_path_normalize "$logical" "$base")"
     [[ "$logical" == "$canon" ]] || printf '%s%s\n' "$kind" "$logical"
   fi
 }
@@ -70,7 +70,7 @@ sb_aw_entries() {
         printf '*\n'
         return 0
       fi
-      ( cd "${cwd:-.}" 2>/dev/null; _sb_aw_path_entries f "$fp" )
+      _sb_aw_path_entries f "$fp" "" "${cwd:-$PWD}"
       return 0
       ;;
     Bash | exec_command)
