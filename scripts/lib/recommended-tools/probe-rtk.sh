@@ -160,7 +160,11 @@ rt_repair_rtk() {
     return 0
   fi
   local opt="${RT_REPO_ROOT}/scripts/optimize-rtk-context-mode.sh"
-  if [[ -f "$opt" ]]; then
+  if ! rt_mutation_allowed rtk wire; then
+    # Install-only consent: the optimizer would skip every step, so do not run it or claim success.
+    rt_wire_skipped_notice rtk
+    failures+=("wire_not_consented")
+  elif [[ -f "$opt" ]]; then
     local -a opt_args=(--host "${RT_HOST:-cursor}" --project-root "${RT_PROJECT_ROOT:-}" --skip-cm-doctor)
     rt_cross_tool_batch_active && opt_args+=(--skip-rtk-init)
     if rt_cross_tool_batch_active; then
@@ -173,7 +177,8 @@ rt_repair_rtk() {
         && actions+=("optimize_rtk_context_mode") || failures+=("optimize_rtk_failed")
     fi
   fi
-  if [[ "${RT_HOST:-cursor}" == "cursor" ]] && ! rt_cross_tool_batch_active; then
+  # The machine-wide hooks.json rewrite needs the user's "wire" consent, not just "install".
+  if [[ "${RT_HOST:-cursor}" == "cursor" ]] && ! rt_cross_tool_batch_active && rt_mutation_allowed rtk wire; then
     local patch_py="${RT_REPO_ROOT}/scripts/lib/global-toolstack/patch-hooks.py"
     if [[ -f "$patch_py" ]]; then
       RT_PATCH_RTK=1 RT_PATCH_GRAPHIFY=0 RT_PATCH_AGENTMEMORY=0 RT_PATCH_CONTEXT_MODE=0 RT_PATCH_LEANCTX=0 \

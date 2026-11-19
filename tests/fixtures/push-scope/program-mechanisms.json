@@ -1,0 +1,1155 @@
+{
+ "schema": 1,
+ "reviewed_non_executing": {
+  "advice.ignoredhook": "message only",
+  "advice.waitingforeditor": "message only",
+  "browser.<tool>.cmd": "git web--browse, not inert",
+  "browser.<tool>.path": "git web--browse, not inert",
+  "clone.filtersubmodules": "clone only",
+  "color.pager": "colour switch, no program",
+  "commit.gpgsign": "boolean read by git_bool; the programs are gpg.* (M10)",
+  "commitgraph.maxnewfilters": "number",
+  "completion.commands": "completion list",
+  "core.fsmonitorhookversion": "number",
+  "diff.<driver>.binary": "flag",
+  "diff.<driver>.cachetextconv": "flag",
+  "diff.<driver>.wordregex": "regex",
+  "diff.<driver>.xfuncname": "regex",
+  "diff.guitool": "difftool only, not inert",
+  "diff.tool": "difftool only, not inert",
+  "difftool.<tool>.cmd": "difftool only, not inert",
+  "difftool.<tool>.path": "difftool only, not inert",
+  "difftool.guidefault": "difftool only",
+  "difftool.prompt": "difftool only",
+  "difftool.trustexitcode": "difftool only",
+  "format.signoff": "format-patch, not inert",
+  "format.signature": "format-patch, not inert",
+  "format.signaturefile": "format-patch, not inert",
+  "fsmonitor.allowremote": "built-in monitor option",
+  "fsmonitor.socketdir": "built-in monitor option",
+  "gc.repackfilter": "a filter spec string",
+  "gc.repackfilterto": "a path",
+  "gitcvs.dbdriver": "a database name for git-cvsserver",
+  "gpg.format": "selects a format; programs are gpg.*.program (M10)",
+  "gpg.mintrustlevel": "trust level",
+  "gpg.ssh.allowedsignersfile": "a file read by ssh-keygen",
+  "gpg.ssh.revocationfile": "a file read by ssh-keygen",
+  "guitool.<name>.argprompt": "git gui",
+  "guitool.<name>.cmd": "git gui, not inert",
+  "guitool.<name>.confirm": "git gui",
+  "guitool.<name>.needsfile": "git gui",
+  "guitool.<name>.noconsole": "git gui",
+  "guitool.<name>.norescan": "git gui",
+  "guitool.<name>.prompt": "git gui",
+  "guitool.<name>.revprompt": "git gui",
+  "guitool.<name>.revunmerged": "git gui",
+  "guitool.<name>.title": "git gui",
+  "http.proxy": "a URL, not a program (M18)",
+  "http.proxyauthmethod": "a method name",
+  "http.proxysslcainfo": "a file",
+  "http.proxysslcert": "a file",
+  "http.proxysslcertpasswordprotected": "flag",
+  "http.proxysslkey": "a file",
+  "interactive.diffilter": "add -p/-i only, not inert",
+  "interactive.difffilter": "add -p/-i only, not inert",
+  "log.showsignature": "boolean; verification runs gpg.*.program (M10)",
+  "man.<tool>.cmd": "git help, not inert",
+  "man.<tool>.path": "git help, not inert",
+  "merge.<driver>.driver": "merge only, not inert (M25)",
+  "merge.<driver>.name": "label",
+  "merge.<driver>.recursive": "name",
+  "merge.guitool": "mergetool only",
+  "merge.tool": "mergetool only",
+  "merge.verifysignatures": "merge only, not inert",
+  "mergetool.<tool>.cmd": "mergetool only (M25)",
+  "mergetool.<tool>.hideresolved": "flag",
+  "mergetool.<tool>.path": "mergetool only",
+  "mergetool.<tool>.trustexitcode": "flag",
+  "mergetool.guidefault": "flag",
+  "mergetool.hideresolved": "flag",
+  "mergetool.keepbackup": "flag",
+  "mergetool.keeptemporaries": "flag",
+  "mergetool.meld.hasoutput": "flag",
+  "mergetool.meld.useautomerge": "flag",
+  "mergetool.prompt": "flag",
+  "mergetool.vimdiff.layout": "layout string",
+  "mergetool.writetotemp": "flag",
+  "notes.rewrite.<command>": "flag",
+  "rebase.abbreviatecommands": "rebase only",
+  "rebase.reschedulefailedexec": "rebase only",
+  "remote.<name>.partialclonefilter": "a filter spec string",
+  "remote.<name>.proxy": "refused by the remote.<name>.* allowlist (M21)",
+  "remote.<name>.proxyauthmethod": "refused by the remote.<name>.* allowlist (M21)",
+  "sendemail.cccmd": "send-email only",
+  "sendemail.headercmd": "send-email only",
+  "sendemail.signedoffbycc": "flag",
+  "sendemail.tocmd": "send-email only",
+  "ssh.variant": "selects an ssh flavour, runs nothing",
+  "tag.forcesignannotated": "tag only, not inert",
+  "tag.gpgsign": "tag only, not inert",
+  "uploadpack.allowfilter": "flag",
+  "uploadpackfilter.<filter>.allow": "flag",
+  "uploadpackfilter.allow": "flag",
+  "uploadpackfilter.tree.maxdepth": "number",
+  "user.signingkey": "a key id or key file, no program",
+  "core.alternaterefscommand": "covered (M22)",
+  "sequence.editor": "rebase -i only, not inert (M13)"
+ },
+ "reviewed_not_writing": [
+  [
+   "advice\\..*",
+   "a message switch"
+  ],
+  [
+   "core\\.(attributesfile|excludesfile)",
+   "a file git reads"
+  ],
+  [
+   "core\\.(filemode|filesreflocktimeout|fsyncobjectfiles|hidedotfiles|quotepath|untrackedcache|bigfilethreshold|deltabasecachelimit|logallrefupdates)",
+   "a flag or number; any file written is fixed inside .git"
+  ],
+  [
+   "blame\\.ignorerevsfile|diff\\.orderfile|log\\.mailmap|mailmap\\.file|format\\.signaturefile|gpg\\.ssh\\.(allowedsignersfile|revocationfile)|sendemail\\.(aliasesfile|smtpsslcertpath)|http\\.sslcapath|include\\.path|includeif\\..*\\.path|safe\\.directory|commitgraph\\.readchangedpaths|help\\.htmlpath|instaweb\\.modulepath",
+   "a path git reads, nothing is written"
+  ],
+  [
+   "init\\.templatedir",
+   "used by init and clone only"
+  ],
+  [
+   "credential\\.usehttppath|credentialcache\\.ignoresighup|credentialstore\\.locktimeoutms",
+   "a flag or number"
+  ],
+  [
+   "diff\\.x\\.cachetextconv|diff\\.dirstat|feature\\.manyfiles|fetch\\.output|fetch\\.writecommitgraph|gc\\.writecommitgraph|gc\\.logexpiry|gc\\..*reflogexpire.*|format\\.filenamemaxlength",
+   "flag, number or format name; any file is fixed inside .git"
+  ],
+  [
+   "format\\.outputdirectory",
+   "format-patch only, not an inert command"
+  ],
+  [
+   "gitcvs\\.logfile|guitool\\..*|sendemail\\..*|man\\.x\\.path|browser\\.x\\.path|difftool\\.x\\.path|mergetool\\..*",
+   "git-cvsserver, git gui, send-email, help and the tool commands are not inert"
+  ],
+  [
+   "(receive\\.)?fsck\\..*",
+   "severity levels or path patterns for fsck"
+  ],
+  [
+   "i18n\\.logoutputencoding|log\\.(abbrevcommit|date|decorate|diffmerges|excludedecoration|follow|graphcolors|initialdecorationset|showroot|showsignature)",
+   "display options"
+  ],
+  [
+   "merge\\.(directoryrenames|log|suppressdest)",
+   "merge options, merge is not inert"
+  ],
+  [
+   "notes\\.rewrite.*|pack\\..*|repack\\.writebitmaps|sparse\\..*|status\\..*|color\\.grep\\.filename|http\\.followredirects",
+   "flags or fixed locations inside .git"
+  ],
+  [
+   "http\\.cookiefile",
+   "read unless http.saveCookies (row M42)"
+  ],
+  [
+   "trace2\\.(configparams|destinationdebug|envvars|eventbrief|eventnesting|maxfiles|normalbrief|perfbrief)",
+   "flags and numbers; they matter only with a target (row M38)"
+  ],
+  [
+   "core\\.hookspath|credential\\.helper|diff\\.x\\.(command|textconv)|filter\\.x\\..*|diff\\.external",
+   "classified by the program rows"
+  ]
+ ],
+ "source": "git help -c on this machine (git 2.43), git-lfs 3.4 docs, the githooks list, the push_scope classifier; man pages are not installed here",
+ "verdicts": [
+  "strict",
+  "not-reachable",
+  "residual"
+ ],
+ "rows": [
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M01",
+   "mechanism": "core.fsmonitor (hook or program; a boolean selects the built-in monitor)",
+   "kind": "config",
+   "keys": [
+    "core.fsmonitor"
+   ],
+   "triggers": "status, add, commit -a, diff, ls-files, checkout -b (anything that refreshes the index)",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "run",
+   "corpus_rows": [
+    "V01"
+   ],
+   "note": "booleans pass: they select git's built-in monitor, not a program",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M02",
+   "mechanism": "core.hooksPath (every hook of the directory runs: pre-commit, commit-msg, post-commit, post-checkout, post-rewrite, reference-transaction, ...)",
+   "kind": "config",
+   "keys": [
+    "core.hookspath"
+   ],
+   "triggers": "commit, checkout -b, add/status (post-index-change)",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "run",
+   "corpus_rows": [
+    "V02",
+    "V03",
+    "V35"
+   ],
+   "note": "checked for every inert git subcommand, for `checkout -b` and for the push itself (pre-push)",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M03",
+   "mechanism": "hook scripts in the hooks directory (applypatch-msg, pre-applypatch, post-applypatch, pre-commit, pre-merge-commit, prepare-commit-msg, commit-msg, post-commit, pre-rebase, post-checkout, post-merge, pre-push, pre-auto-gc, post-rewrite, reference-transaction, push-to-checkout, post-index-change, fsmonitor-watchman, proc-receive, pre-receive, update, post-receive, post-update, sendemail-validate, p4-*)",
+   "kind": "hook",
+   "keys": [
+    "pre-commit",
+    "commit-msg",
+    "post-commit",
+    "pre-push",
+    "post-checkout",
+    "reference-transaction",
+    "pre-auto-gc",
+    "post-index-change"
+   ],
+   "triggers": "commit, push, checkout -b, add, status; gc --auto after a commit",
+   "reachable": true,
+   "verdict": "residual",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "hook files are repository code written by an earlier, separate command",
+   "residual": "residual 1 (follow-up: gate writes to .git/hooks/**)"
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M04",
+   "mechanism": "filter.<name>.clean|smudge|process (selected by .gitattributes filter=<name>)",
+   "kind": "config",
+   "keys": [
+    "filter.x.clean",
+    "filter.x.smudge",
+    "filter.x.process"
+   ],
+   "triggers": "add, commit -a, status, diff, checkout -b",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "run",
+   "corpus_rows": [
+    "V04"
+   ],
+   "note": "the stock git-lfs commands are accepted (with and without --skip)",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M05",
+   "mechanism": "lfs.extension.<name>.clean|smudge, lfs.customtransfer.<name>.*, lfs.standalonetransferagent (git-lfs runs the program)",
+   "kind": "config",
+   "keys": [
+    "lfs.extension.x.clean",
+    "lfs.customtransfer.x.path",
+    "lfs.standalonetransferagent"
+   ],
+   "triggers": "add (with the stock lfs filter), push (lfs transfer)",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "run",
+   "corpus_rows": [
+    "V05",
+    "L1",
+    "L1b"
+   ],
+   "note": "",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M06",
+   "mechanism": "core.attributesFile, info/attributes, .gitattributes (select the drivers named in config: filter=, diff=, merge=)",
+   "kind": "attribute",
+   "keys": [
+    "core.attributesfile"
+   ],
+   "triggers": "any command that reads attributes",
+   "reachable": false,
+   "verdict": "not-reachable",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "selects drivers; the programs are config keys judged in M04, M08, M25",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M07",
+   "mechanism": "diff.external / GIT_EXTERNAL_DIFF",
+   "kind": "config+env",
+   "keys": [
+    "diff.external",
+    "GIT_EXTERNAL_DIFF"
+   ],
+   "triggers": "diff, log -p, show",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "view",
+   "corpus_rows": [
+    "V06",
+    "V29"
+   ],
+   "note": "",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M08",
+   "mechanism": "diff.<driver>.command|textconv (selected by .gitattributes diff=<driver>)",
+   "kind": "config",
+   "keys": [
+    "diff.x.command",
+    "diff.x.textconv"
+   ],
+   "triggers": "diff, log -p, show, shortlog",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "view",
+   "corpus_rows": [
+    "V07"
+   ],
+   "note": "",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M09",
+   "mechanism": "core.pager, pager.<command>, GIT_PAGER (a pager starts only when stdout is a terminal)",
+   "kind": "config+env",
+   "keys": [
+    "core.pager",
+    "pager.log",
+    "GIT_PAGER"
+   ],
+   "triggers": "log, show, diff (viewers)",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "view",
+   "corpus_rows": [
+    "V08",
+    "V09"
+   ],
+   "note": "strict for the viewers; for other commands see M09b",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M09b",
+   "mechanism": "pager.<command> / PAGER for commands that are not viewers",
+   "kind": "config+env",
+   "keys": [
+    "pager.status",
+    "PAGER"
+   ],
+   "triggers": "status, branch, config (a terminal is needed)",
+   "reachable": false,
+   "verdict": "not-reachable",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "the agent's stdout is not a terminal, and --paginate is not an allowed option",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M10",
+   "mechanism": "gpg.program, gpg.<format>.program, gpg.x509.program, gpg.ssh.program, gpg.ssh.defaultKeyCommand (signing and verification)",
+   "kind": "config",
+   "keys": [
+    "gpg.program",
+    "gpg.openpgp.program",
+    "gpg.x509.program",
+    "gpg.ssh.program",
+    "gpg.ssh.defaultkeycommand"
+   ],
+   "triggers": "commit (when commit.gpgsign), log/show/shortlog (signature placeholders, log.showSignature)",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "sign",
+   "corpus_rows": [
+    "V10",
+    "V33",
+    "G1",
+    "G8"
+   ],
+   "note": "a stock system signer, or a program listed in the per-user consent file, is accepted",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M11",
+   "mechanism": "push.gpgSign (signed push runs the signing program)",
+   "kind": "config",
+   "keys": [
+    "push.gpgsign"
+   ],
+   "triggers": "push",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "code",
+   "corpus_rows": [
+    "V11",
+    "G13"
+   ],
+   "note": "",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M12",
+   "mechanism": "core.editor, GIT_EDITOR, VISUAL, EDITOR (a commit without a message)",
+   "kind": "config+env",
+   "keys": [
+    "core.editor",
+    "GIT_EDITOR",
+    "VISUAL",
+    "EDITOR"
+   ],
+   "triggers": "commit without -m/-F/--no-edit",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "editor",
+   "corpus_rows": [
+    "V12",
+    "X85",
+    "X86",
+    "X87"
+   ],
+   "note": "benign editors (true, :, cat) pass",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M13",
+   "mechanism": "sequence.editor, GIT_SEQUENCE_EDITOR, rebase.* , rebase --exec",
+   "kind": "config+env",
+   "keys": [
+    "sequence.editor",
+    "GIT_SEQUENCE_EDITOR"
+   ],
+   "triggers": "rebase -i only",
+   "reachable": false,
+   "verdict": "not-reachable",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "rebase is not an inert command",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M14",
+   "mechanism": "core.sshCommand, GIT_SSH_COMMAND, GIT_SSH (ssh.variant selects a flavour only)",
+   "kind": "config+env",
+   "keys": [
+    "core.sshcommand",
+    "GIT_SSH_COMMAND",
+    "GIT_SSH"
+   ],
+   "triggers": "push over ssh",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "push_run",
+   "corpus_rows": [
+    "V13",
+    "V14",
+    "V15"
+   ],
+   "note": "a plain `ssh [-i KEY] [-o Name=value]` command line passes; no ProxyCommand/LocalCommand",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M15",
+   "mechanism": "credential.helper, credential.<url>.helper (a !shell command or git-credential-<name>)",
+   "kind": "config",
+   "keys": [
+    "credential.helper",
+    "credential.https://x.helper"
+   ],
+   "triggers": "push over http(s), git-lfs",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "push_run",
+   "corpus_rows": [
+    "V16"
+   ],
+   "note": "store (no --file), cache --timeout N, osxkeychain, libsecret, wincred, `!gh auth git-credential` pass; Git Credential Manager (manager, manager-core) writes traces and plaintext stores by its own settings and is stock only when the consent file pins it; a --file or --socket option writes a file and is refused (M40)",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M16",
+   "mechanism": "core.askPass, GIT_ASKPASS, SSH_ASKPASS",
+   "kind": "config+env",
+   "keys": [
+    "core.askpass",
+    "GIT_ASKPASS",
+    "SSH_ASKPASS"
+   ],
+   "triggers": "push (password prompts)",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "push_run",
+   "corpus_rows": [
+    "V17",
+    "V18",
+    "V19"
+   ],
+   "note": "an empty GIT_ASKPASS passes",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M17",
+   "mechanism": "core.gitProxy, GIT_PROXY_COMMAND",
+   "kind": "config+env",
+   "keys": [
+    "core.gitproxy",
+    "GIT_PROXY_COMMAND"
+   ],
+   "triggers": "push over git://",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "push_run",
+   "corpus_rows": [
+    "V20",
+    "V21"
+   ],
+   "note": "",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M18",
+   "mechanism": "http.proxy, http.* (URLs and files read: no program)",
+   "kind": "config",
+   "keys": [
+    "http.proxy"
+   ],
+   "triggers": "push over http(s)",
+   "reachable": false,
+   "verdict": "not-reachable",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "no http.* key names a program; the cookie jar is written when http.saveCookies is on (M42)",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M19",
+   "mechanism": "protocol.ext.allow and the ext:: transport (runs a command)",
+   "kind": "config",
+   "keys": [
+    "protocol.ext.allow"
+   ],
+   "triggers": "push to an ext:: URL",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "push_run",
+   "corpus_rows": [
+    "V22"
+   ],
+   "note": "",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M20",
+   "mechanism": "url.<base>.insteadOf and remote.<name>.url with a remote-helper scheme (git-remote-<scheme> is looked up on PATH; <helper>::address)",
+   "kind": "config",
+   "keys": [
+    "url.evil://x/.insteadof",
+    "remote.origin.url"
+   ],
+   "triggers": "push",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "url",
+   "corpus_rows": [
+    "V23",
+    "V34"
+   ],
+   "note": "",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M21",
+   "mechanism": "remote.<name>.receivepack|uploadpack|vcs|proxy|pushurl|push|mirror",
+   "kind": "config",
+   "keys": [
+    "remote.origin.receivepack",
+    "remote.origin.uploadpack",
+    "remote.origin.vcs",
+    "remote.origin.push"
+   ],
+   "triggers": "push",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "code",
+   "corpus_rows": [
+    "C22",
+    "V24",
+    "V32"
+   ],
+   "note": "the remote.<name>.* allowlist (REMOTE_KEYS_OK) refuses everything else",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M22",
+   "mechanism": "core.alternateRefsCommand, uploadpack.packObjectsHook",
+   "kind": "config",
+   "keys": [
+    "core.alternaterefscommand",
+    "uploadpack.packobjectshook"
+   ],
+   "triggers": "push to a local path remote, fetch",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "push_run",
+   "corpus_rows": [
+    "V25",
+    "V31"
+   ],
+   "note": "",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M23",
+   "mechanism": "include.path, includeIf.<cond>.path (load more configuration)",
+   "kind": "config",
+   "keys": [
+    "include.path",
+    "includeif.onbranch:x.path"
+   ],
+   "triggers": "every command",
+   "reachable": false,
+   "verdict": "not-reachable",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "resolved by `git config --list`: the loaded keys are judged by the rows above (C14, C15)",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M24",
+   "mechanism": "alias.<name>",
+   "kind": "config",
+   "keys": [
+    "alias.p"
+   ],
+   "triggers": "git <alias>",
+   "reachable": false,
+   "verdict": "not-reachable",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "git ignores an alias that shadows a built-in, and any other word is not an inert command",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M25",
+   "mechanism": "merge.<driver>.driver, merge.tool, mergetool.<tool>.cmd, diff.tool, difftool.<tool>.cmd, rerere, am.*, sendemail.*",
+   "kind": "config",
+   "keys": [
+    "merge.x.driver",
+    "mergetool.x.cmd",
+    "difftool.x.cmd"
+   ],
+   "triggers": "merge, pull, rebase, cherry-pick, stash, mergetool, difftool, am, send-email",
+   "reachable": false,
+   "verdict": "not-reachable",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "these commands are not inert: the push is final delivery before any key is read",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M26",
+   "mechanism": "submodule.<name>.update (!command) and the configuration of a submodule's own repository (its core.fsmonitor, hooks, filters)",
+   "kind": "config",
+   "keys": [
+    "submodule.x.update"
+   ],
+   "triggers": "status, diff, add (recurse into submodules), submodule update; submodule.recurse and push.recurseSubmodules make more commands recurse",
+   "reachable": false,
+   "verdict": "residual",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "a submodule's own .git/config is not read",
+   "residual": "residual 1 (submodule repositories)"
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M27",
+   "mechanism": "gc.recentObjectsHook (git gc --auto runs after commit, merge, rebase, pull, fetch, am, cherry-pick, revert, stash and receive-pack; gc.auto forces it)",
+   "kind": "config",
+   "keys": [
+    "gc.recentobjectshook",
+    "gc.repackfilterto"
+   ],
+   "triggers": "commit (the only inert command that writes objects and refs)",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "gc",
+   "corpus_rows": [
+    "V36"
+   ],
+   "note": "the pre-auto-gc hook is a hook file (M03)",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M28",
+   "mechanism": "GIT_CONFIG_GLOBAL, GIT_CONFIG_SYSTEM, GIT_CONFIG, GIT_CONFIG_PARAMETERS, GIT_CONFIG_COUNT/KEY_n/VALUE_n (configuration from the environment)",
+   "kind": "env",
+   "keys": [
+    "GIT_CONFIG_GLOBAL",
+    "GIT_CONFIG_SYSTEM",
+    "GIT_CONFIG",
+    "GIT_CONFIG_PARAMETERS",
+    "GIT_CONFIG_COUNT"
+   ],
+   "triggers": "every command",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "env_config",
+   "corpus_rows": [
+    "V26",
+    "C13"
+   ],
+   "note": "COUNT/KEY/VALUE are parsed; dangerous keys deny, credential and insteadOf entries pass",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M29",
+   "mechanism": "GIT_DIR, GIT_WORK_TREE, GIT_COMMON_DIR, GIT_NAMESPACE, GIT_INDEX_FILE, GIT_OBJECT_DIRECTORY, GIT_ALTERNATE_OBJECT_DIRECTORIES (another repository than the one the proof read)",
+   "kind": "env",
+   "keys": [
+    "GIT_DIR",
+    "GIT_WORK_TREE",
+    "GIT_COMMON_DIR",
+    "GIT_NAMESPACE",
+    "GIT_INDEX_FILE",
+    "GIT_OBJECT_DIRECTORY",
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES"
+   ],
+   "triggers": "every command",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "",
+   "corpus_rows": [
+    "V27",
+    "E6"
+   ],
+   "note": "",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M30",
+   "mechanism": "GIT_EXEC_PATH, PATH lookup of git, git-lfs, git-remote-*, git-credential-*",
+   "kind": "env",
+   "keys": [
+    "GIT_EXEC_PATH",
+    "PATH"
+   ],
+   "triggers": "every command",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "",
+   "corpus_rows": [
+    "V30"
+   ],
+   "note": "GIT_EXEC_PATH denies; a PATH with an empty or relative entry denies; a hostile absolute directory is residual 2",
+   "residual": "residual 2"
+  },
+  {
+   "push_triggers": true,
+   "writes_file": false,
+   "id": "M31",
+   "mechanism": "BASH_ENV, ENV, BASH_FUNC_* (code the shell runs before every command)",
+   "kind": "env",
+   "keys": [
+    "BASH_ENV",
+    "ENV"
+   ],
+   "triggers": "every command",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "",
+   "corpus_rows": [
+    "V28"
+   ],
+   "note": "the repository's own coverage tracer, as the exact file, is the one exception",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M32",
+   "mechanism": "GIT_TEMPLATE_DIR, init.templateDir, GIT_SEQUENCE_EDITOR",
+   "kind": "env+config",
+   "keys": [
+    "init.templatedir",
+    "GIT_TEMPLATE_DIR"
+   ],
+   "triggers": "init, clone",
+   "reachable": false,
+   "verdict": "not-reachable",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "no inert command initialises a repository",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M33",
+   "mechanism": "commit.template, trailer.<token>.command/cmd, core.commentChar",
+   "kind": "config",
+   "keys": [
+    "commit.template",
+    "trailer.x.command"
+   ],
+   "triggers": "commit --trailer, interpret-trailers",
+   "reachable": false,
+   "verdict": "not-reachable",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "`--trailer` and interpret-trailers are not allowed",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M34",
+   "mechanism": ".lfsconfig in the working tree (git-lfs reads a safe subset of keys)",
+   "kind": "file",
+   "keys": [
+    "lfs.url"
+   ],
+   "triggers": "add, push (lfs)",
+   "reachable": false,
+   "verdict": "not-reachable",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "only lfs.url-style keys are honoured from .lfsconfig; extensions and custom transfers are not",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M36",
+   "mechanism": "~/.ssh/config and /etc/ssh/ssh_config (ProxyCommand, LocalCommand, KnownHostsCommand, XAuthLocation, PKCS11Provider, SecurityKeyProvider, Include, Match exec)",
+   "kind": "file",
+   "keys": [
+    "ProxyCommand",
+    "LocalCommand",
+    "Match exec"
+   ],
+   "triggers": "push over ssh",
+   "reachable": true,
+   "verdict": "residual",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "a user-level ssh configuration is read by ssh, not by git: the classifier cannot see it; the -o options on a core.sshCommand/GIT_SSH_COMMAND line are checked against the same keyword list",
+   "residual": "residual 2 (ssh configuration files)"
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M37",
+   "mechanism": "diff-rendering options of inert commands: status -v/-vv, commit -v and commit.verbose (the staged diff goes through textconv and diff.external), log -p, show, diff; other commands that render a diff (stash show, diff-tree/diff-index/diff-files, whatchanged, blame, grep --textconv, cat-file --textconv/--filters, format-patch, reflog -p, add -p/-i, show-branch) are not inert",
+   "kind": "config",
+   "keys": [
+    "diff.external",
+    "diff.x.textconv"
+   ],
+   "triggers": "status -v, commit -v (or commit.verbose without a message)",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "view",
+   "corpus_rows": [
+    "V37",
+    "V38",
+    "V39"
+   ],
+   "note": "the textconv/external-diff check applies to every inert command that renders a diff",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": true,
+   "id": "M38",
+   "mechanism": "trace2.eventTarget, trace2.normalTarget, trace2.perfTarget (a file path or AF_UNIX socket git writes events to; trace2.* briefs and nesting only matter with a target)",
+   "kind": "config",
+   "keys": [
+    "trace2.eventtarget",
+    "trace2.normaltarget",
+    "trace2.perftarget"
+   ],
+   "triggers": "every git command, including the push",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "write",
+   "corpus_rows": [
+    "W01",
+    "W02",
+    "W03"
+   ],
+   "note": "",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": true,
+   "id": "M39",
+   "mechanism": "GIT_TRACE, GIT_TRACE2, GIT_TRACE2_EVENT, GIT_TRACE2_PERF, GIT_TRACE_PACKET, GIT_TRACE_* (a path writes the file; 0-9 and true/false are streams)",
+   "kind": "env",
+   "keys": [
+    "GIT_TRACE",
+    "GIT_TRACE2",
+    "GIT_TRACE2_EVENT",
+    "GIT_TRACE2_PERF",
+    "GIT_TRACE_PACKET"
+   ],
+   "triggers": "every git command, including the push",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "",
+   "corpus_rows": [
+    "W04",
+    "W05",
+    "W06"
+   ],
+   "note": "",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": true,
+   "id": "M40",
+   "mechanism": "credential helper options that name a file or socket: `store --file=PATH` (writes the token there), `cache --socket=PATH`",
+   "kind": "config",
+   "keys": [
+    "credential.helper"
+   ],
+   "triggers": "push over http(s)",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "push_run",
+   "corpus_rows": [
+    "W09",
+    "W10"
+   ],
+   "note": "only helpers without file or socket options pass; `cache` takes --timeout only",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": true,
+   "id": "M41",
+   "mechanism": "ssh options on a core.sshCommand/GIT_SSH_COMMAND line that write or open files or sockets: UserKnownHostsFile, ControlPath/ControlMaster/ControlPersist, LocalForward/RemoteForward/DynamicForward, -E logfile, -D, -L, -R, -S, -w, LogFile, IdentityAgent",
+   "kind": "config+env",
+   "keys": [
+    "core.sshcommand",
+    "GIT_SSH_COMMAND"
+   ],
+   "triggers": "push over ssh",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "push_run",
+   "corpus_rows": [
+    "W11",
+    "W12",
+    "W13",
+    "W14",
+    "W15",
+    "V13"
+   ],
+   "note": "only StrictHostKeyChecking, BatchMode, ConnectTimeout, IdentitiesOnly, ServerAliveInterval, ServerAliveCountMax, Compression and ForwardAgent=no are accepted with -i, -p and -l",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": true,
+   "id": "M46",
+   "mechanism": "GIT_TEST_* (test switches: some write files, all change how git behaves), GCM_TRACE / GCM_CREDENTIAL_STORE (Git Credential Manager settings; GCM is not a stock helper, M15)",
+   "kind": "env",
+   "keys": [
+    "GIT_TEST_*"
+   ],
+   "triggers": "every git command",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "code",
+   "corpus_rows": [
+    "Y01",
+    "W35",
+    "W36"
+   ],
+   "note": "GIT_TEST_ variables must be unset or empty",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": true,
+   "id": "M42",
+   "mechanism": "http.saveCookies and http.<url>.saveCookies for every URL form, with http.cookieFile (git rewrites the cookie jar)",
+   "kind": "config",
+   "keys": [
+    "http.savecookies",
+    "http.https://example.com/.savecookies"
+   ],
+   "triggers": "push over http(s), fetch",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "write",
+   "corpus_rows": [
+    "W16"
+   ],
+   "note": "http.cookieFile alone is only read",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": true,
+   "id": "M43",
+   "mechanism": "fsmonitor.socketDir (the built-in monitor creates its socket in that directory), gc.repackFilterTo (auto gc repack destination)",
+   "kind": "config",
+   "keys": [
+    "fsmonitor.socketdir"
+   ],
+   "triggers": "status, add, commit (monitor); commit (auto gc)",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "write",
+   "corpus_rows": [
+    "W18",
+    "W17"
+   ],
+   "note": "",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": true,
+   "id": "M44",
+   "mechanism": "lfs.storage (git-lfs writes objects there), GIT_LFS_PROGRESS (progress file), GIT_SHALLOW_FILE, SSLKEYLOGFILE / GIT_SSL_KEYLOGFILE (TLS key log; judged in the hook's own environment, a variable set only in the shell that runs the push is the environment-inheritance residual 2)",
+   "kind": "config+env",
+   "keys": [
+    "lfs.storage",
+    "GIT_LFS_PROGRESS",
+    "GIT_SHALLOW_FILE",
+    "SSLKEYLOGFILE",
+    "GIT_SSL_KEYLOGFILE"
+   ],
+   "triggers": "add (with the lfs filter), push (lfs)",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "write",
+   "corpus_rows": [
+    "W19",
+    "W07",
+    "W08",
+    "W42"
+   ],
+   "note": "",
+   "residual": ""
+  },
+  {
+   "push_triggers": true,
+   "writes_file": true,
+   "id": "M45",
+   "mechanism": "a local path, file://, bundle or `.` remote, or a loopback host (localhost, 127.x, ::1; ssh or http to a repository on this machine) (also through url.<base>.insteadOf): git push runs receive-pack WITH THE REMOTE REPOSITORY'S OWN configuration and hooks on this machine (core.hooksPath, gc.recentObjectsHook, receive.procReceiveRefs, post-receive, updateInstead...)",
+   "kind": "config",
+   "keys": [
+    "remote.origin.url",
+    "url.x.insteadof"
+   ],
+   "triggers": "push",
+   "reachable": true,
+   "verdict": "strict",
+   "pattern": "url",
+   "corpus_rows": [
+    "W20",
+    "W21",
+    "W22",
+    "W23",
+    "W24",
+    "W25",
+    "W26",
+    "W38"
+   ],
+   "note": "a deliberate rule: honest feature pushes go to a hosted remote (https, ssh, git, scp-like `[user@]host:path` including `host:/abs/path`)",
+   "residual": ""
+  },
+  {
+   "push_triggers": false,
+   "writes_file": false,
+   "id": "M35",
+   "mechanism": "GIT_SSL_*, http.sslCert*, GIT_CURL_VERBOSE, GIT_FLUSH, GIT_PROGRESS_DELAY (read a file or print to stderr, run nothing)",
+   "kind": "env+config",
+   "keys": [
+    "GIT_SSL_CAINFO"
+   ],
+   "triggers": "every command",
+   "reachable": false,
+   "verdict": "not-reachable",
+   "pattern": "",
+   "corpus_rows": [],
+   "note": "no program and no file written",
+   "residual": ""
+  }
+ ]
+}

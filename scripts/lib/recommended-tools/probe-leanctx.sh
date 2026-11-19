@@ -213,7 +213,11 @@ rt_repair_leanctx() {
     return 0
   fi
   local install="${RT_REPO_ROOT}/scripts/install-leanctx-sb.sh"
-  if [[ -f "$install" ]]; then
+  if ! rt_mutation_allowed leanctx wire; then
+    # Install-only consent: the installer would skip every step, so do not run it or claim success.
+    rt_wire_skipped_notice leanctx
+    failures+=("wire_not_consented")
+  elif [[ -f "$install" ]]; then
     local -a install_args=(--host "${RT_HOST:-cursor}" --project-root "${RT_PROJECT_ROOT:-}")
     rt_cross_tool_batch_active && install_args+=(--skip-merge)
     bash "$install" "${install_args[@]}" >&2 \

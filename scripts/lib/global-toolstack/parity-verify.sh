@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Compare ~/.cursor/toolstack.json vs SB five_tool_routed template defaults.
+# A tool the user opted out of (tools.<tool>.required false) is reported as a warning, not a failure.
 set -euo pipefail
 
 HOME_CURSOR="${HOME}/.cursor"
@@ -7,7 +8,12 @@ TS_JSON="${HOME_CURSOR}/toolstack.json"
 MCP_JSON="${HOME_CURSOR}/mcp.json"
 HOOKS_JSON="${HOME_CURSOR}/hooks.json"
 TS_DIR="${HOME_CURSOR}/hooks/toolstack"
-SB_JSON="${TOOLSTACK_REPO_ROOT:-${HOME}/.cursor/worktrees/repo/r41j}/.silver-bullet.json"
+# Silver Bullet's own checkout, as the installer recorded it; the parity checks are skipped without it.
+SB_REPO_ROOT="${TOOLSTACK_REPO_ROOT:-}"
+if [[ -z "$SB_REPO_ROOT" && -f "${HOME_CURSOR}/state/toolstack/repo-root" ]]; then
+  SB_REPO_ROOT="$(tr -d '\n' <"${HOME_CURSOR}/state/toolstack/repo-root")"
+fi
+SB_JSON="${SB_REPO_ROOT:+${SB_REPO_ROOT}/.silver-bullet.json}"
 pass=0 fail=0 warn=0
 
 _check() {
@@ -21,11 +27,33 @@ _check() {
 
 _jq() { jq -r "$1" "$TS_JSON" 2>/dev/null || echo ""; }
 
+# _fail_unless_opted_out TOOL LABEL DETAIL: a failure, unless the user opted TOOL out.
+_fail_unless_opted_out() {
+  local tool="$1"
+  shift
+  if [[ "$(_jq ".tools.${tool}.required")" == "false" ]]; then
+    _check warn "$1" "not enabled (opted out)"
+  else
+    _check fail "$@"
+  fi
+}
+
+# Every tool explicitly opted out (required false): enforcement "off" is then the expected state.
+_all_opted_out() {
+  local t
+  for t in graphify agentmemory context_mode leanctx rtk; do
+    [[ "$(_jq ".tools.${t}.required")" == "false" ]] || return 1
+  done
+  return 0
+}
+
 printf '== Global toolstack parity verify (SB five_tool_routed) ==\n\n'
 
 if [[ -f "$TS_JSON" ]]; then _check pass config exists; else _check fail config missing; fi
 
-if [[ "$(_jq '.enforcement')" == "always" ]]; then _check pass enforcement always; else _check fail enforcement "not always"; fi
+if [[ "$(_jq '.enforcement')" == "always" ]]; then _check pass enforcement always
+elif [[ "$(_jq '.enforcement')" == "off" ]] && _all_opted_out; then _check pass enforcement "off (no tool enabled)"
+else _check fail enforcement "not always"; fi
 if [[ "$(_jq '.sb_parity')" == "true" ]]; then _check pass sb_parity true; else _check fail sb_parity "not true"; fi
 if [[ "$(_jq '.profile')" == "five_tool_routed" ]]; then _check pass profile five_tool_routed; else _check fail profile "$(_jq '.profile')"; fi
 
@@ -57,11 +85,11 @@ if [[ "$(_jq '.tools.agentmemory.usage_ttl_seconds')" == "1800" ]]; then _check 
 if ! jq -e '.tools.leanctx_standalone' "$TS_JSON" >/dev/null 2>&1; then _check pass no_standalone_tool absent; else _check fail no_standalone_tool "leanctx_standalone present"; fi
 
 for tool in graphify agentmemory context_mode leanctx rtk; do
-  if [[ "$(_jq ".tools.${tool}.required")" == "true" ]]; then
-    _check pass "required:${tool}" true
-  else
-    _check fail "required:${tool}" "$(_jq ".tools.${tool}.required")"
-  fi
+  case "$(_jq ".tools.${tool}.required")" in
+    true) _check pass "required:${tool}" true ;;
+    false) _check warn "required:${tool}" "opted out" ;;
+    *) _check fail "required:${tool}" "$(_jq ".tools.${tool}.required")" ;;
+  esac
 done
 
 for hook in session-bootstrap shell-compression graphify-gate agentmemory-gate rtk-gate context-mode-gate token-compression-tools-gate stack-compression-coordinator record-graphify-query record-agentmemory-usage; do
@@ -82,10 +110,10 @@ for rule in graphify.mdc agentmemory.mdc leanctx.mdc context-mode.mdc token-comp
 done
 
 if [[ -f "$MCP_JSON" ]]; then
-  if grep -q '"graphify"' "$MCP_JSON"; then _check pass mcp:graphify wired; else _check fail mcp:graphify missing; fi
-  if grep -q 'agentmemory' "$MCP_JSON"; then _check pass mcp:agentmemory wired; else _check fail mcp:agentmemory missing; fi
-  if grep -q '"context-mode"' "$MCP_JSON"; then _check pass mcp:context-mode wired; else _check fail mcp:context-mode missing; fi
-  if grep -q '"leanctx"' "$MCP_JSON"; then _check pass mcp:leanctx wired; else _check fail mcp:leanctx missing; fi
+  if grep -q '"graphify"' "$MCP_JSON"; then _check pass mcp:graphify wired; else _fail_unless_opted_out graphify mcp:graphify missing; fi
+  if grep -q 'agentmemory' "$MCP_JSON"; then _check pass mcp:agentmemory wired; else _fail_unless_opted_out agentmemory mcp:agentmemory missing; fi
+  if grep -q '"context-mode"' "$MCP_JSON"; then _check pass mcp:context-mode wired; else _fail_unless_opted_out context_mode mcp:context-mode missing; fi
+  if grep -q '"leanctx"' "$MCP_JSON"; then _check pass mcp:leanctx wired; else _fail_unless_opted_out leanctx mcp:leanctx missing; fi
   if ! grep -q 'lean-ctx-standalone' "$MCP_JSON"; then _check pass mcp:no_standalone removed; else _check fail mcp:no_standalone "still present"; fi
   if grep -q 'LEANCTX_DISABLE_SHELL_MCP' "$MCP_JSON"; then _check pass leanctx:shell_off env; else _check fail leanctx:shell_off missing; fi
   if grep -q 'lctx_' "$MCP_JSON"; then _check pass leanctx:prefix lctx_; else _check warn leanctx:prefix "check env"; fi
@@ -100,10 +128,10 @@ if [[ -f "$HOOKS_JSON" ]]; then
   if grep -q 'rtk hook cursor' "$HOOKS_JSON"; then _check pass hooks:shell_compression wired; else _check fail hooks:shell_compression missing; fi
   if ! grep -q 'toolstack/shell-compression' "$HOOKS_JSON"; then _check pass hooks:legacy_shell_wrapper removed; else _check fail hooks:legacy_shell_wrapper "still wired"; fi
   if ! grep -q 'lean-ctx hook rewrite' "$HOOKS_JSON"; then _check pass hooks:no_leanctx_rewrite removed; else _check fail hooks:no_leanctx_rewrite "still present"; fi
-  if grep -q 'toolstack/graphify-gate' "$HOOKS_JSON"; then _check pass hooks:graphify_gate wired; else _check fail hooks:graphify_gate missing; fi
-  if grep -q 'toolstack/agentmemory-gate' "$HOOKS_JSON"; then _check pass hooks:agentmemory_gate wired; else _check fail hooks:agentmemory_gate missing; fi
-  if grep -q 'toolstack/rtk-gate' "$HOOKS_JSON"; then _check pass hooks:rtk_gate wired; else _check fail hooks:rtk_gate missing; fi
-  if grep -q 'toolstack/context-mode-gate' "$HOOKS_JSON"; then _check pass hooks:cm_gate wired; else _check fail hooks:cm_gate missing; fi
+  if grep -q 'toolstack/graphify-gate' "$HOOKS_JSON"; then _check pass hooks:graphify_gate wired; else _fail_unless_opted_out graphify hooks:graphify_gate missing; fi
+  if grep -q 'toolstack/agentmemory-gate' "$HOOKS_JSON"; then _check pass hooks:agentmemory_gate wired; else _fail_unless_opted_out agentmemory hooks:agentmemory_gate missing; fi
+  if grep -q 'toolstack/rtk-gate' "$HOOKS_JSON"; then _check pass hooks:rtk_gate wired; else _fail_unless_opted_out rtk hooks:rtk_gate missing; fi
+  if grep -q 'toolstack/context-mode-gate' "$HOOKS_JSON"; then _check pass hooks:cm_gate wired; else _fail_unless_opted_out context_mode hooks:cm_gate missing; fi
   if grep -q 'toolstack/stack-compression-coordinator' "$HOOKS_JSON"; then _check pass hooks:coordinator wired; else _check fail hooks:coordinator missing; fi
   if grep -q 'toolstack/token-compression-tools-gate' "$HOOKS_JSON"; then _check pass hooks:token_gate wired; else _check fail hooks:token_gate missing; fi
   if grep -q 'toolstack/session-bootstrap' "$HOOKS_JSON"; then _check pass hooks:session_bootstrap wired; else _check fail hooks:session_bootstrap missing; fi
@@ -120,13 +148,13 @@ else
   _check fail hooks.json missing
 fi
 
-if command -v graphify >/dev/null 2>&1; then _check pass cli:graphify ok; else _check fail cli:graphify missing; fi
-if command -v agentmemory >/dev/null 2>&1; then _check pass cli:agentmemory ok; else _check fail cli:agentmemory missing; fi
-if command -v context-mode >/dev/null 2>&1; then _check pass cli:context-mode ok; else _check fail cli:context-mode missing; fi
-if command -v lean-ctx >/dev/null 2>&1; then _check pass cli:lean-ctx ok; else _check fail cli:lean-ctx missing; fi
-if command -v rtk >/dev/null 2>&1; then _check pass cli:rtk ok; else _check fail cli:rtk missing; fi
+if command -v graphify >/dev/null 2>&1; then _check pass cli:graphify ok; else _fail_unless_opted_out graphify cli:graphify missing; fi
+if command -v agentmemory >/dev/null 2>&1; then _check pass cli:agentmemory ok; else _fail_unless_opted_out agentmemory cli:agentmemory missing; fi
+if command -v context-mode >/dev/null 2>&1; then _check pass cli:context-mode ok; else _fail_unless_opted_out context_mode cli:context-mode missing; fi
+if command -v lean-ctx >/dev/null 2>&1; then _check pass cli:lean-ctx ok; else _fail_unless_opted_out leanctx cli:lean-ctx missing; fi
+if command -v rtk >/dev/null 2>&1; then _check pass cli:rtk ok; else _fail_unless_opted_out rtk cli:rtk missing; fi
 
-if [[ -f "$SB_JSON" ]]; then
+if [[ -n "$SB_JSON" && -f "$SB_JSON" ]]; then
   sb_budget="$(jq -r '.recommended_tools.graphify.query_budget // 0' "$SB_JSON")"
   if [[ "$sb_budget" == "$(_jq '.tools.graphify.query_budget')" ]]; then
     _check pass parity:query_budget "$sb_budget"

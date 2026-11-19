@@ -35,7 +35,7 @@ def env(*claims: str) -> list[dict]:
     return [{"payload": {"evidence": [{"claim": c} for c in claims]}}]
 
 
-from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run, with_apo_pack_run_plain_names  # noqa: E402
 
 
 @with_apo_pack_run
@@ -70,7 +70,7 @@ class ClaimClassificationTests(unittest.TestCase):
         self.assertFalse(m.is_unusable_overview_claim("Aider, Cline, Continue", focus_name="aider"))
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class SlugTests(unittest.TestCase):
     def test_slugify_and_normalize(self) -> None:
         self.assertEqual(m._slugify(" Foo & Bar! "), "foo-bar")
@@ -109,7 +109,7 @@ class SlugTests(unittest.TestCase):
 
     def test_extract_slugs_from_text(self) -> None:
         self.assertEqual(m._extract_slugs_from_text("Silver Bullet and github copilot with cline"),
-                         ["silver-bullet", "cline", "github-copilot", "github-copilot-workspace"])  # one product, one slug
+                         ["silver-bullet", "cline", "github-copilot"])  # one product, one slug
         self.assertEqual(m._extract_slugs_from_text("nothing here"), [])
         self.assertEqual(m._extract_slugs_from_text("zt rocks and omega", KNOWN_WITH_PACK, PACK), ["omega", "zeta-tool"])  # "zt" is the pack alias of zeta-tool
 
@@ -193,7 +193,7 @@ class DiscoverTests(unittest.TestCase):
         self.assertEqual(m._iter_claim_texts(envelopes), ["e1", "e2", "c1", "c2", "f1", "t1", "d1", "a1"])
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class ProseInferenceTests(unittest.TestCase):
     def test_explicit_criterion_flags_override_prose(self) -> None:
         body = ("lifecycle_span=yes; deterministic_gates=no; cross_session_state=partial; "
@@ -336,7 +336,7 @@ class ProseInferenceTests(unittest.TestCase):
             self.assertFalse(m._parse_solution_led_matrix_entry(support, "???", "body"))
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class ListParsingTests(unittest.TestCase):
     def test_extract_slugs_from_list(self) -> None:
         self.assertEqual(m._extract_slugs_from_list("Devin, Aider (oss), cline only among peers"), ["devin", "aider", "cline"])
@@ -346,7 +346,7 @@ class ListParsingTests(unittest.TestCase):
         self.assertEqual(m._extract_slugs_from_list("a-team; ateam/ AI-team"), ["ateam"])
 
     def test_checkmark_body_sections(self) -> None:
-        pos, neg = m._parse_checkmark_body("✔ devin, aider only extras; ✖ cline; devin ✔ ; aider ✗ x; ; plain")
+        pos, neg = m._parse_checkmark_body("✔ devin, Aider only extras; ✖ cline; devin ✔ ; Aider ✗ x; ; plain")
         self.assertEqual(pos, ["devin", "aider", "devin"])
         self.assertEqual(neg, ["cline", "aider"])
         self.assertEqual(m._parse_checkmark_body("   "), ([], []))
@@ -371,7 +371,7 @@ class ListParsingTests(unittest.TestCase):
         self.assertIs(support["cline"]["Hook-enforced gates"], False)
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class ClaimParserTests(unittest.TestCase):
     def test_features_in_text_and_primary_slug(self) -> None:
         self.assertEqual(m._features_in_text("Has hook gates and CI/CD plus audit logs"),
@@ -384,7 +384,7 @@ class ClaimParserTests(unittest.TestCase):
         self.assertIsNone(m._primary_slug_in_text("x" * 100 + " zzz"))
 
     def test_comparative_claims(self) -> None:
-        support = support_of(m._parse_comparative_claims, "Devin lacks hook gates; while aider and cline offer CI integration.")
+        support = support_of(m._parse_comparative_claims, "Devin lacks hook gates; while Aider and cline offer CI integration.")
         self.assertIs(support["devin"]["Hook-enforced gates"], False)
         self.assertTrue(support["aider"]["CI integration"])
         self.assertTrue(support["cline"]["CI integration"])
@@ -465,7 +465,7 @@ class ClaimParserTests(unittest.TestCase):
 
     def test_managed_hosting_offer(self) -> None:
         self.assertEqual(support_of(m._parse_managed_hosting_offer, "nothing"), {})
-        support = support_of(m._parse_managed_hosting_offer, "While Silver Bullet is local, devin and aider offer managed hosting paths")
+        support = support_of(m._parse_managed_hosting_offer, "While Silver Bullet is local, devin and Aider offer managed hosting paths")
         self.assertNotIn("silver-bullet", support)
         self.assertTrue(support["devin"]["Managed hosting"])
         self.assertTrue(support["aider"]["Zero-infra bootstrap"])
@@ -514,7 +514,7 @@ class ClaimParserTests(unittest.TestCase):
         self.assertIn("Hook-enforced gates", defaults)
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class SlugScopedProseTests(unittest.TestCase):
     def test_window_scan_positive_and_lack(self) -> None:
         support = support_of(m._apply_slug_scoped_prose, "Devin provides hook gates and workflow composition. Aider")
@@ -536,7 +536,7 @@ class SlugScopedProseTests(unittest.TestCase):
         self.assertEqual(support, {"github-copilot": {"Hook-enforced gates": True}})
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class BulkClaimTests(unittest.TestCase):
     def test_extract_bulk_solution_list(self) -> None:
         f = m._extract_bulk_solution_list
@@ -586,7 +586,7 @@ class BulkClaimTests(unittest.TestCase):
         self.assertEqual(support, {"cursor": {"IDE-native integration": True}, "claude-code": {"IDE-native integration": True}})
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class ParseFeatureSupportTests(unittest.TestCase):
     def test_dispatch_order(self) -> None:
         envelopes = env(
@@ -749,7 +749,7 @@ class ScrTests(unittest.TestCase):
         self.assertIn("_No direct prose evidence lines matched this solution slug in live envelopes._", bare)
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class MaterializeTests(unittest.TestCase):
     def run_materialize(self, root: Path, **kw):
         with mock.patch.object(m, "resolve_pack_from_need", return_value=kw.pop("the_pack", None)):

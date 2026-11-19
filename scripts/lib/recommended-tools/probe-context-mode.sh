@@ -93,10 +93,21 @@ rt_repair_context_mode() {
     return 0
   fi
   if ! sb_context_mode_cli_available 2>/dev/null; then
-    npm install -g context-mode 2>/dev/null && actions+=("npm_install_context_mode") || failures+=("npm_install_failed")
+    # A package install needs the user's "install" consent, not just "wire".
+    if ! rt_mutation_allowed context_mode install; then
+      failures+=("install_not_consented")
+    elif npm install -g context-mode >&2; then
+      actions+=("npm_install_context_mode")
+    else
+      failures+=("npm_install_failed")
+    fi
   fi
   local opt="${RT_REPO_ROOT}/scripts/optimize-rtk-context-mode.sh"
-  if [[ -f "$opt" ]]; then
+  if ! rt_mutation_allowed context_mode wire; then
+    # Install-only consent: the optimizer would skip every step, so do not run it or claim success.
+    rt_wire_skipped_notice context_mode
+    failures+=("wire_not_consented")
+  elif [[ -f "$opt" ]]; then
     local -a opt_args=(--host "${RT_HOST:-cursor}" --project-root "${RT_PROJECT_ROOT:-}")
     rt_cross_tool_batch_active && opt_args+=(--skip-rtk-init)
     rt_cross_tool_batch_active && opt_args+=(--skip-cm-doctor)

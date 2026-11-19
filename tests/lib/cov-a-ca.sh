@@ -2,6 +2,12 @@
 # shellcheck disable=SC2034  # variables are consumed by the sourcing tests
 # shellcheck shell=bash
 # Shared completion-audit fixture (sourced after tl_init).
+# The push scope refuses a hook environment that redirects git (GIT_CONFIG_*, GIT_DIR, ...): the fixture runs
+# the hook in a clean one, whatever the caller (a CI runner, a sandboxed agent) exports.
+for _ca_var in $(compgen -e | grep -E '^GIT_(DIR|WORK_TREE|COMMON_DIR|NAMESPACE|EXEC_PATH|CONFIG($|_))'); do
+  unset "$_ca_var"
+done
+unset _ca_var ENV
 _ca_tpl() {
   if [[ -z "${_CA_TPL:-}" ]]; then
     _CA_TPL="$TL_TMP/.tpl"
@@ -13,6 +19,8 @@ _ca_tpl() {
 mkproj() {
   PROJ="$TL_TMP/$1"
   _ca_tpl
+  # a name used twice is a fresh project (cp -a into an existing directory would nest the template, and fails for a non-root user: its objects are read-only)
+  rm -rf "$PROJ"
   cp -a "$_CA_TPL" "$PROJ"
   printf '# Silver Bullet\n' >"$PROJ/silver-bullet.md"
   jq -n --arg v "$CFG_VERSION" "{config_version:\$v, sb_initiated:true,
@@ -22,9 +30,12 @@ mkproj() {
   export GH_RUN_LIST_OVERRIDE
   : >"$STATE"
   rm -f "$SB_RUNTIME_STATE_DIR"/release-live-matrix "$SB_RUNTIME_STATE_DIR"/e2e-live-matrix "$SB_RUNTIME_STATE_DIR"/inline-e2e-matrix "$QG"
+  # Once the install has made its key every project needs its record (hooks/lib/integrity.sh).
+  if [[ -f "$SB_RUNTIME_STATE_DIR/seal.key" ]]; then sb_integrity_baseline "$(cd "$PROJ" && pwd -P)" session; sb_integrity_forget; fi
 }
 
-HOOK="$TL_REPO_ROOT/hooks/completion-audit.sh"
+PLUGIN="$(tl_fake_plugin_root)"
+HOOK="$PLUGIN/hooks/completion-audit.sh"
 CFG_VERSION="$(jq -r '.config_version' "$TL_REPO_ROOT/templates/silver-bullet.config.json.default")"
 
 SKILLS="$TL_TMP/skills"
@@ -42,7 +53,11 @@ export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$SB_RUNTIME_STATE_DIR/verify-tests
 export SILVER_BULLET_QUALITY_GATE_STATE_FILE="$QG"
 printf 'verified\n' >"$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
 
-state() { printf '%s\n' "$@" >"$STATE"; }
+source "$TL_REPO_ROOT/hooks/lib/integrity.sh"
+state() {
+  printf '%s\n' "$@" >"$STATE"
+  if [[ -f "$SB_RUNTIME_STATE_DIR/seal.key" ]]; then sb_state_seal_write "$STATE"; fi
+}
 run_ca() {
   local event="$1" cmd="$2"
   shift 2
