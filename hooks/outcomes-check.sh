@@ -39,6 +39,10 @@ else
   prompt=""
 fi
 
+# R2-22: this session's own checklist file (the host session_id keys it; works without jq too).
+[[ -f "$_lib_dir/session-key.sh" ]] && source "$_lib_dir/session-key.sh"
+declare -f sb_session_key_set >/dev/null 2>&1 && sb_session_key_set "$input"
+
 # Resolve SB project
 # The project: the nearest root with a record, else the nearest directory with both contract files.
 config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity-anchor.sh" && sb_integrity_activation_config "$PWD") 2>/dev/null; true)"
@@ -64,28 +68,43 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
     # shellcheck source=lib/prompt-classifier.sh
     source "$_lib_dir/prompt-classifier.sh"
   fi
+  # R4-08: orchestrator-parent.sh defines sb_orchestrator_parent_queue_pending, which the
+  # interrupt helper needs, so it is sourced BEFORE the helper runs.
+  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
+    # shellcheck source=lib/orchestrator-parent.sh
+    source "$_lib_dir/orchestrator-parent.sh"
+  fi
   if [[ -f "$_lib_dir/orchestrator-state.sh" ]]; then
     # shellcheck source=lib/orchestrator-state.sh
     source "$_lib_dir/orchestrator-state.sh"
-    sb_orchestrator_clear_queue_on_interrupt "$prompt" 2>/dev/null || true
   fi
-  sb_outcomes_seed_for_prompt "$prompt"
+  override_notice=""
   if [[ -f "$_lib_dir/orchestrator-directive.sh" ]]; then
-    if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
-      # shellcheck source=lib/orchestrator-parent.sh
-      source "$_lib_dir/orchestrator-parent.sh"
-    fi
     # shellcheck source=lib/orchestrator-directive.sh
     source "$_lib_dir/orchestrator-directive.sh"
-    if sb_orchestrator_prompt_has_override "$prompt"; then
-      repo_root="$(dirname "$config_file")"
-      sb_orchestrator_log_override "$repo_root" "$(sb_orchestrator_extract_override_reason "$prompt")" "$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
-      sb_orchestrator_directive_clear
-    elif ! ( declare -f sb_prompt_is_orchestrator_followup >/dev/null 2>&1 && sb_prompt_is_orchestrator_followup "$prompt" ); then
-      sb_orchestrator_directive_from_pending_outcome 2>/dev/null || true
+  fi
+  # An SB OVERRIDE is the user's decision to abandon the queue, so it is handled first.
+  override_rc=1
+  declare -f sb_orchestrator_note_parent_prompt >/dev/null 2>&1 && sb_orchestrator_note_parent_prompt "$input"
+  if declare -f sb_orchestrator_override_apply >/dev/null 2>&1; then
+    override_rc=0
+    sb_orchestrator_override_apply "$input" "$prompt" "$(dirname "$config_file")" || override_rc=$?
+    if [[ "$override_rc" -eq 2 ]]; then
+      override_notice="SB OVERRIDE was NOT honoured: ${SB_OVERRIDE_REFUSAL}. Nothing was cleared."
     fi
   fi
+  if declare -f sb_orchestrator_clear_queue_on_interrupt >/dev/null 2>&1 && [[ "$override_rc" -ne 0 ]]; then
+    sb_orchestrator_clear_queue_on_interrupt "$prompt" "$(dirname "$config_file")" "$input" 2>/dev/null || true
+  fi
+  sb_outcomes_seed_for_prompt "$prompt"
+  if [[ "$override_rc" -ne 0 ]] && declare -f sb_orchestrator_directive_from_pending_outcome >/dev/null 2>&1 \
+    && ! ( declare -f sb_prompt_is_orchestrator_followup >/dev/null 2>&1 && sb_prompt_is_orchestrator_followup "$prompt" ); then
+    sb_orchestrator_directive_from_pending_outcome 2>/dev/null || true
+  fi
   summary="$(sb_outcomes_pending_summary)"
+  if [[ -n "$override_notice" ]]; then
+    summary="${override_notice}${summary:+$'\n\n'$summary}"
+  fi
   [[ -n "$summary" ]] || exit 0
   if [[ -f "$_lib_dir/ups-coalesce.sh" ]]; then
     # shellcheck source=lib/ups-coalesce.sh
@@ -98,14 +117,9 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
   exit 0
 fi
 
-# Stop / SubagentStop
-if [[ "$hook_event" == "SubagentStop" ]]; then
-  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
-    # shellcheck source=lib/orchestrator-parent.sh
-    source "$_lib_dir/orchestrator-parent.sh"
-    sb_orchestrator_is_worker_session 2>/dev/null && exit 0
-  fi
-fi
+# Stop / SubagentStop — the checklist belongs to the parent's prompt, so an ordinary subagent
+# finishing is never held by it (R2-10); the parent's own Stop is where it blocks.
+[[ "$hook_event" == "SubagentStop" ]] && exit 0
 
 state_contents=""
 if [[ -f "$state_file" && ! -L "$state_file" ]]; then
@@ -120,7 +134,8 @@ fi
 
 [[ -z "$state_contents" ]] && exit 0
 
-sb_outcomes_auto_evaluate "$state_contents"
+sb_outcomes_reject_tampered
+sb_outcomes_auto_evaluate "$state_contents" "$trivial_file"
 
 if sb_outcomes_all_done; then
   exit 0
@@ -137,7 +152,7 @@ if [[ -f "$_lib_dir/stop-coalesce.sh" ]]; then
     exit 0
   fi
 fi
-reason=$(printf 'Cannot complete — per-prompt outcome checklist incomplete.\n\n%s\n\nUpdate %s (mark outcomes done with evidence) or complete the missing work.' \
+reason=$(printf 'Cannot complete — per-prompt outcome checklist incomplete.\n\n%s\n\nComplete the missing work: route through /sb (or a composer skill), define the deliverables in a plan, and run sb:verify. The checklist is derived from recorded skills and plan files; editing %s is detected and reset.' \
   "$summary" "$(sb_outcomes_session_file)")
 if [[ "$_sb_outcomes_have_jq" == true ]]; then
   json_reason=$(printf '%s' "$reason" | jq -Rs '.')

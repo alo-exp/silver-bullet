@@ -3,7 +3,8 @@ set -euo pipefail
 trap 'printf "{\"hookSpecificOutput\":{\"message\":\"Silver Bullet dependency compatibility gate encountered an internal error; continuing without blocking.\"}}" ; exit 0' ERR
 
 # PreToolUse hook (matcher: Skill)
-# Legacy compatibility gate for dependency skill invocations.
+# Legacy compatibility STUB for dependency skill invocations: INERT, every path allows (R2-32).
+# It is not an enforcement gate; docs/HOOKS.md says so.
 #
 # SB owns lifecycle markers and workflows. Missing optional third-party plugins
 # are not a hard Silver Bullet runtime prerequisite. This hook keeps the matcher

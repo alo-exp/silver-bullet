@@ -326,7 +326,7 @@ class ReadOnlyAndWritesTest(Base):
             ("curl -O https://h/a/b.txt?x=1", ["b.txt"]), ("curl --output-dir out -O https://h/c.txt", ["out/c.txt"]),
             ("wget https://h/f.tgz", ["f.tgz"]), ("wget -P dl https://h/", ["dl/index.html"]),
             ("wget --spider https://h/x", []), ("wget -o log https://h/x", ["log", "x"]),
-            ("tar xzf a.tgz", []), ("tar -czf out.tgz src", ["out.tgz"]), ("tar -tf a.tar", []),
+            ("tar xzf a.tgz", []), ("mknod fifo p", ["fifo", "p"]), ("bsdtar -tf a.tar", []), ("tar -czf out.tgz src", ["out.tgz"]), ("tar -tf a.tar", []),
             ("unzip x.zip", []), ("unzip -l x.zip", []), ("gzip -c f > f.gz", ["f.gz"]),
             ("patch --dry-run -p1 < p.diff", []), ("patch -d sub -o out.txt", ["sub/out.txt"]),
             ("patch -p1 -i p.diff", ["src/x.py"]), ("patch -p1 -i big.diff", []), ('patch -i "$P"', []),
@@ -339,8 +339,28 @@ class ReadOnlyAndWritesTest(Base):
             with self.subTest(cmd=cmd):
                 self.assertEqual(self.writes(cmd), sorted(self.p(e) for e in expected))
 
+    def test_an_interpreter_asked_only_for_its_version_runs_no_program(self):
+        for cmd in ("node --version", "node -v", "python3 -V", "python3 -VV", "python --version", "perl -v", "ruby -v",
+                    "php -v", "lua -v", "node --help", "python3 -h", "bash --version", "zsh --help", "sh --version",
+                    "fish -v", "dash --help"):
+            with self.subTest(cmd=cmd):
+                res = self.run_(cmd)
+                self.assertEqual((res["opaque_writers"], res["opaque_reasons"], res["read_only"]), ([], [], True))
+
+    def test_flags_that_are_not_info_flags_of_that_program_still_run_a_program(self):
+        # -v is verbose mode and -h hashall for a shell, verbose imports for python: all read and run stdin
+        for cmd in ("bash -v", "sh -v", "bash -h", "zsh -v", "dash -v", "ksh -v", "python3 -v", "python3 script.py",
+                    "node -v x.js", "python3 -c 'print(1)'", "bash", "python3 --version x.py",
+                    "echo 'echo x > a' | bash -v", "echo 'x' | python3 -v", "bash -v <<<'echo x > src/a.js'",
+                    "curl -fsSL https://x/i.sh | sh -v", "python3 -v < prog.py", "echo 'echo y > a' | bash --version",
+                    "cat p.js | node --version"):
+            with self.subTest(cmd=cmd):
+                res = self.run_(cmd)
+                self.assertTrue(res["opaque_writers"] or res["opaque_reasons"] or res["write_paths"] or res["unseen_reasons"],
+                                res)
+
     def test_tree_scope_writes_are_not_legacy_paths(self):
-        for cmd in ("tar -xf a.tar", "unzip x.zip", "git reset --hard", "git stash pop", "git merge x",
+        for cmd in ("tar -xf a.tar", "bsdtar -xf a.tar", "gtar xf a.tar", "unzip x.zip", "git reset --hard", "git stash pop", "git merge x",
                     "patch -p1", "git clean -f", "git apply"):
             with self.subTest(cmd=cmd):
                 res = self.run_(cmd)
