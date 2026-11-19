@@ -47,6 +47,36 @@ info 'explain how to fix this'
 info 'Why does the release build fail on CI?'
 info 'recap'
 info "what's next?"
+# r4: a clause after a Unicode ellipsis, a colon, a dash or an opening parenthesis that begins with a work verb is a
+# request, whatever the question phrase before it; honest questions stay informational. UTF-8 bytes are matched as
+# literals, so the table must give the same verdicts in a UTF-8 locale and in the C locale (macOS Bash 3.2 / BSD).
+table_r4() {
+  work 'What is going on…fix it'
+  work 'What is going on… fix it'
+  work 'What is broken: fix it'
+  work 'What is broken — fix it'
+  work 'What is broken – fix it'
+  work 'What is broken - fix it'
+  work 'What is broken -- fix it'
+  work 'What is broken (fix it)'
+  work 'Why is it slow (fix it)'
+  work 'What is wrong: please fix it'
+  work 'What is wrong: and then deploy it'
+  info 'What does this do: explain'
+  info 'What does this do — explain'
+  info 'What is the status (see the review notes)'
+  info 'What is the status of the build (the main one)?'
+  info 'What does this do: fix it?'
+  info 'What time is it in Zürich: 10:30 — or later?'
+  info 'What is 10:30 vs 11:00 in … Zürich?'
+  info 'What is the difference between fix and patch - in git terms'
+  info 'What is http://example.com/fix about'
+}
+for _loc in C C.utf8; do
+  _old_lc="${LC_ALL-}"; export LC_ALL="$_loc"
+  table_r4
+  if [[ -n "$_old_lc" ]]; then export LC_ALL="$_old_lc"; else unset LC_ALL; fi
+done
 fu() { if sb_prompt_is_orchestrator_followup "$1"; then tl_pass "follow-up: $1"; else tl_fail "expected follow-up: $1"; fi; }
 nofu() { if sb_prompt_is_orchestrator_followup "$1"; then tl_fail "expected new request: $1"; else tl_pass "new request: $1"; fi; }
 nofu 'now implement the payment API'
