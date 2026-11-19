@@ -28,6 +28,8 @@ _dc_tpl() {
 mkproj() {
   PROJ="$TL_TMP/$1"
   _dc_tpl
+  # a name used twice is a fresh project (cp -a into an existing directory would nest the template, and fails for a non-root user: its objects are read-only)
+  rm -rf "$PROJ"
   cp -a "$_DC_TPL" "$PROJ"
   printf '# SB\n' >"$PROJ/silver-bullet.md"
   jq -n --arg v "$CFG_VERSION" "{config_version:\$v, sb_initiated:true,
