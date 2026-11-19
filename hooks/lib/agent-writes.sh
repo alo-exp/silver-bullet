@@ -67,7 +67,7 @@ _sb_aw_tool_paths() {
 }
 
 sb_aw_entries() {
-  local input="${1:-}" tool="" cwd="" cmd="" kind path logical scope dyn raw cwdyn paths any
+  local input="${1:-}" tool="" cwd="" cmd="" kind path logical scope dyn raw cwdyn any
   # one jq call reads the fields the fast paths need (NUL separated: a path may hold anything else)
   {
     IFS= read -r -d '' tool
