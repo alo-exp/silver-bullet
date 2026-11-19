@@ -160,6 +160,17 @@ if [[ -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]]; then
     ((FAIL++)) || true
   fi
   rm -f "$rm_state"
+  # a marker that cannot be removed (a directory under that name) is tolerated
+  rm_dir="$(mktemp -d "${TMPDIR:-/tmp}/sb-matrix-stuck.XXXXXX")"
+  mkdir -p "$rm_dir/e2e-matrix-routing-row/keep"
+  if ( export SB_RUNTIME_STATE_DIR="$rm_dir"; sb_e2e_matrix_clear_routing_row_marker ); then
+    echo "PASS: an unremovable routing marker is tolerated"
+    ((PASS++)) || true
+  else
+    echo "FAIL: an unremovable routing marker is tolerated"
+    ((FAIL++)) || true
+  fi
+  rm -rf "$rm_dir"
 else
   echo "FAIL: e2e-matrix-routing.sh helper missing"
   ((FAIL++)) || true

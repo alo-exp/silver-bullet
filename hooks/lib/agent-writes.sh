@@ -89,9 +89,7 @@ sb_aw_entries() {
         return 0
       fi
       while IFS= read -r path; do
-        kind=f
-        case "$path" in *'$'* | *'`'*) kind=d ;; esac
-        _sb_aw_path_entries "$kind" "$path" ""
+        _sb_aw_path_entries f "$path" ""
       done <<<"$SB_SA_WRITE_PATHS"
       return 0
       ;;
@@ -114,12 +112,12 @@ sb_aw_entries() {
       ;;
     *)
       # apply_patch and other file tools: the paths of the patch, else the file path
-      local any=false
+      local any=false paths="${SB_TI_PATCH_PATHS:-}"$'\n'"${SB_TI_FILE_PATH:-}"
       while IFS= read -r path; do
         [[ -n "$path" ]] || continue
         any=true
         _sb_aw_path_entries f "$path" ""
-      done <<<"$(printf '%s\n%s\n' "${SB_TI_PATCH_PATHS:-}" "${SB_TI_FILE_PATH:-}")"
+      done <<<"$paths"
       [[ "$any" == true ]] || printf '*\n'
       ;;
   esac
@@ -143,7 +141,6 @@ sb_aw_record() {
   n="${content//[!$'\n']/}"
   n=$((${#n} + 1))
   while IFS= read -r entry; do
-    [[ -n "$entry" ]] || continue
     case $'\n'"$content"$'\n' in *$'\n'"$entry"$'\n'*) continue ;; esac
     if (( n >= SB_AW_MAX )); then
       entry='*'
@@ -159,7 +156,7 @@ sb_aw_record() {
 sb_aw_wrote_source() {
   local root="${1%/}" sd="${2:-}" marker epoch entry body first
   marker="$sd/files-written"
-  [[ -f "$marker" && ! -L "$marker" && -n "$root" ]] || return 1
+  [[ -f "$marker" && ! -L "$marker" ]] || return 1
   epoch="$(sb_aw_session_epoch "$sd")"
   first="$(sed -n 1p "$marker")"
   [[ -n "$epoch" && "$first" == "#${epoch}" ]] || return 1
