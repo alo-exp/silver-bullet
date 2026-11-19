@@ -8,7 +8,8 @@
 #
 # The record is `${state dir}/files-written.<session start epoch>`: append-only, one entry per line. A line is one
 # O_APPEND write, so concurrent hooks never lose each other's entries, and a live trace is never rewritten. A new
-# session starts a new file (the first recorder of a session removes the regular files of earlier ones), and a
+# session starts a new file (the first recorder of a session removes the regular files of earlier ones; never when the
+# session start is unknown: then the trace is `files-written.unknown`, and a trace of any session counts), and a
 # trace holds at most SB_AW_MAX entries: past that one `*` is recorded and nothing more (fail closed).
 #   f<abs path>   a file the agent wrote (resolved path; the logical spelling too when it differs); a glob is a pattern
 #   l<abs path>   a file a file tool wrote: the path is literal (`*` and `?` are part of the name, never a pattern)
@@ -52,7 +53,7 @@ sb_aw_session_epoch() {
 sb_aw_trace_file() {
   local epoch
   epoch="$(sb_aw_session_epoch "$1")"
-  printf '%s/files-written.%s' "$1" "${epoch:--}"
+  printf '%s/files-written.%s' "$1" "${epoch:-unknown}"
 }
 
 # _sb_aw_path_entries KIND PATH LOGICAL [BASE]: the entries of one written path (relative to BASE, default $PWD), in both spellings
@@ -67,17 +68,17 @@ _sb_aw_path_entries() {
   fi
 }
 
-# The local paths a file tool names, one per line (never cell, body or content text). TOOL decides the fields:
+# The local paths a file tool names, one per line (never cell, body or content text; a value with a newline is judged line by line). TOOL decides the fields:
 # NotebookEdit its notebook_path, the Edit family its file_path, a local MCP tool the shared key list of
 # sb_tool_input_path_fields (the one the dev-cycle write guard reads); the tools of a known remote service (the
 # server name is the segment after mcp__) name no local path.
 _sb_aw_tool_paths() {
   local tool="$1" input="$2"
   case "$tool" in
-    NotebookEdit) printf '%s' "$input" | jq -r '.tool_input | objects | .notebook_path | strings | select(contains("\n") | not)' 2>/dev/null ;;
-    Edit | Write | MultiEdit) printf '%s' "$input" | jq -r '.tool_input | objects | .file_path | strings | select(contains("\n") | not)' 2>/dev/null ;;
-    mcp__github__* | mcp__gitlab__* | mcp__bitbucket__* | mcp__slack__* | mcp__notion__* | mcp__linear__* | mcp__asana__* | mcp__jira__* | mcp__atlassian__* | mcp__Figma__* | mcp__figma__* | mcp__Gmail__* | mcp__Google_* | mcp__plugin_*) return 0 ;;
-    *) sb_tool_input_path_fields "$input" ;;
+    NotebookEdit) printf '%s' "$input" | jq -r '.tool_input | objects | .notebook_path | strings' 2>/dev/null | awk 'NF' ;;
+    Edit | Write | MultiEdit) printf '%s' "$input" | jq -r '.tool_input | objects | .file_path | strings' 2>/dev/null | awk 'NF' ;;
+    mcp__github__* | mcp__gitlab__* | mcp__bitbucket__* | mcp__slack__* | mcp__notion__* | mcp__linear__* | mcp__asana__* | mcp__jira__* | mcp__atlassian__* | mcp__Figma__* | mcp__figma__* | mcp__Gmail__* | mcp__Google_Drive__* | mcp__Google_Calendar__* | mcp__plugin_*_github__* | mcp__plugin_*_gitlab__* | mcp__plugin_*_slack__* | mcp__plugin_*_notion__* | mcp__plugin_*_linear__* | mcp__plugin_*_asana__* | mcp__plugin_*_jira__* | mcp__plugin_*_atlassian__* | mcp__plugin_*_shopify__* | mcp__plugin_*_intuit-quickbooks__* | mcp__plugin_*_figma__*) return 0 ;;
+    *) sb_tool_input_path_fields "$input" | awk 'NF' ;;
   esac
 }
 
@@ -183,15 +184,16 @@ sb_aw_entries() {
 sb_aw_record() {
   local sd="${1:-}" entries="${2:-}" marker content entry n base
   marker="$(sb_aw_trace_file "$sd")"
+  base="${marker##*/}"
   # never through a link, never into (or opening) anything but a regular file: a FIFO would block the hook
   [[ -d "$sd" && ! -L "$marker" && ( ! -e "$marker" || -f "$marker" ) && -n "$entries" ]] || return 0
   content=""
   if [[ -f "$marker" ]]; then
     content="$(<"$marker")"
-  else
+  elif [[ "$base" != files-written.unknown ]]; then
     # the first record of a session: the regular files of earlier sessions' traces go (other names, so no
-    # concurrent appender of this session is affected)
-    base="${marker##*/}"
+    # concurrent appender of this session is affected). Never when the session start is unknown (its file was
+    # erased or is unreadable): then nothing can be told apart from this session's own trace.
     find "$sd" -maxdepth 1 -type f -name 'files-written*' ! -name "$base" -delete 2>/dev/null || true
   fi
   n="$(printf '%s' "$content" | grep -c . || true)"
@@ -277,16 +279,30 @@ _sb_aw_entry_source() {
   return 1
 }
 
+# _sb_aw_read_trace FILE ROOT: a regular file's entries, status 0 when one can be source
+_sb_aw_read_trace() {
+  local entry
+  while IFS= read -r entry; do
+    [[ "$entry" != '*' ]] || return 0
+    _sb_aw_entry_source "${entry:0:1}" "${entry:1}" "$2" && return 0
+  done <"$1"
+  return 1
+}
+
 sb_aw_wrote_source() {
-  local root="${1%/}" sd="${2:-}" marker entry
+  local root="${1%/}" sd="${2:-}" marker f
   marker="$(sb_aw_trace_file "$sd")"
   # a trace that is not a regular file (a planted link, dangling or not, a directory, a FIFO) cannot be read: an
   # unknown write
   if [[ -L "$marker" || ( -e "$marker" && ! -f "$marker" ) ]]; then return 0; fi
-  [[ -f "$marker" && -n "$(sb_aw_session_epoch "$sd")" ]] || return 1
-  while IFS= read -r entry; do
-    [[ "$entry" != '*' ]] || return 0
-    _sb_aw_entry_source "${entry:0:1}" "${entry:1}" "$root" && return 0
-  done <"$marker"
-  return 1
+  if [[ -z "$(sb_aw_session_epoch "$sd")" ]]; then
+    # the session start is unknown (its file was erased, or holds no number): a trace of any session cannot be told
+    # from this one's, so one that holds anything counts as a write that can be source
+    for f in "$sd"/files-written.*; do
+      [[ "$f" != "$marker" && ( -e "$f" || -L "$f" ) ]] || continue
+      [[ -L "$f" || ! -f "$f" || -s "$f" ]] && return 0
+    done
+  fi
+  [[ -f "$marker" ]] || return 1
+  _sb_aw_read_trace "$marker" "$root"
 }

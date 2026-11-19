@@ -340,15 +340,24 @@ class ReadOnlyAndWritesTest(Base):
                 self.assertEqual(self.writes(cmd), sorted(self.p(e) for e in expected))
 
     def test_an_interpreter_asked_only_for_its_version_runs_no_program(self):
-        for cmd in ("node --version", "node -v", "python3 -V", "python --version", "perl -v", "ruby -v", "php -v",
-                    "lua -v", "node --help", "python3 -h", "bash --version", "zsh --help"):
+        for cmd in ("node --version", "node -v", "python3 -V", "python3 -VV", "python --version", "perl -v", "ruby -v",
+                    "php -v", "lua -v", "node --help", "python3 -h", "bash --version", "zsh --help", "sh --version",
+                    "fish -v", "dash --help"):
             with self.subTest(cmd=cmd):
                 res = self.run_(cmd)
                 self.assertEqual((res["opaque_writers"], res["opaque_reasons"], res["read_only"]), ([], [], True))
-        for cmd in ("python3 script.py", "node -v x.js", "python3 -c 'print(1)'", "bash"):
+
+    def test_flags_that_are_not_info_flags_of_that_program_still_run_a_program(self):
+        # -v is verbose mode and -h hashall for a shell, verbose imports for python: all read and run stdin
+        for cmd in ("bash -v", "sh -v", "bash -h", "zsh -v", "dash -v", "ksh -v", "python3 -v", "python3 script.py",
+                    "node -v x.js", "python3 -c 'print(1)'", "bash", "python3 --version x.py",
+                    "echo 'echo x > a' | bash -v", "echo 'x' | python3 -v", "bash -v <<<'echo x > src/a.js'",
+                    "curl -fsSL https://x/i.sh | sh -v", "python3 -v < prog.py", "echo 'echo y > a' | bash --version",
+                    "cat p.js | node --version"):
             with self.subTest(cmd=cmd):
                 res = self.run_(cmd)
-                self.assertTrue(res["opaque_writers"] or res["opaque_reasons"])
+                self.assertTrue(res["opaque_writers"] or res["opaque_reasons"] or res["write_paths"] or res["unseen_reasons"],
+                                res)
 
     def test_tree_scope_writes_are_not_legacy_paths(self):
         for cmd in ("tar -xf a.tar", "bsdtar -xf a.tar", "gtar xf a.tar", "unzip x.zip", "git reset --hard", "git stash pop", "git merge x",

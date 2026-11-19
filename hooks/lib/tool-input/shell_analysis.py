@@ -1837,12 +1837,25 @@ _NODE_VALUE_LONG = {"--require", "--import", "--loader", "--experimental-loader"
                     "--conditions", "--title"}
 
 
-_INFO_FLAGS = frozenset(("-v", "-V", "--version", "-version", "-h", "-help", "--help"))
+# Per program: the only flags that print and exit. -v / -h are NOT among them for a shell (verbose mode, hashall) or
+# for `python -v` (verbose imports): those still read and run a program from stdin.
+_INFO_FLAGS = {
+    "python": frozenset(("-V", "-VV", "--version", "-h", "--help")),
+    "node": frozenset(("-v", "--version", "-h", "--help")),
+    "perl": frozenset(("-v", "-V", "--version", "-h", "--help")),
+    "ruby": frozenset(("-v", "--version", "-h", "--help")),
+    "php": frozenset(("-v", "--version", "-h", "--help")),
+    "lua": frozenset(("-v",)),
+    "fish": frozenset(("-v", "--version", "-h", "--help")),
+}
+_SHELL_INFO_FLAGS = frozenset(("--version", "--help"))
 
 
-def _only_info_flags(args):
-    """True when every argument is a version/help flag: the program prints and exits without running code."""
-    return bool(args) and all(_lit(a) in _INFO_FLAGS for a in args)
+def _only_info_flags(args, kind, stdin):
+    """True when the program only prints its version or help: every argument is an info flag of THAT program and
+    nothing is fed to it (a piped or here-document program is read and run whatever the flags say)."""
+    allowed = _INFO_FLAGS.get(kind, _SHELL_INFO_FLAGS if kind in _SHELLS else frozenset())
+    return stdin is None and bool(args) and all(_lit(a) in allowed for a in args)
 
 
 def _interpreter_kind(name):
@@ -3476,7 +3489,7 @@ class _Analysis:
 
     def h_shell(self, argv, env, prefix, stdin):
         args = argv[1:]
-        if _only_info_flags(args):  # bash --version: no program runs
+        if _only_info_flags(args, os.path.basename(_text(argv[0])), stdin):  # bash --version: no program runs
             return None
         i, command_mode, stdin_mode = 0, False, False
         while i < len(args):
@@ -3541,7 +3554,7 @@ class _Analysis:
         kind = _interpreter_kind(os.path.basename(argv[0]))
         code_flags, value_flags, attached_only = _INTERPRETER_FLAGS.get(kind, ("e", "", False))
         args = argv[1:]
-        if _only_info_flags(args):  # node --version, python3 -V: no program runs
+        if _only_info_flags(args, kind, stdin):  # node --version, python3 -V: no program runs
             return None
         codes, module, test, i = [], None, False, 0
         while i < len(args):
