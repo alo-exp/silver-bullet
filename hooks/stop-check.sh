@@ -442,7 +442,7 @@ fi
 # scratch files elsewhere. The source pattern and exclusions are the ones the other gates use (sb_pf_src_load).
 sb_stop_agent_wrote_source() {
   local root line path
-  [[ -n "$sb_dirty_filtered" && -f "${SB_STATE_DIR}/files-written" ]] || return 1
+  [[ -n "$sb_dirty_filtered" && ( -e "${SB_STATE_DIR}/files-written" || -L "${SB_STATE_DIR}/files-written" ) ]] || return 1
   root="$(git -C "$PWD" rev-parse --show-toplevel)"
   source "$lib_dir/planning-floor.sh"
   source "$lib_dir/agent-writes.sh"

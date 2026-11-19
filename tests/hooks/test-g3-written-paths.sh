@@ -33,6 +33,7 @@ printf 'a\n' >"$EC_PROJ/src/app.js"; printf 'd\n' >"$EC_PROJ/docs/a.txt"
 git -C "$EC_PROJ" add -A >/dev/null; git -C "$EC_PROJ" commit -qm init
 printf 'user edit\n' >>"$EC_PROJ/src/app.js"   # the user's own pending change
 TMPD="$(mktemp -d)"
+mkdir -p "$TMPD/other"
 
 # ---- honest chat-only variants: a write outside the project's source never engages the floor ----------------
 for c in 'git diff > '"$TMPD"'/review.diff' 'pytest 2>&1 | tee '"$TMPD"'/test.log' 'echo hi > '"$TMPD"'/scratch.txt' 'cat src/app.js > '"$HOME"'/notes.txt' 'echo n > docs/notes.md'; do
@@ -101,8 +102,6 @@ assert_file_absent "an empty command leaves no trace" "$MARK"
 source "$TL_REPO_ROOT/hooks/lib/planning-floor.sh"
 source "$TL_REPO_ROOT/hooks/lib/agent-writes.sh"
 if sb_aw_wrote_source "$EC_PROJ" "$SD"; then fail "no trace: not source"; else pass "no trace: not source"; fi
-ln -s "$TMPD/elsewhere" "$MARK"
-if sb_aw_wrote_source "$EC_PROJ" "$SD"; then fail "a linked trace is not read"; else pass "a linked trace is not read"; fi
 rm -f "$MARK"
 fresh
 run "$TF" "$(sbash "tar -xf a.tar -C $TMPD")"
@@ -138,7 +137,7 @@ NOPY="$(tl_path_without python3)"
 tl_run_stdin "$(sbash 'echo x > /nowhere/a')" env PATH="$NOPY" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TF"
 if stopped; then pass "python3 unavailable: a shell call counts as possible source (fail closed)"; else fail "python3 unavailable: fail closed"; fi
 fresh
-run "$TF" "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"mcp__fs__write",tool_input:{}}')"
+run "$TF" "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"NotebookEdit",tool_input:{}}')"
 if stopped; then pass "a file tool whose path is unknown: counted as possible source"; else fail "a file tool whose path is unknown"; fi
 fresh
 run "$TF" "$(sbash 'echo "unterminated > src/a.js')"
@@ -153,24 +152,35 @@ if stopped; then pass "a Write without a path: counted as possible source"; else
 # ---- the trace: format, tamper safety, session scoping ----------------------------------------------------------
 fresh
 run "$TF" "$(sbash "echo x > $TMPD/a; echo y > $TMPD/a")"
-assert_eq "the header carries the session start" "#$(cat "$SESSION_FILE")" "$(head -n1 "$MARK")"
-assert_eq "a repeated target is recorded once" 1 "$(grep -c -Fx "f$(cd "$TMPD" && pwd -P)/a" "$MARK")"
-rm -f "$MARK"; ln -s "$TMPD/elsewhere" "$MARK"
+assert_eq 'an entry is <session start><TAB>f<path>' "$(cat "$SESSION_FILE")"$'\t'"f$(cd "$TMPD" && pwd -P)/a" "$(head -n1 "$MARK")"
+assert_eq "a repeated target is recorded once" 1 "$(grep -c -F "f$(cd "$TMPD" && pwd -P)/a" "$MARK")"
+# a link at the trace path is never written through, and is read as an unknown write (fail closed)
+fresh
+printf '%s\tf%s/docs/a.txt\n' "$(cat "$SESSION_FILE")" "$EC_PROJ" >"$TMPD/target"
+cp "$TMPD/target" "$TMPD/target.orig"
+ln -s "$TMPD/target" "$MARK"
 run "$TF" "$(sbash 'echo x > src/a.js')"
-assert_file_absent "a symlinked trace is never written through" "$TMPD/elsewhere"
+assert_eq "a symlinked trace is not written through" "" "$(cmp "$TMPD/target" "$TMPD/target.orig" 2>&1)"
+if stopped; then pass "a symlinked trace counts as an unknown write: Stop applies the floor"; else fail "a symlinked trace fails closed"; fi
 rm -f "$MARK"
 fresh
 mkdir "$MARK"
-run "$TF" "$(sbash 'echo x > src/a.js')"
-assert_eq "a trace that is a directory is tolerated" 0 "$TL_STATUS"
+run "$TF" "$(sbash 'echo x > '"$TMPD"'/a')"
+assert_eq "a trace that is a directory is tolerated by the recorder" 0 "$TL_STATUS"
+if stopped; then pass "a trace that is a directory counts as an unknown write"; else fail "a directory trace fails closed"; fi
 rmdir "$MARK"
-# a trace from an earlier session never counts, and the next write starts a fresh one
+# a trace from an earlier session never counts; this session's lines are appended after it
 fresh
-printf '#1\nf%s/src/app.js\n' "$EC_PROJ" >"$MARK"
+printf '1\tf%s/src/app.js\n' "$EC_PROJ" >"$MARK"
 if stopped; then fail "a trace from an earlier session is ignored"; else pass "a trace from an earlier session is ignored"; fi
 run "$TF" "$(sbash "echo x > $TMPD/a")"
-assert_eq "an old trace is replaced, not extended" "#$(cat "$SESSION_FILE")" "$(head -n1 "$MARK")"
-assert_not_contains "the old entries are gone" "$(cat "$MARK")" "app.js"
+assert_eq "the old line is kept, this session's is added" 2 "$(wc -l <"$MARK" | tr -d ' ')"
+if stopped; then fail "the old session's source write still does not count"; else pass "the old session's source write still does not count"; fi
+# a file past 256 KB is rewritten with this session's lines only
+fresh
+head -c 300000 /dev/zero | tr '\0' 'x' | sed 's/^/1\t/' >"$MARK"; printf '\n' >>"$MARK"
+run "$TF" "$(sbash "echo x > $TMPD/a")"
+assert_eq "an oversized trace is pruned to this session" 1 "$(wc -l <"$MARK" | tr -d ' ')"
 fresh
 rm -f "$SESSION_FILE"
 run "$TF" "$(sbash 'echo x > src/a.js')"
@@ -184,10 +194,78 @@ assert_contains "the trace is in the guarded state directory" "$TL_OUT" "deny"
 fresh
 lines=""; i=0; while (( i < 520 )); do lines="${lines}echo x > $TMPD/f$i; "; i=$((i+1)); done
 run "$TF" "$(sbash "$lines")"
-assert_eq "past the bound the trace says anywhere" 1 "$(grep -c '^\*$' "$MARK")"
+assert_eq "past the bound the trace says anywhere" 1 "$(awk -F'\t' '$2 == "*"' "$MARK" | wc -l | tr -d ' ')"
 if stopped; then pass "past the bound: fail closed"; else fail "past the bound: fail closed"; fi
 run "$TF" "$(sbash 'echo x > '"$TMPD"'/more')"
-assert_eq "the 'anywhere' line is not repeated" 1 "$(grep -c '^\*$' "$MARK")"
+assert_eq "the 'anywhere' line is not repeated" 1 "$(awk -F'\t' '$2 == "*"' "$MARK" | wc -l | tr -d ' ')"
+
+# ---- r4: bulk edits through the root, globs, unresolved first components, other cwds --------------------------------
+sbashc() { jq -cn --arg c "$1" --arg d "$2" '{hook_event_name:"PostToolUse",tool_name:"Bash",cwd:$d,tool_input:{command:$c},tool_response:{}}'; }
+for c in 'git checkout HEAD~1 -- .' 'cp -r /tmp/d .' 'rsync -a /tmp/d/ .' 'rsync -a /tmp/d/ ./' 'cp -r /tmp/d/. .' "find . -name '*.js' -exec sed -i s/a/b/ {} +" \
+  'find . -type f | xargs sed -i s/a/b/' 'git ls-files -z | xargs -0 sed -i s/a/b/' 'find . -name app.js -delete' "find $EC_PROJ -exec sed -i s/a/b/ {} +" \
+  'sed -i s/a/b/ */*.js' 'sed -i s/a/b/ **/*.js' 'sed -i s/a/b/ s*/app.js' 'echo x > sr?/a.js' 'echo x > [s]rc/a.js' 'cp /tmp/x s*/' \
+  'sed -i s/a/b/ $(git ls-files)' 'echo x > "$P/src/a.js"' 'cd "$P" && echo x > src/a.js'; do
+  fresh
+  run "$TF" "$(sbash "$c")"
+  if stopped; then pass "bulk/glob/unresolved write ($c): the planning floor applies"; else fail "bulk/glob/unresolved write ($c): the floor must apply"; fi
+done
+# from a cwd outside the project the same idioms are unknown targets
+for c in 'echo x > "$P/src/a.js"' "grep -rl a $EC_PROJ/src | xargs sed -i s/a/b/" "find $EC_PROJ -exec sed -i s/a/b/ {} +" 'cd "$P" && echo x > src/a.js' "cp -r /tmp/d $EC_PROJ" "echo x > $EC_PROJ/s*/a.js"; do
+  fresh
+  run "$TF" "$(sbashc "$c" /tmp)"
+  if stopped; then pass "from cwd /tmp ($c): the planning floor applies"; else fail "from cwd /tmp ($c): the floor must apply"; fi
+done
+# honest scratch writes never count
+for c in 'sed -i s/a/b/ docs/*.md' 'echo x > docs/a.md' "echo x > $TMPD/f" 'cp docs/a.txt /tmp/copy.txt' 'echo x > "/elsewhere/$D/a"' "git -C $TMPD/other status > $TMPD/o.txt" 'echo x > ~/n.txt' "cat src/app.js > $SD/scratch"; do
+  fresh
+  run "$TF" "$(sbash "$c")"
+  if stopped; then fail "honest write ($c): Stop must pass"; else pass "honest write ($c): Stop passes"; fi
+done
+for c in "echo x > $TMPD/f" "cp a $TMPD/b" 'echo x > /tmp/y'; do
+  fresh
+  run "$TF" "$(sbashc "$c" /tmp)"
+  if stopped; then fail "from cwd /tmp, honest write ($c): Stop must pass"; else pass "from cwd /tmp, honest write ($c): Stop passes"; fi
+done
+# an apply_patch with a relative path resolves against the payload cwd, not the hook's cwd
+fresh
+PL="$(jq -cn --arg c "$EC_PROJ" '{hook_event_name:"PostToolUse",tool_name:"apply_patch",cwd:$c,tool_input:{command:"*** Begin Patch\n*** Add File: src/n.js\n+x\n*** End Patch\n"},tool_response:{}}')"
+tl_run_stdin "$PL" bash -c 'cd /tmp && exec bash "$1"' _ "$TF"
+if stopped; then pass "apply_patch with a relative path resolves against the payload cwd"; else fail "apply_patch relative path against the payload cwd"; fi
+# NotebookEdit and MCP file writes
+fresh
+run "$TF" "$(jq -cn --arg p "$EC_PROJ/src/n.ipynb" '{hook_event_name:"PostToolUse",tool_name:"NotebookEdit",tool_input:{notebook_path:$p,new_source:"x"}}')"
+if stopped; then pass "NotebookEdit of a source notebook: floor applies"; else fail "NotebookEdit into src"; fi
+fresh
+run "$TF" "$(jq -cn --arg p "$EC_PROJ/src/m.js" '{hook_event_name:"PostToolUse",tool_name:"mcp__fs__write_file",tool_input:{path:$p,content:"x"}}')"
+if stopped; then pass "an MCP file write into src: floor applies"; else fail "MCP write into src"; fi
+fresh
+run "$TF" "$(jq -cn --arg p "$TMPD/m.txt" '{hook_event_name:"PostToolUse",tool_name:"mcp__fs__write_file",tool_input:{path:$p,content:"x"}}')"
+if stopped; then fail "an MCP file write outside the project: Stop must pass"; else pass "an MCP file write outside the project: Stop passes"; fi
+fresh
+run "$TF" "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"mcp__github__create_issue",tool_input:{title:"t",body:"b"}}')"
+assert_file_absent "an MCP API call without a path writes no local file" "$MARK"
+
+# ---- concurrent recorders never lose an entry (header-less append-only trace) --------------------------------------
+A="$(jq -cn --arg p "$EC_PROJ/src/a.js" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$p}}')"
+B="$(jq -cn --arg p "$TMPD/zz" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$p}}')"
+lost=0; N=40
+for i in $(seq "$N"); do
+  fresh
+  (cd "$EC_PROJ" && printf '%s' "$A" | bash "$TF" >/dev/null 2>&1) & p1=$!
+  (cd "$EC_PROJ" && printf '%s' "$B" | bash "$TF" >/dev/null 2>&1) & p2=$!
+  wait "$p1" "$p2"
+  grep -q "src/a.js" "$MARK" || lost=$((lost + 1))
+done
+assert_eq "40 concurrent first writes: no src entry lost" 0 "$lost"
+
+# ---- read-only chains skip the analysis ----------------------------------------------------------------------------
+source "$TL_REPO_ROOT/hooks/lib/plain-read-only.sh"
+for c in 'git status && git diff | head -20' 'ls src; git status --short' 'ls 2>/dev/null | wc -l' 'cat src/app.js > /dev/null' 'git log --oneline 2>&1 | head -5' 'ls || echo' 'ls 2> /dev/null'; do
+  if sb_pf_plain_read_only_chain "$c"; then pass "read-only chain: $c"; else fail "should be a read-only chain: $c"; fi
+done
+for c in 'ls > out' 'ls | tee x' 'ls >> x' 'echo $(date)' 'ls &' 'ls | sed -i s/a/b/ f' 'git status &> x' "ls 'a b'" 'ls | sort -o x' 'ls &&' $'ls\ngit status' 'ls > /dev/nullx' 'ls > /tmp/x' 'ls >'; do
+  if sb_pf_plain_read_only_chain "$c"; then fail "must go to the analysis: $c"; else pass "goes to the analysis: $c"; fi
+done
 
 # ---- the legacy trivial marker is still cleared by every write ---------------------------------------------------
 fresh

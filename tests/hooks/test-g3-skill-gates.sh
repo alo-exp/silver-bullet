@@ -143,6 +143,10 @@ assert_not_contains "r4: an extra cell with PASS and the word fail inside a cell
 uat_file '| # | Criterion | Result |' '|---|---|---|' '| 1 | login | PASS |' '| Legend | PASS | FAIL | NOT-RUN | extra |'
 rel
 assert_not_contains "r4: a legend row with a different cell count is still a legend (honest variant)" "$TL_OUT" '"deny"'
+# pins the escaped-pipe join: unescaped, the split would make an exact FAIL cell out of "x \|FAIL" and a ragged row
+uat_file '| # | Criterion | Result |' '|---|---|---|' '| 1 | x \|FAIL| PASS |'
+rel
+assert_not_contains "r4: an escaped pipe that would split into a FAIL cell stays one cell: PASS row allowed (honest variant)" "$TL_OUT" '"deny"'
 # a FAIL under another header column (Notes) is documented as not a result: only Result/Status columns decide
 uat_file '| # | Criterion | Result | Notes |' '|---|---|---|---|' '| 1 | login | PASS | FAIL path tested |' '| 2 | x | PASS | FAIL |'
 rel

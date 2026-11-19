@@ -199,7 +199,7 @@
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/trivial-file-clear.sh\"",
         "timeout": 10,
-        "matcher": "Shell"
+        "matcher": "Shell|NotebookEdit|mcp__.*(write|edit|create|move|rename|patch|replace|delete|append|save|insert|copy|upload|apply|_mv|mv_|_put|put_|update|modify|set_|touch|truncate|unlink|_rm|rm_)[A-Za-z0-9_]*"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",

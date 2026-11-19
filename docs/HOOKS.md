@@ -88,7 +88,7 @@ After a tool runs; a hook can report, record state, or ask the agent to stop.
 |---|---------|--------|---------|
 | 1 | `Write\|Edit\|MultiEdit\|apply_patch` | `record-site-session.sh` | 10 |
 | 2 | `Write\|Edit\|MultiEdit\|apply_patch` | `trivial-file-clear.sh` | 5 |
-| 3 | `Bash\|exec_command` | `trivial-file-clear.sh` | 10 |
+| 3 | `Bash\|exec_command\|NotebookEdit\|mcp__.*(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save\|insert\|copy\|upload\|apply\|_mv\|mv_\|_put\|put_\|update\|modify\|set_\|touch\|truncate\|unlink\|_rm\|rm_)[A-Za-z0-9_]*` | `trivial-file-clear.sh` | 10 |
 | 4 | `Task\|Subagent\|Agent` | `subagent-stop-enforcement.sh` | 10 |
 | 5 | `Task\|Subagent\|Agent` | `review-fix-ladder-guard.sh` | 10 |
 | 6 | `Skill\|Bash\|exec_command` | `subagent-stop-enforcement.sh` | 10 |
@@ -227,7 +227,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `subagent-stop-enforcement.sh` | PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PostToolUse `Task\|Subagent\|Agent`; PostToolUse `Skill\|Bash\|exec_command`; Stop `.*`; UserPromptSubmit `.*` | Tracks Task worker spawns and returns; at Stop, blocks a parent session whose workers ran but `sb:completion-audit` is not recorded. |
 | `timeout-check.sh` | PostToolUse `.*` | Autonomous mode only: warns on wall-clock timeout and on 30/60/100 tool calls without a recorded skill. |
 | `token-compression-tools-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in: requires recent RTK usage before commits, PRs and releases (shell delivery commands only), and enforces the stack mutex. |
-| `trivial-file-clear.sh` | PostToolUse `Write\|Edit\|MultiEdit\|apply_patch`; PostToolUse `Bash\|exec_command` | Deletes the legacy trivial-session marker after any file write. |
+| `trivial-file-clear.sh` | PostToolUse `Write\|Edit\|MultiEdit\|apply_patch`; PostToolUse `Bash\|exec_command\|NotebookEdit\|mcp__.*(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save\|insert\|copy\|upload\|apply\|_mv\|mv_\|_put\|put_\|update\|modify\|set_\|touch\|truncate\|unlink\|_rm\|rm_)[A-Za-z0-9_]*` | Deletes the legacy trivial-session marker after any file write. |
 | `trivial-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Blocks agents from creating the legacy trivial marker (any spelling of its path: `~`, `$HOME`, `cd` + relative, cp/mv/ln/tee/dd); small changes go through `/sb:fast`. |
 | `uat-gate.sh` | PreToolUse `Bash\|Skill\|exec_command` | Blocks `sb:release` (Skill tool or Codex `invoke-skill`) and milestone completion when `UAT.md` is missing, failing or stale against the spec version. |
 | `v-loop-rollup-gate.sh` | Stop `.*` | At Stop, blocks when active site-session V-loops lack evidence. |
