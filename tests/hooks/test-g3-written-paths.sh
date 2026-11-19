@@ -70,6 +70,34 @@ fresh
 run "$TF" "$(jq -cn --arg p "$EC_PROJ/src/n.js" '{hook_event_name:"PostToolUse",tool_name:"apply_patch",tool_input:{command:("*** Begin Patch\n*** Add File: " + $p + "\n+x\n*** End Patch\n")},tool_response:{}}')"
 if stopped; then pass "apply_patch into src: floor applies"; else fail "apply_patch into src: floor must apply"; fi
 
+# ---- resolution: symlinks, loops, a cwd in the payload, tree extracts below the root -----------------------------
+fresh
+mkdir -p "$TMPD/outside-src"
+mv "$EC_PROJ/src" "$EC_PROJ/src.real"; ln -s "$TMPD/outside-src" "$EC_PROJ/src"
+run "$TF" "$(sbash 'echo x > src/a.js')"
+if stopped; then pass "a source directory symlinked outside the project is still source by name"; else fail "symlinked source directory"; fi
+rm -f "$EC_PROJ/src"; mv "$EC_PROJ/src.real" "$EC_PROJ/src"
+fresh
+ln -s "$TMPD/loop-b" "$TMPD/loop-a"; ln -s "$TMPD/loop-a" "$TMPD/loop-b"
+run "$TF" "$(sbash "echo x > $TMPD/loop-a")"
+assert_file_exists "a symlink loop is recorded lexically, not dropped" "$MARK"
+if stopped; then fail "a symlink loop outside the project is not source"; else pass "a symlink loop outside the project is not source"; fi
+fresh
+run "$TF" "$(jq -cn --arg c "$EC_PROJ/src" '{hook_event_name:"PostToolUse",tool_name:"Write",cwd:$c,tool_input:{file_path:"x.js",content:"x"}}')"
+if stopped; then pass "a relative Write path resolves against the payload cwd: src"; else fail "payload cwd"; fi
+fresh
+run "$TF" "$(jq -cn --arg c "$EC_PROJ/docs" '{hook_event_name:"PostToolUse",tool_name:"Write",cwd:$c,tool_input:{file_path:"x.js",content:"x"}}')"
+if stopped; then fail "a relative Write path resolves against the payload cwd: docs is not source"; else pass "payload cwd: docs is not source"; fi
+fresh
+run "$TF" "$(sbash 'tar -xf a.tar -C src')"
+if stopped; then pass "a tree extracted into src: floor applies"; else fail "tar -C src"; fi
+fresh
+run "$TF" "$(sbash "tar -xf a.tar -C $TMPD")"
+if stopped; then fail "a tree extracted outside the project is not source"; else pass "a tree extracted outside the project is not source"; fi
+fresh
+run "$TF" "$(sbash 'echo x > "/elsewhere/$D/a"')"
+if stopped; then fail "an unresolved path under an absolute directory outside the project is not source"; else pass "an unresolved path outside the project is not source"; fi
+
 # ---- a project-configured source pattern decides ---------------------------------------------------------------
 ec_cfg '{"config_version":"0.40.0","sb_initiated":true,"project":{"src_pattern":"/lib/","src_exclude_pattern":"\\.gen\\."},"skills":{}}'
 mkdir -p "$EC_PROJ/lib"; printf 'l\n' >"$EC_PROJ/lib/x.js"
@@ -86,9 +114,19 @@ ec_cfg '{"config_version":"0.40.0","sb_initiated":true,"skills":{}}'
 
 # ---- fail closed when the target cannot be determined ----------------------------------------------------------
 fresh
+run "$TF" ''
+assert_file_exists "an empty payload leaves a trace" "$MARK"
+fresh
 run "$TF" 'not json at all'
 assert_file_exists "an unreadable payload still leaves a trace" "$MARK"
 if stopped; then pass "unreadable payload: counted as possible source (fail closed)"; else fail "unreadable payload: counted as possible source"; fi
+fresh
+NOPY="$(tl_path_without python3)"
+tl_run_stdin "$(sbash 'echo x > /nowhere/a')" env PATH="$NOPY" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TF"
+if stopped; then pass "python3 unavailable: a shell call counts as possible source (fail closed)"; else fail "python3 unavailable: fail closed"; fi
+fresh
+run "$TF" "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"mcp__fs__write",tool_input:{}}')"
+if stopped; then pass "a file tool whose path is unknown: counted as possible source"; else fail "a file tool whose path is unknown"; fi
 fresh
 run "$TF" "$(sbash 'echo "unterminated > src/a.js')"
 if stopped; then pass "unparsable shell write naming src: floor applies"; else fail "unparsable shell write naming src: floor applies"; fi

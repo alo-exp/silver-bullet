@@ -148,6 +148,18 @@ if [[ -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]]; then
   fi
   sb_e2e_matrix_clear_routing_row_marker
   unset SB_E2E_ENTERPRISE_MATRIX
+  # No resolved state directory: there is no marker to set, and clearing is a no-op (no /tmp fallback).
+  # A state "directory" that is a file: setting fails without side effects, clearing stays quiet.
+  rm_state="$(mktemp "${TMPDIR:-/tmp}/sb-matrix-notdir.XXXXXX")"
+  if ( unset SB_RUNTIME_STATE_DIR; ! sb_e2e_matrix_set_routing_row_marker && sb_e2e_matrix_clear_routing_row_marker ) \
+    && ( export SB_RUNTIME_STATE_DIR="$rm_state"; ! sb_e2e_matrix_set_routing_row_marker && sb_e2e_matrix_clear_routing_row_marker ); then
+    echo "PASS: routing marker helpers refuse without a usable state directory"
+    ((PASS++)) || true
+  else
+    echo "FAIL: routing marker helpers refuse without a usable state directory"
+    ((FAIL++)) || true
+  fi
+  rm -f "$rm_state"
 else
   echo "FAIL: e2e-matrix-routing.sh helper missing"
   ((FAIL++)) || true

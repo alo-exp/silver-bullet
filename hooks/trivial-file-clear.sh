@@ -24,7 +24,7 @@ source "$_sb_runtime_paths_dir/shell-analysis.sh"
 source "$_sb_runtime_paths_dir/plain-read-only.sh"
 # shellcheck source=lib/agent-writes.sh
 source "$_sb_runtime_paths_dir/agent-writes.sh"
-_tfc_input="$(cat 2>/dev/null || true)"
+_tfc_input="$(cat)"
 _tfc_entries="$(sb_aw_entries "$_tfc_input")"
 if [[ -n "$_tfc_entries" ]]; then
   rm -f -- "${SB_RUNTIME_STATE_DIR}/trivial"
