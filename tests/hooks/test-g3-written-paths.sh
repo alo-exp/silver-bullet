@@ -410,6 +410,9 @@ fresh
 run "$TF" "$(sbash "rm $SDH/.s*/files-w*")"
 if stopped; then pass "a glob inside the state dir's parent that can match it counts"; else fail "glob into the state dir"; fi
 fresh
+run "$TF" "$(sbash "rm $SD/files-w*")"
+if stopped; then pass "a glob directly in the state dir counts"; else fail "glob in the state dir"; fi
+fresh
 run "$TF" "$(sbash "rm $SDH/.q*/files-w*")"
 if stopped; then fail "a glob that cannot match the state dir is not an erase"; else pass "a glob that cannot match the state dir is not an erase"; fi
 fresh
