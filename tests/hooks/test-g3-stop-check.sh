@@ -115,10 +115,10 @@ assert_eq "R2-36: a trace from another session is ignored" "0:" "$TL_STATUS:$TL_
 mark
 rm -f "$SESSION_FILE"
 run_stop
-assert_eq "R2-36: unknown session start: marker not trusted" "0:" "$TL_STATUS:$TL_OUT"
+assert_contains "R2-36: unknown session start: a trace that cannot be attributed counts" "$(reason)" "missing required skills"
 printf 'junk\n' >"$SESSION_FILE"
 run_stop
-assert_eq "R2-36: non-numeric session start: marker not trusted" "0:" "$TL_STATUS:$TL_OUT"
+assert_contains "R2-36: non-numeric session start: a trace that cannot be attributed counts" "$(reason)" "missing required skills"
 ec_cfg '{"config_version":"0.40.0","sb_initiated":true,"project":{"src_pattern":".*","src_exclude_pattern":"$(x)"},"skills":{}}'
 date +%s >"$SESSION_FILE"
 mark

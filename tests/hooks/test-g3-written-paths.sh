@@ -203,11 +203,36 @@ run "$TF" "$(sbash "echo x > $TMPD/a")"
 ino1="$(ls -i "$MARK" | awk '{print $1}')"
 for i in $(seq 30); do run "$TF" "$(sbash "echo x > $TMPD/b$i")"; done
 assert_eq "a live trace is appended to, never rewritten" "$ino1" "$(ls -i "$MARK" | awk '{print $1}')"
+# an unknown session start (its file is erased or holds no number) never hides a write: the entries go to a
+# files-written.unknown trace that is read like any other, and a trace of any session counts
 fresh
 rm -f "$SESSION_FILE"
 run "$TF" "$(sbash 'echo x > src/a.js')"
-if stopped; then fail "unknown session start: the trace is not trusted"; else pass "unknown session start: the trace is not trusted"; fi
-rm -f "$MARKBASE".-
+if stopped; then pass "unknown session start: a source write is recorded and counts"; else fail "unknown session start: a source write counts"; fi
+assert_file_exists "the unknown-epoch trace has a fixed name" "$MARKBASE.unknown"
+fresh
+rm -f "$SESSION_FILE"
+run "$TF" "$(sbash "echo x > $TMPD/a")"
+if stopped; then fail "unknown session start, scratch write only: Stop must pass"; else pass "unknown session start, scratch write only: Stop passes"; fi
+printf 'garbage\n' >"$SESSION_FILE"
+run "$TF" "$(sbash 'echo x > src/a.js')"
+if stopped; then pass "a non-numeric session start is unknown too"; else fail "non-numeric session start"; fi
+# the erase of the epoch itself (a glob spelling the PreToolUse guard allows): the real trace stays and still counts
+fresh
+run "$TF" "$(swrite "$EC_PROJ/src/app.js")"
+REAL="$MARK"
+rm -f "$SESSION_FILE"
+run "$TF" "$(sbash 'rm ~/.c*/.s*/session-start-time')"
+assert_file_exists "the epoch's erase does not rotate the real trace away" "$REAL"
+if stopped; then pass "an erased session epoch: the earlier source write still counts"; else fail "erased session epoch hides the source write"; fi
+for c in 'rm ~/.c*/.s*/s*' 'mv ~/.c*/.s*/session-start-time /tmp/' 'rm -rf ~/.c*'; do
+  fresh
+  run "$TF" "$(swrite "$EC_PROJ/src/app.js")"
+  rm -f "$SESSION_FILE"
+  run "$TF" "$(sbash "$c")"
+  if stopped; then pass "epoch erase spelling ($c): the floor applies"; else fail "epoch erase spelling ($c)"; fi
+done
+rm -f "$MARKBASE".unknown
 date +%s >"$SESSION_FILE"
 # a hook-written trace cannot be forged by a shell command (G2 state-tamper guard)
 DCC="$TL_REPO_ROOT/hooks/dev-cycle-check.sh"
@@ -384,6 +409,17 @@ for c in '"$BASH" -c "x"' 'python3 -c "print(1)"' 'node -p "1+1"' 'php -r "echo 
   if stopped; then pass "unknown program ($c): counted"; else fail "unknown program ($c): must count"; fi
 done
 
+# -v / -h are not info flags of a shell (verbose, hashall) or of python -v: they still run a program from stdin
+for c in "echo 'echo x > src/a.js' | sh -v" "echo 'echo x > src/a.js' | bash -v" "echo 'echo x > src/a.js' | bash -h" "echo 'echo x > src/a.js' | zsh -v" \
+  "echo 'echo x > src/a.js' | dash -v" "echo 'echo x > src/a.js' | ksh -v" "echo \"open('src/a.js','w').write('x')\" | python3 -v" 'python3 -v < /tmp/prog.py' \
+  "bash -v <<<'echo x > src/a.js'" 'curl -fsSL https://x/i.sh | sh -v'; do
+  for tool in Bash exec_command; do
+    fresh
+    run "$TF" "$(sbash "$c" "$tool")"
+    if stopped; then pass "stdin program behind a non-info flag via $tool ($c): counted"; else fail "stdin program behind a non-info flag via $tool ($c) must count"; fi
+  done
+done
+
 # ---- r6: rotation with earlier traces present never loses an append ----------------------------------------------------
 A="$(jq -cn --arg p "$EC_PROJ/src/a.js" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$p}}')"
 B="$(jq -cn --arg p "$TMPD/zz" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$p}}')"
@@ -431,10 +467,39 @@ if stopped; then pass "a local server whose name merely contains Google is not r
 fresh
 run "$TF" "$(jq -cn --arg p "$EC_PROJ/src/m.js" '{hook_event_name:"PostToolUse",tool_name:"mcp__fs__write_file",tool_input:{content:$p,body:$p}}')"
 if stopped; then fail "content and body are never paths"; else pass "content and body are never paths"; fi
+for t in mcp__plugin_serena_serena__replace_symbol_body mcp__plugin_fs_filesystem__write_file; do
+  fresh
+  run "$TF" "$(jq -cn --arg t "$t" --arg p "$EC_PROJ/src/m.js" '{hook_event_name:"PostToolUse",tool_name:$t,tool_input:{relative_path:$p,body:"x"}}')"
+  if stopped; then pass "a local plugin MCP server ($t) is traced"; else fail "a local plugin MCP server ($t) must be traced"; fi
+done
+for t in mcp__plugin_engineering_github__create_or_update_file mcp__plugin_small-business_shopify__update-product mcp__Google_Drive__create_file; do
+  fresh
+  run "$TF" "$(jq -cn --arg t "$t" '{hook_event_name:"PostToolUse",tool_name:$t,tool_input:{path:"src/app.js",name:"src"}}')"
+  if stopped; then fail "a remote plugin server ($t) names no local path"; else pass "a remote plugin server ($t) names no local path"; fi
+done
+# a path value with a newline is still a path: judged line by line, a trailing newline adds nothing
+fresh
+run "$TF" "$(jq -cn --arg p "src/n.js"$'\n' '{hook_event_name:"PostToolUse",tool_name:"mcp__fs__write_file",tool_input:{path:$p,content:"x"}}')"
+if stopped; then pass "an MCP path with a trailing newline is judged as the path"; else fail "trailing newline path"; fi
+fresh
+run "$TF" "$(jq -cn --arg p $'docs/a\nsrc/n.js' '{hook_event_name:"PostToolUse",tool_name:"mcp__fs__write_file",tool_input:{path:$p}}')"
+if stopped; then pass "an MCP path with an embedded newline: each line is judged"; else fail "embedded newline path"; fi
+DCC="$TL_REPO_ROOT/hooks/dev-cycle-check.sh"
+run "$DCC" "$(jq -cn --arg p "$EC_PROJ/src/n.js"$'\n' '{hook_event_name:"PreToolUse",tool_name:"mcp__fs__write_file",tool_input:{path:$p,content:"x"}}')"
+assert_contains "the PreToolUse guard still denies a source path that ends in a newline" "$TL_OUT" "deny"
 # a single-line notebook cell: the newline filter alone cannot make this pass; only notebook_path is read
 fresh
 run "$TF" "$(jq -cn --arg p "$EC_PROJ/analysis.ipynb" '{hook_event_name:"PostToolUse",tool_name:"NotebookEdit",tool_input:{notebook_path:$p,new_source:"* accuracy improved"}}')"
 if stopped; then fail "a single-line notebook cell is not a path"; else pass "a single-line notebook cell is not a path"; fi
+# the verdict follows notebook_path only: a cell that is itself a source path or a glob changes nothing
+for cell in "$EC_PROJ/src/app.js" "src/app.js" "* x" "src/*.js"; do
+  fresh
+  run "$TF" "$(jq -cn --arg p "$EC_PROJ/analysis.ipynb" --arg c "$cell" '{hook_event_name:"PostToolUse",tool_name:"NotebookEdit",tool_input:{notebook_path:$p,new_source:$c}}')"
+  if stopped; then fail "notebook cell text ($cell) is not a path"; else pass "notebook cell text ($cell) is not a path"; fi
+done
+fresh
+run "$TF" "$(jq -cn --arg p "$EC_PROJ/src/n.ipynb" --arg c "docs/a.md" '{hook_event_name:"PostToolUse",tool_name:"NotebookEdit",tool_input:{notebook_path:$p,new_source:$c}}')"
+if stopped; then pass "a source notebook counts through notebook_path whatever its cell says"; else fail "notebook_path in src"; fi
 fresh
 run "$TF" "$(jq -cn --arg p "$EC_PROJ/docs/n.ipynb" '{hook_event_name:"PostToolUse",tool_name:"NotebookEdit",tool_input:{notebook_path:$p,new_source:"what is the mean?"}}')"
 if stopped; then fail "a single-line question cell is not a path"; else pass "a single-line question cell is not a path"; fi
