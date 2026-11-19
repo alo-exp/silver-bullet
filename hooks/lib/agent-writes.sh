@@ -144,12 +144,10 @@ sb_aw_entries() {
     *)
       # apply_patch and other tools the analysis reads: the paths of the patch, else the file path, from the payload's cwd
       any=false
-      paths="${SB_TI_PATCH_PATHS:-}"$'\n'"${SB_TI_FILE_PATH:-}"
       while IFS= read -r path; do
-        [[ -n "$path" ]] || continue
         any=true
         _sb_aw_path_entries f "$path" "" "${cwd:-$PWD}"
-      done <<<"$paths"
+      done < <(printf '%s\n%s\n' "${SB_TI_PATCH_PATHS:-}" "${SB_TI_FILE_PATH:-}" | awk 'NF')
       [[ "$any" == true ]] || printf '*\n'
       ;;
   esac
@@ -209,12 +207,11 @@ _sb_aw_entry_source() {
   sb_pf_src_in_scope "$body" "$root" && return 0
   case "$body" in
     *[\*\?\[]*)
-      # a glob: its static directory reaches source when it is the root or above it or is a source directory
-      # itself; below that, the matches that exist now decide
+      # a glob: its static directory reaches source when it is the root or above it; below that, the matches
+      # that exist now decide (a glob inside a source directory is already source by name)
       pre="${body%%[\*\?\[]*}"
       pre="${pre%/*}"
       _sb_aw_covers_root "$pre" "$root" && return 0
-      sb_pf_src_in_scope "$pre" "$root" && return 0
       while IFS= read -r m; do
         sb_pf_src_in_scope "$m" "$root" && return 0
       done < <(compgen -G "$body" | head -n 1000)
