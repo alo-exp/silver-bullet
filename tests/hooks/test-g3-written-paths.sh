@@ -89,8 +89,21 @@ fresh
 run "$TF" "$(jq -cn --arg c "$EC_PROJ/docs" '{hook_event_name:"PostToolUse",tool_name:"Write",cwd:$c,tool_input:{file_path:"x.js",content:"x"}}')"
 if stopped; then fail "a relative Write path resolves against the payload cwd: docs is not source"; else pass "payload cwd: docs is not source"; fi
 fresh
-run "$TF" "$(sbash 'tar -xf a.tar -C src')"
-if stopped; then pass "a tree extracted into src: floor applies"; else fail "tar -C src"; fi
+run "$TF" "$(sbash 'cd src && tar -xf a.tar')"
+if stopped; then pass "a tree extracted into src: floor applies"; else fail "tar in src"; fi
+fresh
+run "$TF" "$(sbash 'cd docs && tar -xf a.tar')"
+if stopped; then fail "a tree extracted into docs is not source"; else pass "a tree extracted into docs is not source"; fi
+fresh
+run "$TF" "$(sbash '')"
+assert_file_absent "an empty command leaves no trace" "$MARK"
+# the reader refuses a missing or linked trace
+source "$TL_REPO_ROOT/hooks/lib/planning-floor.sh"
+source "$TL_REPO_ROOT/hooks/lib/agent-writes.sh"
+if sb_aw_wrote_source "$EC_PROJ" "$SD"; then fail "no trace: not source"; else pass "no trace: not source"; fi
+ln -s "$TMPD/elsewhere" "$MARK"
+if sb_aw_wrote_source "$EC_PROJ" "$SD"; then fail "a linked trace is not read"; else pass "a linked trace is not read"; fi
+rm -f "$MARK"
 fresh
 run "$TF" "$(sbash "tar -xf a.tar -C $TMPD")"
 if stopped; then fail "a tree extracted outside the project is not source"; else pass "a tree extracted outside the project is not source"; fi
