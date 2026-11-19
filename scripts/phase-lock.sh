@@ -189,6 +189,14 @@ _pl_iso_to_epoch() {
     || echo 0
 }
 
+# A heartbeat counts as stale when it is older than the ttl, or more than this many seconds in the
+# future: a lock file can come from a repository (or a skewed clock), and a heartbeat dated 2099 must
+# not pin a phase for every user. A small skew between machines or runtimes is still honoured.
+_PL_FUTURE_SKEW=300
+_pl_hb_is_stale() { # age ttl
+  (( $1 > $2 || $1 < -_PL_FUTURE_SKEW ))
+}
+
 # Normalize phase: zero-pad to 3 digits if purely numeric; otherwise leave as-is.
 # Strip leading zeros before printf to avoid octal interpretation (e.g. "070" → 56).
 _pl_normalize_phase() {
@@ -363,7 +371,7 @@ cmd_claim() {
     ttl=$(_pl_config_get_ttl)
     age=$((now_e - hb_e))
 
-    if (( age > ttl )); then
+    if _pl_hb_is_stale "$age" "$ttl"; then
       echo "WARN: stealing stale lock from ${prior_owner} (heartbeat ${age}s ago, ttl ${ttl}s)" >&2
       # fall through to overwrite
     else
@@ -462,7 +470,7 @@ cmd_peek() {
   hb_e=$(_pl_iso_to_epoch "$last_hb")
   ttl=$(_pl_config_get_ttl)
   age=$((now_e - hb_e))
-  if (( age > ttl )); then
+  if _pl_hb_is_stale "$age" "$ttl"; then
     printf '%s' "$current" | jq -c '. + {expired: true}'
   else
     printf '%s' "$current" | jq -c '.'

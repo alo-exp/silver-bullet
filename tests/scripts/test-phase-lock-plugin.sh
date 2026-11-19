@@ -168,6 +168,28 @@ inprj claim 1 claude t
 assert_eq "an honest claim succeeds" 0 "$TL_STATUS"
 assert_eq "only the lock file and its sidecar exist" ".phase-locks.json .phase-locks.json.lock phases" "$(ls -A "$PRJ/.planning" | tr '\n' ' ' | sed 's/ $//')"
 
+# a heartbeat from the future (a committed or skewed lock file) never pins a phase: beyond a small clock
+# skew it counts as stale, so claim steals it and peek reports it expired (G4 r3)
+iso_at() { date -u -d "@$1" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -r "$1" +%Y-%m-%dT%H:%M:%SZ; }
+put_lock() { printf '{"007":{"owner_id":"claude-other-1","agent_runtime":"claude","host":"other","last_heartbeat_at":"%s","intent":"x"}}\n' "$1" >"$SB_PHASE_LOCK_FILE"; }
+reset; put_lock "2099-01-01T00:00:00Z"
+pl peek 7
+assert_contains "far-future heartbeat peeks as expired" "$TL_OUT" '"expired":true'
+pl claim 7 claude t
+assert_eq "far-future heartbeat: the claim steals the lock" 0 "$TL_STATUS"
+assert_contains "far-future heartbeat: the steal is announced" "$TL_ERR" "stealing stale lock from claude-other-1"
+assert_not_contains "far-future heartbeat: the claim now owns the phase" "$(jq -r '."007".owner_id' "$SB_PHASE_LOCK_FILE")" "claude-other-1"
+reset; put_lock "$(iso_at $(( $(date -u +%s) + 3600 )))"
+pl peek 7
+assert_contains "heartbeat an hour ahead peeks as expired" "$TL_OUT" '"expired":true'
+reset; put_lock "$(iso_at $(( $(date -u +%s) + 120 )))"
+pl peek 7
+assert_not_contains "a heartbeat two minutes ahead (clock skew) is still live" "$TL_OUT" 'expired'
+pl claim 7 claude t
+assert_eq "a heartbeat within the skew still holds the lock" 2 "$TL_STATUS"
+assert_contains "the conflict names the owner" "$TL_ERR" "claude-other-1"
+reset
+
 # config fallbacks: a bare plugin tree (no templates/) and a project without config
 mkdir -p "$TL_TMP/bare"
 mkproj 1800; rm -f "$PRJ/.silver-bullet.json"

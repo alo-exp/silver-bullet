@@ -150,6 +150,30 @@ run_ss '{"source":"resume"}'
 for f in enterprise-human-deploy-approved ci-red-override leanctx-usage; do
   assert_file_absent "branch change clears $f" "$SD/$f"
 done
+# Per-session ledger, outcomes checklist and write-trace files belong to the scope too (G3 hand-off):
+# a branch change removes the keyed and the unkeyed ones, a same-branch restart keeps the ledger files.
+scoped_session_files="instruction-ledger-s1.json instruction-ledger-s2.json instruction-ledger.json
+outcomes-session-s1.json outcomes-session-s1.json.sha256 outcomes-session.json outcomes-session.json.sha256
+outcomes-seeded-s1 outcomes-seeded files-written.1700000000 files-written.unknown"
+fresh
+printf 'old-branch\n' >"$BRANCH"
+printf 'silver-plan\n' >"$STATE"
+for f in $scoped_session_files outcomes-tamper.log instruction-ledger-notes.txt; do printf 'x' >"$SD/$f"; done
+run_ss '{"source":"startup"}'
+for f in $scoped_session_files; do
+  assert_file_absent "branch change removes $f" "$SD/$f"
+done
+assert_file_exists "branch change keeps the tamper log (an audit trail)" "$SD/outcomes-tamper.log"
+assert_file_exists "branch change keeps files that only look similar" "$SD/instruction-ledger-notes.txt"
+assert_eq "a clean reset logs no outcomes tamper" "x" "$(cat "$SD/outcomes-tamper.log")"
+fresh
+printf 'feature/test\n%s\n' "$EC_PROJ" >"$BRANCH"
+for f in instruction-ledger-s1.json outcomes-session-s1.json files-written.1700000000; do printf 'x' >"$SD/$f"; done
+run_ss '{"source":"resume"}'
+for f in instruction-ledger-s1.json outcomes-session-s1.json files-written.1700000000; do
+  assert_file_exists "a same-branch resume keeps $f" "$SD/$f"
+done
+rm -f "$SD"/instruction-ledger-*.json "$SD"/outcomes-session-* "$SD"/files-written.* "$SD"/outcomes-seeded* "$SD/outcomes-tamper.log" "$SD/instruction-ledger-notes.txt" "$SD/outcomes-session.json" "$SD/outcomes-session.json.sha256"
 # On a same-branch startup the approval markers and the CI override still end with the session.
 fresh
 printf 'feature/test\n%s\n' "$EC_PROJ" >"$BRANCH"

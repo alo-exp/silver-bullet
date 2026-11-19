@@ -57,8 +57,8 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | hooks/session-start:106 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | A | the trust anchor: baselines the record at the end of session start |
 | hooks/session-start:174 | config | `if [[ -n "$_rt_hb_script" && -f "${sb_project_root}/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
 | hooks/session-start:175 | config | `_sb_initiated="$(jq -r '.sb_initiated // false' "${sb_project_root}/.silver-bullet.json" 2` | A | the trust anchor: baselines the record at the end of session start |
-| hooks/session-start:390 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
-| hooks/session-start:391 | config | `cfg_trivial=$(jq -r '.state.trivial_file // ""' "$search_dir/.silver-bullet.json" 2>/dev/n` | A | the trust anchor: baselines the record at the end of session start |
+| hooks/session-start:399 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
+| hooks/session-start:400 | config | `cfg_trivial=$(jq -r '.state.trivial_file // ""' "$search_dir/.silver-bullet.json" 2>/dev/n` | A | the trust anchor: baselines the record at the end of session start |
 | scripts/deploy-gate-snippet.sh:50 | config | `if [[ -f "$_dw_search_dir/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/deploy-gate-snippet.sh:51 | config | `_dw_config_file="$_dw_search_dir/.silver-bullet.json"` | X | user-run or skill-run script, not a hook gate |
 | scripts/deploy-gate-snippet.sh:92 | config | `_val=$(jq -r '.state.state_file // ""' "$_dw_config_file")` | X | user-run or skill-run script, not a hook gate |

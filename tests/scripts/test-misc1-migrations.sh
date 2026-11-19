@@ -130,13 +130,18 @@ assert_contains "project: creates gitignore" "$TL_OUT" "Created .gitignore with 
 assert_contains "project: completion" "$TL_OUT" "Project surface migration complete for $W"
 assert_eq "project: helper copied+executable" workflows-helper "$("$W/scripts/workflows.sh")"
 assert_file_exists "project: archive dir" "$W/.planning/workflows/.archive"
+assert_contains "project: ignores the phase-lock files" "$TL_OUT" "Added .planning/.phase-locks.json* to .gitignore"
 assert_eq "project: gitignore exact" "# Composed-workflow tracker — local runtime state (Silver Bullet)
-.planning/workflows/" "$(cat "$W/.gitignore")"
+.planning/workflows/
+
+# Phase-lock runtime state — local, never committed (Silver Bullet)
+.planning/.phase-locks.json*" "$(cat "$W/.gitignore")"
 assert_eq "project: config migrated" parent "$(jq -r .orchestrator_mode "$W/.silver-bullet.json")"
 tl_run bash "$PRJ" "$W"
 assert_contains "project: helper already present" "$TL_OUT" "scripts/workflows.sh already present"
 assert_not_contains "project: no reinstall of docs" "$TL_OUT" "Installed docs/workflows"
 assert_not_contains "project: gitignore untouched when marker present" "$TL_OUT" "Added"
+assert_eq "project: gitignore not duplicated on a re-run" 1 "$(grep -c 'phase-locks' "$W/.gitignore")"
 # gitignore exists without the marker -> appended
 printf 'node_modules\n' >"$W/.gitignore"
 tl_run bash "$PRJ" "$W"
@@ -144,7 +149,10 @@ assert_contains "project: appends marker" "$TL_OUT" "Added .planning/workflows/ 
 assert_eq "project: appended gitignore exact" "node_modules
 
 # Composed-workflow tracker — local runtime state (Silver Bullet)
-.planning/workflows/" "$(cat "$W/.gitignore")"
+.planning/workflows/
+
+# Phase-lock runtime state — local, never committed (Silver Bullet)
+.planning/.phase-locks.json*" "$(cat "$W/.gitignore")"
 
 # ---------------- extract-phase-goal.sh ----------------
 EPG="$R/scripts/extract-phase-goal.sh"

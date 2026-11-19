@@ -78,4 +78,16 @@ EOF
   echo "Created .gitignore with $MARKER"
 fi
 
+# The phase-lock file (and its .lock sidecar) is per-checkout runtime state: a committed copy would
+# carry another machine's locks onto every clone.
+LOCKS_MARKER='.planning/.phase-locks.json*'
+if ! grep -qF "$LOCKS_MARKER" "$GITIGNORE" 2>/dev/null; then
+  {
+    echo ""
+    echo "# Phase-lock runtime state — local, never committed (Silver Bullet)"
+    echo "$LOCKS_MARKER"
+  } >>"$GITIGNORE"
+  echo "Added $LOCKS_MARKER to .gitignore"
+fi
+
 echo "Project surface migration complete for $PROJ_ROOT"
