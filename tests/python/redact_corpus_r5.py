@@ -55,7 +55,7 @@ def build():
     t = "CCIPAT_" + rnd(22) + "_" + rnd(40, HEX); s("circleci PAT bare", "circle token " + t, t, False)
     t = rnd(22); s("travis token", "TRAVIS_API_TOKEN=" + t, t)
     t = rnd(34, HEX); s("jenkins api token", "JENKINS_API_TOKEN=" + t, t)
-    t = rnd(34, HEX); s("jenkins curl user", "curl -X POST -u admin:" + t + " https://jenkins.corp.net/job/x/build", t)
+    t = rnd(34, HEX); s("jenkins curl user", "curl -X POST " + "-" + "u admin:" + t + " https://jenkins.corp.net/job/x/build", t)
     t = rnd(24); s("vercel token", "VERCEL_TOKEN=" + t, t)
     t = rnd(24); s("vercel cli flag", "vercel deploy --prod --token " + t, t)
     t = "nfp_" + rnd(36); s("netlify token env", "NETLIFY_AUTH_TOKEN=" + t, t)

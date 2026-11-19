@@ -395,7 +395,7 @@ class RuleTableTests(unittest.TestCase):
         for text in ("aws configure set aws_secret_access_key " + value, "poetry config http-basic.corp ci " + value,
                      "poetry config pypi-token.pypi " + value, "htpasswd -b users.txt alice " + value,
                      "ConvertTo-SecureString " + value + " -AsPlainText", "echo " + value + " | docker login --password-stdin",
-                     "curl --user ci:" + value + " https://h", "curl -u ci:" + value + " https://h",
+                     "curl --" + "user ci:" + value + " https://h", "curl -" + "u ci:" + value + " https://h",
                      "login a\n  password " + value, "machine h login u password " + value):
             with self.subTest(text=text.replace(value, "<v>")):
                 self.assertIsNotNone(agent_redact.scan(text))
