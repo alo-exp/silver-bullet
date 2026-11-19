@@ -245,6 +245,28 @@ fresh
 run "$TF" "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"mcp__github__create_issue",tool_input:{title:"t",body:"b"}}')"
 assert_file_absent "an MCP API call without a path writes no local file" "$MARK"
 
+# a relative target with a static first component and an unresolved tail is a `d` entry under the project
+fresh
+run "$TF" "$(sbash 'echo x > src/$N.js')"
+if stopped; then pass "src/\$N.js: an unresolved tail under a static directory counts"; else fail "src/\$N.js"; fi
+fresh
+run "$TF" "$(sbash 'echo x > docs/$N.md')"
+if stopped; then pass "docs/\$N.md: a project path with an unresolved tail counts (fail closed)"; else fail "docs/\$N.md counts"; fi
+# a patch tool with no readable path is an unknown write
+fresh
+run "$TF" "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"apply_patch",tool_input:{command:"nothing"}}')"
+if stopped; then pass "apply_patch without a path: counted as possible source"; else fail "apply_patch without a path"; fi
+# a glob below the root counts when what it matches is source under a custom pattern
+ec_cfg '{"config_version":"0.40.0","sb_initiated":true,"project":{"src_pattern":"/lib/gen/"},"skills":{}}'
+mkdir -p "$EC_PROJ/lib/gen" "$EC_PROJ/lib/other"; printf 'g\n' >"$EC_PROJ/lib/gen/x.js"
+fresh
+run "$TF" "$(sbash 'sed -i s/a/b/ lib/g*/x.js')"
+if stopped; then pass "a glob that expands into a source directory counts"; else fail "glob expanding into source"; fi
+fresh
+run "$TF" "$(sbash 'sed -i s/a/b/ lib/o*/x.js')"
+if stopped; then fail "a glob that expands outside source does not count"; else pass "a glob that expands outside source does not count"; fi
+ec_cfg '{"config_version":"0.40.0","sb_initiated":true,"skills":{}}'
+
 # ---- concurrent recorders never lose an entry (header-less append-only trace) --------------------------------------
 A="$(jq -cn --arg p "$EC_PROJ/src/a.js" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$p}}')"
 B="$(jq -cn --arg p "$TMPD/zz" '{hook_event_name:"PostToolUse",tool_name:"Write",tool_input:{file_path:$p}}')"
