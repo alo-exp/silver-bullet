@@ -9,6 +9,9 @@ sb_prompt_trim() {
 # Work-intent verbs (shared by the informational and bare-work classifiers).
 _SB_PROMPT_WORK_VERBS='add|build|change|create|cut|debug|deploy|document|fix|implement|improve|investigate|migrate|publish|refactor|release|research|review|ship|test|update|validate|verify'
 
+# Verbs that are a request wherever a clause opens with them (no everyday noun among them).
+_SB_PROMPT_STRONG_VERBS='fix|implement|add|change|update|remove|delete|refactor|create|write|make|rename|patch|resolve|repair|rewrite|migrate|install'
+
 # Informational / status questions — answer directly; do not compose full SB chains.
 #
 # R2-19: classify on the FIRST non-blank line with patterns anchored at its start, and only call
@@ -32,30 +35,37 @@ sb_prompt_is_informational_query() {
   if [[ -n "$rest" ]] && grep -Eq "(^|[^[:alnum:]_])(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$rest"; then
     return 1
   fi
-  if grep -Eq "(and|then|also|but|plus|[,;])[[:space:]]+(please[[:space:]]+)?(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$first"; then
+  if grep -Eq "(and|then|also|but|plus)[[:space:]]+(please[[:space:]]+)?(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$first"; then
+    return 1
+  fi
+  # After a comma or semicolon only a strong change verb opens a request ("What is X, fix it"): a list of nouns
+  # ("Explain the flow: build, test, deploy") is not one.
+  if grep -Eq "[,;][[:space:]]+(please[[:space:]]+)?(${_SB_PROMPT_STRONG_VERBS})([^[:alnum:]_]|\$)" <<<"$first"; then
     return 1
   fi
   # A later sentence on the same line ("What is going on with CI? Fix it.", "...CI?Fix it", "going on... fix it") is judged
   # like a later line: split at the first run of terminators (`?`/`!` runs, an ellipsis, or a full stop before
   # whitespace or the end), whitespace after it optional. A dot inside a name (`config.test.js`) is no boundary.
-  # A Unicode ellipsis (U+2026, a literal byte sequence: no multibyte bracket expression, so the C locale and BSD sed
-  # agree) is the same boundary as `...`.
-  sentences="$(printf '%s' "${first//…/...}" | sed -E 's/^([^.?!]|\.[^[:space:].?!])*(\.*[?!]+|\.\.+|\.([[:space:]]|$))[[:space:]]*//')"
+  sentences="$(printf '%s' "$first" | sed -E 's/^([^.?!]|\.[^[:space:].?!])*(\.*[?!]+|\.\.+|\.([[:space:]]|$))[[:space:]]*//')"
   if [[ "$sentences" != "$first" ]] && grep -Eq "(^|[^[:alnum:]_])(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$sentences"; then
     return 1
   fi
-  # A clause set off by a colon, a dash (em, en, spaced hyphen) or an opening parenthesis that BEGINS with a work verb
-  # ("What is broken: fix it", "Why is it slow (fix it)") is a request. A line that ends in a question mark is
-  # still a question, and a verb inside a clause ("what is the status (see the review notes)") is not enough.
+  # A clause set off by a Unicode ellipsis, a colon or an em/en dash that is an IMPERATIVE ("What is broken: fix it",
+  # "What is wrong — fix it", "What is going on… fix it") is a request. Imperative = a strong change verb (not a
+  # noun-ambiguous one such as test, build, review, deploy or release) that opens the clause, after an optional
+  # please/pls/go/can you, followed by an object word or the end of the clause. "What does this do: test.sh",
+  # "Explain: migrate vs upgrade" and "What is TDD — test driven development" stay questions; so does a line that
+  # ends in a question mark. The separators are literal byte sequences (no multibyte bracket expression), so the
+  # C locale and BSD awk agree with a UTF-8 locale.
   if ! grep -Eq '[?][[:space:]]*$' <<<"$first"; then
-    clauses="$(printf '%s\n' "$first" | awk '{ gsub(/—|–| -+ |:|\(/, "\001"); n = split($0, p, "\001"); for (i = 2; i <= n; i++) print p[i] }')"
-    if grep -Eq "^[[:space:]]*((and|then|also|please)[[:space:]]+)*(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$clauses"; then
+    clauses="$(printf '%s\n' "$first" | awk '{ gsub(/…|—|–|:/, "\001"); n = split($0, p, "\001"); for (i = 2; i <= n; i++) print p[i] }')"
+    if grep -Eq "^[[:space:]]*(((and|then|also|please|pls|kindly|just|go|now)|(can|could|would|will)[[:space:]]+you)[[:space:]]+)*(${_SB_PROMPT_STRONG_VERBS})(([[:space:]]+(it|this|that|them|these|those|the|all|everything|my|our|now|please|up|a|an)([^[:alnum:]_]|\$))|[[:space:]]*[.!)]*\$)" <<<"$clauses"; then
       return 1
     fi
   fi
   if grep -Eq "(^|[^[:alnum:]_])(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$first" \
     && ! grep -Eq '[?][[:space:]]*$' <<<"$first" \
-    && ! grep -Eq '^(explain|describe|summarize|how (do|does|can|to|would)|what (is|are|does)|why (is|does|did|are))([^[:alnum:]_]|$)' <<<"$first"; then
+    && ! grep -Eq '^(explain|describe|summarize|how (do|does|can|to|would|is|are|did|should)|what (is|are|does|did|changed|was|were)|what.s|which|who|where (is|are|do|does|did)|when (is|are|do|does|did)|why (is|does|did|are|do))([^[:alnum:]_]|$)' <<<"$first"; then
     return 1
   fi
   return 0
