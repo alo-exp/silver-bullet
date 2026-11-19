@@ -139,15 +139,38 @@ if [[ -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]]; then
   fi
   unset SB_E2E_ENTERPRISE_MATRIX
   unset SB_E2E_MATRIX_ROUTING_ROW
-  if sb_e2e_matrix_routing_row_active; then
-    echo "PASS: routing row marker active without enterprise matrix env (hook spawn)"
+  if ! sb_e2e_matrix_routing_row_active; then
+    echo "PASS: routing row marker alone is ignored without the enterprise matrix env (R5-06)"
     ((PASS++)) || true
   else
-    echo "FAIL: routing row marker active without enterprise matrix env (hook spawn)"
+    echo "FAIL: routing row marker alone is ignored without the enterprise matrix env (R5-06)"
     ((FAIL++)) || true
   fi
   sb_e2e_matrix_clear_routing_row_marker
   unset SB_E2E_ENTERPRISE_MATRIX
+  # No resolved state directory: there is no marker to set, and clearing is a no-op (no /tmp fallback).
+  # A state "directory" that is a file: setting fails without side effects, clearing stays quiet.
+  rm_state="$(mktemp "${TMPDIR:-/tmp}/sb-matrix-notdir.XXXXXX")"
+  if ( unset SB_RUNTIME_STATE_DIR; ! sb_e2e_matrix_set_routing_row_marker && sb_e2e_matrix_clear_routing_row_marker ) \
+    && ( export SB_RUNTIME_STATE_DIR="$rm_state"; ! sb_e2e_matrix_set_routing_row_marker && sb_e2e_matrix_clear_routing_row_marker ); then
+    echo "PASS: routing marker helpers refuse without a usable state directory"
+    ((PASS++)) || true
+  else
+    echo "FAIL: routing marker helpers refuse without a usable state directory"
+    ((FAIL++)) || true
+  fi
+  rm -f "$rm_state"
+  # a marker that cannot be removed (a directory under that name) is tolerated
+  rm_dir="$(mktemp -d "${TMPDIR:-/tmp}/sb-matrix-stuck.XXXXXX")"
+  mkdir -p "$rm_dir/e2e-matrix-routing-row/keep"
+  if ( export SB_RUNTIME_STATE_DIR="$rm_dir"; sb_e2e_matrix_clear_routing_row_marker ); then
+    echo "PASS: an unremovable routing marker is tolerated"
+    ((PASS++)) || true
+  else
+    echo "FAIL: an unremovable routing marker is tolerated"
+    ((FAIL++)) || true
+  fi
+  rm -rf "$rm_dir"
 else
   echo "FAIL: e2e-matrix-routing.sh helper missing"
   ((FAIL++)) || true
@@ -226,6 +249,7 @@ if [[ -x "$SITE_REG_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]
     echo "FAIL: site-regression blocks Stop with active session (no marker)"
     ((FAIL++)) || true
   fi
+  export SB_E2E_ENTERPRISE_MATRIX=1
   sb_e2e_matrix_set_routing_row_marker
   site_out="$(cd "$site_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$site_home" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$site_state" bash "$SITE_REG_HOOK" 2>/dev/null || true)"
   if ! grep -qE '"decision"\s*:\s*"block"' <<<"$site_out"; then
@@ -236,6 +260,7 @@ if [[ -x "$SITE_REG_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]
     ((FAIL++)) || true
   fi
   sb_e2e_matrix_clear_routing_row_marker
+  unset SB_E2E_ENTERPRISE_MATRIX
   rm -rf "$site_home"
 fi
 

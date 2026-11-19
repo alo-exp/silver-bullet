@@ -391,6 +391,17 @@
         ]
       },
       {
+        "matcher": "Bash|exec_command|NotebookEdit|mcp__.*(write|edit|create|move|rename|patch|replace|delete|append|save|insert|copy|upload|apply|_mv|mv_|_put|put_|update|modify|set_|touch|truncate|unlink|_rm|rm_)[A-Za-z0-9_]*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/trivial-file-clear.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Task|Subagent|Agent",
         "hooks": [
           {
@@ -402,6 +413,17 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Skill|Bash|exec_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
             "async": false,
             "timeout": 10
           }

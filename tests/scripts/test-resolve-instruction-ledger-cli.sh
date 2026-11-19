@@ -12,8 +12,8 @@ WT="$(cd "$REPO" && git rev-parse --show-toplevel)"
 
 run() { tl_run bash -c 'cd "$1" && shift && timeout 20 bash "$@"' _ "$REPO" "$CLI" "$@"; }
 
-write_ledger() { # scope-branch
-  jq -n --arg b "$1" --arg w "$WT" '{
+write_ledger() { # scope-branch [worktree]
+  jq -n --arg b "$1" --arg w "${2:-$WT}" '{
     scope:{branch:$b, worktree:$w},
     intents:[{id:"I1",label:"Ship the feature",status:"pending",children:[
       {id:"I1.1",label:"write alpha module",status:"pending"},
@@ -42,11 +42,15 @@ assert_eq "list ok" 0 "$TL_STATUS"
 assert_contains "list header" "$TL_OUT" "Instruction ledger — unresolved items:"
 assert_contains "list pending leaf alpha" "$TL_OUT" "- [I1.1] write alpha module"
 assert_contains "list pending leaf beta" "$TL_OUT" "- [I1.2] write beta module"
-write_ledger some/other-branch
+write_ledger some/other-branch /elsewhere/worktree
 run list
 assert_eq "foreign list exits 0" 0 "$TL_STATUS"
-assert_contains "foreign list message" "$TL_OUT" "Ledger scope mismatches current branch/worktree"
+assert_contains "foreign list message" "$TL_OUT" "Ledger belongs to another worktree"
 assert_file_absent "foreign ledger cleared by list" "$LEDGER"
+write_ledger some/other-branch
+run list
+assert_contains "a branch switch in this worktree keeps the items (R2-11)" "$TL_OUT" "- [I1.1] write alpha module"
+assert_contains "list names the resolver by absolute path" "$TL_OUT" "$CLI"
 
 # --- argument validation for done/deferred --------------------------------------------------------
 write_ledger feature/test
@@ -88,7 +92,7 @@ assert_eq "ambiguous selector -> 1" 1 "$TL_STATUS"
 assert_contains "ambiguous message" "$TL_ERR" "could not resolve item module as done"
 run "done" nomatch --evidence x
 assert_eq "no match -> 1" 1 "$TL_STATUS"
-write_ledger some/other-branch
+write_ledger some/other-branch /elsewhere/worktree
 run "done" I1.1 --evidence x
 assert_eq "foreign ledger -> 1" 1 "$TL_STATUS"
 assert_file_absent "foreign ledger dropped on resolve" "$LEDGER"

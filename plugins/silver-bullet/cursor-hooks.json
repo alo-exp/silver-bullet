@@ -197,6 +197,11 @@
         "matcher": "Write|Edit|MultiEdit"
       },
       {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/trivial-file-clear.sh\"",
+        "timeout": 10,
+        "matcher": "Shell|NotebookEdit|mcp__.*(write|edit|create|move|rename|patch|replace|delete|append|save|insert|copy|upload|apply|_mv|mv_|_put|put_|update|modify|set_|touch|truncate|unlink|_rm|rm_)[A-Za-z0-9_]*"
+      },
+      {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
         "timeout": 10,
         "matcher": "Task|Subagent|Agent"
@@ -205,6 +210,11 @@
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
         "timeout": 10,
         "matcher": "Task|Subagent|Agent"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
+        "timeout": 10,
+        "matcher": "Skill|Shell"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/semantic-compress.sh\"",
@@ -300,6 +310,13 @@
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
         "timeout": 10,
         "matcher": "mcp__.*agentmemory.*|mcp__.*graphify.*|mcp__.*lean-?ctx.*"
+      }
+    ],
+    "afterShellExecution": [
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution \"${CURSOR_PLUGIN_ROOT}/hooks/trivial-file-clear.sh\"",
+        "matcher": ".*",
+        "timeout": 10
       }
     ],
     "subagentStart": [
