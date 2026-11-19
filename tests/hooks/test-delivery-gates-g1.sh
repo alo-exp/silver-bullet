@@ -158,9 +158,13 @@ mkproj cert
 state
 run_ca PreToolUse "git commit -m x" SB_AGENT_CERT_RUN=1
 assert_eq "cert switch inside the sandbox: commit passes the gate" "none" "$(decision)"
+# a real home that the user running the test can create: the passwd home (stubbed) holds the state dir, so it is never a
+# sandbox even though it lives under /tmp (a path such as /var/empty is not creatable without root: the hook then fails open)
 mkdir -p "$TL_TMP/fakehome/.claude/.silver-bullet"
-run_ca PreToolUse "git commit -m x" SB_AGENT_CERT_RUN=1 SB_RUNTIME_STATE_DIR=/var/empty/.claude/.silver-bullet SB_RUNTIME_PRESERVE_STATE_DIR=1
+tl_stub getent 'echo "u:x:1000:1000::'"$TL_TMP"'/fakehome:/bin/sh"'
+run_ca PreToolUse "git commit -m x" SB_AGENT_CERT_RUN=1 SB_RUNTIME_STATE_DIR="$TL_TMP/fakehome/.claude/.silver-bullet" SB_RUNTIME_PRESERVE_STATE_DIR=1
 assert_eq "cert switch with a real-home state dir: the gate still runs" "deny" "$(decision)"
+rm -f "$TL_BIN/getent"
 # test overrides for CI status: ignored outside the sandbox
 mkproj gh
 state inst-a inst-b verify-tests
@@ -292,8 +296,11 @@ mkproj tier2
 state inst-a inst-b verify-tests
 run_ca PreToolUse "gh pr create --fill" -u SILVER_BULLET_SKIP_ENFORCEMENT_TIER_GATE -u SILVER_BULLET_TEST_HOOK_ENFORCED
 assert_eq "plugin enabled outside the user settings file: delivery is not blocked as 'hooks inactive'" "allow" "$(decision)"
-run_ca PreToolUse "gh pr create --fill" -u SILVER_BULLET_TEST_HOOK_ENFORCED SB_RUNTIME_STATE_DIR=/var/empty/.claude/.silver-bullet SB_RUNTIME_PRESERVE_STATE_DIR=1 SILVER_BULLET_SKIP_ENFORCEMENT_TIER_GATE=1
+mkdir -p "$TL_TMP/fakehome/.claude/.silver-bullet"
+tl_stub getent 'echo "u:x:1000:1000::'"$TL_TMP"'/fakehome:/bin/sh"'
+run_ca PreToolUse "gh pr create --fill" -u SILVER_BULLET_TEST_HOOK_ENFORCED SB_RUNTIME_STATE_DIR="$TL_TMP/fakehome/.claude/.silver-bullet" SB_RUNTIME_PRESERVE_STATE_DIR=1 SILVER_BULLET_SKIP_ENFORCEMENT_TIER_GATE=1
 assert_eq "the tier-gate skip switch is ignored with a real home" "deny" "$(decision)"
+rm -f "$TL_BIN/getent"
 unapprove
 
 # ── R1-08: the verify-tests marker must name this project ────────────────────
