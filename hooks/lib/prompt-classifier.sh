@@ -16,7 +16,7 @@ _SB_PROMPT_WORK_VERBS='add|build|change|create|cut|debug|deploy|document|fix|imp
 # later lines, no `... and <work verb>` clause, and (for a question with a work verb in it) a
 # trailing question mark. Everything else is work, so the outcome and ledger gates stay on.
 sb_prompt_is_informational_query() {
-  local prompt lower first rest sentences
+  local prompt lower first rest sentences clauses
   prompt="$(sb_prompt_trim "${1:-}")"
   [[ -n "$prompt" ]] || return 1
   lower="$(printf '%s' "$prompt" | tr '[:upper:]' '[:lower:]')"
@@ -38,9 +38,20 @@ sb_prompt_is_informational_query() {
   # A later sentence on the same line ("What is going on with CI? Fix it.", "...CI?Fix it", "going on... fix it") is judged
   # like a later line: split at the first run of terminators (`?`/`!` runs, an ellipsis, or a full stop before
   # whitespace or the end), whitespace after it optional. A dot inside a name (`config.test.js`) is no boundary.
-  sentences="$(printf '%s' "$first" | sed -E 's/^([^.?!]|\.[^[:space:].?!])*(\.*[?!]+|\.\.+|\.([[:space:]]|$))[[:space:]]*//')"
+  # A Unicode ellipsis (U+2026, a literal byte sequence: no multibyte bracket expression, so the C locale and BSD sed
+  # agree) is the same boundary as `...`.
+  sentences="$(printf '%s' "${first//…/...}" | sed -E 's/^([^.?!]|\.[^[:space:].?!])*(\.*[?!]+|\.\.+|\.([[:space:]]|$))[[:space:]]*//')"
   if [[ "$sentences" != "$first" ]] && grep -Eq "(^|[^[:alnum:]_])(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$sentences"; then
     return 1
+  fi
+  # A clause set off by a colon, a dash (em, en, spaced hyphen) or an opening parenthesis that BEGINS with a work verb
+  # ("What is broken: fix it", "Why is it slow (fix it)") is a request. A line that ends in a question mark is
+  # still a question, and a verb inside a clause ("what is the status (see the review notes)") is not enough.
+  if ! grep -Eq '[?][[:space:]]*$' <<<"$first"; then
+    clauses="$(printf '%s\n' "$first" | awk '{ gsub(/—|–| -+ |:|\(/, "\001"); n = split($0, p, "\001"); for (i = 2; i <= n; i++) print p[i] }')"
+    if grep -Eq "^[[:space:]]*((and|then|also|please)[[:space:]]+)*(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$clauses"; then
+      return 1
+    fi
   fi
   if grep -Eq "(^|[^[:alnum:]_])(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$first" \
     && ! grep -Eq '[?][[:space:]]*$' <<<"$first" \
