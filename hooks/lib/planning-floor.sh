@@ -47,7 +47,7 @@ _sb_pf_dir="${BASH_SOURCE[0]:-$0}"
 _sb_pf_dir="${_sb_pf_dir%/*}"
 # A library the caller already loaded is not loaded again: required-skills.sh reads the default lists
 # with jq on every load, which costs about 35 ms on the hot path of every edit.
-for _sb_pf_lib in runtime-paths.sh path-canonical.sh hook-output.sh tool-input.sh required-skills.sh skill-discovery.sh state-seal.sh contract-unlock.sh integrity.sh; do
+for _sb_pf_lib in runtime-paths.sh path-canonical.sh plain-read-only.sh hook-output.sh tool-input.sh required-skills.sh skill-discovery.sh state-seal.sh contract-unlock.sh integrity.sh; do
   case "$_sb_pf_lib" in
     required-skills.sh) _sb_pf_probe=sb_required_skill_is_recorded ;;
     skill-discovery.sh) _sb_pf_probe=sb_skill_is_installed ;;
@@ -55,6 +55,7 @@ for _sb_pf_lib in runtime-paths.sh path-canonical.sh hook-output.sh tool-input.s
     contract-unlock.sh) _sb_pf_probe=sb_contract_is_writer ;;
     integrity.sh) _sb_pf_probe=sb_integrity_verify ;;
     path-canonical.sh) _sb_pf_probe=sb_canonical_path ;;
+    plain-read-only.sh) _sb_pf_probe=sb_pf_plain_read_only ;;
     *) _sb_pf_probe="" ;;
   esac
   if [[ -n "$_sb_pf_probe" ]] && declare -F "$_sb_pf_probe" >/dev/null 2>&1; then continue; fi
@@ -242,34 +243,6 @@ sb_pf_unanalysable_message() {
         "${SB_TI_ERROR:-the payload is not valid}"
       ;;
   esac
-}
-
-# A plainly read-only single command, judged without python3: no shell metacharacters at all,
-# a short allowlist of read-only programs, and git only with read-only subcommands.
-sb_pf_plain_read_only() {
-  local cmd="${1:-}" word
-  [[ -n "$cmd" && "$cmd" != *$'\n'* ]] || return 1
-  case "$cmd" in
-    *[\;\&\|\<\>\(\)\$\`\\\"\'\*\?\{\}\[\!\#\~]*) return 1 ;;
-  esac
-  # shellcheck disable=SC2086  # deliberate word splitting; globs were excluded above
-  set -- $cmd
-  case "${1:-}" in
-    ls | pwd | cat | head | tail | wc | echo | date | whoami | uname | id | which | stat | file | du | df | basename | dirname | realpath | readlink | grep | egrep | fgrep | rg | diff | cmp | sort | uniq | cut | tr | true | false) ;;
-    git)
-      case "${2:-}" in
-        status | diff | log | show | rev-parse | ls-files | describe | blame | remote | shortlog | whatchanged) ;;
-        *) return 1 ;;
-      esac
-      ;;
-    *) return 1 ;;
-  esac
-  for word in "$@"; do
-    case "$word" in
-      --output* | -o | --ext-diff | --textconv) return 1 ;;
-    esac
-  done
-  return 0
 }
 
 # sb_pf_src_load ROOT: the project's source pattern, exclusion and workflow, validated. They come from the
