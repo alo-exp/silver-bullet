@@ -86,8 +86,8 @@ run_stop '{"hook_event_name":"SubagentStop"}'
 assert_file_absent "R2-22: SubagentStop clears a stale coalesce file" "$SD/stop-coalesce-block"
 
 # ---- R2-36: agent-written source with an empty state --------------------------------
-# the trace (hooks/lib/agent-writes.sh): a header with the session start, then what the agent wrote
-mark() { printf '#%s\nf%s/src/app.py\n' "$(cat "$SESSION_FILE")" "$EC_PROJ" >"$SD/files-written"; }
+# the trace (hooks/lib/agent-writes.sh): one line per write, `<session start><TAB><entry>`
+mark() { printf '%s\tf%s/src/app.py\n' "$(cat "$SESSION_FILE")" "$EC_PROJ" >"$SD/files-written"; }
 reset
 : >"$SD/state"
 mkdir -p "$EC_PROJ/src"
@@ -108,7 +108,7 @@ assert_eq "R2-36: excluded test paths do not count as source" "0:" "$TL_STATUS:$
 rm -rf "$EC_PROJ/src"
 mkdir -p "$EC_PROJ/src"
 printf 'a\n' >"$EC_PROJ/src/app.py"
-printf '#1\nf%s/src/app.py\n' "$EC_PROJ" >"$SD/files-written"
+printf '1\tf%s/src/app.py\n' "$EC_PROJ" >"$SD/files-written"
 run_stop
 assert_eq "R2-36: a trace from another session is ignored" "0:" "$TL_STATUS:$TL_OUT"
 mark
@@ -130,7 +130,7 @@ unset SILVER_BULLET_SESSION_START_FILE
 date +%s >"$SD/session-start-time"
 mkdir -p "$EC_PROJ/src"
 printf 'a\n' >"$EC_PROJ/src/app.py"
-printf '#%s\nf%s/src/app.py\n' "$(cat "$SD/session-start-time")" "$EC_PROJ" >"$SD/files-written"
+printf '%s\tf%s/src/app.py\n' "$(cat "$SD/session-start-time")" "$EC_PROJ" >"$SD/files-written"
 run_stop
 assert_contains "R2-36: default session-start-time file is honoured" "$(reason)" "missing required skills"
 rm -f "$SD/session-start-time"

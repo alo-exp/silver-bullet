@@ -30,3 +30,40 @@ sb_pf_plain_read_only() {
   done
   return 0
 }
+
+# sb_pf_plain_read_only_chain COMMAND: a pipeline or &&/||/; chain whose every part is plainly read-only
+# (sb_pf_plain_read_only). The redirects `2>&1`, `>/dev/null`, `2>/dev/null`, `1>/dev/null` write nothing and are
+# dropped first; any other redirect, quote, expansion or program outside the allowlist sends the command to the
+# full analysis. Splitting is by the separators only (no quotes can be present: the parts reject them).
+sb_pf_plain_read_only_chain() {
+  local cmd="${1:-}" seg word rest part pending=""
+  [[ -n "$cmd" && "$cmd" != *$'\n'* ]] || return 1
+  cmd="${cmd//&&/|}"
+  cmd="${cmd//||/|}"
+  cmd="${cmd//;/|}"
+  rest="$cmd|"
+  while [[ -n "$rest" ]]; do
+    seg="${rest%%|*}"
+    rest="${rest#*|}"
+    part=""
+    pending=""
+    # shellcheck disable=SC2086  # deliberate word splitting; globs are rejected by the part check below
+    for word in $seg; do
+      if [[ -n "$pending" ]]; then
+        # a redirect operator on its own is harmless only in front of /dev/null
+        [[ "$word" == /dev/null ]] || part="$part $pending $word"
+        pending=""
+        continue
+      fi
+      case "$word" in
+        2'>&1' | '>/dev/null' | 2'>/dev/null' | 1'>/dev/null') ;;
+        '>' | 1'>' | 2'>') pending="$word" ;;
+        *) part="$part $word" ;;
+      esac
+    done
+    [[ -z "$pending" ]] || part="$part $pending"
+    part="${part# }"
+    sb_pf_plain_read_only "$part" || return 1
+  done
+  return 0
+}
