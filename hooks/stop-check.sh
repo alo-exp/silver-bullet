@@ -43,11 +43,16 @@ fi
 # Read JSON from stdin (hook event + optional context)
 stop_input="$(cat 2>/dev/null || true)"
 stop_hook_event="$(printf '%s' "$stop_input" | jq -r '.hook_event_name // "Stop"' 2>/dev/null || echo Stop)"
+# R2-10: the host sets stop_hook_active once it is already continuing because of a Stop hook.
+stop_hook_active="$(printf '%s' "$stop_input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo false)"
 
 if [[ -f "$_lib_dir_early/stop-coalesce.sh" ]]; then
   # shellcheck source=lib/stop-coalesce.sh
   source "$_lib_dir_early/stop-coalesce.sh"
-  if [[ "$stop_hook_event" == "Stop" ]] && declare -f sb_stop_coalesce_reset >/dev/null 2>&1; then
+  # R2-22: a stale coalesce file must not silence the secondary gates of a later event, so every
+  # Stop and SubagentStop starts clean (stop-check is the first Stop-family gate).
+  if [[ "$stop_hook_event" == "Stop" || "$stop_hook_event" == "SubagentStop" ]] \
+    && declare -f sb_stop_coalesce_reset >/dev/null 2>&1; then
     sb_stop_coalesce_reset
   fi
 fi
@@ -58,27 +63,24 @@ fi
 # knows something unexpected occurred rather than seeing a clean block/allow.
 trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️  stop-check.sh: unexpected error — skipping check\"}}" ; exit 0' ERR
 
-# ── Resolve config file by walking up from $PWD ──────────────────────────────
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir=$(dirname "$search_dir")
-done
-
-# No config → project not set up with Silver Bullet.
-# Fail-open by design: stop-check is a no-op for non-SB projects.
-[[ -z "$config_file" ]] && exit 0
-
-if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+# ── The project: nearest root with a record, else nearest directory holding both contract files ──
+# A root whose contract files were deleted or moved is still a project (hooks/lib/integrity.sh).
+lib_dir="${_lib_dir:-$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)}"
+if [[ -f "$lib_dir/integrity.sh" ]]; then
+  # shellcheck source=lib/integrity.sh
+  source "$lib_dir/integrity.sh"
+fi
+if [[ -f "$lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
-  source "$_lib_dir/sb-project-gate.sh"
+  source "$lib_dir/sb-project-gate.sh"
+fi
+_iv_root="$(sb_integrity_root "$PWD")"
+
+# No project → not set up with Silver Bullet. Fail-open by design: stop-check is a no-op for non-SB projects.
+[[ -z "$_iv_root" ]] && exit 0
+config_file="$_iv_root/.silver-bullet.json"
+search_dir="$_iv_root"
+if declare -f sb_project_is_initiated >/dev/null 2>&1; then
   sb_project_is_initiated "$config_file" || exit 0
 fi
 
@@ -95,20 +97,24 @@ PY
   exit 0
 fi
 
-# ── Read config values ────────────────────────────────────────────────────────
+# ── Read config values (from the verified record) ─────────────────────────────
+sb_integrity_gate "$_iv_root"
+sb_integrity_config_snapshot
+config_file="$SB_IV_CONFIG_FILE"
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_STATE_DIR"
 
 sb_default_state="${SB_STATE_DIR}/state"
 sb_default_trivial="${SB_STATE_DIR}/trivial"
-config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
+# shellcheck disable=SC2016  # the jq program
+config_vals=$(sb_iv_jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
   (.state.state_file // $ds),
   (.state.trivial_file // $dt),
   ((.skills.required_deploy // []) | join(" ")),
   (.project.active_workflow // "full-dev-cycle"),
   ((.skills.required_planning // []) | join(" ")),
   ((.skills.required_planning_devops // []) | join(" "))
-] | join("\n")' "$config_file")
+] | join("\n")')
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
 state_file="${state_file/#\~/$HOME}"
@@ -117,6 +123,8 @@ trivial_file="${trivial_file/#\~/$HOME}"
 active_workflow=$(printf '%s' "$config_vals" | sed -n '4p')
 required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '5p')
 required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
+# The trivial marker is the user's, at the default path: the config does not name another one.
+if [[ "$SB_IV_STATUS" != none ]]; then trivial_file="$sb_default_trivial"; fi
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
@@ -130,7 +138,6 @@ if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
 fi
 
 # ── Resolve lib dir (needed for trivial-bypass and required-skills helpers) ───
-lib_dir="${_lib_dir:-$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)}"
 
 if [[ -f "$lib_dir/required-skills.sh" ]]; then
   # shellcheck source=lib/required-skills.sh
@@ -197,6 +204,8 @@ fi
 if [[ -f "$lib_dir/trivial-bypass.sh" ]]; then
   # shellcheck disable=SC1090
   source "$lib_dir/trivial-bypass.sh"
+  # only the state directory's own `trivial` file may stand for a trivial session (R3-02)
+  sb_trivial_path_trusted "$trivial_file" "$sb_default_trivial" || trivial_file="$sb_default_trivial"
   sb_trivial_bypass "$trivial_file"
 fi
 
@@ -227,7 +236,7 @@ fi
       exit 0
     fi
   fi
-  _stop_project_root="$(dirname "$config_file")"
+  _stop_project_root="$SB_IV_ROOT"
   if sb_orchestrator_is_parent_session 2>/dev/null \
     && sb_orchestrator_state_applies_to_project "$_stop_project_root" 2>/dev/null; then
     cur_flow=""
@@ -261,6 +270,15 @@ fi
   fi
 fi
 
+# stat mtime helper (BSD and GNU).
+sb_stop_mtime() {
+  if [[ "$(uname)" == "Darwin" ]]; then
+    stat -f %m "$1" 2>/dev/null || echo 0
+  else
+    stat -c %Y "$1" 2>/dev/null || echo 0
+  fi
+}
+
 # L-04: block Stop when autonomous stall flag is set (100+ tool calls, no skill progress).
 stall_block_file="${SB_STATE_DIR}/stall-block"
 if [[ -f "$stall_block_file" && ! -L "$stall_block_file" ]]; then
@@ -270,13 +288,15 @@ if [[ -f "$stall_block_file" && ! -L "$stall_block_file" ]]; then
   elif [[ -f "${SB_STATE_DIR}/session-start-time" ]]; then
     session_start_epoch=$(cat "${SB_STATE_DIR}/session-start-time" 2>/dev/null || true)
   fi
-  stall_mtime=0
-  if [[ "$(uname)" == "Darwin" ]]; then
-    stall_mtime=$(stat -f %m "$stall_block_file" 2>/dev/null || echo 0)
-  else
-    stall_mtime=$(stat -c %Y "$stall_block_file" 2>/dev/null || echo 0)
+  stall_mtime=$(sb_stop_mtime "$stall_block_file")
+  # R2-09: a skill recorded after the stall flag was written is the progress the flag asks for.
+  state_mtime=0
+  if [[ -f "$state_file" && ! -L "$state_file" ]]; then
+    state_mtime=$(sb_stop_mtime "$state_file")
   fi
-  if [[ -z "$session_start_epoch" || ! "$session_start_epoch" =~ ^[0-9]+$ || "$stall_mtime" -ge "$session_start_epoch" ]]; then
+  if (( state_mtime > stall_mtime )); then
+    rm -f -- "$stall_block_file"
+  elif [[ -z "$session_start_epoch" || ! "$session_start_epoch" =~ ^[0-9]+$ || "$stall_mtime" -ge "$session_start_epoch" ]]; then
     stall_count=$(cat "$stall_block_file" 2>/dev/null || echo "100")
     stall_reason="Autonomous stall detected: ${stall_count} tool calls without workflow progress. Invoke the next SB skill before declaring done."
     json_reason=$(printf '%s' "$stall_reason" | jq -Rs '.')
@@ -296,6 +316,7 @@ fi
 # Clean tree + no local-only commits ahead of origin → nothing to deploy → skip.
 # Untracked files (including .gitignored ones) count as dirty — active work.
 # Fail-closed on rev-list/ref-resolution failure (HOOK-06 / #17).
+sb_dirty_filtered=""
 if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   tree_clean=false
   # `--untracked-files=all` makes porcelain deterministic across user-local
@@ -310,22 +331,13 @@ if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   if [[ -n "$porcelain" ]]; then
     # Built-in transient-artifact patterns (extended-grep, anchored to
     # status-line shape `XX path`).
-    sb_transient_re="(\.${SB_RUNTIME_NAME}/scheduled_tasks\.lock|\.${SB_RUNTIME_NAME}/settings\.local\.json|\.superpowers/|\.planning/workflows/|REVIEW\.md)"
-    # Project-configured additional patterns (newline-separated, ERE-escaped
-    # by the user). Resolved via .silver-bullet.json walk-up.
-    sb_cfg_search="$PWD"
-    sb_cfg=""
-    while true; do
-      if [[ -f "$sb_cfg_search/.silver-bullet.json" ]]; then
-        sb_cfg="$sb_cfg_search/.silver-bullet.json"
-        break
-      fi
-      # Stop at the repository root or /: the config can vanish while the hook runs.
-      if [[ -d "$sb_cfg_search/.git" ]] || [[ "$sb_cfg_search" == "/" ]]; then break; fi
-      sb_cfg_search=$(dirname "$sb_cfg_search")
-    done
+    # R2-30: anchored to the path (a `docs/CODE-REVIEW.md` or `SECURITY-REVIEW.md` is real work), and
+    # handed to awk through ENVIRON so backslash escapes are not re-processed (no stderr warnings).
+    sb_transient_re="(^\.${SB_RUNTIME_NAME}/scheduled_tasks\.lock$|^\.${SB_RUNTIME_NAME}/settings\.local\.json$|^\.superpowers/|^\.planning/workflows/|^REVIEW\.md$|^\.planning/(.*/)?[^/]*REVIEW\.md$)"
+    # Project-configured additional patterns (newline-separated, ERE-escaped by the user): the recorded ones.
+    sb_cfg="$config_file"
     if [[ -n "$sb_cfg" ]] && command -v jq >/dev/null 2>&1; then
-      sb_extra=$(jq -r '.hooks.stop_check.transient_path_ignore_patterns // [] | join("|")' "$sb_cfg" 2>/dev/null)
+      sb_extra=$(sb_iv_jq -r '.hooks.stop_check.transient_path_ignore_patterns // [] | join("|")' 2>/dev/null)
       if [[ -n "$sb_extra" ]]; then
         # Validate: reject overly-broad patterns that match a single printable char.
         # Sentinel is ASCII SOH (\001) — never present in a real file path, so
@@ -341,13 +353,15 @@ if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     # Drop any porcelain line whose path component matches the transient regex.
     # Porcelain format: "XY path" — path starts at column 4. Use awk to extract
     # the path so renames (R/C with " -> ") don't confuse the filter.
-    filtered=$(printf '%s\n' "$porcelain" | awk -v re="$sb_transient_re" '
+    filtered=$(printf '%s\n' "$porcelain" | SB_TRANSIENT_RE="$sb_transient_re" awk '
+      BEGIN { re = ENVIRON["SB_TRANSIENT_RE"] }
       {
         path = substr($0, 4)
         sub(/^.* -> /, "", path)
         if (path !~ re) print
       }
     ')
+    sb_dirty_filtered="$filtered"
     [[ -z "$filtered" ]] && tree_clean=true
   else
     tree_clean=true
@@ -416,11 +430,47 @@ fi
 
 # ── Read state file ───────────────────────────────────────────────────────────
 state_contents=""
-[[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
+if [[ -f "$state_file" ]]; then
+  # Only what the recorder sealed counts (hooks/lib/state-seal.sh): a state edited by anything else yields nothing.
+  source "$lib_dir/integrity.sh"
+  state_contents=$(sb_integrity_state_contents "$state_file")
+fi
+
+# R2-36: true when this session's agent wrote a file that can be under the project's source (trivial-file-clear.sh
+# records what every Write/Edit and shell write touched, hooks/lib/agent-writes.sh) AND a still-dirty path is
+# project source. A chat-only session over the user's own pending edits stays allowed, also when the agent wrote
+# scratch files elsewhere. The source pattern and exclusions are the ones the other gates use (sb_pf_src_load).
+sb_stop_agent_wrote_source() {
+  local root line path
+  root="$(git -C "$PWD" rev-parse --show-toplevel)"
+  source "$lib_dir/planning-floor.sh"
+  source "$lib_dir/agent-writes.sh"
+  # nothing was written: no trace of any session, not even a planted link
+  compgen -G "${SB_STATE_DIR}/files-written.*" >/dev/null || return 1
+  sb_pf_src_load "$root"
+  while IFS= read -r line; do
+    path="${line:3}"
+    path="${path##* -> }"
+    sb_pf_src_in_scope "$root/$path" "$root" || continue
+    sb_aw_wrote_source "$root" "${SB_STATE_DIR}" && return 0
+    return 1
+  done <<<"$sb_dirty_filtered"
+  return 1
+}
 
 # HOOK-04: empty state file means no skills were tracked — non-dev session.
 # Fail-open by design: nothing to gate against.
-[[ -z "$state_contents" ]] && exit 0
+# A state file with content that nothing sealed is not an empty one: it is a forged or damaged state, and the
+# floor counts it as having recorded nothing.
+# A state that was tracked once and is now empty or gone was truncated or deleted: that is not a session that
+# never tracked anything, the floor applies to the empty state. "Tracked once" is the keyed record's word
+# (SB_IV_TRACKED) or the counter file's; a project that is unbaselined or untrusted has no trustworthy evidence
+# either way, so it is held to the floor too.
+# R2-36: nor is a session whose agent wrote project source: then the planning floor applies exactly as if one
+# unrelated skill had been recorded.
+if [[ -z "$state_contents" && ! -s "$state_file" && ! -s "${state_file}.hwm" ]]; then
+  if ! sb_integrity_strict && [[ "$SB_IV_TRACKED" != true ]] && ! sb_stop_agent_wrote_source; then exit 0; fi
+fi
 
 # Emit block JSON for Stop
 emit_stop_block() {
@@ -448,6 +498,23 @@ run_doc_scheme_task_gate() {
   fi
   return 0
 }
+
+# R2-10: a block the agent cannot clear from inside the session (the branch file belongs to
+# the host's global runtime state, so a branch switch or a concurrent session trips it) must
+# not trap the session. The first Stop blocks; once the host reports stop_hook_active the
+# same condition is released with a visible message and an audit line instead of looping.
+sb_stop_block_unclearable() {
+  local reason="$1" json_reason
+  if [[ "$stop_hook_active" == "true" ]]; then
+    printf '%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$reason" >>"${SB_STATE_DIR}/stop-loop-release.log" 2>/dev/null || true
+    # Released, but not waved through: the planning floor below still applies (R2-10).
+    stop_release_note="$reason"
+    return 1
+  fi
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  printf '{"decision":"block","reason":%s}' "$json_reason"
+}
+stop_release_note=""
 
 # ── Branch-scope validation: skip if state is from a different branch ─────────
 # State is branch-scoped by session-start. If the branch file and current branch
@@ -481,17 +548,17 @@ fi
 # M-04: branch / worktree mismatch — warn visibly instead of silent fail-open.
 if declare -f sb_branch_scope_mismatch >/dev/null 2>&1; then
   if sb_branch_scope_mismatch "$current_branch" "$current_git_toplevel"; then
-    warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' (worktree ${stored_state_toplevel:-unknown}) but current scope is '${current_branch}' (${current_git_toplevel:-unknown}). Run a fresh session-start on this worktree before declaring done."
-    json_warn=$(printf '%s' "$warn_msg" | jq -Rs '.')
-    printf '{"decision":"block","reason":%s}' "$json_warn"
-    exit 0
+    warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' (worktree ${stored_state_toplevel:-unknown}) but current scope is '${current_branch}' (${current_git_toplevel:-unknown}). To start clean run /clear (or start a new session): session-start re-scopes the state. To continue, stop again: the planning floor is then checked against the skills recorded so far."
+    if sb_stop_block_unclearable "$warn_msg"; then
+      exit 0
+    fi
   fi
 elif [[ -n "$stored_state_branch" && -n "$current_branch" && \
       "$stored_state_branch" != "$current_branch" ]]; then
-  warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' but current branch is '${current_branch}'. Run a fresh session-start on this branch before declaring done."
-  json_warn=$(printf '%s' "$warn_msg" | jq -Rs '.')
-  printf '{"decision":"block","reason":%s}' "$json_warn"
-  exit 0
+  warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' but current branch is '${current_branch}'. To start clean run /clear (or start a new session): session-start re-scopes the state. To continue, stop again: the planning floor is then checked against the skills recorded so far."
+  if sb_stop_block_unclearable "$warn_msg"; then
+    exit 0
+  fi
 fi
 
 # v0.30.0 fix (#85): the Stop hook is the conversation-end gate, NOT the
@@ -571,6 +638,9 @@ if [[ -n "$missing" ]]; then
     missing_lines="${missing_lines}  - ${skill}"$'\n'
   done
   reason=$(printf 'Cannot complete -- missing required skills:\n%s\nRun these skills before declaring task complete.' "$missing_lines")
+  if [[ -n "$stop_release_note" ]]; then
+    reason="${stop_release_note}"$'\n\n'"${reason}"
+  fi
   if [[ -n "$uninstalled" ]]; then
     unavailable_lines=""
     for skill in $uninstalled; do
@@ -594,6 +664,9 @@ elif [[ -n "$uninstalled" ]]; then
   printf '{"hookSpecificOutput":{"message":%s}}' "$json_reason"
 else
   run_doc_scheme_task_gate "$search_dir"
+  if [[ -n "$stop_release_note" ]]; then
+    printf '{"systemMessage":%s}' "$(printf '%s' "$stop_release_note" | jq -Rs '.')"
+  fi
 fi
 
 exit 0

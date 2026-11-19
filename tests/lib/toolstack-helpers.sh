@@ -25,6 +25,12 @@ ts_sb_project() {
   printf '# sb\n' >"$1/silver-bullet.md"
 }
 
+# ts_sb_bridge ROOT: ROOT is Silver Bullet's checkout as ~/.cursor/state/toolstack/repo-root records it.
+ts_sb_bridge() {
+  mkdir -p "$1/scripts/lib/recommended-tools" "$HOME/.cursor/state/toolstack"
+  printf '%s\n' "$1" >"$HOME/.cursor/state/toolstack/repo-root"
+}
+
 # ts_stage_deployed: lay the toolstack scripts out like ~/.cursor/hooks/toolstack
 # (scripts next to a lib/ directory that holds common.sh), as the gates expect, and
 # set TS_STAGE. The directory is named global-toolstack so the coverage tool maps the

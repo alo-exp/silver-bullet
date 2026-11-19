@@ -8,7 +8,8 @@
     "name": "silver-bullet",
     "src_pattern": "/hooks/|/skills/|/templates/",
     "src_exclude_pattern": "__tests__|\\.test\\.",
-    "active_workflow": "full-dev-cycle"
+    "active_workflow": "full-dev-cycle",
+    "push_to_default_branch_tier": "completion"
   },
   "skills": {
     "required_planning": [

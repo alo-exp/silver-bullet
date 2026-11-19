@@ -23,6 +23,13 @@ def proc(returncode: int = 0, stdout: str = "", stderr: str = "") -> mock.Mock:
     return mock.Mock(returncode=returncode, stdout=stdout, stderr=stderr)
 
 
+class VendorTagContractTests(unittest.TestCase):
+    def test_every_claim_row_phase_offers_the_optional_vendors_tag(self) -> None:
+        for phase in ("DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"):
+            self.assertIn("vendors", ld.PHASE_INSTRUCTIONS[phase], phase)
+        self.assertNotIn("vendors", ld.PHASE_INSTRUCTIONS["TASK"])
+
+
 class CursorHelperTests(HermeticCase):
     def test_stub_mode_values(self) -> None:
         for value, expected in (("1", True), ("true", True), ("yes", True), (" yes ", True), ("0", False), ("", False)):

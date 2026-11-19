@@ -53,7 +53,7 @@ It runs, and stops at the first failure:
 3. **Full suite** — `bash tests/run-all-tests.sh`, the local equivalent of CI.
 4. **RC validation matrix** — `bash scripts/run-rc-validation-matrix.sh` (cursor, codex, claude × fresh/upgrade on the operator machine; writes the six markers under `${SB_RUNTIME_STATE_DIR}/rc-validation/`). See `docs/testing/RC-VALIDATION-MATRIX.md`.
 
-`scripts/sync-release-marketplace-versions.sh` runs this gate at startup. Audited bypasses only: `SB_SKIP_PRE_RELEASE_GATE=1` skips the whole gate, `SB_SKIP_RC_MATRIX=1` the RC matrix.
+`scripts/sync-release-marketplace-versions.sh` runs this gate at startup. Bypasses are logged, not silent: `SB_SKIP_PRE_RELEASE_GATE=1` skips the whole gate and `SB_SKIP_RC_MATRIX=1` makes the RC script exit without writing markers (so the release gate still blocks); each use is printed and appended to `${SB_RUNTIME_STATE_DIR}/release-bypass-log.jsonl`.
 
 ## 3. Pre-Release Quality Stages
 
@@ -77,7 +77,7 @@ bash scripts/run-release-live-matrix.sh
 bash tests/e2e-live/run-e2e-live-tests.sh
 ```
 
-When `release.require_plugin_runtime_matrix` is true (the template default), `gh release create` needs matching `matrix=` markers from the release live matrix, the E2E live suite and the enterprise inline journey (`matrix=inline-full-surface`, or the Claude supervised enterprise matrix under `.planning/enterprise-e2e/`). The E2E live suite writes `matrix=inline-full-surface` only when the inline full-surface journey itself ran and passed (`SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1`); a run of the default hook-failure matrix removes that marker. The accepted combinations are listed in `hooks/lib/completion-audit/deploy-tier.sh`. `scripts/run-release-live-matrix.sh` refuses to start without a fresh `verify-tests` marker.
+When `release.require_plugin_runtime_matrix` is true (this repository; the template leaves it off), `gh release create` needs matching `matrix=` markers from the release live matrix, the E2E live suite and the enterprise inline journey (`matrix=inline-full-surface`, or the Claude supervised enterprise matrix under `.planning/enterprise-e2e/`). The E2E live suite writes `matrix=inline-full-surface` only when the inline full-surface journey itself ran and passed (`SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1`); a run of the default hook-failure matrix removes that marker. The accepted combinations are listed in `hooks/lib/completion-audit/deploy-tier.sh`. `scripts/run-release-live-matrix.sh` refuses to start without a `verify-tests` marker (it checks that the file exists, not its age).
 
 The live harnesses default to the Claude runtime (`SB_LIVE_RUNTIMES` / `SB_E2E_LIVE_RUNTIMES` default to `claude` in `tests/live/run-live-tests.sh`, `tests/e2e-live/run-e2e-live-tests.sh` and `tests/run-all-tests.sh`). `scripts/run-sb-live-tests-kay.sh` runs the Kay (Codex-compatible) path instead; `scripts/run-sb-live-tests-claude.sh` and `scripts/run-sb-live-tests-codex.sh` pin the other runtimes. Live pre-release runs go through the host's `/sb:agent-*` wrapper; the maintainer's current wrapper and model policy for those runs is recorded in [docs/internal/pre-release-quality-gate.md](internal/pre-release-quality-gate.md). Model choice is otherwise a host concern ([RUNTIME-COMPATIBILITY.md](RUNTIME-COMPATIBILITY.md#model-selection-boundary)).
 

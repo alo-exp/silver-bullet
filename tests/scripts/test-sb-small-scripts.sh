@@ -5,6 +5,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 cd "$TL_TMP"
 unset CI SB_STACK_OPTIMIZER_DRY_RUN SB_AGENTMEMORY_HOME
 
@@ -14,10 +15,19 @@ mkdir -p "$ST/scripts" "$ST/hooks"
 cp "$TL_REPO_ROOT/scripts/sb-verify-synergy.sh" "$ST/scripts/"
 ln -s "$TL_REPO_ROOT/hooks/lib" "$ST/hooks/lib"
 VS="$ST/scripts/sb-verify-synergy.sh"
+PRJ="$TL_TMP/project"; mkdir -p "$PRJ"
+cd "$PRJ"   # the audited project is the working directory (not the Silver Bullet checkout the script lives in)
 
 tl_run bash "$VS" --help
 assert_eq "help exits 0" "0" "$TL_STATUS"
 assert_contains "help usage" "$TL_OUT" "Usage: bash scripts/sb-verify-synergy.sh"
+
+tl_run bash "$VS" --project-root
+assert_eq "--project-root without a value exits 2" "2" "$TL_STATUS"
+assert_contains "--project-root without a value is explained" "$TL_ERR" "--project-root requires a value"
+tl_run bash "$VS" --project-root "$TL_TMP/no-such-dir"
+assert_eq "a missing project root exits 2" "2" "$TL_STATUS"
+assert_contains "the missing project root is named" "$TL_ERR" "Not a directory: $TL_TMP/no-such-dir"
 
 tl_run bash "$VS" --bogus
 assert_eq "unknown option exits 2" "2" "$TL_STATUS"
@@ -27,16 +37,29 @@ tl_run bash "$VS"
 assert_eq "missing config exits 1" "1" "$TL_STATUS"
 assert_contains "missing config message" "$TL_ERR" ".silver-bullet.json missing"
 
-# nothing opted in: score 0, no fails -> NEEDS_WORK, still exit 0
+# R6-23: the plugin directory is not a project
+cd "$ST"; tl_run bash "$VS"; cd "$PRJ"
+assert_eq "run from the plugin directory is refused" "2" "$TL_STATUS"
+assert_contains "the refusal says what to do" "$TL_ERR" "run it from your project or pass --project-root DIR"
+tl_run bash "$VS" --project-root "$ST"
+assert_eq "an explicit plugin root is refused too" "2" "$TL_STATUS"
 printf '{}\n' >"$ST/.silver-bullet.json"
+tl_run env SB_ALLOW_PLUGIN_ROOT=1 bash "$VS" --project-root "$ST"
+assert_eq "developing Silver Bullet itself may opt in" "0" "$TL_STATUS"
+rm -f "$ST/.silver-bullet.json"
+
+# nothing opted in: score 0, no fails -> NEEDS_WORK, still exit 0
+printf '{}\n' >"$PRJ/.silver-bullet.json"
+sb_test_consent_reset_mirror "$PRJ/.silver-bullet.json" install,wire,enforce
 tl_run bash "$VS"
 assert_eq "no opt-in exits 0" "0" "$TL_STATUS"
 assert_contains "no opt-in verdict" "$TL_OUT" "Synergy audit verdict: NEEDS_WORK (score=0/100, fails=0, warns=0)"
 assert_contains "no opt-in report line" "$TL_OUT" "skip|graphify-opt|graphify not opted in|0"
-assert_file_absent "no report without flag" "$ST/SETUP_REPORT.md"
+assert_file_absent "no report without flag" "$PRJ/SETUP_REPORT.md"
 
 # graphify opted in but nothing installed: fails > 0 -> NEEDS_WORK and exit 1
-printf '{"recommended_tools":{"graphify":{"enabled_by_user":true}}}\n' >"$ST/.silver-bullet.json"
+printf '{"recommended_tools":{"graphify":{"enabled_by_user":true}}}\n' >"$PRJ/.silver-bullet.json"
+sb_test_consent_reset_mirror "$PRJ/.silver-bullet.json" install,wire,enforce
 tl_run bash "$VS"
 assert_eq "fails exit 1" "1" "$TL_STATUS"
 assert_contains "fails verdict" "$TL_OUT" "Synergy audit verdict: NEEDS_WORK"
@@ -47,12 +70,12 @@ assert_contains "fail row" "$TL_OUT" "fail|graphify-cli|CLI missing|10"
 tl_run bash "$VS" --write-setup-report
 assert_eq "report run keeps exit 1 on fails" "1" "$TL_STATUS"
 assert_contains "report announced" "$TL_OUT" "Appended addendum to SETUP_REPORT.md"
-REP="$(cat "$ST/SETUP_REPORT.md")"
+REP="$(cat "$PRJ/SETUP_REPORT.md")"
 assert_contains "addendum heading" "$REP" "## Optimization verification addendum ("
 assert_contains "addendum verdict row" "$REP" "| Verdict | NEEDS_WORK |"
 assert_contains "addendum fails row" "$REP" "| Fails | 2 |"
 tl_run bash "$VS" --write-setup-report
-assert_eq "second append" "2" "$(grep -c '^## Optimization verification addendum' "$ST/SETUP_REPORT.md")"
+assert_eq "second append" "2" "$(grep -c '^## Optimization verification addendum' "$PRJ/SETUP_REPORT.md")"
 
 # ACCEPTABLE / OPTIMAL verdicts: score thresholds with no fails. Stub the
 # optimizer library with fixed scores.
@@ -150,6 +173,7 @@ assert_contains "graphify hint" "$TL_OUT" "uv tool install graphifyy"
 
 printf '#!/usr/bin/env bash\necho DIAG-RAN; exit 3\n' >"$BD/sb-diagnostics.sh"; chmod +x "$BD/sb-diagnostics.sh"
 printf '{}\n' >"$TGT/.silver-bullet.json"
+sb_test_consent_reset_mirror "$TGT/.silver-bullet.json" install,wire,enforce
 tl_run bash "$BD/sb-bootstrap.sh" "$TGT"
 assert_eq "failing diagnostics tolerated" "0" "$TL_STATUS"
 assert_contains "diagnostics ran" "$TL_OUT" "DIAG-RAN"

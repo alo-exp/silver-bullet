@@ -10,12 +10,12 @@ sb_core_rules_pin_file() {
 sb_core_rules_compute_hash() {
   local core_rules_file="${1:-}"
   [[ -f "$core_rules_file" ]] || return 1
-  if command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 "$core_rules_file" | awk '{print $1}'
-    return 0
-  fi
   if command -v sha256sum >/dev/null 2>&1; then
     sha256sum "$core_rules_file" | awk '{print $1}'
+    return 0
+  fi
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$core_rules_file" | awk '{print $1}'
     return 0
   fi
   return 1

@@ -53,6 +53,28 @@ if [[ -f "$_lib_dir/hook-output.sh" ]]; then
   # shellcheck source=lib/hook-output.sh
   source "$_lib_dir/hook-output.sh"
 fi
+if [[ -f "$_lib_dir/state-seal.sh" ]]; then
+  # shellcheck source=lib/state-seal.sh
+  source "$_lib_dir/state-seal.sh"
+fi
+if ! declare -F sb_state_seal_write >/dev/null 2>&1; then
+  sb_state_seal_write() { :; }
+  sb_state_seal_enforce() { :; }
+  sb_state_seal_lock() { :; }
+  sb_state_seal_unlock() { :; }
+fi
+if [[ -f "$_lib_dir/contract-unlock.sh" ]]; then
+  # shellcheck source=lib/contract-unlock.sh
+  source "$_lib_dir/contract-unlock.sh"
+fi
+if [[ -f "$_lib_dir/integrity.sh" ]]; then
+  # shellcheck source=lib/integrity.sh
+  source "$_lib_dir/integrity.sh"
+fi
+if ! declare -F sb_contract_is_writer >/dev/null 2>&1; then
+  # Without the libraries there is nothing to keep in step.
+  sb_contract_is_writer() { return 1; }
+fi
 
 # jq is required for JSON parsing
 if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
@@ -233,6 +255,10 @@ fi
 
 [[ ${#skills_to_record[@]} -gt 0 ]] || exit 0
 
+# Only a host hook event records: the payload must carry the host's PostToolUse event name. (A
+# crafted payload can still say so; the planning gates refuse commands that run the recorder.)
+[[ "$(printf '%s' "$input" | jq -r '.hook_event_name // ""')" == "PostToolUse" ]] || exit 0
+
 debug_record_skill() {
   [[ "${SILVER_BULLET_DEBUG_RECORD_SKILL:-0}" == "1" ]] || return 0
   local dbg_dir="${SB_RUNTIME_STATE_DIR}"
@@ -317,6 +343,8 @@ debug_record_skill
 
 recorded_any=false
 completed_skills_to_mark=()
+sb_state_seal_lock "$STATE_FILE"
+trap 'sb_state_seal_unlock' EXIT
 
 for raw in "${skills_to_record[@]}"; do
   loaded_only=false
@@ -365,12 +393,19 @@ for raw in "${skills_to_record[@]}"; do
   fi
 
   completed_skills_to_mark+=("$skill")
+  if sb_contract_is_writer "$skill"; then
+    # A contract-writing skill starts: an unlock entry of the verified record (nothing is written
+    # when the project has no valid record), and a hint that wakes dev-cycle-check's PostToolUse up.
+    sb_integrity_baseline "$(sb_integrity_root "$PWD")" unlock "$skill"
+    if : 2>/dev/null >"${SB_STATE_DIR}/unlock-hint"; then :; fi
+  fi
 
   # --- Record completed skill invocation (no duplicates) ---
   mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true
   # SEC-02: refuse to write through a symlink at STATE_FILE
   sb_guard_nofollow "$STATE_FILE"
   touch -- "$STATE_FILE"
+  sb_state_seal_enforce "$STATE_FILE"
   if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then
     printf '%s\n' "$skill" >> "$STATE_FILE"
     recorded_any=true
@@ -406,6 +441,13 @@ for raw in "${skills_to_record[@]}"; do
     fi
   fi
 done
+
+if [[ "${recorded_any:-false}" == true ]]; then
+  sb_state_seal_write "$STATE_FILE"
+  # the keyed record remembers that skills were tracked here (a deleted counter file proves nothing)
+  if declare -F sb_integrity_baseline >/dev/null 2>&1; then sb_integrity_baseline "$(sb_integrity_root "$PWD")" tracked; fi
+fi
+sb_state_seal_unlock
 
 if [[ ${#completed_skills_to_mark[@]} -gt 0 ]] && declare -F sb_session_ledger_mark_completed >/dev/null 2>&1; then
   for skill in "${completed_skills_to_mark[@]}"; do

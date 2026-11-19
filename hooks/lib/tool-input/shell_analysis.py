@@ -90,6 +90,7 @@ Analysis schema (version 1):
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import re
@@ -101,6 +102,7 @@ SCHEMA_VERSION = 1
 MAX_DEPTH = 24
 MAX_EXPANSIONS = 64
 MAX_LOOP_VALUES = 16
+MAX_ALTS = 8                  # other directories a shell may be in after cds that may not have run
 # Analysis budget: exceeding any limit ends the walk and reports unseen code (strictest tier),
 # so a crafted command can neither stall a hook until its timeout nor crash the analyzer.
 MAX_INPUT_CHARS = 512 * 1024
@@ -215,6 +217,22 @@ class Compound:
         self.parts = parts
         self.redirs = []
         self.extra = extra
+
+
+class AndOr(list):
+    """The pipelines of one and-or list; ``ops`` holds the operator before each pipeline after the first."""
+
+    def __init__(self, pipes=(), ops=()):
+        super().__init__(pipes)
+        self.ops = list(ops)
+
+
+class Pipeline(list):
+    """The commands of one pipeline; ``negated`` is true for a leading ``!``."""
+
+    def __init__(self, cmds=(), negated=False):
+        super().__init__(cmds)
+        self.negated = negated
 
 
 class Script:
@@ -346,20 +364,23 @@ class _Parser:
         return andor, background
 
     def parse_andor(self):
-        pipes = [self.parse_pipeline()]
+        pipes = AndOr([self.parse_pipeline()])
         while True:
             self.skip_blanks()
             if not (self.at("&&") or self.at("||")):
                 return pipes
+            pipes.ops.append(self.s[self.i:self.i + 2])
             self.i += 2
             self.skip_newlines()
             pipes.append(self.parse_pipeline())
 
     def parse_pipeline(self):
+        negated = False
         while True:
             self.skip_blanks()
             if self.at_word("!"):
                 self.i += 1
+                negated = not negated
             elif self.at_word("time"):
                 self.i += 4
                 self.skip_blanks()
@@ -367,7 +388,7 @@ class _Parser:
                     self.i += 2
             else:
                 break
-        cmds = [self.parse_command()]
+        cmds = Pipeline([self.parse_command()], negated)
         while True:
             self.skip_blanks()
             if self.at("||") or self.peek() != "|":
@@ -1006,11 +1027,17 @@ def _lit(item):
 class Env:
     """What the walker knows about the shell at one point of the command."""
 
-    def __init__(self, cwd, home):
+    def __init__(self, cwd, home, logical=None):
         self.vars = {}
-        self.cwd = cwd
-        self.cwd_text = cwd
-        self.oldpwd = None
+        self.cwd = cwd              # where the kernel has the shell: symlinks resolved (None: not known)
+        self.cwd_text = logical or cwd  # where the shell thinks it is ($PWD): joined lexically, symlinks kept
+        self.oldpwd = None          # the logical previous directory ($OLDPWD), None when not known
+        self.dirstack = []          # pushd: logical directories (None: not known)
+        self.cdn = 0                # directory changes seen (a function or a chain that changed it left it unknown)
+        self.maybe = 0              # > 0 while the walk is in code that may not run (|| side, if/case/loop bodies)
+        self.cdable = False         # shopt -s cdable_vars: a cd target may name a variable
+        self.made = set()           # directories an earlier mkdir of this command made
+        self.alts = []              # other (resolved, logical) directories the shell may be in (a cd that may not have run)
         self.home = home
         self.aliases = {}
         self.functions = {}
@@ -1026,6 +1053,12 @@ class Env:
         new.vars = dict(self.vars)
         new.cwd_text = self.cwd_text
         new.oldpwd = self.oldpwd
+        new.dirstack = list(self.dirstack)
+        new.cdn = self.cdn
+        new.maybe = self.maybe
+        new.cdable = self.cdable
+        new.made = set(self.made)
+        new.alts = list(self.alts)
         new.aliases = dict(self.aliases)
         new.functions = dict(self.functions)
         new.git_aliases = dict(self.git_aliases)
@@ -1058,21 +1091,83 @@ class Env:
                 return "", False
             value = self.positional[index - 1]
             return _lit(value), isinstance(value, Dyn) and value.tainted
-        return {"HOME": self.home, "PWD": self.cwd, "OLDPWD": self.oldpwd}.get(name), False
+        return {"HOME": self.home, "PWD": self.logical_cwd(), "OLDPWD": self.oldpwd}.get(name), False
 
     def get(self, name):
         return self.lookup(name)[0]
 
-    def chdir(self, item):
-        """cd to an argv item; an unknown target makes the directory dynamic."""
-        self.oldpwd = self.cwd
+    def logical_cwd(self):
+        """The logical working directory ($PWD), None when it is not known."""
+        return None if self.cwd is None else self.cwd_text
+
+    def made_dir(self, path):
+        """True when an earlier mkdir of this command made PATH (or, with -p, a directory on the way to it)."""
+        return path in self.made
+
+    def chdir(self, item, physical=False, tainted=False):
+        """cd to an argv item. The logical directory joins the target lexically ('.' and '..' collapsed, symlinks
+        kept, as bash -L does); the resolved one is where the kernel ends up (-P: '..' follows the symlinks it
+        passes). The directory becomes unknown (dynamic) when the effect of the cd cannot be read: a target
+        computed at run time, a cd the environment redirects (CDPATH, cdable_vars, HOME, OLDPWD, PWD:
+        ``tainted``). A cd that may not take effect (the target is no directory now and no mkdir of this command
+        made it, or the code may not run: ``maybe``) leaves the directory before it among ``alts``."""
+        self.cdn += 1
+        self.oldpwd = self.logical_cwd()
         target = _lit(item)
         if target is None or (self.cwd is None and not target.startswith(("/", "~"))):
             self.cwd = None
             self.cwd_text = os.path.join(self.cwd_text, _text(item))
+            self.alts = []
             return
-        self.cwd = os.path.normpath(os.path.join(self.cwd or "/", os.path.expanduser(target)))
-        self.cwd_text = self.cwd
+        relative = not target.startswith(("/", "~"))
+        if tainted and target.startswith("~") or relative and (
+                tainted or self.cdable or (os.environ.get("CDPATH") and not re.match(r"\.\.?(/|$)", target))):
+            self.cwd = None
+            self.cwd_text = os.path.join(self.cwd_text, target)
+            self.alts = []
+            return
+        target = os.path.expanduser(target)
+        before = [(self.cwd, self.cwd_text)] + self.alts
+        moved = [_cd_to(c, t, target, physical) for c, t in before]
+        sure = self.maybe == 0 and (os.path.isdir(moved[0][0]) or self.made_dir(moved[0][0]))
+        self.cwd, self.cwd_text = moved[0]
+        candidates = moved[1:] if sure else moved[1:] + before
+        self.alts = []
+        for candidate in candidates:
+            if candidate != moved[0] and candidate not in self.alts:
+                self.alts.append(candidate)
+        if len(self.alts) > MAX_ALTS:
+            self.unknown_dir()
+
+    def add_alts(self, state):
+        """The shell may also be in the directories of STATE (``(cwd, cwd_text, alts)``): a cd before it may not have run."""
+        cwd, text, alts = state
+        for candidate in [(cwd, text)] + alts:
+            if candidate[0] is None:
+                self.unknown_dir()
+                return
+            if candidate != (self.cwd, self.cwd_text) and candidate not in self.alts:
+                self.alts.append(candidate)
+        if len(self.alts) > MAX_ALTS:
+            self.unknown_dir()
+
+    def unknown_dir(self):
+        """The directory is no longer known (popd or pushd with a stack the analysis does not model, a function or
+        a chain that may have changed it)."""
+        self.cdn += 1
+        self.oldpwd = self.logical_cwd()
+        self.cwd = None
+        self.cwd_text = os.path.join(self.cwd_text, "$DIRSTACK")
+        self.alts = []
+
+
+def _cd_to(cwd, text, target, physical):
+    """``(resolved, logical)`` after a cd to the expanded TARGET from the directory ``(cwd, text)``."""
+    if physical:
+        resolved = os.path.realpath(os.path.join(cwd, target))
+        return resolved, resolved
+    logical = os.path.normpath(os.path.join(text, target))
+    return os.path.realpath(logical), logical
 
 
 # `eval "$(tool init)"` setup lines: the whole substitution is one well-known environment tool with plain
@@ -1431,6 +1526,7 @@ _GRAPHQL_MUTATIONS = (
 
 _MCP_ACTIONS = {
     "create_pull_request": ("pr_create",),
+    "create_pull_request_with_copilot": ("pr_create",),
     "create_merge_request": ("pr_create",),
     "merge_pull_request": ("pr_merge",),
     "merge_merge_request": ("pr_merge",),
@@ -1446,7 +1542,11 @@ _MCP_ACTIONS = {
     "create_ref": ("push",),
     "update_ref": ("push",),
     "create_release": ("release_create",),
+    "actions_run_trigger": ("deploy",),
 }
+
+# actions_run_trigger methods that only stop or clean up runs (not a delivery)
+_MCP_NON_DELIVERY_METHODS = {"cancel_workflow_run", "force_cancel_workflow_run", "delete_workflow_run_logs"}
 
 _DEPLOY_FIRST = {"deploy", "release", "publish", "ship"}
 _DEPLOY_ANY = {"deploy", "publish"}
@@ -1737,6 +1837,27 @@ _NODE_VALUE_LONG = {"--require", "--import", "--loader", "--experimental-loader"
                     "--conditions", "--title"}
 
 
+# Per program: the only flags that print and exit. -v / -h are NOT among them for a shell (verbose mode, hashall) or
+# for `python -v` (verbose imports): those still read and run a program from stdin.
+_INFO_FLAGS = {
+    "python": frozenset(("-V", "-VV", "--version", "-h", "--help")),
+    "node": frozenset(("-v", "--version", "-h", "--help")),
+    "perl": frozenset(("-v", "-V", "--version", "-h", "--help")),
+    "ruby": frozenset(("-v", "--version", "-h", "--help")),
+    "php": frozenset(("-v", "--version", "-h", "--help")),
+    "lua": frozenset(("-v",)),
+    "fish": frozenset(("-v", "--version", "-h", "--help")),
+}
+_SHELL_INFO_FLAGS = frozenset(("--version", "--help"))
+
+
+def _only_info_flags(args, kind, stdin):
+    """True when the program only prints its version or help: every argument is an info flag of THAT program and
+    nothing is fed to it (a piped or here-document program is read and run whatever the flags say)."""
+    allowed = _INFO_FLAGS.get(kind, _SHELL_INFO_FLAGS if kind in _SHELLS else frozenset())
+    return stdin is None and bool(args) and all(_lit(a) in allowed for a in args)
+
+
 def _interpreter_kind(name):
     for prefix, kind in (("python", "python"), ("pypy", "python"), ("node", "node"), ("ruby", "ruby"),
                          ("perl", "perl"), ("php", "php")):
@@ -1858,6 +1979,24 @@ def _positionals(args, value_short="", value_long=()):
         else:
             i += 1 + _value_follows(token, value_short, value_long)
     return out
+
+
+# variables that redirect or rewrite a cd: a cd after one of them is assigned is not read
+_CD_ENV = ("CDPATH", "HOME", "OLDPWD", "PWD")
+
+
+def _cd_physical(args):
+    """True when ``cd -P`` is in effect (the last of -L and -P wins)."""
+    physical = False
+    for item in args:
+        token = _lit(item)
+        if token == "--":
+            break
+        if token is not None and token.startswith("-") and token != "-":
+            for flag in token[1:]:
+                if flag in "LP":
+                    physical = flag == "P"
+    return physical
 
 
 def _option_values(args, wanted_short="", wanted_long=(), value_short="", value_long=()):
@@ -2218,7 +2357,7 @@ class _Analysis:
         (self.possible if possible else self.actions).add(name)
         canonical = "%s [%s]" % (CANONICAL_PREFIX[name], " ".join(_text(a) for a in argv))
         self.delivery.append({"action": name, "tier": ACTION_TIER[name], "canonical": canonical,
-                              "possible": possible})
+                              "possible": possible, "argv": [_text(a) for a in argv]})
 
     def write(self, item, env, via, scope="path"):
         text = _text(item)
@@ -2238,7 +2377,20 @@ class _Analysis:
             env.files[key] = None  # rewritten by something else: what it holds now is not known
         dynamic = isinstance(item, Dyn) or (env.cwd is None and not os.path.isabs(path))
         full = os.path.join(env.cwd_text, path) if dynamic else os.path.realpath(os.path.join(env.cwd or "/", path))
-        self.writes.append({"path": full, "raw": text, "dynamic": dynamic, "via": via, "scope": scope})
+        # the logical (symlinks unresolved, lexically normalised) spelling is judged next to the resolved one
+        lpath = os.path.normpath(os.path.join(env.cwd_text or env.cwd or "/", path))
+        if via == "mkdir" and not dynamic:
+            made = full
+            while made != "/" and not os.path.isdir(made):  # mkdir -p makes every directory on the way
+                env.made.add(made)
+                made = os.path.dirname(made)
+        record = {"path": full, "lpath": lpath, "raw": text, "dynamic": dynamic, "via": via, "scope": scope,
+                  "relative": not os.path.isabs(path), "cwd_dynamic": env.cwd is None}
+        if env.alts and not dynamic and record["relative"]:
+            # where else the same name lands when a cd before it did not take effect
+            record["alts"] = [{"path": os.path.realpath(os.path.join(c, path)),
+                               "lpath": os.path.normpath(os.path.join(t, path))} for c, t in env.alts]
+        self.writes.append(record)
 
     def opaque_writer(self, program, reason):
         self.mark("no")
@@ -2403,7 +2555,7 @@ class _Analysis:
 
     def tilde(self, text, env):
         head, sep, tail = text.partition("/")
-        replacement = {"~": env.home, "~+": env.cwd, "~-": env.oldpwd}.get(head)
+        replacement = {"~": env.home, "~+": env.logical_cwd(), "~-": env.oldpwd}.get(head)
         return text if replacement is None else replacement + sep + tail
 
     def static_output(self, script, env):
@@ -2425,7 +2577,7 @@ class _Analysis:
         if argv[0] == "printf" and len(argv) > 1:
             return _printf_output(argv[1], argv[2:])
         if argv[0] == "pwd" and env.cwd is not None:
-            return env.cwd + "\n"
+            return (env.cwd if "-P" in argv[1:] else env.cwd_text) + "\n"
         return None
 
     def literal_text(self, word, env):
@@ -2450,15 +2602,28 @@ class _Analysis:
             self.unseen("parse error: " + script.error)
         for andor, background in script.items:
             scope = env.copy() if background else env
-            for pipeline in andor:
-                if len(pipeline) == 1:
-                    self.walk_command(pipeline[0], scope, stdin)
-                    continue
-                feed = stdin
-                for node in pipeline:
-                    feed = self.walk_command(node, scope.copy(), feed)
-                    if feed is None:  # a pipe carries output this analysis cannot see
-                        feed = _UNKNOWN_FEED
+            skipped, chained, before = False, None, None
+            for index, pipeline in enumerate(andor):
+                if index:
+                    skipped = skipped or andor.ops[index - 1] == "||"
+                    if chained is None:
+                        chained, before = scope.cdn, (scope.cwd, scope.cwd_text, list(scope.alts))
+                if skipped:  # the right side of ||: it may not run, nor may a cd in it take effect
+                    scope.maybe += 1
+                try:
+                    if len(pipeline) == 1:
+                        self.walk_command(pipeline[0], scope, stdin)
+                        continue
+                    feed = stdin
+                    for node in pipeline:
+                        feed = self.walk_command(node, scope.copy(), feed)
+                        if feed is None:  # a pipe carries output this analysis cannot see
+                            feed = _UNKNOWN_FEED
+                finally:
+                    if skipped:
+                        scope.maybe -= 1
+            if chained is not None and scope.cdn != chained:
+                scope.add_alts(before)  # a cd after && or || may not have run: the next command may be in either place
 
     def scan_word(self, word, env):
         """Expansions that evaluate or execute a variable's value (arithmetic, ${!n}, ${x@P})."""
@@ -2547,8 +2712,14 @@ class _Analysis:
                 self.scan_conditional(node, env)
             for word in node.extra or ():
                 self.walk_nested(word, env)
-            for part in node.parts:
-                self.walk_script(part, env, stdin)
+            # if, while, until and case bodies may run zero times: a cd in them is not known to have happened
+            conditional = node.kind == "case" or node.kind == "group" and len(node.parts) > 1
+            env.maybe += conditional
+            try:
+                for part in node.parts:
+                    self.walk_script(part, env, stdin)
+            finally:
+                env.maybe -= conditional
         return None
 
     def walk_for(self, node, env, stdin):
@@ -2560,14 +2731,18 @@ class _Analysis:
             self.walk_nested(word, env)
             items.extend(self.expand(word, env))
         body = node.parts[0]
-        if name and items and len(items) <= MAX_LOOP_VALUES and not any(isinstance(i, Dyn) for i in items):
-            for value in items:
-                env.vars[name] = str(value)
-                self.walk_script(body, env, stdin)
-            return
-        if name:
-            env.vars[name] = None
-        self.walk_script(body, env, stdin)
+        env.maybe += 1  # a loop may run zero times
+        try:
+            if name and items and len(items) <= MAX_LOOP_VALUES and not any(isinstance(i, Dyn) for i in items):
+                for value in items:
+                    env.vars[name] = str(value)
+                    self.walk_script(body, env, stdin)
+                return
+            if name:
+                env.vars[name] = None
+            self.walk_script(body, env, stdin)
+        finally:
+            env.maybe -= 1
 
     def walk_simple(self, cmd, env, stdin):
         for assign in cmd.assigns:
@@ -2697,6 +2872,8 @@ class _Analysis:
             scope.positional = list(argv[1:])
             self.walk_script(env.functions[name], scope)
             self.active.discard(name)
+            if scope.cdn != env.cdn:
+                env.unknown_dir()  # the function changed the directory of the shell that called it
         handler = _HANDLERS.get(name) or ("interpreter" if _INTERPRETER.match(name) else "unknown")
         result = getattr(self, "h_" + handler)(argv, env, prefix, stdin)
         if handler in _ARGUMENT_COMMANDS and name not in _NOT_COMMAND_ARGS:
@@ -3053,7 +3230,10 @@ class _Analysis:
                     j += 1
                 inner = [Dyn("{}", roots) if _text(a) == "{}" else a for a in args[i + 1:j]]
                 if inner:
-                    self.execute(inner, env.copy(), {}, None)
+                    scope = env.copy()
+                    if token in ("-execdir", "-okdir"):
+                        scope.unknown_dir()  # runs in the directory of each match
+                    self.execute(inner, scope, {}, None)
                 i = j + 1
             elif token == "-delete":
                 for root in roots:
@@ -3079,12 +3259,27 @@ class _Analysis:
                 self.unseen("%s evaluates text that holds a command substitution" % name)
         if name in ("cd", "pushd"):
             positionals = _positionals(args)
+            if name == "pushd":
+                # `pushd`, `pushd +1`, `pushd -n d`: the stack is rotated or left alone, which is not modelled
+                if not positionals or any(_lit(a) is not None and re.match(r"\+|-\w*n", _lit(a)) for a in args):
+                    env.dirstack.append(None)
+                    env.unknown_dir()
+                    return
+                env.dirstack.append(env.logical_cwd())
             target = positionals[0] if positionals else (env.home or Dyn("~"))
+            if not positionals and ("HOME" in prefix or "HOME" in env.vars):
+                target = Dyn("~")
             if _lit(target) == "-":
-                target = env.oldpwd or Dyn("$OLDPWD")
-            env.chdir(target)
+                target = Dyn("$OLDPWD") if "OLDPWD" in prefix or "OLDPWD" in env.vars else env.oldpwd or Dyn("$OLDPWD")
+            env.chdir(target, _cd_physical(args), any(v in prefix or v in env.vars for v in _CD_ENV))
+        elif name == "shopt" and "cdable_vars" in [_lit(a) for a in args]:
+            env.cdable = "-s" in [_lit(a) for a in args]
         elif name == "popd":
-            env.chdir(Dyn("$DIRSTACK"))
+            top = env.dirstack.pop() if env.dirstack and not args else None
+            if top is None:
+                env.unknown_dir()
+            else:
+                env.chdir(top)
         elif name in _DECLARATIONS:
             integer = _has_flag(args, "i")
             for item in _positionals(args):
@@ -3294,6 +3489,8 @@ class _Analysis:
 
     def h_shell(self, argv, env, prefix, stdin):
         args = argv[1:]
+        if _only_info_flags(args, os.path.basename(_text(argv[0])), stdin):  # bash --version: no program runs
+            return None
         i, command_mode, stdin_mode = 0, False, False
         while i < len(args):
             token = _lit(args[i])
@@ -3357,6 +3554,8 @@ class _Analysis:
         kind = _interpreter_kind(os.path.basename(argv[0]))
         code_flags, value_flags, attached_only = _INTERPRETER_FLAGS.get(kind, ("e", "", False))
         args = argv[1:]
+        if _only_info_flags(args, kind, stdin):  # node --version, python3 -V: no program runs
+            return None
         codes, module, test, i = [], None, False, 0
         while i < len(args):
             token = _lit(args[i])
@@ -3461,6 +3660,10 @@ class _Analysis:
             self.write(target, env, name)
         for source in positionals if name == "mv" else ():
             self.write(source, env, "mv source")
+        # a hard link shares the file: writing through the new name writes the source
+        hard = name == "ln" and not _has_flag(args, "s", ("--symbolic",)) or name == "cp" and _has_flag(args, "l", ("--link",))
+        for source in positionals if hard else ():
+            self.write(source, env, "link source")
         return None
 
     def h_operands(self, argv, env, prefix, stdin):
@@ -3654,13 +3857,17 @@ class _Analysis:
     def h_git(self, argv, env, prefix, stdin, depth=0):
         args = argv[1:]
         scope, config, i, info = env, self.git_env_config(prefix, env), 0, False
+        tree = prefix["GIT_WORK_TREE"] if "GIT_WORK_TREE" in prefix else env.vars.get("GIT_WORK_TREE", "")
+        if tree or "GIT_WORK_TREE" in prefix or "GIT_WORK_TREE" in env.vars:
+            scope = env.copy()
+            scope.chdir(tree if tree else Dyn("$GIT_WORK_TREE"))  # the work tree git cleans or resets
         while i < len(args):
             token = _lit(args[i])
             if token is None or not token.startswith("-"):
                 break
             if token in _GIT_GLOBAL_VALUE and i + 1 < len(args):
                 value = args[i + 1]
-                if token == "-C":
+                if token in ("-C", "--work-tree"):
                     scope = scope.copy()
                     scope.chdir(value)
                 elif token == "-c":
@@ -3674,6 +3881,9 @@ class _Analysis:
                 continue
             if token.startswith("--config-env="):
                 self.config_unknown = True
+            if token.startswith("--work-tree="):
+                scope = scope.copy()
+                scope.chdir(token.partition("=")[2])
             info = info or token in _GIT_INFO_FLAGS
             i += 1
         if not all(_git_config_safe(key, value) for key, value in config.items()):
@@ -3940,7 +4150,8 @@ class _Analysis:
             paths = _positionals(rest, "e", ("--exclude",))
             for path in paths or ["."]:
                 self.write(path, env, "git clean", "path" if paths else "tree")
-        elif sub == "stash" and (literal[0] if rest else "push") in ("push", "save", "pop", "apply"):
+        elif sub == "stash" and not (_positionals(rest, "m", ("--message",)) or ["push"])[0] in (
+                "list", "show", "drop", "clear", "branch", "create", "store"):
             self.write(".", env, "git stash", "tree")
         elif sub == "mv" or sub == "rm" and "--cached" not in literal:
             for path in _positionals(rest):
@@ -4008,6 +4219,12 @@ class _Analysis:
                 self.run_code(expansion[1:] + "".join(" " + shlex.quote(_text(a)) for a in rest), env.copy())
                 return None
             return self.h_gh(argv[:1] + _split_words(expansion) + list(rest), env, prefix, stdin, depth + 1)
+        if group != "api":
+            # cobra strips persistent flags (-R/--repo VALUE, --repo=VALUE) while it looks for the subcommand, so
+            # they may sit between the command group and the subcommand: `gh pr -R o/r merge 1`
+            rest = list(rest)
+            while rest and (_lit(rest[0]) or "").startswith("-"):
+                rest = rest[2:] if _lit(rest[0]) in ("-R", "--repo") else rest[1:]
         sub = _lit(rest[0]) if rest else ""
         tail = [_lit(a) for a in rest[1:]]
         if sub is None and group in ("pr", "release"):
@@ -4041,7 +4258,14 @@ class _Analysis:
                 continue
             name, eq, value = token.partition("=")
             if not token.startswith("--") and len(token) > 2:
-                name, eq, value = token[:2], "=", token[2:]
+                # a shorthand cluster (-if k=v, -XPOST, -fk=v): bool letters continue it, a value letter takes the
+                # rest of the cluster (after one optional "=") or else the next word
+                k = 1
+                while k < len(token) - 1 and "-" + token[k] not in _GH_API_VALUE:
+                    k += 1
+                name, value = "-" + token[k], token[k + 1:]
+                value = value[1:] if value.startswith("=") else value
+                eq = "=" if value else ""
             if name not in _GH_API_VALUE:
                 continue
             if not eq:
@@ -4292,7 +4516,7 @@ _OPERAND_WRITERS = {
     "shred": ("ns", ("--iterations", "--size", "--random-source")),
     "touch": ("rtd", ("--reference", "--date")), "mkdir": ("m", ("--mode", "--context")),
     "chmod": ("", ("--reference",)), "chown": ("", ("--reference", "--from")), "chgrp": ("", ("--reference",)),
-    "truncate": ("sr", ("--size", "--reference")), "mkfifo": ("m", ("--mode",)), "chattr": ("pv", ()),
+    "truncate": ("sr", ("--size", "--reference")), "mkfifo": ("m", ("--mode",)), "mknod": ("m", ("--mode",)), "chattr": ("pv", ()),
 }
 _HANDLERS = {}
 for _names, _handler in (
@@ -4314,7 +4538,7 @@ _RUNNERS = {"script": ("cIOBETm", ("--command", "--log-in", "--log-out", "--log-
                                    "--whitelist-environment"))}
 _HANDLERS.update({
     "echo": "echo", "eval": "eval", "source": "source", ".": "source", "trap": "trap", "command": "command",
-    "env": "env", "rtk": "rtk", "xargs": "xargs", "dd": "dd", "curl": "curl", "wget": "wget", "tar": "tar",
+    "env": "env", "rtk": "rtk", "xargs": "xargs", "dd": "dd", "curl": "curl", "wget": "wget", "tar": "tar", "bsdtar": "tar", "gtar": "tar",
     "glab": "forge", "tea": "forge", "lab": "forge", "jj": "forge", "sl": "forge",
     "ssh": "ssh", "sftp": "ssh", "http": "httpie", "https": "httpie", "xh": "httpie", "xhs": "httpie", "script": "runner", "su": "runner", "runuser": "runner", "unzip": "unzip", "patch": "patch", "split": "split", "git": "git", "gh": "gh", "hub": "hub",
 })
@@ -4410,6 +4634,52 @@ def is_skill_adapter_invocation(text):
     return _skill_adapter(parse(text or ""))
 
 
+def _sibling(name):
+    """Import a helper module that lives next to this file (None when it is missing)."""
+    module = sys.modules.get(name)
+    if module is not None:
+        return module
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), name + ".py")
+    try:
+        spec = importlib.util.spec_from_file_location(name, path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    except (OSError, AttributeError, ImportError, SyntaxError):
+        sys.modules.pop(name, None)
+        return None
+    return module
+
+
+def _push_scope(analysis, script, result, scope_base, environ, scope_logical=None):
+    """Attach the proof-based verdict of a shell push (push_scope.shell_scope); strict when it cannot run."""
+    push_scope = _sibling("push_scope")
+    if push_scope is None:
+        result["push_scope"] = {"verdict": "strict", "reason": "push scope helper missing", "dir": "",
+                                "remote": "", "branches": []}
+        return
+    env = os.environ if environ is None else environ
+    if scope_logical is None:
+        scope_logical = env.get("SB_PUSH_LOGICAL_CWD") or None  # the payload cwd as the host spelled it (hook)
+    result["push_scope"] = push_scope.shell_scope(script, result, scope_base, env, None, parse, scope_logical)
+
+
+def _attach_release(result, mcp_tool, fields, scope_base, environ, lookups, command):
+    """When the command creates a release, record how its tag and target read (release_scope.py)."""
+    if not any(d.get("action") == "release_create" for d in result["delivery"]):
+        return
+    scope = _sibling("release_scope")
+    if scope is None:
+        result["release"] = {"ok": False, "reason": "release scope helper missing", "tag": "", "target": ""}
+        return
+    env = os.environ if environ is None else environ
+    slug = None
+    pusher = _sibling("push_scope") if lookups else None
+    if pusher is not None:
+        slug = pusher.origin_slug(scope_base, env)
+    result["release"] = scope.release_scope(result, mcp_tool, fields, slug, env, command)
+
+
 def _result(analysis, script, text):
     actions = sorted(analysis.actions)
     possible = sorted(analysis.possible - analysis.actions)
@@ -4470,32 +4740,51 @@ def _guarded(analysis, walk):
         analysis.unseen(analysis.failed)
 
 
-def analyze_command(command, base_dir=None, lookups=True):
-    """Analyze one shell command string (see the module docstring for the result)."""
+def analyze_command(command, base_dir=None, lookups=True, environ=None, scope_base=None, scope_logical=None,
+                    walk_logical=None):
+    """Analyze one shell command string (see the module docstring for the result).
+
+    ``scope_base`` is the verified directory the push scope runs git in (the payload cwd); it defaults to
+    ``base_dir``. ``walk_logical`` is the logical (symlinks kept) spelling of ``base_dir`` the walk starts from.
+    ``environ`` stands in for the Bash tool's environment (default: the process environment)."""
     text = (command or "").replace("\x00", "")
     base = os.path.realpath(base_dir or os.getcwd())
     analysis = _Analysis(base, lookups)
+    logical = os.path.abspath(walk_logical or scope_logical or base_dir or os.getcwd())
     if len(text) > MAX_INPUT_CHARS:
         analysis.unseen("command too large to analyze")
         return _result(analysis, Script([], ""), text[:4096])
     script = parse(text)
     analysis.deadline = time.monotonic() + MAX_SECONDS  # the walk's own budget starts after the parse
-    _guarded(analysis, lambda: analysis.walk_script(script, Env(base, _home())))
-    return _result(analysis, script, text)
+    _guarded(analysis, lambda: analysis.walk_script(script, Env(base, _home(), logical)))
+    result = _result(analysis, script, text)
+    scope_dir = base if scope_base is None else scope_base or None
+    if lookups and analysis.push:
+        _push_scope(analysis, script, result, scope_dir, environ, scope_logical)
+    _attach_release(result, None, {}, scope_dir, environ, lookups, text)
+    return result
 
 
-def analyze_argv(argv, base_dir=None, lookups=True):
+def analyze_argv(argv, base_dir=None, lookups=True, environ=None, scope_base=None, scope_logical=None,
+                 walk_logical=None):
     """Analyze a command given as an argv list (Codex exec_command ``cmd``), run without a shell."""
     argv = [str(part).replace("\x00", "") for part in argv]
     text = " ".join(shlex.quote(part) for part in argv)
     base = os.path.realpath(base_dir or os.getcwd())
     analysis = _Analysis(base, lookups)
+    logical = os.path.abspath(walk_logical or scope_logical or base_dir or os.getcwd())
     if len(text) > MAX_INPUT_CHARS:
         analysis.unseen("command too large to analyze")
         return _result(analysis, Script([], ""), text[:4096])
     if argv:
-        _guarded(analysis, lambda: analysis.execute(argv, Env(base, _home()), {}, None))
-    return _result(analysis, parse(text), text)
+        _guarded(analysis, lambda: analysis.execute(argv, Env(base, _home(), logical), {}, None))
+    script = parse(text)
+    result = _result(analysis, script, text)
+    scope_dir = base if scope_base is None else scope_base or None
+    if lookups and analysis.push:
+        _push_scope(analysis, script, result, scope_dir, environ, scope_logical)
+    _attach_release(result, None, {}, scope_dir, environ, lookups, text)
+    return result
 
 
 def _strings(value):
@@ -4544,7 +4833,18 @@ def _tool_kind(tool_name, mcp_tool):
     return "other"
 
 
-def analyze_payload(text, base_dir=None, lookups=True):
+def _payload_scope_base(payload_cwd, workdir, base):
+    """The directory a payload's push runs in: cwd (else ``base``) joined with workdir; "" when cwd is not a directory."""
+    if isinstance(payload_cwd, str) and payload_cwd:
+        if not os.path.isdir(payload_cwd):
+            return ""
+        base = os.path.realpath(payload_cwd)
+    if isinstance(workdir, str) and workdir:
+        base = os.path.realpath(os.path.join(base, workdir))
+    return base
+
+
+def analyze_payload(text, base_dir=None, lookups=True, environ=None):
     """Analyze a hook payload (JSON text); shell tools get the command analysis, MCP tools
     are classified by tool name, Edit/Write/apply_patch report the paths they write."""
     base = os.path.realpath(base_dir or os.getcwd())
@@ -4566,12 +4866,24 @@ def analyze_payload(text, base_dir=None, lookups=True):
     if command is None:
         command = fields.get("cmd")
     workdir = fields.get("workdir")
+    scope_base = _payload_scope_base(payload.get("cwd"), workdir, base)
+    raw_cwd = payload.get("cwd")
+    scope_logical = None
+    walk_logical = os.path.abspath(base_dir or os.getcwd())
+    if isinstance(raw_cwd, str) and raw_cwd and os.path.isdir(raw_cwd):
+        # the host runs the command in the payload's cwd, wherever this hook process happens to be: the walk starts
+        # there, with the payload's own spelling as its logical directory
+        base = os.path.realpath(raw_cwd)
+        scope_logical = walk_logical = os.path.abspath(raw_cwd)
     if isinstance(workdir, str) and workdir:
+        scope_logical = os.path.normpath(os.path.join(walk_logical, workdir)) if scope_logical else None
+        walk_logical = os.path.normpath(os.path.join(walk_logical, workdir))
         base = os.path.realpath(os.path.join(base, workdir))
     if kind == "shell" and isinstance(command, list):
-        result = analyze_argv(command, base, lookups)
+        result = analyze_argv(command, base, lookups, environ, scope_base, scope_logical, walk_logical)
     else:
-        result = analyze_command(command if kind == "shell" and isinstance(command, str) else "", base, lookups)
+        result = analyze_command(command if kind == "shell" and isinstance(command, str) else "", base, lookups,
+                                 environ, scope_base, scope_logical, walk_logical)
     command_text = command if isinstance(command, str) else \
         " ".join(shlex.quote(str(part)) for part in command) if isinstance(command, list) else ""
     paths = patch_paths(tool_input) if tool_input is not None else []
@@ -4580,17 +4892,33 @@ def analyze_payload(text, base_dir=None, lookups=True):
         response = payload.get("tool_response")
         file_path = response.get("filePath") if isinstance(response, dict) else None
     file_path = file_path if isinstance(file_path, str) and file_path else (paths[0] if paths else "")
-    for action in _MCP_ACTIONS.get((mcp_tool or "").lower(), ()) if kind == "mcp" else ():
+    mcp_actions = _MCP_ACTIONS.get((mcp_tool or "").lower(), ()) if kind == "mcp" else ()
+    if mcp_actions and (mcp_tool or "").lower() == "actions_run_trigger" and \
+            str(fields.get("method", "")).lower() in _MCP_NON_DELIVERY_METHODS:
+        mcp_actions = ()
+    for action in mcp_actions:
         result["actions"] = sorted(set(result["actions"]) | {action})
         result["delivery"].append({"action": action, "tier": ACTION_TIER[action], "possible": False,
                                    "canonical": "%s [mcp %s %s]" % (CANONICAL_PREFIX[action], server, mcp_tool)})
+    if kind == "mcp" and mcp_actions:
+        arguments = fields.get("arguments") if tool_name in ("CallMcpTool", "MCP") else fields
+        arguments = arguments if isinstance(arguments, dict) else {}
+        tool = (mcp_tool or "").lower()
+        if "push" in mcp_actions and lookups:
+            pusher = _sibling("push_scope")
+            result["push_scope"] = {"verdict": "strict", "reason": "push scope helper missing", "dir": "",
+                                    "remote": "", "branches": []} if pusher is None else \
+                pusher.mcp_scope(tool, arguments, scope_base or None, os.environ if environ is None else environ)
+        _attach_release(result, tool, arguments, scope_base or None, environ, lookups, "")
     if kind == "mcp" and result["actions"]:
         result["tier"] = _tier(result["actions"])
         result["legacy_first_line"] = " ; ".join(
             r["canonical"] for r in result["delivery"] if r["tier"] == result["tier"])
     targets = paths if kind == "patch" else [file_path] if kind == "edit" and file_path else []
+    logical_base = walk_logical
     for target in targets:
         result["writes"].append({"path": os.path.realpath(os.path.join(base, os.path.expanduser(target))),
+                                 "lpath": os.path.abspath(os.path.join(logical_base, os.path.expanduser(target))),
                                  "raw": target, "dynamic": False, "via": tool_name, "scope": "path"})
     if kind != "shell":
         result["read_only"] = result["read_only_legacy"] = False

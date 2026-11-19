@@ -5,6 +5,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-recommended-helpers.sh"
 cd "$TL_TMP"  # never run with the checkout as cwd: stubs and relative writes stay in the sandbox
 
@@ -103,6 +104,22 @@ RT_HOST=cursor
 mv "$HR_STAGE/scripts/lib/global-toolstack/patch-mcp.py" "$HR_STAGE/scripts/lib/global-toolstack/patch-mcp.off"
 assert_eq "mcp: patch-mcp.py missing" '{"actions":[],"failures":[],"changed":false}' "$(rt_apply_host_mcp_batch | j)"
 mv "$HR_STAGE/scripts/lib/global-toolstack/patch-mcp.off" "$HR_STAGE/scripts/lib/global-toolstack/patch-mcp.py"
+
+# ======================================== capabilities: install is not wire (R6-03)
+hr_consent "${ALL_ENABLED[@]}"
+sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" install
+: >"$HR_LOG"
+for h in cursor opencode pi; do
+  RT_HOST=$h
+  assert_eq "install-only grant: $h hooks batch writes no host config" '{"actions":[],"failures":[],"changed":false}' "$(rt_apply_host_hooks_batch | j)"
+done
+RT_HOST=cursor
+assert_eq "install-only grant: mcp batch writes no host config" '{"actions":[],"failures":[],"changed":false}' "$(rt_apply_host_mcp_batch | j)"
+assert_eq "install-only grant: no patcher or merger ran" "" "$(log)"
+assert_eq "install-only grant: the batch as a whole changes nothing" '{"actions":[],"failures":[],"restart_required":false,"changed":false,"affected_servers":[]}' "$(rt_apply_host_convergence_batches false 2>/dev/null | j)"
+sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" wire
+assert_eq "wire-only grant: hooks batch patches" '{"actions":["patch_hooks"],"failures":[],"changed":true}' "$(HR_PY_OUT_patch_hooks=patched HR_PY_HOOK_patch_hooks="$CHANGE_HOOKS" rt_apply_host_hooks_batch | j)"
+assert_eq "wire-only grant: mcp batch patches" '{"actions":["patch_mcp"],"failures":[],"changed":true}' "$(HR_PY_OUT_patch_mcp=patched HR_PY_HOOK_patch_mcp="$CHANGE_MCP" rt_apply_host_mcp_batch | j)"
 
 
 tl_results

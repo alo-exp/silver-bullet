@@ -105,6 +105,21 @@ tl_run timeout 60 bash "$CTL" --control-dir "$CDIR" status
 assert_eq "ctl without cmd.fifo exits 2" "2" "$TL_STATUS"
 assert_contains "ctl without cmd.fifo message" "$TL_ERR" "cmd.fifo missing (not interactive)"
 
+# R4-22: a real FIFO with no reader (crashed driver) must fail fast instead of hanging.
+mkfifo "$CDIR/cmd.fifo"
+start=$SECONDS
+tl_run timeout 30 env SB_AGENT_CTL_TIMEOUT=1 bash "$CTL" --control-dir "$CDIR" abort
+assert_eq "ctl abort with no reader exits 2" "2" "$TL_STATUS"
+assert_contains "ctl abort with no reader explains" "$TL_ERR" "could not open cmd.fifo"
+[[ $((SECONDS - start)) -le 10 ]] && tl_pass "ctl with no reader returns within the deadline" || tl_fail "ctl with no reader returns within the deadline"
+# a reader that appears late is still served
+( sleep 0.4; exec 9<"$CDIR/cmd.fifo"; read -r -t 5 -u 9 got; printf '%s' "$got" >"$CDIR/late.out" ) &
+LATE_PID=$!
+tl_run timeout 30 env SB_AGENT_CTL_TIMEOUT=5 bash "$CTL" --control-dir "$CDIR" abort
+wait "$LATE_PID" 2>/dev/null || true
+assert_eq "ctl abort reaches a reader that attaches late" '{"op": "abort"}' "$(cat "$CDIR/late.out")"
+rm -f "$CDIR/cmd.fifo" "$CDIR/late.out"
+
 # Regular files stand in for the fifos: python opens them the same way and nothing blocks.
 : >"$CDIR/cmd.fifo"
 tl_run timeout 60 bash "$CTL" --control-dir "$CDIR" send 'hello "world"'

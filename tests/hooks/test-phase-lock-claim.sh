@@ -133,7 +133,7 @@ bash "$HELPER_SRC" claim 099 opencode "simulated-other-runtime" >/dev/null 2>&1
 
 json=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":".planning/phases/099-test/y.md"},"session_id":"test2-%s"}' "$TEST_RUN_ID")
 set +e
-stderr_capture=$(printf '%s' "$json" | bash "$HOOK" 2> >(cat) 1>"$TMPDIR_TEST/claim-stdout")
+stderr_capture=$(printf '%s' "$json" | bash "$HOOK" 2>&1 1>"$TMPDIR_TEST/claim-stdout")
 rc=$?
 stdout_capture=$(cat "$TMPDIR_TEST/claim-stdout" 2>/dev/null)
 rm -f "$TMPDIR_TEST/claim-stdout"
