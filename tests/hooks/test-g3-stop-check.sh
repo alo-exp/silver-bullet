@@ -108,6 +108,7 @@ assert_eq "R2-36: excluded test paths do not count as source" "0:" "$TL_STATUS:$
 rm -rf "$EC_PROJ/src"
 mkdir -p "$EC_PROJ/src"
 printf 'a\n' >"$EC_PROJ/src/app.py"
+rm -f "$SD"/files-written*
 printf 'f%s/src/app.py\n' "$EC_PROJ" >"$SD/files-written.1"
 run_stop
 assert_eq "R2-36: a trace from another session is ignored" "0:" "$TL_STATUS:$TL_OUT"
