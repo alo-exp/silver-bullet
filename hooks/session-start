@@ -289,6 +289,14 @@ case "$sb_session_source" in
   resume) sb_scope_check=true ;;
 esac
 
+# Remove the per-session files of the scope being left (see sb_session_reset_scoped_state).
+sb_session_clear_session_files() {
+  find "$SB_STATE_DIR" -maxdepth 1 \( -type f -o -type l \) \( -name 'instruction-ledger-*.json' \
+    -o -name 'outcomes-session.json' -o -name 'outcomes-session.json.sha256' \
+    -o -name 'outcomes-session-*.json' -o -name 'outcomes-session-*.json.sha256' \
+    -o -name 'outcomes-seeded' -o -name 'outcomes-seeded-*' -o -name 'files-written.*' \) -delete
+}
+
 # Reset everything that was earned on another branch or worktree.
 sb_session_reset_scoped_state() {
   sb_safe_write "$state_file"
@@ -304,12 +312,7 @@ sb_session_reset_scoped_state() {
   # Per-session files keyed by the session id or its start epoch: the instruction ledgers, the outcomes
   # checklist (with its sha256 seal and seeded marker, removed together so a clean reset never reads as
   # tampering) and the agent write trace. find -delete unlinks a symlink itself and never follows it.
-  if [[ -d "$SB_STATE_DIR" ]]; then
-    find "$SB_STATE_DIR" -maxdepth 1 \( -type f -o -type l \) \( -name 'instruction-ledger-*.json' \
-      -o -name 'outcomes-session.json' -o -name 'outcomes-session.json.sha256' \
-      -o -name 'outcomes-session-*.json' -o -name 'outcomes-session-*.json.sha256' \
-      -o -name 'outcomes-seeded' -o -name 'outcomes-seeded-*' -o -name 'files-written.*' \) -delete 2>/dev/null || true
-  fi
+  sb_session_clear_session_files 2>/dev/null || true
   if [[ -f "$_lib_dir/graphify-gate.sh" ]]; then
     # shellcheck source=lib/graphify-gate.sh
     source "$_lib_dir/graphify-gate.sh"
