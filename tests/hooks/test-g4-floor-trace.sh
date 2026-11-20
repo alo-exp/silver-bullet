@@ -208,6 +208,28 @@ assert_eq "a forward move drops star entries and entries the move touched" "f$EC
 git -C "$EC_PROJ" checkout -q -- . ; git -C "$EC_PROJ" checkout -q "$MAIN"; git -C "$EC_PROJ" branch -q -D ahead
 fresh_session; rm -f "$SD"/files-written.*
 
+# directory entries (cp -r style) follow the same rule: kept while something below is dirty and not part of the move
+git -C "$EC_PROJ" checkout -q "$MAIN"; git -C "$EC_PROJ" checkout -q -b ahead2
+mkdir -p "$EC_PROJ/src/moved" "$EC_PROJ/src/pend"; echo m >"$EC_PROJ/src/moved/m.js"; git -C "$EC_PROJ" add src/moved; git -C "$EC_PROJ" commit -qm "ahead2" 2>/dev/null
+git -C "$EC_PROJ" checkout -q "$MAIN"; rm -f "$SD"/files-written.*; fresh_session
+echo p >"$EC_PROJ/src/pend/p.js"
+printf 'd%s/src/pend\nd%s/src/moved\nd%s/src/clean\n' "$EC_PROJ" "$EC_PROJ" "$EC_PROJ" >"$(cur_trace)"
+git -C "$EC_PROJ" checkout -q ahead2
+echo q >>"$EC_PROJ/src/moved/m.js"
+fresh_session
+assert_eq "a directory entry stays while dirty and untouched by the move; the others go" "d$EC_PROJ/src/pend" "$(cat "$(cur_trace)")"
+rm -rf "$EC_PROJ/src/pend"; git -C "$EC_PROJ" checkout -q -- . ; git -C "$EC_PROJ" checkout -q "$MAIN"; git -C "$EC_PROJ" branch -q -D ahead2
+rm -f "$SD"/files-written.*; fresh_session; rm -f "$SD"/files-written.*
+
+# blank traces merge to nothing and fail nothing; a junk epoch is not collected
+printf '\n' >"$SD/files-written.4"
+r=0; sb_session_epoch_restamp "$SD/session-start-time" "$SD" || r=$?
+assert_eq "an all-blank trace: nothing to merge, no failure" 0 "$r"
+printf 'junk\n' >"$TL_TMP/junk-epoch"
+r=0; sb_session_epoch_collect "$TL_TMP/junk-epoch" "$SD" || r=$?
+assert_eq "a junk epoch is not collected" 0 "$r"
+rm -f "$SD"/files-written.*
+
 # r7-03: a host that sends no session id rotates on startup once the epoch is a day old
 sr2() { sb_session_epoch_should_rotate startup codex "" "$SD" "$SD/session-start-time" && echo rotate || echo keep; }
 printf '%s\n' "$(( $(date +%s) - 100 ))" >"$SD/session-start-time"

@@ -102,7 +102,7 @@ sb_session_epoch_should_rotate() {
   [[ "$runtime" == claude ]] && return 0
   if [[ -z "$sid" ]]; then
     # no session id (cannot tell a restart from a new session): rotate once the epoch is a day old
-    epoch="$(cat "${5:-$sd/session-start-time}" 2>/dev/null || true)"
+    if epoch="$(cat "${5:-$sd/session-start-time}" 2>/dev/null)"; then :; fi
     [[ "$epoch" =~ ^[0-9]+$ ]] && (( $(date +%s) - epoch > 86400 ))
     return
   fi
@@ -113,7 +113,8 @@ sb_session_epoch_should_rotate() {
 
 # _sb_se_repo ROOT: the canonical git common directory of ROOT (a worktree shares its repository's)
 _sb_se_repo() {
-  (cd "$1" 2>/dev/null && cd "$(git rev-parse --git-common-dir 2>/dev/null)" 2>/dev/null && pwd -P) || true
+  local out
+  if out="$(cd "$1" 2>/dev/null && cd "$(git rev-parse --git-common-dir 2>/dev/null)" 2>/dev/null && pwd -P)"; then printf '%s' "$out"; fi
 }
 
 # _sb_se_filter ROOT OLD NEW TRACE: keep the entries of TRACE whose path is still dirty and not in `git diff OLD NEW`
@@ -127,10 +128,8 @@ _sb_se_filter() {
     path="${path#"${root%/}"/}"
     # a file entry is its own path; a directory entry (d) covers every path below it
     if [[ "${line:0:1}" == d ]]; then
-      p="$(printf '%s\n' "$dirty" | grep -c "^${path%/}/" || true)"
-      [[ "$p" -gt 0 ]] || continue
-      p="$(printf '%s\n' "$moved" | grep -c "^${path%/}/" || true)"
-      [[ "$p" -eq 0 ]] || continue
+      grep -q "^${path%/}/" <<<"$dirty" || continue
+      ! grep -q "^${path%/}/" <<<"$moved" || continue
     else
       grep -qxF -- "$path" <<<"$dirty" || continue
       ! grep -qxF -- "$path" <<<"$moved" || continue
@@ -138,7 +137,7 @@ _sb_se_filter() {
     keep="${keep}${line}"$'\n'
   done <"$trace"
   if [[ -n "$keep" ]]; then
-    _sb_se_write "$trace" "${keep%$'\n'}" || return 1
+    _sb_se_write "$trace" "${keep%$'\n'}" && :
   else
     rm -f -- "$trace" 2>/dev/null
   fi
@@ -149,9 +148,11 @@ sb_session_epoch_rotate() {
   local file="${1:-}" sd="${2:-}" root="${3:-}" mode="${4:-rotate}" sid="${5:-}"
   local headfile="$sd/session-start-head" oldid="" oldhead="" curid curhead how=keep l1="" l2="" foreign
   if [[ -f "$headfile" && ! -L "$headfile" ]]; then
-    { IFS= read -r l1; IFS= read -r l2; } <"$headfile" || true
+    l1="$(sed -n 1p "$headfile")"
+    l2="$(sed -n 2p "$headfile")"
     # a record without a repository line (older state) is the HEAD alone
-    if [[ -z "$l2" ]]; then oldhead="$l1"; else oldid="$l1"; oldhead="$l2"; fi
+    oldid="$l1"; oldhead="$l2"
+    if [[ -z "$l2" ]]; then oldid=""; oldhead="$l1"; fi
   fi
   curid="$(_sb_se_repo "$root")"
   curhead="$(git -C "$root" rev-parse HEAD 2>/dev/null || true)"
