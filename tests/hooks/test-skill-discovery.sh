@@ -88,7 +88,25 @@ assert_eq "sb:plan" "silver-plan" "$(canon sb:plan)"
 assert_eq "bare sb" "silver" "$(canon sb)"
 assert_eq "sb-plan" "silver-plan" "$(canon sb-plan)"
 assert_eq "retired silver: namespace preserved" "silver:plan" "$(canon silver:plan)"
-assert_eq "foreign namespaces unwrapped" "name" "$(canon host:ns:name)"
+# R10b-03: Silver Bullet's own plugin prefix is peeled before the sb: mapping
+assert_eq "silver-bullet:sb:plan" "silver-plan" "$(canon silver-bullet:sb:plan)"
+assert_eq "silver-bullet:silver-plan" "silver-plan" "$(canon silver-bullet:silver-plan)"
+assert_eq "silver-bullet:silver-bullet:sb:verify-tests" "verify-tests" "$(canon silver-bullet:silver-bullet:sb:verify-tests)"
+assert_eq "silver-bullet:sb:security" "security" "$(canon silver-bullet:sb:security)"
+# R1-23: a foreign plugin keeps its namespace, so it cannot mint a Silver Bullet marker
+assert_eq "foreign namespace kept" "host:ns:name" "$(canon host:ns:name)"
+assert_eq "foreign security skill stays foreign" "evil:security" "$(canon evil:security)"
+assert_eq "foreign tdd skill stays foreign" "evil:tdd" "$(canon evil:tdd)"
+assert_eq "trusted plugin namespace unwrapped" "tdd" "$(canon superpowers:tdd)"
+# a dependency plugin supplies only its own names, never a Silver Bullet-owned one
+for n in superpowers:silver-plan engineering:silver-secure multai:silver-quality-gates superpowers:sb:plan design:sb-plan product-management:sb silver-bullet:superpowers:silver-plan; do
+  assert_eq "$n stays foreign" "$n" "$(canon "$n")"
+done
+assert_eq "engineering:code-review keeps its retired name" "code-review" "$(canon engineering:code-review)"
+assert_eq "SILVER_BULLET_SKILL_NAMESPACES extends the trusted list" "tdd" "$(SILVER_BULLET_SKILL_NAMESPACES='superpowers mine' canon mine:tdd)"
+assert_eq "an override replaces the default list" "superpowers:tdd" "$(SILVER_BULLET_SKILL_NAMESPACES='mine' canon superpowers:tdd)"
+assert_eq "only a namespace: no name" "" "$(canon silver-bullet: 2>/dev/null || true)"
+if sb_skill_namespace_is_trusted ""; then tl_fail "empty namespace is not trusted"; else tl_pass "empty namespace is not trusted"; fi
 assert_eq "plain name unchanged" "plain-name" "$(canon plain-name)"
 
 tl_results

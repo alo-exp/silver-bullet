@@ -45,6 +45,10 @@ if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"
 fi
+if [[ -f "$_lib_dir/skill-gates.sh" ]]; then
+  # shellcheck source=lib/skill-gates.sh
+  source "$_lib_dir/skill-gates.sh"
+fi
 if [[ -f "$_lib_dir/hook-output.sh" ]]; then
   # shellcheck source=lib/hook-output.sh
   source "$_lib_dir/hook-output.sh"
@@ -100,15 +104,15 @@ else
   cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
 fi
 
-extract_invoke_skill_adapter_skill() {
-  local command_str="$1"
-  python3 - "$command_str" <<'PY' 2>/dev/null || true
+# The command arrives on stdin, never argv (no size limit, nothing visible in `ps`).
+# (read -d '' rather than $(cat <<...): Bash 3.2 mis-parses quotes inside a heredoc in $(...).)
+IFS= read -r -d '' _SB_ADAPTER_PARSER_PY <<'PY' || true
 import pathlib
 import re
 import shlex
 import sys
 
-command = sys.argv[1]
+command = sys.stdin.read()
 assignment_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*$")
 shell_names = {"bash", "sh", "zsh"}
 
@@ -159,6 +163,11 @@ skill = inspect_tokens(parse(command))
 if skill:
     print(skill)
 PY
+
+extract_invoke_skill_adapter_skill() {
+  # Cheap guard (R3-19): most Bash calls are not adapter calls, so skip starting python for them.
+  [[ "$1" == *invoke-skill* ]] || return 0
+  printf '%s' "$1" | python3 -c "$_SB_ADAPTER_PARSER_PY" 2>/dev/null || true
 }
 
 invoke_skill_adapter_receipt_is_valid() {
@@ -210,12 +219,18 @@ invoke_skill_adapter_receipt_is_valid() {
 }
 
 skills_to_record=()
-if [[ -n "$raw_skill" ]]; then
+# tool_input.skill is honoured only for the Skill tool itself: a Bash or exec_command payload that
+# happens to carry a `skill` key records nothing (its only route is the invoke-skill adapter below).
+if [[ -n "$raw_skill" && "$tool_name" == "Skill" ]]; then
   skills_to_record+=("$raw_skill")
 elif { [[ "$tool_name" == "Bash" ]] || { declare -f sb_tool_is_shell_like >/dev/null 2>&1 && sb_tool_is_shell_like "$tool_name"; }; }; then
   adapter_skill="$(extract_invoke_skill_adapter_skill "$cmd")"
   adapter_exit_code="$(printf '%s' "$input" | jq -r '.tool_response.exit_code // .tool_response.exitCode // 0' 2>/dev/null || printf '0')"
   if [[ -n "$adapter_skill" && "$adapter_exit_code" == "0" ]] && invoke_skill_adapter_receipt_is_valid "$adapter_skill"; then
+    if adapter_denial="$(sb_skill_gates_denial "$adapter_skill" "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"; then
+      sb_emit_hook_message "PostToolUse" "⚠️ Skill not recorded: the Skill gates deny ${adapter_skill} — ${adapter_denial}"
+      exit 0
+    fi
     skills_to_record+=("$adapter_skill")
   elif [[ "$cmd" == *"SKILL.md"* ]]; then
     # Extract any SKILL.md paths embedded in the command string.

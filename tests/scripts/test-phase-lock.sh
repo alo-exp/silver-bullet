@@ -37,7 +37,7 @@ assert_true() {
 # ---------------------------------------------------------------------------
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT="${REPO_ROOT}/.planning/scripts/phase-lock.sh"
+SCRIPT="${PL_SCRIPT:-${REPO_ROOT}/.planning/scripts/phase-lock.sh}"
 [[ -x "$SCRIPT" ]] || { echo "FAIL: phase-lock.sh not found or not executable at $SCRIPT"; exit 1; }
 
 TMP=$(mktemp -d)
@@ -233,6 +233,13 @@ out_unpadded=$("$SCRIPT" peek 70)
 [[ -n "$out_unpadded" ]] && { echo "PASS: peek 70 finds lock claimed as 70"; (( PASS++ )) || true; } \
                          || { echo "FAIL: peek 70 returned empty after claim 70"; (( FAIL++ )) || true; }
 "$SCRIPT" release 070 claude >/dev/null 2>&1
+
+# Test 2b — heartbeat by a runtime that does not own the lock is refused
+reset_lock
+"$SCRIPT" claim 070 claude "owner" >/dev/null 2>&1
+rc=0; "$SCRIPT" heartbeat 070 codex >/dev/null 2>&1 || rc=$?
+assert_eq "heartbeat by another runtime exits 2" "2" "$rc"
+reset_lock
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

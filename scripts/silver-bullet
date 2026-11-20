@@ -71,12 +71,14 @@ append_skill_roots() {
   local cache_root="${SB_RUNTIME_PLUGIN_CACHE_ROOT:-${HOME}/.codex/plugins/cache}"
   local candidate
 
+  # The plugin's own skills come first, so a same-named SKILL.md in a user-level or cache root
+  # can never shadow a Silver Bullet skill and still earn its receipt.
   SKILL_ROOTS+=(
+    "${PLUGIN_ROOT}/skills"
+    "${PLUGIN_ROOT}/skill-source"
     "${SB_RUNTIME_HOME_ROOT:-${HOME}/.codex}/skills"
     "${HOME}/.codex/skills"
     "${HOME}/.agents/skills"
-    "${PLUGIN_ROOT}/skills"
-    "${PLUGIN_ROOT}/skill-source"
   )
 
   shopt -s nullglob
@@ -212,6 +214,18 @@ invoke_skill() {
   if ! skill_file="$(find_skill_file "$raw_skill" "$canonical_skill")"; then
     printf 'ERROR: skill not installed or not discoverable: %s\n' "$raw_skill" >&2
     return 1
+  fi
+
+  # Refuse BEFORE the skill text is printed or a receipt is written: the host sees this call as
+  # Bash, so its Skill gates (forbidden skills, UAT, review ladder) have not run (R3-08).
+  local denial
+  if [[ -f "${LIB_DIR}/skill-gates.sh" ]]; then
+    # shellcheck source=../hooks/lib/skill-gates.sh
+    source "${LIB_DIR}/skill-gates.sh"
+    if denial="$(sb_skill_gates_denial "$raw_skill" "${PLUGIN_ROOT}/hooks")"; then
+      printf 'ERROR: skill refused by the Silver Bullet Skill gates: %s\n' "$denial" >&2
+      return 1
+    fi
   fi
 
   write_receipt "$raw_skill" "$canonical_skill" "$skill_file"

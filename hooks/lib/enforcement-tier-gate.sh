@@ -37,17 +37,8 @@ sb_enforcement_tier_probe() {
   esac
 }
 
-sb_enforcement_tier_persist() {
-  local config_file="$1"
-  local tier="$2"
-  # Doctor / hook smoke must not mutate project config (F8 / #257).
-  [[ "${SB_HOOK_SMOKE:-0}" == "1" ]] && return 0
-  [[ -n "$config_file" && -f "$config_file" && -n "$tier" ]] || return 0
-  command -v jq >/dev/null 2>&1 || return 0
-  local updated
-  updated="$(jq --argjson t "$tier" '.sb_enforcement_tier = $t' "$config_file" 2>/dev/null || true)"
-  [[ -n "$updated" ]] && printf '%s\n' "$updated" >"${config_file}.tmp" && mv "${config_file}.tmp" "$config_file"
-}
+# The effective tier is computed each time and never written into the project config: hooks do not
+# mutate committed files (R3-11). sb_enforcement_tier_read_config reads only a value the user set.
 
 sb_enforcement_tier_effective() {
   local config_file="${1:-}"

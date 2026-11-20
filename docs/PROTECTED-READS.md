@@ -4,9 +4,10 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 
 | file:line | value read | how it is used | verified record | disposition |
 |---|---|---|---|---|
-| hooks/compliance-status.sh:219 | state | `state_contents=$(cat "$state_file")` | X | informational progress line, no gate decision |
+| hooks/compliance-status.sh:244 | state | `state_contents=$(cat "$state_file")` | X | informational progress line, no gate decision |
 | hooks/dev-cycle-check.sh:88 | trivial | `[[ -e "$marker_early" \|\| -e "${SB_RUNTIME_STATE_DIR}/unlock-hint" \|\| -e "${SB_RUNTIME_` | X | wake-up test: the presence of the marker only makes PostToolUse run the verification; it never trusts the marker |
-| hooks/flow-advance.sh:76 | config | `if [[ -f "$repo_root/.silver-bullet.json" ]] && jq '.project.active_workflow = "full-dev-c` | X | writes the one key (.project.active_workflow) in the live file after the RECORDED config said devops-cycle; the record changes by that key only |
+| hooks/flow-advance.sh:76 | config | `if [[ -f "$repo_root/.silver-bullet.json" ]]; then` | X | writes the one key (.project.active_workflow) in the live file after the RECORDED config said devops-cycle; the record changes by that key only |
+| hooks/flow-advance.sh:77 | config | `updated="$(jq '.project.active_workflow = "full-dev-cycle"' "$repo_root/.silver-bullet.jso` | X | writes the one key (.project.active_workflow) in the live file after the RECORDED config said devops-cycle; the record changes by that key only |
 | hooks/industry-tooling-hint.sh:30 | config | `enabled="$(jq -r '.hooks.industry_tooling.enabled // false' "$config_file" 2>/dev/null \|\` | X | advisory hint, no gate decision |
 | hooks/lib/agentmemory-gate.sh:30 | config | `url="$(jq -r '.recommended_tools.agentmemory.health_url // "" \| strings' "$config_file" 2` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
 | hooks/lib/agentmemory-gate.sh:39 | config | `rel="$(jq -r '.recommended_tools.agentmemory.export_root // "" \| strings' "$config_file" ` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
@@ -21,7 +22,6 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | hooks/lib/context-mode-read-deny.sh:83 | config | `state_file="$(jq -r '.state.state_file // "" \| strings' "$config_file" 2>/dev/null \|\| t` | X | token-saving read gate: exempts the named runtime files from the read-size deny; it decides no planning or delivery gate |
 | hooks/lib/context-mode-read-deny.sh:84 | config | `trivial_file="$(jq -r '.state.trivial_file // "" \| strings' "$config_file" 2>/dev/null \|` | X | token-saving read gate: exempts the named runtime files from the read-size deny; it decides no planning or delivery gate |
 | hooks/lib/enforcement-tier-gate.sh:8 | config | `jq -r 'if (.sb_enforcement_tier // "") != "" then (.sb_enforcement_tier \| tostring) else ` | X | the tier is min(configured, probed): a live value can only lower it; excluded from the record (hooks keep it) |
-| hooks/lib/enforcement-tier-gate.sh:48 | config | `updated="$(jq --argjson t "$tier" '.sb_enforcement_tier = $t' "$config_file" 2>/dev/null \` | X | the tier is min(configured, probed): a live value can only lower it; excluded from the record (hooks keep it) |
 | hooks/lib/enterprise-policy.sh:13 | config | `profile="$(jq -r '.enterprise_policy.active_profile // empty' "$config_file" 2>/dev/null \` | X | handed the root's config path by the delivery tier only after the drift check proved it equals the record; session and prompt callers print advisory text with it |
 | hooks/lib/enterprise-policy.sh:135 | config | `hooks_strict="$(jq -r '.hooks.evidence_schema.strict \| if . == null then "true" else tost` | X | handed the root's config path by the delivery tier only after the drift check proved it equals the record; session and prompt callers print advisory text with it |
 | hooks/lib/integrity-anchor.sh:534 | config | `if [[ -f "$root/.silver-bullet.json" && -f "$root/silver-bullet.md" ]]; then` | A | the integrity machinery: where the project is (record, contract files, git tracking) |
@@ -34,8 +34,8 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | hooks/lib/leanctx-gate.sh:82 | config | `configured="$(jq -r '.recommended_tools.leanctx.usage_state_file // "" \| strings' "$confi` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
 | hooks/lib/opt-in-gate.sh:91 | config | `trivial_cfg="$(jq -r '.state.trivial_file // "" \| strings' "$config_file" 2>/dev/null \|\` | X | the config trivial path is handed to sb_trivial_bypass, which ignores it once the project has a record (only an install without a record honours it) |
 | hooks/lib/orchestrator-parent.sh:10 | config | `mode="$(jq -r '.orchestrator_mode // "parent"' "$config_file" 2>/dev/null \|\| echo parent` | X | orchestrator parent mode: an extra directive layer; the planning floor and the delivery gates do not depend on it |
-| hooks/lib/prerequisite-probe.sh:39 | config | `if [[ ! -f "$repo_root/.silver-bullet.json" \|\| ! -f "$repo_root/silver-bullet.md" ]]; th` | X | installer prerequisite probe: reports a missing contract file, decides no gate |
-| hooks/lib/prerequisite-probe.sh:69 | config | `if [[ ! -f "$repo_root/.silver-bullet.json" \|\| ! -f "$repo_root/silver-bullet.md" ]]; th` | X | installer prerequisite probe: reports a missing contract file, decides no gate |
+| hooks/lib/prerequisite-probe.sh:38 | config | `if [[ ! -f "$repo_root/.silver-bullet.json" \|\| ! -f "$repo_root/silver-bullet.md" ]]; th` | X | installer prerequisite probe: reports a missing contract file, decides no gate |
+| hooks/lib/prerequisite-probe.sh:68 | config | `if [[ ! -f "$repo_root/.silver-bullet.json" \|\| ! -f "$repo_root/silver-bullet.md" ]]; th` | X | installer prerequisite probe: reports a missing contract file, decides no gate |
 | hooks/lib/project-active.sh:32 | config | `[[ "$(jq -r '.sb_initiated // false' "$config_file" 2>/dev/null \|\| echo false)" == "true` | A | activation helper: record-aware |
 | hooks/lib/recommended-tools.sh:70 | config | `jq -e --arg id "$tool_id" '.recommended_tools[$id].enforcement_suspended == true' "$config` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
 | hooks/lib/required-skills.sh:45 | config | `jq -r '.config_version // .version // ""' "${cfg}" 2>/dev/null` | X | reads the TEMPLATE's default lists (templates/silver-bullet.config.json.default), not a project file |
@@ -45,20 +45,20 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | hooks/lib/sb-project-gate.sh:39 | config | `[[ -n "$cached" && -f "$cached/.silver-bullet.json" && -f "$cached/silver-bullet.md" ]] \|` | A | activation helper: record-aware project lookup (root with a record wins) |
 | hooks/lib/session-ledger.sh:26 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | X | session log bookkeeping: finds the project directory for the ledger file, decides no gate |
 | hooks/lib/site-session.sh:19 | config | `if [[ -f "$search_dir/.silver-bullet.json" && -f "$search_dir/silver-bullet.md" ]]; then` | X | site-session bookkeeping: finds the project directory, decides no gate |
-| hooks/record-skill.sh:265 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:266 | config | `config_file="$search_dir/.silver-bullet.json"` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:289 | config | `STATE_FILE=$(jq -r '.state.state_file // ""' "$config_file")` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:318 | config | `custom_tracked=$(jq -r '(.skills.all_tracked // []) \| join(" ")' "$config_file")` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:394 | state | `if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:409 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:423 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:450 | state | `[[ -f "$STATE_FILE" ]] && state_contents="$(cat "$STATE_FILE" 2>/dev/null \|\| true)"` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:280 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:281 | config | `config_file="$search_dir/.silver-bullet.json"` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:304 | config | `STATE_FILE=$(jq -r '.state.state_file // ""' "$config_file")` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:333 | config | `custom_tracked=$(jq -r '(.skills.all_tracked // []) \| join(" ")' "$config_file")` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:409 | state | `if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:424 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:438 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:465 | state | `[[ -f "$STATE_FILE" ]] && state_contents="$(cat "$STATE_FILE" 2>/dev/null \|\| true)"` | A | sanctioned writer: keeps the record in step |
 | hooks/session-log-init.sh:68 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | X | session log bookkeeping, no gate decision |
 | hooks/session-start:106 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | A | the trust anchor: baselines the record at the end of session start |
-| hooks/session-start:172 | config | `if [[ -n "$_rt_hb_script" && -f "${sb_project_root}/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
-| hooks/session-start:173 | config | `_sb_initiated="$(jq -r '.sb_initiated // false' "${sb_project_root}/.silver-bullet.json" 2` | A | the trust anchor: baselines the record at the end of session start |
-| hooks/session-start:373 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
-| hooks/session-start:374 | config | `cfg_trivial=$(jq -r '.state.trivial_file // ""' "$search_dir/.silver-bullet.json" 2>/dev/n` | A | the trust anchor: baselines the record at the end of session start |
+| hooks/session-start:174 | config | `if [[ -n "$_rt_hb_script" && -f "${sb_project_root}/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
+| hooks/session-start:175 | config | `_sb_initiated="$(jq -r '.sb_initiated // false' "${sb_project_root}/.silver-bullet.json" 2` | A | the trust anchor: baselines the record at the end of session start |
+| hooks/session-start:404 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
+| hooks/session-start:405 | config | `cfg_trivial=$(jq -r '.state.trivial_file // ""' "$search_dir/.silver-bullet.json" 2>/dev/n` | A | the trust anchor: baselines the record at the end of session start |
 | scripts/deploy-gate-snippet.sh:50 | config | `if [[ -f "$_dw_search_dir/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/deploy-gate-snippet.sh:51 | config | `_dw_config_file="$_dw_search_dir/.silver-bullet.json"` | X | user-run or skill-run script, not a hook gate |
 | scripts/deploy-gate-snippet.sh:92 | config | `_val=$(jq -r '.state.state_file // ""' "$_dw_config_file")` | X | user-run or skill-run script, not a hook gate |
@@ -75,6 +75,7 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | scripts/optimize-five-tool-stack.sh:108 | config | `if [[ -n "$PROJECT_ROOT" && -f "${PROJECT_ROOT}/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/optimize-five-tool-stack.sh:118 | config | `[[ -z "$cfg" ]] \|\| [[ "$(jq -r '.recommended_tools.leanctx.enabled_by_user' "$cfg" 2>/de` | X | user-run or skill-run script, not a hook gate |
 | scripts/optimize-five-tool-stack.sh:126 | config | `profile="$(jq -r '.recommended_tools.leanctx.optimization_profile // "five_tool_routed"' "` | X | user-run or skill-run script, not a hook gate |
+| scripts/phase-lock.sh:129 | config | `if [[ -n "${REPO_ROOT}" ]] && [[ -f "${REPO_ROOT}/.silver-bullet.json" ]]; then` | X | phase-lock coordination (run by phase-lock-claim.sh): the ttl and runtime tags are validated and only compared; not an enforcement decision |
 | scripts/pre-release-gate.sh:52 | config | `if jq -e '.recommended_tools.leanctx.enabled_by_user == true' "${REPO_ROOT}/.silver-bullet` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-bootstrap.sh:28 | config | `if [[ -f "$TARGET/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-consent.sh:92 | config | `while [[ "$_sb_probe" != "/" && ! -f "$_sb_probe/.silver-bullet.json" ]]; do` | X | user-run or skill-run script, not a hook gate |
@@ -89,10 +90,10 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | scripts/sb-doctor.sh:702 | md | `elif [[ ! -f "${PROJ_ROOT}/silver-bullet.md" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-doctor.sh:706 | md | `grep -q "^## ${d7_sec}\\. " "${PROJ_ROOT}/silver-bullet.md" 2>/dev/null \|\| d7_missing="$` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-doctor.sh:945 | config | `csba_scope="$(jq -r '.cursor_sb_agents.agents_install_scope // "global"' "$sb_config" 2>/d` | X | user-run or skill-run script, not a hook gate |
-| scripts/sb-migrate-orchestrator-parent.sh:11 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | X | user-run or skill-run script, not a hook gate |
-| scripts/sb-migrate-orchestrator-parent.sh:12 | config | `config_file="$search_dir/.silver-bullet.json"` | X | user-run or skill-run script, not a hook gate |
-| scripts/sb-migrate-orchestrator-parent.sh:29 | config | `mode="$(jq -r '.orchestrator_mode // "absent"' "$config_file")"` | X | user-run or skill-run script, not a hook gate |
-| scripts/sb-migrate-orchestrator-parent.sh:32 | config | `jq '.orchestrator_mode = "parent"' "$config_file" >"$tmp" && mv "$tmp" "$config_file"` | X | user-run or skill-run script, not a hook gate |
+| scripts/sb-migrate-orchestrator-parent.sh:13 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | X | user-run or skill-run script, not a hook gate |
+| scripts/sb-migrate-orchestrator-parent.sh:14 | config | `config_file="$search_dir/.silver-bullet.json"` | X | user-run or skill-run script, not a hook gate |
+| scripts/sb-migrate-orchestrator-parent.sh:31 | config | `mode="$(jq -r '.orchestrator_mode // "absent"' "$config_file")"` | X | user-run or skill-run script, not a hook gate |
+| scripts/sb-migrate-orchestrator-parent.sh:33 | config | `updated="$(jq '.orchestrator_mode = "parent"' "$config_file")"` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-migrate-project.sh:11 | config | `if [[ -f "$SEARCH_DIR/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/semantic-compress.sh:16 | config | `[[ -f "$dir/.silver-bullet.json" ]] && { printf '%s' "$dir"; return; }` | X | user-run or skill-run script, not a hook gate |
 | scripts/silver-add.sh:129 | config | `CREATE_CMD=$(jq -r '.issue_tracker_adapter.create_issue_command // empty' "$cfg" 2>/dev/nu` | X | user-run or skill-run script, not a hook gate |

@@ -6,7 +6,7 @@ trap 'exit 0' ERR
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-state.sh orchestrator-parent.sh skill-discovery.sh jq-gate.sh hook-output.sh; do
+for _lib in runtime-paths.sh nofollow-guard.sh sb-project-gate.sh orchestrator-state.sh orchestrator-parent.sh skill-discovery.sh jq-gate.sh hook-output.sh; do
   if [[ -f "$_lib_dir/$_lib" ]]; then
     # shellcheck source=/dev/null
     source "$_lib_dir/$_lib"
@@ -72,14 +72,14 @@ if [[ "$skill" == "silver-ship" && -f "$_lib_dir/integrity.sh" ]]; then
   # shellcheck source=lib/integrity.sh
   source "$_lib_dir/integrity.sh"
   if sb_integrity_gate "$repo_root" && [[ "$(sb_iv_jq -r '.project.active_workflow // "full-dev-cycle"')" == "devops-cycle" ]]; then
-    tmp="$(mktemp)"
-    if [[ -f "$repo_root/.silver-bullet.json" ]] && jq '.project.active_workflow = "full-dev-cycle"' "$repo_root/.silver-bullet.json" >"$tmp" 2>/dev/null; then
-      mv "$tmp" "$repo_root/.silver-bullet.json"
+    updated=""
+    if [[ -f "$repo_root/.silver-bullet.json" ]]; then
+      updated="$(jq '.project.active_workflow = "full-dev-cycle"' "$repo_root/.silver-bullet.json" 2>/dev/null || true)"
+    fi
+    if [[ -n "$updated" ]] && printf '%s\n' "$updated" | sb_atomic_write_file "$repo_root/.silver-bullet.json"; then
       sb_integrity_set_workflow "$SB_IV_ROOT" full-dev-cycle
       reset_note="SB ► active_workflow reset to full-dev-cycle after devops ship"
       msg="${msg:+$msg — }${reset_note}"
-    else
-      rm -f -- "$tmp" 2>/dev/null || true
     fi
   fi
 fi
