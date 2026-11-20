@@ -114,6 +114,21 @@ tl_run_hook "$HOOK" "$(bash_json "git apply x.patch")"
 assert_eq "Bash git apply (tree scope) denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
 tl_run_hook "$HOOK" "$(bash_json "git status")"
 assert_eq "Bash git status allowed" "0|" "$TL_STATUS|$TL_OUT"
+# Commands that overwrite the owned tree without a modeled "tree" write (git restore . reports the repo root
+# as a path write; git checkout/switch <branch|.> reports nothing at all).
+mkdir -p "$PROJ/src/inner"
+for deny in "git restore ." "git checkout ." "git checkout -- ." "git checkout other-branch" "git switch other-branch" \
+            "git checkout -b copy main" "git -C src checkout ." "cd src && git checkout ." "git -C $PROJ checkout other-branch" \
+            "git --no-pager checkout other-branch" "git checkout HEAD~1 -- src" "git -c core.x=y checkout ." "git restore src"; do
+  tl_run_hook "$HOOK" "$(bash_json "$deny")"
+  assert_eq "delegation active, owned tree overwritten: $deny" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+done
+for allow in "git diff" "git log --oneline" "ls src" "grep -rn x src" "git checkout -b feature" "git switch -c feature" "git checkout -- docs/free.md" \
+             "git restore docs/free.md" "cd docs && git checkout ." "git -C docs checkout ." "git -C /abs/elsewhere checkout ." "git add -A" "git commit -m wip" "git branch -a" \
+             "git checkout" "git -C docs status" "cp docs/free.md docs/copy.md"; do
+  tl_run_hook "$HOOK" "$(bash_json "$allow")"
+  assert_eq "delegation active, honest command allowed: $allow" "0|" "$TL_STATUS|$TL_OUT"
+done
 tl_run_hook "$HOOK" "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"exec_command", tool_input:{cmd:"sed -i s/a/b/ src/owned.txt"}}')"
 assert_eq "Codex exec_command writing an owned file denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
 
