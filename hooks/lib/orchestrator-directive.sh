@@ -417,7 +417,7 @@ sb_orchestrator_prompt_provenance_ok() {
     SB_PROVENANCE_REFUSAL="the payload's transcript_path is not a regular file under ${SB_RUNTIME_HOME_ROOT:-the host runtime root}"
     return 1
   fi
-  if sb_orchestrator_is_worker_session 2>/dev/null; then
+  if sb_orchestrator_worker_marker_fresh; then
     recorded="$(jq -r '.session_id // ""' "$(sb_orchestrator_parent_session_file)" 2>/dev/null)"
     if [[ -z "$transcript" || -z "$recorded" || "$recorded" != "$sid" ]]; then
       spawned="$(jq -r '.spawned_at // "unknown time"' "$(sb_orchestrator_worker_marker_file)" 2>/dev/null)"
@@ -435,7 +435,7 @@ sb_orchestrator_prompt_provenance_ok() {
 sb_orchestrator_note_parent_prompt() {
   local input="${1:-}" sid tmp file
   sb_orchestrator_prompt_provenance_ok "$input" || return 0
-  sb_orchestrator_is_worker_session 2>/dev/null && return 0
+  sb_orchestrator_worker_marker_fresh && return 0
   sid="$(printf '%s' "$input" | jq -r '.session_id // ""' 2>/dev/null)"
   [[ "$sid" =~ ^[A-Za-z0-9_-]{1,64}$ ]] || return 0
   file="$(sb_orchestrator_parent_session_file)"
