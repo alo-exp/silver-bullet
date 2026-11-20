@@ -25,7 +25,7 @@ edit_src() {
   echo y >>"$EC_PROJ/src/a.js"
   hook trivial-file-clear.sh "$(jq -nc --arg f "$EC_PROJ/src/a.js" '{hook_event_name:"PostToolUse",tool_name:"Edit",tool_input:{file_path:$f,old_string:"x",new_string:"y"},session_id:"s1"}')"
 }
-stop_twice() { local i; for i in 1 2; do hook stop-check.sh '{"hook_event_name":"Stop","session_id":"s1"}'; done; }
+stop_twice() { local _; for _ in 1 2; do hook stop-check.sh '{"hook_event_name":"Stop","session_id":"s1"}'; done; }
 
 # honest baseline: the written source blocks Stop
 start; edit_src
