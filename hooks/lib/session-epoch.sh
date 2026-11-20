@@ -15,8 +15,8 @@
 # API:
 #   sb_session_epoch_restamp FILE STATE_DIR OLD [drop]   write a new epoch to FILE; carry the trace of OLD to it
 #                                                        (with `drop`, delete every trace instead)
-#   sb_session_epoch_rotate FILE STATE_DIR ROOT          the session-start rule above; records HEAD in
-#                                                        STATE_DIR/session-start-head
+#   sb_session_epoch_rotate FILE STATE_DIR ROOT [rotate|keep]   the session-start rule above (keep: only record HEAD
+#                                                        once); HEAD is kept in STATE_DIR/session-start-head
 
 sb_session_epoch_restamp() {
   local file="${1:-}" sd="${2:-}" old="${3:-}" drop="${4:-}" new
@@ -28,18 +28,22 @@ sb_session_epoch_restamp() {
     && ! -e "$sd/files-written.$new" ]]; then
     mv -f -- "$sd/files-written.$old" "$sd/files-written.$new" 2>/dev/null && :
   fi
-  printf '%s\n' "$new" >"$file" 2>/dev/null && :
+  { printf '%s\n' "$new" >"$file"; } 2>/dev/null && :
   return 0
 }
 
 sb_session_epoch_rotate() {
-  local file="${1:-}" sd="${2:-}" root="${3:-}" old="" oldhead="" curhead="" headfile drop=""
+  local file="${1:-}" sd="${2:-}" root="${3:-}" mode="${4:-rotate}" old="" oldhead="" curhead="" headfile drop=""
   headfile="$sd/session-start-head"
   [[ ! -f "$file" ]] || old="$(<"$file")"
   [[ ! -f "$headfile" || -L "$headfile" ]] || oldhead="$(<"$headfile")"
   curhead="$(git -C "$root" rev-parse HEAD 2>/dev/null || true)"
-  if [[ -n "$curhead" && -n "$oldhead" && "$curhead" != "$oldhead" ]]; then drop=drop; fi
-  sb_session_epoch_restamp "$file" "$sd" "$old" "$drop"
-  [[ -L "$headfile" ]] || printf '%s\n' "$curhead" >"$headfile" 2>/dev/null && :
+  if [[ "$mode" == rotate ]]; then
+    if [[ -n "$curhead" && -n "$oldhead" && "$curhead" != "$oldhead" ]]; then drop=drop; fi
+    sb_session_epoch_restamp "$file" "$sd" "$old" "$drop"
+    oldhead=""
+  fi
+  # HEAD where the epoch began: written at a rotation, and once by a start that keeps the epoch
+  [[ -n "$oldhead" || -L "$headfile" ]] || { printf '%s\n' "$curhead" >"$headfile"; } 2>/dev/null && :
   return 0
 }

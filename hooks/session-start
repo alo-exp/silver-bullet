@@ -446,10 +446,16 @@ if [[ "$sb_should_mutate" == true ]]; then
   fi
   # A genuine new session gets a fresh epoch (and a clean write trace unless HEAD is unchanged); a worker
   # start (#275) and resume/compact do not (hooks/lib/session-epoch.sh).
+  # Codex fires SessionStart(startup) on every process restart of one session, so there only `clear` is a new
+  # session; Claude Code's `startup` is always one. A start that does not rotate only records HEAD once.
   if [[ "$_sb_preserve_worker_marker" != true && -f "$_lib_dir/session-epoch.sh" ]]; then
     # shellcheck source=lib/session-epoch.sh
     source "$_lib_dir/session-epoch.sh"
-    sb_session_epoch_rotate "$session_start_file" "$SB_STATE_DIR" "$sb_project_root"
+    _sb_epoch_mode=keep
+    if [[ "$sb_session_source" == clear || ( "$sb_session_source" == startup && "${SILVER_BULLET_RUNTIME:-}" == claude ) ]]; then
+      _sb_epoch_mode=rotate
+    fi
+    sb_session_epoch_rotate "$session_start_file" "$SB_STATE_DIR" "$sb_project_root" "$_sb_epoch_mode"
   fi
   if [[ "$_sb_preserve_worker_marker" != true ]]; then
     rm -f -- "${SB_STATE_DIR}/orchestrator-worker-active.json" 2>/dev/null || true
