@@ -116,6 +116,16 @@ for child in plugin_root.iterdir():
 PY
 }
 
+# Refresh the plugin cache's own `current` alias and drop orphaned version dirs. Cache-internal:
+# no project file is read or copied (used by sb-prerequisite-repair.sh, which also ships to Codex
+# installs and so must not name the Claude cache path itself).
+sb_claude_refresh_plugin_cache_alias() {
+  local cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+  [[ -d "$cache_root" ]] || return 0
+  sb_plugin_cache_prune_orphaned_dirs "$cache_root" 2>/dev/null || true
+  sb_plugin_cache_refresh_current_alias "$cache_root" 2>/dev/null || true
+}
+
 # Ensure Claude Silver Bullet plugin cache has current alias + hooks (dev checkout).
 sb_claude_ensure_plugin_cache_ready() {
   local repo_root="${1:-}"
