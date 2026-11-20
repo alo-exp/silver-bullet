@@ -818,5 +818,25 @@
     "Tags": [],
     "RuleID": "generic-api-key",
     "Fingerprint": "faebd77aa9bc54892795ca7bc571ab38c16357e0:tests/scripts/test-agent-delegate-common-behavior.sh:generic-api-key:231"
+  },
+  {
+    "Description": "Identified a pattern that may indicate AWS credentials, risking unauthorized cloud resource access and data breaches on AWS platforms.",
+    "StartLine": 121,
+    "EndLine": 121,
+    "StartColumn": 134,
+    "EndColumn": 154,
+    "Match": "REDACTED ",
+    "Secret": "REDACTED",
+    "File": "tests/hooks/test-g4-state-libs.sh",
+    "SymlinkFile": "",
+    "Commit": "302707b5d0eea568085f345d9078303ad85903f3",
+    "Entropy": 3.8841836,
+    "Author": "Claude",
+    "Email": "noreply@anthropic.com",
+    "Date": "2026-11-05T06:26:09Z",
+    "Message": "fix(session-start): plugin-only code paths, branch scope, no config rewrite, benign compact (R2-12 R3-03 R3-07 R3-11 R3-14 R3-15 R3-25 R3-30 R8-07 R8-08 R16-01)\n\nRed: planted project scripts/lib/recommended-tools/*.sh, scripts/sb-prerequisite-repair.sh and\nscripts/review-fix-ladder.py ran at SessionStart; repair ran sudo apt/brew and rsynced the\nproject hooks/ over the plugin; branch names outside [a-zA-Z0-9/_.-], a deleted branch file and\nresume never reset state; a symlinked branch file aborted the hook; session-start rewrote\n.silver-bullet.json each start; compact deleted the trivial marker and live matrices.\nGreen: libraries and scripts resolve from the plugin root, repair is report-only, any ref is a\nscope (detached HEAD and rebases handled), SessionStart fires for resume, enterprise approval,\nci-red-override and leanctx usage are cleared on reset, config is only written atomically by\nexplicit callers. tests/hooks/test-g4-session-start.sh (new) and updated session-start tests.\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_013z3F7YTZ5T5DAJxAcCmeVV",
+    "Tags": [],
+    "RuleID": "aws-access-token",
+    "Fingerprint": "302707b5d0eea568085f345d9078303ad85903f3:tests/hooks/test-g4-state-libs.sh:aws-access-token:121"
   }
 ]
