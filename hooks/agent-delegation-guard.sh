@@ -73,9 +73,14 @@ fi
 target_paths="$(printf '%s\n%s' "$target_paths" "$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.path // ""' 2>/dev/null || true)")"
 
 in_scope=false
-# A tree-scope write (git reset --hard, git apply, ...) touches every owned path under its tree.
+# A write whose path is a directory holding an owned path (git reset --hard, git restore ., git apply, ...)
+# touches the owned path whatever scope the classifier gave it. `git checkout|switch <branch|.>` has no
+# modeled writes (it may be a path or a branch), so it counts as a write to the whole repository, or to
+# the directory for a lone ".", unless it names paths after "--" (those are modeled) or only creates a branch.
 if [[ "${SB_TI_STATUS:-}" == "ok" ]]; then
   while IFS= read -r tree_path; do
+    [[ "$tree_path" == "REPO" ]] && tree_path="$repo_root"
+    tree_path="$(sb_agent_delegation_normalize_path "$tree_path" "$repo_root" 2>/dev/null || printf '%s' "$tree_path")"
     tree_path="${tree_path%/}"
     while IFS= read -r owned; do
       if owned="$(sb_agent_delegation_normalize_path "$owned" "$repo_root" 2>/dev/null)" \
@@ -83,7 +88,19 @@ if [[ "${SB_TI_STATUS:-}" == "ok" ]]; then
         in_scope=true
       fi
     done < <(jq -r '.ownership_scope[]? | select(. != "")' "$(sb_agent_delegation_state_file)" 2>/dev/null)
-  done < <(printf '%s' "$SB_SA_JSON" | jq -r '.writes[]? | select(.scope == "tree" and (.path // "") != "") | .path' 2>/dev/null)
+  done < <(printf '%s' "$SB_SA_JSON" | jq -r '
+    (.writes[]? | select((.path // "") != "") | .path),
+    (.commands[]? | select(.program == "git") | . as $c | .argv as $a
+      | ([range(1; $a | length) as $k | select(($a[$k] | startswith("-") | not)
+          and ($k == 1 or (["-C", "-c", "--git-dir", "--work-tree", "--namespace"] | index($a[$k - 1]) | not))) | $k][0]) as $i
+      | select($i != null and ($a[$i] == "checkout" or $a[$i] == "switch"))
+      | $a[$i + 1:] as $r
+      | select(($r | index("--")) == null)
+      | [$r[] | select(startswith("-") | not)] as $pos
+      | ([$r[] | select(test("^-[A-Za-z]*[bBcC]$|^--(orphan|create|force-create)(=.*)?$"))] | length > 0) as $mk
+      | select(($pos | length) > (if $mk then 1 else 0 end))
+      | ([range(1; $a | length) as $k | select($a[$k - 1] == "-C") | $a[$k]] | last // "") as $dir
+      | if all($pos[]; . == ".") then ($dir | if . == "" then $c.cwd elif startswith("/") then . else $c.cwd + "/" + . end) else "REPO" end)' 2>/dev/null)
 fi
 while IFS= read -r target_path; do
   [[ -n "$target_path" ]] || continue
