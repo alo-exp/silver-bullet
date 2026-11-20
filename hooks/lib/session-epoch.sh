@@ -52,8 +52,8 @@ _sb_se_merge() {
     srcs+=("$f")
   done
   [[ ${#srcs[@]} -gt 0 ]] || return 0
-  merged="$(cat -- "${srcs[@]}" 2>/dev/null | awk 'NF && !seen[$0]++' || true)"
-  n="$(printf '%s' "$merged" | grep -c . || true)"
+  if merged="$(cat -- "${srcs[@]}" 2>/dev/null | awk 'NF && !seen[$0]++')"; then :; fi
+  if n="$(printf '%s' "$merged" | grep -c .)"; then :; fi
   if (( n > SB_SE_MAX )); then
     merged="$(printf '%s\n' "$merged" | head -n "$SB_SE_MAX")"$'\n''*'
   fi
