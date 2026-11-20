@@ -143,7 +143,7 @@ out_graphify_update=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","too
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_contains "parent blocks graphify update" "$out_graphify_update" "ORCHESTRATOR PARENT"
 
-out_resolve=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"bash scripts/resolve-instruction-ledger.sh list"}}' | \
+out_resolve=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"bash '"$REPO_ROOT"'/scripts/resolve-instruction-ledger.sh list"}}' | \
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_empty "parent allows resolve-instruction-ledger (#264)" "$out_resolve"
 

@@ -109,11 +109,11 @@ tl_run_hook "$HOOK" "$(tool_json Bash 'silver-bullet invoke-skill silver')"
 assert_eq "router invoke-skill adapter allowed" "0|" "$TL_STATUS|$TL_OUT"
 # R4-03: the exceptions parse the command; naming an allowed tool does not whitelist the rest.
 write_directive silver-plan PLAN
-for evil in "rm -f x # scripts/resolve-instruction-ledger.sh" "echo scripts/resolve-instruction-ledger.sh; rm x" "silver-bullet invoke-skill silver && rm -f x" $'silver-bullet invoke-skill sb\ntouch pwned' "bash -c 'silver-bullet invoke-skill silver' ; touch pwned2" "scripts/resolve-instruction-ledger.sh list > out.txt"; do
+for evil in "rm -f x # scripts/resolve-instruction-ledger.sh" "echo scripts/resolve-instruction-ledger.sh; rm x" "silver-bullet invoke-skill silver && rm -f x" $'silver-bullet invoke-skill sb\ntouch pwned' "bash -c 'silver-bullet invoke-skill silver' ; touch pwned2" "$TL_REPO_ROOT/scripts/resolve-instruction-ledger.sh list > out.txt" "$TL_TMP/evil/silver-bullet invoke-skill silver" "scripts/resolve-instruction-ledger.sh list"; do
   tl_run_hook "$HOOK" "$(tool_json Bash "$evil")"
   assert_eq "parent Bash denied: ${evil//$'\n'/ }" deny "$(decision)"
 done
-for honest in "silver-bullet invoke-skill silver 2>/dev/null" "scripts/resolve-instruction-ledger.sh list 2>&1" "bash scripts/resolve-instruction-ledger.sh done 3" "git status 2>&1 | head" "bash -c 'silver-bullet invoke-skill silver'"; do
+for honest in "silver-bullet invoke-skill silver 2>/dev/null" "$TL_REPO_ROOT/scripts/resolve-instruction-ledger.sh list 2>&1" "bash $TL_REPO_ROOT/scripts/resolve-instruction-ledger.sh done 3" "git status 2>&1 | head" "bash -c 'silver-bullet invoke-skill silver'"; do
   tl_run_hook "$HOOK" "$(tool_json Bash "$honest")"
   assert_eq "parent Bash allowed: $honest" "0|" "$TL_STATUS|$TL_OUT"
 done
