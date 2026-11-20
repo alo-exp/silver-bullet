@@ -216,6 +216,11 @@ sb_session_epoch_rotate "$SD/session-start-time" "$SD" "$EC_PROJ" keep cx9
 assert_file_absent "a symlinked HEAD file is not written through" "$TL_TMP/head-victim"
 assert_file_absent "a symlinked id file is not written through" "$TL_TMP/sid-victim2"
 rm -f "$SD/session-start-head" "$SD/session-start-sid"
+# an epoch path that is a directory is left alone (mv would move the temp file into it)
+mkdir "$SD/ss-dir"
+sb_session_epoch_restamp "$SD/ss-dir" "$SD"
+assert_eq "a directory as the epoch file stays empty" 0 "$(find "$SD/ss-dir" | wc -l | tr -d ' ' | awk '{print $1-1}')"
+rmdir "$SD/ss-dir"
 # a symlinked epoch file is never written through
 rm -f "$SD/session-start-time"; ln -s "$TL_TMP/epoch-victim" "$SD/session-start-time"
 sb_session_epoch_restamp "$SD/session-start-time" "$SD"

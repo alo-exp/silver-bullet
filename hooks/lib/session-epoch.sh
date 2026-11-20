@@ -35,7 +35,7 @@ SB_SE_MAX=500
 # _sb_se_write FILE TEXT: replace FILE with TEXT through a temp file in its directory (never through a link)
 _sb_se_write() {
   local file="$1" tmp
-  [[ ! -L "$file" ]] || return 0
+  [[ ! -L "$file" && ! -d "$file" ]] || return 0
   tmp="$(mktemp "$file.XXXXXX" 2>/dev/null)" || return 0
   if printf '%s\n' "$2" >"$tmp" 2>/dev/null && mv -f -- "$tmp" "$file" 2>/dev/null; then return 0; fi
   rm -f -- "$tmp" 2>/dev/null
