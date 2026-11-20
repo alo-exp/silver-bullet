@@ -313,7 +313,7 @@ sb_session_reset_scoped_state() {
   # Per-session files keyed by the session id or its start epoch: the instruction ledgers, the outcomes
   # checklist (with its sha256 seal and seeded marker, removed together so a clean reset never reads as
   # tampering). The agent write trace (files-written.*) is deliberately kept: it is the evidence that source was
-  # written, and only the first record of a new session rotates it (hooks/lib/agent-writes.sh). find -delete unlinks a symlink itself and never follows it.
+  # written; session-epoch.sh rotates it with the epoch. find -delete unlinks a symlink itself and never follows it.
   sb_session_clear_session_files
   if [[ -f "$_lib_dir/graphify-gate.sh" ]]; then
     # shellcheck source=lib/graphify-gate.sh
@@ -443,6 +443,13 @@ if [[ "$sb_should_mutate" == true ]]; then
     if sb_orchestrator_is_worker_session 2>/dev/null; then
       _sb_preserve_worker_marker=true
     fi
+  fi
+  # A genuine new session gets a fresh epoch (and a clean write trace unless HEAD is unchanged); a worker
+  # start (#275) and resume/compact do not (hooks/lib/session-epoch.sh).
+  if [[ "$_sb_preserve_worker_marker" != true && -f "$_lib_dir/session-epoch.sh" ]]; then
+    # shellcheck source=lib/session-epoch.sh
+    source "$_lib_dir/session-epoch.sh"
+    sb_session_epoch_rotate "$session_start_file" "$SB_STATE_DIR" "$sb_project_root"
   fi
   if [[ "$_sb_preserve_worker_marker" != true ]]; then
     rm -f -- "${SB_STATE_DIR}/orchestrator-worker-active.json" 2>/dev/null || true

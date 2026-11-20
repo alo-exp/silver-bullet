@@ -123,6 +123,7 @@
         "branch-scope.sh",
         "trivial-bypass.sh",
         "nofollow-guard.sh",
+        "session-epoch.sh",
         "plugin-cache-guard.sh",
         "core-rules-integrity.sh",
         "capability-tier.sh",
