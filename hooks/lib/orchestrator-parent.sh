@@ -355,18 +355,30 @@ _sb_orch_parent_prefix_free() {
   return 0
 }
 
-# `bash <script> invoke-skill ...`: the script must be this plugin's own scripts/silver-bullet, not
-# a file the project or the agent put under that name. Direct and `bash -c` forms are unaffected.
-_sb_orch_parent_script_form_ok() {
-  local script plugin_script
-  script="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '
-    (.commands[0].argv // []) as $a
-    | if (["bash", "sh", "zsh", "dash", "ksh"] | index(($a[0] // "") | split("/") | last)) == null then empty
-      elif any($a[1:][]; test("^-[A-Za-z]*c[A-Za-z]*$")) then empty
-      else ([$a[1:][] | select(startswith("-") | not)][0] // empty) end' 2>/dev/null)"
-  [[ -n "$script" ]] || return 0
-  plugin_script="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/scripts/silver-bullet"
-  [[ "$(cd "$(dirname "$script")" 2>/dev/null && pwd)/$(basename "$script")" == "$plugin_script" ]]
+# One rule for the program a sanctioned parent command runs (R-G5 r2): a bare name is looked up on
+# PATH; any path containing a slash must resolve (directory realpath + file name) to this plugin's
+# own scripts/<name>. A script a project or an agent left under the same file name is refused,
+# whether it is run directly, as `bash <script>`, or inside `sh -c`. A script handed to a shell
+# is found relative to the working directory even when bare, so there the slash does not matter.
+_sb_orch_parent_is_plugin_script() { # PATH PLUGIN-SCRIPT-NAME
+  local plugin_root
+  plugin_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+  [[ "$(cd "$(dirname "$1")" 2>/dev/null && pwd -P)/$(basename "$1")" == "$plugin_root/scripts/$2" ]]
+}
+
+# _sb_orch_parent_program_ok ARGV_JSON PLUGIN-SCRIPT-NAME: the lone command's program, and every
+# script a shell in the analysed command line was handed, pass the rule above.
+_sb_orch_parent_program_ok() {
+  local program script
+  program="$(jq -r '.[0]' <<<"$1" 2>/dev/null)"
+  case "$program" in */*) _sb_orch_parent_is_plugin_script "$program" "$2" || return 1 ;; esac
+  while IFS= read -r script; do
+    _sb_orch_parent_is_plugin_script "$script" "$2" || return 1
+  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '
+    .commands[]? | (.argv // []) as $a
+    | select((["bash", "sh", "zsh", "dash", "ksh"] | index(($a[0] // "") | split("/") | last)) != null)
+    | select(any($a[1:][]; test("^-[A-Za-z]*c[A-Za-z]*$")) | not)
+    | ([$a[1:][] | select(startswith("-") | not)][0] // empty)' 2>/dev/null)
 }
 
 # Skill named by a lone "silver-bullet invoke-skill <skill>" call, else nothing (rc 1).
@@ -376,9 +388,9 @@ sb_orchestrator_extract_invoke_skill_adapter() {
   _sb_orch_parent_load_analysis "$command_str" || return 1
   [[ "$SB_TI_STATUS" == "ok" && -z "$SB_SA_WRITE_PATHS" ]] || return 1
   argv="$(_sb_orch_parent_lone_argv)" || return 1
-  jq -er '
-    if ((.[0] | split("/") | last) == "silver-bullet") and .[1] == "invoke-skill" and (.[2] // "") != ""
-    then .[2] else empty end' <<<"$argv" 2>/dev/null
+  jq -e '(.[0] | split("/") | last) == "silver-bullet" and .[1] == "invoke-skill" and (.[2] // "") != ""' <<<"$argv" >/dev/null 2>&1 || return 1
+  _sb_orch_parent_program_ok "$argv" silver-bullet || return 1
+  jq -r '.[2]' <<<"$argv"
 }
 
 # A delegate script (scripts/agent-<host>-delegate.sh, scripts/agent-<host>/invoke.sh) run as
@@ -409,10 +421,10 @@ sb_orchestrator_parent_resolve_ledger_bash_allowed() {
   argv="$(_sb_orch_parent_lone_argv)" || return 1
   _sb_orch_parent_prefix_free || return 1
   jq -e '
-    .[0] as $p
-    | ($p == "scripts/resolve-instruction-ledger.sh" or ($p | endswith("/scripts/resolve-instruction-ledger.sh")))
-      and ((.[1] // "list") | IN("list", "done", "deferred", "help", "--help", "-h"))
-    ' <<<"$argv" >/dev/null 2>&1
+    (.[0] | split("/") | last) == "resolve-instruction-ledger.sh"
+    and ((.[1] // "list") | IN("list", "done", "deferred", "help", "--help", "-h"))
+    ' <<<"$argv" >/dev/null 2>&1 || return 1
+  _sb_orch_parent_program_ok "$argv" resolve-instruction-ledger.sh
 }
 
 # Reason of the last sb_orchestrator_parent_bash_allowed denial that is not the plain
@@ -443,7 +455,7 @@ sb_orchestrator_parent_bash_allowed() {
   adapter_skill="$(sb_orchestrator_extract_invoke_skill_adapter "$command_str" 2>/dev/null || true)"
   if [[ -n "$adapter_skill" ]]; then
     # extract just analysed this command: the globals still describe it.
-    _sb_orch_parent_prefix_free && _sb_orch_parent_script_form_ok || return 1
+    _sb_orch_parent_prefix_free || return 1
     sb_orchestrator_parent_skill_allowed "$adapter_skill"
     return $?
   fi
