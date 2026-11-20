@@ -80,7 +80,8 @@ in_scope=false
 if [[ "${SB_TI_STATUS:-}" == "ok" ]]; then
   while IFS= read -r tree_path; do
     [[ "$tree_path" == "REPO" ]] && tree_path="$repo_root"
-    tree_path="$(sb_agent_delegation_normalize_path "$tree_path" "$repo_root" 2>/dev/null || printf '%s' "$tree_path")"
+    # A path that cannot be resolved (symlink loop) is treated as in scope, like sb_agent_delegation_path_in_scope.
+    tree_path="$(sb_agent_delegation_normalize_path "$tree_path" "$repo_root" 2>/dev/null)" || { in_scope=true; continue; }
     tree_path="${tree_path%/}"
     while IFS= read -r owned; do
       if owned="$(sb_agent_delegation_normalize_path "$owned" "$repo_root" 2>/dev/null)" \

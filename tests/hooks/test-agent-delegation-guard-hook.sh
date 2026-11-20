@@ -123,6 +123,10 @@ for deny in "git restore ." "git checkout ." "git checkout -- ." "git checkout o
   tl_run_hook "$HOOK" "$(bash_json "$deny")"
   assert_eq "delegation active, owned tree overwritten: $deny" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
 done
+ln -s loop "$PROJ/docs/loop"
+tl_run_hook "$HOOK" "$(bash_json "git -C docs/loop checkout .")"
+assert_eq "delegation active, -C directory that cannot be resolved (symlink loop): fail closed" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+rm -f "$PROJ/docs/loop"
 for allow in "git diff" "git log --oneline" "ls src" "grep -rn x src" "git checkout -b feature" "git switch -c feature" "git checkout -- docs/free.md" \
              "git restore docs/free.md" "cd docs && git checkout ." "git -C docs checkout ." "git -C /abs/elsewhere checkout ." "git add -A" "git commit -m wip" "git branch -a" \
              "git checkout" "git -C docs status" "cp docs/free.md docs/copy.md"; do
