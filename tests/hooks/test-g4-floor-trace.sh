@@ -163,7 +163,8 @@ git -C "$EC_PROJ" reset -q --soft ORIG_HEAD
 git -C "$EC_PROJ" commit -qam "forward" 2>/dev/null
 fresh_session
 assert_eq "a forward move (a commit on top) drops the trace" 0 "$(trace_count)"
-REPO_ID="$(cd "$EC_PROJ" && cd "$(git rev-parse --git-common-dir)" && pwd -P)"
+REPO_ID="$(_sb_se_repo "$EC_PROJ")"
+echo dirty >>"$EC_PROJ/src/a.js"
 printf '%s\ndeadbeef\n' "$REPO_ID" >"$SD/session-start-head"
 printf 'f%s/src/a.js\n' "$EC_PROJ" >"$(cur_trace)"
 fresh_session
@@ -185,8 +186,10 @@ assert_eq "a trace of another project is dropped" 0 "$(trace_count)"
 tl_run_stdin '{"hook_event_name":"Stop","session_id":"s3"}' bash -c 'cd "$1" && exec bash "$2"' _ "$OTHER" "$TL_REPO_ROOT/hooks/stop-check.sh"
 assert_not_contains "a chat-only Stop in the other project is not blocked by the first project's trace" "$TL_OUT" '"decision":"block"'
 # the same project keeps a `*` trace
-fresh_session; printf '*\n' >"$(cur_trace)"; fresh_session
-assert_eq "the same project keeps its trace" 1 "$(trace_count)"
+fresh_session; printf 'f%s/src/a.js\n' "$EC_PROJ" >"$(cur_trace)"; fresh_session
+assert_eq "the same project keeps a dirty source entry" 1 "$(trace_count)"
+printf '*\n' >"$(cur_trace)"; fresh_session
+assert_eq "a star entry is dropped on any rotation (a hand-run session-start loses a star-only trace)" 0 "$(trace_count)"
 
 # r7-02: a forward move without a commit keeps the agent's still-dirty entries that the move did not touch
 rm -f "$SD"/files-written.*
@@ -230,6 +233,24 @@ r=0; sb_session_epoch_collect "$TL_TMP/junk-epoch" "$SD" || r=$?
 assert_eq "a junk epoch is not collected" 0 "$r"
 rm -f "$SD"/files-written.*
 
+# r8: entries are matched as fixed strings (a `[` in a directory name, a glob entry), a helper that cannot run keeps
+# the trace whole, and the repository identity works with BSD stat and outside a repository
+fresh_session; rm -f "$SD"/files-written.*
+mkdir -p "$EC_PROJ/src/dir[x]" "$EC_PROJ/src/gl"; echo 1 >"$EC_PROJ/src/dir[x]/f.js"; echo 2 >"$EC_PROJ/src/gl/g.js"
+printf 'd%s/src/dir[x]\nf%s/src/gl/*.js\n*\nt%s/src/none\n' "$EC_PROJ" "$EC_PROJ" "$EC_PROJ" >"$(cur_trace)"
+fresh_session
+assert_eq "bracket directory and glob entries stay while dirty; star and clean tree entries go" "2" "$(grep -c . "$(cur_trace)")"
+printf 'f%s/src/a.js\n*\n' "$EC_PROJ" >"$(cur_trace)"
+tl_stub python3 'exit 1'; hash -r
+fresh_session
+rm -f "$TL_BIN/python3"; hash -r
+assert_eq "no working python3: the trace is kept whole" 2 "$(grep -c . "$(cur_trace)")"
+tl_stub stat 'if [[ "$1" == -c ]]; then exit 1; fi; echo 7:9'; hash -r
+assert_eq "BSD stat form is used when -c is not supported" "7:9" "$(_sb_se_repo "$EC_PROJ")"
+rm -f "$TL_BIN/stat"; hash -r
+assert_eq "no repository: no identity" "" "$(_sb_se_repo "$TL_TMP")"
+rm -rf "$EC_PROJ/src/dir[x]" "$EC_PROJ/src/gl"; rm -f "$SD"/files-written.*; fresh_session; rm -f "$SD"/files-written.*
+
 # r7-03: a host that sends no session id rotates on startup once the epoch is a day old
 sr2() { sb_session_epoch_should_rotate startup codex "" "$SD" "$SD/session-start-time" && echo rotate || echo keep; }
 printf '%s\n' "$(( $(date +%s) - 100 ))" >"$SD/session-start-time"
@@ -241,19 +262,22 @@ assert_eq "no session id, an unreadable epoch: keep" keep "$(sr2)"
 
 
 # r6-03: traces that are not under the old epoch (unknown, other epochs) are merged into the new one
+mkdir -p "$EC_PROJ/src"; for n in 1 2 3; do echo "m$n" >"$EC_PROJ/src/m$n.js"; done
 rm -f "$SD"/files-written.*
-printf 'f/x/one\nf/x/two\n' >"$SD/files-written.unknown"
-printf 'f/x/two\nf/x/three\n' >"$SD/files-written.123"
+printf 'f%s/src/m1.js\nf%s/src/m2.js\n' "$EC_PROJ" "$EC_PROJ" >"$SD/files-written.unknown"
+printf 'f%s/src/m2.js\nf%s/src/m3.js\n' "$EC_PROJ" "$EC_PROJ" >"$SD/files-written.123"
 rm -f "$SD/session-start-time"
 fresh_session
 assert_eq "an erased epoch: the traces end up in one file" 1 "$(trace_count)"
 assert_eq "...merged and de-duplicated" 3 "$(grep -c . "$(cur_trace)")"
-# the cap: more than 500 entries become 500 plus `*`
-rm -f "$SD"/files-written.*
-seq 1 600 | sed 's|^|f/y/|' >"$SD/files-written.1"
+# the cap: more than 500 entries become 500 (the star the cap adds is dropped by the rule)
+rm -f "$SD"/files-written.*; mkdir -p "$EC_PROJ/src/gen"
+for n in $(seq 1 600); do : >"$EC_PROJ/src/gen/f$n"; done
+seq 1 600 | sed "s|^|f$EC_PROJ/src/gen/f|" >"$SD/files-written.1"
 fresh_session
-assert_eq "the cap keeps 500 entries and a star" 501 "$(grep -c . "$(cur_trace)")"
-assert_eq "...ending in the star" '*' "$(tail -n 1 "$(cur_trace)")"
+assert_eq "the cap keeps 500 entries" 500 "$(grep -c . "$(cur_trace)")"
+assert_eq "...and no star" 0 "$(grep -c '^\*$' "$(cur_trace)")"
+rm -rf "$EC_PROJ/src/gen"
 # a planted link is never merged or followed
 rm -f "$SD"/files-written.*; printf 'victim\n' >"$TL_TMP/link-victim"; ln -s "$TL_TMP/link-victim" "$SD/files-written.77"
 printf 'f/z/a\n' >"$SD/files-written.88"
