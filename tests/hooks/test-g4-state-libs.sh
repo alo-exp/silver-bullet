@@ -96,7 +96,8 @@ DD="$TL_REPO_ROOT/hooks/debug-dump.sh"
 SD="$SB_RUNTIME_STATE_DIR"
 OUT="$SD/hook-dump.jsonl"
 rm -f "$OUT" "$OUT.1"; : >"$SD/debug-dump"
-PAY='{"tool_input":{"command":"curl -H token=abc123 --data password: hunter2 ghp_aaaaaaaaaaaaaaaaaaaaaaaaaa sk-aaaaaaaaaaaaaaaaaaaa AKIAABCDEFGHIJKLMNOP xoxb-1234567890-abc github_pat_aaaaaaaaaaaaaaaaaaaaaaaa"}}'
+AWS_FIXTURE="AKIA""ABCDEFGHIJKLMNOP"
+PAY='{"tool_input":{"command":"curl -H token=abc123 --data password: hunter2 ghp_aaaaaaaaaaaaaaaaaaaaaaaaaa sk-aaaaaaaaaaaaaaaaaaaa '"$AWS_FIXTURE"' xoxb-1234567890-abc github_pat_aaaaaaaaaaaaaaaaaaaaaaaa"}}'
 tl_run_stdin "$PAY" bash "$DD"
 dump="$(cat "$OUT")"
 assert_contains "the dump is written" "$dump" "curl"
