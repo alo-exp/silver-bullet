@@ -22,7 +22,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
 fi
 HOOK="$REPO_ROOT/hooks/phase-lock-release.sh"
-HELPER_SRC="$REPO_ROOT/.planning/scripts/phase-lock.sh"
+HELPER_SRC="$REPO_ROOT/scripts/phase-lock.sh"   # the hooks run the plugin's copy (R3-03)
 
 PASS=0
 FAIL=0
@@ -48,8 +48,6 @@ setup() {
   git config user.email t@t
   git config user.name t
   mkdir -p .planning/scripts
-  cp "$HELPER_SRC" .planning/scripts/phase-lock.sh
-  chmod +x .planning/scripts/phase-lock.sh
   export SB_PHASE_LOCK_FILE="$TMPDIR_TEST/.planning/.phase-locks.json"
   rm -f "$MANIFEST"
 }
@@ -89,8 +87,8 @@ teardown
 echo "--- T3: manifest with two entries → both released, manifest deleted ---"
 setup
 # Claim 099 + 098 using the current SB runtime
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 "$SB_RUNTIME_NAME" "test" >/dev/null 2>&1
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 098 "$SB_RUNTIME_NAME" "test" >/dev/null 2>&1
+SB_PHASE_LOCK_SESSION="test-$TEST_RUN_ID" bash "$HELPER_SRC" claim 099 "$SB_RUNTIME_NAME" "test" >/dev/null 2>&1
+SB_PHASE_LOCK_SESSION="test-$TEST_RUN_ID" bash "$HELPER_SRC" claim 098 "$SB_RUNTIME_NAME" "test" >/dev/null 2>&1
 printf '099\n098\n' > "$MANIFEST"
 printf '{"hook_event_name":"Stop","session_id":"test-%s"}' "$TEST_RUN_ID" \
   | bash "$HOOK" >/dev/null 2>&1
@@ -108,8 +106,8 @@ teardown
 # ── T4: non-owner does not abort the loop ──────────────────────────────────
 echo "--- T4: 099 owned by opencode, 098 by current runtime -> continues, 098 released, manifest deleted ---"
 setup
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 opencode "owned-by-opencode" >/dev/null 2>&1
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 098 "$SB_RUNTIME_NAME" "owned-by-runtime" >/dev/null 2>&1
+bash "$HELPER_SRC" claim 099 opencode "owned-by-opencode" >/dev/null 2>&1
+SB_PHASE_LOCK_SESSION="test-$TEST_RUN_ID" bash "$HELPER_SRC" claim 098 "$SB_RUNTIME_NAME" "owned-by-runtime" >/dev/null 2>&1
 printf '099\n098\n' > "$MANIFEST"
 out=$(printf '{"hook_event_name":"Stop","session_id":"test-%s"}' "$TEST_RUN_ID" \
   | bash "$HOOK" 2>&1)
@@ -128,7 +126,7 @@ fi
 [[ ! -f "$MANIFEST" ]] && ok "T4: manifest deleted (cleanup safety)" \
   || nope "T4: manifest cleanup" "still exists"
 # Cleanup opencode claim
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release 099 opencode >/dev/null 2>&1
+bash "$HELPER_SRC" release 099 opencode >/dev/null 2>&1
 teardown
 
 # ── Summary ─────────────────────────────────────────────────────────────────

@@ -4,7 +4,7 @@
 > Do not edit by hand: change those files, then run `python3 scripts/generate-hook-reference.py`.
 > `tests/docs/test-hook-reference.sh` fails when this file is stale.
 
-`hooks/hooks.json` registers **98 hook commands** backed by **63 scripts** across 7 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
+`hooks/hooks.json` registers **99 hook commands** backed by **63 scripts** across 7 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
 
 ## How hooks are wired
 
@@ -27,6 +27,7 @@ Session startup, `/clear` and compaction (`startup|clear|compact`).
 | 1 | `startup\|clear\|compact` | `session-start` | 15 |
 | 2 | `startup\|clear\|compact` | `spec-session-record.sh` | 10 |
 | 3 | `startup\|clear\|compact` | `rfl-quota-retry-due.sh` | 10 |
+| 4 | `resume` | `session-start` | 15 |
 
 ### PreToolUse
 
@@ -192,9 +193,9 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `orchestrator-directive-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch`; PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Orchestrator parent mode: blocks edits, shell commands and Task spawns until the skill named by the pending directive has been invoked. |
 | `outcomes-check.sh` | Stop `.*`; SubagentStop `.*`; UserPromptSubmit `.*` | Tracks the per-prompt outcome checklist; at Stop, blocks while outcomes are incomplete. |
 | `phase-archive.sh` | PreToolUse `Bash\|Skill\|exec_command\|mcp__.*` | Archives `.planning/phases/` directories before a real `phases clear` invocation (or a shell delete of the whole phases directory) runs; never skips new phases when an earlier archive exists. Fails closed: if archiving fails, the clear is denied. |
-| `phase-lock-claim.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | Claims the `.planning/phases/<NNN>/` lock (via `.planning/scripts/phase-lock.sh`) before a session edits a phase's files. |
+| `phase-lock-claim.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | Claims the `.planning/phases/<NNN>/` lock (via `scripts/phase-lock.sh` (plugin root)) before a session edits a phase's files. |
 | `phase-lock-heartbeat.sh` | PostToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Refreshes heartbeats for the phase locks this session holds (throttled to once per 5 minutes per phase). |
-| `phase-lock-release.sh` | Stop `.*`; SubagentStop `.*` | Releases this session's phase locks at Stop/SubagentStop. Never blocks. |
+| `phase-lock-release.sh` | Stop `.*`; SubagentStop `.*` | Releases this session's phase locks at Stop. A SubagentStop that carries an agent_id releases nothing, so a finishing subagent never drops its parent session's locks. Never blocks. |
 | `planning-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save\|insert\|copy\|upload\|apply\|_mv\|mv_\|_put\|put_\|update\|modify\|set_\|touch\|truncate\|unlink\|_rm\|rm_)[A-Za-z0-9_]*` | Blocks direct edits to SB-managed planning artifacts (`.planning/ROADMAP.md`, `STATE.md`, phase `*-PLAN.md`/`*-SUMMARY.md`, ...) by the file tools (and MCP file-write tools), every apply_patch path and shell writes (a copy, extract or move over a directory that holds them included; unreadable commands are refused); they change only through the owning SB skill. Overrides are the user's: `planning-edit-override` is created from a terminal, and `roadmap-edit-override` works only while `sb:phase` or `sb:undo` is recorded. |
 | `pr-traceability.sh` | PostToolUse `Bash\|exec_command` | After `gh pr create`, appends the spec traceability block to the PR body and records the PR URL in `SPEC.md`. |
 | `prompt-reminder.sh` | UserPromptSubmit `.*` | Injects a compact compliance reminder (missing skills, active workflow position, opted-in tool notes) before each prompt. |
@@ -214,7 +215,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `rtk-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.rtk`): checks RTK install, version and host hook wiring (it does not rewrite commands itself). |
 | `semantic-compress.sh` | PostToolUse `Skill` | After phase skills, assembles a ranked context summary for the current phase goal (`semantic_compression` config). |
 | `session-log-init.sh` | PostToolUse `Bash\|exec_command` | When the session mode is written, creates the `docs/sessions/` log skeleton; in autonomous mode starts the timeout sentinel. |
-| `session-start` | SessionStart `startup\|clear\|compact` | Injects the core rules, resets branch- and worktree-scoped state, clears the trivial marker and stale gate files, and probes prerequisites (warns when `jq` is missing). |
+| `session-start` | SessionStart `startup\|clear\|compact`; SessionStart `resume` | Injects the core rules, resets branch- and worktree-scoped state, clears the trivial marker and stale gate files, and probes prerequisites (warns when `jq` is missing). |
 | `site-chrome-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Blocks inline `<nav>`/`<footer>` in site HTML (canonical fragments live in `site/_chrome/`) and unmarked font edits in `site/tokens.css`. |
 | `site-preview-preflight.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Before `site/**` edits, checks that the local site preview server is healthy. |
 | `site-regression-gate.sh` | PreToolUse `Bash\|exec_command`; Stop `.*`; SubagentStop `.*` | Runs the site regression tests at Stop and before `git push` when `site/**` was touched in the session. |
@@ -255,12 +256,12 @@ These files are not registered in `hooks/hooks.json`.
 Hooks source these helpers; none of them is registered as a hook. Each file's header comment describes it.
 
 - **Runtime paths and hook plumbing:** `runtime-paths.sh`, `hook-bootstrap.sh`, `hook-output.sh`, `hook-subproc-timeout.sh`, `hook-audit.sh`, `jq-gate.sh`, `tool-input.sh`, `tool-input/`, `shell-analysis.sh`, `path-canonical.sh`, `stop-coalesce.sh`, `ups-coalesce.sh`, `rtk-compat.sh`, `cert-bypass.sh`
-- **Project activation, state and safety:** `sb-project-gate.sh`, `project-active.sh`, `branch-scope.sh`, `trivial-bypass.sh`, `nofollow-guard.sh`, `plugin-cache-guard.sh`, `core-rules-integrity.sh`, `capability-tier.sh`, `enforcement-tier-gate.sh`, `prerequisite-probe.sh`, `check-sb-update.sh`, `session-ledger.sh`, `phase-path.sh`
+- **Project activation, state and safety:** `sb-project-gate.sh`, `project-active.sh`, `branch-scope.sh`, `trivial-bypass.sh`, `nofollow-guard.sh`, `session-epoch.sh`, `plugin-cache-guard.sh`, `core-rules-integrity.sh`, `capability-tier.sh`, `enforcement-tier-gate.sh`, `prerequisite-probe.sh`, `check-sb-update.sh`, `session-ledger.sh`, `phase-path.sh`
 - **Required skills and workflow tracking:** `required-skills.sh`, `skill-discovery.sh`, `workflow-utils.sh`, `quality-gates-mode.sh`, `prompt-classifier.sh`, `outcomes-gate.sh`, `instruction-ledger.sh`
 - **Delivery gates:** `completion-audit/`, `artifact-substance-gate.sh`, `doc-scheme-gate.sh`, `evidence-schema-gate.sh`, `enterprise-policy.sh`, `github-run-list.sh`, `e2e-matrix-routing.sh`
 - **Orchestrator, delegation and review ladder:** `orchestrator-directive.sh`, `orchestrator-event-log.sh`, `orchestrator-parent.sh`, `orchestrator-scheduler.sh`, `orchestrator-skill-atom.sh`, `orchestrator-state.sh`, `agent-delegation-state.sh`, `review-fix-ladder-state.sh`, `rfl-policy-c-assert.sh`
 - **Opt-in recommended tools (five-tool stack):** `recommended-tools.sh`, `recommended-tools-registry.sh`, `graphify-gate.sh`, `agentmemory-gate.sh`, `alumnium-gate.sh`, `context-mode-gate.sh`, `context-mode-read-deny.sh`, `leanctx-gate.sh`, `rtk-gate.sh`, `token-compression-tools-gate.sh`, `stack-compression-coordinator.sh`, `stack-optimizer.sh`, `graphify-am-global.sh`, `rtk-cm-global.sh`
 - **Site sessions:** `site-session.sh`
-- **Other:** `agent-writes.sh`, `contract-unlock.sh`, `integrity-anchor.sh`, `integrity.sh`, `opt-in-gate.sh`, `plain-read-only.sh`, `planning-floor.sh`, `session-key.sh`, `state-seal.sh`, `tool-path-fields.sh`, `user-consent.sh`
+- **Other:** `agent-writes.sh`, `contract-unlock.sh`, `integrity-anchor.sh`, `integrity.sh`, `opt-in-gate.sh`, `plain-read-only.sh`, `planning-floor.sh`, `session-key.sh`, `skill-gates.sh`, `state-seal.sh`, `tool-path-fields.sh`, `user-consent.sh`
 
 `hooks/lib/completion-audit/` holds the modules `completion-audit.sh` sources (command classification, planning tier, deploy tier, change class, gate runners, state helpers). `hooks/lib/tool-input/` holds the Python helpers `tool-input.sh` calls to parse tool payloads (command strings, write targets, patch paths, RTK unwrapping); they share `shell_analysis.py`, the shell-command analyzer that `shell-analysis.sh` loads with `sb_tool_input_load` (delivery actions and tier, read-only verdict, write targets, opaque and unseen parts); completion-audit loads it once per call, the other gates start it through the accessors until they adopt the load.

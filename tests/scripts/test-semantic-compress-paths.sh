@@ -48,18 +48,24 @@ assert_eq "jq missing: no output" "" "$TL_OUT"
 # --- stack-compression coordinator and runtime libs ---------------------------------------
 mkproj
 bigfile "$P/src/auth.sh" authentication 30
-mkdir -p "$P/hooks/lib"
+# The libraries come from the plugin tree beside the script (SCRIPTS_DIR_OVERRIDE here), never
+# from the opened project (R3-03): stage a plugin tree and plant a hostile copy in the project.
+PLUG="$TL_TMP/plug"; mkdir -p "$PLUG/scripts" "$PLUG/hooks/lib" "$P/hooks/lib"
+cp "$SC" "$TL_REPO_ROOT/scripts/extract-phase-goal.sh" "$TL_REPO_ROOT/scripts/tfidf-rank.sh" "$PLUG/scripts/"
 for lib in runtime-paths recommended-tools; do
-  printf 'echo %s >>"%s/sourced.log"\n' "$lib" "$TL_TMP" >"$P/hooks/lib/$lib.sh"
+  printf 'echo %s >>"%s/sourced.log"\n' "$lib" "$TL_TMP" >"$PLUG/hooks/lib/$lib.sh"
+  printf 'echo PROJECT-%s >>"%s/sourced.log"\n' "$lib" "$TL_TMP" >"$P/hooks/lib/$lib.sh"
 done
-printf 'echo coordinator >>"%s/sourced.log"\nsb_stack_coordinator_needed() { return 0; }\n' "$TL_TMP" >"$P/hooks/lib/stack-compression-coordinator.sh"
+printf 'echo coordinator >>"%s/sourced.log"\nsb_stack_coordinator_needed() { return 0; }\n' "$TL_TMP" >"$PLUG/hooks/lib/stack-compression-coordinator.sh"
+printf 'echo PROJECT-coordinator >>"%s/sourced.log"\nsb_stack_coordinator_needed() { return 1; }\n' "$TL_TMP" >"$P/hooks/lib/stack-compression-coordinator.sh"
 : >"$TL_TMP/sourced.log"
-run
+SCRIPTS_DIR_OVERRIDE="$PLUG/scripts" run
 assert_eq "coordinator owns compression: exits 0" 0 "$TL_STATUS"
 assert_eq "coordinator owns compression: no output" "" "$TL_OUT"
-assert_eq "all three libraries sourced in order" $'runtime-paths\nrecommended-tools\ncoordinator' "$(cat "$TL_TMP/sourced.log")"
-printf 'sb_stack_coordinator_needed() { return 1; }\n' >"$P/hooks/lib/stack-compression-coordinator.sh"
-run
+assert_eq "plugin libraries sourced in order, project copies never" $'runtime-paths\nrecommended-tools\ncoordinator' "$(cat "$TL_TMP/sourced.log")"
+rm -rf "$P/hooks"
+printf 'sb_stack_coordinator_needed() { return 1; }\n' >"$PLUG/hooks/lib/stack-compression-coordinator.sh"
+SCRIPTS_DIR_OVERRIDE="$PLUG/scripts" run
 assert_contains "coordinator not needed: compression runs" "$TL_OUT" "additionalContext"
 
 # --- exclude pattern handling ---------------------------------------------------------------
@@ -141,11 +147,10 @@ assert_eq "goal empty and no planning files: silent" "" "$TL_OUT"
 # --- file discovery -----------------------------------------------------------------------------------
 mkproj
 echo "authentication helper" >"$P/src/ok.sh"
-tl_stub file 'exit 1'
+printf '\x00\x01binary' >"$P/src/blob.sh"
 run
-assert_eq "file(1) failing -> nothing is treated as text -> no output" "" "$TL_OUT"
-assert_eq "file(1) failing -> exits 0" 0 "$TL_STATUS"
-rm -f "$TL_BIN/file"
+assert_contains "binary files are skipped, text kept" "$(ctx)" "src/ok.sh"
+assert_not_contains "binary file not injected" "$(ctx)" "blob.sh"
 # names containing newlines produce blank find lines, which are skipped
 mkproj
 echo "authentication helper" >"$P/src/ok.sh"
@@ -312,11 +317,9 @@ assert_contains "falls back to the first-30-lines block" "$(ctx)" "### src/auth.
 
 # file(1) failing with only docs present
 mkproj
-echo "authentication doc" >"$P/docs/only.md"
-tl_stub file 'exit 1'
+printf '\x00\x01binary' >"$P/docs/only.md"
 run
-assert_eq "file(1) failing on docs: nothing is text" "" "$TL_OUT"
-rm -f "$TL_BIN/file"
+assert_eq "binary-only docs: nothing is text" "" "$TL_OUT"
 
 # listing docs fails -> treated as no docs, sources still used
 mkproj

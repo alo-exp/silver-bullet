@@ -17,13 +17,13 @@
   ]
  },
  "counts": {
-  "X": 116,
+  "X": 117,
   "A": 22
  },
  "rows": [
   {
    "file": "hooks/compliance-status.sh",
-   "line": 219,
+   "line": 244,
    "kind": "state",
    "snippet": "state_contents=$(cat \"$state_file\")",
    "record": "X",
@@ -41,7 +41,15 @@
    "file": "hooks/flow-advance.sh",
    "line": 76,
    "kind": "config",
-   "snippet": "if [[ -f \"$repo_root/.silver-bullet.json\" ]] && jq '.project.active_workflow = \"full-dev-cycle\"' \"$repo_root/.silver-bullet.json\" >\"$tmp\" 2>/dev/null; then",
+   "snippet": "if [[ -f \"$repo_root/.silver-bullet.json\" ]]; then",
+   "record": "X",
+   "reason": "writes the one key (.project.active_workflow) in the live file after the RECORDED config said devops-cycle; the record changes by that key only"
+  },
+  {
+   "file": "hooks/flow-advance.sh",
+   "line": 77,
+   "kind": "config",
+   "snippet": "updated=\"$(jq '.project.active_workflow = \"full-dev-cycle\"' \"$repo_root/.silver-bullet.json\" 2>/dev/null || true)\"",
    "record": "X",
    "reason": "writes the one key (.project.active_workflow) in the live file after the RECORDED config said devops-cycle; the record changes by that key only"
   },
@@ -158,14 +166,6 @@
    "reason": "the tier is min(configured, probed): a live value can only lower it; excluded from the record (hooks keep it)"
   },
   {
-   "file": "hooks/lib/enforcement-tier-gate.sh",
-   "line": 48,
-   "kind": "config",
-   "snippet": "updated=\"$(jq --argjson t \"$tier\" '.sb_enforcement_tier = $t' \"$config_file\" 2>/dev/null || true)\"",
-   "record": "X",
-   "reason": "the tier is min(configured, probed): a live value can only lower it; excluded from the record (hooks keep it)"
-  },
-  {
    "file": "hooks/lib/enterprise-policy.sh",
    "line": 13,
    "kind": "config",
@@ -263,7 +263,7 @@
   },
   {
    "file": "hooks/lib/prerequisite-probe.sh",
-   "line": 39,
+   "line": 38,
    "kind": "config",
    "snippet": "if [[ ! -f \"$repo_root/.silver-bullet.json\" || ! -f \"$repo_root/silver-bullet.md\" ]]; then",
    "record": "X",
@@ -271,7 +271,7 @@
   },
   {
    "file": "hooks/lib/prerequisite-probe.sh",
-   "line": 69,
+   "line": 68,
    "kind": "config",
    "snippet": "if [[ ! -f \"$repo_root/.silver-bullet.json\" || ! -f \"$repo_root/silver-bullet.md\" ]]; then",
    "record": "X",
@@ -351,7 +351,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 265,
+   "line": 280,
    "kind": "config",
    "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]] && [[ -f \"$search_dir/silver-bullet.md\" ]]; then",
    "record": "A",
@@ -359,7 +359,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 266,
+   "line": 281,
    "kind": "config",
    "snippet": "config_file=\"$search_dir/.silver-bullet.json\"",
    "record": "A",
@@ -367,7 +367,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 289,
+   "line": 304,
    "kind": "config",
    "snippet": "STATE_FILE=$(jq -r '.state.state_file // \"\"' \"$config_file\")",
    "record": "A",
@@ -375,7 +375,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 318,
+   "line": 333,
    "kind": "config",
    "snippet": "custom_tracked=$(jq -r '(.skills.all_tracked // []) | join(\" \")' \"$config_file\")",
    "record": "A",
@@ -383,7 +383,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 394,
+   "line": 409,
    "kind": "state",
    "snippet": "if ! grep -Fqx -- \"$skill\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "A",
@@ -391,7 +391,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 409,
+   "line": 424,
    "kind": "state",
    "snippet": "if ! grep -Fqx -- \"$mode_marker\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "A",
@@ -399,7 +399,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 423,
+   "line": 438,
    "kind": "state",
    "snippet": "if ! grep -Fqx -- \"$mode_marker\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "A",
@@ -407,7 +407,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 450,
+   "line": 465,
    "kind": "state",
    "snippet": "[[ -f \"$STATE_FILE\" ]] && state_contents=\"$(cat \"$STATE_FILE\" 2>/dev/null || true)\"",
    "record": "A",
@@ -431,7 +431,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 172,
+   "line": 174,
    "kind": "config",
    "snippet": "if [[ -n \"$_rt_hb_script\" && -f \"${sb_project_root}/.silver-bullet.json\" ]]; then",
    "record": "A",
@@ -439,7 +439,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 173,
+   "line": 175,
    "kind": "config",
    "snippet": "_sb_initiated=\"$(jq -r '.sb_initiated // false' \"${sb_project_root}/.silver-bullet.json\" 2>/dev/null || echo false)\"",
    "record": "A",
@@ -447,7 +447,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 373,
+   "line": 404,
    "kind": "config",
    "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]]; then",
    "record": "A",
@@ -455,7 +455,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 374,
+   "line": 405,
    "kind": "config",
    "snippet": "cfg_trivial=$(jq -r '.state.trivial_file // \"\"' \"$search_dir/.silver-bullet.json\" 2>/dev/null || true)",
    "record": "A",
@@ -590,6 +590,14 @@
    "reason": "user-run or skill-run script, not a hook gate"
   },
   {
+   "file": "scripts/phase-lock.sh",
+   "line": 129,
+   "kind": "config",
+   "snippet": "if [[ -n \"${REPO_ROOT}\" ]] && [[ -f \"${REPO_ROOT}/.silver-bullet.json\" ]]; then",
+   "record": "X",
+   "reason": "phase-lock coordination (run by phase-lock-claim.sh): the ttl and runtime tags are validated and only compared; not an enforcement decision"
+  },
+  {
    "file": "scripts/pre-release-gate.sh",
    "line": 52,
    "kind": "config",
@@ -689,7 +697,7 @@
    "file": "scripts/sb-doctor.sh",
    "line": 706,
    "kind": "md",
-   "snippet": "grep -q \"^## ${d7_sec}\\\\. \" \"${PROJ_ROOT}/silver-bullet.md\" 2>/dev/null || d7_missing=\"${d7_missing:+${d7_missing}, }\u00a7${d7_sec}\"",
+   "snippet": "grep -q \"^## ${d7_sec}\\\\. \" \"${PROJ_ROOT}/silver-bullet.md\" 2>/dev/null || d7_missing=\"${d7_missing:+${d7_missing}, }§${d7_sec}\"",
    "record": "X",
    "reason": "user-run or skill-run script, not a hook gate"
   },
@@ -703,7 +711,7 @@
   },
   {
    "file": "scripts/sb-migrate-orchestrator-parent.sh",
-   "line": 11,
+   "line": 13,
    "kind": "config",
    "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]] && [[ -f \"$search_dir/silver-bullet.md\" ]]; then",
    "record": "X",
@@ -711,7 +719,7 @@
   },
   {
    "file": "scripts/sb-migrate-orchestrator-parent.sh",
-   "line": 12,
+   "line": 14,
    "kind": "config",
    "snippet": "config_file=\"$search_dir/.silver-bullet.json\"",
    "record": "X",
@@ -719,7 +727,7 @@
   },
   {
    "file": "scripts/sb-migrate-orchestrator-parent.sh",
-   "line": 29,
+   "line": 31,
    "kind": "config",
    "snippet": "mode=\"$(jq -r '.orchestrator_mode // \"absent\"' \"$config_file\")\"",
    "record": "X",
@@ -727,9 +735,9 @@
   },
   {
    "file": "scripts/sb-migrate-orchestrator-parent.sh",
-   "line": 32,
+   "line": 33,
    "kind": "config",
-   "snippet": "jq '.orchestrator_mode = \"parent\"' \"$config_file\" >\"$tmp\" && mv \"$tmp\" \"$config_file\"",
+   "snippet": "updated=\"$(jq '.orchestrator_mode = \"parent\"' \"$config_file\")\"",
    "record": "X",
    "reason": "user-run or skill-run script, not a hook gate"
   },
@@ -913,7 +921,7 @@
    "file": "skills/silver-create-release/SKILL.md",
    "line": 34,
    "kind": "config",
-   "snippet": "- `jq` (read `.silver-bullet.json` config \u2014 verify_commands only)",
+   "snippet": "- `jq` (read `.silver-bullet.json` config — verify_commands only)",
    "record": "X",
    "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
   },

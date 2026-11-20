@@ -15,6 +15,10 @@ for s in sb-migrate-config sb-migrate-project sb-migrate-orchestrator-parent; do
 cp "$R/templates/silver-bullet.config.json.default" "$PL/templates/"
 cp "$R/templates/workflows/full-dev-cycle.md" "$PL/templates/workflows/"   # devops-cycle.md deliberately absent
 printf '#!/usr/bin/env bash\necho workflows-helper\n' >"$PL/scripts/workflows.sh"
+# the scripts source the plugin's atomic-write helper from hooks/lib
+mkdir -p "$PL/hooks/lib"
+ln -s "$R/hooks/lib/nofollow-guard.sh" "$PL/hooks/lib/nofollow-guard.sh"
+ln -s "$R/hooks/lib/runtime-paths.sh" "$PL/hooks/lib/runtime-paths.sh"
 echo '{"version":"9.9.9"}' >"$PL/package.json"
 
 # ---------------- sb-migrate-config.sh ----------------
@@ -62,7 +66,8 @@ assert_eq "merge: project name kept" acme "$(jq -r .project.name "$M")"
 assert_eq "merge: project src_pattern kept" "/lib/" "$(jq -r .project.src_pattern "$M")"
 assert_eq "merge: template project key filled" "full-dev-cycle" "$(jq -r .project.active_workflow "$M")"
 assert_eq "merge: custom required_planning unioned" true "$(jq '.skills.required_planning | index("zz-custom") != null and index("silver-plan") != null' "$M")"
-assert_eq "merge: union has no duplicates" "$(jq -c '.skills.required_planning | unique' "$M")" "$(jq -c .skills.required_planning "$M")"
+assert_eq "merge: union has no duplicates" "$(jq '.skills.required_planning | length' "$M")" "$(jq '.skills.required_planning | unique | length' "$M")"
+assert_eq "merge: template order kept, project extras appended (R3-22)" '["silver-quality-gates","silver-context","silver-plan","zz-custom"]' "$(jq -c .skills.required_planning "$M")"
 assert_eq "merge: forbidden unioned" true "$(jq '.skills.forbidden | index("bad-skill") != null' "$M")"
 assert_eq "merge: custom hook kept" true "$(jq -r .hooks.custom_hook "$M")"
 assert_eq "merge: legacy tracker -> local" local "$(jq -r .issue_tracker "$M")"
@@ -125,13 +130,18 @@ assert_contains "project: creates gitignore" "$TL_OUT" "Created .gitignore with 
 assert_contains "project: completion" "$TL_OUT" "Project surface migration complete for $W"
 assert_eq "project: helper copied+executable" workflows-helper "$("$W/scripts/workflows.sh")"
 assert_file_exists "project: archive dir" "$W/.planning/workflows/.archive"
+assert_contains "project: ignores the phase-lock files" "$TL_OUT" "Added .planning/.phase-locks.json* to .gitignore"
 assert_eq "project: gitignore exact" "# Composed-workflow tracker — local runtime state (Silver Bullet)
-.planning/workflows/" "$(cat "$W/.gitignore")"
+.planning/workflows/
+
+# Phase-lock runtime state — local, never committed (Silver Bullet)
+.planning/.phase-locks.json*" "$(cat "$W/.gitignore")"
 assert_eq "project: config migrated" parent "$(jq -r .orchestrator_mode "$W/.silver-bullet.json")"
 tl_run bash "$PRJ" "$W"
 assert_contains "project: helper already present" "$TL_OUT" "scripts/workflows.sh already present"
 assert_not_contains "project: no reinstall of docs" "$TL_OUT" "Installed docs/workflows"
 assert_not_contains "project: gitignore untouched when marker present" "$TL_OUT" "Added"
+assert_eq "project: gitignore not duplicated on a re-run" 1 "$(grep -c 'phase-locks' "$W/.gitignore")"
 # gitignore exists without the marker -> appended
 printf 'node_modules\n' >"$W/.gitignore"
 tl_run bash "$PRJ" "$W"
@@ -139,7 +149,22 @@ assert_contains "project: appends marker" "$TL_OUT" "Added .planning/workflows/ 
 assert_eq "project: appended gitignore exact" "node_modules
 
 # Composed-workflow tracker — local runtime state (Silver Bullet)
-.planning/workflows/" "$(cat "$W/.gitignore")"
+.planning/workflows/
+
+# Phase-lock runtime state — local, never committed (Silver Bullet)
+.planning/.phase-locks.json*" "$(cat "$W/.gitignore")"
+
+# a symlinked .gitignore is never written through (both blocks), whether it dangles or not
+printf 'mine\n' >"$TL_TMP/gi-victim"
+rm -f "$W/.gitignore"; ln -s "$TL_TMP/gi-victim" "$W/.gitignore"
+tl_run bash "$PRJ" "$W"
+assert_eq "project: symlinked gitignore: still completes" 0 "$TL_STATUS"
+assert_eq "project: symlinked gitignore: the target is untouched" "mine" "$(cat "$TL_TMP/gi-victim")"
+assert_contains "project: symlinked gitignore: skipped with a note" "$TL_OUT" ".gitignore is a symlink"
+rm -f "$W/.gitignore"; ln -s "$TL_TMP/gi-dangling" "$W/.gitignore"
+tl_run bash "$PRJ" "$W"
+assert_file_absent "project: dangling gitignore symlink: nothing created through it" "$TL_TMP/gi-dangling"
+rm -f "$W/.gitignore"
 
 # ---------------- extract-phase-goal.sh ----------------
 EPG="$R/scripts/extract-phase-goal.sh"

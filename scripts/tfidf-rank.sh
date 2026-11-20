@@ -12,6 +12,8 @@ trap 'exit 0' ERR
 QUERY="${1:-}"
 CHUNK_LINES=40                                 # force-split interval when no blank line found
 MAX_CHUNK_BYTES="${SB_CHUNK_BYTES:-1024}"      # passed by semantic-compress.sh; default matches spec
+# Used in arithmetic below: a non-number would be evaluated as an expression (R3-04).
+[[ "$MAX_CHUNK_BYTES" =~ ^[0-9]{1,9}$ ]] || MAX_CHUNK_BYTES=1024
 
 # Read file paths from stdin (bash 3.2 compatible — no mapfile)
 FILES=()
