@@ -66,7 +66,7 @@ git -C "$EC_PROJ" commit -qam "agent work" 2>/dev/null
 printf '%s\n' "$((e1 - 90000))" >"$SD/session-start-time"
 mv "$SD/files-written.$e1" "$SD/files-written.$((e1 - 90000))"
 echo user >>"$EC_PROJ/src/a.js"
-printf 'checklist\n' >"$TL_TMP/checklist.md"; touch -d '@'"$((e1 - 80000))" "$TL_TMP/checklist.md"
+printf 'checklist\n' >"$TL_TMP/checklist.md"; python3 -c 'import os,sys; t=int(sys.argv[1]); os.utime(sys.argv[2],(t,t))' "$((e1 - 80000))" "$TL_TMP/checklist.md"
 fresh_session
 # the doc-scheme gate (doc-scheme-gate.sh) flags a checklist older than the session epoch as not updated this session
 assert_eq "a checklist from the earlier session is older than the new epoch" 1 "$(( $(stat -c %Y "$TL_TMP/checklist.md" 2>/dev/null || stat -f %m "$TL_TMP/checklist.md") < $(cat "$SD/session-start-time") ))"
@@ -110,6 +110,8 @@ unset SENTINEL_SLEEP_OVERRIDE
 # ---- r6: the helper rules, HEAD that moves without a commit, stray and concurrent traces, the real doc gate ----
 # shellcheck source=../../hooks/lib/session-epoch.sh
 source "$TL_REPO_ROOT/hooks/lib/session-epoch.sh"
+# BSD/GNU-neutral mtime setter
+settime() { python3 -c 'import os,sys; t=int(sys.argv[1]); [os.utime(f,(t,t)) for f in sys.argv[2:]]' "$@"; }
 trace_count() { find "$SD" -maxdepth 1 -name 'files-written.*' | wc -l | tr -d ' '; }
 cur_trace() { printf '%s/files-written.%s' "$SD" "$(cat "$SD/session-start-time")"; }
 
@@ -161,10 +163,60 @@ git -C "$EC_PROJ" reset -q --soft ORIG_HEAD
 git -C "$EC_PROJ" commit -qam "forward" 2>/dev/null
 fresh_session
 assert_eq "a forward move (a commit on top) drops the trace" 0 "$(trace_count)"
-printf 'deadbeef\n' >"$SD/session-start-head"
+REPO_ID="$(cd "$EC_PROJ" && cd "$(git rev-parse --git-common-dir)" && pwd -P)"
+printf '%s\ndeadbeef\n' "$REPO_ID" >"$SD/session-start-head"
 printf 'f%s/src/a.js\n' "$EC_PROJ" >"$(cur_trace)"
 fresh_session
-assert_eq "an unreadable old HEAD keeps the trace" 1 "$(trace_count)"
+assert_eq "an unreadable old HEAD of this repository keeps the trace" 1 "$(trace_count)"
+printf 'deadbeef\n' >"$SD/session-start-head"
+fresh_session
+assert_eq "a record without a repository whose HEAD is not in this one is foreign: dropped" 0 "$(trace_count)"
+
+# r7-01: a trace recorded in another project says nothing about this one (a `*` entry would block Stop anywhere)
+OTHER="$TL_TMP/other-proj"; mkdir -p "$OTHER/src"; git -C "$OTHER" init -q -b main; git -C "$OTHER" config user.email a@b; git -C "$OTHER" config user.name a
+printf '# sb\n' >"$OTHER/silver-bullet.md"; cp "$EC_PROJ/.silver-bullet.json" "$OTHER/.silver-bullet.json"
+printf '%s\n' '.silver-bullet.json' 'silver-bullet.md' >>"$OTHER/.git/info/exclude"
+echo x >"$OTHER/src/a.js"; git -C "$OTHER" add -A; git -C "$OTHER" commit -qm init
+fresh_session_in() { tl_run_stdin '{"hook_event_name":"SessionStart","source":"clear","session_id":"s3"}' bash -c 'cd "$1" && exec bash "$2"' _ "$1" "$TL_REPO_ROOT/hooks/session-start"; }
+fresh_session; printf '*\n' >"$(cur_trace)"
+echo user >>"$OTHER/src/a.js"
+fresh_session_in "$OTHER"
+assert_eq "a trace of another project is dropped" 0 "$(trace_count)"
+tl_run_stdin '{"hook_event_name":"Stop","session_id":"s3"}' bash -c 'cd "$1" && exec bash "$2"' _ "$OTHER" "$TL_REPO_ROOT/hooks/stop-check.sh"
+assert_not_contains "a chat-only Stop in the other project is not blocked by the first project's trace" "$TL_OUT" '"decision":"block"'
+# the same project keeps a `*` trace
+fresh_session; printf '*\n' >"$(cur_trace)"; fresh_session
+assert_eq "the same project keeps its trace" 1 "$(trace_count)"
+
+# r7-02: a forward move without a commit keeps the agent's still-dirty entries that the move did not touch
+rm -f "$SD"/files-written.*
+git -C "$EC_PROJ" checkout -q "$MAIN"; git -C "$EC_PROJ" checkout -q -b ahead
+echo c >"$EC_PROJ/src/c.js"; git -C "$EC_PROJ" add src/c.js; git -C "$EC_PROJ" commit -qm "ahead" 2>/dev/null
+git -C "$EC_PROJ" checkout -q "$MAIN"
+fresh_session
+echo agent-edit >>"$EC_PROJ/src/a.js"; edit_src
+git -C "$EC_PROJ" checkout -q ahead
+fresh_session
+assert_eq "a forward checkout keeps the still-dirty agent entry" 1 "$(trace_count)"
+assert_eq "...exactly that entry" 1 "$(grep -c 'src/a.js' "$(cur_trace)")"
+# a star entry and an entry for a path the move touched are dropped on a forward move
+git -C "$EC_PROJ" checkout -q "$MAIN"; rm -f "$SD"/files-written.*; fresh_session
+printf 'f%s/src/a.js\n*\nf%s/src/c.js\n' "$EC_PROJ" "$EC_PROJ" >"$(cur_trace)"
+git -C "$EC_PROJ" checkout -q ahead
+fresh_session
+assert_eq "a forward move drops star entries and entries the move touched" "f$EC_PROJ/src/a.js" "$(cat "$(cur_trace)")"
+git -C "$EC_PROJ" checkout -q -- . ; git -C "$EC_PROJ" checkout -q "$MAIN"; git -C "$EC_PROJ" branch -q -D ahead
+fresh_session; rm -f "$SD"/files-written.*
+
+# r7-03: a host that sends no session id rotates on startup once the epoch is a day old
+sr2() { sb_session_epoch_should_rotate startup codex "" "$SD" "$SD/session-start-time" && echo rotate || echo keep; }
+printf '%s\n' "$(( $(date +%s) - 100 ))" >"$SD/session-start-time"
+assert_eq "no session id, a young epoch: keep" keep "$(sr2)"
+printf '%s\n' "$(( $(date +%s) - 90000 ))" >"$SD/session-start-time"
+assert_eq "no session id, an epoch over a day old: rotate" rotate "$(sr2)"
+printf 'junk\n' >"$SD/session-start-time"
+assert_eq "no session id, an unreadable epoch: keep" keep "$(sr2)"
+
 
 # r6-03: traces that are not under the old epoch (unknown, other epochs) are merged into the new one
 rm -f "$SD"/files-written.*
@@ -201,15 +253,27 @@ assert_eq "the epoch is a bare number" 1 "$(grep -cE '^[0-9]+$' "$SD/session-sta
 # a failing temp file leaves the epoch as it was
 printf '42\n' >"$SD/session-start-time"
 tl_stub mktemp 'exit 1'
-sb_session_epoch_restamp "$SD/session-start-time" "$SD"
+sb_session_epoch_restamp "$SD/session-start-time" "$SD" || true
 rm -f "$TL_BIN/mktemp"
 assert_eq "no temp file: the epoch is untouched" 42 "$(cat "$SD/session-start-time")"
 # a failing rename leaves no temp file behind, and a symlinked head or id file is never written through
 printf '43\n' >"$SD/session-start-time"
 tl_stub mv 'exit 1'; hash -r
-sb_session_epoch_restamp "$SD/session-start-time" "$SD"
+sb_session_epoch_restamp "$SD/session-start-time" "$SD" || true
 rm -f "$TL_BIN/mv"; hash -r
 assert_eq "a failing rename: the epoch is untouched" 43 "$(cat "$SD/session-start-time")"
+printf 'f/keep/me\n' >"$SD/files-written.9"; printf '44\n' >"$SD/session-start-time"
+tl_stub mv 'exit 1'; hash -r
+r=0; sb_session_epoch_restamp "$SD/session-start-time" "$SD" || r=$?
+rm -f "$TL_BIN/mv"; hash -r
+assert_eq "a failed merge write reports failure" 1 "$r"
+assert_eq "...keeps the source trace" "f/keep/me" "$(cat "$SD/files-written.9")"
+assert_eq "...and the old epoch" 44 "$(cat "$SD/session-start-time")"
+tl_stub mktemp 'exit 1'; hash -r
+r=0; sb_session_epoch_restamp "$SD/session-start-time" "$SD" || r=$?
+rm -f "$TL_BIN/mktemp"; hash -r
+assert_eq "no temp file for the merge: failure, trace kept" "1 f/keep/me" "$r $(cat "$SD/files-written.9")"
+rm -f "$SD/files-written.9"
 assert_eq "...and no temp file is left" 0 "$(find "$SD" -maxdepth 1 -name 'session-start-time.*' | wc -l | tr -d ' ')"
 rm -f "$SD/session-start-head" "$SD/session-start-sid"; ln -s "$TL_TMP/head-victim" "$SD/session-start-head"; ln -s "$TL_TMP/sid-victim2" "$SD/session-start-sid"
 sb_session_epoch_rotate "$SD/session-start-time" "$SD" "$EC_PROJ" keep cx9
@@ -218,12 +282,12 @@ assert_file_absent "a symlinked id file is not written through" "$TL_TMP/sid-vic
 rm -f "$SD/session-start-head" "$SD/session-start-sid"
 # an epoch path that is a directory is left alone (mv would move the temp file into it)
 mkdir "$SD/ss-dir"
-sb_session_epoch_restamp "$SD/ss-dir" "$SD"
+sb_session_epoch_restamp "$SD/ss-dir" "$SD" || true
 assert_eq "a directory as the epoch file stays empty" 0 "$(find "$SD/ss-dir" | wc -l | tr -d ' ' | awk '{print $1-1}')"
 rmdir "$SD/ss-dir"
 # a symlinked epoch file is never written through
 rm -f "$SD/session-start-time"; ln -s "$TL_TMP/epoch-victim" "$SD/session-start-time"
-sb_session_epoch_restamp "$SD/session-start-time" "$SD"
+sb_session_epoch_restamp "$SD/session-start-time" "$SD" || true
 assert_file_absent "a symlinked epoch is not written through" "$TL_TMP/epoch-victim"
 rm -f "$SD/session-start-time"; rm -f "$SD"/files-written.*
 
@@ -240,7 +304,7 @@ JSON
 echo arch >"$DR/docs/ARCH.md"
 echo '{"task_id":"T-1","task_granularity":2,"docs":{"docs/ARCH.md":"not-needed:unchanged"},"sections":{}}' >"$DR/docs/task-doc-checklist.json"
 old_epoch=$(( $(date +%s) - 100000 ))
-touch -d "@$((old_epoch + 10))" "$DR/docs/ARCH.md" "$DR/docs/task-doc-checklist.json"
+settime "$((old_epoch + 10))" "$DR/docs/ARCH.md" "$DR/docs/task-doc-checklist.json"
 printf '%s\n' "$old_epoch" >"$SD/session-start-time"
 EMITTED="$TL_TMP/doc-emitted"; rm -f "$EMITTED"; emit() { printf '%s' "$1" >"$EMITTED"; }
 (sb_doc_scheme_gate_enforce task "$DR" "$SD" emit) || true
