@@ -71,17 +71,16 @@ sb_orchestrator_directive_write_batch silver-plan "" "" true TPL '{"handoffs":[]
 assert_eq "batch document build failure" 1 "$rc"
 assert_file_absent "no batch directive left behind" "$DIRF"
 orch_unstub jq
-# Override log: an unusable .planning/ directory is tolerated.
+# Override log: an unusable .planning/ directory fails closed (R4-14).
 mkdir -p "$PROJ/.planning"
 orch_stub_failing mkdir '.planning'
 sb_orchestrator_log_override "$PROJ" "why" silver-plan && rc=0 || rc=$?
-assert_eq "override log tolerates mkdir failure" 0 "$rc"
-assert_eq "override entry still appended when the dir exists" 1 "$(wc -l <"$PROJ/.planning/orchestrator-override-log.jsonl" | tr -d ' ')"
+assert_eq "override log refuses when .planning cannot be created" 1 "$rc"
 orch_unstub mkdir
 rm -f "$PROJ/.planning/orchestrator-override-log.jsonl"
 mkdir -p "$PROJ/.planning/orchestrator-override-log.jsonl"
 sb_orchestrator_log_override "$PROJ" "why" silver-plan && rc=0 || rc=$?
-assert_eq "override log tolerates an unwritable log file" 0 "$rc"
+assert_eq "override log refuses an unwritable log file" 1 "$rc"
 rm -rf "$PROJ/.planning/orchestrator-override-log.jsonl"
 # State sync: state file helper missing or jq failing degrade quietly.
 orch_write_state '{"current_flow":"FLOW-PLAN","active_intent":"go"}'

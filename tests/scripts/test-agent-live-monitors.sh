@@ -120,16 +120,33 @@ exit 0"
   rm -f "$TL_BIN/sleep"
 done
 
-# ---- host-specific signal quirks
-# codex/opencode/pi accept a signal word in the guard that the extraction pattern does not
-# capture ('not logged in' for codex, 'auth' for opencode/pi): the bullet falls back to "anomaly".
-printf 'You are not logged in\n' >"$LOGDIR/codex-q.log"
-tl_run timeout 60 bash "$SCRIPTS/agent-codex/monitor.sh" --log "$LOGDIR/codex-q.log" --once --stall-sec 99999
-assert_contains "codex 'not logged in' falls back to anomaly" "$TL_OUT" "• signal: anomaly"
-for host in opencode pi; do
-  printf 'auth token rejected\n' >"$LOGDIR/$host-q.log"
+# ---- shared signal table (R8-26): the same words mean the same thing on every host
+for host in claude codex opencode pi; do
+  printf 'You are not logged in\n' >"$LOGDIR/$host-q.log"
   tl_run timeout 60 bash "$SCRIPTS/agent-$host/monitor.sh" --log "$LOGDIR/$host-q.log" --once --stall-sec 99999
-  assert_contains "$host 'auth' falls back to anomaly" "$TL_OUT" "• signal: anomaly"
+  assert_contains "$host 'not logged in' is extracted" "$TL_OUT" "• signal: not logged in"
+  for text in 'Unauthorized' 'authentication failed' 'invalid_api_key' 'HTTP 429' 'status: 429 rate'; do
+    printf '%s\n' "$text" >"$LOGDIR/$host-sig.log"
+    tl_run timeout 60 bash "$SCRIPTS/agent-$host/monitor.sh" --log "$LOGDIR/$host-sig.log" --once --stall-sec 99999
+    assert_contains "$host raises a signal for '$text'" "$TL_OUT" "• signal:"
+  done
+  # benign lines that merely contain 'auth' / '429' must not raise a signal on any host
+  for text in 'wrote docs/AUTHORS.md successfully' 'OAuth flow documented' 'git author set' 'AssertionError at line 429' 'saved 429 bytes' 'authored by the team'; do
+    printf '%s\n' "$text" >"$LOGDIR/$host-ok.log"
+    tl_run timeout 60 bash "$SCRIPTS/agent-$host/monitor.sh" --log "$LOGDIR/$host-ok.log" --once --stall-sec 99999
+    assert_not_contains "$host stays silent for '$text'" "$TL_OUT" "signal:"
+  done
+done
+# the host-specific additions stay host-specific
+printf 'Queued follow-up\n' >"$LOGDIR/codex-x.log"
+tl_run timeout 60 bash "$SCRIPTS/agent-codex/monitor.sh" --log "$LOGDIR/codex-x.log" --once --stall-sec 99999
+assert_not_contains "codex has no 'Queued follow-up' signal" "$TL_OUT" "signal:"
+printf 'hooks need review\n' >"$LOGDIR/claude-x.log"
+tl_run timeout 60 bash "$SCRIPTS/agent-claude/monitor.sh" --log "$LOGDIR/claude-x.log" --once --stall-sec 99999
+assert_not_contains "claude has no 'hooks need review' signal" "$TL_OUT" "signal:"
+# the shims are thin
+for host in claude codex opencode pi; do
+  [[ "$(wc -l <"$SCRIPTS/agent-$host/monitor.sh" | tr -d ' ')" -le 5 ]] && tl_pass "$host monitor.sh is a shim" || tl_fail "$host monitor.sh is a shim"
 done
 
 # claude: the extraction pipeline failing (tail unavailable) also falls back to anomaly.

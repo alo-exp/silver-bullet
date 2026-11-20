@@ -11,7 +11,7 @@ SESSION_LOG="$TG2_PROJ/docs/sessions/log.md"
 BASE_CFG='{"sb_initiated":true}'
 
 reset() {
-  rm -rf "$STATE" "$LOADED" "$DIRECTIVE" "$RECEIPTS" "$SB_RUNTIME_STATE_DIR/project-root" \
+  rm -rf "$SB_RUNTIME_STATE_DIR/seal.key" "$SB_RUNTIME_STATE_DIR"/integrity-* "$STATE" "$STATE.seal" "$STATE.hwm" "$LOADED" "$DIRECTIVE" "$RECEIPTS" "$SB_RUNTIME_STATE_DIR/project-root" \
     "$SB_RUNTIME_STATE_DIR/record-skill.debug.log" "$TG2_PROJ/.planning"
   tg2_cfg "$BASE_CFG"
 }
@@ -38,8 +38,9 @@ NOTHING="ℹ️ No completed tracked skill invocation found"
 REAL_PY="$(command -v python3)"
 REAL_CAT="$(command -v cat)"
 tg2_install_jq_stub
-# python3 fails only for `python3 -c ...` (the hook's cwd resolution), not for the heredoc script
-tg2_fault_stub python3 "if [[ -n \"\${PY_NO_C:-}\" && \"\${1:-}\" == -c ]]; then exit 1; fi
+# python3 fails only for the hook's cwd resolution (`python3 -c '...Path.cwd()...'`), not for the
+# adapter parser, which also runs as `python3 -c` with the command on stdin
+tg2_fault_stub python3 "if [[ -n \"\${PY_NO_C:-}\" && \"\${1:-}\" == -c && \"\${2:-}\" == *Path.cwd* ]]; then exit 1; fi
 exec $REAL_PY \"\$@\""
 tg2_fault_stub cat "if [[ -n \"\${CAT_FAIL:-}\" && \"\${1:-}\" == \"\$CAT_FAIL\" ]]; then exit 1; fi
 exec $REAL_CAT \"\$@\""

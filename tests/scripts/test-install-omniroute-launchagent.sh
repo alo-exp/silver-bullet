@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# scripts/install-omniroute-launchagent.sh with stubbed omniroute/node/lsof/
-# launchctl/pkill and a sandboxed HOME: plist contents, binary resolution,
+# scripts/install-omniroute-launchagent.sh with stubbed omniroute/node/lsof/ps/
+# launchctl and a sandboxed HOME: plist contents, binary resolution,
 # port-in-use refusal, bootstrap order and the health-check timeout.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
@@ -17,8 +17,12 @@ printf '#!/usr/bin/env bash\necho "omniroute $*" >>"%s"\n[[ "$1" == health && -f
 chmod +x "$TL_TMP/real-bin/omniroute.mjs"
 ln -s "$TL_TMP/real-bin/omniroute.mjs" "$TL_BIN/omniroute"
 tl_stub node 'exit 0'
-tl_stub pkill 'echo "pkill $*" >>"'"$LOG"'"; exit 1'
-tl_stub lsof '[[ -f "'"$CFG"'/port-busy" ]]'
+# Silver Bullet stops only a process LISTENING on its own port whose command is omniroute: lsof names
+# the listener (CFG/listener), ps tells what it is (CFG/pscmd). Nothing is ever killed by name.
+tl_stub pkill 'echo "pkill $*" >>"'"$LOG"'"; exit 0'
+tl_stub lsof 'if [[ "$1" == -ti ]]; then echo "lsof $*" >>"'"$LOG"'"; [[ -f "'"$CFG"'/listener" ]] && cat "'"$CFG"'/listener"; exit 0; fi
+[[ -f "'"$CFG"'/port-busy" ]]'
+tl_stub ps 'cat "'"$CFG"'/pscmd" 2>/dev/null; true'
 tl_stub launchctl '
 echo "launchctl $*" >>"'"$LOG"'"
 [[ "$1" == print && ! -f "'"$CFG"'/loaded" ]] && exit 1
@@ -60,7 +64,8 @@ assert_contains "plist log file under data dir" "$PL" "<string>$HOME/.omniroute/
 assert_file_exists "data dir created" "$HOME/.omniroute"
 CALLS="$(<"$LOG")"
 assert_contains "foreign instance stopped" "$CALLS" "omniroute stop"
-assert_contains "serve processes killed" "$CALLS" "pkill -f omniroute.*serve"
+assert_not_contains "no process is ever killed by name" "$CALLS" "pkill"
+assert_contains "the listener on our port is looked up" "$CALLS" "lsof -ti :20128 -sTCP:LISTEN"
 assert_contains "launchd bootstrap" "$CALLS" "launchctl bootstrap gui/$(id -u) $PLIST"
 assert_contains "launchd kickstart" "$CALLS" "launchctl kickstart -k gui/$(id -u)/com.omniroute.server"
 assert_not_contains "no bootout when not loaded" "$CALLS" "bootout"
@@ -82,6 +87,89 @@ assert_contains "enable was attempted" "$(<"$LOG")" "launchctl enable gui/$(id -
 assert_contains "bootstrap still ran" "$(<"$LOG")" "launchctl bootstrap"
 rm -f "$CFG/loaded" "$CFG/ctl-fails"
 
+# ---- only an omniroute listener on our port is stopped (R6-22)
+command sleep 120 &
+OMNI_PID=$!
+command sleep 120 &
+OTHER_PID=$!
+echo "$OMNI_PID" >"$CFG/listener"
+echo "node /usr/lib/omniroute/bin/omniroute.mjs serve --port 20128" >"$CFG/pscmd"
+run
+assert_eq "install with an omniroute listener exits 0" 0 "$TL_STATUS"
+assert_eq "the omniroute listener was stopped" "gone" "$(kill -0 "$OMNI_PID" 2>/dev/null && echo alive || echo gone)"
+echo "$OTHER_PID" >"$CFG/listener"
+echo "postgres: main process" >"$CFG/pscmd"
+run
+assert_eq "a different listener is left alone" "alive" "$(kill -0 "$OTHER_PID" 2>/dev/null && echo alive || echo gone)"
+kill "$OTHER_PID" 2>/dev/null || true
+wait 2>/dev/null || true
+rm -f "$CFG/listener" "$CFG/pscmd"
+
+# ---- the plist is valid XML whatever the paths contain (R6-22)
+mkdir -p "$TL_TMP/a&b<c>"
+cp "$TL_TMP/real-bin/omniroute.mjs" "$TL_TMP/a&b<c>/omniroute"
+tl_run env PATH="$TL_TMP/a&b<c>:$PATH" bash "$SCRIPT"
+assert_eq "install with special characters in the path exits 0" 0 "$TL_STATUS"
+assert_contains "ampersand and angle brackets are escaped" "$(<"$PLIST")" "<string>$TL_TMP/a&amp;b&lt;c&gt;/omniroute</string>"
+if command -v python3 >/dev/null 2>&1; then
+  assert_eq "the plist parses" "ok" "$(python3 -c 'import plistlib,sys; plistlib.load(open(sys.argv[1],"rb")); print("ok")' "$PLIST" 2>&1 || echo bad)"
+fi
+rm -rf "$TL_TMP/a&b<c>"
+
+# ---- an invalid port is refused before anything is written
+rm -f "$PLIST"
+for bad in 0 70000 abc "20128;x"; do
+  tl_run env OMNIROUTE_PORT="$bad" bash "$SCRIPT"
+  assert_eq "port '$bad' is refused" 1 "$TL_STATUS"
+  assert_contains "port '$bad' message" "$TL_ERR" "OMNIROUTE_PORT must be a port number"
+done
+assert_file_absent "no plist for an invalid port" "$PLIST"
+
+# ---- failing helpers are tolerated (R6-22)
+true &
+GONE_PID=$!
+wait "$GONE_PID" 2>/dev/null || true   # a reaped child: a pid that is certainly gone
+echo "$GONE_PID" >"$CFG/listener"
+echo "node /usr/lib/omniroute/bin/omniroute.mjs serve --port 20128" >"$CFG/pscmd"
+run
+assert_eq "a listener that is already gone does not abort the install" 0 "$TL_STATUS"
+rm -f "$CFG/listener" "$CFG/pscmd"
+tl_stub lsof 'if [[ "$1" == -ti ]]; then exit 1; fi
+[[ -f "'"$CFG"'/port-busy" ]]'
+run
+assert_eq "lsof finding nothing does not abort the install" 0 "$TL_STATUS"
+tl_stub lsof 'if [[ "$1" == -ti ]]; then echo 4242; exit 0; fi
+[[ -f "'"$CFG"'/port-busy" ]]'
+tl_stub ps 'exit 1'
+run
+assert_eq "ps failing does not abort the install" 0 "$TL_STATUS"
+tl_stub ps 'cat "'"$CFG"'/pscmd" 2>/dev/null; true'
+tl_stub lsof 'if [[ "$1" == -ti ]]; then echo "lsof $*" >>"'"$LOG"'"; [[ -f "'"$CFG"'/listener" ]] && cat "'"$CFG"'/listener"; exit 0; fi
+[[ -f "'"$CFG"'/port-busy" ]]'
+touch "$CFG/loaded" "$CFG/ctl-fails" "$CFG/unhealthy"
+run
+assert_eq "an unhealthy server with a failing bootout still ends in the explained failure" 1 "$TL_STATUS"
+assert_contains "and says it unloaded the agent" "$TL_ERR" "it was unloaded again"
+rm -f "$CFG/loaded" "$CFG/ctl-fails" "$CFG/unhealthy"
+
+# ---- uninstall
+run
+touch "$CFG/loaded"
+: >"$LOG"
+tl_run bash "$SCRIPT" --uninstall
+assert_eq "uninstall exits 0" 0 "$TL_STATUS"
+assert_contains "uninstall unloads the agent" "$(<"$LOG")" "launchctl bootout gui/$(id -u) $PLIST"
+assert_file_absent "uninstall removes the plist" "$PLIST"
+rm -f "$CFG/loaded"
+tl_run bash "$SCRIPT" --uninstall
+assert_eq "uninstall is idempotent" 0 "$TL_STATUS"
+touch "$CFG/loaded" "$CFG/ctl-fails"
+tl_run bash "$SCRIPT" --uninstall
+assert_eq "uninstall tolerates a failing bootout" 0 "$TL_STATUS"
+assert_file_absent "and still removes the plist" "$PLIST"
+rm -f "$CFG/loaded" "$CFG/ctl-fails"
+run
+
 # ---- port still in use after stop
 touch "$CFG/port-busy"
 run
@@ -95,6 +183,8 @@ touch "$CFG/unhealthy"
 run
 assert_eq "unhealthy server exits 1" 1 "$TL_STATUS"
 assert_contains "unhealthy message" "$TL_ERR" "omniroute health did not pass within 30s"
+assert_contains "a failing agent is unloaded, not left crash-looping under KeepAlive" "$(<"$LOG")" "launchctl bootout gui/$(id -u) $PLIST"
+assert_contains "the message says it was unloaded" "$TL_ERR" "it was unloaded again"
 rm -f "$CFG/unhealthy"
 
 # ---- binary resolution fallbacks when readlink -f / realpath are unavailable

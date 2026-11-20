@@ -44,5 +44,29 @@ kill "$sentinel"
 for _ in $(seq 1 50); do kill -0 "$child" 2>/dev/null || break; command -p sleep 0.1; done
 assert_eq "stopping the sentinel stops its sleep" "1" "$(kill -0 "$child" 2>/dev/null && echo 0 || echo 1)"
 assert_file_absent "a stopped sentinel writes no timeout" "$SD/timeout"
+# R3-18: the sentinel removes its own lock when it is stopped, so a recycled pid has no lock and
+# the cleanup path never signals an unrelated process.
+for _ in $(seq 1 50); do ls "$SD"/sentinel-lock-* >/dev/null 2>&1 || break; command -p sleep 0.1; done
+assert_eq "a stopped sentinel removes its lock" "0" "$(ls "$SD"/sentinel-lock-* 2>/dev/null | wc -l | tr -d ' ')"
+
+# A sentinel that reaches its timeout removes the lock too (and writes the marker).
+rm -f "$SD/sentinel-pid" "$SD/timeout"
+rm -rf "${EC_PROJ:?}/docs/sessions"
+SENTINEL_SLEEP_OVERRIDE=1 tl_run_stdin "$PAYLOAD" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$HOOK"
+for _ in $(seq 1 60); do [[ -f "$SD/timeout" ]] && break; command -p sleep 0.1; done
+assert_eq "the timeout marker is written" "TIMEOUT" "$(cat "$SD/timeout" 2>/dev/null || true)"
+for _ in $(seq 1 50); do ls "$SD"/sentinel-lock-* >/dev/null 2>&1 || break; command -p sleep 0.1; done
+assert_eq "a timed-out sentinel removes its lock" "0" "$(ls "$SD"/sentinel-lock-* 2>/dev/null | wc -l | tr -d ' ')"
+
+# A recycled pid whose lock is gone is never signalled: start an unrelated process, record its
+# pid as a stale sentinel, and run the hook again.
+bystander_sleep=4172
+sleep "$bystander_sleep" &
+bystander=$!
+printf '%s:%s\n' "$bystander" "stale-token" >"$SD/sentinel-pid"
+rm -rf "${EC_PROJ:?}/docs/sessions"
+tl_run_stdin "$PAYLOAD" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$HOOK"
+assert_eq "an unrelated process with a stale sentinel record survives" "0" "$(kill -0 "$bystander" 2>/dev/null && echo 0 || echo 1)"
+kill "$bystander" 2>/dev/null || true
 
 tl_results

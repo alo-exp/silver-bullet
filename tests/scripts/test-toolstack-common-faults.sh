@@ -68,8 +68,8 @@ rm -f "$TL_BIN/date"
 # --- heartbeat helpers that fail ---
 proj="$TL_TMP/hbproj"
 ts_sb_project "$proj"
-hbdir="$proj/scripts/lib/recommended-tools"
-mkdir -p "$hbdir"
+ts_sb_bridge "$TL_TMP/sbroot"
+hbdir="$TL_TMP/sbroot/scripts/lib/recommended-tools"
 cat >"$hbdir/heartbeat.sh" <<'HB'
 rt_project_id() { return 1; }
 rt_worktree_id() { return 1; }
@@ -97,5 +97,40 @@ assert_file_absent "validity check skipped without a heartbeat path" "$HB_OUT"
 printf 'return 1\n' >"$hbdir/heartbeat.sh"
 in_dir "$proj" ts_sb_defer_to_bridge
 assert_eq "heartbeat lib that fails to load => no defer" 1 "$TL_STATUS"
+
+# --- ts_token_usage_record: atomic stamp, every failure reported (R6-08) ---
+rec="$TL_TMP/recrepo"; tl_git_repo "$rec"
+rechash="$(printf '%s' "$rec" | sha256sum | awk '{print substr($1,1,16)}')"
+rm -rf "$HOME/st"
+in_dir "$rec" ts_token_usage_record rtk
+assert_eq "usage record: ok" 0 "$TL_STATUS"
+assert_match "usage record holds an epoch" '^[0-9]+$' "$(cat "$HOME/st/$rechash/rtk-usage")"
+in_dir "$rec" ts_token_usage_is_fresh rtk
+assert_eq "a recorded usage is fresh" 0 "$TL_STATUS"
+# a symlink planted at the stamp is replaced, never written through
+echo precious >"$TL_TMP/victim"
+rm -f "$HOME/st/$rechash/rtk-usage"; ln -s "$TL_TMP/victim" "$HOME/st/$rechash/rtk-usage"
+in_dir "$rec" ts_token_usage_record rtk
+assert_eq "usage record over a symlink: ok" 0 "$TL_STATUS"
+assert_eq "the symlink target is untouched" precious "$(cat "$TL_TMP/victim")"
+assert_eq "the stamp is a regular file again" "no" "$([[ -L "$HOME/st/$rechash/rtk-usage" ]] && echo yes || echo no)"
+# failures
+rm -rf "$HOME/st"; mkdir -p "$HOME"; printf 'file\n' >"$HOME/st"
+in_dir "$rec" ts_token_usage_record rtk
+assert_eq "state dir that cannot be created: fails" 1 "$TL_STATUS"
+rm -f "$HOME/st"; mkdir -p "$HOME/st/$rechash"
+tl_stub mktemp 'exit 1'
+in_dir "$rec" ts_token_usage_record rtk
+assert_eq "mktemp failing: fails" 1 "$TL_STATUS"
+rm -f "$TL_BIN/mktemp"
+tl_stub mv 'exit 1'
+in_dir "$rec" ts_token_usage_record rtk
+assert_eq "rename failing: fails" 1 "$TL_STATUS"
+assert_eq "no temp file is left behind" "" "$(ls -A "$HOME/st/$rechash")"
+rm -f "$TL_BIN/mv"
+tl_stub date 'exit 1'
+in_dir "$rec" ts_token_usage_record rtk
+assert_eq "clock failing: fails" 1 "$TL_STATUS"
+rm -f "$TL_BIN/date"
 
 tl_results

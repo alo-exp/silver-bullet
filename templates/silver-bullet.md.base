@@ -58,8 +58,8 @@ Twelve enforcement layers enforce compliance:
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|MultiEdit|Bash, with the workflow chain guard) — HARD STOP if planning skills (or the active composed workflow's pre-execution chain) are incomplete before source edits
 3. **Compliance status** (PostToolUse/all) — Shows workflow progress on every tool use (informational)
 4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — `planning-file-guard.sh` blocks direct edits to SB-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of the owning SB skill or workflow
-5. **Completion audit** (Pre+PostToolUse/Bash) — Blocks intermediate commits until planning is done; blocks PR/deploy/release until full workflow is done
-6. **CI status check** (Pre+PostToolUse/Bash) — Blocks `git push`, `gh pr create`/`merge` and `gh release create` while the latest CI run failed; after `git commit` it only warns, so a CI fix can still be committed
+5. **Completion audit** (Pre+PostToolUse/Bash, and PreToolUse on MCP tools such as the GitHub server's create/merge/push tools) — Blocks intermediate commits until planning is done; blocks PR/deploy/release until full workflow is done. A push to the default branch, or of a tag, counts as final delivery (full `required_deploy` floor); `project.push_to_default_branch_tier: "intermediate"` is the explicit opt-out
+6. **CI status check** (Pre+PostToolUse/Bash, PreToolUse on MCP tools) — Blocks `git push`, `gh pr create`/`merge` and `gh release create` while the latest CI run failed; after `git commit` it only warns, so a CI fix can still be committed
 7. **Session management** (SessionStart + PostToolUse) — Branch-scoped state reset at session start, session logging, autonomous mode timeout detection
 8. **Stop hook** (Stop/SubagentStop) — Blocks task-complete declaration if required_planning skills are missing (planning floor). The full `required_deploy` list is enforced at delivery (`gh pr create`, deploy, `gh release create`) by completion-audit. Per-prompt outcome checklist is enforced by `outcomes-check.sh` on the same events.
 9. **UserPromptSubmit recorder + reminder** (UserPromptSubmit) — Records requested SB and optional extension routes and re-injects missing skills list before every user message
@@ -320,12 +320,14 @@ Before planning, editing, debugging, reviewing, documenting, or shipping, the ac
 agent MUST retrieve project memory that could affect the action.
 
 **Opt-in policy:** Graphify is a **recommended tool** — SB asks for explicit user consent
-at init, update, and session start (`recommended_tools.graphify.enabled_by_user` in `.silver-bullet.json`).
-`null` = consent pending (no enforcement); `true` = mandatory hooks active when install succeeded;
-`false` = advisory only. If the user opts in but install fails, `enforcement_suspended: true`
+at init, update, and session start. The user's answer is recorded in their own consent store with
+`scripts/sb-consent.sh` (see `docs/CONSENT.md`), never in the repository; `recommended_tools.graphify.enabled_by_user`
+in `.silver-bullet.json` only recommends (`true`) or turns the tool off (`false`). Without a recorded
+grant (including `null`) there is no enforcement; with a grant, mandatory hooks are active when
+install succeeded; `false` = advisory only. If the user opts in but install fails, `enforcement_suspended: true`
 lifts hook blocks until the next init/update retry succeeds.
 
-**When opted in (`enabled_by_user: true`) and not suspended:**
+**When the user has consented (enforce granted in their consent store) and not suspended:**
 
 1. **Graphify query (required when CLI installed).** From the project root, run
    `graphify query "<task, file, feature, bug, or workflow context>" --graph graphify-out/graph.json --budget 2000`.
@@ -432,7 +434,7 @@ Silver Bullet workflows are composed from the APO catalog in `docs/apo-catalog.j
 
 **Parent orchestrator mode (default, only mode):** The parent session NEVER implements directly. It reads `orchestrator-directive.json`, spawns **Task workers** using `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`, and advances the queue via hooks. Composer skills (`sb:feature`, `sb:ui`, …) are queue builders — not inline execution instructions. See `docs/ORCHESTRATOR.md`.
 
-**SB OVERRIDE (audited escape hatch):** When a blocking orchestrator directive or PreToolUse gate cannot be satisfied, include in your next user message: `SB OVERRIDE: <reason>`. The hook logs the override to `.planning/orchestrator-override-log.jsonl` and clears the pending directive. Use sparingly — overrides are audited, not silent bypasses.
+**SB OVERRIDE (audited escape hatch):** When a blocking orchestrator directive cannot be satisfied, start your next user message with `SB OVERRIDE: <reason>` (first line, upper case, a real reason of 12+ characters and at least two words). The UserPromptSubmit hook checks the host's prompt payload (it needs the host `session_id` from a parent session, never a worker or delegate, and, when the host sends one, a transcript path under the host's runtime root with symlinks resolved; while a Task worker marker is still fresh the prompt must also be the recorded parent session's own and must carry the host's `transcript_path`, so on a host that sends none the override is refused until the marker is deleted or lapses after 2 hours), writes a hash-chained record with the session id and prompt hash to `.planning/orchestrator-override-log.jsonl` first, and only then clears the pending directive and abandons the flow queue, so the orchestrator no longer holds Stop. The override message is itself a prompt: when it reads as work it seeds its own outcome checklist (route, plan, verify), and that checklist can still hold Stop. It does not lift parent-mode tool restrictions or any other PreToolUse gate. A mention later in a message, a pasted denial text, or a log that cannot be written leaves everything in force. Use sparingly — overrides are audited, not silent bypasses.
 
 The active composed workflow file under `.planning/workflows/<id>.md` tracks execution state — which flows have run, which are next, and any dynamic insertions (e.g., FLOW 15 DEBUG on failure). See `docs/composable-flows-contracts.md` for full flow contracts.
 
@@ -982,7 +984,7 @@ These rules apply to `site/**`, Help Center pages, homepage copy, `site/help/sea
 **Site/help publish policy**
 - `site/**` publishes via direct commits to `main` without a patch release, version bump, git tag, or GitHub release unless the user explicitly requests a release.
 - Before pushing, run `bash tests/scripts/test-site-doc-freshness.sh` and `bash tests/scripts/test-site-content-freshness.sh`; site-only work does not require the full `tests/run-all-tests.sh` suite.
-- Publish path: commit + push to `main`; GitHub Pages deploys via `.github/workflows/pages.yml` (path-filtered to `site/**`).
+- Publish path: commit + push to `main` (a push to the default branch is final delivery; a site-only change uses the light change-class floor); GitHub Pages deploys via `.github/workflows/pages.yml` (path-filtered to `site/**`).
 - Expect **~1–15 minutes** end-to-end deploy latency (Pages queue + `Cache-Control: max-age=600` on GitHub Pages).
 
 **Live publish notification (mandatory)**

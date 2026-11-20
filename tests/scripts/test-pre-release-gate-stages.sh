@@ -5,8 +5,10 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 
 T="$TL_TMP/tree"
-mkdir -p "$T/scripts" "$T/tests/scripts"
+mkdir -p "$T/scripts/lib" "$T/tests/scripts" "$T/hooks/lib"
 cp "$TL_REPO_ROOT/scripts/pre-release-gate.sh" "$T/scripts/"
+cp "$TL_REPO_ROOT/scripts/lib/release-bypass-audit.sh" "$T/scripts/lib/"
+cp "$TL_REPO_ROOT/hooks/lib/runtime-paths.sh" "$T/hooks/lib/"
 LOG="$TL_TMP/stages.log"
 mk_stub() { # path label
   cat >"$1" <<EOS
@@ -29,6 +31,8 @@ run() { : >"$LOG"; tl_run env "$@" bash "$G"; }
 run SB_SKIP_PRE_RELEASE_GATE=1
 assert_eq "bypass exits 0" 0 "$TL_STATUS"
 assert_contains "bypass notice" "$TL_ERR" "SB_SKIP_PRE_RELEASE_GATE=1 — pre-release gate skipped"
+assert_contains "R13-20: the bypass is announced as an audit line" "$TL_ERR" "AUDIT: release gate bypass SB_SKIP_PRE_RELEASE_GATE=1"
+assert_contains "R13-20: the bypass is logged" "$(cat "$SB_RUNTIME_STATE_DIR/release-bypass-log.jsonl")" '"switch":"SB_SKIP_PRE_RELEASE_GATE"'
 assert_eq "bypass runs nothing" "" "$(cat "$LOG")"
 
 # all green, leanctx not opted in

@@ -13,12 +13,9 @@ ST="$SB_RUNTIME_STATE_DIR"
 dec() { [[ -n "$TL_OUT" ]] && jq -r '.hookSpecificOutput.permissionDecision // .decision // "none"' <<<"$TL_OUT" 2>/dev/null || echo none; }
 
 # ---- phase-lock-claim: nofollow-guard.sh missing -> inline sb_safe_write ----
-cat >"$P/.planning/scripts/phase-lock.sh" <<'STUB'
-#!/usr/bin/env bash
-exit 0
-STUB
-chmod +x "$P/.planning/scripts/phase-lock.sh"
-S1="$TL_TMP/s1"; dg_stage_hooks "$S1" nofollow-guard.sh
+# the claim hook runs the plugin's own helper (scripts/phase-lock.sh beside hooks/), never the project's
+stage_helper() { mkdir -p "$1/scripts"; printf '#!/usr/bin/env bash\nexit 0\n' >"$1/scripts/phase-lock.sh"; chmod +x "$1/scripts/phase-lock.sh"; }
+S1="$TL_TMP/s1"; dg_stage_hooks "$S1" nofollow-guard.sh; stage_helper "$S1"
 CLAIM="$(jq -cn --arg p "$P/.planning/phases/099-x/a.md" '{tool_name:"Edit",tool_input:{file_path:$p},session_id:"sa"}')"
 dg_run "$P" "$S1/hooks/phase-lock-claim.sh" "$CLAIM"
 assert_eq "claim(no nofollow-guard): still claims" "099" "$(cat "$ST/claimed-phases-sa.txt")"
@@ -29,7 +26,7 @@ assert_eq "claim(no nofollow-guard): manifest now regular" "yes" "$([[ -f "$ST/c
 rm -f "$ST/claimed-phases-sa.txt"
 
 # ---- phase-lock-claim: tool-input.sh missing -> jq file_path extraction ----
-S2="$TL_TMP/s2"; dg_stage_hooks "$S2" tool-input.sh
+S2="$TL_TMP/s2"; dg_stage_hooks "$S2" tool-input.sh; stage_helper "$S2"
 dg_run "$P" "$S2/hooks/phase-lock-claim.sh" "$CLAIM"
 assert_eq "claim(no tool-input): jq extraction claims the phase" "099" "$(cat "$ST/claimed-phases-sa.txt")"
 rm -f "$ST/claimed-phases-sa.txt"
@@ -68,22 +65,12 @@ dg_run "$P" hooks/live-publish-evidence-gate.sh '{"hook_event_name":"Stop"}'
 assert_eq "live gate: push intent alone still needs evidence" "block" "$(dec)"
 rm -f "$TL_BIN/jq"
 
-# ---- uat-gate: failing count pipelines (file modified between the check and the count) ----
-mkdir -p "$P/.planning"
-printf '| 1 | a | FAIL |\n' >"$P/.planning/UAT.md"
-real_grep="$(command -v grep)"
-tl_stub grep "if [[ \"\$1\" == -cvE ]]; then echo 0; exit 1; fi; exec $real_grep \"\$@\""; hash -r
-dg_run "$P" hooks/uat-gate.sh '{"hook_event_name":"PreToolUse","tool_name":"Skill","tool_input":{"skill":"silver-release"}}'
-assert_contains "uat-gate: FAIL block survives a failing count" "$TL_OUT" "UAT GATE: 0 criterion/criteria marked FAIL"
-printf '| 1 | a | NOT-RUN |\n' >"$P/.planning/UAT.md"
-dg_run "$P" hooks/uat-gate.sh '{"hook_event_name":"PreToolUse","tool_name":"Skill","tool_input":{"skill":"silver-release"}}'
-assert_contains "uat-gate: NOT-RUN block survives a failing count" "$TL_OUT" "UAT GATE: 0 criterion/criteria marked NOT-RUN"
-rm -f "$TL_BIN/grep"; hash -r
 
 # ---- outcomes-check without jq: event extraction pipeline failing -> defaults to Stop ----
 OST="$ST/state-x"; printf 'silver-quality-gates\n' >"$OST"
 rm -f "$ST/outcomes-session.json" "$ST/stop-coalesce-block"
 echo '{"outcomes":[{"id":"route","label":"R","status":"pending","evidence":""}]}' >"$ST/outcomes-session.json"
+real_grep="$(command -v grep)"
 tl_stub grep "if [[ \"\$1\" == -oE ]]; then exit 1; fi; exec $real_grep \"\$@\""; hash -r
 dg_run_nojq "$P" hooks/outcomes-check.sh '{"hook_event_name":"SubagentStop"}' SILVER_BULLET_STATE_FILE="$OST"
 rm -f "$TL_BIN/grep"; hash -r

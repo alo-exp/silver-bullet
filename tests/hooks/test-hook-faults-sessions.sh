@@ -333,9 +333,10 @@ assert_contains "reminder: delivery tier with no lists at all still answers" "$(
 # a directory named like a workflow file is ignored
 pr_reset
 mkdir -p "$EC_PROJ/.planning/workflows/dir.md" "$EC_PROJ/.planning/workflows"
-printf x >"$EC_PROJ/.planning/workflows/real.md"
+printf x >"$EC_PROJ/.planning/workflows/20260428T120000Z-REAL01-silver-feature.md"
+printf x >"$EC_PROJ/.planning/workflows/not-an-id.md"
 hook prompt-reminder.sh "$EC_PROJ" "$(prompt 'continue')"
-assert_contains "reminder: only regular workflow files are listed" "$(ctx)" "Active composed workflows: real"
+assert_contains "reminder: only regular workflow files are listed" "$(ctx)" "Active composed workflows: 20260428T120000Z-REAL01-silver-feature"
 assert_not_contains "reminder: directories are skipped" "$(ctx)" "dir.md"
 # helper libraries that return nothing
 ec_stage_hooks "$TL_TMP/helpers" orchestrator-state.sh orchestrator-directive.sh graphify-gate.sh agentmemory-gate.sh token-compression-tools-gate.sh stack-optimizer.sh

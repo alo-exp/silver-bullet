@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# dev-cycle-check: fault injection through a staged copy of hooks/ whose libraries are replaced
-# or made to fail (missing lib, helper returning non-zero, project gate refusing, failing main).
+# dev-cycle-check: fault injection through a staged copy of hooks/ whose libraries are missing
+# or replaced, and unreadable files.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
@@ -15,60 +15,27 @@ stage() {
   HOOK_UNDER_TEST="$STG/hooks/dev-cycle-check.sh"
   export HOOK_UNDER_TEST
 }
-# rename_fn <file> <name>: make a function undefined without changing line numbers.
-rename_fn() { sed -i "s/\\b$2\\b/zz_$2/g" "$1"; }
 unstage() { unset HOOK_UNDER_TEST; }
 
-# ── apply_patch path recovery when sb_tool_file_path is unavailable ──────────
+# ── a broken install must not turn the planning floor off ────────────────────
 mkproj f1
 state ""
 stage s1
-rename_fn "$STG/hooks/lib/tool-input.sh" sb_tool_file_path
-PATCH_JSON="$(jq -cn --arg p "$PATCH_SRC" '{hook_event_name:"PreToolUse",tool_name:"apply_patch",tool_input:{command:"apply_patch",input:$p}}')"
-run_dc "$PATCH_JSON"
-assert_eq "patch path is taken from sb_tool_patch_paths when the file-path helper is absent" "deny" "$(decision)"
-assert_contains "gated as a source edit" "$(message)" "HARD STOP"
-unstage
-run_dc "$PATCH_JSON"
-assert_eq "same payload with the real lib is also gated" "deny" "$(decision)"
-
-stage s2
-printf 'sb_tool_patch_paths() { return 1; }\n' >>"$STG/hooks/lib/tool-input.sh"
-run_dc "$PATCH_JSON"
-assert_eq "failing patch-path helper: apply_patch is not a shell tool, ignored" "none" "$(decision)"
+rm -f "$STG/hooks/lib/planning-floor.sh"
+edit
+assert_eq "planning-floor lib missing: the call is denied, not silently allowed" "deny" "$(decision)"
+assert_contains "the deny says to reinstall" "$(message)" "Reinstall the plugin"
+assert_eq "the deny is one document" 1 "$(jq -s length <<<"$TL_OUT")"
 unstage
 
-# ── shell helpers failing ────────────────────────────────────────────────────
-stage s3
-printf 'sb_shell_candidate_write_paths() { return 1; }\n' >>"$STG/hooks/lib/tool-input.sh"
-dc_cmd 'echo x > src/app.js'
-assert_eq "failing write-path helper falls back to opaque scope matching" "deny" "$(decision)"
-unstage
-
-stage s4
-printf 'sb_shell_invoked_script_path() { return 1; }\n' >>"$STG/hooks/lib/tool-input.sh"
-printf '#!/usr/bin/env bash\necho x > src/gen.js\n' >"$PROJ/gen.sh"
-dc_cmd 'bash gen.sh'
-assert_eq "failing script-path helper: the script body is not inspected" "none" "$(decision)"
-unstage
-
-stage s3b
-printf 'sb_shell_candidate_write_paths() { printf "\\n"; }\n' >>"$STG/hooks/lib/tool-input.sh"
-dc_cmd 'cp $A /src/$B'
-assert_eq "blank lines from the write-path helper are not counted as targets" "deny" "$(decision)"
-unstage
-
-if [[ -f /proc/self/mem ]]; then
-  stage s5
-  printf 'sb_shell_invoked_script_path() { printf "%%s" /proc/self/mem; }\n' >>"$STG/hooks/lib/tool-input.sh"
-  dc_cmd 'bash gen.sh'
-  assert_eq "unreadable script file is tolerated" "none" "$(decision)"
-  assert_eq "unreadable script file does not fail the hook" 0 "$TL_STATUS"
-  unstage
-fi
+# ── the lib directory cannot even be resolved ────────────────────────────────
+mkproj f1b
+state ""
+tl_run_stdin "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")" bash -c 'cd() { return 1; }; export -f cd; exec bash "$0"' "$HOOK"
+assert_contains "an unresolvable lib dir is refused, not silently allowed" "$TL_OUT" "Reinstall the plugin"
 
 # ── plugin-cache guard library missing ───────────────────────────────────────
-stage s6
+stage s2
 rm -f "$STG/hooks/lib/plugin-cache-guard.sh"
 mkdir -p "$SB_RUNTIME_PLUGIN_CACHE_ROOT/old/1.0"
 mkdir -p "$SB_RUNTIME_HOME_ROOT/plugins"
@@ -77,37 +44,25 @@ dc_cmd "rm -rf $SB_RUNTIME_PLUGIN_CACHE_ROOT/old/1.0"
 assert_contains "without the guard lib, cache deletion is never treated as uninstall cleanup" "$(message)" "PLUGIN BOUNDARY VIOLATION via Bash"
 unstage
 
-# ── project activation helpers ───────────────────────────────────────────────
-stage s7
-printf 'sb_project_active() { return 1; }\n' >>"$STG/hooks/lib/project-active.sh"
-edit
-assert_eq "inactive project config: hook exits quietly" "none" "$(decision)"
+# ── the analysis helper failing mid-run ──────────────────────────────────────
+stage s3
+printf '#!/usr/bin/env python3\nimport sys\nsys.exit(3)\n' >"$STG/hooks/lib/tool-input/analyze.py"
+dc_cmd 'echo x > src/app.js'
+assert_eq "a helper that crashes is reported as unavailable: the write is refused" "deny" "$(decision)"
+assert_contains "and says how to proceed" "$(message)" "python3"
+dc_cmd 'git status'
+assert_eq "a helper that crashes does not block a plainly read-only command" "none" "$(decision)"
 unstage
 
-stage s8
-rename_fn "$STG/hooks/lib/project-active.sh" sb_project_active
-printf 'sb_project_is_initiated() { return 1; }\n' >>"$STG/hooks/lib/project-active.sh"
-edit
-assert_eq "no sb_project_active: sb_project_is_initiated decides, not initiated exits" "none" "$(decision)"
-unstage
-
-stage s9
-rename_fn "$STG/hooks/lib/project-active.sh" sb_project_active
-edit
-assert_eq "no sb_project_active: initiated project is still enforced" "deny" "$(decision)"
-unstage
-
-# ── main failing: ERR trap does not preempt the fallback report ──────────────
-# A library that turns `exit` into a function lets main finish with a non-zero status.
+# ── a script body that cannot be read ───────────────────────────────────────
 mkproj f2
-state inst-a silver-review silver-branch-finish
-stage s10
-printf 'exit() { return 3; }\n' >>"$STG/hooks/lib/hook-bootstrap.sh"
-edit
-assert_contains "main returning non-zero prints the continue-without-blocking notice" "$TL_OUT" "dev-cycle-check.sh encountered an error"
+state inst-a
+printf '#!/usr/bin/env bash\necho x > src/gen.js\n' >"$PROJ/gen.sh"
+stage s4
+printf 'sb_pf_write_records() { :; }\n' >>"$STG/hooks/lib/planning-floor.sh"
+dc_cmd 'bash gen.sh'
+assert_eq "no write records at all: nothing to gate" "none" "$(decision)"
 unstage
-
-# ── unreadable files (needs a non-root user: root ignores permission bits) ───
 if [[ "$(id -u)" -eq 0 ]]; then
   echo "SKIP: needs a non-root user (unreadable branch file and script)"
 else

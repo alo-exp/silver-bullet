@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for the PostToolUse usage recorders (record-graphify-query.sh, record-recommended-mcp.sh)
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 # shellcheck source=../lib/c-toolgates-2-helpers.sh
@@ -58,36 +62,26 @@ prologue_suite() {
   tg2_run "$hook" "$good"
   assert_not_recorded "$name: suspended enforcement is a no-op" "$state"
 
-  # Library farm: without sb-project-gate.sh the hook walks upward itself.
+  # Without sb-project-gate.sh the hook cannot find its project: inert (fail-open), never an error.
   reset; tg2_farm gate "hooks/$name" sb-project-gate.sh project-active.sh
   TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TG2_PROJ/src" tg2_run "hooks/$name" "$good"
-  assert_recorded "$name: farm without gate lib still records via its own walk-up" "$state"
+  assert_not_recorded "$name: farm without the project-gate lib is inert" "$state"
+  assert_eq "$name: farm without the project-gate lib exits 0" "0" "$TL_STATUS"
+
+  # A project recommendation without the user's consent records nothing.
+  reset; TG2_PROJECT_ROOT="$TG2_PROJ" tg2_run "$hook" "$good" XDG_CONFIG_HOME="$TL_TMP/no-consent"
+  assert_not_recorded "$name: no user consent is a no-op" "$state"
   # Without any lib dir the hook cannot source anything and stays inert (fail-open).
   reset; tg2_farm nolib "hooks/$name" -
   TG2_REPO="$TG2_FARM" tg2_run "hooks/$name" "$good"
   assert_not_recorded "$name: missing lib dir fails open" "$state"
 }
 
-# Walk-up fallback (no sb-project-gate.sh): finds config in a parent, stops at .git / root.
-walkup_suite() { # hook state good tool-with-gate-libs-note
-  local hook="$1" state="$2" good="$3" name="${1##*/}"
-  reset; tg2_farm walk "hooks/$name" sb-project-gate.sh project-active.sh
-  TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TG2_PROJ/src" tg2_run "hooks/$name" "$good"
-  if state_is_epoch "$state"; then tl_pass "$name: walk-up fallback finds parent config"; else tl_fail "$name: walk-up fallback did not record (status=$TL_STATUS err=$TL_ERR)"; fi
-  reset
-  mkdir -p "$TL_TMP/gitonly/sub"; git -C "$TL_TMP/gitonly" init -q 2>/dev/null
-  TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TL_TMP/gitonly/sub" tg2_run "hooks/$name" "$good"
-  assert_not_recorded "$name: walk-up stops at .git boundary" "$state"
-  reset
-  TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TL_TMP/outside" tg2_run "hooks/$name" "$good"
-  assert_not_recorded "$name: walk-up stops at filesystem root" "$state"
-}
 
 # ------------------------------------------------------------------ graphify
 GFH=hooks/record-graphify-query.sh
 gf_cmd="$(tg2_bash_input 'graphify query "how does X work"' Bash PostToolUse)"
 prologue_suite "$GFH" "$GF_STATE" "$gf_cmd" "✅ Graphify query recorded" graphify
-walkup_suite "$GFH" "$GF_STATE" "$gf_cmd"
 reset; tg2_run "$GFH" "$(tg2_bash_input 'graphify query x' Bash PostToolUse 2)"
 assert_not_recorded "graphify: failed query is not recorded" "$GF_STATE"
 reset; tg2_run "$GFH" "$(tg2_bash_input 'graphify update .' Bash PostToolUse)"
@@ -96,11 +90,11 @@ reset; tg2_run "$GFH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash
 assert_not_recorded "graphify: shell tool without command is a no-op" "$GF_STATE"
 reset; tg2_run "$GFH" "$(tg2_bash_input 'graphify explain Y' shell PostToolUse)"
 assert_recorded "graphify: shell tool name records" "$GF_STATE"
-reset; mkdir -p "$SB_RUNTIME_STATE_DIR/gf-dir"
-jq --arg p "$SB_RUNTIME_STATE_DIR/gf-dir" '.recommended_tools.graphify.query_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
+reset; mkdir -p "$SB_RUNTIME_STATE_DIR/gf-dir-usage"
+jq --arg p "$SB_RUNTIME_STATE_DIR/gf-dir-usage" '.recommended_tools.graphify.query_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
 tg2_run "$GFH" "$gf_cmd"
 assert_silent_ok "graphify: failed state write is silent"
-rmdir "$SB_RUNTIME_STATE_DIR/gf-dir"
+rmdir "$SB_RUNTIME_STATE_DIR/gf-dir-usage"
 reset; tg2_farm notoolinput-gf "$GFH" tool-input.sh
 TG2_REPO="$TG2_FARM" tg2_run "$GFH" "$gf_cmd"
 assert_recorded "graphify: jq fallbacks record without tool-input.sh" "$GF_STATE"
@@ -108,16 +102,39 @@ assert_recorded "graphify: jq fallbacks record without tool-input.sh" "$GF_STATE
 # ------------------------------------------------------ recommended MCP usage
 RMH=hooks/record-recommended-mcp.sh
 reset; tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
-assert_recorded "recommended-mcp: agentmemory server + memory tool records" "$AM_STATE"
-assert_eq "recommended-mcp: confirmation" "✅ recommended MCP usage recorded" "$(msg)"
-reset; tg2_run "$RMH" "$(tg2_mcp_input agentmemory list_files MCP)"
-assert_recorded "recommended-mcp: agentmemory server alone records" "$AM_STATE"
-reset; tg2_run "$RMH" "$(tg2_mcp_input some-server save_memory CallMcpTool)"
-assert_recorded "recommended-mcp: memory tool on another server records" "$AM_STATE"
-reset; tg2_run "$RMH" "$(tg2_mcp_input some-server store_note CallMcpTool)"
-assert_recorded "recommended-mcp: store* tool records" "$AM_STATE"
-reset; tg2_run "$RMH" "$(tg2_mcp_input some-server list_files CallMcpTool)"
-assert_not_recorded "recommended-mcp: unrelated server and tool is a no-op" "$AM_STATE"
+assert_recorded "recommended-mcp: agentmemory server + retrieval tool records" "$AM_STATE"
+assert_eq "recommended-mcp: confirmation" "✅ agentmemory usage recorded" "$(msg)"
+for t in memory_smart_search memory_search memory_file_history smart_search recall search; do
+  reset; tg2_run "$RMH" "$(tg2_mcp_input agentmemory "$t" MCP)"
+  assert_recorded "recommended-mcp: agentmemory retrieval tool $t records" "$AM_STATE"
+done
+reset; tg2_run "$RMH" "$(tg2_mcp_input user-agentmemory memory_recall CallMcpTool)"
+assert_recorded "recommended-mcp: a namespaced agentmemory server records" "$AM_STATE"
+reset; tg2_run "$RMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"mcp__agentmemory__memory_smart_search", tool_input:{query:"x"}}')"
+assert_recorded "recommended-mcp: Claude Code names (mcp__server__tool) record" "$AM_STATE"
+# R5-10: capture is not retrieval, and another server's search tool is not agentmemory
+for c in "agentmemory list_files" "agentmemory memory_save" "agentmemory save_memory" "some-server save_memory" "some-server store_note" \
+  "some-server search" "some-server recall" "my-agentmemory-fork memory_recall" "agentmemory-evil memory_recall"; do
+  reset; tg2_run "$RMH" "$(tg2_mcp_input "${c% *}" "${c#* }" CallMcpTool)"
+  assert_not_recorded "recommended-mcp: does not record $c" "$AM_STATE"
+done
+reset; tg2_run "$RMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"CallMcpTool", tool_input:{server:"agentmemory", toolName:"memory_recall"}, tool_response:{isError:true}}')"
+assert_not_recorded "recommended-mcp: an error result is not recorded" "$AM_STATE"
+# Graphify MCP retrievals
+reset; tg2_run "$RMH" "$(tg2_mcp_input graphify query_graph CallMcpTool)"
+assert_recorded "recommended-mcp: graphify query_graph records" "$GF_STATE"
+assert_eq "recommended-mcp: graphify confirmation" "✅ Graphify query recorded" "$(msg)"
+for t in get_node get_neighbors shortest_path; do
+  reset; tg2_run "$RMH" "$(tg2_mcp_input graphify "$t" MCP)"
+  assert_recorded "recommended-mcp: graphify $t records" "$GF_STATE"
+done
+reset; tg2_run "$RMH" "$(tg2_mcp_input graphify graph_stats CallMcpTool)"
+assert_not_recorded "recommended-mcp: a graphify tool that is not retrieval does not record" "$GF_STATE"
+reset; tg2_run "$RMH" "$(tg2_mcp_input some-server query_graph CallMcpTool)"
+assert_not_recorded "recommended-mcp: query_graph on another server does not record" "$GF_STATE"
+reset; jq '.recommended_tools.graphify.enabled_by_user=false' <<<"$all_cfg" >"$TG2_CFG"
+tg2_run "$RMH" "$(tg2_mcp_input graphify query_graph CallMcpTool)"
+assert_not_recorded "recommended-mcp: opted-out graphify is a no-op" "$GF_STATE"
 reset; tg2_run "$RMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"CallMcpTool", tool_input:{server:"agentmemory"}}')"
 assert_not_recorded "recommended-mcp: missing tool name is a no-op" "$AM_STATE"
 reset; tg2_run "$RMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"CallMcpTool", tool_input:{toolName:"search"}}')"
@@ -138,28 +155,24 @@ assert_recorded "recommended-mcp: walk finds config in parent dir" "$AM_STATE"
 reset; jq '.recommended_tools.agentmemory.enabled_by_user=false' <<<"$all_cfg" >"$TG2_CFG"
 tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
 assert_not_recorded "recommended-mcp: opted-out agentmemory is a no-op" "$AM_STATE"
-reset; tg2_farm rm-nogate "$RMH" agentmemory-gate.sh
-TG2_REPO="$TG2_FARM" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
-assert_not_recorded "recommended-mcp: without agentmemory-gate.sh no usage can be recorded" "$AM_STATE"
+reset; tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)" XDG_CONFIG_HOME="$TL_TMP/no-consent"
+assert_not_recorded "recommended-mcp: no user consent is a no-op" "$AM_STATE"
 reset; tg2_farm rm-nolib "$RMH" -
 TG2_REPO="$TG2_FARM" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
 assert_not_recorded "recommended-mcp: missing lib dir fails open" "$AM_STATE"
 reset; tg2_farm rm-notoolinput "$RMH" tool-input.sh
 TG2_REPO="$TG2_FARM" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
 assert_recorded "recommended-mcp: jq fallback tool-name parse records" "$AM_STATE"
-reset; mkdir -p "$SB_RUNTIME_STATE_DIR/am-dir"
-jq --arg p "$SB_RUNTIME_STATE_DIR/am-dir" '.recommended_tools.agentmemory.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
-tg2_run "$RMH" "$(tg2_mcp_input agentmemory save_memory CallMcpTool)"
+reset; mkdir -p "$SB_RUNTIME_STATE_DIR/am-dir-usage"
+jq --arg p "$SB_RUNTIME_STATE_DIR/am-dir-usage" '.recommended_tools.agentmemory.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
+tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
 assert_silent_ok "recommended-mcp: failed state write is silent"
-rmdir "$SB_RUNTIME_STATE_DIR/am-dir"
+rmdir "$SB_RUNTIME_STATE_DIR/am-dir-usage"
 
 # ------------------------------------------------ injected library faults
 # A farm whose tool-input.sh answers from env (so unparsable JSON still routes to a tool)
 # exercises the "jq failed -> default" fallbacks; a farm whose project-active.sh reports
 # "not initiated" exercises the initiation guards.
-stub_tool_input='sb_tool_name() { printf "%s" "${STUB_TOOL_NAME:-}"; }
-sb_tool_command_string() { printf "%s" "${STUB_CMD:-}"; }
-sb_tool_file_path() { printf "%s" "${STUB_FILE:-}"; }'
 stub_inactive='sb_project_active() { return 1; }
 sb_project_is_initiated() { return 1; }
 sb_project_gate_or_exit() { exit 0; }'
@@ -168,19 +181,15 @@ fault_suite() { # hook state bash-cmd mcp-tool-env-ok
   local hook="$1" state="$2" cmd="$3" name="${1##*/}"
   reset; TG2_STDIN_UNREADABLE=1 tg2_run "$hook" ""
   assert_not_recorded "$name: unreadable stdin is a no-op" "$state"
-  if [[ -n "$cmd" ]]; then
-    reset; tg2_farm "ti-$name" "$hook" tool-input.sh; tg2_farm_stub tool-input.sh "$stub_tool_input"
-    TG2_REPO="$TG2_FARM" tg2_run "$hook" "not json" STUB_TOOL_NAME=Bash "STUB_CMD=$cmd"
-    assert_recorded "$name: unparsable exit_code defaults to success" "$state"
-  fi
+  reset; tg2_run "$hook" "not json"
+  assert_not_recorded "$name: unparsable payload records nothing" "$state"
   reset; tg2_farm "inactive-$name" "$hook" project-active.sh; tg2_farm_stub project-active.sh "$stub_inactive"
   TG2_REPO="$TG2_FARM" tg2_run "$hook" "$4" STUB_TOOL_NAME="${5:-Bash}" "STUB_CMD=$cmd"
   assert_not_recorded "$name: not-initiated project is a no-op" "$state"
 }
 fault_suite "$GFH" "$GF_STATE" 'graphify query x' "$gf_cmd"
-reset; tg2_farm ti-rm "$RMH" tool-input.sh; tg2_farm_stub tool-input.sh "$stub_tool_input"
-TG2_REPO="$TG2_FARM" tg2_run "$RMH" "not json" STUB_TOOL_NAME=CallMcpTool
-assert_not_recorded "recommended-mcp: unparsable MCP payload records nothing" "$AM_STATE"
+reset; tg2_run "$RMH" "not json"
+assert_not_recorded "recommended-mcp: unparsable payload records nothing" "$AM_STATE"
 reset; TG2_STDIN_UNREADABLE=1 tg2_run "$RMH" ""
 assert_not_recorded "recommended-mcp: unreadable stdin is a no-op" "$AM_STATE"
 reset; tg2_farm inactive-rm "$RMH" project-active.sh; tg2_farm_stub project-active.sh "$stub_inactive"

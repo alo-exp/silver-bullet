@@ -66,13 +66,13 @@ assert_contains "SB_RFL_QUOTA_NOW forwarded" "$(ctx)" "--quota-now 2026-01-01T00
 dg_run "$P" "$H" '{}' SB_RFL_RESOLVER="$RES" SB_RFL_PROJECT_ROOT="$P"
 assert_contains "SB_RFL_PROJECT_ROOT honoured from anywhere" "$(ctx)" "--project-root $P"
 
-# resolver discovery: project copy first, then hook-relative repo copy
+# resolver discovery: only the plugin's own resolver; a project copy is never executed (R3-03)
 cat >"$P/scripts/review-fix-ladder.py" <<'PY'
 import json
 print(json.dumps({"hook_context": "from-project-copy"}))
 PY
 dg_run "$P" "$H" '{}'
-assert_eq "project scripts/review-fix-ladder.py discovered" "from-project-copy" "$(ctx)"
+assert_not_contains "project scripts/review-fix-ladder.py is never run" "$(ctx)" "from-project-copy"
 rm -f "$P/scripts/review-fix-ladder.py"
 dg_run "$P" "$H" '{}' SB_RFL_QUOTA_NOW=2000-01-01T00:00:00Z
 assert_eq "falls back to the bundled resolver (not due => noop)" "" "$(ctx)"
@@ -97,7 +97,8 @@ dg_run "$P" "$H" '{}' SB_RFL_RESOLVER="$TL_TMP/badjson.py"
 assert_eq "non-JSON resolver output => noop" "" "$(ctx)"
 assert_eq "non-JSON resolver output still exits 0" 0 "$TL_STATUS"
 
-# cd into the hook directory failing is tolerated (resolver is then found via the project)
+# cd into the hook directory failing is tolerated; with no plugin resolver found it is a noop and
+# the project copy is still not used
 cat >"$P/scripts/review-fix-ladder.py" <<'PY'
 import json
 print(json.dumps({"hook_context": "project-only"}))
@@ -105,7 +106,7 @@ PY
 TL_STATUS=0
 printf '{}' | (cd "$P" && bash -c 'cd() { [[ "$1" == */hooks ]] && return 1; builtin cd "$@"; }; export -f cd; exec bash "$0"' "$TL_REPO_ROOT/$H") >"$TL_TMP/.out" 2>/dev/null || TL_STATUS=$?
 TL_OUT="$(cat "$TL_TMP/.out")"
-assert_eq "hook dir unresolvable: project resolver still used" "project-only" "$(ctx)"
+assert_eq "hook dir unresolvable: noop, project resolver not used" "" "$(ctx)"
 rm -f "$P/scripts/review-fix-ladder.py"
 
 # python3 missing

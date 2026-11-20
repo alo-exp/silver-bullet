@@ -36,7 +36,20 @@ printf '/elsewhere/log.md' >"$SD/session-log-path"
 if in_proj sb_session_ledger_log_path >/dev/null; then tl_fail "path outside the project rejected"; else tl_pass "path outside the project rejected"; fi
 printf '%s' "$LOG" >"$SD/session-log-path"
 assert_eq "valid path" "$LOG" "$(in_proj sb_session_ledger_log_path)"
-assert_eq "valid path outside a project (no root to constrain)" "$LOG" "$(cd "$TL_TMP/plain" && sb_session_ledger_log_path)"
+# R3-12: a prompt typed outside any SB project must not land in the last SB project's log
+if (cd "$TL_TMP/plain" && sb_session_ledger_log_path >/dev/null); then tl_fail "no project: no log path"; else tl_pass "no project: no log path"; fi
+printf '%s' "$EC_PROJ/docs/../../elsewhere/log.md" >"$SD/session-log-path"
+mkdir -p "$TL_TMP/elsewhere"; : >"$TL_TMP/elsewhere/log.md"
+if in_proj sb_session_ledger_log_path >/dev/null; then tl_fail "dot-dot escape rejected"; else tl_pass "dot-dot escape rejected"; fi
+ln -s "$TL_TMP/elsewhere" "$EC_PROJ/docs/linkdir"
+printf '%s' "$EC_PROJ/docs/linkdir/log.md" >"$SD/session-log-path"
+if in_proj sb_session_ledger_log_path >/dev/null; then tl_fail "symlinked directory escape rejected"; else tl_pass "symlinked directory escape rejected"; fi
+rm -f "$EC_PROJ/docs/linkdir"
+printf '%s' "$EC_PROJ/docs/missing-dir/log.md" >"$SD/session-log-path"
+if in_proj sb_session_ledger_log_path >/dev/null; then tl_fail "unresolvable directory rejected"; else tl_pass "unresolvable directory rejected"; fi
+printf '%s' "$LOG" >"$SD/session-log-path"
+if (cd "$EC_PROJ" && PROJECT_ROOT_OVERRIDE="$TL_TMP/no-such-root" sb_session_ledger_log_path >/dev/null); then tl_fail "unresolvable project root rejected"; else tl_pass "unresolvable project root rejected"; fi
+printf '%s' "$LOG" >"$SD/session-log-path"
 rm -f "$SD/session-log-path"
 ln -s "$TL_TMP/target" "$SD/session-log-path"
 if in_proj sb_session_ledger_log_path >/dev/null; then tl_fail "symlinked path file rejected"; else tl_pass "symlinked path file rejected"; fi
@@ -44,6 +57,11 @@ rm -f "$SD/session-log-path"
 printf '%s' "$LOG" >"$SD/session-log-path"
 
 # ---- request block ----------------------------------------------------------
+red="$(sb_session_ledger_request_block $'deploy with token=abc123 and ghp_aaaaaaaaaaaaaaaaaaaaaaaaaa\npassword: hunter2 ok')"
+assert_not_contains "token value redacted from the logged prompt" "$red" "abc123"
+assert_not_contains "github token redacted from the logged prompt" "$red" "ghp_aaaa"
+assert_not_contains "password redacted from the logged prompt" "$red" "hunter2"
+assert_contains "ordinary words survive redaction" "$red" "deploy with"
 block="$(sb_session_ledger_request_block $'first line\nsecond line' silver-plan "" silver-execute)"
 assert_match "block header" '^- Request \[[0-9-]+ [0-9:]+Z\]' "$block"
 assert_contains "multi-line prompt quoted" "$block" $'  > first line\n  > second line'

@@ -120,6 +120,21 @@ hash -r
 assert_eq "failed rewrite: config untouched" devops-cycle "$(jq -r .project.active_workflow "$PROJ/.silver-bullet.json")"
 assert_eq "failed rewrite: silent" "0|" "$TL_STATUS|$TL_OUT"
 assert_eq "failed rewrite: temp file removed" 0 "$(find "$TL_TMP/hook-tmp" -type f | wc -l | tr -d ' ')"
+# R3-11: the reset keeps the file's mode and never writes through a symlink.
+orch_make_project "$PROJ" '{"sb_initiated":true,"project":{"active_workflow":"devops-cycle"}}'
+chmod 640 "$PROJ/.silver-bullet.json"
+rm -f "$(orch_state_file)"
+tl_run_hook "$HOOK" "$(skill_json silver-ship)"
+assert_eq "reset keeps the config mode" 640 "$(stat -c %a "$PROJ/.silver-bullet.json" 2>/dev/null || stat -f %Lp "$PROJ/.silver-bullet.json")"
+orch_make_project "$PROJ" '{"sb_initiated":true,"project":{"active_workflow":"devops-cycle"}}'
+mv "$PROJ/.silver-bullet.json" "$TL_TMP/real-config.json"
+ln -s "$TL_TMP/real-config.json" "$PROJ/.silver-bullet.json"
+rm -f "$(orch_state_file)"
+tl_run_hook "$HOOK" "$(skill_json silver-ship)"
+assert_eq "symlinked config is not rewritten" devops-cycle "$(jq -r .project.active_workflow "$TL_TMP/real-config.json")"
+assert_eq "symlinked config: no reset note" "0|" "$TL_STATUS|$TL_OUT"
+rm -f "$PROJ/.silver-bullet.json" "$TL_TMP/real-config.json"
+orch_make_project "$PROJ"
 
 echo "=== failure paths ==="
 status=0
