@@ -155,7 +155,7 @@ sb_session_epoch_rotate() {
     if [[ -z "$l2" ]]; then oldid=""; oldhead="$l1"; fi
   fi
   curid="$(_sb_se_repo "$root")"
-  curhead="$(git -C "$root" rev-parse HEAD 2>/dev/null || true)"
+  if curhead="$(git -C "$root" rev-parse HEAD 2>/dev/null)"; then :; fi
   if [[ "$mode" == rotate ]]; then
     if [[ -n "$oldhead" ]]; then
       foreign=0
