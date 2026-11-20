@@ -159,7 +159,8 @@ fresh
 printf 'old-branch\n' >"$BRANCH"
 printf 'silver-plan\n' >"$STATE"
 for f in $scoped_session_files outcomes-tamper.log instruction-ledger-notes.txt; do printf 'x' >"$SD/$f"; done
-printf 'fa/one\n' >"$SD/files-written.1700000000"; printf 'fa/two\n' >"$SD/files-written.unknown"
+echo one >"$EC_PROJ/src-one.js"; echo two >"$EC_PROJ/src-two.js"   # dirty (untracked) project files the trace names
+printf 'f%s/src-one.js\n' "$EC_PROJ" >"$SD/files-written.1700000000"; printf 'f%s/src-two.js\n' "$EC_PROJ" >"$SD/files-written.unknown"
 run_ss '{"source":"startup"}'
 for f in $scoped_session_files; do
   assert_file_absent "branch change removes $f" "$SD/$f"
@@ -177,6 +178,7 @@ run_ss '{"source":"resume"}'
 for f in instruction-ledger-s1.json outcomes-session-s1.json files-written.1700000000; do
   assert_file_exists "a same-branch resume keeps $f" "$SD/$f"
 done
+rm -f "$EC_PROJ/src-one.js" "$EC_PROJ/src-two.js"
 rm -f "$SD"/instruction-ledger-*.json "$SD"/outcomes-session-* "$SD"/files-written.* "$SD"/outcomes-seeded* "$SD/outcomes-tamper.log" "$SD/instruction-ledger-notes.txt" "$SD/outcomes-session.json" "$SD/outcomes-session.json.sha256"
 # On a same-branch startup the approval markers and the CI override still end with the session.
 fresh

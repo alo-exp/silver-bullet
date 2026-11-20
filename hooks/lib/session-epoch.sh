@@ -14,19 +14,19 @@
 #     the evidence that the agent wrote source. The merge is idempotent, and the traces it reads are removed only
 #     after the merged trace was written (a failed write keeps them and the old epoch). An entry appended between
 #     the read and the removal can be lost (a window of milliseconds).
-#   - STATE_DIR/session-start-head records the repository (git common dir) and the HEAD the carried trace was
-#     written against. A trace of ANOTHER repository (or a record without a repository whose HEAD is not in this
-#     one) is dropped: it says nothing about this project. In the same repository a HEAD that did not move, moved
-#     back or sideways (checkout, detach, reset), or cannot be read keeps the trace whole. A HEAD that moved
-#     FORWARD (the recorded one is an ancestor of the current one) keeps only the entries whose path is still dirty
-#     and was not part of the move (`git diff --name-only old new`): work that was committed, or the user's own
-#     later edits to it, is not the agent's pending write, so a new chat-only session over the user's edits is not
-#     blocked, while the agent's own uncommitted edits stay on record. `*` entries cannot be checked against a
-#     path and are dropped on a forward move.
+#   - ONE rule decides what a rotation keeps (hooks/lib/tool-input/trace_filter.py). An entry stays only when its
+#     path is under the project root, is still dirty there (modified or untracked per `git status`) and is not part
+#     of the HEAD move since the previous rotation (`git diff --name-only old new`, empty when HEAD did not move);
+#     `d`, `t` and glob entries cover the paths below them; `*` entries cannot be checked against a path and are
+#     dropped. So a new chat-only session over the user's own edits is not blocked by an earlier session's stale
+#     entries, while the agent's own still-uncommitted source stays on record. STATE_DIR/session-start-head holds
+#     the repository identity (device:inode of the git common dir) and the HEAD of the previous rotation; a trace
+#     recorded for another repository, or a record in an older one-line layout, is dropped whole.
 # session-log-init never replaces a valid epoch; the autonomous-mode relaunch restamps it (the sentinel timer
 # restarts) and merges the traces the same way.
-# Residual: running session-start by hand is out of scope for the integrity record (integrity.sh); an agent that
-# commits its own change and edits it no further loses that part of its trace on a forward move.
+# Residual: running session-start by hand is out of scope for the integrity record (integrity.sh). A hand-run
+# session-start therefore loses a trace that holds only `*` entries (and entries for changes that were committed),
+# and keeps the dirty source files the agent wrote.
 #
 # API:
 #   sb_session_epoch_restamp FILE STATE_DIR [drop]    write a new epoch to FILE; merge every trace into its trace
@@ -111,80 +111,48 @@ sb_session_epoch_should_rotate() {
   [[ "$sid" != "$stored" ]]
 }
 
-# _sb_se_repo ROOT: the canonical git common directory of ROOT (a worktree shares its repository's)
+# _sb_se_repo ROOT: the identity of ROOT's repository: device and inode of its git common directory (a worktree
+# shares its repository's; unlike a path it does not depend on how the directory was spelled)
 _sb_se_repo() {
-  local out
-  if out="$(cd "$1" 2>/dev/null && cd "$(git rev-parse --git-common-dir 2>/dev/null)" 2>/dev/null && pwd -P)"; then printf '%s' "$out"; fi
+  local dir out
+  if dir="$(cd "$1" 2>/dev/null && git rev-parse --git-common-dir 2>/dev/null)"; then
+    [[ "$dir" == /* ]] || dir="$1/$dir"
+    if out="$(stat -c '%d:%i' "$dir" 2>/dev/null || stat -f '%d:%i' "$dir" 2>/dev/null)"; then printf '%s' "$out"; fi
+  fi
 }
 
-# _sb_se_filter ROOT OLD NEW TRACE: keep the entries of TRACE whose path is still dirty and not in `git diff OLD NEW`
+# The rule applied to the merged trace on every rotation (see the header): hooks/lib/tool-input/trace_filter.py.
+# A failing helper (no python3, an error) leaves the trace whole.
 _sb_se_filter() {
-  local root="$1" old="$2" new="$3" trace="$4" dirty moved line path keep="" p
-  dirty="$(git -C "$root" status --porcelain -z 2>/dev/null | tr '\0' '\n' | cut -c4-)"
-  moved="$(git -C "$root" diff --name-only -z "$old" "$new" 2>/dev/null | tr '\0' '\n')"
-  while IFS= read -r line; do
-    [[ "$line" == '*' || -z "$line" ]] && continue
-    path="${line:1}"
-    path="${path#"${root%/}"/}"
-    # a file entry is its own path; a directory entry (d) covers every path below it
-    if [[ "${line:0:1}" == d ]]; then
-      grep -q "^${path%/}/" <<<"$dirty" || continue
-      ! grep -q "^${path%/}/" <<<"$moved" || continue
-    else
-      grep -qxF -- "$path" <<<"$dirty" || continue
-      ! grep -qxF -- "$path" <<<"$moved" || continue
-    fi
-    keep="${keep}${line}"$'\n'
-  done <"$trace"
-  if [[ -n "$keep" ]]; then
-    _sb_se_write "$trace" "${keep%$'\n'}" && :
-  else
-    rm -f -- "$trace" 2>/dev/null
-  fi
+  python3 "${BASH_SOURCE[0]%/*}/tool-input/trace_filter.py" "$1" "$2" "$3" "$4" 2>/dev/null && :
   return 0
 }
 
 sb_session_epoch_rotate() {
   local file="${1:-}" sd="${2:-}" root="${3:-}" mode="${4:-rotate}" sid="${5:-}"
-  local headfile="$sd/session-start-head" oldid="" oldhead="" curid curhead how=keep l1="" l2="" foreign
+  local headfile="$sd/session-start-head" oldid="" oldhead="" curid curhead=""
   if [[ -f "$headfile" && ! -L "$headfile" ]]; then
-    l1="$(sed -n 1p "$headfile")"
-    l2="$(sed -n 2p "$headfile")"
-    # a record without a repository line (older state) is the HEAD alone
-    oldid="$l1"; oldhead="$l2"
-    if [[ -z "$l2" ]]; then oldid=""; oldhead="$l1"; fi
+    oldid="$(sed -n 1p "$headfile")"
+    oldhead="$(sed -n 2p "$headfile")"
+    # a record without a repository line (an older layout) says nothing about this project: it is foreign
+    [[ -n "$oldhead" ]] || oldid="legacy"
   fi
   curid="$(_sb_se_repo "$root")"
   if curhead="$(git -C "$root" rev-parse HEAD 2>/dev/null)"; then :; fi
   if [[ "$mode" == rotate ]]; then
-    if [[ -n "$oldhead" ]]; then
-      foreign=0
-      if [[ -n "$oldid" ]]; then
-        [[ "$oldid" == "$curid" ]] || foreign=1
-      elif ! git -C "$root" cat-file -e "$oldhead^{commit}" 2>/dev/null; then
-        foreign=1
-      fi
-      if [[ "$foreign" == 1 ]]; then
-        how=drop
-      elif [[ -n "$curhead" && "$curhead" != "$oldhead" ]] && git -C "$root" merge-base --is-ancestor "$oldhead" "$curhead" 2>/dev/null; then
-        how=filter
-      fi
-    fi
-    if [[ "$how" == drop ]]; then
+    if [[ -n "$oldid" && "$oldid" != "$curid" ]]; then
       sb_session_epoch_restamp "$file" "$sd" drop && :
     else
       sb_session_epoch_restamp "$file" "$sd" && :
-      if [[ "$how" == filter && -f "$file" ]]; then
-        _sb_se_filter "$root" "$oldhead" "$curhead" "$sd/files-written.$(<"$file")" && :
+      if [[ -f "$file" && -f "$sd/files-written.$(<"$file")" ]]; then
+        _sb_se_filter "$root" "$oldhead" "$curhead" "$sd/files-written.$(<"$file")"
       fi
     fi
-    # the HEAD a carried trace was written against is kept (a detour and back is not a forward move)
-    if [[ "$how" != keep ]] || ! compgen -G "$sd/files-written.*" >/dev/null; then oldhead=""; fi
+    _sb_se_write "$headfile" "$curid"$'\n'"$curhead" && :
   else
     sb_session_epoch_collect "$file" "$sd" && :
+    [[ -f "$headfile" ]] || _sb_se_write "$headfile" "$curid"$'\n'"$curhead" && :
   fi
-  # repository and HEAD the trace was written against: recorded when there is none yet or none is carried
-  if [[ -z "$oldhead" ]]; then _sb_se_write "$headfile" "$curid"$'\n'"$curhead" && :; fi
   if [[ -n "$sid" ]]; then _sb_se_write "$sd/session-start-sid" "$sid" && :; fi
   return 0
 }
