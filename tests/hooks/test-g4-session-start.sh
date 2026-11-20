@@ -158,14 +158,16 @@ outcomes-seeded-s1 outcomes-seeded"
 fresh
 printf 'old-branch\n' >"$BRANCH"
 printf 'silver-plan\n' >"$STATE"
-for f in $scoped_session_files outcomes-tamper.log instruction-ledger-notes.txt files-written.1700000000 files-written.unknown; do printf 'x' >"$SD/$f"; done
+for f in $scoped_session_files outcomes-tamper.log instruction-ledger-notes.txt; do printf 'x' >"$SD/$f"; done
+printf 'fa/one\n' >"$SD/files-written.1700000000"; printf 'fa/two\n' >"$SD/files-written.unknown"
 run_ss '{"source":"startup"}'
 for f in $scoped_session_files; do
   assert_file_absent "branch change removes $f" "$SD/$f"
 done
 assert_file_exists "branch change keeps the tamper log (an audit trail)" "$SD/outcomes-tamper.log"
-assert_file_exists "branch change keeps the write trace (the evidence, G4 r4-01)" "$SD/files-written.1700000000"
-assert_file_exists "branch change keeps the unknown-epoch write trace" "$SD/files-written.unknown"
+# the traces are merged into the new epoch's trace (hooks/lib/session-epoch.sh): their entries all survive
+assert_eq "branch change keeps the write trace entries (the evidence, G4 r4-01)" 2 "$(cat "$SD"/files-written.* 2>/dev/null | grep -c .)"
+assert_eq "...in one trace under the current epoch" "$SD/files-written.$(cat "$SD/session-start-time")" "$(ls "$SD"/files-written.*)"
 assert_file_exists "branch change keeps files that only look similar" "$SD/instruction-ledger-notes.txt"
 assert_eq "a clean reset logs no outcomes tamper" "x" "$(cat "$SD/outcomes-tamper.log")"
 fresh
