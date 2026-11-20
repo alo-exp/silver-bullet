@@ -51,6 +51,19 @@ sb_orchestrator_is_worker_session() {
   [[ -n "$agent_id" ]]
 }
 
+# A Task spawn record younger than its TTL (default 2 h) exists. This is evidence about the session,
+# never its identity: only the prompt provenance check (orchestrator-directive.sh) reads it, to refuse an
+# override or a parent registration that cannot be tied to the recorded parent while a worker may be running.
+sb_orchestrator_worker_marker_fresh() {
+  local file ttl
+  file="$(sb_orchestrator_worker_marker_file)"
+  [[ -f "$file" && ! -L "$file" ]] || return 1
+  ttl="${SB_ORCHESTRATOR_WORKER_MARKER_TTL_SECONDS:-7200}"
+  [[ "$ttl" =~ ^[0-9]+$ ]] || ttl=7200
+  jq -e --argjson now "$(date +%s)" --argjson ttl "$ttl" \
+    '(.spawned_at | strings | (try fromdateiso8601 catch 0)) as $t | $t > 0 and ($now - $t) < $ttl' "$file" >/dev/null 2>&1
+}
+
 # True when current PWD walk finds SB boundary (.silver-bullet.json + silver-bullet.md).
 # Never uses project-root cache — stale cache must not activate orchestrator enforcement.
 sb_orchestrator_workspace_has_boundary() {

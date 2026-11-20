@@ -78,6 +78,28 @@ rm -f "$MARKER" "$TL_TMP/real-marker"
 sb_orchestrator_clear_worker_marker
 assert_eq "clear removes the record" no "$([[ -e "$MARKER" ]] && echo yes || echo no)"
 
+echo "=== spawn record freshness (evidence for the prompt provenance check, never identity) ==="
+fresh() { sb_orchestrator_worker_marker_fresh && echo yes || echo no; }
+assert_eq "no record: not fresh" no "$(fresh)"
+printf '{"spawned_at":"%s"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$MARKER"
+assert_eq "a record spawned now is fresh" yes "$(fresh)"
+assert_eq "...and still not a worker session" no "$(worker)"
+printf '{"spawned_at":"%s"}' "$(date -u -d '3 hours ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-3H +%Y-%m-%dT%H:%M:%SZ)" >"$MARKER"
+assert_eq "a record past the default 2 h TTL is stale" no "$(fresh)"
+assert_eq "TTL override keeps it fresh" yes "$(SB_ORCHESTRATOR_WORKER_MARKER_TTL_SECONDS=86400 fresh)"
+assert_eq "a non-numeric TTL falls back to 2 h" no "$(SB_ORCHESTRATOR_WORKER_MARKER_TTL_SECONDS=soon fresh)"
+printf '{"skill":"silver-plan"}' >"$MARKER"
+assert_eq "no spawned_at: not fresh" no "$(fresh)"
+printf '{"spawned_at":"yesterday"}' >"$MARKER"
+assert_eq "an unparsable spawned_at: not fresh" no "$(fresh)"
+printf '{"spawned_at":5}' >"$MARKER"
+assert_eq "a non-string spawned_at: not fresh" no "$(fresh)"
+rm -f "$MARKER"
+printf '{"spawned_at":"%s"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$TL_TMP/real-marker"
+ln -s "$TL_TMP/real-marker" "$MARKER"
+assert_eq "a symlinked record is not evidence" no "$(fresh)"
+rm -f "$MARKER" "$TL_TMP/real-marker"
+
 echo "=== workspace boundary ==="
 ( cd "$TL_TMP" && mkdir -p plain/.git && cd plain && sb_orchestrator_workspace_has_boundary ) && rc=0 || rc=$?
 assert_eq "outside an SB project: no boundary" 1 "$rc"
