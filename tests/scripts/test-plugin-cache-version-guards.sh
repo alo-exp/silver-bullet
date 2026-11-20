@@ -90,6 +90,7 @@ assert_file_exists "prune: stray file kept" "$TL_TMP/pr/stray-file"
 # --- sb_claude_ensure_plugin_cache_ready ------------------------------------------------------
 REPO="$TL_TMP/repo"; mkdir -p "$REPO/hooks/lib"
 echo '#!/bin/sh' >"$REPO/hooks/session-start"; echo lib >"$REPO/hooks/lib/x.sh"
+mkdir -p "$REPO/.claude-plugin"; echo '{"name":"silver-bullet"}' >"$REPO/.claude-plugin/plugin.json"
 assert_eq "ensure: cache root missing" 1 "$(rc_of sb_claude_ensure_plugin_cache_ready "$REPO")"
 mkdir -p "$CR/orphan"; : >"$CR/orphan/.orphaned_at"
 assert_eq "ensure: no valid version dir" 1 "$(rc_of sb_claude_ensure_plugin_cache_ready "$REPO")"
@@ -101,6 +102,14 @@ assert_file_exists "ensure: session-start copied" "$CR/0.5.0/hooks/session-start
 assert_eq "ensure: nested hook copied" lib "$(cat "$CR/0.5.0/hooks/lib/x.sh")"
 assert_eq "ensure: current alias points at latest" "$(cd "$CR/0.5.0" && pwd -P)" "$(readlink "$CR/current")"
 assert_eq "ensure: copied files get the Fu=rx,Fgo=rx mode" "555" "$(stat -c %a "$CR/0.5.0/hooks/session-start")"
+
+# a directory that only has a hooks/ folder is not a Silver Bullet checkout: nothing is copied (R2-12)
+HOSTILE="$TL_TMP/hostile"; mkdir -p "$HOSTILE/hooks"; echo evil >"$HOSTILE/hooks/evil.sh"
+rc_of sb_claude_ensure_plugin_cache_ready "$HOSTILE" >/dev/null
+assert_file_absent "ensure: a non-Silver-Bullet project's hooks are not copied" "$CR/0.5.0/hooks/evil.sh"
+echo '{"name":"someone-else"}' >"$HOSTILE/plugin-name.json"; mkdir -p "$HOSTILE/.claude-plugin"; echo '{"name":"someone-else"}' >"$HOSTILE/.claude-plugin/plugin.json"
+rc_of sb_claude_ensure_plugin_cache_ready "$HOSTILE" >/dev/null
+assert_file_absent "ensure: another plugin's checkout is not copied either" "$CR/0.5.0/hooks/evil.sh"
 
 # no repo root: only existing cache content counts
 rm -rf "$CR/0.5.0/hooks"; mkdir -p "$CR/0.5.0/hooks"

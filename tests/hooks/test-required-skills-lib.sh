@@ -28,15 +28,22 @@ assert_eq "default version read" "9.9.9" "$out"
 printf '{}' >"$TL_TMP/empty.json"
 out="$(SB_DEFAULT_CONFIG="$TL_TMP/empty.json" bash -c 'source "$1"; printf "%s|%s|%s|%s|%s|%s|%s" "$DEFAULT_PLANNING" "$DEVOPS_DEFAULT_PLANNING" "$DEFAULT_REQUIRED" "$DEVOPS_DEFAULT_REQUIRED" "$DEFAULT_RELEASE_REQUIRED" "$DEVOPS_DEFAULT_RELEASE_REQUIRED" "$DEFAULT_ALL_TRACKED"' _ "$LIB")"
 assert_eq "empty config: built-in fallbacks" "silver-quality-gates silver-context silver-plan|silver-blast-radius devops-quality-gates silver-context silver-plan|silver-quality-gates silver-completion-audit verify-tests|silver-quality-gates silver-completion-audit verify-tests|silver-create-release|silver-create-release|silver-quality-gates silver-quality-gates-design silver-quality-gates-adversarial verify-tests" "$out"
+# a template that is not JSON: jq fails, every list keeps its fallback
+printf 'not json' >"$TL_TMP/bad.json"
+out="$(SB_DEFAULT_CONFIG="$TL_TMP/bad.json" bash -c 'source "$1"; printf "%s|%s" "$DEFAULT_PLANNING" "$DEFAULT_ALL_TRACKED"' _ "$LIB")"
+assert_eq "unreadable template: built-in fallbacks" "silver-quality-gates silver-context silver-plan|silver-quality-gates silver-quality-gates-design silver-quality-gates-adversarial verify-tests" "$out"
 # no jq: every lookup fails, fallbacks apply
 NOJQ="$(tl_path_without jq)"
-out="$(PATH="$NOJQ" bash -c 'source "$1"; printf "%s" "$DEFAULT_PLANNING"; __sb_rs_load_all_tracked || printf " tracked-fail"; __sb_rs_default_version || printf " version-fail"' _ "$LIB")"
-assert_eq "no jq: fallback planning, failing lookups" "silver-quality-gates silver-context silver-plan tracked-fail version-fail" "$out"
+out="$(PATH="$NOJQ" bash -c 'source "$1"; printf "%s" "$DEFAULT_PLANNING"; __sb_rs_default_version || printf " version-fail"' _ "$LIB")"
+assert_eq "no jq: fallback planning, failing lookups" "silver-quality-gates silver-context silver-plan version-fail" "$out"
 # the library copy without the templates directory next to it finds no default config
 mkdir -p "$TL_TMP/isolated/hooks/lib"
 cp "$LIB" "$TL_TMP/isolated/hooks/lib/required-skills.sh"
 out="$(bash -c 'source "$1"; printf "%s" "$DEFAULT_PLANNING"; __sb_rs_find_default_config || printf " no-config"' _ "$TL_TMP/isolated/hooks/lib/required-skills.sh")"
 assert_eq "no adjacent template: fallback planning" "silver-quality-gates silver-context silver-plan no-config" "$out"
+# without a template: the default version lookup fails, and so does the legacy-config check (jq is there)
+out="$(bash -c 'source "$1"; __sb_rs_default_version || printf "version-fail"; sb_required_skills_config_is_legacy "$2" || printf " legacy-no"' _ "$TL_TMP/isolated/hooks/lib/required-skills.sh" "$TL_TMP/empty.json")"
+assert_eq "no template: no default version, no legacy verdict" "version-fail legacy-no" "$out"
 
 # ---- version comparison -----------------------------------------------------
 lt() { __sb_rs_version_lt "$1" "$2"; }
@@ -67,9 +74,13 @@ if SB_DEFAULT_CONFIG="$TL_TMP/empty.json" bash -c 'source "$1"; sb_required_skil
 assert_eq "plain skill is its own alias" "silver-verify" "$(sb_required_skill_aliases silver-verify | tr '\n' ' ' | sed 's/ $//')"
 assert_eq "tdd aliases" "silver-tdd tdd test-driven-development" "$(sb_required_skill_aliases silver-tdd | tr '\n' ' ' | sed 's/ $//')"
 assert_eq "plan alias" "silver-plan writing-plans" "$(sb_required_skill_aliases silver-plan | tr '\n' ' ' | sed 's/ $//')"
-for pair in "silver-review:code-review" "silver-secure:security" "silver-debug:systematic-debugging" "silver-review-request:requesting-code-review" "silver-review-triage:receiving-code-review" "silver-branch-finish:finishing-a-development-branch" "silver-completion-audit:verification-before-completion"; do
+for pair in "silver-review:code-review" "silver-debug:systematic-debugging" "silver-review-request:requesting-code-review" "silver-review-triage:receiving-code-review" "silver-branch-finish:finishing-a-development-branch" "silver-completion-audit:verification-before-completion"; do
   assert_contains "alias of ${pair%%:*}" "$(sb_required_skill_aliases "${pair%%:*}")" "${pair#*:}"
 done
+# R1-23: `security` and `silver-secure` are two required steps; one must not satisfy the other
+assert_eq "silver-secure has no alias" "silver-secure" "$(sb_required_skill_aliases silver-secure | tr '\n' ' ' | sed 's/ $//')"
+if sb_required_skill_is_recorded $'security\n' silver-secure; then tl_fail "security does not satisfy silver-secure"; else tl_pass "security does not satisfy silver-secure"; fi
+if sb_required_skill_is_recorded $'silver-secure\n' silver-secure; then tl_pass "silver-secure satisfies itself"; else tl_fail "silver-secure satisfies itself"; fi
 if sb_required_skill_is_virtual_marker silver-plan; then tl_pass "virtual marker"; else tl_fail "virtual marker"; fi
 if sb_required_skill_is_virtual_marker random-skill; then tl_fail "not a virtual marker"; else tl_pass "not a virtual marker"; fi
 STATE=$'code-review\nother\n'

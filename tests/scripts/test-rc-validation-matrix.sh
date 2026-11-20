@@ -50,8 +50,7 @@ assert_pass "completion-audit reads require_rc_matrix" test $? -eq 0
 grep -q 'rc-validation' "$REPO_ROOT/hooks/lib/completion-audit/deploy-tier.sh"
 assert_pass "deploy-tier enforces rc-validation markers" test $? -eq 0
 
-test -f "$REPO_ROOT/.github/workflows/rc-validation.yml"
-assert_pass "rc-validation workflow exists" test $? -eq 0
+assert_pass "rc-validation workflow exists" test -f "$REPO_ROOT/.github/workflows/rc-validation.yml"
 
 workflow_body="$(<"$REPO_ROOT/.github/workflows/rc-validation.yml")"
 assert_not_contains() {

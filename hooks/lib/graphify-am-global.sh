@@ -2,6 +2,7 @@
 # Graphify + agentmemory global setup — SB-independent synergy_max apply/verify.
 # Sourced by: scripts/graphify-am-global-setup.sh
 
+_ga_lib_dir="${BASH_SOURCE[0]%/*}"
 GA_SUPPORTED_HOSTS="claude codex opencode goose hermes"
 GA_DEFAULT_PROFILE="synergy_max"
 GA_DEFAULT_EXPORT_FALLBACK="${HOME}/.agentmemory/default-export"
@@ -177,28 +178,17 @@ AGENTMEMORY_EXPORT_ROOT=${export_abs}
   chmod 600 "$env_file" 2>/dev/null || true
 }
 
+# The OpenCode agentmemory entry comes from the shared five-tool manifest (the same writer
+# `sb-doctor --fix` and patch-mcp.py use), so every writer produces one identical entry.
 ga_opencode_merge_agentmemory_mcp() {
-  local cfg="${HOME}/.config/opencode/opencode.json"
-  mkdir -p "$(dirname "$cfg")"
+  local cfg="${HOME}/.config/opencode/opencode.json" patch
+  patch="${_ga_lib_dir}/../../scripts/lib/global-toolstack/patch-mcp.py"
   if ga_dry_run; then
     printf 'DRY-RUN: merge agentmemory MCP into %s\n' "$cfg"
     return 0
   fi
-  if [[ ! -f "$cfg" ]]; then
-    cat >"$cfg" <<'JSON'
-{"$schema":"https://opencode.ai/config.json","mcp":{"agentmemory":{"type":"stdio","command":"npx","args":["-y","@agentmemory/mcp"],"env":{"AGENTMEMORY_URL":"http://localhost:3111"}}}}
-JSON
-    return 0
-  fi
-  command -v jq >/dev/null 2>&1 || return 1
-  local tmp
-  tmp="$(mktemp)"
-  jq '.mcp.agentmemory = {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "@agentmemory/mcp"],
-    "env": { "AGENTMEMORY_URL": "http://localhost:3111" }
-  }' "$cfg" >"$tmp" && mv "$tmp" "$cfg"
+  command -v python3 >/dev/null 2>&1 && [[ -f "$patch" ]] || return 1
+  RT_HOST=opencode RT_PATCH_AGENTMEMORY=1 python3 "$patch" >/dev/null
 }
 
 ga_launchd_server_plist() {

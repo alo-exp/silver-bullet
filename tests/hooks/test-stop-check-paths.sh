@@ -70,6 +70,14 @@ assert_eq "baseline exit" "0" "$TL_STATUS"
 assert_contains "baseline blocks on missing skills" "$(reason)" "silver-quality-gates"
 assert_not_contains "recorded skill is not listed as missing" "$(reason)" "- silver-context"
 
+# ---- a trivial path in the config outside the state root never bypasses -------
+reset_state
+: >"$TL_TMP/outside-trivial"
+ec_cfg "$(jq -cn --arg t "$TL_TMP/outside-trivial" '{config_version:"0.40.0",sb_initiated:true,project:{src_pattern:"/src/",active_workflow:"full-dev-cycle"},skills:{},state:{trivial_file:$t}}')"
+run_stop
+assert_contains "a configured trivial file outside the state root does not bypass" "$(reason)" "silver-quality-gates"
+reset_state
+
 # ---- SubagentStop of a worker is skipped; shared state is left alone (R4-02) --
 reset_state
 marker="$SD/orchestrator-worker-active.json"

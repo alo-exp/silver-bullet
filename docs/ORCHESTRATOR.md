@@ -28,11 +28,11 @@ Config: `"orchestrator_mode": "parent"` (only allowed value; default in template
 | `${SB_RUNTIME_STATE_DIR}/orchestrator-events.jsonl` | Session | Durable orchestration event log (dispatch, join, advance, stop_block, retry). Bounded: past 1 MiB (`SB_ORCHESTRATOR_EVENT_LOG_MAX_BYTES`) it is cut back to the newest 2000 lines (`SB_ORCHESTRATOR_EVENT_LOG_KEEP_LINES`) |
 | `${SB_RUNTIME_STATE_DIR}/orchestrator.lock/` | Session | Short-lived mkdir lock around every `orchestrator.json` read-modify-write (stale after 1 minute, 5 s wait, then proceeds unlocked) |
 | `${SB_RUNTIME_STATE_DIR}/orchestrator-stop-blocks.json` | Session | Parent Stop-block counter (see [Stop release](#stop-release)) |
-| `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` | Session | Human sign-off marker when enterprise policy blocks production delivery |
+| `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` | Host runtime, expires | Human sign-off marker when enterprise policy blocks production delivery. It lives in the host-wide runtime state directory (every project of that host shares it), expires after `enterprise_policy.human_approval_ttl_minutes` (default 480), and may name one project with a `project=<repo root>` line. Nothing clears it at session start: delete it after the approved delivery |
 | `.scheduler.batch_dispatch` (in `orchestrator.json`) | Session | Active parallel/sequential batch handoffs + join status |
 | `.silver-bullet/orchestrator-workers/*.md` | Project | Worker prompt templates (stamped by `sb:init`) |
 | `.planning/orchestrator-composition-log.jsonl` | Committed | Autonomous composition audit |
-| `.planning/orchestrator-override-log.jsonl` | Committed | User `SB OVERRIDE:` audit trail |
+| `.planning/orchestrator-override-log.jsonl` | Committed | User `SB OVERRIDE:` audit trail (hash-chained; mirrored in the runtime state dir) |
 
 ## Directive schema (`orchestrator-directive.json`)
 
@@ -163,7 +163,7 @@ Silver Bullet hooks do **not** read host mode from stdin today. Operators and ag
 |-----------|------------|----------------|
 | **Agent (default)** | Spawn Task workers; read-only Bash in parent | Full PreToolUse/Stop stack |
 | **Plan** (`SwitchMode` → plan) | Read/Grep/Glob + Task PLAN worker; **no** direct Edit/Write in parent | `orchestrator-directive-guard` still blocks parent writes; route planning via workers |
-| **Debug** | Route to `sb:debug` / `sb:forensics` queue — not freestyle Bash | Stop/PreToolUse still fire; use `SB OVERRIDE:` only for audited bypass |
+| **Debug** | Route to `sb:debug` / `sb:forensics` queue — not freestyle Bash | Stop/PreToolUse still fire; an `SB OVERRIDE:` message clears the pending directive and flow queue (audited) but not parent-mode tool limits |
 | **Ask** | Read-only tools | Aligns with parent read-only subset |
 
 **Enterprise E2E:** Matrix rows run in autonomous Agent mode. Do not switch to Plan/Debug mid-row — outcome scorers expect worker completion markers.

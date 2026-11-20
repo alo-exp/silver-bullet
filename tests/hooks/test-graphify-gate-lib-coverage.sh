@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for hooks/lib/graphify-gate.sh (graphify CLI is stubbed)
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 unset SB_GLOBAL_TOOLSTACK_MANIFEST SB_GLOBAL_TOOLSTACK_HOME
@@ -70,8 +74,12 @@ unset SB_GLOBAL_TOOLSTACK_MANIFEST
 w '{}'
 assert_eq "abs graph path default" "$PR/graphify-out/graph.json" "$(sb_graphify_abs_graph_path "$PR/" "$CFG")"
 assert_eq "abs graph path default project is PWD" "$PR/graphify-out/graph.json" "$(cd "$PR" && sb_graphify_abs_graph_path)"
-w '{"recommended_tools":{"graphify":{"graph_path":"/abs/graph.json"}}}'
-assert_eq "abs graph path absolute rel" "/abs/graph.json" "$(sb_graphify_abs_graph_path "$PR" "$CFG")"
+for bad in /abs/graph.json ../x/graph.json a/../b.json "a b/graph.json" 'a$(x)/g.json' "a//b.json"; do
+  w "$(jq -n --arg v "$bad" '{recommended_tools:{graphify:{graph_path:$v}}}')"
+  assert_eq "graph path rejected: $bad" "$PR/graphify-out/graph.json" "$(sb_graphify_abs_graph_path "$PR" "$CFG")"
+done
+w '{"recommended_tools":{"graphify":{"graph_path":"idx/graph.json"}}}'
+assert_eq "graph path accepted" "$PR/idx/graph.json" "$(sb_graphify_abs_graph_path "$PR" "$CFG")"
 w '{}'
 no_t "index missing" sb_graphify_index_exists "$PR" "$CFG"
 mkdir -p "$PR/graphify-out"; : >"$PR/graphify-out/graph.json"
@@ -86,30 +94,32 @@ DEF="$SB_RUNTIME_STATE_DIR/graphify-query"
 assert_eq "state path default no config" "$DEF" "$(sb_graphify_query_state_path)"
 w '{}'
 assert_eq "state path default empty config" "$DEF" "$(sb_graphify_query_state_path "$CFG")"
-w "{\"recommended_tools\":{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/q-custom\"}}}"
-assert_eq "state path configured" "$SB_RUNTIME_STATE_DIR/q-custom" "$(sb_graphify_query_state_path "$CFG")"
-w "{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/q-legacy\"}}"
-assert_eq "state path legacy key" "$SB_RUNTIME_STATE_DIR/q-legacy" "$(sb_graphify_query_state_path "$CFG")"
+w "{\"recommended_tools\":{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/q-custom-query\"}}}"
+assert_eq "state path configured" "$SB_RUNTIME_STATE_DIR/q-custom-query" "$(sb_graphify_query_state_path "$CFG")"
+w "{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/q-legacy-query\"}}"
+assert_eq "state path legacy key" "$SB_RUNTIME_STATE_DIR/q-legacy-query" "$(sb_graphify_query_state_path "$CFG")"
 w '{"graphify":{"query_state_file":"/tmp/escape/q"}}'
 assert_eq "state path outside state scope rejected" "$DEF" "$(sb_graphify_query_state_path "$CFG")"
 w '{"graphify":{"query_state_file":"~/escape"}}'
 assert_eq "state path ~ outside scope rejected" "$DEF" "$(sb_graphify_query_state_path "$CFG")"
 w 'garbage'
 assert_eq "state path invalid json default" "$DEF" "$(sb_graphify_query_state_path "$CFG")"
-assert_eq "state path without scope helper accepts any" "/tmp/anywhere/q" "$(w '{"graphify":{"query_state_file":"/tmp/anywhere/q"}}'; env bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_graphify_query_state_path "$2"' _ "$LIBF" "$CFG")"
-assert_eq "state path default without runtime dir" "$HOME/.silver-bullet/graphify-query" "$(env -u SB_RUNTIME_STATE_DIR bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_graphify_query_state_path' _ "$LIBF")"
+# R5-01: a '..' component, a symlinked directory or a relative path never leaves the state dir
+for bad in "$SB_RUNTIME_STATE_DIR/../victim" "$SB_RUNTIME_STATE_DIR/a/../../victim" "relative/q" "$SB_RUNTIME_STATE_DIR/" "$SB_RUNTIME_STATE_DIR/./q" "$SB_RUNTIME_STATE_DIR/a/../victim-query" "$SB_RUNTIME_STATE_DIR/./q-query" "$SB_RUNTIME_STATE_DIR/a//q-query"; do
+  w "$(jq -n --arg v "$bad" '{graphify:{query_state_file:$v}}')"
+  assert_eq "state path rejected: $bad" "$DEF" "$(sb_graphify_query_state_path "$CFG")"
+done
+mkdir -p "$TL_TMP/outside-dir"; ln -s "$TL_TMP/outside-dir" "$SB_RUNTIME_STATE_DIR/linkdir"
+w "{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/linkdir/q-query\"}}"
+assert_eq "state path through a symlinked directory is rejected" "$DEF" "$(sb_graphify_query_state_path "$CFG")"
+rm -f "$SB_RUNTIME_STATE_DIR/linkdir"
+w "{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/newdir/q-query\"}}"
+assert_eq "state path in a subdirectory is rejected" "$DEF" "$(sb_graphify_query_state_path "$CFG")"
+assert_file_absent "no subdirectory is created for it" "$SB_RUNTIME_STATE_DIR/newdir"
+assert_eq "state path default without runtime dir" "$HOME/.silver-bullet/graphify-query" "$(env -u SB_RUNTIME_STATE_DIR bash -c 'source "$1"; sb_graphify_query_state_path' _ "$LIBF")"
 
 Q="$DEF"
 w '{}'
-no_t "epoch missing" sb_graphify_query_epoch "$Q"
-printf 'x\n' >"$Q"; no_t "epoch non-numeric" sb_graphify_query_epoch "$Q"
-printf '42\nextra\n' >"$Q"; assert_eq "epoch first line" "42" "$(sb_graphify_query_epoch "$Q")"
-tl_stub sed 'exit 1'; hash -r
-no_t "epoch unreadable" sb_graphify_query_epoch "$Q"
-rm -f "$TL_BIN/sed"; hash -r
-rm -f "$Q"; ln -s "$TL_TMP/tgt" "$Q"; printf '9\n' >"$TL_TMP/tgt"
-no_t "epoch symlink refused" sb_graphify_query_epoch "$Q"
-rm -f "$Q"
 
 no_t "not fresh without state" sb_graphify_query_is_fresh "$CFG"
 tl_stub date 'echo 10000'; hash -r
@@ -126,11 +136,16 @@ sb_graphify_clear_query_state "$CFG"; tl_pass "clear idempotent"
 mkdir -p "$Q/child"; sb_graphify_clear_query_state "$CFG"
 assert_eq "clear tolerates rm failure" "yes" "$([[ -d "$Q/child" ]] && echo yes || echo no)"; rm -rf "$Q"
 mkdir -p "$Q"; no_t "record fails when path is a directory" sb_graphify_record_query "$CFG"; rmdir "$Q"
-( ln -s "$TL_TMP/tgt" "$Q"; sb_graphify_record_query "$CFG" ) 2>"$TL_TMP/err" && tl_fail "record refuses symlink" || tl_pass "record refuses symlink"
-assert_contains "symlink refusal message" "$(cat "$TL_TMP/err")" "refusing to write through symlink"
+printf 'precious\n' >"$TL_TMP/tgt"; ln -s "$TL_TMP/tgt" "$Q"
+sb_graphify_record_query "$CFG"
+assert_eq "record never writes through a symlink" "precious" "$(cat "$TL_TMP/tgt")"
+if [[ -f "$Q" && ! -L "$Q" ]]; then tl_pass "record replaces the symlink with a regular file"; else tl_fail "record replaces the symlink with a regular file"; fi
+assert_eq "record wrote the epoch" "10000" "$(cat "$Q")"
+rm -f "$Q"; ln -s "$TL_TMP/tgt" "$Q"; printf '9999\n' >"$TL_TMP/tgt"
+no_t "a symlinked stamp is never fresh" sb_graphify_query_is_fresh "$CFG"
 rm -f "$Q"
-( unset -f sb_guard_nofollow; sb_graphify_record_query "$CFG" ) && tl_pass "record without nofollow helper" || tl_fail "record without nofollow helper"
-assert_eq "record without helper wrote epoch" "10000" "$(cat "$Q")"
+printf '12abc\n' >"$Q"; no_t "a non-numeric stamp is not fresh" sb_graphify_query_is_fresh "$CFG"
+rm -f "$Q"
 rm -f "$Q" "$TL_BIN/date"; hash -r
 BADF="$TL_TMP/badfile"; printf x >"$BADF"
 (
@@ -141,18 +156,19 @@ BADF="$TL_TMP/badfile"; printf x >"$BADF"
 
 # ---------- command classification ----------
 no_t "retrieval empty" sb_graphify_command_is_retrieval ""
-for c in "graphify query foo" "graphify explain x" "uvx graphifyy path A B" "/usr/bin/graphify affected f" "graphify diagnose" "graphify dfs a"; do
+for c in "graphify query foo" "graphify explain x" "graphifyy path A B" "/usr/bin/graphify affected f" "RTK_DISABLED=1 rtk graphify query x" "graphify query x 2>/dev/null" "FOO=1 graphify --json query x"; do
   yes_t "retrieval: $c" sb_graphify_command_is_retrieval "$c"
 done
 no_t "retrieval: update is not retrieval" sb_graphify_command_is_retrieval "graphify update ."
 no_t "retrieval: other tool" sb_graphify_command_is_retrieval "grep query"
-no_t "index_build empty" sb_graphify_command_is_index_build ""
-for c in "graphify update ." "graphify extract f" "graphify watch"; do yes_t "index build: $c" sb_graphify_command_is_index_build "$c"; done
-no_t "index build: query" sb_graphify_command_is_index_build "graphify query x"
-no_t "index build: other tool" sb_graphify_command_is_index_build "make update"
+for c in "echo graphify query" "graphify query x | head" "graphify query x || true" "graphify query x; true" "graphify query x > out" "uvx graphifyy path A B" "graphify diagnose" "graphify dfs a" "graphify" "graphify export query" "make graphify query"; do
+  no_t "not retrieval: $c" sb_graphify_command_is_retrieval "$c"
+done
 yes_t "exempt empty" sb_graphify_command_is_exempt ""
 yes_t "exempt retrieval" sb_graphify_command_is_exempt "graphify query a"
 yes_t "exempt index build" sb_graphify_command_is_exempt "graphify update ."
+no_t "not exempt: index build with a redirect" sb_graphify_command_is_exempt "graphify update . > log"
+no_t "not exempt: a lookalike program" sb_graphify_command_is_exempt "graphify-evil update . > out.log"
 yes_t "exempt bare graphify" sb_graphify_command_is_exempt "graphify --help"
 for c in "cat f" "ls -la" "git status" "git diff HEAD" "echo hi" "jq . f" "pwd"; do yes_t "exempt read-only: $c" sb_graphify_command_is_exempt "$c"; done
 no_t "not exempt commit" sb_graphify_command_is_exempt "git commit -m x"
@@ -161,10 +177,12 @@ no_t "not exempt writer" sb_graphify_command_is_exempt "cp a b"
 # ---------- edit exemptions ----------
 w '{}'
 no_t "edit exempt empty" sb_graphify_edit_path_is_exempt ""
-yes_t "edit exempt graphify-out abs" sb_graphify_edit_path_is_exempt "/p/graphify-out/graph.json" "$CFG"
+yes_t "edit exempt graphify-out abs" sb_graphify_edit_path_is_exempt "$TL_TMP/graphify-out/graph.json" "$CFG"
 yes_t "edit exempt graphify-out rel" sb_graphify_edit_path_is_exempt "graphify-out/x" "$CFG"
 w '{"recommended_tools":{"graphify":{"graph_path":"idx/graph.json"}}}'
-yes_t "edit exempt custom graph dir abs" sb_graphify_edit_path_is_exempt "/p/idx/graph.json" "$CFG"
+yes_t "edit exempt custom graph dir abs" sb_graphify_edit_path_is_exempt "$TL_TMP/idx/graph.json" "$CFG"
+no_t "edit not exempt: dotdot out of graphify-out" sb_graphify_edit_path_is_exempt "$TL_TMP/graphify-out/../src/a.py" "$CFG"
+no_t "edit not exempt: dotdot out of a custom graph dir" sb_graphify_edit_path_is_exempt "$TL_TMP/idx/../src/a.py" "$CFG"
 yes_t "edit exempt custom graph dir rel" sb_graphify_edit_path_is_exempt "idx/a" "$CFG"
 yes_t "edit exempt state dir" sb_graphify_edit_path_is_exempt "/p/.silver-bullet/state" "$CFG"
 no_t "edit not exempt" sb_graphify_edit_path_is_exempt "/p/src/a.py" "$CFG"
@@ -173,23 +191,7 @@ no_t "edit not exempt" sb_graphify_edit_path_is_exempt "/p/src/a.py" "$CFG"
 m="$(SILVER_BULLET_RUNTIME=claude sb_graphify_block_message_no_cli "$CFG")"
 assert_contains "no_cli header" "$m" "GRAPHIFY REQUIRED"
 assert_contains "no_cli install lines" "$m" "uv tool install 'graphifyy[mcp]'"
-(
-  # install-line helper yields nothing: message builds its own default list
-  sb_recommended_tool_full_install_lines() { return 0; }
-  m="$(SILVER_BULLET_RUNTIME=claude sb_graphify_block_message_no_cli "$CFG")"
-  [[ "$m" == *"uv tool install graphifyy"* && "$m" == *"graphify install --project"* && "$m" == *"graphify update . --no-cluster"* && "$m" == *"graphify claude install --project"* ]] || { echo "$m"; exit 1; }
-  # host with no pre/post commands (opencode)
-  m="$(SILVER_BULLET_RUNTIME=opencode sb_graphify_block_message_no_cli "$CFG")"
-  [[ "$m" == *"pipx install graphifyy"* && "$m" == *"graphify update . --no-cluster"* ]] || exit 2
-  exit 0
-) && tl_pass "no_cli builds fallback install list" || tl_fail "no_cli builds fallback install list (exit $?)"
-(
-  sb_recommended_tool_full_install_lines() { return 1; }
-  sb_recommended_tool_platform_pre_index_commands() { return 1; }
-  sb_recommended_tool_platform_post_index_commands() { return 1; }
-  m="$(SILVER_BULLET_RUNTIME=claude sb_graphify_block_message_no_cli "$CFG")"
-  [[ "$m" == *"pipx install graphifyy"* && "$m" == *"graphify update . --no-cluster"* ]]
-) && tl_pass "no_cli survives helper failures" || tl_fail "no_cli survives helper failures"
+assert_contains "no_cli points at the consent CLI to decline" "$m" "sb-consent.sh"
 m="$(sb_graphify_block_message_no_index "idx/graph.json")"
 assert_contains "no_index header" "$m" "GRAPHIFY INDEX MISSING"
 assert_contains "no_index path" "$m" "Expected index: idx/graph.json"
@@ -203,7 +205,8 @@ assert_contains "stale defaults" "$(sb_graphify_block_message_stale_query)" "--g
 # ---------- prompt reminder ----------
 RC="$PR/.silver-bullet.json"
 rem() { sb_graphify_prompt_reminder_line "$RC"; }
-printf '{}' >"$RC"; assert_contains "reminder pending" "$(rem)" "consent pending"
+printf '{"recommended_tools":{"graphify":{"enabled_by_user":true}}}' >"$RC"
+assert_contains "reminder pending (a project recommendation is not consent)" "$(XDG_CONFIG_HOME="$TL_TMP/none" rem)" "consent pending"
 printf '{"recommended_tools":{"graphify":{"enabled_by_user":false}}}' >"$RC"; assert_contains "reminder disabled" "$(rem)" "opted out"
 printf '{"recommended_tools":{"graphify":{"enabled_by_user":true,"enforcement_suspended":true}}}' >"$RC"; assert_contains "reminder suspended" "$(rem)" "enforcement suspended"
 printf '{"recommended_tools":{"graphify":{"enabled_by_user":true}}}' >"$RC"

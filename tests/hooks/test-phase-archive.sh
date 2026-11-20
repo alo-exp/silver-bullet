@@ -117,8 +117,17 @@ teardown
 echo "--- Group 2: PROJECT.md handling ---"
 setup
 mkdir -p "$TMPDIR_TEST/.planning"
+mkdir -p "$TMPDIR_TEST/.planning/phases/01-test"
+echo "dummy" > "$TMPDIR_TEST/.planning/phases/01-test/plan.md"
 out=$(run_hook "silver-bullet phases clear")
-assert_passes "phases clear without PROJECT.md passes silently" "$out"
+assert_passes "phases clear without PROJECT.md passes" "$out"
+if [[ -f "$TMPDIR_TEST/.planning/archive/unnamed-milestone/01-test/plan.md" ]]; then
+  echo "  ✅ no PROJECT.md: phases are archived under unnamed-milestone, not left unprotected"
+  PASS=$((PASS + 1))
+else
+  echo "  ❌ no PROJECT.md: phases were not archived"
+  FAIL=$((FAIL + 1))
+fi
 teardown
 
 # Test 4: phases clear with PROJECT.md and phases dir — archives
@@ -142,7 +151,7 @@ else
 fi
 teardown
 
-# Test 5: phases clear when archive already exists — skips with message
+# Test 5: phases clear when the milestone archive already holds everything — nothing to copy
 echo "--- Group 3: Idempotency ---"
 setup
 mkdir -p "$TMPDIR_TEST/.planning/phases/01-test"
@@ -155,12 +164,33 @@ cat > "$TMPDIR_TEST/.planning/PROJECT.md" << 'EOF'
 # Project
 Current Milestone: v1.0
 EOF
-# Pre-create archive with a file so it's non-empty
+# An earlier archive of the same milestone that already holds every phase
 mkdir -p "$TMPDIR_TEST/.planning/archive/v1.0"
-echo "existing" > "$TMPDIR_TEST/.planning/archive/v1.0/existing-file.txt"
+cp -r "$TMPDIR_TEST/.planning/phases/01-test" "$TMPDIR_TEST/.planning/archive/v1.0/01-test"
 out=$(run_hook "silver-bullet phases clear")
-assert_passes "phases clear with existing archive passes" "$out"
-assert_contains "output mentions already exists" "$out" "already exists"
+assert_passes "phases clear with an identical archive passes" "$out"
+assert_contains "output says the phases are already preserved" "$out" "already preserved"
+teardown
+
+# R2-21: an earlier archive of the same milestone must not make the clear skip a NEW phase
+setup
+mkdir -p "$TMPDIR_TEST/.planning/phases/01-test" "$TMPDIR_TEST/.planning/phases/05-new"
+echo "dummy" > "$TMPDIR_TEST/.planning/phases/01-test/plan.md"
+echo "newer" > "$TMPDIR_TEST/.planning/phases/05-new/plan.md"
+printf '# Project\nCurrent Milestone: v1.0\n' > "$TMPDIR_TEST/.planning/PROJECT.md"
+mkdir -p "$TMPDIR_TEST/.planning/archive/v1.0/01-test"
+echo "dummy" > "$TMPDIR_TEST/.planning/archive/v1.0/01-test/plan.md"
+out=$(run_hook "silver-bullet phases clear")
+assert_passes "a stale archive does not block the clear" "$out"
+snap=$(find "$TMPDIR_TEST/.planning/archive/v1.0" -path '*/05-new/plan.md' | head -1)
+if [[ -n "$snap" && "$(cat "$snap")" == "newer" ]]; then
+  echo "  ✅ the new phase is archived into a fresh snapshot"
+  PASS=$((PASS + 1))
+else
+  echo "  ❌ the new phase was not archived"
+  FAIL=$((FAIL + 1))
+fi
+assert_contains "the stale archive is untouched" "$(cat "$TMPDIR_TEST/.planning/archive/v1.0/01-test/plan.md")" "dummy"
 teardown
 
 # Test 6: phases clear with no phases directory — passes silently

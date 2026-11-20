@@ -82,8 +82,8 @@ fi
 
 integration_teardown
 
-# Scenario 4: Namespace stripping for a generic prefix
-echo "--- Scenario 4: Namespace stripping (generic prefix) ---"
+# Scenario 4: a foreign namespace is kept verbatim (R1-23): it cannot mint a Silver Bullet marker
+echo "--- Scenario 4: Foreign namespace keeps its prefix ---"
 integration_setup
 write_full_config
 
@@ -91,16 +91,25 @@ write_full_config
 input=$(jq -n '{hook_event_name: "PostToolUse", tool_name: "Skill", tool_input: {skill: "external:silver-test"}}')
 ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/record-skill.sh" 2>/dev/null ) >/dev/null
 
-if grep -qx "silver-test" "$TMPSTATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S4.1: external:silver-test stripped to silver-test\n'
+if ! grep -qx "silver-test" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S4.1: external:silver-test does not become silver-test\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S4.1: silver-test not found in state after generic prefix\n'
+  FAIL=$((FAIL + 1)); printf 'FAIL: S4.1: a foreign namespace minted the silver-test marker\n'
 fi
 
 if ! grep -q "external:" "$TMPSTATE" 2>/dev/null; then
   PASS=$((PASS + 1)); printf 'PASS: S4.2: generic prefix not in state\n'
 else
   FAIL=$((FAIL + 1)); printf 'FAIL: S4.2: generic prefix should not be in state\n'
+fi
+
+# positive control: the recorder works in this setup, so the absence above is the namespace rule, not a dead hook
+input=$(jq -n '{hook_event_name: "PostToolUse", tool_name: "Skill", tool_input: {skill: "silver-bullet:silver-test"}}')
+( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/record-skill.sh" 2>/dev/null ) >/dev/null
+if grep -qx "silver-test" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S4.3: control: silver-bullet:silver-test is recorded as silver-test\n'
+else
+  FAIL=$((FAIL + 1)); printf 'FAIL: S4.3: control: the recorder recorded nothing\n'
 fi
 
 integration_teardown
@@ -121,12 +130,12 @@ fi
 
 integration_teardown
 
-# Scenario 6: Double namespace stripping
+# Scenario 6: repeated Silver Bullet namespaces are all stripped
 echo "--- Scenario 6: Double namespace stripping ---"
 integration_setup
 write_full_config
 
-input=$(jq -n '{hook_event_name: "PostToolUse", tool_name: "Skill", tool_input: {skill: "engineering:external:silver-test"}}')
+input=$(jq -n '{hook_event_name: "PostToolUse", tool_name: "Skill", tool_input: {skill: "silver-bullet:silver-bullet:silver-test"}}')
 ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/record-skill.sh" 2>/dev/null ) >/dev/null
 
 if grep -qx "silver-test" "$TMPSTATE" 2>/dev/null; then
@@ -135,10 +144,10 @@ else
   FAIL=$((FAIL + 1)); printf 'FAIL: S6.1: silver-test not found after double namespace strip\n'
 fi
 
-if ! grep -qE "^(engineering|external)" "$TMPSTATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S6.2: no namespace prefixes in state\n'
+if ! grep -q "silver-bullet:" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S6.2: no silver-bullet: prefix left in state\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S6.2: namespace prefixes found in state\n'
+  FAIL=$((FAIL + 1)); printf 'FAIL: S6.2: a silver-bullet: prefix was left in state\n'
 fi
 
 integration_teardown

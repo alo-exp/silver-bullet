@@ -44,7 +44,7 @@ _resolve_phase_from_path() {
 # Behavior:
 # - Resolves a phase from $PWD.
 # - If $PWD is not under .planning/phases/<NNN>/ → silent no-op.
-# - If `.planning/scripts/phase-lock.sh` is missing or not executable → silent.
+# - If the plugin's `scripts/phase-lock.sh` is missing or not executable → silent.
 # - If jq is missing → silent (the peek output is JSON we need to parse).
 # - If the phase has no active lock → emit `WARN: phase NNN has no active
 #   lock — proceeding anyway` on stderr.
@@ -60,19 +60,12 @@ _phase_lock_peek_on_exit() {
   local _peek_phase
   _peek_phase=$(_resolve_phase_from_path "$PWD" 2>/dev/null || true)
   [[ -z "$_peek_phase" ]] && return $_saved_rc
-  # Walk up from $PWD to locate the helper (repo root may be above $PWD when
-  # the user has cd'd into a phase directory — which is exactly when the
-  # warning is most useful).
-  local _peek_dir="$PWD"
-  local _peek_helper=""
-  while [[ "$_peek_dir" != "/" && "$_peek_dir" != "" ]]; do
-    if [[ -x "$_peek_dir/.planning/scripts/phase-lock.sh" ]]; then
-      _peek_helper="$_peek_dir/.planning/scripts/phase-lock.sh"
-      break
-    fi
-    _peek_dir=$(dirname "$_peek_dir")
-  done
-  [[ -n "$_peek_helper" ]] || return $_saved_rc
+  # The helper is Silver Bullet's own, shipped beside hooks/ in the plugin; a script found in the
+  # project is never run (R3-03). The lock file is still the project's (the helper finds it
+  # through git from $PWD).
+  local _peek_helper
+  _peek_helper="${BASH_SOURCE[0]%/*}/../../scripts/phase-lock.sh"
+  [[ -x "$_peek_helper" ]] || return $_saved_rc
   local _peek_owner_json
   _peek_owner_json=$("$_peek_helper" peek "$_peek_phase" 2>/dev/null || true)
   if [[ -z "$_peek_owner_json" ]]; then

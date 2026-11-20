@@ -39,9 +39,8 @@ case "$cmd" in
       printf 'No instruction ledger at %s\n' "$outfile"
       exit 0
     fi
-    if sb_instruction_ledger_scope_mismatch "$PWD" 2>/dev/null; then
-      printf 'Ledger scope mismatches current branch/worktree — ignoring foreign ledger.\n'
-      sb_instruction_ledger_clear
+    if sb_instruction_ledger_drop_if_scope_mismatch "$PWD" 2>/dev/null; then
+      printf 'Ledger belongs to another worktree — ignoring foreign ledger.\n'
       exit 0
     fi
     sb_instruction_ledger_pending_summary || true

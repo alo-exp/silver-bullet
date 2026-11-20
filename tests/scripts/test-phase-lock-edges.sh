@@ -127,15 +127,21 @@ assert_eq "ttl from default config marks lock expired" "true" "$(jq -r '.expired
 # Without SB_DEFAULT_CONFIG the repo template is used.
 mkdir -p "$CFG_REPO/templates"
 printf '{"multi_agent":{"identity_tags":["gamma"],"stale_lock_ttl_seconds":3600}}\n' >"$CFG_REPO/templates/silver-bullet.config.json.default"
+if [[ -z "${PL_SCRIPT:-}" ]]; then
 in_dir "$CFG_REPO" tl_run env -u SB_DEFAULT_CONFIG SB_PHASE_LOCK_FILE="$CFG_REPO/.planning/l3.json" bash "$SCRIPT" claim 1 gamma t
 assert_eq "repo template tags used" "0" "$TL_STATUS"
 in_dir "$CFG_REPO" tl_run env -u SB_DEFAULT_CONFIG SB_PHASE_LOCK_FILE="$CFG_REPO/.planning/l3.json" bash "$SCRIPT" claim 2 claude t
 assert_contains "repo template tag list in error" "$TL_ERR" "allowed: gamma"
+else
+  # the plugin copy never reads a templates/ directory from the project (R3-03)
+  in_dir "$CFG_REPO" tl_run env -u SB_DEFAULT_CONFIG SB_PHASE_LOCK_FILE="$CFG_REPO/.planning/l3.json" bash "$SCRIPT" claim 1 gamma t
+  assert_eq "the project's templates/ tag list is ignored" "3" "$TL_STATUS"
+fi
 
 # Outside git, no SB_DEFAULT_CONFIG: the template next to the script tree is used.
 in_dir "$NOGIT" tl_run env -u SB_DEFAULT_CONFIG bash "$SCRIPT" claim 1 forge t
 assert_eq "template beside script is found outside git (forge not in template)" "3" "$TL_STATUS"
-assert_contains "template beside script supplies the tag list" "$TL_ERR" "allowed: claude codex opencode"
+assert_contains "template beside script supplies the tag list" "$TL_ERR" "allowed: $(jq -r '.multi_agent.identity_tags | join(" ")' "$DEFAULT_CFG")"
 reset
 
 # No template anywhere (script copied to a tree without templates/): hard fallback tags and ttl.
@@ -147,7 +153,8 @@ iso claim 1 opencode t
 assert_eq "hard fallback accepts opencode" "0" "$TL_STATUS"
 iso claim 2 martian t
 assert_eq "hard fallback rejects unknown tag" "3" "$TL_STATUS"
-assert_contains "hard fallback tag list" "$TL_ERR" "allowed: claude forge codex opencode"
+if [[ -n "${PL_SCRIPT:-}" ]]; then FALLBACK_TAGS="claude codex opencode pi goose hermes forge"; else FALLBACK_TAGS="claude forge codex opencode"; fi
+assert_contains "hard fallback tag list" "$TL_ERR" "allowed: $FALLBACK_TAGS"
 iso peek 1
 assert_eq "hard fallback ttl keeps fresh lock unexpired" "null" "$(jq -r '.expired // "null"' <<<"$TL_OUT")"
 reset

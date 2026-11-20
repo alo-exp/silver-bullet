@@ -39,6 +39,10 @@ cursor_sync_script="${SB_SYNC_CURSOR_MARKETPLACE_VERSION_SCRIPT:-${SCRIPT_DIR}/s
 if [[ "$AGENT_PLUGINS_PUBLISH" != "1" ]]; then
   if [[ "${SB_SKIP_PRE_RELEASE_GATE:-0}" != "1" ]]; then
     bash "${SCRIPT_DIR}/pre-release-gate.sh"
+  else
+    # shellcheck source=scripts/lib/release-bypass-audit.sh
+    source "${SCRIPT_DIR}/lib/release-bypass-audit.sh"
+    sb_release_bypass_audit SB_SKIP_PRE_RELEASE_GATE "$repo_root"
   fi
   bash "$claude_sync_script" "$release_version"
   bash "$codex_sync_script" "$release_version"
