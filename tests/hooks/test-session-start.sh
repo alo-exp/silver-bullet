@@ -218,19 +218,47 @@ fi
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPBRANCH" "$SESSION_START_FILE"
 
-# Test 0c: SB project -> existing marker preserved across Codex process restarts
+# Test 0c: SB project -> existing marker preserved across Codex process restarts (Codex `startup` is a restart,
+# not a new session; Claude's `startup` and every host's `clear` rotate it: Test 0d)
 echo "--- Test 0c: SB project -> existing session marker preserved ---"
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf '%s' "$new_branch" > "$TMPBRANCH"
 printf '1234567890\n' > "$SESSION_START_FILE"
-run_hook "$HOOK_WORKDIR" >/dev/null
+SILVER_BULLET_RUNTIME=codex run_hook "$HOOK_WORKDIR" >/dev/null
 if [[ "$(cat "$SESSION_START_FILE" 2>/dev/null)" == "1234567890" ]]; then
   echo "  PASS: existing session marker preserved"
   PASS=$((PASS + 1))
 else
   echo "  FAIL: existing session marker should be preserved, got: $(cat "$SESSION_START_FILE" 2>/dev/null || true)"
   FAIL=$((FAIL + 1))
+fi
+rm -rf "$HOOK_WORKDIR"
+rm -f "$TMPBRANCH" "$SESSION_START_FILE"
+
+# Test 0d: a genuine new session rotates the epoch: Claude startup and clear; resume, compact and a Codex startup (a process restart) do not
+echo "--- Test 0d: new session -> session marker rotated ---"
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+printf '%s' "$new_branch" > "$TMPBRANCH"
+rot() { # RUNTIME SOURCE EXPECT(rotated|kept)
+  printf '1234567890\n' > "$SESSION_START_FILE"
+  SILVER_BULLET_RUNTIME="$1" SILVER_BULLET_SESSION_SOURCE="$2" run_hook "$HOOK_WORKDIR" >/dev/null
+  local now; now="$(cat "$SESSION_START_FILE" 2>/dev/null)"
+  if [[ "$3" == rotated && "$now" =~ ^[0-9]+$ && "$now" != 1234567890 ]] || [[ "$3" == kept && "$now" == 1234567890 ]]; then
+    echo "  PASS: $1 $2 -> marker $3"; PASS=$((PASS + 1))
+  else
+    echo "  FAIL: $1 $2 -> marker should be $3, got: $now"; FAIL=$((FAIL + 1))
+  fi
+}
+# (the Claude rows need Claude's state-dir layout: the override paths are scoped to the host under test)
+if [[ "${SILVER_BULLET_RUNTIME:-claude}" == claude ]]; then
+  rot claude startup rotated
+  rot claude clear rotated
+  rot claude resume kept
+  rot claude compact kept
+else
+  rot "$SILVER_BULLET_RUNTIME" startup kept
 fi
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPBRANCH" "$SESSION_START_FILE"

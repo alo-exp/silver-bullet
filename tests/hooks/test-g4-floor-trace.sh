@@ -25,6 +25,8 @@ edit_src() {
   echo y >>"$EC_PROJ/src/a.js"
   hook trivial-file-clear.sh "$(jq -nc --arg f "$EC_PROJ/src/a.js" '{hook_event_name:"PostToolUse",tool_name:"Edit",tool_input:{file_path:$f,old_string:"x",new_string:"y"},session_id:"s1"}')"
 }
+# a genuine new session: `clear` on every host (Codex restarts its process with `startup` inside one session)
+fresh_session() { hook session-start '{"hook_event_name":"SessionStart","source":"clear","session_id":"s2"}'; }
 stop_twice() { local _; for _ in 1 2; do hook stop-check.sh '{"hook_event_name":"Stop","session_id":"s1"}'; done; }
 
 # honest baseline: the written source blocks Stop
@@ -65,7 +67,7 @@ printf '%s\n' "$((e1 - 90000))" >"$SD/session-start-time"
 mv "$SD/files-written.$e1" "$SD/files-written.$((e1 - 90000))"
 echo user >>"$EC_PROJ/src/a.js"
 printf 'checklist\n' >"$TL_TMP/checklist.md"; touch -d '@'"$((e1 - 80000))" "$TL_TMP/checklist.md"
-start
+fresh_session
 # the doc-scheme gate (doc-scheme-gate.sh) flags a checklist older than the session epoch as not updated this session
 assert_eq "a checklist from the earlier session is older than the new epoch" 1 "$(( $(stat -c %Y "$TL_TMP/checklist.md" 2>/dev/null || stat -f %m "$TL_TMP/checklist.md") < $(cat "$SD/session-start-time") ))"
 assert_eq "a new session rotates the epoch" 1 "$(( $(cat "$SD/session-start-time") > e1 - 1000 ))"
@@ -75,15 +77,15 @@ assert_not_contains "a chat-only new session over the user's edits is not blocke
 
 # a worker SessionStart keeps the epoch and the trace of its parent
 git -C "$EC_PROJ" commit -qam "user work" 2>/dev/null
-start; edit_src
+fresh_session; edit_src
 ew="$(cat "$SD/session-start-time")"
 printf '%s\n' "$((ew - 50))" >"$SD/session-start-time"; mv "$SD/files-written.$ew" "$SD/files-written.$((ew - 50))"
-SB_ORCHESTRATOR_WORKER=1 start
+SB_ORCHESTRATOR_WORKER=1 fresh_session
 assert_eq "a worker start keeps the epoch" "$((ew - 50))" "$(cat "$SD/session-start-time")"
 stop_twice
 assert_contains "after a worker start Stop still blocks" "$TL_OUT" '"decision":"block"'
 # the same start outside a worker rotates and carries the trace (HEAD unchanged: the work is not committed)
-start
+fresh_session
 assert_eq "an uncommitted trace is carried to the new epoch" 1 "$(find "$SD" -maxdepth 1 -name "files-written.$(cat "$SD/session-start-time")" | wc -l | tr -d ' ')"
 stop_twice
 assert_contains "a hand-run startup does not erase the floor" "$TL_OUT" '"decision":"block"'
