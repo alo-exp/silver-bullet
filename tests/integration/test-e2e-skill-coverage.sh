@@ -103,6 +103,15 @@ else
   FAIL=$((FAIL + 1)); printf 'FAIL: S4.2: generic prefix should not be in state\n'
 fi
 
+# positive control: the recorder works in this setup, so the absence above is the namespace rule, not a dead hook
+input=$(jq -n '{hook_event_name: "PostToolUse", tool_name: "Skill", tool_input: {skill: "silver-bullet:silver-test"}}')
+( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/record-skill.sh" 2>/dev/null ) >/dev/null
+if grep -qx "silver-test" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S4.3: control: silver-bullet:silver-test is recorded as silver-test\n'
+else
+  FAIL=$((FAIL + 1)); printf 'FAIL: S4.3: control: the recorder recorded nothing\n'
+fi
+
 integration_teardown
 
 # Scenario 5: Retired namespace markers are not default-recordable
@@ -135,10 +144,10 @@ else
   FAIL=$((FAIL + 1)); printf 'FAIL: S6.1: silver-test not found after double namespace strip\n'
 fi
 
-if ! grep -qE "^(engineering|external)" "$TMPSTATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S6.2: no namespace prefixes in state\n'
+if ! grep -q "silver-bullet:" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S6.2: no silver-bullet: prefix left in state\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S6.2: namespace prefixes found in state\n'
+  FAIL=$((FAIL + 1)); printf 'FAIL: S6.2: a silver-bullet: prefix was left in state\n'
 fi
 
 integration_teardown

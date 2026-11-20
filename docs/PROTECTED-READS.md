@@ -57,8 +57,8 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | hooks/session-start:106 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | A | the trust anchor: baselines the record at the end of session start |
 | hooks/session-start:174 | config | `if [[ -n "$_rt_hb_script" && -f "${sb_project_root}/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
 | hooks/session-start:175 | config | `_sb_initiated="$(jq -r '.sb_initiated // false' "${sb_project_root}/.silver-bullet.json" 2` | A | the trust anchor: baselines the record at the end of session start |
-| hooks/session-start:403 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
-| hooks/session-start:404 | config | `cfg_trivial=$(jq -r '.state.trivial_file // ""' "$search_dir/.silver-bullet.json" 2>/dev/n` | A | the trust anchor: baselines the record at the end of session start |
+| hooks/session-start:404 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
+| hooks/session-start:405 | config | `cfg_trivial=$(jq -r '.state.trivial_file // ""' "$search_dir/.silver-bullet.json" 2>/dev/n` | A | the trust anchor: baselines the record at the end of session start |
 | scripts/deploy-gate-snippet.sh:50 | config | `if [[ -f "$_dw_search_dir/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/deploy-gate-snippet.sh:51 | config | `_dw_config_file="$_dw_search_dir/.silver-bullet.json"` | X | user-run or skill-run script, not a hook gate |
 | scripts/deploy-gate-snippet.sh:92 | config | `_val=$(jq -r '.state.state_file // ""' "$_dw_config_file")` | X | user-run or skill-run script, not a hook gate |
@@ -75,7 +75,7 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | scripts/optimize-five-tool-stack.sh:108 | config | `if [[ -n "$PROJECT_ROOT" && -f "${PROJECT_ROOT}/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/optimize-five-tool-stack.sh:118 | config | `[[ -z "$cfg" ]] \|\| [[ "$(jq -r '.recommended_tools.leanctx.enabled_by_user' "$cfg" 2>/de` | X | user-run or skill-run script, not a hook gate |
 | scripts/optimize-five-tool-stack.sh:126 | config | `profile="$(jq -r '.recommended_tools.leanctx.optimization_profile // "five_tool_routed"' "` | X | user-run or skill-run script, not a hook gate |
-| scripts/phase-lock.sh:129 | config | `if [[ -n "${REPO_ROOT}" ]] && [[ -f "${REPO_ROOT}/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
+| scripts/phase-lock.sh:129 | config | `if [[ -n "${REPO_ROOT}" ]] && [[ -f "${REPO_ROOT}/.silver-bullet.json" ]]; then` | X | phase-lock coordination (run by phase-lock-claim.sh): the ttl and runtime tags are validated and only compared; not an enforcement decision |
 | scripts/pre-release-gate.sh:52 | config | `if jq -e '.recommended_tools.leanctx.enabled_by_user == true' "${REPO_ROOT}/.silver-bullet` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-bootstrap.sh:28 | config | `if [[ -f "$TARGET/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-consent.sh:92 | config | `while [[ "$_sb_probe" != "/" && ! -f "$_sb_probe/.silver-bullet.json" ]]; do` | X | user-run or skill-run script, not a hook gate |
