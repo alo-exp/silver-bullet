@@ -107,4 +107,132 @@ stop_twice
 assert_contains "after an autonomous restamp Stop still blocks" "$TL_OUT" '"decision":"block"'
 sleep 3
 unset SENTINEL_SLEEP_OVERRIDE
+# ---- r6: the helper rules, HEAD that moves without a commit, stray and concurrent traces, the real doc gate ----
+# shellcheck source=../../hooks/lib/session-epoch.sh
+source "$TL_REPO_ROOT/hooks/lib/session-epoch.sh"
+trace_count() { find "$SD" -maxdepth 1 -name 'files-written.*' | wc -l | tr -d ' '; }
+cur_trace() { printf '%s/files-written.%s' "$SD" "$(cat "$SD/session-start-time")"; }
+
+# r6-01: which start is a new session (Codex fires startup on every process restart of one session)
+rm -f "$SD/session-start-sid"
+sr() { sb_session_epoch_should_rotate "$1" "$2" "$3" "$SD" && echo rotate || echo keep; }
+assert_eq "clear rotates on every host" rotate "$(sr clear codex "")"
+assert_eq "Claude startup rotates" rotate "$(sr startup claude "")"
+assert_eq "resume keeps" keep "$(sr resume claude s9)"
+assert_eq "Codex startup without a session id keeps" keep "$(sr startup codex "")"
+assert_eq "Codex startup with a first session id rotates" rotate "$(sr startup codex s1)"
+printf 's1\n' >"$SD/session-start-sid"
+assert_eq "Codex startup, same session id (a process restart) keeps" keep "$(sr startup codex s1)"
+assert_eq "Codex startup, new session id rotates" rotate "$(sr startup codex s2)"
+rm -f "$SD/session-start-sid"; ln -s "$TL_TMP/sid-victim" "$SD/session-start-sid"
+assert_eq "a symlinked id file is never trusted (keep)" keep "$(sr startup codex s2)"
+rm -f "$SD/session-start-sid"
+# end to end on the host under test: a genuinely new session id with the earlier work committed drops the trace
+if [[ "${SILVER_BULLET_RUNTIME:-claude}" == codex ]]; then
+  git -C "$EC_PROJ" commit -qam "sync" 2>/dev/null || true
+  hook session-start '{"hook_event_name":"SessionStart","source":"startup","session_id":"cx1"}'
+  echo agent >>"$EC_PROJ/src/a.js"; edit_src; e1="$(cat "$SD/session-start-time")"
+  git -C "$EC_PROJ" commit -qam "agent work" 2>/dev/null
+  printf '%s\n' "$((e1 - 90000))" >"$SD/session-start-time"; mv "$SD/files-written.$e1" "$SD/files-written.$((e1 - 90000))"
+  echo user >>"$EC_PROJ/src/a.js"
+  hook session-start '{"hook_event_name":"SessionStart","source":"startup","session_id":"cx1"}'
+  assert_eq "Codex: a restart of the same session keeps the epoch" "$((e1 - 90000))" "$(cat "$SD/session-start-time")"
+  hook session-start '{"hook_event_name":"SessionStart","source":"startup","session_id":"cx2"}'
+  assert_eq "Codex: a new session id rotates and drops the committed work's trace" 0 "$(trace_count)"
+  hook stop-check.sh '{"hook_event_name":"Stop","session_id":"cx2"}'
+  assert_not_contains "Codex: a chat-only new session is not blocked" "$TL_OUT" '"decision":"block"'
+fi
+
+# r6-02: HEAD that moves without a commit (detach, soft reset) keeps the trace; a forward move drops it
+git -C "$EC_PROJ" commit -qam "base" 2>/dev/null || true
+echo more >"$EC_PROJ/src/b.js"; git -C "$EC_PROJ" add src/b.js; git -C "$EC_PROJ" commit -qm "second" 2>/dev/null
+fresh_session; edit_src
+git -C "$EC_PROJ" checkout -q --detach HEAD~1
+fresh_session
+assert_eq "a detached HEAD keeps the trace" 1 "$(trace_count)"
+git -C "$EC_PROJ" checkout -q "$MAIN"
+fresh_session
+git -C "$EC_PROJ" reset -q --soft HEAD~1
+fresh_session
+assert_eq "a soft reset keeps the trace" 1 "$(trace_count)"
+stop_twice
+assert_contains "after the soft reset Stop still blocks" "$TL_OUT" '"decision":"block"'
+git -C "$EC_PROJ" reset -q --soft ORIG_HEAD
+git -C "$EC_PROJ" commit -qam "forward" 2>/dev/null
+fresh_session
+assert_eq "a forward move (a commit on top) drops the trace" 0 "$(trace_count)"
+printf 'deadbeef\n' >"$SD/session-start-head"
+printf 'f%s/src/a.js\n' "$EC_PROJ" >"$(cur_trace)"
+fresh_session
+assert_eq "an unreadable old HEAD keeps the trace" 1 "$(trace_count)"
+
+# r6-03: traces that are not under the old epoch (unknown, other epochs) are merged into the new one
+rm -f "$SD"/files-written.*
+printf 'f/x/one\nf/x/two\n' >"$SD/files-written.unknown"
+printf 'f/x/two\nf/x/three\n' >"$SD/files-written.123"
+rm -f "$SD/session-start-time"
+fresh_session
+assert_eq "an erased epoch: the traces end up in one file" 1 "$(trace_count)"
+assert_eq "...merged and de-duplicated" 3 "$(grep -c . "$(cur_trace)")"
+# the cap: more than 500 entries become 500 plus `*`
+rm -f "$SD"/files-written.*
+seq 1 600 | sed 's|^|f/y/|' >"$SD/files-written.1"
+fresh_session
+assert_eq "the cap keeps 500 entries and a star" 501 "$(grep -c . "$(cur_trace)")"
+assert_eq "...ending in the star" '*' "$(tail -n 1 "$(cur_trace)")"
+# a planted link is never merged or followed
+rm -f "$SD"/files-written.*; printf 'victim\n' >"$TL_TMP/link-victim"; ln -s "$TL_TMP/link-victim" "$SD/files-written.77"
+printf 'f/z/a\n' >"$SD/files-written.88"
+fresh_session
+assert_eq "a planted link is left alone" "victim" "$(cat "$TL_TMP/link-victim")"
+rm -f "$SD"/files-written.*
+
+# r6-04: concurrent rotations never orphan the trace, and the epoch is written whole
+printf 'f/c/one\nf/c/two\n' >"$SD/files-written.5"
+printf '5\n' >"$SD/session-start-time"
+for _ in 1 2 3 4 5 6; do ( sb_session_epoch_restamp "$SD/session-start-time" "$SD" ) & done
+wait
+assert_eq "parallel rotations leave one trace" 1 "$(trace_count)"
+assert_eq "...under the current epoch" 1 "$([[ -f "$(cur_trace)" ]] && echo 1 || echo 0)"
+assert_eq "...with every entry" 2 "$(grep -c . "$(cur_trace)")"
+sleep 1; sb_session_epoch_restamp "$SD/session-start-time" "$SD"
+assert_eq "back-to-back rotations (a second later) merge instead of orphaning" 2 "$(grep -c . "$(cur_trace)")"
+assert_eq "the epoch is a bare number" 1 "$(grep -cE '^[0-9]+$' "$SD/session-start-time")"
+# a failing temp file leaves the epoch as it was
+printf '42\n' >"$SD/session-start-time"
+tl_stub mktemp 'exit 1'
+sb_session_epoch_restamp "$SD/session-start-time" "$SD"
+rm -f "$TL_BIN/mktemp"
+assert_eq "no temp file: the epoch is untouched" 42 "$(cat "$SD/session-start-time")"
+# a symlinked epoch file is never written through
+rm -f "$SD/session-start-time"; ln -s "$TL_TMP/epoch-victim" "$SD/session-start-time"
+sb_session_epoch_restamp "$SD/session-start-time" "$SD"
+assert_file_absent "a symlinked epoch is not written through" "$TL_TMP/epoch-victim"
+rm -f "$SD/session-start-time"; rm -f "$SD"/files-written.*
+
+# r6-05: the real doc-scheme gate: a checklist from an earlier session is stale, one from this session passes
+# shellcheck source=../../hooks/lib/doc-scheme-gate.sh
+source "$TL_REPO_ROOT/hooks/lib/doc-scheme-gate.sh"
+DR="$TL_TMP/docrepo"; rm -rf "$DR"; mkdir -p "$DR/docs"
+echo "# scheme" >"$DR/docs/doc-scheme.md"
+cat >"$DR/docs/doc-scheme.json" <<'JSON'
+{"enforcement":{"enabled":true,"granularity_levels":[2,3]},
+ "mandatory_updated_docs":[],
+ "required_docs":[{"key":"docs/ARCH.md","mandatory_updated":false,"required_sections":[]}]}
+JSON
+echo arch >"$DR/docs/ARCH.md"
+echo '{"task_id":"T-1","task_granularity":2,"docs":{"docs/ARCH.md":"not-needed:unchanged"},"sections":{}}' >"$DR/docs/task-doc-checklist.json"
+old_epoch=$(( $(date +%s) - 100000 ))
+touch -d "@$((old_epoch + 10))" "$DR/docs/ARCH.md" "$DR/docs/task-doc-checklist.json"
+printf '%s\n' "$old_epoch" >"$SD/session-start-time"
+EMITTED="$TL_TMP/doc-emitted"; rm -f "$EMITTED"; emit() { printf '%s' "$1" >"$EMITTED"; }
+(sb_doc_scheme_gate_enforce task "$DR" "$SD" emit) || true
+assert_file_absent "a checklist from the current session satisfies the gate" "$EMITTED"
+fresh_session
+rm -f "$EMITTED"; (sb_doc_scheme_gate_enforce task "$DR" "$SD" emit) || true
+assert_contains "after a new session the earlier checklist is stale" "$(cat "$EMITTED" 2>/dev/null)" "Stale checklist (not updated this session)"
+touch "$DR/docs/task-doc-checklist.json" "$DR/docs/ARCH.md"
+rm -f "$EMITTED"; (sb_doc_scheme_gate_enforce task "$DR" "$SD" emit) || true
+assert_file_absent "a checklist touched in the new session passes again" "$EMITTED"
+
 tl_results
