@@ -17,11 +17,7 @@ fi
 if [[ -f "${SCRIPT_DIR}/lib/plugin-cache-version.sh" ]]; then
   # shellcheck source=scripts/lib/plugin-cache-version.sh
   source "${SCRIPT_DIR}/lib/plugin-cache-version.sh"
-  cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
-  if [[ -d "$cache_root" ]]; then
-    sb_plugin_cache_prune_orphaned_dirs "$cache_root" 2>/dev/null || true
-    sb_plugin_cache_refresh_current_alias "$cache_root" 2>/dev/null || true
-  fi
+  sb_claude_refresh_plugin_cache_alias
 fi
 
 if command -v jq >/dev/null 2>&1; then

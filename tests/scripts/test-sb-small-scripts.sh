@@ -126,6 +126,7 @@ SD="$TL_TMP/prstage/scripts"
 mkdir -p "$SD/lib" "$TL_TMP/home/.claude/plugins/cache/alo-labs/silver-bullet"
 ln -s "$PR" "$SD/sb-prerequisite-repair.sh"   # a symlink, so coverage is attributed to the real script
 cat >"$SD/lib/plugin-cache-version.sh" <<STUB
+source "$TL_REPO_ROOT/scripts/lib/plugin-cache-version.sh"
 sb_plugin_cache_prune_orphaned_dirs() { echo "prune \$1" >>"$LOG"; }
 sb_plugin_cache_refresh_current_alias() { echo "refresh \$1" >>"$LOG"; }
 sb_claude_ensure_plugin_cache_ready() { echo "ensure \$1" >>"$LOG"; }
@@ -138,6 +139,7 @@ assert_not_contains "project root never passed to the cache repair" "$(cat "$LOG
 # cache helpers that fail never fail the repair
 mkdir -p "$TL_TMP/home/.claude/plugins/cache/alo-labs/silver-bullet"
 cat >"$SD/lib/plugin-cache-version.sh" <<STUB
+source "$TL_REPO_ROOT/scripts/lib/plugin-cache-version.sh"
 sb_plugin_cache_prune_orphaned_dirs() { echo "prune" >>"$LOG"; return 1; }
 sb_plugin_cache_refresh_current_alias() { echo "refresh" >>"$LOG"; return 1; }
 STUB
