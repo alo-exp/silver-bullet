@@ -154,6 +154,18 @@ assert_eq "project: appended gitignore exact" "node_modules
 # Phase-lock runtime state — local, never committed (Silver Bullet)
 .planning/.phase-locks.json*" "$(cat "$W/.gitignore")"
 
+# a symlinked .gitignore is never written through (both blocks), whether it dangles or not
+printf 'mine\n' >"$TL_TMP/gi-victim"
+rm -f "$W/.gitignore"; ln -s "$TL_TMP/gi-victim" "$W/.gitignore"
+tl_run bash "$PRJ" "$W"
+assert_eq "project: symlinked gitignore: still completes" 0 "$TL_STATUS"
+assert_eq "project: symlinked gitignore: the target is untouched" "mine" "$(cat "$TL_TMP/gi-victim")"
+assert_contains "project: symlinked gitignore: skipped with a note" "$TL_OUT" ".gitignore is a symlink"
+rm -f "$W/.gitignore"; ln -s "$TL_TMP/gi-dangling" "$W/.gitignore"
+tl_run bash "$PRJ" "$W"
+assert_file_absent "project: dangling gitignore symlink: nothing created through it" "$TL_TMP/gi-dangling"
+rm -f "$W/.gitignore"
+
 # ---------------- extract-phase-goal.sh ----------------
 EPG="$R/scripts/extract-phase-goal.sh"
 E="$TL_TMP/epg"; mkdir -p "$E/.planning"

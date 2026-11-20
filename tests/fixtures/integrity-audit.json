@@ -447,7 +447,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 403,
+   "line": 404,
    "kind": "config",
    "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]]; then",
    "record": "A",
@@ -455,7 +455,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 404,
+   "line": 405,
    "kind": "config",
    "snippet": "cfg_trivial=$(jq -r '.state.trivial_file // \"\"' \"$search_dir/.silver-bullet.json\" 2>/dev/null || true)",
    "record": "A",
@@ -595,7 +595,7 @@
    "kind": "config",
    "snippet": "if [[ -n \"${REPO_ROOT}\" ]] && [[ -f \"${REPO_ROOT}/.silver-bullet.json\" ]]; then",
    "record": "X",
-   "reason": "user-run or skill-run script, not a hook gate"
+   "reason": "phase-lock coordination (run by phase-lock-claim.sh): the ttl and runtime tags are validated and only compared; not an enforcement decision"
   },
   {
    "file": "scripts/pre-release-gate.sh",

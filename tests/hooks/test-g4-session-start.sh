@@ -154,16 +154,18 @@ done
 # a branch change removes the keyed and the unkeyed ones, a same-branch restart keeps the ledger files.
 scoped_session_files="instruction-ledger-s1.json instruction-ledger-s2.json instruction-ledger.json
 outcomes-session-s1.json outcomes-session-s1.json.sha256 outcomes-session.json outcomes-session.json.sha256
-outcomes-seeded-s1 outcomes-seeded files-written.1700000000 files-written.unknown"
+outcomes-seeded-s1 outcomes-seeded"
 fresh
 printf 'old-branch\n' >"$BRANCH"
 printf 'silver-plan\n' >"$STATE"
-for f in $scoped_session_files outcomes-tamper.log instruction-ledger-notes.txt; do printf 'x' >"$SD/$f"; done
+for f in $scoped_session_files outcomes-tamper.log instruction-ledger-notes.txt files-written.1700000000 files-written.unknown; do printf 'x' >"$SD/$f"; done
 run_ss '{"source":"startup"}'
 for f in $scoped_session_files; do
   assert_file_absent "branch change removes $f" "$SD/$f"
 done
 assert_file_exists "branch change keeps the tamper log (an audit trail)" "$SD/outcomes-tamper.log"
+assert_file_exists "branch change keeps the write trace (the evidence, G4 r4-01)" "$SD/files-written.1700000000"
+assert_file_exists "branch change keeps the unknown-epoch write trace" "$SD/files-written.unknown"
 assert_file_exists "branch change keeps files that only look similar" "$SD/instruction-ledger-notes.txt"
 assert_eq "a clean reset logs no outcomes tamper" "x" "$(cat "$SD/outcomes-tamper.log")"
 fresh

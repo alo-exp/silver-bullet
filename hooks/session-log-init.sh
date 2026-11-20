@@ -313,8 +313,12 @@ cat > "$log_file" << LOGEOF
 LOGEOF
 
 # --- Step 7: Write session start timestamp ---
+# An existing epoch is kept: session-start owns it, and the agent write trace is keyed by it (replacing it
+# here would orphan files-written.<epoch> and let Stop pass).
 sb_guard_nofollow "$SB_DIR"/session-start-time
-date +%s > "$SB_DIR"/session-start-time
+if ! [[ "$(cat "$SB_DIR"/session-start-time 2>/dev/null || true)" =~ ^[0-9]+$ ]]; then
+  date +%s > "$SB_DIR"/session-start-time
+fi
 
 # --- Step 8: Launch sentinel (autonomous mode only) ---
 # AUTONOMOUS MODE TIMEOUT SENTINEL — Security note:
