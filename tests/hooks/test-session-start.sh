@@ -224,9 +224,10 @@ echo "--- Test 0c: SB project -> existing session marker preserved ---"
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf '%s' "$new_branch" > "$TMPBRANCH"
-printf '1234567890\n' > "$SESSION_START_FILE"
+YOUNG=$(( $(date +%s) - 100 ))   # a Codex startup without a session id rotates only an epoch over a day old
+printf '%s\n' "$YOUNG" > "$SESSION_START_FILE"
 SILVER_BULLET_RUNTIME=codex run_hook "$HOOK_WORKDIR" >/dev/null
-if [[ "$(cat "$SESSION_START_FILE" 2>/dev/null)" == "1234567890" ]]; then
+if [[ "$(cat "$SESSION_START_FILE" 2>/dev/null)" == "$YOUNG" ]]; then
   echo "  PASS: existing session marker preserved"
   PASS=$((PASS + 1))
 else
@@ -242,10 +243,11 @@ HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf '%s' "$new_branch" > "$TMPBRANCH"
 rot() { # RUNTIME SOURCE EXPECT(rotated|kept)
-  printf '1234567890\n' > "$SESSION_START_FILE"
+  local young=$(( $(date +%s) - 100 ))
+  printf '%s\n' "$young" > "$SESSION_START_FILE"
   SILVER_BULLET_RUNTIME="$1" SILVER_BULLET_SESSION_SOURCE="$2" run_hook "$HOOK_WORKDIR" >/dev/null
   local now; now="$(cat "$SESSION_START_FILE" 2>/dev/null)"
-  if [[ "$3" == rotated && "$now" =~ ^[0-9]+$ && "$now" != 1234567890 ]] || [[ "$3" == kept && "$now" == 1234567890 ]]; then
+  if [[ "$3" == rotated && "$now" =~ ^[0-9]+$ && "$now" != "$young" ]] || [[ "$3" == kept && "$now" == "$young" ]]; then
     echo "  PASS: $1 $2 -> marker $3"; PASS=$((PASS + 1))
   else
     echo "  FAIL: $1 $2 -> marker should be $3, got: $now"; FAIL=$((FAIL + 1))
