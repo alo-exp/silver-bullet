@@ -447,7 +447,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 402,
+   "line": 403,
    "kind": "config",
    "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]]; then",
    "record": "A",
@@ -455,7 +455,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 403,
+   "line": 404,
    "kind": "config",
    "snippet": "cfg_trivial=$(jq -r '.state.trivial_file // \"\"' \"$search_dir/.silver-bullet.json\" 2>/dev/null || true)",
    "record": "A",
