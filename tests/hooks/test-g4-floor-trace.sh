@@ -64,7 +64,10 @@ git -C "$EC_PROJ" commit -qam "agent work" 2>/dev/null
 printf '%s\n' "$((e1 - 90000))" >"$SD/session-start-time"
 mv "$SD/files-written.$e1" "$SD/files-written.$((e1 - 90000))"
 echo user >>"$EC_PROJ/src/a.js"
+printf 'checklist\n' >"$TL_TMP/checklist.md"; touch -d '@'"$((e1 - 80000))" "$TL_TMP/checklist.md"
 start
+# the doc-scheme gate (doc-scheme-gate.sh) flags a checklist older than the session epoch as not updated this session
+assert_eq "a checklist from the earlier session is older than the new epoch" 1 "$(( $(stat -c %Y "$TL_TMP/checklist.md" 2>/dev/null || stat -f %m "$TL_TMP/checklist.md") < $(cat "$SD/session-start-time") ))"
 assert_eq "a new session rotates the epoch" 1 "$(( $(cat "$SD/session-start-time") > e1 - 1000 ))"
 assert_eq "a new session after committed work starts with no trace" 0 "$(find "$SD" -maxdepth 1 -name 'files-written.*' | wc -l | tr -d ' ')"
 hook stop-check.sh '{"hook_event_name":"Stop","session_id":"s2"}'
