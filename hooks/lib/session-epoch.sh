@@ -132,8 +132,8 @@ _sb_se_filter() {
       p="$(printf '%s\n' "$moved" | grep -c "^${path%/}/" || true)"
       [[ "$p" -eq 0 ]] || continue
     else
-      printf '%s\n' "$dirty" | grep -qxF -- "$path" || continue
-      ! printf '%s\n' "$moved" | grep -qxF -- "$path" || continue
+      grep -qxF -- "$path" <<<"$dirty" || continue
+      ! grep -qxF -- "$path" <<<"$moved" || continue
     fi
     keep="${keep}${line}"$'\n'
   done <"$trace"
