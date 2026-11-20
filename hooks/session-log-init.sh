@@ -110,12 +110,11 @@ sb_launch_timeout_sentinel() {
   disown "$sentinel_pid"
 }
 
-# The epoch the sentinel cleanup may delete: the restamp below carries the write trace from it.
+# The restamps below (Step 4 deletes the epoch, Step 7 and the relaunch write one) merge the write traces.
 if [[ -n "$_lib_dir" && -f "$_lib_dir/session-epoch.sh" ]]; then
   # shellcheck source=lib/session-epoch.sh
   source "$_lib_dir/session-epoch.sh"
 fi
-_sb_old_epoch="$(cat "$SB_DIR"/session-start-time 2>/dev/null || true)"
 
 # --- Step 4: Sentinel cleanup (unconditional, before dedup guard) ---
 if [[ -f "$SB_DIR"/sentinel-pid && ! -L "$SB_DIR"/sentinel-pid ]]; then
@@ -203,7 +202,7 @@ if [[ -n "$existing" ]]; then
     sb_guard_nofollow "$SB_DIR"/session-start-time
     sb_guard_nofollow "$SB_DIR"/timeout
     sb_guard_nofollow "$SB_DIR"/sentinel-pid
-    sb_session_epoch_restamp "$SB_DIR"/session-start-time "$SB_DIR" "$_sb_old_epoch"
+    sb_session_epoch_restamp "$SB_DIR"/session-start-time "$SB_DIR"
     # AUTONOMOUS MODE TIMEOUT SENTINEL — Security note:
     # This spawns a background subshell that sleeps for at most SENTINEL_SLEEP_OVERRIDE
     # seconds (default: 600), then writes the literal string "TIMEOUT" to
@@ -324,7 +323,7 @@ LOGEOF
 # here would orphan files-written.<epoch> and let Stop pass).
 sb_guard_nofollow "$SB_DIR"/session-start-time
 if ! [[ "$(cat "$SB_DIR"/session-start-time 2>/dev/null || true)" =~ ^[0-9]+$ ]]; then
-  sb_session_epoch_restamp "$SB_DIR"/session-start-time "$SB_DIR" "$_sb_old_epoch"
+  sb_session_epoch_restamp "$SB_DIR"/session-start-time "$SB_DIR"
 fi
 
 # --- Step 8: Launch sentinel (autonomous mode only) ---
