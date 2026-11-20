@@ -454,7 +454,7 @@ if [[ "$sb_should_mutate" == true ]]; then
     _sb_sid="$(printf '%s' "${_sb_stdin_payload:-}" | jq -r '.session_id // ""' 2>/dev/null || true)"
     [[ "$_sb_sid" =~ ^[A-Za-z0-9_-]{1,64}$ ]] || _sb_sid=""
     _sb_epoch_mode=keep
-    if sb_session_epoch_should_rotate "$sb_session_source" "${SILVER_BULLET_RUNTIME:-}" "$_sb_sid" "$SB_STATE_DIR"; then
+    if sb_session_epoch_should_rotate "$sb_session_source" "${SILVER_BULLET_RUNTIME:-}" "$_sb_sid" "$SB_STATE_DIR" "$session_start_file"; then
       _sb_epoch_mode=rotate
     fi
     sb_session_epoch_rotate "$session_start_file" "$SB_STATE_DIR" "$sb_project_root" "$_sb_epoch_mode" "$_sb_sid"
