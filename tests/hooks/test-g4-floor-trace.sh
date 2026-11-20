@@ -204,6 +204,18 @@ tl_stub mktemp 'exit 1'
 sb_session_epoch_restamp "$SD/session-start-time" "$SD"
 rm -f "$TL_BIN/mktemp"
 assert_eq "no temp file: the epoch is untouched" 42 "$(cat "$SD/session-start-time")"
+# a failing rename leaves no temp file behind, and a symlinked head or id file is never written through
+printf '43\n' >"$SD/session-start-time"
+tl_stub mv 'exit 1'; hash -r
+sb_session_epoch_restamp "$SD/session-start-time" "$SD"
+rm -f "$TL_BIN/mv"; hash -r
+assert_eq "a failing rename: the epoch is untouched" 43 "$(cat "$SD/session-start-time")"
+assert_eq "...and no temp file is left" 0 "$(find "$SD" -maxdepth 1 -name 'session-start-time.*' | wc -l | tr -d ' ')"
+rm -f "$SD/session-start-head" "$SD/session-start-sid"; ln -s "$TL_TMP/head-victim" "$SD/session-start-head"; ln -s "$TL_TMP/sid-victim2" "$SD/session-start-sid"
+sb_session_epoch_rotate "$SD/session-start-time" "$SD" "$EC_PROJ" keep cx9
+assert_file_absent "a symlinked HEAD file is not written through" "$TL_TMP/head-victim"
+assert_file_absent "a symlinked id file is not written through" "$TL_TMP/sid-victim2"
+rm -f "$SD/session-start-head" "$SD/session-start-sid"
 # a symlinked epoch file is never written through
 rm -f "$SD/session-start-time"; ln -s "$TL_TMP/epoch-victim" "$SD/session-start-time"
 sb_session_epoch_restamp "$SD/session-start-time" "$SD"
