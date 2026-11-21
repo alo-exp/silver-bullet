@@ -18,6 +18,12 @@ printf 'main\n' >"$SILVER_BULLET_BRANCH_FILE"
 write_req() { # tool [extra input json filter]
   tg2_run "$GUARD" "$(jq -cn --arg f "$REQ" --arg t "${1:-Write}" '{hook_event_name:"PreToolUse", tool_name:$t, tool_input:{file_path:$f}}')"
 }
+write_as() { # agent id as a JSON literal ("w1", "\u0000" forms ok)
+  tg2_run "$GUARD" "$(jq -cn --arg f "$REQ" --argjson a "$1" '{hook_event_name:"PreToolUse", tool_name:"Write", agent_id:$a, tool_input:{file_path:$f}}')"
+}
+sub_rec_as() { # agent id (plain string), skill
+  rs "$(jq -c --arg a "$1" '. + {agent_id:$a}' <<<"$(skill_input "$2")")"
+}
 denied() { grep -qE '"permissionDecision"[[:space:]]*:[[:space:]]*"deny"' <<<"$TL_OUT"; }
 allowed_case() { write_req "${2:-Write}"; if denied; then tl_fail "$1 (denied: $TL_OUT)"; else tl_pass "$1"; fi; }
 denied_case() { write_req "${2:-Write}"; if denied; then tl_pass "$1"; else tl_fail "$1 (allowed)"; fi; }
@@ -52,14 +58,64 @@ rec silver-spec-evil; rec x:silver-spec; rec silver-bullet-evil:silver-plan
 allowed_case "near-names do not displace spec"
 rec silver-bullet:sb:spec
 allowed_case "the plugin namespace prefix still resolves to spec"
-echo "subagent calls carry a top-level agent_id"
-sub_rec() { rs "$(jq -c '. + {agent_id:"sub-1"}' <<<"$(skill_input "$1")")"; }
-reset; rec silver-plan; rec silver-spec; sub_rec silver-plan
-allowed_case "a subagent's tracked skill does not displace the parent's spec"
-reset; rec silver-plan; sub_rec silver-spec
-denied_case "a subagent's spec does not grant the parent the allowance"
 reset; rec silver-spec; rs "$(jq -c '. + {agentId:"sub-2"}' <<<"$(skill_input silver-plan)")"
 allowed_case "the agentId spelling is a subagent too"
+
+echo "--- per-agent records: workers in a parent-mode project ---"
+reset; tg2_cfg '{"sb_initiated":true,"orchestrator_mode":"parent"}'
+write_as '"w1"'; if denied; then tl_pass "worker w1 before any skill: denied"; else tl_fail "w1 allowed with no record"; fi
+sub_rec_as w1 silver-plan; sub_rec_as w1 silver-spec
+write_as '"w1"'; if denied; then tl_fail "worker w1 after its own sb:spec denied"; else tl_pass "worker w1 invoked sb:spec: its Write is allowed"; fi
+write_as '"w2"'; if denied; then tl_pass "worker w2 (no record) is denied"; else tl_fail "w2 allowed"; fi
+denied_case "the main session after a worker's spec is denied"
+sub_rec_as w1 silver-plan
+write_as '"w1"'; if denied; then tl_pass "worker w1 then a tracked skill: denied"; else tl_fail "w1 allowed after plan"; fi
+sub_rec_as w1 silver-spec
+write_as '"w1"'; if denied; then tl_fail "w1 re-run denied"; else tl_pass "worker w1 re-running sb:spec is allowed again"; fi
+sub_rec_as w2 silver-plan
+write_as '"w1"'; if denied; then tl_fail "w2's skill displaced w1"; else tl_pass "another worker's skill does not displace w1"; fi
+reset; rec silver-spec
+allowed_case "main session spec: main Write allowed"
+write_as '"w1"'; if denied; then tl_pass "a main-session sb:spec does not let a subagent write"; else tl_fail "subagent rode the main record"; fi
+sub_rec_as w1 silver-plan
+allowed_case "a worker's tracked skill leaves the main record alone"
+reset; printf 'silver-plan\nsilver-spec\n' >"$STATE"
+write_as '"w1"'; if denied; then tl_pass "an old state with no per-agent record gives a worker nothing"; else tl_fail "old state allowed a worker"; fi
+
+echo "--- hostile agent ids ---"
+reset; rec silver-spec
+lastfiles() { ls "$STATE".last* "$STATE".lasthwm* 2>/dev/null | sort | tr '\n' ' '; }
+before="$(lastfiles)"
+for bad in '../x' 'a/b' '' "$(printf 'z%.0s' $(seq 1 200))" $'a\nb' 'a b' '.hidden' 'w1.tmp'; do
+  sub_rec_as "$bad" silver-spec
+done
+rs "$(jq -c '. + {agent_id:"a\u0000b"}' <<<"$(skill_input silver-spec)")"
+rs "$(jq -c '. + {agent_id:5}' <<<"$(skill_input silver-spec)")"
+assert_eq "hostile agent ids create no record file" "$before" "$(lastfiles)"
+assert_eq "and no file beside the state directory" "" "$(ls "$SB_RUNTIME_STATE_DIR"/../*.last* "$SB_RUNTIME_STATE_DIR"/../x* 2>/dev/null | tr '\n' ' ')"
+assert_file_absent "nothing was written beside the state directory" "$SB_RUNTIME_STATE_DIR/../x.last"
+for bad in '"../x"' '"a/b"' '""' '"a\nb"' '"a\u0000b"' 5 '["w1"]'; do
+  write_as "$bad"; if denied; then tl_pass "hostile id $bad: Write denied even with a main record"; else tl_fail "hostile id $bad allowed"; fi
+done
+sub_rec_as w1 silver-spec
+write_as '"w1"'; if denied; then tl_fail "valid id w1 denied"; else tl_pass "a valid id still works next to the hostile ones"; fi
+tg2_run "$GUARD" "$(jq -cn --arg f "$REQ" '{hook_event_name:"PreToolUse", tool_name:"Write", agentId:"w1", tool_input:{file_path:$f}}')"
+if denied; then tl_fail "agentId spelling denied"; else tl_pass "the agentId spelling reads the same record"; fi
+
+echo "--- concurrent workers and pruning ---"
+reset; rec silver-plan
+( sub_rec_as wa silver-spec ) & ( sub_rec_as wb silver-spec ) & ( sub_rec_as wc silver-plan ) & wait
+write_as '"wa"'; if denied; then tl_fail "wa denied"; else tl_pass "concurrent worker wa allowed"; fi
+write_as '"wb"'; if denied; then tl_fail "wb denied"; else tl_pass "concurrent worker wb allowed"; fi
+write_as '"wc"'; if denied; then tl_pass "concurrent worker wc (plan) denied"; else tl_fail "wc allowed"; fi
+export SB_LAST_AGENT_RECORDS=3
+for n in 1 2 3 4 5; do sub_rec_as "p$n" silver-spec; sleep 1; done
+count="$(ls "$STATE".last.* 2>/dev/null | wc -l | tr -d ' ')"
+assert_eq "agent records are bounded (newest kept)" "3" "$count"
+assert_eq "the pruned agents' counter files go too" "3" "$(ls "$STATE".lasthwm.* 2>/dev/null | wc -l | tr -d ' ')"
+write_as '"p5"'; if denied; then tl_fail "newest agent pruned"; else tl_pass "the newest agent's record survives pruning"; fi
+write_as '"p1"'; if denied; then tl_pass "the oldest agent's record was pruned"; else tl_fail "p1 survived"; fi
+unset SB_LAST_AGENT_RECORDS
 
 echo "--- forgery and staleness ---"
 reset; rec silver-plan; rec silver-spec

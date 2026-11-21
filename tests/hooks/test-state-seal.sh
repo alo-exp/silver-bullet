@@ -325,6 +325,23 @@ assert_eq "a symlinked counter file is refused on read" "" "$(sb_state_last_read
 sb_state_last_write "$S" silver-spec
 assert_file_absent "and on write" "$TL_TMP/elsewhere2"
 rm -f "$S.lasthwm"
+# per-agent records
+rm -f "$S".last.* "$S".lasthwm.*
+sb_state_last_write "$S" silver-spec w1
+assert_eq "an agent's record reads back for that agent" "silver-spec" "$(sb_state_last_read "$S" w1)"
+assert_eq "and not for another agent" "" "$(sb_state_last_read "$S" w2)"
+assert_eq "nor for the main session" "" "$(sb_state_last_read "$S")"
+for bad in '../x' 'a/b' 'a b' '.h' "$(printf 'z%.0s' $(seq 1 65))"; do
+  sb_state_last_write "$S" silver-spec "$bad"
+  assert_eq "an invalid agent id writes nothing: $bad" "" "$(ls "$SD" | grep -c 'last\.' | grep -v '^1$' || true)$(sb_state_last_read "$S" "$bad")"
+done
+assert_eq "only the valid agent has a file" "1" "$(ls "$S".last.* | wc -l | tr -d ' ')"
+cp "$S.last.w1" "$S.last.w3"; cp "$S.lasthwm.w1" "$S.lasthwm.w3"
+assert_eq "an agent's record copied to another agent id fails its digest" "" "$(sb_state_last_read "$S" w3)"
+touch "$S.last.w1.12345" "$S.last.not.valid.id"
+SB_LAST_AGENT_RECORDS=1 sb_state_last_write "$S" silver-spec w4
+assert_file_exists "pruning keeps files that are not agent records" "$S.last.not.valid.id"
+rm -f "$S".last.* "$S".lasthwm.*
 sb_state_last_write "$S" silver-spec
 rm -f "$S.lasthwm"
 assert_eq "a record whose counter file was deleted is refused" "" "$(sb_state_last_read "$S")"
