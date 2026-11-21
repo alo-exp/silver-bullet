@@ -170,6 +170,44 @@ js_line="$(python3 "$SBCOV" report --cov-dir "$cov" --only 'site/chrome.js' | gr
 check_eq "lcov merged across runs (lines, functions, branches)" \
   "JS/TS      files 1: lines 2/2 (100.00%), functions 1/1 (100.00%), branches 1/2 (50.00%)" "$js_line"
 
+# 10. An in-scope Python file the analyzer cannot parse is a failure, never 0/0 (100%).
+mkdir -p "$TMP/pyscope"
+printf 'def f(:\n    pass\n' >"$TMP/pyscope/bad.py"
+printf 'def g():\n    return 1\n' >"$TMP/pyscope/good.py"
+cov="$TMP/parse-fail"
+mkdir -p "$cov"
+probe() {
+  python3 - "$SBCOV" "$cov" "$TMP/pyscope/$1" <<'PY'
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("sbcov", sys.argv[1])
+m = importlib.util.module_from_spec(spec)
+sys.modules["sbcov"] = m
+spec.loader.exec_module(m)
+from pathlib import Path
+rel = sys.argv[3]
+m.load_scope = lambda: ({}, {"bash": [], "python": [rel], "javascript": []})
+m.load_known_limits = lambda *a: ([], [])
+sys.exit(m.report(Path(sys.argv[2]), None, False, None))
+PY
+}
+rc=0
+probe bad.py >"$TMP/parse-fail.out" 2>"$TMP/parse-fail.err" || rc=$?
+check_eq "report exits 4 when an in-scope Python file cannot be parsed" "4" "$rc"
+if grep -q 'could not be parsed' "$TMP/parse-fail.out" && grep -q 'bad.py: cannot be analysed' "$TMP/parse-fail.err"; then
+  pass "the unparseable file is named in the report"
+else
+  fail "the unparseable file is named in the report"
+fi
+check_eq "the unparseable file counts as an uncovered statement" "0/1" \
+  "$(jq -r '.python | to_entries[0].value | "\(.statements_covered)/\(.statements)"' "$cov/coverage-summary.json")"
+check_eq "the summary records the parse error" "1" \
+  "$(jq -r '.summary.python_parse_errors | length' "$cov/coverage-summary.json")"
+rc=0
+probe good.py >/dev/null 2>&1 || rc=$?
+check_eq "a parseable file that no test ran still reports normally (uncovered statements, no parse error)" "0" "$rc"
+check_eq "and counts its statements" "0/2" \
+  "$(jq -r '.python | to_entries[0].value | "\(.statements_covered)/\(.statements)"' "$cov/coverage-summary.json")"
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
