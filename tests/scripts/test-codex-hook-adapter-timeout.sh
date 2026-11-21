@@ -124,6 +124,28 @@ if [[ "$out" == "plain text" ]]; then
 else
   fail "non-JSON output should pass through, got: $out"
 fi
+# Env overrides are validated: a non-numeric or zero cap falls back to the
+# manifest budget instead of crashing `timeout` (rc 125, deny lost) or disabling it.
+for bad_cap in abc 0 -1 "1;2"; do
+  out=$(printf '{}' | SB_CODEX_HOOK_SUBPROC_TIMEOUT="$bad_cap" "$ADAPTER" PreToolUse --timeout 5 "$deny_stub" 2>/dev/null || true)
+  if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecisionReason == "slow gate says no"' >/dev/null 2>&1; then
+    pass "invalid SB_CODEX_HOOK_SUBPROC_TIMEOUT [$bad_cap] ignored, deny kept"
+  else
+    fail "invalid SB_CODEX_HOOK_SUBPROC_TIMEOUT [$bad_cap] lost the deny: $out"
+  fi
+done
+# Only exactly "allow" opts out of fail-closed.
+slow2="$(mktemp)"; printf '#!/usr/bin/env bash\nsleep 30\n' >"$slow2"; chmod +x "$slow2"
+for odd in block deny DENY Allow yes ""; do
+  out=$(printf '{}' | SB_CODEX_HOOK_SUBPROC_TIMEOUT=1 SB_CODEX_HOOK_ON_TIMEOUT="$odd" "$ADAPTER" PreToolUse "$slow2" 2>/dev/null || true)
+  if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
+    pass "SB_CODEX_HOOK_ON_TIMEOUT=[$odd] still fails closed"
+  else
+    fail "SB_CODEX_HOOK_ON_TIMEOUT=[$odd] must fail closed, got: $out"
+  fi
+done
+rm -f "$slow2"
+
 # --timeout without a value or a command is a usage error (exit 2).
 rc=0
 printf '{}' | "$ADAPTER" PreToolUse --timeout >/dev/null 2>&1 || rc=$?
