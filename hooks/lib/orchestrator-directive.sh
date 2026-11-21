@@ -146,7 +146,10 @@ sb_orchestrator_directive_write() {
     next_worker_template="$(sb_orchestrator_worker_template_for_skill "$next_skill")"
   fi
 
-  local now file dir json
+  local now file dir json template_path=""
+  if [[ -n "$next_worker_template" ]] && declare -f sb_orchestrator_worker_template_path >/dev/null 2>&1; then
+    template_path="$(sb_orchestrator_worker_template_path "" "$next_worker_template" 2>/dev/null || true)"
+  fi
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   file="$(sb_orchestrator_directive_file)"
   dir="$(dirname "$file")"
@@ -157,6 +160,7 @@ sb_orchestrator_directive_write() {
     --arg args "$args" \
     --arg reason "$reason" \
     --arg next_worker_template "$next_worker_template" \
+    --arg template_path "$template_path" \
     --argjson blocking "$([[ "$blocking" == true || "$blocking" == 1 ]] && echo true || echo false)" \
     --arg updated_at "$now" \
     '{
@@ -164,6 +168,7 @@ sb_orchestrator_directive_write() {
       args: $args,
       reason: $reason,
       next_worker_template: (if $next_worker_template != "" then $next_worker_template else null end),
+      next_worker_template_path: (if $template_path != "" then $template_path else null end),
       blocking: $blocking,
       updated_at: $updated_at
     }' 2>/dev/null || true)"
@@ -187,7 +192,10 @@ sb_orchestrator_directive_write_batch() {
     next_worker_template="$(sb_orchestrator_worker_template_for_skill "$next_skill")"
   fi
 
-  local now file dir json batch_parsed
+  local now file dir json batch_parsed template_path=""
+  if [[ -n "$next_worker_template" ]] && declare -f sb_orchestrator_worker_template_path >/dev/null 2>&1; then
+    template_path="$(sb_orchestrator_worker_template_path "" "$next_worker_template" 2>/dev/null || true)"
+  fi
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   file="$(sb_orchestrator_directive_file)"
   dir="$(dirname "$file")"
@@ -200,6 +208,7 @@ sb_orchestrator_directive_write_batch() {
     --arg args "$args" \
     --arg reason "$reason" \
     --arg next_worker_template "$next_worker_template" \
+    --arg template_path "$template_path" \
     --argjson blocking "$([[ "$blocking" == true || "$blocking" == 1 ]] && echo true || echo false)" \
     --argjson batch_dispatch "$batch_parsed" \
     --arg updated_at "$now" \
@@ -208,6 +217,7 @@ sb_orchestrator_directive_write_batch() {
       args: $args,
       reason: $reason,
       next_worker_template: (if $next_worker_template != "" then $next_worker_template else null end),
+      next_worker_template_path: (if $template_path != "" then $template_path else null end),
       blocking: $blocking,
       batch_dispatch: $batch_dispatch,
       updated_at: $updated_at

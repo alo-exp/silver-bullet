@@ -87,7 +87,7 @@ Silver Bullet self-describes as an **Agentic Process Orchestrator** with hierarc
 
 **One atomic flow = exactly one subagent work package.** Workflows are dependency DAGs; independent flows may parallelize; dependents join on V-gates ([`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md`](../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md) §Goal; [`research/2026-06-24-prior-art-and-extensibility/SB_PRIOR_ART_RESEARCH_PROMPT.md`](../research/2026-06-24-prior-art-and-extensibility/SB_PRIOR_ART_RESEARCH_PROMPT.md) §Core differentiators).
 
-Each `AF-*` maps to a worker template under `.silver-bullet/orchestrator-workers/` (e.g. `EXECUTE.md`, `SHIP.md`) ([`docs/composable-flows-contracts.md`](composable-flows-contracts.md) §Atomic Flow Catalog).
+Each `AF-*` maps to a worker template under `templates/orchestrator-workers/` (e.g. `EXECUTE.md`, `SHIP.md`) ([`docs/composable-flows-contracts.md`](composable-flows-contracts.md) §Atomic Flow Catalog).
 
 ### 3.3 Parent orchestrator
 
