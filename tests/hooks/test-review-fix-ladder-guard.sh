@@ -146,7 +146,7 @@ tl_stub python3 'exit 5'
 assert_contains "a crashing guard blocks Stop while live" "$(guard '{"hook_event_name":"Stop"}')" "exit 5"
 rm -f "$TL_BIN/python3"
 mkdir -p "$TL_TMP/noplugin/hooks"
-cp -R "$REPO/hooks/." "$TL_TMP/noplugin/hooks/"
+(cd "$REPO/hooks" && tar --exclude=__pycache__ -cf - .) | tar -xf - -C "$TL_TMP/noplugin/hooks"
 out="$(cd "$P" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$TL_TMP/noplugin/hooks/review-fix-ladder-guard.sh" 2>/dev/null || true)"
 assert_contains "a missing resolver blocks Stop while live" "$out" "is missing"
 out="$(cd "$P" && printf '%s' "$agent_pre" | bash "$TL_TMP/noplugin/hooks/review-fix-ladder-guard.sh" 2>/dev/null || true)"
