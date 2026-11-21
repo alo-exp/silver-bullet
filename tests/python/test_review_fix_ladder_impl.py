@@ -125,6 +125,7 @@ class QuotaCliTest(CliCase):
 class LifecycleCliTest(CliCase):
     def test_full_rung_through_the_cli(self):
         charter = self.write_charter()
+        native.record_user_rungs(self.root, "sonnet:high")  # the user's own `rungs:` message, as the hook records it
         code, out, _ = self.jcli("--start", "--charter-file", str(charter), "--run-id", "demo", "--rungs", "sonnet:high")
         self.assertEqual((code, out["run_id"]), (0, "demo"))
         run = ".planning/rfl-demo"
@@ -132,6 +133,9 @@ class LifecycleCliTest(CliCase):
         self.run_dir = run_dir
         code, _, err = self.cli("--issue-ticket", "review", "--run-dir", str(run_dir))
         self.assertEqual((code, "Policy E" in err), (3, True))
+        code, _, err = self.cli("--approve", "--run-dir", str(run_dir))
+        self.assertEqual((code, "RFL APPROVE demo" in err), (3, True))  # the agent cannot approve for the user
+        native.write_user_token(self.root, "approve", "demo", prompt_sha256="test")
         self.assertEqual(self.jcli("--approve", "--run-dir", str(run_dir))[0], 0)
         for cycle in range(2):
             code, out, _ = self.jcli("--issue-ticket", "review", "--run-dir", str(run_dir))
@@ -171,8 +175,8 @@ class LifecycleCliTest(CliCase):
         self.start()
         self.ticket("review")
         code, out, _ = self.jcli("--cancel-ticket", "--run-dir", str(self.run_dir))
-        self.assertEqual((code, out["outcome"]), (0, "cannot_launch"))
-        native.clear_live()
+        self.assertEqual((code, out["outcome"]), (0, "cancelled"))
+        native.clear_live(self.root)
         code, out, _ = self.jcli("--resume", "demo")
         self.assertEqual((code, out["run_id"]), (0, "demo"))
         code, out, err = self.jcli("--abort", "demo")
@@ -192,6 +196,7 @@ class LifecycleCliTest(CliCase):
 
     def test_hook_entry_point_reads_stdin(self):
         self.start()
+        self.ticket("review")
         code, out, _ = self.jcli("--hook", stdin=json.dumps({"hook_event_name": "Stop"}))
         self.assertEqual(code, 0)
         self.assertEqual(out["output"]["decision"], "block")

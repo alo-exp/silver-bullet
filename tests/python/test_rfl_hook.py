@@ -65,7 +65,7 @@ class SpawnTest(HookCase):
 
     def test_not_live_means_inert(self):
         self.ticket("review")
-        native.clear_live()
+        native.clear_live(self.root)
         self.assertEqual(self.fire(self.spawn_payload({"spawn": {"params": {}}})), hook.NOOP)
 
     def test_tamper_fails_closed_on_a_spawn(self):
@@ -160,12 +160,15 @@ class EditGuardTest(HookCase):
 class StopTest(HookCase):
     def test_stop_blocks_an_active_run_and_allows_the_rest(self):
         self.start()
+        self.ticket("review")
         out = self.fire({"hook_event_name": "Stop"})
         reason = self.denied(out)
         self.assertEqual(out["output"]["decision"], "block")
         self.assertIn("RFL ABORT demo", reason)
-        self.assertIn("rung 1 sonnet:high", reason)
+        self.assertIn("ticket", reason)
         self.assertEqual(out["audit"]["decision"], "deny")
+        native.cancel_ticket(self.root, self.run_dir)
+        self.assertEqual(self.fire({"hook_event_name": "Stop"}), hook.NOOP)  # nothing open, nothing unmet: free to stop
         self.review()
         self.assertIn("missing POLICY-C.json", self.denied(self.fire({"hook_event_name": "Stop"})))
         status = self.status()
@@ -176,11 +179,14 @@ class StopTest(HookCase):
     def test_stop_fails_closed_on_tamper_deep_json_and_garbage(self):
         self.start()
         (self.run_dir / native.STATUS_FILE).write_text("[" * 200000 + "]" * 200000)
-        self.assertIn("could not check", self.denied(self.fire({"hook_event_name": "Stop"})))
+        out = self.fire({"hook_event_name": "Stop"})
+        self.assertIn("RFL ABORT demo", self.denied(out))
+        self.assertIn("RecursionError", self.denied(out))
 
     def test_stop_not_live_or_unknown_event(self):
         self.assertEqual(self.fire({"hook_event_name": "Stop"}), hook.NOOP)
         self.start()
+        self.ticket("review")
         self.assertEqual(self.fire({"hook_event_name": "SubagentStop"}), hook.NOOP)
         self.assertEqual(self.fire({}), hook.NOOP)
         self.assertEqual(self.fire({"hookEventName": "Stop"})["output"]["decision"], "block")
