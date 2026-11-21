@@ -16,7 +16,7 @@ FAIL=0
 
 run_check() { # $1 = label, $2 = python check name
   local out
-  if out="$(SB_LINT_ROOT="${SB_LINT_ROOT:-$REPO_ROOT}" python3 -I - "$2" <<'PY' 2>&1
+  if out="$(SB_LINT_ROOT="${SB_LINT_ROOT:-$REPO_ROOT}" python3 -I -B - "$2" <<'PY' 2>&1
 import glob, json, os, re, sys
 
 ROOT = os.environ["SB_LINT_ROOT"]
