@@ -29,7 +29,7 @@ case "$hook_event" in
   SessionStart) ;;
   UserPromptSubmit)
     # one grep, no python unless the user's message is an abort/approve command or states rungs
-    prompt_text="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)"
+    prompt_text="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null)"
     grep -qE '^[[:space:]]*RFL (ABORT|APPROVE) [A-Za-z0-9._-]+[[:space:]]*$|[Rr][Uu][Nn][Gg][Ss][[:space:]]*:' <<<"$prompt_text" || exit 0
     # provenance (R4-07): only the parent session's own typed prompt counts
     if declare -f sb_orchestrator_prompt_provenance_ok >/dev/null 2>&1 && ! sb_orchestrator_prompt_provenance_ok "$input"; then
