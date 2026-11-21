@@ -251,7 +251,7 @@ for t in graphify agentmemory alumnium rtk; do
   bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1
 done
 for t in graphify agentmemory alumnium rtk; do
-  bash "$CLI" revoke "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
+  SB_CONSENT_LOCK_TRIES=1000 bash "$CLI" revoke "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
   pids+=("$!")
 done
 for pid in "${pids[@]}"; do wait "$pid" || true; done
