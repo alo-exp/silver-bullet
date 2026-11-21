@@ -126,7 +126,7 @@ else
 fi
 # Env overrides are validated: a non-numeric or zero cap falls back to the
 # manifest budget instead of crashing `timeout` (rc 125, deny lost) or disabling it.
-for bad_cap in abc 0 -1 "1;2"; do
+for bad_cap in abc 0 00 0.000 0e0 -1 -5 NaN nan inf 1e3 . 5. .5 "1;2" " "; do
   out=$(printf '{}' | SB_CODEX_HOOK_SUBPROC_TIMEOUT="$bad_cap" "$ADAPTER" PreToolUse --timeout 5 "$deny_stub" 2>/dev/null || true)
   if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecisionReason == "slow gate says no"' >/dev/null 2>&1; then
     pass "invalid SB_CODEX_HOOK_SUBPROC_TIMEOUT [$bad_cap] ignored, deny kept"

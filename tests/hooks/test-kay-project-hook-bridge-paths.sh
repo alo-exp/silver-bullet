@@ -209,6 +209,59 @@ run_bridge file.before_write '{"changes":[{"path":7,"new_path":""},{"path":"/x/P
 assert_eq "non-string and empty path values are ignored, later change still gated" "2" "$TL_STATUS"
 run_bridge file.after_write '{}' keys-weird
 
+# R7-03 (r2): Kay's real change schema is not documented in this repo, so unknown
+# shapes are gated by the UNION of every path-like value found: changes keyed by
+# path, a top-level path, nested rename objects and case variants of the keys.
+shape_denied() { # description payload
+  run_bridge file.before_write "$2" shape
+  assert_eq "$1" "2" "$TL_STATUS"
+  run_bridge file.after_write '{}' shape
+}
+shape_denied "changes object keyed by path" '{"changes":{"/x/ok.md":{"kind":"update"},"/x/PROTECTED.md":{"kind":"add"}}}'
+shape_denied "changes object keyed by path, protected first" '{"changes":{"/x/PROTECTED.md":"diff text"}}'
+shape_denied "top-level path" '{"path":"/x/PROTECTED.md"}'
+shape_denied "top-level filePath next to clean changes" '{"filePath":"/x/PROTECTED.md","changes":[{"path":"/x/ok.md"}]}'
+shape_denied "nested rename object" '{"changes":[{"path":"/x/ok.md","rename":{"to":{"newPath":"/x/PROTECTED.md"}}}]}'
+shape_denied "case variant NewPath" '{"changes":[{"Path":"/x/ok.md","NewPath":"/x/PROTECTED.md"}]}'
+shape_denied "case variant FILE_PATH" '{"changes":[{"FILE_PATH":"/x/PROTECTED.md"}]}'
+shape_denied "path list inside a change" '{"changes":[{"files":[{"path":"/x/PROTECTED.md"}]}]}'
+run_bridge file.before_write '{"changes":{"/x/a.md":{"kind":"add"},"/x/b.md":{"kind":"add"}},"path":"/x/c.md"}' shape-ok
+assert_eq "clean paths in every shape are allowed" "0" "$TL_STATUS"
+# a write-shaped payload with no recognisable path at all fails closed, even with no hook denying
+mk_script allowall2 'cat >/dev/null'
+write_hooks "$(jq -cn --argjson h "$(cmd_of allowall2)" '{hooks:{PreToolUse:[{matcher:"Write|Edit|MultiEdit|apply_patch",hooks:[$h]}]}}')"
+for blank in '{}' '{"changes":[]}' '{"changes":[{"content":"x"}]}' '{"something":"else"}'; do
+  run_bridge file.before_write "$blank" nopath
+  assert_eq "no recognisable path in $blank: denied (fail closed)" "2" "$TL_STATUS"
+  assert_contains "fail-closed reason says why" "$TL_ERR" "no file path"
+done
+run_bridge file.after_write '{}' nopath
+assert_eq "an after event without a path is not blocked" "0" "$TL_STATUS"
+write_hooks "$(jq -cn --argjson h "$(cmd_of protect)" '{hooks:{PreToolUse:[{matcher:"Write|Edit|MultiEdit|apply_patch",hooks:[$h]}]}}')"
+
+# R7-04 (r2): bridge hooks run under a timeout derived from the hooks.json budget
+# (T - max(2, T/10), min 1): a hung hook cannot stall a Kay session. A timed-out
+# gating (Pre) hook denies (fail closed); a timed-out Post/SessionStart hook does not block.
+mk_script hang 'cat >/dev/null; sleep 30'
+hang_hooks() { # event matcher
+  jq -cn --argjson h "$(cmd_of hang | jq -c '. + {timeout:3}')" --arg ev "$1" --arg m "$2" '{hooks:{($ev):[{matcher:$m,hooks:[$h]}]}}'
+}
+write_hooks "$(hang_hooks PreToolUse Bash)"
+start_s=$SECONDS
+run_bridge tool.before '{"command":"echo hi"}' hang1
+assert_eq "a hung PreToolUse hook is denied after its budget (fail closed)" "2" "$TL_STATUS"
+assert_contains "timeout reason names the cause" "$TL_ERR" "timed out"
+assert_eq "the hang was cut short (under 20 s)" "1" "$(( SECONDS - start_s < 20 ? 1 : 0 ))"
+write_hooks "$(hang_hooks PostToolUse Bash)"
+run_bridge tool.after '{"command":"echo hi"}' hang2
+assert_eq "a timed-out PostToolUse hook does not block" "0" "$TL_STATUS"
+write_hooks "$(hang_hooks SessionStart 'startup|clear|compact')"
+start_s=$SECONDS
+run_bridge session.start '{}' hang3
+assert_eq "a hung SessionStart hook does not stall or block session.start" "0" "$TL_STATUS"
+assert_eq "session.start returned within 20 s" "1" "$(( SECONDS - start_s < 20 ? 1 : 0 ))"
+write_hooks "$(jq -cn --argjson h "$(cmd_of protect)" '{hooks:{PreToolUse:[{matcher:"Write|Edit|MultiEdit|apply_patch",hooks:[$h]}]}}')"
+
 # the matched hook list is cached per (event, tool): a 20-path write costs the
 # same number of matching lookups as a 1-path write.
 REAL_PY="$(command -v python3)"

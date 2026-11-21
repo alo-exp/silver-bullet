@@ -43,12 +43,17 @@ trap cleanup EXIT
 
 cat >"$input_file"
 
-# The override must be a positive number; anything else is ignored (GNU timeout
-# would exit 125 before running the hook, or "0" would disable the cap).
+# The override must be a finite number > 0 written as digits with an optional
+# fractional part; anything else is ignored (GNU timeout would exit 125 before
+# running the hook, and 0, 00 or 0.000 would disable the cap).
 SB_HOOK_SUBPROC_TIMEOUT="$manifest_timeout"
 case "${SB_CODEX_HOOK_SUBPROC_TIMEOUT:-}" in
-  '' | *[!0-9.]* | *.*.* | . | 0 | 0.0 | 0.00) ;;
-  *) SB_HOOK_SUBPROC_TIMEOUT="$SB_CODEX_HOOK_SUBPROC_TIMEOUT" ;;
+  '' | *[!0-9.]* | *.*.* | .* | *.) ;;
+  *)
+    if [[ -n "${SB_CODEX_HOOK_SUBPROC_TIMEOUT//[0.]/}" ]]; then
+      SB_HOOK_SUBPROC_TIMEOUT="$SB_CODEX_HOOK_SUBPROC_TIMEOUT"
+    fi
+    ;;
 esac
 trap - ERR
 set +e
