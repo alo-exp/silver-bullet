@@ -28,3 +28,4 @@ if ledger_require_all "$tmp_missing" "sb:init" "sb:feature" "sb:quality-gates"; 
 fi
 
 echo "PASS: coverage ledger helpers behave as expected"
+echo "Results: 1 passed, 0 failed"
