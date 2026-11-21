@@ -192,9 +192,37 @@ class RunDrLiveTests(unittest.TestCase):
         with mock.patch.object(drl, "dispatch_phase_parallel", dispatch), \
                 mock.patch.object(drl, "materialize_solution_artifacts", mat), \
                 mock.patch.object(drl, "synthesize_landscape", syn), \
-                mock.patch.object(drl, "detect_host", return_value="claude-code"):
+                mock.patch.object(drl, "detect_host", return_value="claude-code"), \
+                mock.patch.object(drl, "backend_availability", self.availability):
             result = drl.run_dr_live(query="the query", output_root=root, selection=sel, **kw)
         return result, mat, syn
+
+    def availability(self, resolved):  # every backend CLI present unless a test says otherwise
+        return {item.get("backend", "cursor"): {"available": True, "cli": "/x", "hint": None} for item in resolved}
+
+    def test_a_missing_backend_cli_stops_the_run_before_anything_is_written_or_dispatched(self) -> None:
+        """consolidation needs a complete pool, so a missing CLI is reported up front, per backend, never as a host error"""
+        dispatch = mock.Mock()
+
+        everything_present = self.availability
+
+        def availability(resolved):  # noqa: ANN001
+            report = everything_present(resolved)
+            report["ocg"] = {"available": False, "cli": None, "hint": "install OpenCode (opencode) or set SB_OPENCODE_BIN"}
+            report["codex"] = {"available": False, "cli": None, "hint": "install the Codex CLI or set CODEX_BIN"}
+            return report
+
+        self.availability = availability
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "run"
+            result, _, _ = self.run_live(root, dispatch, parallel_phases=["DR-RETRIEVE"])
+            self.assertFalse(root.exists())
+        self.assertEqual((result["ok"], result["error_code"]), (False, "BACKEND_CLI_MISSING"))
+        self.assertEqual(sorted(result["missing_backends"]), ["codex", "ocg"])
+        self.assertIn("SB_OPENCODE_BIN", result["missing_backends"]["ocg"])
+        self.assertIn("--exclude", result["message"])
+        self.assertNotIn("UNSUPPORTED_HOST", json.dumps(result))
+        dispatch.assert_not_called()
 
     def test_stub_mode_short_circuits(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

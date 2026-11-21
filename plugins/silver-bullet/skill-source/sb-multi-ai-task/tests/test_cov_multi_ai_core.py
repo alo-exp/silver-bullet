@@ -7,6 +7,7 @@ import os
 import re
 import unittest
 from decimal import Decimal
+from pathlib import Path
 from unittest import mock
 
 from cov_helpers import HermeticCase
@@ -70,47 +71,161 @@ class HostDetectionTests(HermeticCase):
         with mock.patch.dict(os.environ, env):
             return core.detect_host()
 
-    def test_detect_host_precedence(self) -> None:
+    def test_detect_host_from_ambient_markers(self) -> None:
         self.assertEqual(self.host(), "unknown")
         self.assertEqual(self.host(CLAUDECODE="1"), "claude-code")
         self.assertEqual(self.host(CLAUDE_CODE="1"), "claude-code")
-        # Ambient fail-closed hosts beat a permissive SB_HOST override.
-        self.assertEqual(self.host(CLAUDECODE="1", SB_HOST="cursor"), "claude-code")
-        self.assertEqual(self.host(CODEX_SANDBOX="seatbelt", SB_HOST="cursor"), "codex")
-        self.assertEqual(self.host(SB_AGENT_CODEX_DELEGATE="1"), "codex")
+        for marker in ("CODEX_SANDBOX", "SB_AGENT_CODEX_DELEGATE", "CODEX_CI", "CODEX_THREAD_ID", "CODEX_INTERNAL_ORIGINATOR_OVERRIDE"):
+            self.assertEqual(self.host(**{marker: "1"}), "codex", marker)
+        # Both supported hosts at once: a fixed order, never an error.
+        self.assertEqual(self.host(CLAUDECODE="1", CODEX_SANDBOX="seatbelt"), "claude-code")
+
+    def test_detect_host_explicit_supported_names(self) -> None:
         self.assertEqual(self.host(SB_HOST="Claude"), "claude-code")
         self.assertEqual(self.host(SB_HOST="claude-code"), "claude-code")
         self.assertEqual(self.host(SB_HOST=" CODEX "), "codex")
+        # Real process evidence beats a supported override (both are supported: nothing weaker is selectable).
+        self.assertEqual(self.host(CODEX_SANDBOX="seatbelt", SB_HOST="claude"), "codex")
+        self.assertEqual(self.host(CLAUDECODE="1", SB_HOST="codex"), "claude-code")
+
+    def test_cursor_is_never_a_host(self) -> None:
         self.assertEqual(self.host(SB_HOST="cursor"), "cursor")
         self.assertEqual(self.host(CURSOR_AGENT="1"), "cursor")
         self.assertEqual(self.host(CURSOR_TRACE_ID="t"), "cursor")
+        # Claude Code or Codex started from a Cursor terminal inherits CURSOR_* markers: it is still that host.
+        self.assertEqual(self.host(CLAUDECODE="1", CURSOR_TRACE_ID="t"), "claude-code")
+        self.assertEqual(self.host(CODEX_CI="1", CURSOR_AGENT="1"), "codex")
+
+    def test_explicit_unsupported_override_always_fails_closed(self) -> None:
+        # An override can only make the gate stricter, never hide an unsupported or unknown host.
+        self.assertEqual(self.host(SB_HOST="cursor", CLAUDECODE="1"), "cursor")
+        self.assertEqual(self.host(SB_HOST="Weird", CODEX_SANDBOX="1"), "weird")
         self.assertEqual(self.host(SB_HOST="Weird"), "weird")
         self.assertEqual(self.host(SB_HOST="  "), "unknown")
 
-    def test_host_gate_supported_and_fail_closed(self) -> None:
-        with mock.patch.dict(os.environ, {"SB_HOST": "cursor"}):
-            self.assertEqual(core.host_gate(), {"ok": True, "host": "cursor"})
-        with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}):
-            gate = core.host_gate()
-        self.assertFalse(gate["ok"])
-        self.assertEqual(gate["host"], "claude-code")
-        self.assertEqual(gate["error_code"], core.UNSUPPORTED_HOST_ERROR)
-        self.assertIn("packaged-fail-closed", gate["message"])
+    def test_host_gate_supports_claude_and_codex(self) -> None:
+        for env, host in (({"CLAUDECODE": "1"}, "claude-code"), ({"SB_HOST": "claude"}, "claude-code"),
+                          ({"CODEX_THREAD_ID": "t"}, "codex"), ({"SB_HOST": "codex"}, "codex")):
+            with mock.patch.dict(os.environ, env):
+                self.assertEqual(core.host_gate(), {"ok": True, "host": host}, env)
+
+    def test_host_gate_cursor_says_it_is_no_longer_a_host(self) -> None:
+        for env in ({"SB_HOST": "cursor"}, {"CURSOR_AGENT": "1"}, {"CURSOR_TRACE_ID": "t"}, {"SB_HOST": "cursor", "CLAUDECODE": "1"}):
+            with mock.patch.dict(os.environ, env):
+                gate = core.host_gate()
+            self.assertFalse(gate["ok"], env)
+            self.assertEqual(gate["host"], "cursor")
+            self.assertEqual(gate["error_code"], core.UNSUPPORTED_HOST_ERROR)
+            self.assertIn("Cursor is no longer a supported host", gate["message"])
+            self.assertIn("Claude Code or Codex", gate["message"])
+            self.assertNotIn("packaged-fail-closed", gate["message"])
 
     def test_host_gate_unknown_host_is_unsupported(self) -> None:
         gate = core.host_gate()
         self.assertEqual(gate["host"], "unknown")
         self.assertEqual(gate["error_code"], "SB_MULTI_AI_UNSUPPORTED_HOST")
-        self.assertIn("unsupported for multi-ai-task v1", gate["message"])
+        self.assertIn("unsupported for multi-ai-task", gate["message"])
+        self.assertIn("Claude Code or Codex", gate["message"])
 
-    def test_host_gate_non_supported_entry_without_error_code_uses_default(self) -> None:
+    def test_shipped_matrix_lists_exactly_claude_and_codex(self) -> None:
+        matrix = json.loads(core.HOST_MATRIX_PATH.read_text(encoding="utf-8"))
+        status = {name: entry["status"] for name, entry in matrix["hosts"].items()}
+        self.assertEqual(status, {"claude-code": "supported", "codex": "supported", "cursor": "unsupported"})
+        self.assertEqual(matrix["execution_hosts"], ["claude-code", "codex"])
+        self.assertEqual(sorted(matrix["backends"]), ["claude", "codex", "cursor", "ocg"])
+
+    def test_host_gate_non_supported_entry_without_error_code_or_message_uses_defaults(self) -> None:
         matrix = self.tmp / "matrix.json"
-        matrix.write_text(json.dumps({"hosts": {"cursor": {"status": "beta"}, "codex": {"status": "off", "error_code": "CUSTOM"}}}))
+        matrix.write_text(json.dumps({"hosts": {"claude-code": {"status": "beta"}, "codex": {"status": "off", "error_code": "CUSTOM", "message": "custom words"}}}))
         with mock.patch.object(core, "HOST_MATRIX_PATH", matrix):
-            with mock.patch.dict(os.environ, {"SB_HOST": "cursor"}):
-                self.assertEqual(core.host_gate()["error_code"], core.UNSUPPORTED_HOST_ERROR)
+            with mock.patch.dict(os.environ, {"SB_HOST": "claude"}):
+                gate = core.host_gate()
+                self.assertEqual(gate["error_code"], core.UNSUPPORTED_HOST_ERROR)
+                self.assertIn("not supported for multi-ai-task", gate["message"])
             with mock.patch.dict(os.environ, {"SB_HOST": "codex"}):
-                self.assertEqual(core.host_gate()["error_code"], "CUSTOM")
+                gate = core.host_gate()
+                self.assertEqual((gate["error_code"], gate["message"]), ("CUSTOM", "custom words"))
+
+
+class OutputRootPolicyTests(HermeticCase):
+    """A run writes only below its output root, so the root may not be a place Silver Bullet protects."""
+
+    def refusal(self, path, **env: str):
+        with mock.patch.dict(os.environ, env):
+            return core.output_root_refusal(Path(path))
+
+    def delegation(self, scopes, *, host="codex", task="T1", active=True, state_dir=None, raw=None):
+        state_dir = state_dir or self.home / ".claude" / ".silver-bullet"
+        state_dir.mkdir(parents=True, exist_ok=True)
+        body = raw if raw is not None else json.dumps({"active": active, "host": host, "task_id": task, "work_dir": str(self.tmp), "ownership_scope": scopes})
+        (state_dir / "agent-delegation-active.json").write_text(body)
+
+    def test_ordinary_places_are_sanctioned(self) -> None:
+        for path in (self.tmp / ".planning" / "multi-ai" / "run-1", self.tmp / "research" / "2026-11-21-x", self.tmp / "out", Path("relative/out")):
+            self.assertIsNone(self.refusal(path), path)
+
+    def test_runtime_state_and_plugin_cache_are_refused(self) -> None:
+        for sub in (".claude/.silver-bullet", ".claude/.silver-bullet/x/y", ".codex/.silver-bullet", ".claude/plugins/cache/alo/sb/1.0/hooks", ".codex/plugins"):
+            reason = self.refusal(self.home / sub)
+            self.assertIn("Silver Bullet", reason, sub)
+        self.assertIsNotNone(self.refusal(self.tmp / "state" / "deep", SB_RUNTIME_STATE_DIR=str(self.tmp / "state")))
+        self.assertIsNotNone(self.refusal(self.tmp / "cache", SB_RUNTIME_PLUGIN_CACHE_ROOT=str(self.tmp / "cache")))
+        self.assertIsNotNone(self.refusal(self.tmp / "ch" / "plugins" / "z", CODEX_HOME=str(self.tmp / "ch")))
+        # Siblings and prefixes of a protected root are not inside it.
+        self.assertIsNone(self.refusal(self.home / ".claude" / ".silver-bullet-notes"))
+        self.assertIsNone(self.refusal(self.home / ".claude" / "projects"))
+
+    def test_symlink_into_a_protected_root_is_refused(self) -> None:
+        target = self.home / ".claude" / ".silver-bullet"
+        target.mkdir(parents=True)
+        link = self.tmp / "innocent"
+        link.symlink_to(target)
+        self.assertIsNotNone(self.refusal(link / "run"))
+
+    def test_git_directories_are_refused(self) -> None:
+        self.assertIn(".git", self.refusal(self.tmp / "repo" / ".git" / "hooks"))
+        self.assertIsNone(self.refusal(self.tmp / "repo" / ".github" / "multi-ai"))
+        self.assertIsNone(self.refusal(self.tmp / "repo" / "x.git" / "run"))
+
+    def test_filesystem_root_and_home_are_refused(self) -> None:
+        self.assertIsNotNone(self.refusal("/"))
+        self.assertIsNotNone(self.refusal(self.home))
+
+    def test_active_delegation_scope_is_refused_but_its_evidence_directory_is_not(self) -> None:
+        owned = self.tmp / "proj" / "src"
+        self.delegation([str(owned), "", "rel/owned"])
+        self.assertIn("delegation", self.refusal(owned))
+        self.assertIn("delegation", self.refusal(owned / "deep" / "out"))
+        self.assertIsNotNone(self.refusal(Path("rel/owned") / "x"))
+        self.assertIsNone(self.refusal(self.tmp / "proj" / "docs" / "out"))
+        self.assertIsNone(self.refusal(self.tmp / "proj" / "srcs" / "out"))
+        evidence = owned / ".planning" / "agent-codex" / "T1" / "multi-ai"
+        self.assertIsNone(self.refusal(evidence))
+        # A different task's or host's evidence directory is not the sanctioned one.
+        self.assertIsNotNone(self.refusal(owned / ".planning" / "agent-codex" / "T2" / "multi-ai"))
+        self.assertIsNotNone(self.refusal(owned / ".planning" / "agent-claude" / "T1" / "multi-ai"))
+
+    def test_inactive_disabled_or_unreadable_delegation_is_ignored(self) -> None:
+        owned = self.tmp / "proj" / "src"
+        self.delegation([str(owned)], active=False)
+        self.assertIsNone(self.refusal(owned))
+        self.delegation([str(owned)])
+        self.assertIsNone(self.refusal(owned, SB_AGENT_DELEGATE_GUARD="0"))
+        self.assertIsNone(self.refusal(owned, SB_AGENT_DELEGATE_V2="0"))
+        self.delegation(None, raw="{not json")
+        self.assertIsNone(self.refusal(owned))
+        self.delegation(None, raw="[1]")
+        self.assertIsNone(self.refusal(owned))
+        self.delegation(None, raw='{"active": true, "ownership_scope": "src", "task_id": 7, "host": null}')
+        self.assertIsNone(self.refusal(owned))
+
+    def test_delegation_state_in_the_codex_and_env_state_dirs_counts(self) -> None:
+        owned = self.tmp / "proj" / "src"
+        self.delegation([str(owned)], state_dir=self.home / ".codex" / ".silver-bullet")
+        self.assertIsNotNone(self.refusal(owned))
+        other = self.tmp / "envstate"
+        self.delegation([str(owned / "a")], state_dir=other)
+        self.assertIsNotNone(self.refusal(owned / "a" / "b", SB_RUNTIME_STATE_DIR=str(other)))
 
 
 def ids(resolved: list[dict]) -> list[str]:
@@ -247,10 +362,10 @@ class DocumentBuilderTests(HermeticCase):
 
 class DryRunReportTests(HermeticCase):
     def test_ok_report(self) -> None:
-        with mock.patch.dict(os.environ, {"SB_HOST": "cursor"}):
+        with mock.patch.dict(os.environ, {"SB_HOST": "codex"}):
             report = core.dry_run_report(core.PoolSelection(include_only=["composer-2.5"]))
         self.assertTrue(report["ok"])
-        self.assertEqual(report["host"], "cursor")
+        self.assertEqual(report["host"], "codex")
         self.assertFalse(report["host_gate_enforced"])
         self.assertTrue(report["dry_run"])
         self.assertEqual(report["resolved_count"], 1)

@@ -3,7 +3,7 @@ name: "sb:multi-ai-task"
 title: "Multi AI Task"
 description: >
   Reusable SB multi-model orchestration primitive (multi-ai-task-v2 spine). Parallel workers,
-  pool algebra, manifests, dispatch ledger, agent and concurrency caps, and result index. Runs only on a Cursor-hosted session in v1: on Claude Code and Codex, `--dry-run` and live runs both fail closed with `SB_MULTI_AI_UNSUPPORTED_HOST`.
+  pool algebra, manifests, dispatch ledger, agent and concurrency caps, and result index. Runs on Claude Code and Codex; Cursor is not a host any more and is used only as one backend CLI (cursor-agent) beside the OpenCode-Go pool and the Codex and Claude CLIs.
 argument-hint: "--task-prompt <text> --output-root <dir> [--ocg-pool none|lite|regular] [--cursor-pool none|default] [--dry-run]"
 version: 1.0.0
 ---
@@ -18,25 +18,64 @@ flow step `FS-SILVER_MULTI_AI_TASK` · spine `multi-ai-task-v2`.
 Backend-neutral reusable primitive for parallel model lanes. DR-multi-AI and future
 workflows compose this skill; it does **not** own DR phase state or consolidation.
 
-## Host matrix (v1)
+## Host matrix
 
 | Host | Status |
 |------|--------|
-| Cursor | **supported** |
-| Claude Code | packaged-fail-closed (`SB_MULTI_AI_UNSUPPORTED_HOST`) |
-| Codex | packaged-fail-closed (`SB_MULTI_AI_UNSUPPORTED_HOST`) |
+| Claude Code | **supported** |
+| Codex | **supported** |
+| Cursor | **not a host** (error `SB_MULTI_AI_UNSUPPORTED_HOST`: Cursor is no longer a supported host; run from Claude Code or Codex) |
+| Any other / unknown host | fail closed (`SB_MULTI_AI_UNSUPPORTED_HOST`) |
 
-**Availability:** this primitive needs the Cursor agent CLI backend, which only a Cursor-hosted
-session provides. Silver Bullet itself supports Claude Code and Codex, so on either host the
-skill is listed but cannot run. A dry run is a plan for a run, so `--dry-run` fails the same way
-a live run does (exit 2, `SB_MULTI_AI_UNSUPPORTED_HOST`, nothing written). Do not offer this skill
-to the user on an unsupported host.
+The host is the coding agent session that runs this CLI. It is detected from the process: Claude Code
+sets `CLAUDECODE`; Codex sets one of `CODEX_SANDBOX`, `CODEX_CI`, `CODEX_THREAD_ID`,
+`CODEX_INTERNAL_ORIGINATOR_OVERRIDE`. `SB_HOST` (`claude`, `codex`) can name the host when the markers are
+missing (a plain terminal), but it can only make the gate stricter: `SB_HOST=cursor` or any other name
+always fails closed, and a real Claude or Codex marker beats a different supported name. `CURSOR_*`
+variables only count when no Claude or Codex marker is present (a Cursor terminal passes them on to the
+agents started inside it). Unset a stale `SB_HOST` if the gate names a host you are not on.
 
-Fail-closed hosts must error **before** preferences, caches, provisioning, writes, or dispatch.
+A run on an unsupported host fails **before** preferences, caches, provisioning, writes or dispatch. A
+dry run is a plan for a run, so it fails the same way (exit 2, nothing written).
+
+## Backends
+
+Every worker is an external CLI process started the same way on every host; none needs a particular host
+tool (no Cursor Task tool, no `.cursor` directory, no host subagent API):
+
+| Backend | CLI | Logical models | If the CLI is missing |
+|---------|-----|----------------|-----------------------|
+| `cursor` | `cursor-agent` (or the `cursor` launcher's `agent`), `SB_CURSOR_BIN` to override | the Cursor pool | those workers fail with `cursor CLI not found (...)` |
+| `ocg` | OpenCode through `scripts/agent-opencode-delegate.sh`, `SB_OPENCODE_BIN` to override | the OCG pools | those workers fail with `opencode CLI not found (...)` |
+| `codex` | `codex exec`, `CODEX_BIN` to override | `gpt-5.6-luna-medium` | `codex CLI not found (...)` |
+| `claude` | `claude --print`, `CLAUDE_BIN` to override | `claude-opus-4.8-medium` | `claude CLI not found (...)` |
+
+A missing CLI is a per-backend error, never a host error: the other backends still run, `status` is
+`partial` when at least one worker succeeds, and the report lists `missing_backends` and a
+`backend_availability` map (each backend's resolved CLI and how to fix it). `--dry-run` reports the same
+availability for the planned pool without starting anything.
+
+No extra consent record is needed: running the skill is the user's explicit opt-in, and the prompt goes to
+the backends the user chose. It installs, wires and enables nothing (`consent.json` is not read or written).
+
+## Under the orchestrator and the hooks
+
+- **Parent mode.** A parent orchestrator session may not run Bash. Delegate the run to a worker
+  (`Agent` on Claude Code, `spawn_agent` on Codex) with the `MULTI-AI-TASK` worker template; the worker
+  runs the CLI. The Claude and Codex workers this skill starts carry `SB_ORCHESTRATOR_WORKER=1` (and
+  `SB_ORCHESTRATOR_PARENT=0`), so a nested session is never mistaken for a parent.
+- **Output root.** The hooks cannot see what a Python CLI writes, so the CLI keeps their boundaries
+  itself. Use a project directory such as `.planning/multi-ai/<run-id>/` or `research/<run>/`. The CLI
+  refuses (`OUTPUT_ROOT_NOT_ALLOWED`, exit 2, before any worker starts, in a dry run too) an output root
+  inside Silver Bullet's runtime state or plugin cache, a `.git` directory, the home directory or a parent of
+  it, or the ownership scope of an active agent delegation (its `.planning/agent-<host>/<task>/` evidence
+  directory is allowed). It only ever writes the files listed under *Artifacts* below the output root.
+- **Planning files.** The run never writes the protected planning files (`ROADMAP.md`, `STATE.md`, `*-PLAN.md`
+  ...); `planning-file-guard` is unaffected and still denies direct writes to them.
 
 ## CLI contract
 
-Plan a run first with `--dry-run` (no workers start, nothing is written):
+Plan a run first with `--dry-run` (no workers start and nothing is written: it resolves the pool, checks the agent cap, the host and the output root, and looks for each backend CLI):
 
 ```bash
 python3 "${PLUGIN_ROOT}/skills/silver-multi-ai-task/scripts/multi_ai_cli.py" \
@@ -54,7 +93,7 @@ Drop `--dry-run` to dispatch. Flags:
 | `--output-root DIR` | — | Required for a live run |
 | `--task-prompt TEXT` | `""` | The task; workers receive it as untrusted data (see below) |
 | `--ocg-pool none\|lite\|regular` | `lite` | OpenCode Go pool |
-| `--cursor-pool none\|default` | `default` | Cursor-side pool |
+| `--cursor-pool none\|default` | `default` | Cursor backend pool (the cursor-agent CLI) |
 | `--include-only ID` / `--exclude ID` | — | Repeatable pool edits |
 | `--cursor-subscription auto\|subscribed\|unsubscribed` | `auto` | GLM-5.2 routing |
 | `--max-agents N` | `11` | Unique logical agents allowed (dry-run and live) |
@@ -87,7 +126,7 @@ with the least privilege a research task needs:
 
 - Each worker starts in a fresh, empty temporary directory that is deleted afterwards —
   never in the Silver Bullet install root or your project.
-- Cursor runs without `--force`/`--yolo`; OpenCode runs without `--auto`. Codex runs directly
+- The Cursor backend runs without `--force`/`--yolo`; OpenCode runs without `--auto`. Codex runs directly
   as `codex exec --sandbox read-only` and Claude as `claude --print --permission-mode default`,
   both with the prompt on stdin, because the agent-codex / agent-claude delegates map their
   strict mode to `--sandbox danger-full-access` and `acceptEdits`. An inherited
@@ -123,7 +162,7 @@ at least one worker produced an authoritative result; `status` is `completed`, `
 1. `FS-MULTI-AI-RESOLVE` — pool expand, alias normalize, subscription route
 2. `FS-MULTI-AI-CAPABILITY-PROBE` — backend capability spike / cache
 3. `FS-MULTI-AI-RESERVE` — agent-cap check before dispatch
-4. `FS-MULTI-AI-DISPATCH` — adapter launch (Cursor / delegates / OCG)
+4. `FS-MULTI-AI-DISPATCH` — backend launch (Cursor CLI / Codex / Claude / OCG)
 5. `FS-MULTI-AI-RECONCILE` — ledger entries, authoritative attempt per agent
 6. `FS-MULTI-AI-INDEX` — stable `multi-ai-result-index-v1`
 
