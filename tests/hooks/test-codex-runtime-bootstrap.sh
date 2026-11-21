@@ -118,4 +118,5 @@ assert_not_contains "dev-cycle-check bootstraps runtime vars" "$DEV_OUT" "unboun
 echo
 echo "Passed: $PASS"
 echo "Failed: $FAIL"
+echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
