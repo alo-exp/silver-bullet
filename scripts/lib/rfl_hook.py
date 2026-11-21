@@ -150,7 +150,7 @@ def check_spawn(root: Path, run_dir: Path, status: dict[str, Any], payload: dict
         return f"an agent file ({shadow[0]}) could carry a reserved name: {native.SHADOW_NOTE}"
     if str(spec.get("model") or "").lower() != ticket["model"] or str(spec.get("effort") or "").lower() != ticket["effort"]:
         return f"RFL ticket {ticket['ticket']} requires model {ticket['model']} with effort {ticket['effort']}"
-    if spec.get("run_in_background") not in (None, False):
+    if "run_in_background" in spec and spec["run_in_background"] is not False:
         return "RFL review and verify subagents run in the foreground (run_in_background must be absent or false)"
     if native.sha256_text(str(spec.get("prompt") or "").strip()) != ticket["brief_sha256"]:
         return f"RFL ticket {ticket['ticket']} requires the exact brief returned by --issue-ticket (the prompt differs)"
@@ -205,7 +205,8 @@ def check_edit(root: Path, run_dir: Path, payload: dict[str, Any]) -> str | None
         if _is_agent_path(target):
             return (f"{target} is an agent definition: a same-name agent would replace the plugin's read-only reviewer, "
                     "so no agent definition may be written while a review-fix ladder run is live")
-    if any(native.mentions_reserved_agent(t) for t in _payload_texts(spec)):
+    in_agents = any("agents" in Path(os.path.realpath(raw if Path(raw).is_absolute() else cwd / raw)).parts for raw in payload_paths(spec))
+    if in_agents and any(native.mentions_reserved_agent(t) for t in _payload_texts(spec)):
         return f"the content mentions the reserved sb-rfl-* agent names; {native.SHADOW_NOTE.split('; ')[0]}"
     _, agent_type = _subagent(payload)
     if agent_type.split(":")[-1] in native.ROLES.values() and rels:

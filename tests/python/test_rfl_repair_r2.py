@@ -96,13 +96,13 @@ class AgentNameForgery(Fire):
     def test_edit_guard_checks_content_for_the_reserved_names_anywhere(self):
         self.start()
         forged = '---\nname: "sb-rfl-verifier"\n---\n'
-        for spec in ({"file_path": str(self.root / "docs/x.md"), "content": forged},
-                     {"file_path": str(self.root / "docs/x.md"), "new_string": forged},
-                     {"file_path": str(self.root / "docs/x.md"), "edits": [{"file_path": "a", "new_string": forged}]},
-                     {"input": "*** Begin Patch\n*** Add File: docs/x.md\n+---\n+name: sb-rfl-verifier\n+---\n*** End Patch"}):
+        for spec in ({"file_path": str(self.root / "docs/agents/x.md"), "content": forged},
+                     {"file_path": str(self.root / "docs/agents/x.md"), "new_string": forged},
+                     {"file_path": str(self.root / "docs/agents/x.md"), "edits": [{"file_path": "a", "new_string": forged}]},
+                     {"input": "*** Begin Patch\n*** Add File: docs/agents/x.md\n+---\n+name: sb-rfl-verifier\n+---\n*** End Patch"}):
             with self.subTest(spec=list(spec)):
                 self.assertIn("reserved", self.reason(self.edit("Write", **spec)))
-        self.assertIn("over-broad", self.reason(self.edit("Write", file_path=str(self.root / "docs/x.md"), content="mentions sb-rfl-verifier in prose")))
+        self.assertIn("over-broad", self.reason(self.edit("Write", file_path=str(self.root / "docs/agents/x.md"), content="mentions sb-rfl-verifier in prose")))
 
 
 class SessionFallback(Fire):
