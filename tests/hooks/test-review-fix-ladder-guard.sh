@@ -33,6 +33,7 @@ guard() { # <payload-json> [dir]: run the wrapper from the project (or dir); the
   (cd "${2:-$P}" && printf '%s' "$payload" | bash "$GUARD" 2>/dev/null) || true
 }
 user_says() { guard "$(jq -cn --arg p "$1" '{hook_event_name:"UserPromptSubmit", prompt:$p}')"; }
+drop_pointers() { find "$SB_RUNTIME_STATE_DIR/rfl-live" -name '*.json' -delete 2>/dev/null || true; }
 pointers() { find "$SB_RUNTIME_STATE_DIR/rfl-live" -name '*.json' 2>/dev/null | wc -l | tr -d ' '; }
 cli() { (cd "$P" && python3 "$CLI" "$@"); }
 denied() { [[ "$1" == *'"permissionDecision":"deny"'* || "$1" == *'"decision":"block"'* ]]; }
@@ -176,7 +177,7 @@ assert_contains "garbage from the guard denies a spawn while live" "$out" "could
 assert_eq "garbage on a PostToolUse stays silent (no decision exists)" "" "$(guard '{"hook_event_name":"PostToolUse","tool_name":"Agent"}')"
 tl_stub python3 'exit 5'
 assert_contains "a crashing guard blocks Stop while live" "$(guard '{"hook_event_name":"Stop"}')" "exit 5"
-rm -f "$TL_BIN/python3"
+mv -f "$TL_BIN/python3" "$TL_TMP/python3.stub"
 mkdir -p "$TL_TMP/noplugin/hooks"
 (cd "$REPO/hooks" && tar --exclude=__pycache__ -cf - .) | tar -xf - -C "$TL_TMP/noplugin/hooks"
 out="$(cd "$P" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$TL_TMP/noplugin/hooks/review-fix-ladder-guard.sh" 2>/dev/null || true)"
@@ -199,8 +200,8 @@ assert_contains "without python3 a live run fails closed (Stop)" "$out" "python3
 out="$(cd "$P" && printf '%s' "$agent_pre" | PATH="$no_py" bash "$GUARD" 2>/dev/null || true)"
 assert_contains "without python3 a live run fails closed (PreToolUse)" "$out" "python3 is missing"
 assert_eq "without python3 a PostToolUse stays silent" "" "$(cd "$P" && printf '%s' '{"hook_event_name":"PostToolUse","tool_name":"Agent"}' | PATH="$no_py" bash "$GUARD" 2>/dev/null || true)"
-assert_eq "without python3 a SessionStart with no live run stays silent" "" "$(rm -rf "$SB_RUNTIME_STATE_DIR/rfl-live"; cd "$P" && printf '%s' '{"hook_event_name":"SessionStart","source":"startup","session_id":"sess-1"}' | PATH="$no_py" bash "$GUARD" 2>/dev/null || true)"
-assert_eq "without python3 and no live run nothing happens" "" "$(rm -rf "$SB_RUNTIME_STATE_DIR/rfl-live"; cd "$P" && printf '%s' '{"hook_event_name":"Stop"}' | PATH="$no_py" bash "$GUARD" 2>/dev/null || true)"
+assert_eq "without python3 a SessionStart with no live run stays silent" "" "$(drop_pointers; cd "$P" && printf '%s' '{"hook_event_name":"SessionStart","source":"startup","session_id":"sess-1"}' | PATH="$no_py" bash "$GUARD" 2>/dev/null || true)"
+assert_eq "without python3 and no live run nothing happens" "" "$(drop_pointers; cd "$P" && printf '%s' '{"hook_event_name":"Stop"}' | PATH="$no_py" bash "$GUARD" 2>/dev/null || true)"
 
 # --- registered events -------------------------------------------------------------------------------
 rfl_assert_registered PreToolUse Agent review-fix-ladder-guard.sh

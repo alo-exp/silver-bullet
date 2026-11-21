@@ -60,14 +60,14 @@ assert_eq "claude-agent-post.json: the review moved the run to triage" "triage" 
 assert_file_exists "the captured review is on disk" "$RD/rung-01-sonnet-high/review.md"
 
 # shapes without a block are failed attempts, never a captured verdict
-rm -rf "$SB_RUNTIME_STATE_DIR/rfl-live"  # a new session: the first run is no longer live
+find "$SB_RUNTIME_STATE_DIR/rfl-live" -name '*.json' -delete  # a new session: the first run is no longer live
 new_run two
 RD="$P/.planning/rfl-two"
 # the string-shaped tool_response (plain text) is captured too
 issue
 assert_eq "claude-agent-post-string.json: captured" "" "$(guard "$(render claude-agent-post-string.json "$TICKET" "$PROMPT" "$CLEAN")")"
 assert_eq "claude-agent-post-string.json: the review moved the run to triage" "triage" "$(phase)"
-rm -rf "$SB_RUNTIME_STATE_DIR/rfl-live"
+find "$SB_RUNTIME_STATE_DIR/rfl-live" -name '*.json' -delete
 new_run three
 RD="$P/.planning/rfl-three"
 for shape in claude-agent-post-noverdict.json claude-agent-post-async.json; do
