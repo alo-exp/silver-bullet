@@ -329,8 +329,8 @@ sb_pf_multi_ai_cli_exempt() {
     | select(($a | length) >= 2 and ($a[0] | test("^python[0-9.]*$")) and ($a[1] | startswith("-") | not))
     | $a[1]' 2>/dev/null || true)"
   [[ -n "$script" && ! -L "$script" && -f "$script" ]] || return 1
-  plugin_root="$(cd "${_sb_pf_dir}/../.." && pwd -P || true)"
-  dir="$(cd "$(dirname "$script")" 2>/dev/null && pwd -P || true)"
+  plugin_root="$({ cd "${_sb_pf_dir}/../.." && pwd -P; } || true)"
+  dir="$({ cd "$(dirname "$script")" 2>/dev/null && pwd -P; } || true)"
   case "$dir/$(basename "$script")" in
     "$plugin_root/skills/silver-multi-ai-task/scripts/multi_ai_cli.py" \
       | "$plugin_root/skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py" \

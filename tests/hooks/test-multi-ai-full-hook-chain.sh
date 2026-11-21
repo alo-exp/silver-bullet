@@ -31,7 +31,8 @@ HOOKS="$(jq -r '.hooks.PreToolUse[] | select(.matcher | test("(^|\\|)(Bash)(\\||
 
 # chain RUNTIME ROLE COMMAND: prints "hook: output" for every hook that denied.
 chain() {
-  local runtime="$1" role="$2" cmd="$3" payload hook denied="" env_args=(SILVER_BULLET_RUNTIME="$runtime" CLAUDE_PLUGIN_ROOT="$TL_REPO_ROOT")
+  local runtime="$1" role="$2" cmd="$3" payload hook denied=""
+  local env_args=(SILVER_BULLET_RUNTIME="$runtime" CLAUDE_PLUGIN_ROOT="$TL_REPO_ROOT")
   if [[ "$role" == worker ]]; then
     payload="$(jq -cn --arg c "$cmd" --arg d "$PWD" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c},agent_id:"agent-123",agent_type:"general-purpose",cwd:$d}')"
     env_args+=(SB_ORCHESTRATOR_WORKER=1 SB_ORCHESTRATOR_PARENT=0)
