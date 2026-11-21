@@ -23,7 +23,6 @@ import rfl_policy_c
 AGENT_TOOLS = frozenset({"Task", "Subagent", "Agent"})
 EDIT_TOOLS = frozenset({"Edit", "Write", "MultiEdit", "apply_patch", "NotebookEdit"})
 USER_CMD_RE = re.compile(r"^\s*RFL (ABORT|APPROVE) ([A-Za-z0-9._-]{1,64})\s*$")
-AGENT_FILE_RE = re.compile(r"^sb-rfl-[A-Za-z0-9_-]+\.md$")
 PATCH_FILE_RE = re.compile(r"^\*\*\* (?:Add|Update|Delete) File: (.+)$|^\*\*\* Move to: (.+)$", re.M)
 PROTECTED_NAMES = ("LADDER-STATUS.json", "QUOTA-CLASSIFY.json")
 NOTICE_STATUSES = frozenset({"active", "paused_quota"})
@@ -133,8 +132,8 @@ def check_spawn(root: Path, run_dir: Path, status: dict[str, Any], payload: dict
     if kind not in (ticket["role"], f"silver-bullet:{ticket['role']}"):
         return f"RFL ticket {ticket['ticket']} requires subagent_type {ticket['role']} (got {kind or 'none'}); only the plugin's own agent is accepted"
     shadow = native.shadow_agent_files(root, ticket["role"])
-    if shadow and kind == ticket["role"]:
-        return f"a project or user agent file ({shadow[0]}) would shadow the plugin's {ticket['role']} for the plain name; remove it"
+    if shadow:
+        return f"an agent file ({shadow[0]}) declares the name {ticket['role']}, which is reserved for the plugin's read-only agent; remove it"
     if str(spec.get("model") or "").lower() != ticket["model"] or str(spec.get("effort") or "").lower() != ticket["effort"]:
         return f"RFL ticket {ticket['ticket']} requires model {ticket['model']} with effort {ticket['effort']}"
     if spec.get("run_in_background"):
@@ -157,6 +156,23 @@ def payload_paths(spec: dict[str, Any]) -> list[str]:
     return paths
 
 
+def _is_agent_path(target: Path) -> bool:
+    parts = target.parts
+    if any(a == ".claude" and b == "agents" for a, b in zip(parts, parts[1:])):
+        return True
+    home_agents = Path(os.path.realpath(native.home_root() / "agents"))
+    return home_agents == target or home_agents in target.parents
+
+
+def _payload_texts(spec: dict[str, Any]) -> list[str]:
+    texts = [str(spec[k]) for k in ("content", "new_string", "file_text", "new_source", "input", "patch", "command") if isinstance(spec.get(k), str)]
+    for edit in spec.get("edits") if isinstance(spec.get("edits"), list) else []:
+        if isinstance(edit, dict) and isinstance(edit.get("new_string"), str):
+            texts.append(edit["new_string"])
+    # an apply_patch body prefixes added lines with "+"
+    return [re.sub(r"(?m)^[+]", "", t) for t in texts]
+
+
 def check_edit(root: Path, run_dir: Path, payload: dict[str, Any]) -> str | None:
     spec = payload.get("tool_input")
     spec = spec if isinstance(spec, dict) else {}
@@ -170,8 +186,11 @@ def check_edit(root: Path, run_dir: Path, payload: dict[str, Any]) -> str | None
             continue
     for raw in payload_paths(spec):
         target = Path(os.path.realpath(raw if Path(raw).is_absolute() else cwd / raw))
-        if AGENT_FILE_RE.match(target.name) and target.parent.name == "agents" and target.parent.parent.name == ".claude":
-            return f"{target.name} is a review-fix-ladder agent definition: a same-name project or user agent would replace the plugin's read-only reviewer, so no one may write it while a run is live"
+        if _is_agent_path(target):
+            return (f"{target} is an agent definition: a same-name agent would replace the plugin's read-only reviewer, "
+                    "so no agent definition may be written while a review-fix ladder run is live")
+    if native.AGENT_NAME_LINE_RE.search("\n".join(_payload_texts(spec))):
+        return "the content declares an agent named sb-rfl-reviewer or sb-rfl-verifier; those names are reserved for the plugin's read-only agents"
     _, agent_type = _subagent(payload)
     if agent_type.split(":")[-1] in native.ROLES.values() and rels:
         return "RFL reviewers and verifiers are read-only: they must not edit files"

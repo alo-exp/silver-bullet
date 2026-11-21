@@ -519,21 +519,64 @@ def user_rungs(project_root: Path) -> str:
 
 
 def agent_dirs(project_root: Path) -> list[Path]:
+    """Every directory the host may load agent definitions from for this project, besides the plugin's own."""
     home = Path(os.environ.get("HOME", "~")).expanduser()
-    return [Path(project_root) / ".claude" / "agents", home_root() / "agents", home / ".claude" / "agents"]
+    dirs = [Path(project_root) / ".claude" / "agents", home_root() / "agents", home / ".claude" / "agents"]
+    dirs += sorted((home_root() / "plugins" / "cache").glob("*/*/*/agents"))[:50]
+    return [d for d in dirs if not _own_plugin_agents(d)]
+
+
+def _own_plugin_agents(directory: Path) -> bool:
+    try:
+        manifest = rfl_json.read_bounded(directory.parent / ".claude-plugin" / "plugin.json", max_bytes=65536, max_depth=8)
+    except rfl_json.BadJson:
+        return False
+    return manifest.get("name") == "silver-bullet"
+
+
+_NAME_KEY_RE = re.compile(r"""^(?:name|"name"|'name')\s*:\s*(.*)$""", re.I)
+_QUOTED_RE = re.compile(r"""^(?:"((?:[^"\\]|\\.)*)"|'((?:[^']|'')*)')""")
+AGENT_NAME_LINE_RE = re.compile(r"""(?im)^\s*["']?name["']?\s*:\s*["']?(?:[\w.-]+:)?(sb-rfl-reviewer|sb-rfl-verifier)\b""")
+
+
+def _yaml_scalar(raw: str) -> str:
+    raw = raw.strip()
+    quoted = _QUOTED_RE.match(raw)
+    if quoted:
+        return (quoted.group(1) if quoted.group(1) is not None else quoted.group(2)).strip()
+    return re.split(r"\s#", raw, maxsplit=1)[0].strip()
+
+
+def declared_agent_names(text: str) -> list[str]:
+    """The ``name`` an agent definition declares in its YAML frontmatter (plain, quoted, commented, block scalar)."""
+    lines = text.lstrip("\ufeff").splitlines()
+    if not lines or lines[0].strip() != "---":
+        return []
+    names: list[str] = []
+    for index, line in enumerate(lines[1:], start=1):
+        if line.strip() == "---":
+            break
+        match = _NAME_KEY_RE.match(line)
+        if not match:
+            continue
+        value = match.group(1).strip()
+        if value.split("#")[0].strip() in ("", "|", "|-", "|+", ">", ">-", ">+"):
+            value = next((n.strip() for n in lines[index + 1:index + 4] if n.strip() and not n.startswith("---")), "")
+        names.append(_yaml_scalar(value).lower())
+    return names
 
 
 def shadow_agent_files(project_root: Path, role: str) -> list[str]:
-    """Project or user agent definitions that would win over the plugin's ``role`` agent for the plain name."""
+    """Agent definitions anywhere the host loads them (any depth) that declare the plugin role's name, with or without a namespace."""
     found = []
     for directory in agent_dirs(project_root):
         if not directory.is_dir():
             continue
-        for path in sorted(directory.glob("*.md"))[:200]:
-            head = ""
+        for path in sorted(directory.rglob("*.md"))[:500]:
+            text = ""
             with contextlib.suppress(OSError):  # a directory or unreadable file named *.md
-                head = path.read_text(encoding="utf-8", errors="replace")[:2048]
-            if path.stem == role or re.search(rf"(?m)^name:\s*{re.escape(role)}\s*$", head):
+                text = path.read_text(encoding="utf-8", errors="replace")[:4096]
+            if path.stem == role or any(n.split(":")[-1] == role for n in declared_agent_names(text)):
                 found.append(str(path))
     return found
 
