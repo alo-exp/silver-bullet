@@ -1,501 +1,277 @@
-"""Unit tests for scripts/_review_fix_ladder_impl.py (host-aware RFL rung resolver)."""
+"""Unit tests for scripts/_review_fix_ladder_impl.py (encoder CLI): resolver, lifecycle, policy, quota, hook."""
 from __future__ import annotations
 
 import contextlib
 import io
 import json
 import os
-import runpy
-import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
-from sbtest import REPO_ROOT, load_module
+from rflhelp import CLEAN_POLICY, RflCase, native
+from sbtest import load_module
 
-r = load_module("scripts/_review_fix_ladder_impl.py")
-
-
-class ImportPathTest(unittest.TestCase):
-    LIB = str(REPO_ROOT / "scripts" / "lib")
-
-    def test_lib_dir_is_added_to_sys_path_when_absent(self):
-        trimmed = [p for p in sys.path if p != self.LIB]
-        with mock.patch.object(sys, "path", trimmed):
-            load_module("scripts/_review_fix_ladder_impl.py", name="rfl_impl_fresh_a")
-            self.assertEqual(trimmed[0], self.LIB)
-
-    def test_lib_dir_not_duplicated_when_present(self):
-        path = [self.LIB] + [p for p in sys.path if p != self.LIB]
-        with mock.patch.object(sys, "path", path):
-            load_module("scripts/_review_fix_ladder_impl.py", name="rfl_impl_fresh_b")
-            self.assertEqual(path.count(self.LIB), 1)
+impl = load_module("scripts/_review_fix_ladder_impl.py", name="rfl_impl_under_test")
 
 
-class TmpCase(unittest.TestCase):
-    """Per-test scratch dir with HOME, cwd and RFL env isolated."""
+class CliCase(RflCase):
+    def cli(self, *argv, stdin=""):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), mock.patch.object(sys, "stdin", io.StringIO(stdin)):
+            try:
+                code = impl.main(["--project-root", str(self.root), *argv])
+            except SystemExit as exc:
+                code = exc.code
+        return code, out.getvalue(), err.getvalue()
 
-    def setUp(self):
-        tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(tmp.cleanup)
-        self.tmp = Path(tmp.name).resolve()
-        self.home = self.tmp / "home"
-        self.home.mkdir()
-        self.proj = self.tmp / "proj"
-        self.proj.mkdir()
-        env = {"HOME": str(self.home), "PATH": os.environ.get("PATH", "/usr/bin:/bin")}
-        p = mock.patch.dict(os.environ, env, clear=True)
-        p.start()
-        self.addCleanup(p.stop)
+    def jcli(self, *argv, **kw):
+        code, out, err = self.cli(*argv, **kw)
+        return code, (json.loads(out) if out.strip().startswith(("{", "[")) else out), err
 
-    def write_json(self, path, obj):
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(obj if isinstance(obj, str) else json.dumps(obj), encoding="utf-8")
+
+class ResolverTest(CliCase):
+    def test_detect_host(self):
+        for key in ("CODEX_CI", "CODEX_THREAD_ID", "CODEX_INTERNAL_ORIGINATOR_OVERRIDE", "CLAUDE_PLUGIN_ROOT"):
+            os.environ.pop(key, None)
+        os.environ["SILVER_BULLET_RUNTIME"] = " Codex "
+        self.assertEqual(impl.detect_host(), "codex")
+        os.environ["SILVER_BULLET_RUNTIME"] = "cursor"  # not a host any more
+        self.assertEqual(impl.detect_host(), "claude")
+        del os.environ["SILVER_BULLET_RUNTIME"]
+        self.assertEqual(impl.detect_host(), "claude")
+        os.environ["CODEX_THREAD_ID"] = "t"
+        self.assertEqual(impl.detect_host(), "codex")
+        del os.environ["CODEX_THREAD_ID"]
+        os.environ["CLAUDE_PLUGIN_ROOT"] = "/home/u/.codex/plugins/x"
+        self.assertEqual(impl.detect_host(), "codex")
+        os.environ["CLAUDE_PLUGIN_ROOT"] = "/home/u/.claude/plugins/x"
+        self.assertEqual(impl.detect_host(), "claude")
+
+    def test_claude_default_ladder(self):
+        out = impl.resolve_ladder("claude", self.root)
+        self.assertEqual((out["host"], out["source"], out["enabled"], out["spawn_tool"]), ("claude", "default", True, "Agent"))
+        self.assertEqual([f"{r['model']}:{r['effort']}" for r in out["rungs"]],
+                         ["haiku:xhigh", "sonnet:high", "sonnet:xhigh", "opus:low", "opus:medium", "opus:high"])
+        self.assertTrue(out["effort_applied"])
+        self.assertNotIn("fable", json.dumps(out))
+        self.assertEqual(impl.resolve_ladder("CLAUDE")["total_rungs"], 6)
+
+    def test_custom_ladder_from_the_prompt_flag_and_config(self):
+        out = impl.resolve_ladder("claude", self.root, "rungs: +opus:xhigh -haiku:xhigh")
+        self.assertEqual((out["source"], out["total_rungs"], out["rungs"][-1]["effort"]), ("config", 6, "xhigh"))
+        (self.root / ".silver-bullet.json").write_text(json.dumps({"review_fix_ladder": {"rungs": ["sonnet:high"]}}))
+        self.assertEqual(impl.resolve_ladder("claude", self.root)["total_rungs"], 1)
+
+    def test_codex_is_disabled_with_documented_defaults(self):
+        out = impl.resolve_ladder("codex")
+        self.assertFalse(out["enabled"])
+        self.assertEqual(out["rungs"], [])
+        self.assertIn("not yet verified on Codex", out["message"])
+        self.assertEqual(out["documented_defaults"]["terra"], ["high", "xhigh"])
+        self.assertEqual(out["documented_defaults"]["excluded"], ["astra"])
+
+    def test_cli_resolution_output(self):
+        code, out, _ = self.cli()
+        self.assertEqual(code, 0)
+        self.assertIn("host: claude\nsource: default\ntotal_rungs: 6\nrungs:\n  1. haiku / xhigh", out)
+        code, out, _ = self.jcli("--json", "--rungs", "opus:high")
+        self.assertEqual((code, out["total_rungs"]), (0, 1))
+        code, out, _ = self.jcli("--host", "codex")
+        self.assertEqual((code, out["enabled"]), (0, False))
+        code, _, err = self.cli("--rungs", "gpt:high")
+        self.assertEqual((code, "bad rung" in err), (3, True))
+        code, _, err = self.cli("--rungs", "fable:high")
+        self.assertIn("Fable is never used", err)
+
+
+class EntrypointTest(unittest.TestCase):
+    def test_main_guard_and_sys_path_bootstrap(self):
+        import runpy
+        lib = str(Path(impl.__file__).resolve().parent / "lib")
+        trimmed = [p for p in sys.path if p != lib]
+        out = io.StringIO()
+        with mock.patch.object(sys, "path", trimmed), mock.patch.object(sys, "argv", ["x", "--launcher-steps"]), \
+                contextlib.redirect_stdout(out), self.assertRaises(SystemExit) as caught:
+            runpy.run_path(impl.__file__, run_name="__main__")
+        self.assertEqual(caught.exception.code, 0)
+        self.assertIn(lib, trimmed)
+        self.assertIn("steps", json.loads(out.getvalue()))
+
+
+class QuotaCliTest(CliCase):
+    def test_classify_contract_via_blob_file_and_host(self):
+        code, out, _ = self.jcli("--classify-quota-window", "--subscription-output", "Error 429 rate limit", "--quota-host", "claude")
+        self.assertEqual(code, 0)
+        for key in ("quota_class", "should_schedule", "should_short_retry", "reset_seconds"):
+            self.assertIn(key, out)
+        self.assertEqual(out["quota_class"], "five_hour")
+        blob = self.tmp / "blob.txt"
+        blob.write_text("weekly limit reached")
+        code, out, _ = self.jcli("--classify-quota-window", "--subscription-output-file", str(blob), "--model", "claude/opus",
+                                 "--quota-now", "2030-01-01T00:00:00Z")
+        self.assertEqual(out["quota_class"], "weekly")
+        code, out, _ = self.jcli("--classify-quota-window", "--subscription-output", "429 too many")
+        self.assertEqual((out["quota_class"], out["should_short_retry"]), ("unknown", True))
+
+    def test_scheduler_flags_are_gone(self):
+        for flag in ("--schedule-quota-retry", "--activate-quota-retry", "--quota-retry-due", "--quota-retry-wake",
+                     "--mark-ladder-status", "--record-rung-review-outcome", "--decide-launch", "--default-host-route"):
+            code, _, err = self.cli(flag, "x") if flag in ("--mark-ladder-status", "--record-rung-review-outcome") else self.cli(flag)
+            self.assertEqual(code, 2, flag)
+
+
+class LifecycleCliTest(CliCase):
+    def test_full_rung_through_the_cli(self):
+        charter = self.write_charter()
+        code, out, _ = self.jcli("--start", "--charter-file", str(charter), "--run-id", "demo", "--rungs", "sonnet:high")
+        self.assertEqual((code, out["run_id"]), (0, "demo"))
+        run = ".planning/rfl-demo"
+        run_dir = self.root / run
+        self.run_dir = run_dir
+        code, _, err = self.cli("--issue-ticket", "review", "--run-dir", str(run_dir))
+        self.assertEqual((code, "Policy E" in err), (3, True))
+        self.assertEqual(self.jcli("--approve", "--run-dir", str(run_dir))[0], 0)
+        for cycle in range(2):
+            code, out, _ = self.jcli("--issue-ticket", "review", "--run-dir", str(run_dir))
+            self.assertEqual(code, 0)
+            self.reply(out["ticket"], {"verdict": "CLEAN", "findings": []})
+            self.write_policy(CLEAN_POLICY)
+            self.assertEqual(self.jcli("--complete-triage", "--run-dir", str(run_dir))[0], 0)
+            code, out, _ = self.jcli("--issue-ticket", "verify_1", "--run-dir", str(run_dir))
+            self.reply(out["ticket"], {"verdict": "VERIFY_PASS", "checks": [], "gaps": []})
+            code, out, _ = self.jcli("--run-signals", "--run-dir", str(run_dir))
+            self.assertEqual(code, 0)
+        code, out, _ = self.jcli("--issue-ticket", "verify_2", "--run-dir", str(run_dir))
+        self.reply(out["ticket"], {"verdict": "VERIFY_PASS", "checks": [], "gaps": []})
+        self.assertEqual(self.jcli("--run-signals", "--run-dir", str(run_dir))[0], 0)
+        code, out, _ = self.jcli("--status", "--run-dir", str(run_dir))
+        self.assertEqual((out["phase"], out["status"]), ("advance", "active"))
+        code, out, _ = self.jcli("--advance", "--run-dir", str(run_dir))
+        self.assertEqual((code, out["status"]), (0, "completed"))
+
+    def test_failed_signals_exit_one_and_apply_loop_commands(self):
+        self.start(signals=[{"id": "no", "argv": ["false"]}])
+        self.review([{"id": "F1", "severity": "HIGH", "file": "src/a.py", "line": 1, "summary": "s"}])
+        from rflhelp import accept_policy
+        self.write_policy(accept_policy())
+        self.assertEqual(self.jcli("--complete-triage", "--run-dir", str(self.run_dir))[0], 0)
+        code, _, err = self.cli("--record-apply", "--run-dir", str(self.run_dir))
+        self.assertEqual(code, 3)
+        (self.root / "src" / "a.py").write_text("x = 2\n")
+        self.assertEqual(self.jcli("--record-apply", "--run-dir", str(self.run_dir))[0], 0)
+        issued = self.ticket("verify_1")
+        self.reply(issued["ticket"], {"verdict": "VERIFY_PASS", "checks": [{"finding_id": "F1", "status": "resolved", "evidence": "e"}], "gaps": []})
+        code, out, _ = self.jcli("--run-signals", "--run-dir", str(self.run_dir))
+        self.assertEqual((code, out["ok"]), (1, False))
+        self.assertEqual(self.status()["phase"], "apply")
+
+    def test_cancel_resume_abort_cleanup_and_errors(self):
+        self.start()
+        self.ticket("review")
+        code, out, _ = self.jcli("--cancel-ticket", "--run-dir", str(self.run_dir))
+        self.assertEqual((code, out["outcome"]), (0, "cannot_launch"))
+        native.clear_live()
+        code, out, _ = self.jcli("--resume", "demo")
+        self.assertEqual((code, out["run_id"]), (0, "demo"))
+        code, out, err = self.jcli("--abort", "demo")
+        self.assertEqual((code, "RFL ABORT demo" in err), (3, True))
+        native.write_abort_token(self.root, "demo")
+        self.assertEqual(self.jcli("--abort", "demo")[1]["status"], "aborted")
+        code, out, _ = self.jcli("--cleanup-legacy-timers", "--dry-run")
+        self.assertEqual((code, out["dry_run"], out["found"]), (0, True, []))
+        code, _, err = self.cli("--abort", "ghost")
+        self.assertEqual(code, 4)  # no signed status: treated as tamper
+        code, _, _ = self.cli("--status")
+        self.assertEqual(code, 2)  # --run-dir required
+        code, _, err = self.cli("--start")
+        self.assertEqual(code, 3)
+        code, _, err = self.cli("--table-json-file", str(self.tmp / "x.json"), "--issue-table")
+        self.assertEqual(code, 3)  # an unreadable input file is a refusal, not a traceback
+
+    def test_hook_entry_point_reads_stdin(self):
+        self.start()
+        code, out, _ = self.jcli("--hook", stdin=json.dumps({"hook_event_name": "Stop"}))
+        self.assertEqual(code, 0)
+        self.assertEqual(out["output"]["decision"], "block")
+        code, out, _ = self.jcli("--hook", stdin="not json")
+        self.assertEqual(out, {"output": None, "audit": None})
+
+
+class PolicyCliTest(CliCase):
+    def write_file(self, name, text):
+        path = self.tmp / name
+        path.write_text(text)
         return path
 
+    def test_steps_launch_policy_and_skip_artifact(self):
+        self.assertIsInstance(self.jcli("--launcher-steps")[1]["steps"], list)
+        code, out, _ = self.jcli("--launch-policy", "--outcome", "timeout", "--attempts", "2")
+        self.assertEqual((code, out["action"]), (0, "skip"))
+        self.assertEqual(self.cli("--launch-policy")[0], 2)
+        code, out, _ = self.jcli("--skip-artifact", "--rung-id", "3", "--outcome", "timeout", "--attempts", "2", "--rung-dir", str(self.tmp / "r"))
+        self.assertTrue((self.tmp / "r" / "SKIPPED.md").is_file())
+        self.assertEqual(out["skipped_md_path"], str(self.tmp / "r" / "SKIPPED.md"))
+        code, out, _ = self.jcli("--skip-artifact", "--rung-id", "3", "--outcome", "cannot_launch")
+        self.assertNotIn("skipped_md_path", out)
+        self.assertEqual(self.cli("--skip-artifact", "--outcome", "timeout")[0], 2)
 
-class DetectHostTest(TmpCase):
-    def check(self, expected, **env):
-        with mock.patch.dict(os.environ, env):
-            self.assertEqual(r.detect_host(), expected)
+    def test_tables(self):
+        rows = '[{"id":"A","severity":"high","title":"t"}]'
+        for flag, needle in (("--issue-table", "### HIGH"), ("--triage-table", "Triage"), ("--resolved-table", "Resolved"), ("--ladder-matrix", "Ladder-complete matrix")):
+            code, out, _ = self.cli(flag, "--table-json", rows if flag != "--ladder-matrix" else "[]")
+            self.assertEqual(code, 0, flag)
+            self.assertIn(needle, out, flag)
+        code, _, err = self.cli("--issue-table", "--table-json", "{}")
+        self.assertEqual((code, "must be an array" in err), (2, True))
+        code, _, err = self.cli("--issue-table")
+        self.assertEqual(code, 3)
 
-    def test_explicit_runtime(self):
-        self.check("codex", SILVER_BULLET_RUNTIME=" Codex ")
-        self.check("claude", SILVER_BULLET_RUNTIME="cursor")
-        self.check("claude", SILVER_BULLET_RUNTIME="claude", CODEX_CI="1")
-
-    def test_unknown_runtime_falls_through(self):
-        self.check("claude", SILVER_BULLET_RUNTIME="opencode")
-        self.check("codex", SILVER_BULLET_RUNTIME="opencode", CODEX_THREAD_ID="t")
-
-    def test_codex_markers(self):
-        for key in ("CODEX_CI", "CODEX_THREAD_ID", "CODEX_INTERNAL_ORIGINATOR_OVERRIDE"):
-            self.check("codex", **{key: "1"})
-
-    def test_plugin_root_paths(self):
-        self.check("codex", CLAUDE_PLUGIN_ROOT="/h/.codex/plugins/sb")
-        self.check("claude", CLAUDE_PLUGIN_ROOT="/h/.cursor/plugins/sb")
-        self.check("claude", CLAUDE_PLUGIN_ROOT="/h/.claude/plugins/sb")
-
-    def test_default(self):
-        self.check("claude")
-
-
-class NamingAndFamilyTest(unittest.TestCase):
-    def test_names(self):
-        self.assertEqual(r.sanitize_model_for_agent_name("gpt-5.5"), "gpt-5-5")
-        self.assertEqual(r.subagent_name_for("grok-4.5", "high"), "sb-grok-4-5-high")
-        self.assertEqual(r.subagent_name_for("m", "low", "x"), "x-m-low")
-
-    def test_family(self):
-        for slug, fam in (("opus-4", "claude"), ("claude-opus", "claude"), ("sb-opus-4", "claude"),
-                          (" SB-Claude-x ", "claude"), ("gpt-5.5", "gpt"), ("chatgpt-4", "gpt"),
-                          ("sb-gpt-5", "gpt"), ("composer-2.5", None), ("", None), (None, None)):
-            self.assertEqual(r.subscription_family_for_model(slug), fam, slug)
-
-    def test_first_regex_match(self):
-        self.assertEqual(r._first_regex_match(r.HASH_MISMATCH_RE, "x HASH   MISMATCH y"), "HASH   MISMATCH")
-        self.assertIsNone(r._first_regex_match(r.HASH_MISMATCH_RE, "fine"))
-        self.assertIsNone(r._first_regex_match(r.HASH_MISMATCH_RE, None))
-
-    def test_subscription_fields(self):
-        none = r.subscription_fields_for_model("composer-2.5")
-        self.assertFalse(none["subscription_first"])
-        self.assertIsNone(none["subscription_invoke"])
-        gpt = r.subscription_fields_for_model("gpt-5.5")
-        self.assertEqual(gpt["subscription_host"], "codex")
-        self.assertEqual(gpt["subscription_invoke"], "scripts/agent-codex/invoke.sh")
-        self.assertEqual(gpt["cursor_fallback"], "quota-exhaustion-only")
-        cl = r.subscription_fields_for_model("claude-opus-4-7")
-        self.assertEqual(cl["subscription_skill"], "silver-agent-claude")
-
-
-class ClassifyAndDecideTest(unittest.TestCase):
-    def test_classify(self):
-        self.assertEqual(r.classify_subscription_attempt(0, "429")["reason"], "success")
-        self.assertEqual(r.classify_subscription_attempt("0", None)["reason"], "success")
-        miss = r.classify_subscription_attempt(1, "bash: codex: command not found")
-        self.assertEqual((miss["reason"], miss["signal"], miss["cursor_fallback"]),
-                         ("missing-cli", "command not found", False))
-        # missing CLI wins over a quota word
-        self.assertEqual(r.classify_subscription_attempt(1, "CLI not found; quota")["reason"], "missing-cli")
-        hm = r.classify_subscription_attempt(2, "HASH MISMATCH in 429")
-        self.assertEqual(hm["reason"], "hash-mismatch")
-        self.assertFalse(hm["cursor_fallback"])
-        q = r.classify_subscription_attempt(1, "Error 429 Too Many")
-        self.assertEqual((q["reason"], q["signal"], q["quota_exhaustion"], q["cursor_fallback"]),
-                         ("quota-exhaustion", "429", True, True))
-        for text in ("rate-limit hit", "usage cap", "out of quota", "billed quota", "token plan"):
-            self.assertTrue(r.classify_subscription_attempt(1, text)["quota_exhaustion"], text)
-        other = r.classify_subscription_attempt(1, "segfault")
-        self.assertEqual(other["reason"], "non-quota-failure")
-        self.assertIsNone(other["signal"])
-        self.assertEqual(r.classify_subscription_attempt(3, None)["reason"], "non-quota-failure")
-
-    def test_decide_non_subscription(self):
-        p = r.decide_launch("composer-2.5", "medium")
-        self.assertEqual((p["action"], p["reason"], p["cursor_fallback"]),
-                         ("cursor_task", "non-subscription-family", False))
-        self.assertEqual(p["subagent_name"], "sb-composer-2-5-medium")
-
-    def test_decide_subscription_first(self):
-        p = r.decide_launch("gpt-5.5", "high", prefix="zz")
-        self.assertEqual((p["action"], p["reason"]), ("invoke_subscription", "subscription-first"))
-        self.assertEqual(p["subagent_name"], "zz-gpt-5-5-high")
-        self.assertEqual(p["cursor_fallback"], "quota-exhaustion-only")
-
-    def test_decide_after_attempt(self):
-        ok = r.decide_launch("gpt-5.5", "high", subscription_exit=0)
-        self.assertEqual(ok["action"], "accept_subscription")
-        self.assertIs(ok["cursor_fallback"], False)
-        fb = r.decide_launch("claude-opus-4-7", "high", subscription_exit=1, subscription_output="rate limit")
-        self.assertEqual((fb["action"], fb["cursor_fallback"]), ("cursor_fallback", True))
-        fail = r.decide_launch("gpt-5.5", "high", subscription_exit=1, subscription_output="boom")
-        self.assertEqual((fail["action"], fail["reason"]), ("fail", "non-quota-failure"))
-
-
-class StateFileTest(TmpCase):
-    def test_rfl_state_file(self):
-        self.assertEqual(r.rfl_state_file(), Path("/tmp/review-fix-ladder-state.json"))
-        with mock.patch.dict(os.environ, {"SB_RUNTIME_STATE_DIR": str(self.tmp / "st")}):
-            self.assertEqual(r.rfl_state_file(), self.tmp / "st" / "review-fix-ladder-state.json")
-
-    def test_mark_quota_fallback_creates_and_merges(self):
-        state_dir = self.tmp / "st"
-        with mock.patch.dict(os.environ, {"SB_RUNTIME_STATE_DIR": str(state_dir)}):
-            out = r.mark_quota_cursor_fallback(host="codex", signal="429")
-            self.assertEqual(out["subscription_quota_host"], "codex")
-            self.assertEqual(out["state_file"], str(state_dir / "review-fix-ladder-state.json"))
-            saved = json.loads((state_dir / "review-fix-ladder-state.json").read_text())
-            self.assertEqual(saved, {"subscription_quota_fallback": True,
-                                     "subscription_quota_host": "codex", "subscription_quota_signal": "429"})
-            # second call keeps unrelated and earlier keys, adds nothing when args are empty
-            saved["other"] = 1
-            (state_dir / "review-fix-ladder-state.json").write_text(json.dumps(saved))
-            out = r.mark_quota_cursor_fallback()
-            self.assertEqual(out["subscription_quota_host"], "codex")
-            again = json.loads((state_dir / "review-fix-ladder-state.json").read_text())
-            self.assertEqual(again["other"], 1)
-
-    def test_mark_quota_fallback_without_host_or_signal(self):
-        with mock.patch.dict(os.environ, {"SB_RUNTIME_STATE_DIR": str(self.tmp / "st2")}):
-            out = r.mark_quota_cursor_fallback()
-        self.assertIsNone(out["subscription_quota_host"])
-        self.assertIsNone(out["subscription_quota_signal"])
-
-    def test_load_json_file(self):
-        self.assertIsNone(r.load_json_file(self.tmp / "missing.json"))
-        self.assertIsNone(r.load_json_file(self.write_json(self.tmp / "bad.json", "{nope")))
-        self.assertIsNone(r.load_json_file(self.write_json(self.tmp / "list.json", "[1]")))
-        self.assertEqual(r.load_json_file(self.write_json(self.tmp / "ok.json", {"a": 1})), {"a": 1})
-
-    def test_load_json_file_unreadable(self):
-        p = self.write_json(self.tmp / "x.json", {"a": 1})
-        with mock.patch.object(Path, "read_text", side_effect=OSError("denied")):
-            self.assertIsNone(r.load_json_file(p))
-
-
-class LaddersTest(TmpCase):
-    def models_cache(self, models):
-        return self.write_json(self.tmp / "codex/models_cache.json", {"models": models})
-
-    def test_reasoning_levels(self):
-        self.assertEqual(r.reasoning_levels_for_model({}), list(r.REASONING_ORDER))
-        m = {"supported_reasoning_levels": [{"effort": "high"}, {"effort": "low"}, {"effort": ""},
-                                            "junk", {"effort": "weird"}]}
-        self.assertEqual(r.reasoning_levels_for_model(m), ["low", "high"])
-        self.assertEqual(r.reasoning_levels_for_model({"supported_reasoning_levels": [{"effort": "weird"}]}),
-                         list(r.REASONING_ORDER))
-
-    def test_expand(self):
-        self.assertEqual(r.expand_model_rungs(["a", "b"], ["x", "y"]),
-                         [{"model": "a", "reasoning": "x"}, {"model": "a", "reasoning": "y"},
-                          {"model": "b", "reasoning": "x"}, {"model": "b", "reasoning": "y"}])
-        self.assertEqual(r.expand_model_rungs([], ["x"]), [])
-
-    def test_fallbacks(self):
-        self.assertEqual(len(r.codex_fallback_rungs()), 2 * 4)
-        self.assertEqual(r.claude_fallback_rungs()[0], {"model": "claude-sonnet-4-6", "reasoning": "medium"})
-        self.assertEqual(len(r.claude_fallback_rungs()), 3 * 3)
-
-    def test_codex_dynamic_rungs(self):
-        self.assertIsNone(r.codex_dynamic_rungs(self.tmp / "nope.json"))
-        bad = self.write_json(self.tmp / "bad.json", "{nope")
-        self.assertIsNone(r.codex_dynamic_rungs(bad))
-        for payload in ({"models": []}, {"models": "x"}, {}):
-            self.assertIsNone(r.codex_dynamic_rungs(self.write_json(self.tmp / "p.json", payload)))
-        hidden = [{"slug": "a", "visibility": "hide"}]
-        self.assertIsNone(r.codex_dynamic_rungs(self.write_json(self.tmp / "p.json", {"models": hidden})))
-        mini = [{"slug": r.CODEX_MINI_SLUG, "visibility": "list"}]
-        self.assertIsNone(r.codex_dynamic_rungs(self.write_json(self.tmp / "p.json", {"models": mini})))
-        blank = [{"slug": "  ", "visibility": "list"}, {"visibility": "list"}]
-        self.assertIsNone(r.codex_dynamic_rungs(self.write_json(self.tmp / "p.json", {"models": blank})))
-
-    def test_codex_dynamic_rungs_sorted_by_priority_and_filtered(self):
-        cache = self.models_cache([
-            {"slug": "low-prio", "visibility": "list", "priority": 1,
-             "supported_reasoning_levels": [{"effort": "xhigh"}, {"effort": "medium"}]},
-            {"slug": r.CODEX_MINI_SLUG, "visibility": "list", "priority": 99},
-            {"slug": "hidden", "visibility": "hide", "priority": 50},
-            {"slug": "top", "visibility": "list", "priority": "7"},
-            {"slug": "", "visibility": "list", "priority": 5},
-        ])
-        rungs = r.codex_dynamic_rungs(cache)
-        self.assertEqual([x["model"] for x in rungs],
-                         ["top"] * 4 + ["low-prio"] * 2)
-        self.assertEqual([x["reasoning"] for x in rungs[-2:]], ["medium", "xhigh"])
-
-    def test_resolve_ladder_hosts(self):
-        self.assertEqual(r.resolve_ladder("CURSOR", project_root=self.proj)["host"], "claude")
-        claude = r.resolve_ladder("claude")
-        self.assertEqual((claude["host"], claude["source"], claude["total_rungs"]), ("claude", "fallback", 9))
-        self.assertEqual(r.resolve_ladder("anything-else")["host"], "claude")
-        cache = self.models_cache([{"slug": "m", "visibility": "list", "priority": 1}])
-        dyn = r.resolve_ladder("codex", codex_home=cache.parent)
-        self.assertEqual((dyn["source"], dyn["total_rungs"]), ("dynamic", 4))
-        fb = r.resolve_ladder("codex", codex_home=self.tmp / "empty")
-        self.assertEqual((fb["source"], fb["total_rungs"]), ("fallback", 8))
-
-    def test_resolve_ladder_codex_home_from_env_and_default(self):
-        cache = self.models_cache([{"slug": "env-model", "visibility": "list"}])
-        with mock.patch.dict(os.environ, {"CODEX_HOME": str(cache.parent)}):
-            self.assertEqual(r.resolve_ladder("codex")["rungs"][0]["model"], "env-model")
-        self.write_json(self.home / ".codex/models_cache.json",
-                        {"models": [{"slug": "home-model", "visibility": "list"}]})
-        self.assertEqual(r.resolve_ladder("codex")["rungs"][0]["model"], "home-model")
-
-
-class RungPhaseTest(unittest.TestCase):
-    PAYLOAD = {"host": "cursor", "rungs": [
-        {"model": "gpt-5.5", "reasoning": "high", "delegation": "d", "subagent_name": "n", "model_param": "mp"},
-        {"model": "composer-2.5", "reasoning": "low"},
-    ]}
-
-    def test_phase_payload(self):
-        out = r.resolve_rung_phase(self.PAYLOAD, 1, "review")
-        self.assertEqual((out["rung"], out["rung_total"], out["phase"], out["delegation"]), (1, 2, "review", "d"))
-        self.assertEqual((out["subagent_name"], out["model_param"]), ("n", "mp"))
-        self.assertTrue(out["subscription_first"])
-        plain = r.resolve_rung_phase(self.PAYLOAD, 2, "verify_2")
-        self.assertEqual(plain["delegation"], "custom-subagent")
-        self.assertIsNone(plain["subagent_name"])
-        self.assertFalse(plain["subscription_first"])
-
-    def test_errors(self):
-        for idx in (0, 3, -1):
-            with self.assertRaisesRegex(ValueError, r"out of range \(1\.\.2\)"):
-                r.resolve_rung_phase(self.PAYLOAD, idx, "review")
-        with self.assertRaisesRegex(ValueError, "unsupported phase 'bogus'"):
-            r.resolve_rung_phase(self.PAYLOAD, 1, "bogus")
-        with self.assertRaisesRegex(ValueError, r"out of range \(1\.\.0\)"):
-            r.resolve_rung_phase({}, 1, "review")
-
-
-class MainTest(TmpCase):
-    def run_main(self, *argv, stdin=None):
-        out, err = io.StringIO(), io.StringIO()
-        with mock.patch.object(sys, "argv", ["review-fix-ladder.py", *map(str, argv)]), \
-                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            try:
-                rc = r.main()
-            except SystemExit as exc:
-                rc = exc.code
-        return rc, out.getvalue(), err.getvalue()
-
-    # ---- quota-window family
-    def test_classify_quota_window(self):
-        with mock.patch.object(r.rfl_quota_claude5h, "classify_quota_window", return_value={"w": 1}) as c:
-            rc, out, _ = self.run_main("--classify-quota-window", "--subscription-output", "text",
-                                       "--quota-host", "claude", "--model", "opus",
-                                       "--quota-now", "2026-01-02T03:04:05Z")
-        self.assertEqual(rc, 0)
-        self.assertEqual(json.loads(out), {"w": 1})
-        args, kwargs = c.call_args
-        self.assertEqual(args, ("text",))
-        self.assertEqual((kwargs["host"], kwargs["model"]), ("claude", "opus"))
-        self.assertEqual(kwargs["now"].year, 2026)
-
-    def test_classify_quota_window_reads_output_file_and_defaults_model(self):
-        f = self.tmp / "out.txt"
-        f.write_text("from file")
-        with mock.patch.object(r.rfl_quota_claude5h, "classify_quota_window", return_value={}) as c:
-            self.run_main("--classify-quota-window", "--subscription-output-file", f)
-        self.assertEqual(c.call_args[0], ("from file",))
-        self.assertEqual(c.call_args[1]["model"], "")
-        self.assertIsNone(c.call_args[1]["now"])
-
-    def test_wake_requires_dir(self):
-        rc, out, err = self.run_main("--quota-retry-wake")
-        self.assertEqual(rc, 2)
-        self.assertIn("--quota-retry-wake requires --run-dir or --project-root", err)
-
-    def test_wake_prints_asks_and_result(self):
-        result = {"asks": ["a1", "a2"], "n": 1}
-        with mock.patch.object(r.rfl_quota_retry, "wake_due_jobs", return_value=result) as w:
-            rc, out, err = self.run_main("--quota-retry-wake", "--project-root", self.proj)
-        self.assertEqual(rc, 0)
-        self.assertEqual(json.loads(out), result)
-        self.assertEqual(err, "[rfl] ASK: a1\n[rfl] ASK: a2\n")
-        self.assertEqual(w.call_args[1]["project_root"], self.proj)
-        with mock.patch.object(r.rfl_quota_retry, "wake_due_jobs", return_value={"asks": None}):
-            rc, out, err = self.run_main("--quota-retry-wake", "--run-dir", self.proj)
-        self.assertEqual((rc, err), (0, ""))
-
-    def test_run_dir_required(self):
-        for flag in ("--quota-retry-due", "--schedule-quota-retry", "--activate-quota-retry"):
-            rc, out, err = self.run_main(flag)
-            self.assertEqual(rc, 2, flag)
-            self.assertIn("quota-retry / ladder-status commands require --run-dir", err)
-
-    def test_mark_ladder_status(self):
-        run = self.tmp / "run-1"
+    def test_issue_ledger_and_brief(self):
+        rows = '[{"id":"A","severity":"high","decision":"accept","summary":"s","sha":"abc"}]'
+        code, out, _ = self.cli("--issue-ledger", "--table-json", rows)
+        self.assertTrue(out.startswith("## Issue ledger"))
+        self.assertIn("| A | HIGH | ACCEPT |", out)
+        code, out, _ = self.cli("--write-review-brief", "--table-json", '{"rows": ' + rows + "}")
+        self.assertTrue(out.startswith("## Hop review"))
+        run = self.tmp / "run"
         run.mkdir()
-        rc, out, _ = self.run_main("--mark-ladder-status", "active", "--run-dir", run,
-                                   "--rung-id", "R2", "--current-phase", "rung_2",
-                                   "--quota-now", "2026-01-02T03:04:05Z")
-        self.assertEqual(rc, 0)
-        data = json.loads(out)
-        self.assertEqual(json.loads((run / "LADDER-STATUS.json").read_text())["status"], "active")
-        self.assertIsInstance(data, dict)
+        (run / "ISSUE-LEDGER.md").write_text("| ID | Severity | Status | Summary |\n| Z | low | accept | from md |\n")
+        self.assertIn("| Z | LOW | ACCEPT |", self.cli("--issue-ledger", "--run-dir", str(run))[1])
+        self.assertIn("| A |", self.cli("--issue-ledger", "--table-json-file", str(self.write_file("rows.json", rows)))[1])
+        code, _, err = self.cli("--issue-ledger", "--table-json", '"x"')
+        self.assertEqual((code, "array or" in err), (2, True))
+        code, _, err = self.cli("--issue-ledger", "--table-json", '{"rows": 3}')
+        self.assertEqual(code, 2)
+        code, _, err = self.cli("--issue-ledger", "--table-json", "{bad")
+        self.assertEqual((code, err.startswith("ERROR:")), (3, True))
+        code, _, err = self.cli("--write-review-brief")
+        self.assertEqual((code, "requires --run-dir or --table-json" in err), (2, True))
 
-    def test_mark_ladder_status_passes_none_for_empty_optionals(self):
-        with mock.patch.object(r.rfl_quota_retry, "mark_ladder_status", return_value={"ok": 1}) as m:
-            self.run_main("--mark-ladder-status", "completed", "--run-dir", self.tmp)
-        self.assertEqual(m.call_args[0], (self.tmp, "completed"))
-        self.assertIsNone(m.call_args[1]["current_rung"])
-        self.assertIsNone(m.call_args[1]["current_phase"])
-
-    def test_mark_ladder_status_value_error_returns_2(self):
-        with mock.patch.object(r.rfl_quota_retry, "mark_ladder_status", side_effect=ValueError("bad status")):
-            rc, out, err = self.run_main("--mark-ladder-status", "active", "--run-dir", self.tmp)
-        self.assertEqual((rc, out), (2, ""))
-        self.assertEqual(err, "ERROR: bad status\n")
-
-    def test_quota_retry_due(self):
-        with mock.patch.object(r.rfl_quota_retry, "due_quota_retries", return_value=[{"job": 1}]) as d:
-            rc, out, _ = self.run_main("--quota-retry-due", "--run-dir", self.tmp)
-        self.assertEqual((rc, json.loads(out)), (0, [{"job": 1}]))
-        self.assertEqual(d.call_args[0], (self.tmp,))
-
-    def test_schedule_and_activate_need_rung_and_model(self):
-        for flag in ("--schedule-quota-retry", "--activate-quota-retry"):
-            rc, _, err = self.run_main(flag, "--run-dir", self.tmp, "--model", "m")
-            self.assertEqual(rc, 2)
-            self.assertIn("quota-retry schedule/activate require --rung-id and --model", err)
-            rc, _, err = self.run_main(flag, "--run-dir", self.tmp, "--rung-id", "R")
-            self.assertEqual(rc, 2)
-
-    def test_schedule_quota_retry(self):
-        run = self.tmp / "run-xyz"
-        with mock.patch.object(r.rfl_quota_claude5h, "schedule_quota_retry", return_value={"s": 1}) as s:
-            rc, out, _ = self.run_main("--schedule-quota-retry", "--run-dir", run, "--rung-id", "R3",
-                                       "--model", "opus", "--subscription-output", "limit", "--quota-host", "claude")
-        self.assertEqual((rc, json.loads(out)), (0, {"s": 1}))
-        kw = s.call_args[1]
-        self.assertEqual((kw["run_id"], kw["rung"], kw["model"], kw["output"], kw["host"]),
-                         ("run-xyz", "R3", "opus", "limit", "claude"))
-        with mock.patch.object(r.rfl_quota_claude5h, "schedule_quota_retry", return_value={}) as s:
-            self.run_main("--schedule-quota-retry", "--run-dir", run, "--rung-id", "R3", "--model", "m",
-                          "--run-id", "explicit")
-        self.assertEqual(s.call_args[1]["run_id"], "explicit")
-
-    def test_activate_quota_retry_ask_user_goes_to_stderr(self):
-        res = {"action": "ask_user", "ask": "Ladder is over; retry?"}
-        with mock.patch.object(r.rfl_quota_retry, "activate_quota_retry", return_value=res):
-            rc, out, err = self.run_main("--activate-quota-retry", "--run-dir", self.tmp, "--rung-id", "R", "--model", "m")
-        self.assertEqual(rc, 0)
-        self.assertEqual(json.loads(out), res)
-        self.assertEqual(err, "[rfl] ASK: Ladder is over; retry?\n")
-
-    def test_activate_quota_retry_other_actions_are_silent(self):
-        for res in ({"action": "retry"}, {"action": "ask_user"}):
-            with mock.patch.object(r.rfl_quota_retry, "activate_quota_retry", return_value=res):
-                rc, out, err = self.run_main("--activate-quota-retry", "--run-dir", self.tmp,
-                                             "--rung-id", "R", "--model", "m")
-            self.assertEqual((rc, err), (0, ""))
-
-    # ---- quota classification / launch decisions
-    def test_classify_quota(self):
-        rc, out, _ = self.run_main("--classify-quota", "--subscription-output", "rate limit")
-        self.assertEqual(json.loads(out)["reason"], "quota-exhaustion")  # exit code defaults to 1
-        rc, out, _ = self.run_main("--classify-quota", "--subscription-exit", "0")
-        self.assertEqual(json.loads(out)["reason"], "success")
-        f = self.tmp / "o.txt"
-        f.write_text("command not found")
-        rc, out, _ = self.run_main("--classify-quota", "--subscription-output-file", f)
-        self.assertEqual(json.loads(out)["reason"], "missing-cli")
-
-    def test_mark_quota_fallback(self):
-        with mock.patch.dict(os.environ, {"SB_RUNTIME_STATE_DIR": str(self.tmp / "st")}):
-            rc, out, _ = self.run_main("--mark-quota-fallback", "--quota-host", "codex", "--quota-signal", "429")
-        data = json.loads(out)
-        self.assertEqual((rc, data["subscription_quota_host"], data["subscription_quota_signal"]), (0, "codex", "429"))
-
-    def test_decide_launch(self):
-        rc, out, _ = self.run_main("--decide-launch", "--model", "gpt-5.5", "--reasoning", "high")
-        self.assertEqual((rc, json.loads(out)["action"]), (0, "invoke_subscription"))
-        rc, out, _ = self.run_main("--decide-launch", "--model", "gpt-5.5", "--reasoning", "high",
-                                   "--subscription-exit", "1", "--subscription-output", "429")
-        self.assertEqual(json.loads(out)["action"], "cursor_fallback")
-        for argv in (("--model", "m"), ("--reasoning", "r"), ()):
-            rc, out, err = self.run_main("--decide-launch", *argv)
-            self.assertEqual(rc, 2)
-            self.assertIn("--decide-launch requires --model and --reasoning", err)
-
-    # ---- ladder output
-    def test_json_output_default_host(self):
-        rc, out, _ = self.run_main("--json", "--host", "claude")
-        data = json.loads(out)
-        self.assertEqual((rc, data["host"], data["total_rungs"]), (0, "claude", 9))
-
-    def test_detected_host_is_used(self):
-        with mock.patch.dict(os.environ, {"SILVER_BULLET_RUNTIME": "codex"}):
-            rc, out, _ = self.run_main("--json", "--codex-home", self.tmp / "none")
-        self.assertEqual(json.loads(out)["host"], "codex")
-
-    def test_text_output_non_cursor(self):
-        rc, out, _ = self.run_main("--host", "claude")
-        lines = out.splitlines()
-        self.assertEqual(lines[:4], ["host: claude", "source: fallback", "total_rungs: 9", "rungs:"])
-        self.assertEqual(lines[4], "  1. claude-sonnet-4-6 / medium")
-
-    def test_text_output_uses_len_when_total_missing(self):
-        payload = {"host": "claude", "source": "x", "rungs": [{"model": "m", "reasoning": "r"}]}
-        with mock.patch.object(r, "resolve_ladder", return_value=payload):
-            rc, out, _ = self.run_main("--host", "claude")
-        self.assertIn("total_rungs: 1", out)
-
-    # ---- check-agents
-    def test_rung_phase(self):
-        rc, out, _ = self.run_main("--host", "claude", "--rung", 2, "--phase", "verify_1")
-        data = json.loads(out)
-        self.assertEqual((rc, data["rung"], data["phase"], data["model"]), (0, 2, "verify_1", "claude-sonnet-4-6"))
-
-    def test_rung_phase_must_be_paired(self):
-        for argv in (("--rung", 1), ("--phase", "review")):
-            rc, _, err = self.run_main("--host", "claude", *argv)
-            self.assertEqual(rc, 2)
-            self.assertIn("--rung and --phase must be used together", err)
-
-    def test_rung_out_of_range(self):
-        rc, out, err = self.run_main("--host", "claude", "--rung", 99, "--phase", "review")
-        self.assertEqual((rc, out), (2, ""))
-        self.assertIn("ERROR: rung index 99 out of range (1..9)", err)
-
-    def test_invalid_phase_choice_rejected_by_argparse(self):
-        rc, _, err = self.run_main("--host", "claude", "--rung", 1, "--phase", "bogus")
-        self.assertEqual(rc, 2)
-        self.assertIn("invalid choice", err)
-
-    def test_entrypoint(self):
-        out = io.StringIO()
-        with mock.patch.object(sys, "argv", ["x", "--json", "--host", "claude"]), contextlib.redirect_stdout(out):
-            with self.assertRaises(SystemExit) as cm:
-                runpy.run_path(str(REPO_ROOT / "scripts" / "_review_fix_ladder_impl.py"), run_name="__main__")
-        self.assertEqual(cm.exception.code, 0)
-        self.assertEqual(json.loads(out.getvalue())["host"], "claude")
+    def test_write_and_assert_policy_c_and_advance(self):
+        rung = self.tmp / "rung-01-x"
+        body = json.dumps(CLEAN_POLICY)
+        code, out, _ = self.cli("--write-policy-c", "--rung-dir", str(rung), "--table-json", body, "--current-phase", "triage")
+        self.assertEqual(code, 0)
+        self.assertIn("Sonnet High", out)
+        code, out, _ = self.jcli("--assert-policy-c", "--rung-dir", str(rung))
+        self.assertEqual((code, out["ok"]), (0, True))
+        (rung / "POLICY-C.json").unlink()
+        code, out, _ = self.jcli("--assert-policy-c", "--rung-dir", str(rung))
+        self.assertEqual((code, out["ok"]), (2, False))
+        self.assertEqual(self.cli("--assert-policy-c")[0], 2)
+        self.assertEqual(self.cli("--write-policy-c")[0], 2)
+        code, _, err = self.cli("--write-policy-c", "--rung-dir", str(rung), "--table-json", "[1]")
+        self.assertEqual((code, "must be an object" in err), (2, True))
+        code, _, err = self.cli("--write-policy-c", "--rung-dir", str(rung), "--table-json", "{}")
+        self.assertEqual((code, "ERROR:" in err), (2, True))
+        code, out, _ = self.jcli("--assert-rfl-advance", "--project-root", str(self.root))
+        self.assertEqual((code, out["ok"]), (0, True))
+        code, out, _ = self.jcli("--assert-consecutive-clean", "--run-dir", str(self.tmp))
+        self.assertIn("next_action", out)
+        code, out, _ = self.jcli("--assert-consecutive-clean", "--next-action", "stop", "--run-dir", str(self.tmp))
+        self.assertEqual(out["next_action"], "stop")
 
 
 if __name__ == "__main__":
