@@ -192,11 +192,9 @@ Surface runtime parity expectations and refresh host hook delivery when applicab
 Run when scripts are available:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
-  bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
 
-bash "${PLUGIN_ROOT}/scripts/sb-bootstrap.sh" 2>/dev/null || \
-  bash "${PLUGIN_ROOT}/scripts/sb-bootstrap.sh" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/sb-bootstrap.sh" 2>/dev/null || true
 ```
 
 Report capability tier and any WARN/FAIL lines. Point the user to `docs/RUNTIME-COMPATIBILITY.md` for tier definitions and install surfaces.
@@ -251,8 +249,7 @@ When the project has UI surface signals (for example `silver-ui` workflow, front
 1. If `.planning/interface/STATE.md` is absent, stamp from template:
 
    ```bash
-   bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" 2>/dev/null || \
-     bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" 2>/dev/null || true
+   bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" 2>/dev/null || true
    ```
 
 2. If the stamp script is unavailable, copy `${PLUGIN_ROOT}/templates/interface/STATE.md.base` to `.planning/interface/STATE.md` (create `.planning/interface/` first).

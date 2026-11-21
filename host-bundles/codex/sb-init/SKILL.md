@@ -433,8 +433,7 @@ After core dependencies are confirmed, run the SB diagnostics probe when the
 script is available in the plugin or repo:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
-  bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
 ```
 
 Surface WARN/FAIL lines to the user. Capability tier and hook presence are
@@ -904,8 +903,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
   `silver-ui` workflow, or similar), stamp durable interface state:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || \
-  bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || true
 ```
 
 This creates `.planning/interface/STATE.md` from
@@ -923,8 +921,7 @@ it thereafter.
 - **3.9 Done**: run capability probe and surface enforcement tier honestly:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
-  bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
 ```
 
 Read `sb_enforcement_tier` / capability tier from diagnostics output. Completion message MUST reflect tier:
