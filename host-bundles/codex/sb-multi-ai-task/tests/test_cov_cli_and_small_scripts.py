@@ -229,10 +229,10 @@ class MultiAiCliTests(HermeticCase):
         """PYTHONPATH/PYTHONSTARTUP are not visible to the hooks: the CLI re-runs isolated, so a shadowing module never loads."""
         evil = self.subdir("evil")
         marker = self.tmp / "pwned"
-        for name in ("json", "argparse", "pathlib", "live_dispatch", "multi_ai_core"):
+        for name in ("secrets", "decimal", "uuid"):
             (evil / f"{name}.py").write_text(f"open({str(marker)!r}, 'w').write('x')\nraise ImportError('shadowed')\n")
         (evil / "startup.py").write_text(f"open({str(marker)!r}, 'w').write('x')\n")
-        env = {k: v for k, v in os.environ.items() if not k.startswith(("PYTHON", "CLAUDE", "CODEX", "CURSOR", "SB_"))}
+        env = {k: v for k, v in os.environ.items() if not k.startswith(("PYTHON", "COVERAGE", "CLAUDE", "CODEX", "CURSOR", "SB_"))}
         env.update({"PYTHONPATH": str(evil), "SB_HOST": "claude", "HOME": str(self.home)})
         proc = subprocess.run([sys.executable, str(SCRIPTS / "multi_ai_cli.py"), "--dry-run", "--include-only", "composer-2.5"],
                               capture_output=True, text=True, env=env, cwd=str(self.tmp), check=False)

@@ -340,20 +340,21 @@ sb_pf_multi_ai_cli_exempt() {
            else ($o[0]) as $e
              | (if $e.value == "--output-root" then ($r[$e.key + 1] // "") else ($e.value | sub("^--output-root="; "")) end) as $v
              | if $v == "" or ($v | startswith("-")) then "BAD" else "\($a[1])\t\($m)\t\($v)" end
-         end end)' 2>/dev/null || true)"
+         end end)' 2>/dev/null)"
   [[ -n "$parsed" && "$parsed" != BAD ]] || return 1
   IFS=$'\t' read -r script mode root <<<"$parsed"
   [[ ! -L "$script" && -f "$script" ]] || return 1
-  plugin_root="$({ cd "${_sb_pf_dir}/../.." && pwd -P; } || true)"
-  dir="$({ cd "$(dirname "$script")" 2>/dev/null && pwd -P; } || true)"
-  case "$dir/$(basename "$script")" in
+  plugin_root="$(sb_pf_canon "${_sb_pf_dir}/../..")"
+  case "$(sb_pf_canon "$script")" in
     "$plugin_root/skills/silver-multi-ai-task/scripts/multi_ai_cli.py" | "$plugin_root/skill-source/sb-multi-ai-task/scripts/multi_ai_cli.py") kind=task ;;
     "$plugin_root/skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py" | "$plugin_root/skill-source/sb-deep-research-multi-ai/scripts/dr_multi_ai_cli.py") kind=dr ;;
     *) return 1 ;;
   esac
   if [[ -z "$root" ]]; then
     # No root: the task CLI writes nothing (a dry run, or a refusal); deep research writes below research/ unless dry.
-    if [[ "$kind" == dr && "$mode" == LIVE ]]; then root="research"; else root=""; fi
+    if [[ "$kind" == dr && "$mode" == LIVE ]]; then
+      root="research"
+    fi
   else
     case "$root" in
       *[\$\`\*\?\[\{\}~\\\"\'\!]*) return 1 ;;

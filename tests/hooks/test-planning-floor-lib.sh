@@ -293,4 +293,42 @@ assert_eq "a trailing slash is ignored" "violation" "$(dv rm "root-123/")"
 assert_eq "a dynamic write of an ordinary name" "ok" "$(dv rm "notes.txt")"
 assert_eq "a dynamic git clean" "violation" "$(dv "git clean" ".")"
 
+# ── sb_pf_multi_ai_cli_exempt / sb_pf_multi_ai_root_records ───────────────────────────────────────────────
+PLUGIN_ROOT="$(cd "$TL_REPO_ROOT" && pwd -P)"
+TASK_CLI="$PLUGIN_ROOT/skills/silver-multi-ai-task/scripts/multi_ai_cli.py"
+DR_CLI="$PLUGIN_ROOT/skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py"
+printf 'print(1)\n' >"$P/tools/other.py"
+exempt() { # exempt CWD ARGV...: loads a one-command analysis and reports status, root and mode
+  local cwd="$1"
+  shift
+  SB_TI_STATUS=ok SB_SA_WRITE_PATHS="" SB_SA_RTK_UNWRAPPED="" SB_SA_UNSEEN_REASONS=""
+  SB_SA_JSON="$(jq -cn '{commands:[{argv:$ARGS.positional}]}' --args -- "$@")"
+  if sb_pf_multi_ai_cli_exempt "$cwd"; then printf 'yes|%s' "$SB_PF_EXEMPT_ROOT"; else printf 'no'; fi
+}
+assert_eq "exempt: task CLI with a plain root" "yes|$P/out/run" "$(exempt "$P" python3 "$TASK_CLI" --output-root out/run --dry-run)"
+assert_eq "exempt: the = form" "yes|$P/out/run" "$(exempt "$P" python3.12 "$TASK_CLI" --output-root=out/run)"
+assert_eq "exempt: a task dry run needs no root and writes nothing" "yes|" "$(exempt "$P" python3 "$TASK_CLI" --dry-run)"
+assert_eq "exempt: deep research without a root writes below research/" "yes|$P/research" "$(exempt "$P" python3 "$DR_CLI" probe)"
+assert_eq "exempt: deep research dry run without a root writes nothing" "yes|" "$(exempt "$P" python3 "$DR_CLI" probe --dry-run)"
+assert_eq "exempt: any other script is not exempt" "no" "$(exempt "$P" python3 "$P/tools/other.py" --output-root out)"
+assert_eq "exempt: an invalid analysis is not exempt" "no" "$(SB_TI_STATUS=ok SB_SA_WRITE_PATHS="" SB_SA_RTK_UNWRAPPED="" SB_SA_UNSEEN_REASONS="" SB_SA_JSON="{not json" sb_pf_multi_ai_cli_exempt "$P" && echo yes || echo no)"
+assert_eq "exempt: a payload cwd that is not an absolute directory is refused" "no|no" "$(exempt rel python3 "$TASK_CLI" --dry-run)|$(exempt "$P/missing" python3 "$TASK_CLI" --dry-run)"
+for root in 's"rc"' '$X' '`x`' 's*' '../x' '~/x' 'a\b' "a'b" 'a!b' 'a{b}'; do
+  assert_eq "exempt: no exemption for the root $root" "no" "$(exempt "$P" python3 "$TASK_CLI" --output-root "$root")"
+done
+assert_eq "exempt: repeated roots" "no" "$(exempt "$P" python3 "$TASK_CLI" --output-root a --output-root b)"
+assert_eq "exempt: an abbreviated option" "no" "$(exempt "$P" python3 "$TASK_CLI" --output-r a)"
+assert_eq "exempt: a root option without a value" "no|no" "$(exempt "$P" python3 "$TASK_CLI" --output-root)|$(exempt "$P" python3 "$TASK_CLI" --output-root --dry-run)"
+assert_eq "exempt: a relative or flagged script" "no|no|no" "$(exempt "$P" python3 skills/silver-multi-ai-task/scripts/multi_ai_cli.py)|$(exempt "$P" python3 -I "$TASK_CLI")|$(exempt "$P" bash "$TASK_CLI")"
+assert_eq "exempt: a symlink to the CLI" "no" "$(ln -sf "$TASK_CLI" "$P/tools/linked.py"; exempt "$P" python3 "$P/tools/linked.py")"
+SB_SA_WRITE_PATHS="x"; assert_eq "exempt: a command with a write" "no" "$(SB_TI_STATUS=ok SB_SA_WRITE_PATHS=x SB_SA_RTK_UNWRAPPED="" SB_SA_UNSEEN_REASONS="" SB_SA_JSON='{"commands":[]}' sb_pf_multi_ai_cli_exempt "$P" && echo yes || echo no)"; SB_SA_WRITE_PATHS=""
+assert_eq "exempt: two commands" "no" "$(SB_TI_STATUS=ok SB_SA_WRITE_PATHS="" SB_SA_RTK_UNWRAPPED="" SB_SA_UNSEEN_REASONS="" SB_SA_JSON="{\"commands\":[{\"argv\":[\"python3\",\"$TASK_CLI\"]},{\"argv\":[\"true\"]}]}" sb_pf_multi_ai_cli_exempt "$P" && echo yes || echo no)"
+exempt "$P" python3 "$TASK_CLI" --output-root lib/x --dry-run >/dev/null
+assert_eq "root records: resolved and logical spelling of a symlinked root" "multi-ai	$P/src/x
+multi-ai	$P/lib/x" "$(sb_pf_multi_ai_root_records)"
+exempt "$P" python3 "$TASK_CLI" --output-root out >/dev/null
+assert_eq "root records: one line when both spellings agree" "multi-ai	$P/out" "$(sb_pf_multi_ai_root_records)"
+exempt "$P" python3 "$TASK_CLI" --dry-run >/dev/null
+assert_eq "root records: none when nothing is written" "" "$(sb_pf_multi_ai_root_records)"
+
 tl_results

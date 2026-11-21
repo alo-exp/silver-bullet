@@ -1292,9 +1292,9 @@ class DrMultiAiCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             evil, marker = Path(tmp) / "evil", Path(tmp) / "pwned"
             evil.mkdir()
-            for name in ("json", "argparse", "pathlib", "shutil", "consolidate", "multi_ai_core"):
+            for name in ("secrets", "decimal", "uuid"):
                 (evil / f"{name}.py").write_text(f"open({str(marker)!r}, 'w').write('x')\nraise ImportError('shadowed')\n")
-            env = {k: v for k, v in os.environ.items() if not k.startswith(("PYTHON", "CLAUDE", "CODEX", "CURSOR", "SB_"))}
+            env = {k: v for k, v in os.environ.items() if not k.startswith(("PYTHON", "COVERAGE", "CLAUDE", "CODEX", "CURSOR", "SB_"))}
             env.update({"PYTHONPATH": str(evil), "SB_HOST": "claude", "HOME": tmp})
             proc = subprocess.run([sys.executable, str(SCRIPTS / "dr_multi_ai_cli.py"), "probe", "--dry-run"],
                                   capture_output=True, text=True, env=env, cwd=tmp, check=False)

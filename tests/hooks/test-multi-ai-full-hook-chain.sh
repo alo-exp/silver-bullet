@@ -58,6 +58,8 @@ ln -s "$MAT" "$PROJ/src/linked_cli.py"
 HOSTILE=(
   "python3 -c 'pass' src/multi_ai_cli.py --output-root $OUT --dry-run"
   "python3 src/multi_ai_cli.py --output-root $OUT --dry-run"
+  "python3 $PROJ/src/multi_ai_cli.py --output-root $OUT --dry-run"
+  "python3 $PROJ/src/linked_cli.py --output-root $OUT --dry-run"
   "python3 src/linked_cli.py --output-root $OUT --dry-run"
   "python3 -I $MAT --output-root $OUT --dry-run"
   "python3 -X dev $MAT --output-root $OUT --dry-run"
@@ -119,10 +121,10 @@ if name == "any-py":
     s = sub(s, '"$plugin_root/skills/silver-multi-ai-task/scripts/multi_ai_cli.py"', '*.py')
 elif name == "symlinks":
     s = sub(s, '[[ ! -L "$script" && -f "$script" ]]', '[[ -f "$script" ]]')
-    s = sub(s, 'case "$dir/$(basename "$script")" in', 'case "$(readlink -f "$script")" in')
 elif name == "flags":
     s = sub(s, ' and ($a[1] | startswith("-") | not) and ($a[1] | startswith("/"))', '')
-    s = sub(s, '| $a[1]', '| ($a[1:] | map(select(startswith("-") | not)) | .[0])')
+    assert s.count('\\($a[1])') == 2
+    s = s.replace('\\($a[1])', '\\(($a[1:] | map(select(startswith("-") | not)) | .[0]))')
 elif name == "prefix":
     s = sub(s, ' && -z "${SB_SA_RTK_UNWRAPPED:-}"', '')
 elif name == "dynamic-root":
@@ -140,6 +142,7 @@ elif name == "root-not-judged":
 open(lib, "w").write(s)
 open(hook, "w").write(h)
 PY
+  ln -sfn "$root/skills/silver-multi-ai-task/scripts/multi_ai_cli.py" "$PROJ/src/linked_cli.py"  # a symlink into THIS tree's plugin
   printf '%s' "$root"
 }
 # denied_in ROOT CMD: prints "denied" when the planning floor of the tree at ROOT denies the worker call.

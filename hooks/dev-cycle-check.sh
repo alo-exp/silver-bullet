@@ -184,7 +184,7 @@ main() {
     # neither an opaque writer nor a shell script to analyse. Their output root is judged below as a recursive
     # write target, like any other tree write; the words of the command (a prompt naming src/) are not scanned.
     multi_ai_exempt=false
-    payload_cwd="$(printf '%s' "$input" | jq -r '.cwd // empty | strings' 2>/dev/null || :)"
+    payload_cwd="$(printf '%s' "$input" | jq -r '.cwd // empty | strings' 2>/dev/null)"
     if [[ "$parse_failed_shell" != true ]] && sb_pf_multi_ai_cli_exempt "${payload_cwd:-$PWD}"; then
       multi_ai_exempt=true
       opaque_records=""
