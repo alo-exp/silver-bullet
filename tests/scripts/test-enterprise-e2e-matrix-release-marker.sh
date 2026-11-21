@@ -128,6 +128,15 @@ assert_eq "isolated mode: the marker is where the gate reads it" "matrix=inline-
 assert_file_absent "isolated mode: nothing in the isolated state dir" "$ISO/.silver-bullet-state/inline-e2e-matrix"
 rm -f "$GATE_DIR/inline-e2e-matrix"
 
+# the gate's state directory cannot be created (HOME/.claude is a regular file): nothing is written, the run still passes
+reset; rm -f "$MARKER"; all_rows_agent
+BAD="$TL_TMP/badhome"; mkdir -p "$BAD"; : >"$BAD/.claude"
+run env SB_E2E_MATRIX_FORCE_ALL=1 SB_E2E_ISOLATED_CLAUDE_CONFIG=1 CLAUDE_CONFIG_DIR="$ISO" \
+  SB_RUNTIME_STATE_DIR="$ISO/.silver-bullet-state" SB_RUNTIME_PRESERVE_STATE_DIR=1 HOME="$BAD" bash "$MATRIX"
+assert_eq "an uncreatable gate state dir does not fail an otherwise passing run" 0 "$TL_STATUS"
+assert_contains "the uncreatable-dir reason is stated" "$TL_OUT" "state directory cannot be resolved or created"
+assert_file_absent "an uncreatable gate state dir writes no marker" "$BAD/.claude/.silver-bullet/inline-e2e-matrix"
+
 # the runner survives a ps that cannot describe its own pid (identity record skipped, tolerated)
 reset; rm -f "$MARKER"
 all_rows_agent
