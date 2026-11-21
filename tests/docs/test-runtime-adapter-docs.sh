@@ -23,4 +23,7 @@ assert_eq "SILVER_BULLET_RUNTIME=goose selects goose" "goose" "$(detect SILVER_B
 assert_eq "CLAUDE_PLUGIN_ROOT under /.codex/ selects codex" "codex" "$(detect CLAUDE_PLUGIN_ROOT=/u/.codex/p)"
 assert_eq "CLAUDE_PLUGIN_ROOT elsewhere stays claude" "claude" "$(detect CLAUDE_PLUGIN_ROOT=/u/.claude/p)"
 
+assert_contains "compat doc: Kay payload shapes fail closed" "$(cat "$COMPAT")" "no recognisable path at all is denied (fail closed)"
+assert_contains "compat doc: Kay hook timeouts" "$(cat "$COMPAT")" "a timed-out PreToolUse hook denies the call (fail closed)"
+
 tl_results
