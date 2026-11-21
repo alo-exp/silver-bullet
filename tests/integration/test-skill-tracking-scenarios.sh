@@ -25,7 +25,7 @@ fi
 
 # Step 3: compliance-status shows 0 progress
 out=$(run_compliance_status)
-assert_contains "S1.3: compliance shows 0" "$out" "0"
+assert_contains "S1.3: compliance shows no planning progress" "$out" "PLANNING 0/3"
 
 integration_teardown
 
@@ -46,7 +46,7 @@ fi
 
 # Step 3: compliance-status reflects progress
 out=$(run_compliance_status)
-assert_contains "S2.2: compliance shows progress" "$out" "1"
+assert_contains "S2.2: compliance counts the recorded planning skill" "$out" "PLANNING 1/3"
 
 integration_teardown
 
