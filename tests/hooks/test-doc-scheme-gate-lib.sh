@@ -283,26 +283,49 @@ for edit in '.required_docs[0].key="docs/OTHER.md"|a governed doc was dropped or
   dirty_log; rm -f "$EMITTED"; run_enforce delivery
   assert_contains "enforce: ${edit#*|} (committed) is weakening" "$(cat "$EMITTED")" "${edit#*|}"
 done
-# Sealed baseline (H6 r2): the first use records the baseline commit; moving the default branch onto a later commit
-# (git branch -f main HEAD / git update-ref refs/remotes/origin/main HEAD) cannot move it.
+# Sealed baseline (H6 r2): the session-start hook seals the baseline commit (sb_doc_scheme_seal_session) before the
+# agent can move a ref; moving the default branch onto a later commit in ONE turn (delete, commit, git branch -f main
+# HEAD, git update-ref refs/remotes/origin/main HEAD, then the very first gate call) cannot move it.
 rm -f "$ST"/doc-scheme-baseline-*
 fresh_branch_repo
 SEALED="$(git -C "$R" rev-parse origin/main)"
-assert_eq "sealed baseline: first use computes it" "$SEALED" "$(sb_doc_scheme__baseline "$R")"
-assert_eq "sealed baseline: and records it in the state dir" "$SEALED" "$(cat "$ST"/doc-scheme-baseline-* | tr -d '\n')"
+sb_doc_scheme_seal_session "$R" replace
+assert_eq "sealed baseline: session start records the merge-base with the default branch" "$SEALED" "$(cat "$ST"/doc-scheme-baseline-* | tr -d '\n')"
 git -C "$R" rm -q docs/doc-scheme.md docs/doc-scheme.json; gitq commit -q -m "delete the scheme"
 git -C "$R" branch -f main HEAD; git -C "$R" update-ref refs/remotes/origin/main HEAD
-assert_eq "sealed baseline: git branch -f main HEAD / update-ref origin/main HEAD cannot move it" "$SEALED" "$(sb_doc_scheme__baseline "$R")"
+assert_eq "sealed baseline: the first gate call after the refs moved still sees the sealed commit" "$SEALED" "$(sb_doc_scheme__baseline "$R")"
 assert_eq "sealed baseline: the repo still counts as governed" "0" "$(sb_doc_scheme__head_tracks "$R" && echo 0 || echo 1)"
 dirty_log; rm -f "$EMITTED"; run_enforce delivery
-assert_contains "sealed baseline: the deletion is still a gap on delivery after the branch was moved" "$(cat "$EMITTED")" "Missing required policy file: docs/doc-scheme.md"
-# a record that is not an ancestor of HEAD (another branch, a rewritten history) or not a commit is ignored and replaced
-printf '%s' "0000000000000000000000000000000000000000" >"$(ls "$ST"/doc-scheme-baseline-* | head -1)"
-assert_eq "sealed baseline: an unknown commit in the record is recomputed" "$(git -C "$R" merge-base HEAD main)" "$(sb_doc_scheme__baseline "$R")"
-printf 'garbage' >"$(ls "$ST"/doc-scheme-baseline-* | head -1)"
-assert_eq "sealed baseline: a malformed record is recomputed" "$(git -C "$R" merge-base HEAD main)" "$(sb_doc_scheme__baseline "$R")"
+assert_contains "sealed baseline: the deletion BLOCKS delivery after the branch was moved (reviewer probe)" "$(cat "$EMITTED")" "Missing required policy file: docs/doc-scheme.md"
+# keep mode never replaces a seal; replace mode does
+git -C "$R" checkout -q -b later; sb_doc_scheme_seal_session "$R" keep
+assert_eq "sealed baseline: keep mode leaves the seal alone" "$SEALED" "$(cat "$ST"/doc-scheme-baseline-* | tr -d '\n')"
+sb_doc_scheme_seal_session "$R" replace
+assert_eq "sealed baseline: replace mode (a genuine new session) seals the current default branch" "$(git -C "$R" merge-base HEAD main)" "$(cat "$ST"/doc-scheme-baseline-* | tr -d '\n')"
+# keep mode writes a seal when there is none (a project initialised mid-session)
+rm -f "$ST"/doc-scheme-baseline-*; sb_doc_scheme_seal_session "$R" keep
+assert_eq "sealed baseline: keep mode seals a project that has no seal yet" "1" "$(ls "$ST"/doc-scheme-baseline-* | wc -l | tr -d ' ')"
+# a repository without any default branch seals HEAD; a non-repository seals nothing
+fresh_branch_repo; git -C "$R" update-ref -d refs/remotes/origin/main; git -C "$R" branch -q -m main trunk; rm -f "$ST"/doc-scheme-baseline-*
+sb_doc_scheme_seal_session "$R" replace
+assert_eq "sealed baseline: with no default branch the seal is HEAD" "$(git -C "$R" rev-parse HEAD)" "$(cat "$ST"/doc-scheme-baseline-* | tr -d '\n')"
+mkdir -p "$TL_TMP/not-a-repo"; rm -f "$ST"/doc-scheme-baseline-*
+assert_eq "sealed baseline: a directory that is not a repository is not sealed" "1" "$(sb_doc_scheme_seal_session "$TL_TMP/not-a-repo" replace && echo 0 || echo 1)"
+fresh_branch_repo; sb_doc_scheme_seal_session "$R" replace
+# a seal whose commit no longer exists (history rewritten and garbage collected) fails CLOSED for delivery
+SEALFILE="$(ls "$ST"/doc-scheme-baseline-* | head -1)"
+printf '%s' "0000000000000000000000000000000000000000" >"$SEALFILE"
+assert_eq "sealed baseline: a seal whose commit is gone is reported, not replaced by HEAD" "SB_SEAL_LOST" "$(sb_doc_scheme__baseline "$R")"
+assert_eq "sealed baseline: and the repo counts as governed" "0" "$(sb_doc_scheme__head_tracks "$R" && echo 0 || echo 1)"
+dirty_log; rm -f "$EMITTED"; run_enforce delivery
+assert_contains "sealed baseline: delivery is blocked with a clear message" "$(cat "$EMITTED")" "sealed baseline commit no longer exists"
+# a seal whose commit still exists but is no longer an ancestor of HEAD (history rewritten) is still the baseline
+printf '%s' "$SEALED" >"$SEALFILE"
 git -C "$R" checkout -q --orphan other; gitq commit -q --allow-empty -m other
-assert_eq "sealed baseline: a record that is not an ancestor of HEAD is recomputed" "$(git -C "$R" merge-base HEAD main 2>/dev/null || echo HEAD)" "$(sb_doc_scheme__baseline "$R")"
+assert_eq "sealed baseline: an orphaned (rewritten) history keeps the sealed commit" "$SEALED" "$(sb_doc_scheme__baseline "$R")"
+# a malformed record is treated as no seal: computed from the default branch and sealed again
+git -C "$R" checkout -q -f work; printf 'garbage' >"$SEALFILE"
+assert_eq "sealed baseline: a malformed record is recomputed" "$(git -C "$R" merge-base HEAD main)" "$(sb_doc_scheme__baseline "$R")"
 # a symlinked record is never followed or written through
 rm -f "$ST"/doc-scheme-baseline-*; fresh_branch_repo
 KEY="$(printf '%s' "$(cd "$R" && pwd -P)" | cksum | cut -d' ' -f1)"

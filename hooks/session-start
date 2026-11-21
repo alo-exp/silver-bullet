@@ -467,11 +467,21 @@ if [[ "$sb_should_mutate" == true ]]; then
   fi
   # #280: drop prior-session doc-scheme gap reports so obligations cannot leak.
   rm -rf -- "${SB_STATE_DIR}/doc-scheme-gaps" 2>/dev/null || true
-  # The sealed doc-scheme baseline (hooks/lib/doc-scheme-gate.sh) lives for one session; a worker start must not
-  # unseal it (that would let a subagent spawn re-baseline after a moved default branch).
-  if [[ "$_sb_preserve_worker_marker" != true ]]; then
-    rm -f -- "${SB_STATE_DIR}"/doc-scheme-baseline-* 2>/dev/null || true
+  # Seal the doc-scheme baseline now, before the agent can move a ref (hooks/lib/doc-scheme-gate.sh). A genuine
+  # startup/clear replaces the seal; a worker start (a subagent spawn) only writes one when none exists.
+  if [[ -f "$_lib_dir/doc-scheme-gate.sh" && -n "${sb_project_root:-}" ]]; then
+    # shellcheck source=lib/doc-scheme-gate.sh
+    source "$_lib_dir/doc-scheme-gate.sh"
+    _sb_seal_mode=replace
+    [[ "$_sb_preserve_worker_marker" == true ]] && _sb_seal_mode=keep
+    sb_doc_scheme_seal_session "$sb_project_root" "$_sb_seal_mode" || true
   fi
+fi
+# A resumed session keeps its seal (writing one only when it has none, e.g. a project initialised mid-session).
+if [[ "$sb_session_source" == resume && -f "$_lib_dir/doc-scheme-gate.sh" && -n "${sb_project_root:-}" ]]; then
+  # shellcheck source=lib/doc-scheme-gate.sh
+  source "$_lib_dir/doc-scheme-gate.sh"
+  sb_doc_scheme_seal_session "$sb_project_root" keep || true
 fi
 
 # Warn visibly if jq is unavailable — enforcement will be disabled

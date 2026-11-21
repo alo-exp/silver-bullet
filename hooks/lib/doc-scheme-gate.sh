@@ -172,37 +172,71 @@ _sb_doc_scheme__baseline_record() {
   printf '%s/doc-scheme-baseline-%s' "$dir" "$key"
 }
 
-# sb_doc_scheme__baseline REPO: the trusted revision the scheme is compared with: the merge-base of HEAD with the
-# default branch (origin/HEAD, then origin/main|master, then main|master), so a commit made on this branch cannot
-# redefine it (one intermediate commit would otherwise switch the delivery gate off); HEAD when there is no default
-# branch to compare with. The first use seals the commit in the runtime state dir and later calls return the sealed
-# commit while it is still an ancestor of HEAD: `git branch -f main HEAD` or `git update-ref refs/remotes/origin/main
-# HEAD` after a deleting commit would otherwise move the default branch (and the baseline) onto that commit. Session
-# start clears the seal, so a deliberate change of the default branch takes effect in the next session.
-sb_doc_scheme__baseline() {
-  local repo="$1" ref mb record sealed tmp
-  record="$(_sb_doc_scheme__baseline_record "$repo")"
-  if [[ -n "$record" && -f "$record" && ! -L "$record" ]]; then
-    sealed="$(head -c 80 "$record" 2>/dev/null | tr -d '[:space:]')"
-    if [[ "$sealed" =~ ^[0-9a-f]{40,64}$ ]] \
-      && git -C "$repo" cat-file -e "${sealed}^{commit}" >/dev/null 2>&1 \
-      && git -C "$repo" merge-base --is-ancestor "$sealed" HEAD >/dev/null 2>&1; then
-      printf '%s' "$sealed"
-      return 0
-    fi
-  fi
+# _sb_doc_scheme__default_merge_base REPO: the merge-base of HEAD with the default branch (origin/HEAD, then
+# origin/main|master, then main|master); nothing, status 1, when there is none.
+_sb_doc_scheme__default_merge_base() {
+  local repo="$1" ref mb
   for ref in "$(git -C "$repo" symbolic-ref -q refs/remotes/origin/HEAD 2>/dev/null)" \
     refs/remotes/origin/main refs/remotes/origin/master refs/heads/main refs/heads/master; do
     [[ -n "$ref" ]] || continue
     if mb="$(git -C "$repo" merge-base HEAD "$ref" 2>/dev/null)"; then
-      if [[ -n "$record" && ! -L "$record" ]]; then
-        tmp="${record}.$$"
-        { printf '%s\n' "$mb" >"$tmp" && mv -f -- "$tmp" "$record"; } 2>/dev/null || rm -f -- "$tmp" 2>/dev/null || true
-      fi
       printf '%s' "$mb"
       return 0
     fi
   done
+  return 1
+}
+
+# _sb_doc_scheme__write_seal RECORD SHA: replace the seal atomically (never through a link).
+_sb_doc_scheme__write_seal() {
+  local record="$1" sha="$2" tmp
+  [[ -n "$record" && ! -L "$record" ]] || return 1
+  tmp="${record}.$$"
+  if { printf '%s\n' "$sha" >"$tmp" && mv -f -- "$tmp" "$record"; } 2>/dev/null; then return 0; fi
+  rm -f -- "$tmp" 2>/dev/null || true
+  return 1
+}
+
+# sb_doc_scheme_seal_session REPO MODE: seal the baseline commit for this repository: the merge-base of HEAD with the
+# default branch (HEAD itself when there is no default branch), recorded in the runtime state dir by the session-start
+# hook, before the agent can move any ref. MODE replace writes a fresh seal; MODE keep only writes when none exists (a
+# resumed session or a worker start never replaces the session's seal). Status 1 when nothing could be sealed (not a
+# git repository, no commit, no usable state dir, unwritable). Once the file exists the state-tamper guard
+# (sb_pf_protected_name: every entry of the state directory) refuses the agent's writes to it.
+sb_doc_scheme_seal_session() {
+  local repo="$1" mode="${2:-replace}" record sha
+  record="$(_sb_doc_scheme__baseline_record "$repo")"
+  [[ -n "$record" ]] || return 1
+  if [[ "$mode" == keep && -f "$record" && ! -L "$record" ]]; then return 0; fi
+  sha="$(_sb_doc_scheme__default_merge_base "$repo")" || sha="$(git -C "$repo" rev-parse -q --verify 'HEAD^{commit}' 2>/dev/null)" || return 1
+  _sb_doc_scheme__write_seal "$record" "$sha"
+}
+
+# sb_doc_scheme__baseline REPO: the trusted revision the scheme is compared with. The session-start hook seals it
+# (sb_doc_scheme_seal_session); the seal is returned while the commit still exists, even when HEAD no longer descends
+# from it (history rewritten), so `git branch -f main HEAD` / `git update-ref refs/remotes/origin/main HEAD` after a
+# deleting commit cannot move it. A seal whose commit is gone prints SB_SEAL_LOST (callers fail closed). Without a
+# seal (a project initialised mid-session) it is computed as the merge-base of HEAD with the default branch (HEAD
+# when there is none) and sealed on the spot.
+sb_doc_scheme__baseline() {
+  local repo="$1" record sealed mb
+  record="$(_sb_doc_scheme__baseline_record "$repo")"
+  if [[ -n "$record" && -f "$record" && ! -L "$record" ]]; then
+    sealed="$(head -c 80 "$record" 2>/dev/null | tr -d '[:space:]')"
+    if [[ "$sealed" =~ ^[0-9a-f]{40,64}$ ]]; then
+      if git -C "$repo" cat-file -e "${sealed}^{commit}" >/dev/null 2>&1; then
+        printf '%s' "$sealed"
+      else
+        printf 'SB_SEAL_LOST'
+      fi
+      return 0
+    fi
+  fi
+  if mb="$(_sb_doc_scheme__default_merge_base "$repo")"; then
+    _sb_doc_scheme__write_seal "$record" "$mb" || true
+    printf '%s' "$mb"
+    return 0
+  fi
   printf 'HEAD'
 }
 
@@ -211,6 +245,7 @@ sb_doc_scheme__baseline() {
 sb_doc_scheme__head_tracks() {
   local repo="$1" f base
   base="$(sb_doc_scheme__baseline "$repo")"
+  [[ "$base" == SB_SEAL_LOST ]] && return 0   # fail closed: the repository counts as governed
   for f in docs/doc-scheme.md docs/doc-scheme.json; do
     git -C "$repo" cat-file -e "$base:$f" >/dev/null 2>&1 && return 0
   done
@@ -223,8 +258,13 @@ sb_doc_scheme__head_tracks() {
 # is no baseline contract to compare with. Committing on this branch does not change the baseline; only what the
 # default branch holds does.
 sb_doc_scheme__weakened() {
-  local repo="$1" contract="$2" head_json
-  head_json="$(git -C "$repo" show "$(sb_doc_scheme__baseline "$repo"):docs/doc-scheme.json" 2>/dev/null)" || return 0
+  local repo="$1" contract="$2" head_json base
+  base="$(sb_doc_scheme__baseline "$repo")"
+  if [[ "$base" == SB_SEAL_LOST ]]; then
+    printf 'the sealed baseline commit no longer exists in this repository (history was rewritten); start a new session to seal it again'
+    return 0
+  fi
+  head_json="$(git -C "$repo" show "${base}:docs/doc-scheme.json" 2>/dev/null)" || return 0
   jq -e . <<<"$head_json" >/dev/null 2>&1 || return 0
   jq -rn --argjson h "$head_json" --slurpfile w "$contract" '
     def en: (.enforcement.enabled | if . == null then true else . end);
