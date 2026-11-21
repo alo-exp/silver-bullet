@@ -11,6 +11,8 @@ TREE="$TL_TMP/tree"
 E2E="$TREE/tests/e2e-live"
 mkdir -p "$E2E/scenarios"
 cp "$TL_REPO_ROOT/tests/e2e-live/run-e2e-live-tests.sh" "$E2E/"
+mkdir -p "$TREE/tests/live/lib"
+cp "$TL_REPO_ROOT/tests/live/lib/evidence-guard.sh" "$TREE/tests/live/lib/"
 RAN="$TL_TMP/ran.log"
 for s in test-e2e-live-hook-failures test-e2e-live-full-surface-journey; do
   printf '#!/usr/bin/env bash\necho "%s $SB_E2E_LIVE_RUNTIME" >>"%s"\nexit "${STUB_%s_RC:-0}"\n' \
@@ -54,5 +56,72 @@ run_suite SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1 STUB_TEST_E2E_LIVE_FULL_SURFACE_J
 assert_eq "failing journey fails the run" 1 "$TL_STATUS"
 assert_file_absent "no inline marker after a failing journey" "$INLINE"
 assert_file_absent "no e2e-live marker after a failing journey" "$E2EM"
+
+
+# --- R14-12: a missing scenario is a failure, never a silent skip -------------------------------
+mv "$E2E/scenarios/test-e2e-live-hook-failures.sh" "$TL_TMP/hook-failures.bak"
+run_suite
+assert_eq "a missing scenario fails the run" 1 "$TL_STATUS"
+assert_contains "the missing scenario is named" "$TL_OUT" "SCENARIO MISSING: [claude] test-e2e-live-hook-failures.sh"
+assert_not_contains "no ALL SCENARIOS PASSED banner" "$TL_OUT" "ALL SCENARIOS PASSED"
+assert_file_absent "no e2e-live marker when a scenario is missing" "$E2EM"
+mv "$TL_TMP/hook-failures.bak" "$E2E/scenarios/test-e2e-live-hook-failures.sh"
+
+# An empty scenario set (nothing to run) is NOT-RUN, not a pass.
+cp "$E2E/run-e2e-live-tests.sh" "$TL_TMP/runner.bak"
+sed -i 's|^SCENARIOS=($|SCENARIOS=(|; /^  "\${SCENARIO_DIR}\/test-e2e-live-hook-failures.sh"$/d' "$E2E/run-e2e-live-tests.sh"
+run_suite
+assert_eq "an empty scenario set fails the run" 1 "$TL_STATUS"
+assert_contains "an empty scenario set is reported as NOT-RUN" "$TL_OUT" "NOT-RUN"
+assert_file_absent "no e2e-live marker for a NOT-RUN suite" "$E2EM"
+cp "$TL_TMP/runner.bak" "$E2E/run-e2e-live-tests.sh"
+
+# --- R14-06: a scenario that writes markers itself and then fails leaves none behind -------------
+cat >"$E2E/scenarios/test-e2e-live-full-surface-journey.sh" <<EOS
+#!/usr/bin/env bash
+mkdir -p "$STATE"
+printf 'matrix=inline-full-surface\n' >"$INLINE"
+printf 'matrix=claude-only\n' >"$E2EM"
+printf 'quality-gate-stage-1\nfull-test-suite-rerun\n' >"$STATE/quality-gate-state"
+exit 1
+EOS
+run_suite SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1
+assert_eq "failing journey fails the run" 1 "$TL_STATUS"
+assert_file_absent "self-written inline marker removed after failure" "$INLINE"
+assert_file_absent "self-written e2e-live marker removed after failure" "$E2EM"
+assert_file_absent "self-written quality-gate state removed after failure" "$STATE/quality-gate-state"
+
+# --- R14-03/R14-06: release evidence the operator earned survives a run ------------------------
+printf 'matrix=claude-only\n' >"$STATE/release-live-matrix"
+printf 'adversarial-review-clean\n' >"$STATE/quality-gate-state"
+printf 'verify-tests\n' >"$STATE/verify-tests-state"
+cat >"$E2E/scenarios/test-e2e-live-hook-failures.sh" <<EOS
+#!/usr/bin/env bash
+# a real session's SessionStart removes branch-scoped evidence
+rm -f "$STATE/release-live-matrix" "$STATE/quality-gate-state"
+printf 'tampered\n' >"$STATE/verify-tests-state"
+exit "\${STUB_HOOK_RC:-0}"
+EOS
+run_suite STUB_HOOK_RC=0
+assert_eq "run passes" 0 "$TL_STATUS"
+assert_eq "release-live-matrix survives the live session reset" "matrix=claude-only" "$(cat "$STATE/release-live-matrix")"
+assert_eq "quality-gate-state survives the live session reset" "adversarial-review-clean" "$(cat "$STATE/quality-gate-state")"
+assert_eq "verify-tests-state restored" "verify-tests" "$(cat "$STATE/verify-tests-state")"
+assert_eq "e2e marker still written on a full pass" "matrix=claude-only" "$(cat "$E2EM")"
+run_suite STUB_HOOK_RC=1
+assert_eq "failing run exits 1" 1 "$TL_STATUS"
+assert_eq "release-live-matrix survives a failing run" "matrix=claude-only" "$(cat "$STATE/release-live-matrix")"
+assert_eq "quality-gate-state survives a failing run" "adversarial-review-clean" "$(cat "$STATE/quality-gate-state")"
+
+# --- R14-15: every post-setup exit tears the isolated home down ---------------------------------
+cat >"$TREE/tests/live/lib/codex-cli-isolation.sh" <<EOS
+setup_codex_cli_isolation() { SB_ISO="$TL_TMP/iso-home"; mkdir -p "\$SB_ISO"; CODEX_BIN=""; }
+teardown_codex_cli_isolation() { rm -rf "$TL_TMP/iso-home"; echo TORN-DOWN >>"$TL_TMP/teardown.log"; }
+EOS
+: >"$TL_TMP/teardown.log"
+run_suite SB_E2E_LIVE_RUNTIMES=codex
+assert_eq "preflight failure after setup exits 1" 1 "$TL_STATUS"
+assert_contains "the isolated home is torn down on the failing exit" "$(cat "$TL_TMP/teardown.log")" "TORN-DOWN"
+assert_file_absent "no isolated home directory remains" "$TL_TMP/iso-home"
 
 tl_results
