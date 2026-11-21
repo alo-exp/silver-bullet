@@ -1,5 +1,6 @@
 """Unit tests for scripts/lib/agent_redact.py (R4-31, R10b-06)."""
 
+import gc
 import io
 import json
 import os
@@ -745,22 +746,39 @@ class LinearityTests(unittest.TestCase):
             "json-nested-str": json.dumps({"o": json.dumps({"pass" + "word": "Zq8mK2pL9xRt4"})}) + "\n",
         }
 
+    MEASURE_ROUNDS = 4  # the MEASUREMENT is repeated under load; the asserted bound never changes
+
     def timed(self, text):
+        """CPU seconds of one scan + redact, the best of three runs (a spike from another process only ever adds)."""
         best = 1e9
-        for _ in range(2):
-            start = time.process_time()
-            agent_redact.scan(text)
-            agent_redact.redact(text)
-            best = min(best, time.process_time() - start)
+        gc.collect()
+        gc.disable()
+        try:
+            for _ in range(3):
+                start = time.process_time()
+                agent_redact.scan(text)
+                agent_redact.redact(text)
+                best = min(best, time.process_time() - start)
+        finally:
+            gc.enable()
         return best
 
     def assert_linear(self, name, unit):
         small, large = (((unit * (size // len(unit) + 1))[:size]) for size in self.SIZES)
-        t_small, t_large = self.timed(small), self.timed(large)
-        if t_large < 0.02:
-            return
+        # Measure small and large in the same process, alternately, and keep the best ratio of a few rounds: a
+        # quadratic scanner shows ~256x in every round, a linear one ~16x in at least one even on a busy machine.
+        best_ratio, shown = None, ""
+        for _ in range(self.MEASURE_ROUNDS):
+            t_small, t_large = self.timed(small), self.timed(large)
+            if t_large < 0.02:
+                return
+            ratio = t_large / max(t_small, 1e-4)
+            if best_ratio is None or ratio < best_ratio:
+                best_ratio, shown = ratio, "%s: %.3fs -> %.3fs" % (name, t_small, t_large)
+            if best_ratio <= 32:
+                break
         # linear is 16; quadratic is 256
-        self.assertLessEqual(t_large / max(t_small, 1e-4), 32, "%s: %.3fs -> %.3fs" % (name, t_small, t_large))
+        self.assertLessEqual(best_ratio, 32, shown)
 
     def test_adversarial_shapes_scale_linearly(self):
         for name, unit in self.shapes().items():
@@ -813,10 +831,17 @@ class LinearityTests(unittest.TestCase):
             unit = text_units[name]
             text = (unit * (1024 * 1024 // len(unit) + 1))[:1024 * 1024]
             with self.subTest(shape=name):
-                start = time.monotonic()
-                agent_redact.scan(text)
-                agent_redact.redact(text)
-                self.assertLess(time.monotonic() - start, 10)
+                # CPU time, not wall time (a loaded machine stretches wall time, not the work done), measured up
+                # to three times: the bound itself (10 s for 1 MiB) is unchanged.
+                best = 1e9
+                for _ in range(3):
+                    start = time.process_time()
+                    agent_redact.scan(text)
+                    agent_redact.redact(text)
+                    best = min(best, time.process_time() - start)
+                    if best < 10:
+                        break
+                self.assertLess(best, 10)
 
     @unittest.skipUnless(os.environ.get("SB_REDACT_LINEARITY_FULL"), "set SB_REDACT_LINEARITY_FULL=1 for the 1 MiB / 64 KiB variant")
     def test_full_ratio_variant(self):
