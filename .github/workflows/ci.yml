@@ -66,7 +66,7 @@ jobs:
 
       - name: Lint shell scripts
         run: |
-          sudo apt-get install -y shellcheck
+          sudo apt-get update -qq && sudo apt-get install -y shellcheck
           shellcheck --version
           # Application Bash (hooks/, scripts/, skills/, site/) must be clean at
           # every severity; test Bash under tests/ must be clean at -S warning.
@@ -110,7 +110,7 @@ jobs:
       - name: Install test prerequisites
         run: |
           # expect drives the TUI contract tests (tests/tui-contract)
-          sudo apt-get install -y jq git expect
+          sudo apt-get update -qq && sudo apt-get install -y jq git expect
           python3 -m pip install -r requirements-dev.txt
 
       # Tests must write only to their sandboxed HOME/TMPDIR, never into the checkout, and that
@@ -160,7 +160,7 @@ jobs:
 
       - name: Install test and coverage prerequisites
         run: |
-          sudo apt-get install -y jq git expect
+          sudo apt-get update -qq && sudo apt-get install -y jq git expect
           python3 -m pip install -r requirements-dev.txt
 
       - name: Measure Bash, Python and JS/TS coverage
