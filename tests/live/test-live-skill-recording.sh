@@ -9,6 +9,7 @@ echo "=== Live Skill Recording Tests ==="
 # --- S5: record-skill hook correctly records tracked skills ---
 echo "--- S5: record-skill hook records silver-quality-gates ---"
 live_setup
+live_hook_audit_enable
 # In -p mode, Claude reads skill files via Read tool (not the Skill tool), so
 # record-skill.sh PostToolUse:Skill hook does not fire automatically during a skill invocation.
 # Instead, verify record-skill.sh works correctly at the unit level, then verify the
@@ -30,8 +31,9 @@ seed_state "silver-quality-gates" "silver-context" "silver-plan" "silver-review"
 target_file="${WORK_DIR}/src/routes/todos.js"
 hook_output=$(jq -n --arg f "$target_file" \
   '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"old content here long enough to exceed the small-edit bypass threshold", new_string:"new content here long enough to exceed the small-edit bypass threshold"}}' \
-  | (cd "$WORK_DIR" && bash "${SB_ROOT}/hooks/dev-cycle-check.sh" 2>/dev/null || true))
-assert_response_not_contains "S5: state-driven hook allows source edit" "$hook_output" "permissionDecision.*deny|decision.*block|HARD STOP|planning incomplete"
+  | (cd "$WORK_DIR" && SILVER_BULLET_HOOK_AUDIT_LOG="$LIVE_HOOK_AUDIT_FILE" bash "${SB_ROOT}/hooks/dev-cycle-check.sh" 2>/dev/null || true))
+assert_hook_audit_entry "S5: state-driven hook records an allow for the source edit" "dev-cycle-check" "allow" 'review recorded|Planning verified|Implementation edits allowed' 5
+assert_response_not_contains "S5: state-driven hook output carries no deny" "$hook_output" "permissionDecision.*deny|decision.*block|HARD STOP|planning incomplete"
 
 live_teardown
 
@@ -39,12 +41,11 @@ live_teardown
 echo "--- S6: compliance-status shows progress ---"
 live_setup
 seed_state "silver-quality-gates"
-# compliance-status.sh fires PostToolUse after ANY tool use (matcher: .*), async.
-# Invoke a Bash command so PostToolUse fires and compliance-status runs.
-response=$(invoke_claude "Run: echo 'hello' in the terminal using the Bash tool.")
-sleep 2
-# compliance-status.sh should show PLANNING 1/1 (silver-quality-gates is the only required_planning skill)
-assert_response_contains "S6: response mentions PLANNING or compliance progress" "$response" "PLANNING|compliance|quality.gate|1/1|hello"
+# compliance-status.sh answers a PostToolUse payload with the PLANNING n/m progress line. It is
+# checked against the shipped hook directly: whether the agent echoes the line is not observable.
+hook_output=$(cd "$WORK_DIR" && printf '{"tool_name":"Bash","tool_input":{"command":"echo hello"},"hook_event_name":"PostToolUse"}' \
+  | bash "${SB_ROOT}/hooks/compliance-status.sh" 2>/dev/null || true)
+assert_response_contains "S6: compliance-status reports the planning progress line" "$hook_output" "PLANNING [0-9]+/[0-9]+"
 live_teardown
 
 print_results

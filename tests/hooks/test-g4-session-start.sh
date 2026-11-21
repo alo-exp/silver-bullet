@@ -27,7 +27,7 @@ fresh() {
   local f
   for f in state branch trivial session-start-time stall-block orchestrator.json orchestrator-directive.json \
     orchestrator-worker-active.json project-root session-rules-injected graphify-query agentmemory-usage \
-    leanctx-usage quality-gate-state release-live-matrix e2e-live-matrix enterprise-human-deploy-approved \
+    leanctx-usage quality-gate-state release-live-matrix e2e-live-matrix inline-e2e-matrix enterprise-human-deploy-approved \
     ci-red-override debug-dump; do
     rm -f "${SD:?}/${f:?}"
   done
@@ -196,13 +196,13 @@ done
 # ---- compact is benign (R3-25) ------------------------------------------------------------------
 fresh
 printf 'feature/test\n%s\n' "$EC_PROJ" >"$BRANCH"
-for f in trivial release-live-matrix e2e-live-matrix; do printf 'x' >"$SD/$f"; done
+for f in trivial release-live-matrix e2e-live-matrix inline-e2e-matrix; do printf 'x' >"$SD/$f"; done
 run_ss '{"source":"compact"}'
-for f in trivial release-live-matrix e2e-live-matrix; do
+for f in trivial release-live-matrix e2e-live-matrix inline-e2e-matrix; do
   assert_file_exists "compact keeps $f" "$SD/$f"
 done
 run_ss '{"source":"startup"}'
-for f in trivial release-live-matrix e2e-live-matrix; do
+for f in trivial release-live-matrix e2e-live-matrix inline-e2e-matrix; do
   assert_file_absent "startup clears $f" "$SD/$f"
 done
 

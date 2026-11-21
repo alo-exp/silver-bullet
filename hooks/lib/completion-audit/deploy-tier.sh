@@ -1,6 +1,78 @@
 #!/usr/bin/env bash
 # completion-audit: TIER 2 final delivery gate
 
+# ca_marker_commit_ok FILE ROOT RELEASE_SHA: the live-matrix marker FILE was earned on the tree being
+# released (R14-16). Its `commit=` line must be a full sha (missing or malformed fails closed) that exists
+# in this checkout (status 2 when it does not: a shallow clone or a commit from another history), and every
+# path that differs between that commit and RELEASE_SHA must be allowed by release-surface-allowlist.txt:
+# a prose file (any text change) or a JSON file that is deeply equal on both sides once ONLY the listed
+# version/ref/sha fields are deleted. The diff is `--raw -z --no-renames`, so a rename is a delete plus an add,
+# and a symlink, type change or mode change on any path rejects. No ancestry is required (a squash or rebase
+# merge with an identical tree is fine). It binds the marker to a TREE; it does not prove a matrix ran.
+ca_marker_commit_ok() {
+  local file="$1" root="$2" release_sha="$3" commit raw meta path rc=0
+  local allowlist
+  allowlist="$(dirname "${BASH_SOURCE[0]}")/../../../scripts/lib/release-surface-allowlist.txt"
+  commit="$(grep -m1 -E '^commit=' "$file" 2>/dev/null | cut -d= -f2-)"
+  [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || return 1
+  [[ "$commit" == "$release_sha" ]] && return 0
+  git -C "$root" cat-file -e "${commit}^{commit}" 2>/dev/null || return 2
+  raw="$(mktemp "${TMPDIR:-/tmp}/sb-surface-diff.XXXXXX")" || return 1
+  if ! git -C "$root" -c core.quotepath=off diff --raw -z --no-renames --no-ext-diff --no-textconv \
+       "$commit" "$release_sha" >"$raw" 2>/dev/null; then
+    rm -f -- "$raw"
+    return 1
+  fi
+  while IFS= read -r -d '' meta && IFS= read -r -d '' path; do
+    ca_surface_change_ok "$root" "$commit" "$release_sha" "$meta" "$path" "$allowlist" || rc=1
+    [[ "$rc" -eq 0 ]] || break
+  done <"$raw"
+  rm -f -- "$raw"
+  return "$rc"
+}
+
+# ca_surface_change_ok ROOT COMMIT RELEASE META PATH ALLOWLIST: one raw diff entry
+# (":<old mode> <new mode> <old sha> <new sha> <status>") against the allowlist.
+ca_surface_change_ok() {
+  local root="$1" commit="$2" release="$3" meta="$4" path="$5" allowlist="$6"
+  local omode nmode status kind pattern jqpaths line
+  read -r omode nmode _ _ status <<<"${meta#:}"
+  # Symlinks, submodules and mode/type changes are never release surface.
+  [[ "$omode" == "$nmode" || "$omode" == 000000 || "$nmode" == 000000 ]] || return 1
+  [[ "$omode" != 120000 && "$nmode" != 120000 && "$omode" != 160000 && "$nmode" != 160000 ]] || return 1
+  [[ "$status" != T ]] || return 1
+  while IFS= read -r line; do
+    case "$line" in ''|'#'*) continue ;; esac
+    kind="${line%% *}"
+    line="${line#* }"
+    pattern="${line%% *}"
+    jqpaths="${line#"$pattern"}"
+    case "$kind" in
+      prose)
+        # shellcheck disable=SC2254  # the allowlist entry is a glob pattern by design
+        case "$path" in $pattern) return 0 ;; esac
+        ;;
+      json)
+        if [[ "$path" == "$pattern" ]]; then
+          [[ "$status" == M ]] || return 1
+          ca_json_equal_modulo "$root" "$commit" "$release" "$path" "$jqpaths"
+          return
+        fi
+        ;;
+    esac
+  done <"$allowlist"
+  return 1
+}
+
+# ca_json_equal_modulo ROOT COMMIT RELEASE PATH JQPATHS: PATH is deeply equal at both commits after deleting
+# only the listed jq paths (comma separated). Unparseable JSON on either side is not equal.
+ca_json_equal_modulo() {
+  local root="$1" commit="$2" release="$3" path="$4" jqpaths="$5" old new
+  old="$(git -C "$root" show "${commit}:${path}" 2>/dev/null | jq -S "del(${jqpaths})" 2>/dev/null)" || return 1
+  new="$(git -C "$root" show "${release}:${path}" 2>/dev/null | jq -S "del(${jqpaths})" 2>/dev/null)" || return 1
+  [[ -n "$old" && "$old" == "$new" ]]
+}
+
 # ca_release_commit_sha ROOT: the commit `gh release create` will release, resolved the way gh does:
 # an existing tag wins (--target is ignored for it), else --target (the remote branch, then a local ref),
 # else the remote default branch, else HEAD. The tag and target are read by release_scope.py (SB_SA_JSON
@@ -95,14 +167,27 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
       inline_matrix_value=$(grep -E '^matrix=' "$inline_e2e_matrix_file" 2>/dev/null || true)
     fi
 
-    if [[ "$release_matrix_value" == 'matrix=full-claude-codex' && "$e2e_matrix_value" == 'matrix=full-claude-codex' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
+    # The inline marker is written by the enterprise-grade-test-app journey or by the Claude supervised
+    # enterprise matrix (full 22-row pass); either way it must carry the commit it was earned at.
+    inline_commit_ok=false
+    inline_commit_missing=false
+    if ca_marker_commit_ok "$inline_e2e_matrix_file" "$project_root" "$release_commit_sha"; then
+      inline_commit_ok=true
+    elif [[ $? -eq 2 ]]; then
+      inline_commit_missing=true
+    fi
+    if [[ "$inline_commit_ok" == true && "$release_matrix_value" == 'matrix=full-claude-codex' && "$e2e_matrix_value" == 'matrix=full-claude-codex' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
-    elif [[ "$release_matrix_value" == 'matrix=claude-only' && "$e2e_matrix_value" == 'matrix=claude-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
+    elif [[ "$inline_commit_ok" == true && "$release_matrix_value" == 'matrix=claude-only' && "$e2e_matrix_value" == 'matrix=claude-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
-    elif [[ "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
+    elif [[ "$inline_commit_ok" == true && "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
     else
-      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh in the standard Claude direct-OAuth configuration (or Kay/OpenCode Go/DeepSeek V4 Flash low when isolated Codex-compatible runs are required), ensure the enterprise-grade-test-app journey records matrix=inline-full-surface in the host runtime inline-e2e-matrix (or complete the Claude supervised enterprise-e2e-matrix per .planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md), then retry. A full Claude/Codex matrix is still accepted when explicitly run, but it is no longer required for the release gate.' )"
+      inline_missing_note=""
+      if [[ "$inline_commit_missing" == true ]]; then
+        inline_missing_note=" The marker commit is not in this checkout (shallow clone or another history): fetch full history (git fetch --unshallow) and retry."
+      fi
+      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh in the standard Claude direct-OAuth configuration (or Kay/OpenCode Go/DeepSeek V4 Flash low when isolated Codex-compatible runs are required), and record matrix=inline-full-surface in the host runtime inline-e2e-matrix by completing the enterprise-grade-test-app journey: the Claude supervised enterprise-e2e-matrix (all 22 rows, per .planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md) or the inline journey (tests/e2e-live/run-e2e-live-tests.sh with SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1). The inline marker must carry commit= naming the commit the matrix ran on: the released commit, or a commit whose tree differs only in release-surface files (scripts/lib/release-surface-allowlist.txt: version bumps, manifests, changelog); a marker without it, or from a tree with other changes, is rejected. Note: this check binds the marker to a tree (the commit exists and the diff stays within the allowlist); it does not prove that a matrix ran. Then retry. A full Claude/Codex matrix is still accepted when explicitly run, but it is no longer required for the release gate.%s' "$inline_missing_note")"
       exit 0
     fi
   fi

@@ -1071,8 +1071,19 @@ enterprise_e2e_preflight_agentmemory() {
 
   if ! sb_agentmemory_server_healthy "$config_file"; then
     if command -v lsof >/dev/null 2>&1 && lsof -tiTCP:3111 -sTCP:LISTEN >/dev/null 2>&1; then
-      echo "    agentmemory port 3111 in use but health failed — recycling stale listener"
-      lsof -tiTCP:3111 -sTCP:LISTEN | xargs kill -9 2>/dev/null || true
+      # Only an agentmemory process owned by this user is recycled, by exact PID and TERM first;
+      # whatever else listens on the port is left alone and the start below reports the failure.
+      local _am_pid _am_cmd
+      while IFS= read -r _am_pid; do
+        [[ "$_am_pid" =~ ^[0-9]+$ ]] || continue
+        _am_cmd="$(ps -p "$_am_pid" -o user= -o command= 2>/dev/null || true)"
+        if [[ "$_am_cmd" == *"$(id -un)"* && "$_am_cmd" == *agentmemory* ]]; then
+          echo "    agentmemory port 3111 in use but health failed — recycling stale listener (agentmemory, pid ${_am_pid})"
+          kill -TERM "$_am_pid" 2>/dev/null || true
+        else
+          echo "    agentmemory port 3111 is held by a process that is not this user's agentmemory (pid ${_am_pid}) — not touching it"
+        fi
+      done < <(lsof -tiTCP:3111 -sTCP:LISTEN 2>/dev/null)
       sleep 1
     fi
     echo "    agentmemory server not healthy — starting background server"

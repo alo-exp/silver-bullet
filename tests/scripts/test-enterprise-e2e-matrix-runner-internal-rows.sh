@@ -10,6 +10,18 @@ WF="$APP/.planning/workflows"
 # ----------------------------------------------------- internal rows 21 and 22
 WF="$APP/.planning/workflows"
 reset
+rm -f "$SB_E2E_LEDGER_FILE"
+run bash "$MATRIX" 21 22
+assert_eq "R14-02: with no row 3/4 evidence the internal rows fail" "1" "$TL_STATUS"
+assert_contains "R14-02: row 21 fails without evidence" "$TL_OUT" "=== Row 21: post-exec-gates (internal) FAIL ==="
+assert_contains "R14-02: row 22 fails without evidence" "$TL_OUT" "=== Row 22: validate-substep (internal) FAIL ==="
+assert_file_absent "R14-02: no feature marker is seeded without evidence" "$WF/feature-currency.md"
+assert_file_absent "R14-02: no bugfix marker is seeded without evidence" "$WF/bugfix-health.md"
+assert_eq "R14-02: no pass is recorded from seeded evidence" "" "$(jq -r '.installs | to_entries[0].value.rows["21"].outcome_pass // empty' "$REG" 2>/dev/null || true)"
+
+# the parent rows passed in the ledger: markers are written and the internal rows pass
+reset
+printf '| 3 | silver-feature | wf | Pass | g | a |\n| 4 | silver-bugfix | wf | Pass | g | a |\n' >"$SB_E2E_LEDGER_FILE"
 run bash "$MATRIX" 21 22
 assert_eq "internal rows pass" "0" "$TL_STATUS"
 assert_contains "row 21 pass" "$TL_OUT" "=== Row 21: post-exec-gates (internal) PASS ==="
@@ -18,6 +30,7 @@ assert_eq "internal pass recorded in registry (row 21)" "true" "$(jq -r '.instal
 assert_eq "internal pass recorded in registry (row 22)" "true" "$(jq -r '.installs | to_entries[0].value.rows["22"].outcome_pass' "$REG")"
 assert_contains "feature marker" "$(cat "$WF/feature-currency.md")" "post-exec-gates"
 assert_contains "bugfix marker" "$(cat "$WF/bugfix-health.md")" "validate-substep"
+rm -f "$SB_E2E_LEDGER_FILE"
 
 # registry pass on the same install lets a broken marker slip to SKIP
 break_markers() { touch "$F2_CTL/find-fail-post-exec-gates" "$F2_CTL/find-fail-validate-substep"; }
@@ -37,14 +50,15 @@ assert_contains "row 21 fail" "$TL_OUT" "=== Row 21: post-exec-gates (internal) 
 assert_contains "row 22 fail" "$TL_OUT" "=== Row 22: validate-substep (internal) FAIL ==="
 assert_contains "internal fail summary" "$TL_OUT" "Fail:  2"
 
-# parent attempt log that mentions the marker rescues the row
+# a parent attempt log that merely mentions the marker no longer rescues the row (R14-02)
 break_markers
 echo "post-exec-gates reached" >"$R/.e2e-row3-attempt.log"
 echo "validate-substep reached" >"$R/.e2e-row4-attempt.log"
+touch "$F2_CTL/outcome-fail-3" "$F2_CTL/outcome-fail-4"
 run bash "$MATRIX" 21 22
-assert_eq "parent attempt logs rescue the internal rows" "0" "$TL_STATUS"
-assert_contains "row 21 rescued by log" "$TL_OUT" "=== Row 21: post-exec-gates (internal) PASS ==="
-rm -f "$REG"
+assert_eq "marker words in the parent attempt logs do not rescue the internal rows" "1" "$TL_STATUS"
+assert_contains "row 21 still fails" "$TL_OUT" "=== Row 21: post-exec-gates (internal) FAIL ==="
+rm -f "$REG" "$F2_CTL"/outcome-fail-*
 
 # parent log without the marker: the outcome scorer decides; a passing scorer re-seeds (heal) and passes
 break_markers
@@ -71,6 +85,7 @@ printf '| 3 | silver-feature | wf | Pass | g | a |\n| 4 | silver-bugfix | wf | F
 break_markers
 touch "$F2_CTL/outcome-fail-3" "$F2_CTL/outcome-fail-4" "$F2_CTL/heal"
 echo 4 >"$F2_CTL/heal-ledger-after"
+rm -rf "$WF"
 run bash "$MATRIX" 21 22
 assert_eq "ledger Pass for parent 3 rescues row 21 only" "1" "$TL_STATUS"
 assert_contains "row 21 rescued by ledger" "$TL_OUT" "=== Row 21: post-exec-gates (internal) PASS ==="
@@ -98,19 +113,26 @@ assert_eq "failing parent attempt-log lookup falls through to FAIL" "1" "$TL_STA
 assert_contains "row 21 fail verdict" "$TL_OUT" "=== Row 21: post-exec-gates (internal) FAIL ==="
 rm -f "$F2_CTL"/find-fail-*
 
-# ensure_internal_gate_markers consults the ledger and parent logs up front
+# ensure_internal_gate_markers consults the ledger only: attempt logs never create a marker
 rm -f "$F2_CTL"/find-fail-*
 printf '| 3 | silver-feature | wf | Pass | g | a |\n| 4 | silver-bugfix | wf | pass | g | a |\n' >"$SB_E2E_LEDGER_FILE"
-echo "log" >"$R/.e2e-row3-attempt.log"
-echo "log" >"$R/.e2e-row4-attempt.log"
 rm -rf "$WF"
 run env SB_E2E_MATRIX_DRY_RUN=1 bash "$MATRIX" 21
-assert_contains "dry-run seeds from ledger and logs" "$(cat "$WF/feature-currency.md")" "post-exec-gates"
-# attempt-log lookups failing during the pre-seed are tolerated
+assert_contains "dry-run seeds the feature marker from a passing ledger row" "$(cat "$WF/feature-currency.md")" "post-exec-gates"
+assert_contains "dry-run seeds the bugfix marker from a passing ledger row" "$(cat "$WF/bugfix-health.md")" "validate-substep"
+printf '| 3 | silver-feature | wf | Fail | g | a |\n| 4 | silver-bugfix | wf | Fail | g | a |\n' >"$SB_E2E_LEDGER_FILE"
+echo "log" >"$R/.e2e-row3-attempt.log"
+echo "log" >"$R/.e2e-row4-attempt.log"
+touch "$F2_CTL/outcome-fail-3" "$F2_CTL/outcome-fail-4"
 rm -rf "$WF"
-run env SB_E2E_MATRIX_DRY_RUN=1 F2_ATTEMPT_LOG_FAIL_FIRST=2 bash "$MATRIX" 21
-assert_eq "failing attempt-log lookup tolerated" "0" "$TL_STATUS"
-rm -f "$SB_E2E_LEDGER_FILE"
+run env SB_E2E_MATRIX_DRY_RUN=1 bash "$MATRIX" 21
+assert_file_absent "a failing ledger row plus a non-empty log seeds nothing" "$WF/feature-currency.md"
+rm -f "$F2_CTL"/outcome-fail-*
+rm -f "$SB_E2E_LEDGER_FILE" "$R/.e2e-row3-attempt.log" "$R/.e2e-row4-attempt.log"
+# no ledger: nothing is seeded
+rm -rf "$WF"
+run env SB_E2E_MATRIX_DRY_RUN=1 bash "$MATRIX" 21
+assert_file_absent "no ledger seeds nothing" "$WF/feature-currency.md"
 
 # blank row argument is ignored
 reset
@@ -120,12 +142,13 @@ assert_not_contains "blank row runs nothing" "$TL_OUT" "=== Row"
 
 # several matching marker files, listed slowly: the verdict must not depend on grep -q closing the pipe early
 reset
+printf '| 3 | silver-feature | wf | Pass | g | a |\n| 4 | silver-bugfix | wf | Pass | g | a |\n' >"$SB_E2E_LEDGER_FILE"
 touch "$F2_CTL/find-slow"
 run bash "$MATRIX" 21 22
 assert_eq "slow multi-file marker listing passes" "0" "$TL_STATUS"
 assert_contains "row 21 pass with slow listing" "$TL_OUT" "=== Row 21: post-exec-gates (internal) PASS ==="
 assert_contains "row 22 pass with slow listing" "$TL_OUT" "=== Row 22: validate-substep (internal) PASS ==="
-rm -f "$F2_CTL/find-slow"
+rm -f "$F2_CTL/find-slow" "$SB_E2E_LEDGER_FILE"
 
 # the post-heal searches (after a passing scorer, after a ledger Pass) also list several files slowly
 reset

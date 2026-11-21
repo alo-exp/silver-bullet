@@ -358,9 +358,7 @@ EOF
 
 write_inline_e2e_matrix_marker() {
   mkdir -p "$SB_TEST_DIR"
-  cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+  printf 'matrix=inline-full-surface\ncommit=%s\n' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 }
 
 write_quality_gate_state_marker() {

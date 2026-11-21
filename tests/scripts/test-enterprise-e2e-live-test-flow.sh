@@ -61,6 +61,16 @@ tl_stub npm 'printf "npm %s cwd=%s\n" "$*" "$PWD" >>"$F2_CALLS"; exit "${F2_NPM_
 tl_stub sleep 'printf "sleep %s\n" "$*" >>"$F2_CALLS"'
 tl_stub pgrep 'printf "pgrep %s\n" "$*" >>"$F2_CALLS"; [[ -n "${F2_PGREP_HIT:-}" ]]'
 tl_stub pkill 'printf "pkill %s\n" "$*" >>"$F2_CALLS"; exit 1'
+# ps with fault injection (F2_PS_FAIL: every call fails; F2_PS_PGID_FAIL: only `-o pgid=` fails) and a kill
+# that fails for real signals when F2_KILL_FAIL is set (BASH_ENV chains the coverage tracer's file)
+tl_stub ps 'if [[ -n "${F2_PS_FAIL:-}" ]]; then exit 1; fi
+if [[ -n "${F2_PS_PGID_FAIL:-}" && "$*" == *pgid=* ]]; then exit 1; fi
+exec /bin/ps "$@"'
+{
+  printf '[[ -z "%s" || ! -f "%s" ]] || source "%s"\n' "${BASH_ENV:-}" "${BASH_ENV:-}" "${BASH_ENV:-}"
+  printf 'kill() { if [[ -n "${F2_KILL_FAIL:-}" && "${1:-}" != -0 ]]; then return 1; fi; builtin kill "$@"; }\n'
+} >"$TL_TMP/kill-fail.sh"
+export BASH_ENV="$TL_TMP/kill-fail.sh"
 
 LIVE="$R/scripts/enterprise-e2e/live-test.sh"
 LEDGER="$TL_TMP/ledger.md"
@@ -221,13 +231,65 @@ assert_contains "force flags forwarded" "$CALLS" "force=1 forceall=1"
 run env F2_FAIL_STEP=matrix bash "$LIVE" 1
 assert_eq "matrix failure propagates" "7" "$TL_STATUS"
 
-# an existing monitor/watch instance is replaced
+# an existing monitor/watch instance this driver started is replaced by exact PID/process group,
+# never by pattern: a look-alike process that is not in the driver's pid file survives (R14-10)
+decoy() { # decoy NAME: a real process whose argv looks like NAME, in its own session (pgid == pid)
+  setsid bash -c 'exec -a "$1" /bin/sleep 300' _ "$1" >/dev/null 2>&1 &
+  echo $!
+}
+# alive PID: running (a zombie that nothing reaped counts as gone)
+alive() { kill -0 "$1" 2>/dev/null && [[ "$(command ps -o stat= -p "$1" 2>/dev/null | tr -d ' ')" != Z* ]]; }
+OLD_MON="$(decoy 'bash scripts/monitor-enterprise-e2e-matrix.sh')"
+OLD_WATCH="$(decoy 'bash scripts/watch-enterprise-e2e-tui.sh')"
+FOREIGN="$(decoy 'bash /elsewhere/scripts/monitor-enterprise-e2e-matrix.sh')"
+/bin/sleep 0.3
+echo "$OLD_MON" >"$TL_TMP/monitor.pid"
+echo "$OLD_WATCH" >"$TL_TMP/watch.pid"
 run env F2_PGREP_HIT=1 bash "$LIVE" 2
 assert_contains "monitor replaced" "$TL_OUT" "matrix-monitor: replacing existing instance (driver-owned harness)"
 assert_contains "watch replaced" "$TL_OUT" "tui-watch: replacing existing instance (driver-owned harness)"
-assert_contains "pkill used for monitor" "$CALLS" "pkill -f monitor-enterprise-e2e-matrix.sh"
-assert_contains "pkill used for watch" "$CALLS" "pkill -f watch-enterprise-e2e-tui.sh"
-assert_eq "failing pkill does not abort the run" "0" "$TL_STATUS"
+assert_not_contains "no pkill by pattern" "$CALLS" "pkill"
+assert_eq "replacing instances does not abort the run" "0" "$TL_STATUS"
+for _ in $(seq 1 30); do alive "$OLD_MON" || break; /bin/sleep 0.1; done
+if alive "$OLD_MON"; then tl_fail "the driver's old monitor was terminated"; kill -KILL "$OLD_MON"; else tl_pass "the driver's old monitor was terminated"; fi
+if alive "$OLD_WATCH"; then tl_fail "the driver's old watch was terminated"; kill -KILL "$OLD_WATCH"; else tl_pass "the driver's old watch was terminated"; fi
+/bin/sleep 0.5
+if alive "$FOREIGN"; then tl_pass "a look-alike process outside the pid file survives"; kill -TERM "$FOREIGN"; else tl_fail "a look-alike process outside the pid file survives"; fi
+# a pid file naming a live process that is NOT a monitor is left alone; a non-numeric one is ignored
+OTHER="$(decoy 'something-else')"
+/bin/sleep 0.3
+echo "$OTHER" >"$TL_TMP/monitor.pid"; echo "not-a-pid" >"$TL_TMP/watch.pid"
+run env F2_PGREP_HIT=1 bash "$LIVE" 2
+assert_not_contains "unrelated pid in the pid file is not replaced" "$TL_OUT" "matrix-monitor: replacing existing instance"
+/bin/sleep 0.5
+if alive "$OTHER"; then tl_pass "an unrelated live process named in the pid file survives"; kill -TERM "$OTHER"; else tl_fail "an unrelated live process named in the pid file survives"; fi
+# fault injection: ps failing for the command lookup, the pgid lookup, and kill failing, never aborts the driver
+LEAD="$(decoy 'bash scripts/monitor-enterprise-e2e-matrix.sh')"
+/bin/sleep 0.3
+echo "$LEAD" >"$TL_TMP/monitor.pid"
+run env F2_PGREP_HIT=1 F2_PS_FAIL=1 bash "$LIVE" 2
+assert_not_contains "ps failing: nothing is replaced" "$TL_OUT" "matrix-monitor: replacing existing instance"
+assert_eq "ps failing does not abort the driver" "0" "$TL_STATUS"
+/bin/sleep 0.3
+if alive "$LEAD"; then tl_pass "ps failing: the process is left alone"; else tl_fail "ps failing: the process is left alone"; fi
+echo "$LEAD" >"$TL_TMP/monitor.pid"
+run env F2_PGREP_HIT=1 F2_KILL_FAIL=1 bash "$LIVE" 2
+assert_contains "group kill failing is tolerated" "$TL_OUT" "matrix-monitor: replacing existing instance"
+assert_eq "group kill failing does not abort the driver" "0" "$TL_STATUS"
+echo "$LEAD" >"$TL_TMP/monitor.pid"
+run env F2_PGREP_HIT=1 F2_KILL_FAIL=1 F2_PS_PGID_FAIL=1 bash "$LIVE" 2
+assert_contains "pgid lookup and single kill failing are tolerated" "$TL_OUT" "matrix-monitor: replacing existing instance"
+assert_eq "pgid lookup and single kill failing do not abort the driver" "0" "$TL_STATUS"
+kill -KILL -- "-$LEAD" 2>/dev/null || kill -KILL "$LEAD" 2>/dev/null || true
+
+# a matching process that is not its own group leader gets a single TERM (no group signal)
+NONLEADER="$(bash -c 'exec -a "bash scripts/monitor-enterprise-e2e-matrix.sh" /bin/sleep 300 >/dev/null 2>&1 & echo $!')"
+/bin/sleep 0.3
+echo "$NONLEADER" >"$TL_TMP/monitor.pid"
+run env F2_PGREP_HIT=1 bash "$LIVE" 2
+assert_contains "non-leader instance replaced" "$TL_OUT" "matrix-monitor: replacing existing instance"
+for _ in $(seq 1 30); do alive "$NONLEADER" || break; /bin/sleep 0.1; done
+if alive "$NONLEADER"; then tl_fail "a non-leader instance gets its own TERM"; kill -KILL "$NONLEADER"; else tl_pass "a non-leader instance gets its own TERM"; fi
 
 # monitor disabled
 run env SB_E2E_MATRIX_MONITOR=0 bash "$LIVE" 2

@@ -13,6 +13,8 @@ export SB_RTK_COMPAT_MODE=verbatim
 source "${SB_ROOT}/hooks/lib/rtk-compat.sh"
 # shellcheck source=tests/live/lib/detach-background.sh
 source "${SB_ROOT}/tests/live/lib/detach-background.sh"
+# shellcheck source=tests/live/lib/evidence-guard.sh
+source "${SB_ROOT}/tests/live/lib/evidence-guard.sh"
 sb_prepend_harness_path
 # shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
@@ -73,6 +75,8 @@ fi
 
 # shellcheck source=scripts/lib/matrix-quota.sh
 source "${SB_ROOT}/scripts/lib/matrix-quota.sh"
+# shellcheck source=scripts/lib/pid-identity.sh
+source "${SB_ROOT}/scripts/lib/pid-identity.sh"
 # shellcheck source=scripts/lib/enterprise-e2e-token-telemetry.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-token-telemetry.sh"
 
@@ -336,14 +340,14 @@ verify_row_internal() {
     21) marker='post-exec-gates'; parent_row=3 ;;
     22) marker='validate-substep'; parent_row=4 ;;
   esac
-  enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
+  # The marker is accepted only when the agent's rows 3/4 (or their ledger status) produced it;
+  # nothing is seeded here before the check, or the check could never fail (R14-02).
   if matrix_marker_present "$marker"; then
     return 0
   fi
   parent_log="$(enterprise_e2e_row_attempt_log "$parent_row" 2>/dev/null || true)"
-  if [[ -n "$parent_log" && -f "$parent_log" ]] && grep -q "$marker" "$parent_log" 2>/dev/null; then
-    return 0
-  fi
+  # A parent attempt log that merely mentions the marker is not evidence: the matrix prompt and the
+  # agent's own echo contain the words. Only the outcome scorer or the ledger can vouch (R14-02).
   if [[ -n "$parent_log" && -f "$parent_log" && -s "$parent_log" ]] && \
      [[ -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]]; then
     # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
@@ -394,25 +398,120 @@ enterprise_e2e_matrix_seed_internal_gate_markers() {
   esac
 }
 
+# Rows 21/22 are derived from rows 3/4. A marker is written for a parent row only when the
+# ledger records that row as passed; an empty or non-empty attempt log, or merely being asked to
+# run, never creates one (R14-02).
 enterprise_e2e_matrix_ensure_internal_gate_markers() {
-  local row_num parent="" ledger="${SB_E2E_LEDGER_FILE:-}"
+  local row_num ledger="${SB_E2E_LEDGER_FILE:-}"
+  [[ -n "$ledger" && -f "$ledger" && -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]] || return 0
+  # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
+  source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
   for row_num in 3 4; do
-    enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
-    if [[ -n "$ledger" && -f "$ledger" && -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]]; then
-      # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
-      source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
-      local line="" status=""
-      line="$(enterprise_e2e_outcome_ledger_workflow_line "$ledger" "$row_num" 2>/dev/null || true)"
-      if [[ -n "$line" ]]; then
-        status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
-        [[ "$status" == "pass" || "$status" == "Pass" ]] && enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
+    local line="" status=""
+    line="$(enterprise_e2e_outcome_ledger_workflow_line "$ledger" "$row_num" 2>/dev/null || true)"
+    if [[ -n "$line" ]]; then
+      status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
+      if [[ "$status" == "pass" || "$status" == "Pass" ]]; then
+        enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
       fi
     fi
-    parent="$(enterprise_e2e_row_attempt_log "$row_num" 2>/dev/null || true)"
-    if [[ -n "$parent" && -f "$parent" && -s "$parent" ]]; then
-      enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
-    fi
   done
+}
+
+# The directory the RELEASE GATE reads its markers from: the releasing session's own runtime state dir
+# (hooks/lib/runtime-paths.sh from the operator's HOME). In isolated-config mode (SB_E2E_ISOLATED_CLAUDE_CONFIG=1,
+# set by the agent-claude wrapper) the nested sessions use a throw-away state dir that the gate never reads, so the
+# marker must not go there (R14-05 review).
+enterprise_e2e_matrix_gate_state_dir() {
+  if [[ "${SB_E2E_ISOLATED_CLAUDE_CONFIG:-}" == "1" ]]; then
+    ( unset SB_RUNTIME_STATE_DIR SB_RUNTIME_HOME_ROOT SB_RUNTIME_PRESERVE_STATE_DIR SB_RUNTIME_EXTRA_STATE_ROOTS
+      export SILVER_BULLET_RUNTIME="${MATRIX_HOST:-claude}"
+      # shellcheck source=hooks/lib/runtime-paths.sh
+      source "${SB_ROOT}/hooks/lib/runtime-paths.sh"
+      printf '%s\n' "$SB_RUNTIME_STATE_DIR" )
+  else
+    enterprise_e2e_runtime_state_dir
+  fi
+}
+
+# The files the supervised matrix itself writes inside the SB checkout: the round ledger (markdown) and the row-pass
+# registry (a tracked JSON data file); neither carries executable behaviour. docs/RELEASE.md and
+# scripts/lib/release-surface-allowlist.txt name the same paths. They
+# are the ONLY paths ignored when deciding whether the tree is dirty. Every other harness output (attempt logs, pid
+# files, telemetry, the row-pass registry, transcripts) is git-ignored.
+ENTERPRISE_E2E_HARNESS_OUTPUTS=(".planning/enterprise-e2e/ROUND-*-LEDGER.md" ".planning/enterprise-e2e/.row-pass-registry.json")
+
+# True when the SB checkout has uncommitted or untracked changes (git-ignored files and the declared harness
+# outputs do not count): that tree is what the nested sessions install and test, so evidence from a dirty tree
+# proves nothing about a commit.
+enterprise_e2e_matrix_tree_dirty() {
+  local -a spec=(.)
+  local out
+  for out in "${ENTERPRISE_E2E_HARNESS_OUTPUTS[@]}"; do
+    spec+=(":(exclude,glob)${out}")
+  done
+  [[ -n "$(git -C "$SB_ROOT" status --porcelain -- "${spec[@]}" 2>/dev/null)" ]]
+}
+
+# At run start: bind the run to the checkout's HEAD and cleanliness, and snapshot the gate's evidence files so the
+# 22 nested sessions' SessionStart resets (they delete release-live-matrix, e2e-live-matrix, quality-gate-state,
+# verify-tests-state in the gate's state dir) cannot destroy the operator's evidence.
+enterprise_e2e_matrix_evidence_begin() {
+  MATRIX_START_HEAD="$(git -C "$SB_ROOT" rev-parse HEAD 2>/dev/null || true)"
+  MATRIX_START_DIRTY=false
+  if enterprise_e2e_matrix_tree_dirty; then
+    MATRIX_START_DIRTY=true
+  fi
+  # An unresolvable or uncreatable state dir means there is no evidence to protect: run unguarded.
+  local gate
+  gate="$(enterprise_e2e_matrix_gate_state_dir 2>/dev/null)" || gate=""
+  [[ -n "$gate" ]] && mkdir -p "$gate" 2>/dev/null || return 0
+  sb_evidence_snapshot "$gate" "$SB_ROOT"
+  sb_evidence_restore inline-e2e-matrix
+}
+
+# Idempotent: put back what the nested sessions' resets removed, drop the snapshot.
+enterprise_e2e_matrix_evidence_finish() {
+  sb_evidence_restore inline-e2e-matrix
+  sb_evidence_discard
+}
+
+# The release marker `inline-e2e-matrix` (matrix=inline-full-surface, commit=<SB HEAD>, written_at=) is
+# written ONLY after a complete real pass: every one of the 22 rows run in this invocation (no row
+# arguments, not a dry run) and passed, with no skipped row, on a CLEAN tree whose HEAD did not move during the
+# run. A partial, dry, skipped, failed or dirty run writes nothing, and rows 21/22 already need their parent rows'
+# evidence to pass (R14-02). The release gate (hooks/lib/completion-audit/deploy-tier.sh) accepts the marker
+# only for a tree that differs from the released one in release-surface files alone.
+enterprise_e2e_matrix_write_release_marker() {
+  local requested_count="$1" dir head file
+  enterprise_e2e_matrix_evidence_finish
+  if [[ "${SB_E2E_MATRIX_DRY_RUN:-}" == "1" || "$requested_count" -ne 0 || "$FAIL_ROWS" -ne 0 \
+        || "$SKIP_ROWS" -ne 0 || "$PASS_ROWS" -ne 22 ]]; then
+    echo "NOTE: inline-e2e-matrix not written: it needs a full, non-dry, no-skip 22/22 run (pass=${PASS_ROWS} skip=${SKIP_ROWS} fail=${FAIL_ROWS})."
+    return 0
+  fi
+  head="$(git -C "$SB_ROOT" rev-parse HEAD 2>/dev/null || true)"
+  if [[ ! "$head" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "NOTE: inline-e2e-matrix not written: ${SB_ROOT} has no commit to bind it to."
+    return 0
+  fi
+  if [[ "$MATRIX_START_DIRTY" == true ]] || enterprise_e2e_matrix_tree_dirty; then
+    echo "NOTE: inline-e2e-matrix not written: ${SB_ROOT} has uncommitted or untracked changes (commit or remove them and re-run)."
+    return 0
+  fi
+  if [[ "$head" != "$MATRIX_START_HEAD" ]]; then
+    echo "NOTE: inline-e2e-matrix not written: HEAD moved during the run (${MATRIX_START_HEAD:0:12} -> ${head:0:12})."
+    return 0
+  fi
+  if ! dir="$(enterprise_e2e_matrix_gate_state_dir 2>/dev/null)" || ! mkdir -p "$dir" 2>/dev/null; then
+    echo "NOTE: inline-e2e-matrix not written: the release gate's state directory cannot be resolved or created."
+    return 0
+  fi
+  file="${dir}/inline-e2e-matrix"
+  rm -f -- "$file"
+  ( umask 077; printf 'matrix=inline-full-surface\ncommit=%s\nwritten_at=%s\nsource=claude-supervised-matrix\n' \
+      "$head" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$file" )
+  echo "inline-e2e-matrix written for commit ${head} (${file})"
 }
 
 matrix_force_rerun() {
@@ -488,12 +587,9 @@ run_matrix_row() {
   fi
 
   prompt="$(build_matrix_prompt "$route" "$prompt_card" "$evidence_path" "$row_num" "$slug")"
-  local matrix_state_file
-  matrix_state_file="$(enterprise_e2e_runtime_state_dir)/state"
-  mkdir -p "$(dirname "$matrix_state_file")" 2>/dev/null || true
-  if ! grep -Fqx -- "$slug" "$matrix_state_file" 2>/dev/null; then
-    printf '%s\n' "$slug" >>"$matrix_state_file" 2>/dev/null || true
-  fi
+  # The row slug is NOT written into the runtime state before the agent turn: row 1 accepts a
+  # routing slug found in that state as proof of routing, so pre-seeding it would pass the row
+  # without the agent routing anything (R14-02).
   local quiet_timeout="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
   if [[ "$row_num" == "1" ]]; then
     quiet_timeout="${SB_E2E_ROW1_QUIET_TIMEOUT:-300}"
@@ -757,14 +853,17 @@ main() {
   if declare -f enterprise_e2e_matrix_batch_pid_file >/dev/null 2>&1; then
     _matrix_batch_pid_file="$(enterprise_e2e_matrix_batch_pid_file)"
     printf '%s\n' "$$" >"$_matrix_batch_pid_file"
+    # The runner records its own identity so a monitor can tell it from a reused pid (R14-10).
+    sb_pid_identity_write "$_matrix_batch_pid_file" "$$" || true
   fi
   setup_workspace
   if [[ -n "$_matrix_batch_pid_file" ]]; then
     # shellcheck disable=SC2064  # capture the pid-file path now, as intended
-    trap "rm -f '$_matrix_batch_pid_file'; cleanup_workspace" EXIT
+    trap "rm -f '$_matrix_batch_pid_file' '${_matrix_batch_pid_file}.id'; enterprise_e2e_matrix_evidence_finish; cleanup_workspace" EXIT
   else
-    trap cleanup_workspace EXIT
+    trap "enterprise_e2e_matrix_evidence_finish; cleanup_workspace" EXIT
   fi
+  enterprise_e2e_matrix_evidence_begin
   enterprise_e2e_matrix_quiesce_orchestrator_queue "$SB_ROOT"
   fi
   WORK_DIR="${WORK_DIR:-$FIXTURE_DIR}"
@@ -845,6 +944,8 @@ main() {
   if [[ "$FAIL_ROWS" -gt 0 ]]; then
     exit 1
   fi
+
+  enterprise_e2e_matrix_write_release_marker "${#requested[@]}"
 
   if [[ "${SB_E2E_MATRIX_FAIL_ON_SKIP:-}" == "1" ]]; then
     local evidence_skip=$((SKIP_ROWS - INSTALL_PASS_SKIP_ROWS))

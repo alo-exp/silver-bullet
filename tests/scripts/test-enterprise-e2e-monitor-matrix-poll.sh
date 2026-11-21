@@ -22,8 +22,7 @@ roster() { # roster ROW:STATUS...  -> matrix log with rows in order
   done
 }
 live_batch() { # a running batch recorded in the pid file
-  echo "${1:-7000}" >"$BPID"
-  f4_alive "${1:-7000}"
+  f4_trust "$BPID" "${1:-7000}"
 }
 
 # --- startup bookkeeping ---
@@ -79,92 +78,67 @@ assert_contains "row 5 attempt log listed with its mtime" "$(cat "$STATUS")" "  
 assert_contains "row 12 attempt log listed with its mtime" "$(cat "$STATUS")" "  row12-attempt.log: 6 bytes (2023-11-14 22:13)"
 assert_not_contains "missing attempt logs not listed" "$(cat "$STATUS")" "row7-attempt.log"
 
-# --- discovery through pgrep: root runner (parent is not a matrix runner) wins ---
+# --- R14-10: a runner is never adopted by command-line matching ---
+# a runner of another checkout, found by every matching pgrep pattern, is neither adopted nor signalled
 f4_mon_reset
 roster 1:PASS
 printf '\n100\n101\n' >"$P/pgrep.(run-enterprise-e2e-matrix"
 echo 1 >"$P/ps.100.ppid"
-echo 100 >"$P/ps.101.ppid"
-echo "/sbin/init" >"$P/ps.1.command"
 echo "bash scripts/run-enterprise-e2e-matrix.sh 1 5" >"$P/ps.100.command"
-f4_alive 100 101
+printf '102\n' >"$P/pgrep.-P 100"
+echo "/opt/bin/claude --model opus" >"$P/ps.102.command"
+f4_alive 100 101 102
 f4_mon_run SB_E2E_MONITOR_AUTO_RESTART=0
-assert_eq "root runner adopted" "100" "$(cat "$BPID")"
-assert_contains "status shows adopted batch" "$(cat "$STATUS")" "batch PID: 100 — RUNNING"
+assert_file_absent "foreign runner is not adopted into the pid file" "$BPID"
+assert_contains "status shows no adopted batch" "$(cat "$STATUS")" "batch PID: none — WAIT_OPERATOR"
+assert_not_contains "foreign runner and its claude child are never signalled" "$(cat "$F4_CALLS")" "kill -TERM 10"
 
+# a bare pid file (no identity record) is not trusted even when the pid is alive
 f4_mon_reset
 roster 1:PASS
-printf '200\n201\n' >"$P/pgrep.(run-enterprise-e2e-matrix"
-echo 200 >"$P/ps.201.ppid"
-echo "bash scripts/enterprise-e2e/matrix.sh 1 5" >"$P/ps.200.command"
-echo 1 >"$P/ps.200.ppid"
-echo "init" >"$P/ps.1.command"
-f4_alive 200 201
+echo 7000 >"$BPID"
+f4_alive 7000
 f4_mon_run SB_E2E_MONITOR_AUTO_RESTART=0
-assert_eq "enterprise-e2e/matrix.sh parent also skipped" "200" "$(cat "$BPID")"
+assert_contains "a bare pid is not a running batch" "$(cat "$STATUS")" "batch PID: none — WAIT_OPERATOR"
 
-# unknown parents: the first candidate is taken
+# a reused pid (same number, different start time) is not our runner
 f4_mon_reset
 roster 1:PASS
-printf '300\n' >"$P/pgrep.(run-enterprise-e2e-matrix"
-f4_alive 300
+f4_trust "$BPID" 7000
+echo "Tue Feb  2 12:00:00 2026" >"$P/ps.7000.lstart"
 f4_mon_run SB_E2E_MONITOR_AUTO_RESTART=0
-assert_eq "candidate with unreadable parent taken" "300" "$(cat "$BPID")"
-
-# only children of matrix runners / dead candidates: nothing adopted
+assert_contains "a reused pid is not a running batch" "$(cat "$STATUS")" "batch PID: none — WAIT_OPERATOR"
+# ... nor when only the process group differs
 f4_mon_reset
 roster 1:PASS
-printf '400\n401\n' >"$P/pgrep.(run-enterprise-e2e-matrix"
-echo 400 >"$P/ps.401.ppid"
-echo 400 >"$P/ps.400.ppid"
-echo "bash scripts/run-enterprise-e2e-matrix.sh" >"$P/ps.400.command"
+f4_trust "$BPID" 7000
+echo 1 >"$P/ps.7000.pgid"
 f4_mon_run SB_E2E_MONITOR_AUTO_RESTART=0
-assert_file_absent "no live root runner -> no pid file" "$BPID"
-assert_contains "operator state" "$(cat "$STATUS")" "batch PID: none — WAIT_OPERATOR"
-assert_contains "operator deferral logged" "$(cat "$POLL")" "defer restart: SB_E2E_MONITOR_AUTO_RESTART=0 — no operator batch"
-
-# stale pid file entry (not alive) falls through to discovery
+assert_contains "a different process group is not our batch" "$(cat "$STATUS")" "batch PID: none — WAIT_OPERATOR"
+# ... nor when the record names another pid
 f4_mon_reset
 roster 1:PASS
-echo 999 >"$BPID"
-printf '500\n' >"$P/pgrep.(run-enterprise-e2e-matrix"
-echo 1 >"$P/ps.500.ppid"
-f4_alive 500
+f4_trust "$BPID" 7000
+echo 7001 >"$BPID"
+f4_alive 7001
 f4_mon_run SB_E2E_MONITOR_AUTO_RESTART=0
-assert_eq "stale pid replaced by discovered runner" "500" "$(cat "$BPID")"
+assert_contains "a record for another pid is not trusted" "$(cat "$STATUS")" "batch PID: none — WAIT_OPERATOR"
 
-# --- auto-restart off: adopt a manually started batch ---
-f4_mon_reset
-roster 1:PASS
-printf '600\n' >"$P/pgrep.(run-enterprise-e2e-matrix"
-f4_alive 600
-# discovery filtered it out (parent is a runner) but any_matrix_runner_pid sees it
-echo 600 >"$P/ps.600.ppid"
-echo "bash scripts/run-enterprise-e2e-matrix.sh" >"$P/ps.600.command"
-f4_mon_run SB_E2E_MONITOR_AUTO_RESTART=0
-assert_contains "manual batch adopted" "$(cat "$POLL")" "adopt manual batch pid 600 (SB_E2E_MONITOR_AUTO_RESTART=0)"
-assert_contains "adopted batch is RUNNING" "$(cat "$STATUS")" "batch PID: 600 — RUNNING"
-assert_eq "adopted pid persisted" "600" "$(cat "$BPID")"
-
-# --- live-test driver active ---
+# --- live-test driver active: its runner is trusted only through its own identity record ---
 f4_mon_reset
 roster 1:PASS
 echo "9000 run-enterprise-e2e-live-test.sh" >"$P/pgrep.live-test"
 f4_mon_run
-assert_contains "pre-matrix live driver defers duplicate batch" "$(cat "$POLL")" "defer restart: live-test driver pre-matrix (skip duplicate FORCE batch)"
+assert_contains "live driver without a trusted runner defers" "$(cat "$POLL")" "defer restart: live-test driver active"
 assert_contains "state WAIT_LIVE_TEST" "$(cat "$STATUS")" "— WAIT_LIVE_TEST"
 assert_file_absent "no batch started" "$P/batch-ran"
 
 f4_mon_reset
 roster 1:PASS
 echo "9000 run-enterprise-e2e-live-test.sh" >"$P/pgrep.live-test"
-printf '700\n' >"$P/pgrep.(run-enterprise-e2e-matrix"
-echo 700 >"$P/ps.700.ppid"
-echo "bash scripts/run-enterprise-e2e-matrix.sh" >"$P/ps.700.command"
-f4_alive 700
+live_batch 700
 f4_mon_run
-assert_contains "live driver adopts matrix pid" "$(cat "$POLL")" "defer restart: live-test driver active — adopted matrix pid 700"
-assert_contains "adopted pid RUNNING" "$(cat "$STATUS")" "batch PID: 700 — RUNNING"
+assert_contains "the driver's own runner (identity record) is RUNNING" "$(cat "$STATUS")" "batch PID: 700 — RUNNING"
 
 # --- growth / stall bookkeeping ---
 f4_mon_reset
@@ -262,18 +236,6 @@ h=codex
   roster 1:PASS
   f4_mon_run SB_E2E_LIVE_RUNTIME=$h
   assert_contains "$h without children tolerated" "$(cat "$STATUS")" "batch PID: 7000 — RUNNING"
-
-# --- tr failing on the pid file: discovery falls back to pgrep ---
-f4_mon_reset
-roster 1:PASS
-echo 7777 >"$BPID"
-f4_alive 7777 8888
-printf '8888\n' >"$P/pgrep.(run-enterprise-e2e-matrix"
-REAL_TR="$(command -v tr)"
-tl_stub tr "in=\"\$(cat)\"; [[ \"\$in\" == 7777* ]] && exit 1; printf '%s' \"\$in\" | $REAL_TR \"\$@\""
-f4_mon_run SB_E2E_MONITOR_AUTO_RESTART=0
-rm -f "$TL_BIN/tr"
-assert_eq "unreadable pid file replaced through pgrep discovery" "8888" "$(cat "$BPID")"
 
 # --- cd failure ---
 f4_mon_reset
