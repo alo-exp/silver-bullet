@@ -421,7 +421,7 @@ sb_orchestrator_prompt_provenance_ok() {
     recorded="$(jq -r '.session_id // ""' "$(sb_orchestrator_parent_session_file)" 2>/dev/null)"
     if [[ -z "$transcript" || -z "$recorded" || "$recorded" != "$sid" ]]; then
       spawned="$(jq -r '.spawned_at // "unknown time"' "$(sb_orchestrator_worker_marker_file)" 2>/dev/null)"
-      SB_PROVENANCE_REFUSAL="a Task worker marker is active (spawned ${spawned}; it lapses after 2 hours or when the worker finishes) and this prompt cannot be tied to the recorded parent session; if the subagent was interrupted, delete $(sb_orchestrator_worker_marker_file) and retry"
+      SB_PROVENANCE_REFUSAL="a Task worker marker is active (spawned ${spawned}; it lapses after its 2 hour TTL; a finished worker does not clear it) and this prompt cannot be tied to the recorded parent session; if no subagent is running, the user can delete $(sb_orchestrator_worker_marker_file) and retry, or send the prompt from the recorded parent session"
       return 1
     fi
   fi

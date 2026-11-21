@@ -119,7 +119,12 @@ assert_eq "Bash git status allowed" "0|" "$TL_STATUS|$TL_OUT"
 mkdir -p "$PROJ/src/inner"
 for deny in "git restore ." "git checkout ." "git checkout -- ." "git checkout other-branch" "git switch other-branch" \
             "git checkout -b copy main" "git -C src checkout ." "cd src && git checkout ." "git -C $PROJ checkout other-branch" \
-            "git --no-pager checkout other-branch" "git checkout HEAD~1 -- src" "git -c core.x=y checkout ." "git restore src"; do
+            "git --no-pager checkout other-branch" "git checkout HEAD~1 -- src" "git -c core.x=y checkout ." "git restore src" \
+            "git checkout -f" "git checkout --force" "git checkout -" "git switch -" "git switch --discard-changes other" "git checkout -m other" \
+            "git checkout --pathspec-from-file=list.txt" "git restore --pathspec-from-file=list.txt" \
+            "git -c alias.co=checkout co ." "git -calias.co=checkout co main" "git config alias.co checkout" "git config --global alias.co checkout" \
+            "git read-tree -u --reset HEAD" "git read-tree -mu HEAD" "git checkout-index -a -f" "git checkout-index -f src/owned.txt" \
+            "git sparse-checkout set docs" "git submodule update --init" "git worktree add src/wt" "git worktree add -b nb src/wt2"; do
   tl_run_hook "$HOOK" "$(bash_json "$deny")"
   assert_eq "delegation active, owned tree overwritten: $deny" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
 done
@@ -129,7 +134,9 @@ assert_eq "delegation active, -C directory that cannot be resolved (symlink loop
 rm -f "$PROJ/docs/loop"
 for allow in "git diff" "git log --oneline" "ls src" "grep -rn x src" "git checkout -b feature" "git switch -c feature" "git checkout -- docs/free.md" \
              "git restore docs/free.md" "cd docs && git checkout ." "git -C docs checkout ." "git -C /abs/elsewhere checkout ." "git add -A" "git commit -m wip" "git branch -a" \
-             "git checkout" "git -C docs status" "cp docs/free.md docs/copy.md"; do
+             "git checkout" "git -C docs status" "cp docs/free.md docs/copy.md" \
+             "git checkout -b feature" "git checkout -f -- docs/free.md" "git config user.name x" "git config --get alias.co" "git read-tree HEAD" \
+             "git sparse-checkout list" "git submodule status" "git worktree add ../wt-elsewhere" "git worktree list" "git restore --staged docs/free.md"; do
   tl_run_hook "$HOOK" "$(bash_json "$allow")"
   assert_eq "delegation active, honest command allowed: $allow" "0|" "$TL_STATUS|$TL_OUT"
 done
