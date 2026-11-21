@@ -5,6 +5,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 # shellcheck source=../../hooks/lib/doc-scheme-gate.sh
 source "$TL_REPO_ROOT/hooks/lib/doc-scheme-gate.sh"
+# the sealed-state accessor the hooks that call the gate have loaded
+# shellcheck source=../../hooks/lib/integrity.sh
+source "$TL_REPO_ROOT/hooks/lib/integrity.sh"
 
 ST="$SB_RUNTIME_STATE_DIR"
 R="$TL_TMP/repo"
@@ -145,8 +148,29 @@ assert_file_absent "enforce: disabled in the contract" "$EMITTED"
 setup_repo; jq 'del(.task_granularity)' "$R/docs/task-doc-checklist.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/task-doc-checklist.json"; touch -d "@$NEW" "$R/docs/task-doc-checklist.json"; run_enforce
 assert_contains "enforce: missing granularity" "$(cat "$EMITTED")" "Missing numeric task granularity"
 assert_contains "enforce: lists enforced levels" "$(cat "$EMITTED")" "Contract enforces these levels: 2 3."
-setup_repo; jq '.task_granularity=1' "$R/docs/task-doc-checklist.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/task-doc-checklist.json"; run_enforce
-assert_file_absent "enforce: out-of-scope granularity not gated" "$EMITTED"
+# R9-09: the granularity is written by the agent, so it cannot switch the gate off by itself: an out-of-scope value
+# is honoured only when the recorded state shows the session ran the sanctioned small-change flow (silver-fast).
+low_gran_empty() { # a granularity-1 checklist with no doc coverage at all
+  jq '.task_granularity=1 | .docs={}' "$R/docs/task-doc-checklist.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/task-doc-checklist.json"
+  touch -d "@$NEW" "$R/docs/task-doc-checklist.json"
+}
+setup_repo; low_gran_empty; rm -f "$ST/state"; run_enforce
+assert_contains "enforce: an agent-set out-of-scope granularity does not skip the gate (R9-09)" "$(cat "$EMITTED")" "Missing checklist entry: docs/CHANGELOG.md"
+setup_repo; low_gran_empty; printf 'silver-quality-gates\nsilver-fast\n' >"$ST/state"; run_enforce
+assert_file_absent "enforce: granularity out of scope is honoured for a recorded silver-fast session" "$EMITTED"
+setup_repo; low_gran_empty; printf 'silver-fast-not-really\n' >"$ST/state"; run_enforce
+assert_contains "enforce: only the exact silver-fast record counts" "$(cat "$EMITTED")" "Missing checklist entry"
+setup_repo; low_gran_empty; printf 'silver-fast\n' >"$TL_TMP/outside-state"; ER=0; (SILVER_BULLET_STATE_FILE="$TL_TMP/outside-state" sb_doc_scheme_gate_enforce task "$R" "$ST" emit) || ER=$?
+assert_contains "enforce: a state file outside the state directory is ignored" "$(cat "$EMITTED")" "Missing checklist entry"
+setup_repo; low_gran_empty; printf 'silver-fast\n' >"$ST/state-x"; ER=0; (SILVER_BULLET_STATE_FILE="$ST/state-x" sb_doc_scheme_gate_enforce task "$R" "$ST" emit) || ER=$?
+assert_file_absent "enforce: SILVER_BULLET_STATE_FILE inside the state directory is read" "$EMITTED"
+rm -f "$ST/state" "$ST/state-x"
+setup_repo; jq '.task_granularity=1' "$R/docs/task-doc-checklist.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/task-doc-checklist.json"; touch -d "@$NEW" "$R/docs/task-doc-checklist.json"; run_enforce
+assert_file_absent "enforce: a complete checklist at an out-of-scope granularity still passes" "$EMITTED"
+setup_repo; low_gran_empty; printf 'silver-fast\n' >"$ST/state"
+(unset -f sb_integrity_state_contents; ER=0; sb_doc_scheme_gate_enforce task "$R" "$ST" emit) || true
+assert_contains "enforce: without the verified-state accessor nothing counts as recorded" "$(cat "$EMITTED")" "Missing checklist entry"
+rm -f "$ST/state"
 setup_repo; jq '.task_granularity="two"' "$R/docs/task-doc-checklist.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/task-doc-checklist.json"; run_enforce
 assert_contains "enforce: non-numeric granularity" "$(cat "$EMITTED")" "Missing numeric task granularity"
 setup_repo; jq 'del(.enforcement.granularity_levels)' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; run_enforce
@@ -183,6 +207,45 @@ assert_contains "enforce: missing section entry" "$(cat "$EMITTED")" "Missing se
 setup_repo; jq '.sections["docs/CHANGELOG.md"].Added="maybe"' "$R/docs/task-doc-checklist.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/task-doc-checklist.json"; touch -d "@$NEW" "$R/docs/task-doc-checklist.json"; run_enforce
 assert_contains "enforce: invalid section status" "$(cat "$EMITTED")" "Invalid section status: docs/CHANGELOG.md :: Added -> maybe"
 assert_contains "enforce: remediation command names the task" "$(cat "$EMITTED")" "--task T-1 --gaps"
+
+# R9-09: removing or weakening the scheme files is detected against what git has at HEAD
+reset_docs() { rm -f "$EMITTED"; git -C "$R" checkout -q -- docs; echo more >>"$R/docs/CHANGELOG.md"; touch -d "@$NEW" "$R/docs/CHANGELOG.md" "$R/docs/task-doc-checklist.json"; }
+setup_repo; git -C "$R" init -q; git -C "$R" add -A; git -C "$R" -c user.email=a@b -c user.name=n commit -q -m base
+echo more >>"$R/docs/CHANGELOG.md"; touch -d "@$NEW" "$R/docs/CHANGELOG.md"
+rm -f "$R/docs/doc-scheme.md" "$R/docs/doc-scheme.json"; run_enforce
+assert_contains "enforce: deleting both scheme files does not switch the gate off (R9-09)" "$(cat "$EMITTED")" "Missing required policy file: docs/doc-scheme.md"
+reset_docs
+rm -f "$R/docs/doc-scheme.json"; run_enforce
+assert_contains "enforce: deleting the contract of a governed repo is a gap" "$(cat "$EMITTED")" "Missing required contract file"
+reset_docs
+jq '.enforcement.enabled=false' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; run_enforce
+assert_contains "enforce: switching enforcement off against HEAD is a gap (R9-09)" "$(cat "$EMITTED")" "weakens the contract committed at HEAD"
+reset_docs
+jq 'del(.enforcement.enabled)' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; run_enforce
+assert_file_absent "enforce: a missing enabled key means enabled, as at HEAD" "$EMITTED"
+reset_docs
+jq '.enforcement.granularity_levels=[3]' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; run_enforce
+assert_contains "enforce: narrowing the enforced levels against HEAD is a gap (R9-09)" "$(cat "$EMITTED")" "weakens the contract committed at HEAD"
+reset_docs
+jq '.enforcement.granularity_levels=[2,3,4]' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; run_enforce
+assert_file_absent "enforce: widening the enforced levels is fine" "$EMITTED"
+reset_docs
+jq 'del(.enforcement.granularity_levels)' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; run_enforce
+assert_file_absent "enforce: dropping the levels falls back to the defaults, which HEAD also had" "$EMITTED"
+reset_docs
+jq '.mandatory_updated_docs=[]' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; run_enforce
+assert_contains "enforce: dropping a mandatory doc against HEAD is a gap (R9-09)" "$(cat "$EMITTED")" "weakens the contract committed at HEAD"
+reset_docs
+jq '.required_docs += [{"key":"docs/NEW.md","mandatory_updated":false,"required_sections":[]}]' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"
+jq '.docs["docs/NEW.md"]="not-needed:x"' "$R/docs/task-doc-checklist.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/task-doc-checklist.json"; touch -d "@$NEW" "$R/docs/task-doc-checklist.json"; run_enforce
+assert_file_absent "enforce: adding a governed doc is not weakening" "$EMITTED"
+reset_docs
+echo '{ not json' >"$R/docs/doc-scheme.json"; run_enforce
+assert_contains "enforce: a malformed contract is still reported as malformed" "$(cat "$EMITTED")" "malformed"
+reset_docs
+git -C "$R" rm -q --cached docs/doc-scheme.md docs/doc-scheme.json; git -C "$R" -c user.email=a@b -c user.name=n commit -q -m untrack
+rm -f "$EMITTED" "$R/docs/doc-scheme.md" "$R/docs/doc-scheme.json"; run_enforce
+assert_file_absent "enforce: a repo whose scheme git does not track is not governed once the files are gone" "$EMITTED"
 
 # R1-17: a touch is not an update when git can say otherwise
 setup_repo
