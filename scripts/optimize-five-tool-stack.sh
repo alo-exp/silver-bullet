@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
 # optimize-five-tool-stack.sh — orchestrate SB five-tool routed profile.
 #
-# Replaces ad-hoc optimize-rtk-context-mode.sh when LeanCTX is opted in (conflict #9).
+# Replaces ad-hoc optimize-rtk-context-mode.sh when the user consented to LeanCTX (conflict #9).
+# Every step is limited to the tools the user granted "wire" for (docs/CONSENT.md); the project's
+# .silver-bullet.json is only a recommendation and is the only config file this script writes.
 # Gates RTK+CM optimize behind this script so shell/sandbox/FTS surfaces stay exclusive.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# One backup per run: sb_host_config keeps the user's file as it was before the run's first change.
+export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 INSTALL_LEANCTX="${SCRIPT_DIR}/install-leanctx-sb.sh"
 OPTIMIZE_RTCM="${SCRIPT_DIR}/optimize-rtk-context-mode.sh"
 OPTIMIZE_SYNERGY="${SCRIPT_DIR}/sb-optimize-stack.sh"
-INSTALL_CURSOR_RULES="${SCRIPT_DIR}/install-recommended-tools-cursor.sh"
 PATCH_MCP="${SCRIPT_DIR}/lib/global-toolstack/patch-mcp.py"
 LIB="${REPO_ROOT}/hooks/lib/rtk-cm-global.sh"
+CONSENT_LIB="${REPO_ROOT}/hooks/lib/user-consent.sh"
 
 HOST=""
 DRY_RUN=0
@@ -36,7 +40,7 @@ When leanctx.enabled_by_user is true, callers MUST use this script instead of
 optimize-rtk-context-mode.sh alone (conflict #9).
 
 Options:
-  --host <cursor|claude|codex|opencode|pi|all> Target host (required)
+  --host <claude|codex|opencode|pi|all> Target host (required)
   --project-root <path>                       Canonical SB project root (required)
   --dry-run                                        Print actions without writes
   --skip-rtcm                                      Skip RTK+CM optimize helper
@@ -48,6 +52,15 @@ EOF
 
 # shellcheck source=../hooks/lib/rtk-cm-global.sh
 source "$LIB"
+# shellcheck source=../hooks/lib/user-consent.sh
+source "$CONSENT_LIB"
+
+# tool_wired TOOL: the user consented to wiring TOOL into host configuration.
+tool_wired() { sb_consent_granted "$1" wire; }
+# flag TOOL: 1 when TOOL is wired, else 0 (for the RT_PATCH_* switches).
+flag() { if tool_wired "$1"; then printf '1'; else printf '0'; fi; }
+# install_flag TOOL: 1 when TOOL is wired AND installable (Pi lists an npm package only then).
+install_flag() { if tool_wired "$1" && sb_consent_granted "$1" install; then printf '1'; else printf '0'; fi; }
 
 log() { printf '%s\n' "$*"; }
 warn() { printf 'WARN: %s\n' "$*" >&2; }
@@ -65,10 +78,6 @@ detect_host() {
     printf '%s' "$RT_HOST"
     return 0
   fi
-  if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]] || [[ -d "${HOME}/.cursor" ]]; then
-    printf '%s' "cursor"
-    return 0
-  fi
   if [[ -n "${CODEX_HOME:-}" ]] || [[ -d "${HOME}/.codex" ]]; then
     printf '%s' "codex"
     return 0
@@ -81,36 +90,33 @@ detect_host() {
     printf '%s' "pi"
     return 0
   fi
-  if [[ -d "${HOME}/.codex" ]]; then
+  if [[ -d "${HOME}/.claude" ]]; then
     printf '%s' "claude"
     return 0
   fi
-  printf '%s' "cursor"
+  printf '%s' "none"
 }
 
+# The project's own file; never Silver Bullet's bundled config or template (those are not the
+# user's choices and must not be rewritten).
 config_file() {
   if [[ -n "$PROJECT_ROOT" && -f "${PROJECT_ROOT}/.silver-bullet.json" ]]; then
     printf '%s' "${PROJECT_ROOT}/.silver-bullet.json"
-  elif [[ -f "${REPO_ROOT}/.silver-bullet.json" ]]; then
-    printf '%s' "${REPO_ROOT}/.silver-bullet.json"
-  else
-    printf '%s' "${REPO_ROOT}/templates/silver-bullet.config.json.default"
   fi
 }
 
+# The user consented to LeanCTX and the project did not turn it off.
 leanctx_opted_in() {
   local cfg
+  tool_wired leanctx || return 1
   cfg="$(config_file)"
-  [[ -f "$cfg" ]] || return 1
-  local val
-  val="$(jq -r '.recommended_tools.leanctx.enabled_by_user // "null"' "$cfg" 2>/dev/null || echo null)"
-  [[ "$val" == "true" ]]
+  [[ -z "$cfg" ]] || [[ "$(jq -r '.recommended_tools.leanctx.enabled_by_user' "$cfg" 2>/dev/null)" != "false" ]]
 }
 
 five_tool_profile_active() {
   local cfg
   cfg="$(config_file)"
-  [[ -f "$cfg" ]] || return 1
+  [[ -n "$cfg" && -f "$cfg" ]] || return 1
   local profile
   profile="$(jq -r '.recommended_tools.leanctx.optimization_profile // "five_tool_routed"' "$cfg" 2>/dev/null || echo five_tool_routed)"
   [[ "$profile" == "five_tool_routed" ]]
@@ -119,13 +125,13 @@ five_tool_profile_active() {
 apply_profile_metadata() {
   local cfg
   cfg="$(config_file)"
-  [[ -f "$cfg" ]] || return 0
+  [[ -n "$cfg" && -f "$cfg" ]] || return 0
   if [[ "$DRY_RUN" -eq 1 ]]; then
     log "DRY-RUN: stamp optimization_profiles.five_tool_routed metadata"
     return 0
   fi
   local tmp
-  tmp="$(mktemp)"
+  tmp="$(mktemp "${TMPDIR:-/tmp}/sb-five-tool.XXXXXX")"
   jq '
     .optimization_profiles.five_tool_routed = (
       .optimization_profiles.five_tool_routed // {
@@ -150,7 +156,10 @@ apply_profile_metadata() {
     | .recommended_tools.leanctx.stack_mode = "parallel_routed"
     | .recommended_tools.leanctx.primary_fts = "context_mode"
   ' "$cfg" >"$tmp"
-  mv "$tmp" "$cfg"
+  # Atomic, through a symlink, mode kept, previous content in .silver-bullet.json.sb-backup.
+  python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import sb_host_config as c; c.write_atomic(sys.argv[2], open(sys.argv[3], "rb").read())' \
+    "${SCRIPT_DIR}/lib" "$cfg" "$tmp"
+  rm -f -- "$tmp"
   log "OK: five_tool_routed profile metadata applied to .silver-bullet.json"
 }
 
@@ -163,30 +172,26 @@ optimize_host() {
   [[ "$DRY_RUN" -eq 1 ]] && leanctx_args+=(--dry-run)
   run_cmd "${leanctx_args[@]}"
 
-  if [[ "$SKIP_RTCM" -eq 0 ]]; then
+  if [[ "$SKIP_RTCM" -eq 0 ]] && { tool_wired rtk || tool_wired context_mode; }; then
     local rtcm_args=(bash "$OPTIMIZE_RTCM" --host "$h" --project-root "${PROJECT_ROOT:-$REPO_ROOT}" --skip-cm-doctor)
     [[ "$DRY_RUN" -eq 1 ]] && rtcm_args+=(--dry-run)
     run_cmd "${rtcm_args[@]}"
   else
-    log "SKIP: optimize-rtk-context-mode.sh"
-  fi
-
-  if [[ "$h" == "cursor" ]]; then
-    run_cmd bash "$INSTALL_CURSOR_RULES" $([[ "$DRY_RUN" -eq 1 ]] && printf '%s' '--global' || true)
+    log "SKIP: optimize-rtk-context-mode.sh (skipped, or neither RTK nor Context Mode is consented)"
   fi
 
   if [[ "$SKIP_SYNERGY" -eq 0 || "$SKIP_RTCM" -eq 0 ]]; then
     local patch_args=(python3 "$PATCH_MCP")
     local patch_env=(RT_HOST="$h" TOOLSTACK_REPO_ROOT="$REPO_ROOT")
     if [[ "$SKIP_SYNERGY" -eq 0 ]]; then
-      patch_env+=(RT_PATCH_GRAPHIFY=1 RT_PATCH_AGENTMEMORY=1)
+      patch_env+=("RT_PATCH_GRAPHIFY=$(flag graphify)" "RT_PATCH_AGENTMEMORY=$(flag agentmemory)")
     else
       patch_env+=(RT_PATCH_GRAPHIFY=0 RT_PATCH_AGENTMEMORY=0)
     fi
     if [[ "$SKIP_RTCM" -eq 0 ]]; then
-      patch_env+=(RT_PATCH_CONTEXT_MODE=1 RT_PATCH_LEANCTX=1)
+      patch_env+=("RT_PATCH_CONTEXT_MODE=$(flag context_mode)" "RT_PATCH_LEANCTX=$(flag leanctx)" "RT_LEANCTX_ALLOW_INSTALL=$(install_flag leanctx)")
     else
-      patch_env+=(RT_PATCH_CONTEXT_MODE=0 RT_PATCH_LEANCTX=0)
+      patch_env+=(RT_PATCH_CONTEXT_MODE=0 RT_PATCH_LEANCTX=0 RT_LEANCTX_ALLOW_INSTALL=0)
     fi
     run_cmd env "${patch_env[@]}" "${patch_args[@]}"
   fi
@@ -218,9 +223,13 @@ fi
 PROJECT_ROOT="$(cd "$PROJECT_ROOT" && pwd -P)"
 
 [[ "$HOST" == "auto" ]] && HOST="$(detect_host)"
+if [[ "$HOST" == "none" ]]; then
+  log "No host detected (no Claude, Codex, OpenCode or Pi config found): nothing written. Pass --host <name> to choose one."
+  exit 0
+fi
 
 if [[ "$FORCE" -eq 0 ]] && ! leanctx_opted_in; then
-  log "leanctx not opted in (recommended_tools.leanctx.enabled_by_user != true)"
+  log "LeanCTX is not consented (bash ${SCRIPT_DIR}/sb-consent.sh grant leanctx --all-projects --capabilities wire)"
   log "Use optimize-rtk-context-mode.sh for RTK+CM only, or pass --force"
   exit 0
 fi
@@ -232,11 +241,11 @@ apply_profile_metadata
 
 case "$HOST" in
   all)
-    for h in cursor claude codex opencode pi; do
+    for h in claude codex opencode pi; do
       optimize_host "$h"
     done
     ;;
-  cursor|claude|codex|opencode|pi)
+  claude|codex|opencode|pi)
     optimize_host "$HOST"
     ;;
   *)
@@ -246,10 +255,16 @@ case "$HOST" in
 esac
 
 if [[ "$SKIP_SYNERGY" -eq 0 ]]; then
-  synergy_args=(bash "$OPTIMIZE_SYNERGY" --apply)
+  synergy_args=(bash "$OPTIMIZE_SYNERGY" --apply --project-root "$PROJECT_ROOT")
   [[ "$DRY_RUN" -eq 1 ]] && synergy_args+=(--dry-run)
   [[ "$HOST" != "auto" && "$HOST" != "all" ]] && synergy_args+=(--host "$HOST")
-  run_cmd "${synergy_args[@]}"
+  # --apply exits non-zero when the stack score has critical gaps (a missing opted-in
+  # CLI, no index). That is a report, not a reason to skip the remaining steps.
+  synergy_rc=0
+  run_cmd "${synergy_args[@]}" || synergy_rc=$?
+  if [[ "$synergy_rc" -ne 0 ]]; then
+    warn "sb-optimize-stack.sh --apply reported critical gaps (exit ${synergy_rc}); run: bash scripts/sb-optimize-stack.sh --verify"
+  fi
 else
   log "SKIP: sb-optimize-stack.sh (Graphify + agentmemory)"
 fi

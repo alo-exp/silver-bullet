@@ -25,11 +25,21 @@ fi
 
 PROJ_ROOT="$(dirname "$CONFIG")"
 
+# Validate before any mutation: a symlinked or unparseable config must stop the migration whole.
+if [[ -L "$CONFIG" ]]; then
+  echo "Refusing to migrate: $CONFIG is a symlink" >&2
+  exit 1
+fi
+if command -v jq >/dev/null 2>&1 && ! jq -e . "$CONFIG" >/dev/null 2>&1; then
+  echo "Refusing to migrate: $CONFIG is not valid JSON" >&2
+  exit 1
+fi
+
 bash "$PLUGIN_ROOT/scripts/sb-migrate-config.sh" "$PROJ_ROOT"
 bash "$PLUGIN_ROOT/scripts/sb-migrate-orchestrator-parent.sh" "$PROJ_ROOT"
 
 mkdir -p "$PROJ_ROOT/scripts"
-if [[ ! -x "$PROJ_ROOT/scripts/workflows.sh" ]]; then
+if [[ ! -e "$PROJ_ROOT/scripts/workflows.sh" ]]; then
   cp "$PLUGIN_ROOT/scripts/workflows.sh" "$PROJ_ROOT/scripts/workflows.sh"
   chmod +x "$PROJ_ROOT/scripts/workflows.sh"
   echo "Installed scripts/workflows.sh"
@@ -51,21 +61,38 @@ done
 
 GITIGNORE="$PROJ_ROOT/.gitignore"
 MARKER='.planning/workflows/'
-if [[ -f "$GITIGNORE" ]]; then
-  if ! grep -qF "$MARKER" "$GITIGNORE" 2>/dev/null; then
-    {
-      echo ""
-      echo "# Composed-workflow tracker — local runtime state (Silver Bullet)"
-      echo "$MARKER"
-    } >>"$GITIGNORE"
-    echo "Added $MARKER to .gitignore"
-  fi
+LOCKS_MARKER='.planning/.phase-locks.json*'
+if [[ -L "$GITIGNORE" ]]; then
+  # Never append through a symlink (it may point outside the project, or dangle): the user adds the entries.
+  echo "Skipped .gitignore: $GITIGNORE is a symlink. Add $MARKER and $LOCKS_MARKER to it yourself."
 else
-  cat >"$GITIGNORE" <<'EOF'
+  if [[ -f "$GITIGNORE" ]]; then
+    if ! grep -qF "$MARKER" "$GITIGNORE" 2>/dev/null; then
+      {
+        echo ""
+        echo "# Composed-workflow tracker — local runtime state (Silver Bullet)"
+        echo "$MARKER"
+      } >>"$GITIGNORE"
+      echo "Added $MARKER to .gitignore"
+    fi
+  else
+    cat >"$GITIGNORE" <<'EOF'
 # Composed-workflow tracker — local runtime state (Silver Bullet)
 .planning/workflows/
 EOF
-  echo "Created .gitignore with $MARKER"
+    echo "Created .gitignore with $MARKER"
+  fi
+
+  # The phase-lock file (and its .lock sidecar) is per-checkout runtime state: a committed copy would
+  # carry another machine's locks onto every clone.
+  if ! grep -qF "$LOCKS_MARKER" "$GITIGNORE" 2>/dev/null; then
+    {
+      echo ""
+      echo "# Phase-lock runtime state — local, never committed (Silver Bullet)"
+      echo "$LOCKS_MARKER"
+    } >>"$GITIGNORE"
+    echo "Added $LOCKS_MARKER to .gitignore"
+  fi
 fi
 
 echo "Project surface migration complete for $PROJ_ROOT"

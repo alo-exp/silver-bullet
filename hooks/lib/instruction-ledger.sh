@@ -10,7 +10,18 @@
 # direct Edit/Write of the ledger file remains blocked by state tamper guards.
 
 sb_instruction_ledger_file() {
-  printf '%s/instruction-ledger.json' "${SB_RUNTIME_STATE_DIR:-/tmp}"
+  local newest
+  [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 1
+  if [[ -z "${SB_SESSION_KEY:-}" && ! -f "$SB_RUNTIME_STATE_DIR/instruction-ledger.json" ]]; then
+    # No session key (the resolver CLI): the most recent per-session ledger.
+    # shellcheck disable=SC2012  # file names here are our own [A-Za-z0-9_-] session keys
+    newest="$(ls -t "$SB_RUNTIME_STATE_DIR"/instruction-ledger-*.json 2>/dev/null | head -1)"
+    if [[ -n "$newest" ]]; then
+      printf '%s' "$newest"
+      return 0
+    fi
+  fi
+  printf '%s/instruction-ledger%s.json' "$SB_RUNTIME_STATE_DIR" "${SB_SESSION_KEY:+-$SB_SESSION_KEY}"
 }
 
 sb_instruction_ledger_clear() {
@@ -27,7 +38,7 @@ sb_instruction_ledger_current_scope() {
   SB_INSTRUCTION_LEDGER_SCOPE_WORKTREE=""
   SB_INSTRUCTION_LEDGER_SCOPE_BRANCH="$(git -C "$root" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
   if [[ -n "$SB_INSTRUCTION_LEDGER_SCOPE_BRANCH" ]] \
-    && ! printf '%s' "$SB_INSTRUCTION_LEDGER_SCOPE_BRANCH" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+    && ! grep -qE '^[a-zA-Z0-9/_.-]+$' <<<"$SB_INSTRUCTION_LEDGER_SCOPE_BRANCH"; then
     SB_INSTRUCTION_LEDGER_SCOPE_BRANCH=""
   fi
   if declare -f sb_branch_scope_git_toplevel >/dev/null 2>&1; then
@@ -50,7 +61,7 @@ sb_instruction_ledger_scope_mismatch() {
   worktree="${SB_INSTRUCTION_LEDGER_SCOPE_WORKTREE:-}"
   [[ -n "$branch" ]] || return 1
   lb="$(jq -r '.scope.branch // empty' "$outfile" 2>/dev/null || true)"
-  lw="$(jq -r '.scope.worktree // empty' "$outfile" 2>/dev/null || true)"
+  lw="$(jq -r '.scope.worktree // empty' "$outfile" 2>/dev/null)"
   # Unscoped legacy ledger: do not treat as mismatch (same-session still valid).
   [[ -n "$lb" || -n "$lw" ]] || return 1
   if [[ -n "$lb" && "$lb" != "$branch" ]]; then
@@ -62,18 +73,39 @@ sb_instruction_ledger_scope_mismatch() {
   return 1
 }
 
-# If ledger is foreign to this branch/worktree, clear it so Stop is not deadlocked.
+# Reconcile the ledger's scope stamp with the current git scope.
+#   - same worktree, different branch: the user switched branches inside the session. The
+#     unresolved items are still the user's, so the ledger is KEPT and re-stamped (R2-11);
+#   - a different worktree: a foreign ledger that must not deadlock this Stop (SB-BUG-C #249),
+#     so it is cleared.
+# Status 0 when the ledger was cleared, 1 otherwise.
 sb_instruction_ledger_drop_if_scope_mismatch() {
-  if sb_instruction_ledger_scope_mismatch "${1:-$PWD}"; then
-    sb_instruction_ledger_clear
-    return 0
+  local outfile lw
+  sb_instruction_ledger_scope_mismatch "${1:-$PWD}" || return 1
+  outfile="$(sb_instruction_ledger_file)"
+  lw="$(jq -r '.scope.worktree // empty' "$outfile" 2>/dev/null)"
+  if [[ -z "$lw" || "$lw" == "${SB_INSTRUCTION_LEDGER_SCOPE_WORKTREE:-}" ]]; then
+    # The branch name was validated to [a-zA-Z0-9/_.-] by sb_instruction_ledger_current_scope.
+    sb_instruction_ledger_jq_update "$outfile" ".scope.branch = \"${SB_INSTRUCTION_LEDGER_SCOPE_BRANCH}\""
+    return 1
   fi
-  return 1
+  sb_instruction_ledger_clear
+  return 0
+}
+
+# Absolute path of the sanctioned resolver, resolved from this plugin's own tree. The project's
+# relative scripts/ directory is the user's, not Silver Bullet's (R2-11).
+sb_instruction_ledger_resolver_path() {
+  local here
+  here="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  printf '%s/scripts/resolve-instruction-ledger.sh' "$here"
 }
 
 sb_instruction_ledger_prompt_id() {
   local prompt="$1"
-  if command -v shasum >/dev/null 2>&1; then
+  if command -v sha256sum >/dev/null 2>&1; then
+    printf '%s' "$prompt" | sha256sum 2>/dev/null | awk '{print substr($1,1,12)}'
+  elif command -v shasum >/dev/null 2>&1; then
     printf '%s' "$prompt" | shasum -a 256 2>/dev/null | awk '{print substr($1,1,12)}'
   else
     printf '%s' "$prompt" | cksum 2>/dev/null | awk '{print $1}'
@@ -152,6 +184,7 @@ sb_prompt_is_agent_report() {
   # hooks running under `set -e` with an ERR trap, where a failing AND-list is
   # needless risk.
   local marker
+  # shellcheck disable=SC2016  # backticks are literal regex characters
   for marker in \
     '^[[:space:]]*(Report from|##[[:space:]]*Report)' \
     'git log --oneline|git status --porcelain' \
@@ -159,7 +192,7 @@ sb_prompt_is_agent_report() {
     'exit 0|_EXIT=[0-9]' \
     '[0-9a-f]{7,}\.\.[0-9a-f]{7,}|`[0-9a-f]{7,}`[[:space:]]*→[[:space:]]*`[0-9a-f]{7,}`'
   do
-    if printf '%s' "$prompt" | grep -Eq "$marker" 2>/dev/null; then
+    if grep -Eq "$marker" <<<"$prompt" 2>/dev/null; then
       hits=$((hits + 1))
     fi
   done
@@ -209,7 +242,7 @@ sb_instruction_ledger_seed_from_prompt() {
 
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   children_json="$(jq -n --argjson labels "$bullets" '
-    [$labels[] | {id: (. | @base64 | .[0:8]), label: ., status: "pending", evidence: "", children: []}]
+    [$labels | to_entries[] | {id: ("i\(.key + 1)-" + (.value | @base64 | .[0:6])), label: .value, status: "pending", evidence: "", children: []}]
   ' 2>/dev/null || echo '[]')"
 
   jq -n \
@@ -270,10 +303,10 @@ sb_instruction_ledger_pending_summary() {
     (.intents // [] | to_entries[] | walk_pending("intents[\(.key)]"; .value)),
     "",
     "Sanctioned resolve (do NOT Edit instruction-ledger.json — state tamper blocks it):",
-    "  bash scripts/resolve-instruction-ledger.sh done <item-id-or-label> --evidence \"…\"",
-    "  bash scripts/resolve-instruction-ledger.sh deferred <item-id-or-label> --evidence \"…\"",
-    "  bash scripts/resolve-instruction-ledger.sh list"
-  ' "$outfile" 2>/dev/null || true
+    "  bash \($resolver) done <item-id-or-label> --evidence \"…\"",
+    "  bash \($resolver) deferred <item-id-or-label> --evidence \"…\"",
+    "  bash \($resolver) list"
+  ' --arg resolver "$(sb_instruction_ledger_resolver_path)" "$outfile" 2>/dev/null || true
 }
 
 # Sanctioned leaf writer: mark a pending leaf done|deferred with evidence.
@@ -283,7 +316,7 @@ sb_instruction_ledger_resolve_item() {
   local selector="${1:-}"
   local status="${2:-}"
   local evidence="${3:-}"
-  local outfile matches tmp
+  local outfile tmp
   outfile="$(sb_instruction_ledger_file)"
   [[ -n "$selector" ]] || return 1
   case "$status" in
@@ -294,44 +327,20 @@ sb_instruction_ledger_resolve_item() {
   [[ -f "$outfile" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
 
-  # Refuse to mutate a foreign-scope ledger; drop it instead.
-  if sb_instruction_ledger_scope_mismatch "$PWD" 2>/dev/null; then
-    sb_instruction_ledger_clear
+  # A ledger from another worktree is dropped; a branch switch inside this worktree re-stamps it.
+  if sb_instruction_ledger_drop_if_scope_mismatch "$PWD" 2>/dev/null; then
     return 1
   fi
 
-  matches="$(jq -r --arg sel "$selector" '
-    def leaves:
-      .. | objects
-      | select(has("status"))
-      | select((.children // []) | length == 0);
-    [leaves
-      | select(
-          (.id // "") == $sel
-          or (.label // "") == $sel
-          or ((.label // "") | contains($sel))
-        )
-      | .id // empty]
-    | unique
-  ' "$outfile" 2>/dev/null || echo '[]')"
-
-  if [[ "$(jq 'length' <<<"$matches" 2>/dev/null || echo 0)" != "1" ]]; then
-    return 1
-  fi
-
+  # Exactly one leaf must match; the update targets that leaf by path, never by (possibly
+  # shared) id, so resolving one item can never resolve another.
   tmp="$(mktemp "${outfile}.XXXXXX" 2>/dev/null)" || return 1
   if jq --arg sel "$selector" --arg st "$status" --arg ev "$evidence" '
-    def update_node:
-      if (.children // []) | length > 0 then
-        .children |= map(update_node)
-      elif (
-          (.id // "") == $sel
-          or (.label // "") == $sel
-          or ((.label // "") | contains($sel))
-        ) then
-        .status = $st | .evidence = $ev
-      else . end;
-    .intents |= map(update_node)
+    def is_leaf: type == "object" and has("status") and ((.children // []) | length == 0);
+    def hit: is_leaf and ((.id // "") == $sel or (.label // "") == $sel or ((.label // "") | contains($sel)));
+    [paths(hit)] as $p
+    | if ($p | length) == 1 then setpath($p[0]; getpath($p[0]) | .status = $st | .evidence = $ev)
+      else error("selector must match exactly one leaf") end
   ' "$outfile" >"$tmp" 2>/dev/null; then
     mv -f -- "$tmp" "$outfile" 2>/dev/null || { rm -f -- "$tmp"; return 1; }
   else

@@ -18,6 +18,11 @@ PROJECT_ROOT="$(cd "${1:-.}" && pwd)"
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TIMESTAMP="$(date -u '+%Y%m%dT%H%M%SZ')"
 OUT_ZIP="${2:-${PROJECT_ROOT}/dist/enterprise-evidence-${TIMESTAMP}.zip}"
+# The zip is written from inside the staging dir: resolve a relative path against the caller's cwd first.
+case "$OUT_ZIP" in
+  /*) ;;
+  *) OUT_ZIP="${PWD}/${OUT_ZIP}" ;;
+esac
 STAGING="$(mktemp -d "${TMPDIR:-/tmp}/sb-evidence-export.XXXXXX")"
 
 cleanup() { rm -rf "$STAGING"; }
@@ -25,6 +30,11 @@ trap cleanup EXIT
 
 command -v jq >/dev/null 2>&1 || { echo "FAIL: jq required" >&2; exit 1; }
 command -v zip >/dev/null 2>&1 || { echo "FAIL: zip required" >&2; exit 1; }
+
+if [[ -L "$OUT_ZIP" ]]; then
+  echo "FAIL: refusing to write through symlink: $OUT_ZIP" >&2
+  exit 1
+fi
 
 mkdir -p "$STAGING/evidence" "$(dirname "$OUT_ZIP")"
 
@@ -40,7 +50,7 @@ if [[ -x "$CERT_SCRIPT" ]]; then
   # read-only operation from the repo's point of view; without the redirect it
   # rewrites the tracked .planning artifact as a side effect.
   RTK_DISABLED=1 SB_CERT_ARTIFACT="$STAGING/evidence/CERTIFICATION-STATUS.json" \
-    bash "$CERT_SCRIPT" --write --json >"$STAGING/evidence/CERTIFICATION-STATUS.json" 2>/dev/null \
+    bash "$CERT_SCRIPT" --write --json >/dev/null 2>&1 \
     || cp -f "${SB_ROOT}/.planning/enterprise-e2e/CERTIFICATION-STATUS.json" \
       "$STAGING/evidence/CERTIFICATION-STATUS.json" 2>/dev/null || true
 fi
@@ -101,6 +111,8 @@ jq -n \
 
 (
   cd "$STAGING"
+  # zip updates an existing archive in place; start clean so stale evidence cannot survive.
+  rm -f -- "$OUT_ZIP"
   zip -qr "$OUT_ZIP" manifest.json checksums.sha256 evidence
 )
 

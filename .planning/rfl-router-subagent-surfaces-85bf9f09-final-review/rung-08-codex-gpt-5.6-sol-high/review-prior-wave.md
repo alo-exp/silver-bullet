@@ -10,8 +10,8 @@ Independently hashed from disk during this review:
 
 | Copy | SHA-256 | Size |
 |---|---|---:|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 bytes |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 bytes |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 bytes |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 bytes |
 
 Byte-identical: **yes** (`cmp -s`). The historical charter-start SHA `07b98609…` / 620985 bytes was not used as current state.
 

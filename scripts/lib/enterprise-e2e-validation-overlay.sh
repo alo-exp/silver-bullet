@@ -50,8 +50,11 @@ validation_overlay_check_apo_catalog_counts() {
     return
   fi
   local wf_count af_count
-  wf_count="$(jq '.workflows | length' "$catalog")"
-  af_count="$(jq '.atomic_flows | length' "$catalog")"
+  if ! wf_count="$(jq '.workflows | length' "$catalog" 2>/dev/null)" ||
+    ! af_count="$(jq '.atomic_flows | length' "$catalog" 2>/dev/null)"; then
+    validation_overlay_fail "apo-catalog.json unreadable (invalid JSON or unexpected shape)"
+    return
+  fi
   if [[ "$wf_count" -eq 22 ]]; then
     validation_overlay_pass "apo-catalog has 22 workflows"
   else
@@ -71,7 +74,7 @@ validation_overlay_check_help_version_sync() {
     validation_overlay_skip "help version sync (jq missing)"
     return
   fi
-  pkg_ver="$(jq -r '.version // empty' "${root}/package.json")"
+  pkg_ver="$(jq -r '.version // empty' "${root}/package.json" 2>/dev/null || true)"
   help_ver="$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' "${root}/site/help/index.html" 2>/dev/null | head -1 | tr -d 'v' || true)"
   if [[ -z "$pkg_ver" || -z "$help_ver" ]]; then
     validation_overlay_fail "help version sync — could not read package ($pkg_ver) or help ($help_ver)"
@@ -134,7 +137,7 @@ validation_overlay_check_host_install_surface() {
 validation_overlay_check_tri_host_install() {
   local root="$1"
   local ok=1
-  for script in install-claude.sh install-codex.sh install-cursor.sh; do
+  for script in install-claude.sh install-codex.sh; do
     if [[ -x "${root}/scripts/${script}" || -f "${root}/scripts/${script}" ]]; then
       validation_overlay_pass "tri-host script exists: ${script}"
     else
@@ -142,12 +145,6 @@ validation_overlay_check_tri_host_install() {
       ok=0
     fi
   done
-  if [[ -f "${root}/hooks/cursor-hook-bridge.sh" ]]; then
-    validation_overlay_pass "cursor-hook-bridge.sh exists under hooks/"
-  else
-    validation_overlay_fail "cursor-hook-bridge.sh missing under hooks/"
-    ok=0
-  fi
   if [[ "$ok" -eq 1 ]]; then
     validation_overlay_pass "tri-host install surface complete"
   fi
@@ -190,15 +187,15 @@ validation_overlay_check_help_catalog_sot() {
 validation_overlay_check_help_tri_host() {
   local root="$1"
   local found=0
-  for host in Claude Codex Cursor; do
+  for host in Claude Codex; do
     if grep -q "$host" "${root}/site/help/index.html" 2>/dev/null; then
       found=$((found + 1))
     fi
   done
-  if [[ "$found" -ge 3 ]]; then
-    validation_overlay_pass "help index mentions Claude, Codex, and Cursor"
+  if [[ "$found" -ge 2 ]]; then
+    validation_overlay_pass "help index mentions Claude and Codex"
   else
-    validation_overlay_fail "help index tri-host mentions incomplete (${found}/3)"
+    validation_overlay_fail "help index host mentions incomplete (${found}/2)"
   fi
 }
 
@@ -218,16 +215,14 @@ validation_overlay_check_apo_invariants() {
     validation_overlay_skip "check-apo-invariants.py missing"
     return
   fi
-  local check failed=0
+  local check
   for check in site-doc-freshness apo-hierarchy-integrity; do
     if python3 "$checker" "$check" >/dev/null 2>&1; then
       validation_overlay_pass "check-apo-invariants.py ${check} green"
     else
       validation_overlay_fail "check-apo-invariants.py ${check} failed"
-      failed=1
     fi
   done
-  [[ "$failed" -eq 0 ]] || return
 }
 
 validation_overlay_check_registry() {
@@ -242,11 +237,14 @@ validation_overlay_check_registry() {
     return
   fi
   local claim_count gate_count backlog telemetry_only excluded
-  claim_count="$(jq '.claims | length' "$registry")"
-  gate_count="$(jq '[.claims[] | select((.validation_scope // "gate") == "gate" and (.status // "active") != "excluded")] | length' "$registry")"
-  backlog="$(jq '[.claims[] | select(.status == "backlog" and ((.validation_scope // "gate") == "gate" or (.validation_scope // "gate") == "live"))] | length' "$registry")"
-  telemetry_only="$(jq '[.claims[] | select(.validation_scope == "telemetry_only")] | length' "$registry")"
-  excluded="$(jq '[.claims[] | select(.validation_scope == "excluded")] | length' "$registry")"
+  if ! claim_count="$(jq '.claims | length' "$registry" 2>/dev/null)" ||
+    ! gate_count="$(jq '[.claims[] | select((.validation_scope // "gate") == "gate" and (.status // "active") != "excluded")] | length' "$registry" 2>/dev/null)" ||
+    ! backlog="$(jq '[.claims[] | select(.status == "backlog" and ((.validation_scope // "gate") == "gate" or (.validation_scope // "gate") == "live"))] | length' "$registry" 2>/dev/null)" ||
+    ! telemetry_only="$(jq '[.claims[] | select(.validation_scope == "telemetry_only")] | length' "$registry" 2>/dev/null)" ||
+    ! excluded="$(jq '[.claims[] | select(.validation_scope == "excluded")] | length' "$registry" 2>/dev/null)"; then
+    validation_overlay_fail "validation-claims-registry.json unreadable (invalid JSON or unexpected shape)"
+    return
+  fi
   if [[ "$gate_count" -ge 4 ]]; then
     validation_overlay_pass "validation registry has ${gate_count} outcome claims (${claim_count} total incl. telemetry/backlog)"
   else

@@ -7,7 +7,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 if [[ "${SB_SKIP_PRE_RELEASE_GATE:-0}" == "1" ]]; then
-  echo "SKIP: SB_SKIP_PRE_RELEASE_GATE=1 — pre-release gate skipped (audited bypass only)" >&2
+  # shellcheck source=scripts/lib/release-bypass-audit.sh
+  source "${SCRIPT_DIR}/lib/release-bypass-audit.sh"
+  sb_release_bypass_audit SB_SKIP_PRE_RELEASE_GATE "$REPO_ROOT"
+  echo "SKIP: SB_SKIP_PRE_RELEASE_GATE=1 — pre-release gate skipped (logged)" >&2
   exit 0
 fi
 
@@ -36,33 +39,6 @@ fi
 
 echo "✓ Site freshness tests passed."
 
-# Stage 4c — Five-tool stack (LeanCTX + RTK + CM + Graphify + agentmemory)
-# Mandatory live delegate when recommended_tools.leanctx.enabled_by_user is true.
-cat <<'EOF'
-
-  Stage 4c — Five-tool stack pre-release (Cursor /sb:agent-cursor)
-  Running: tests/scripts/test-five-tool-prerelease-cursor.sh
-  See: docs/testing/FIVE-TOOL-PRERELEASE.md
-EOF
-
-export SB_FIVE_TOOL_PRERELEASE=1
-if jq -e '.recommended_tools.leanctx.enabled_by_user == true' "${REPO_ROOT}/.silver-bullet.json" >/dev/null 2>&1; then
-  export SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE=1
-  echo "  leanctx opted in — live delegate scenarios required"
-else
-  unset SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE 2>/dev/null || true
-  echo "  leanctx not opted in — offline wiring + bundle only"
-fi
-
-if ! bash "${REPO_ROOT}/tests/scripts/test-five-tool-prerelease-cursor.sh"; then
-  echo "🛑 PRE-RELEASE GATE FAILED — five-tool stack pre-release gate failed." >&2
-  echo "   When leanctx is enabled, run with CURSOR_API_KEY or cursor-agent login." >&2
-  echo "   See docs/testing/FIVE-TOOL-PRERELEASE.md" >&2
-  exit 1
-fi
-
-echo "✓ Five-tool pre-release gate passed."
-
 cat <<'EOF'
 
   Full CI-equivalent suite
@@ -70,11 +46,7 @@ cat <<'EOF'
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EOF
 
-# Stage 4c already ran the required live five-tool gate above.  Do not leak
-# its prerelease selector into the full runner, where the script-unit-test
-# discovery would execute the live matrix a second time.
-if ! env -u SB_FIVE_TOOL_PRERELEASE -u SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE \
-  bash "${REPO_ROOT}/tests/run-all-tests.sh"; then
+if ! bash "${REPO_ROOT}/tests/run-all-tests.sh"; then
   cat <<'EOF' >&2
 
 🛑 PRE-RELEASE GATE FAILED — fix failing tests before bump/tag/release.
@@ -88,7 +60,7 @@ echo "✓ Pre-release gate passed — local CI-equivalent suite is green."
 
 cat <<'EOF'
 
-  RC validation matrix (cursor/codex/claude × fresh/upgrade — operator-local)
+  RC validation matrix (codex/claude × fresh/upgrade — operator-local)
   Running: bash scripts/run-rc-validation-matrix.sh
 EOF
 

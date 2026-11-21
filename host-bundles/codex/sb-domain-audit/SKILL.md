@@ -9,6 +9,8 @@ version: 0.1.0
 
 # /sb:domain-audit - Domain Quality Contracts
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-domain-audit/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 SB-owned domain audit layer for specialized quality checks. It complements
 `sb:quality-gates`; it does not replace the 8 core quality dimensions,
 DevOps gates, security, review, or verification.
@@ -73,7 +75,7 @@ specific evidence pointer that made the claim true.
 After writing findings, validate the artifact when the helper is available:
 
 ```bash
-bash scripts/validate-evidence-findings.sh
+bash "${PLUGIN_ROOT}/scripts/validate-evidence-findings.sh"
 ```
 
 Delivery hooks warn on schema drift (strict block when

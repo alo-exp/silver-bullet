@@ -105,6 +105,31 @@ else
   assert_fail "flag file creates default audit log" "missing $DEFAULT_LOG"
 fi
 
+echo "--- Test 4: a symlinked audit log is never written through ---"
+unset SILVER_BULLET_HOOK_AUDIT_LOG
+TARGET_OF_LINK="${SB_RUNTIME_STATE_DIR}/audit-link-target"
+LINK_LOG="${SB_RUNTIME_STATE_DIR}/hook-audit-link.jsonl"
+rm -f "$TARGET_OF_LINK" "$LINK_LOG"
+ln -s "$TARGET_OF_LINK" "$LINK_LOG"
+SILVER_BULLET_HOOK_AUDIT_LOG="$LINK_LOG" sb_hook_audit_record "dev-cycle-check" "PreToolUse" "deny" "symlink-log"
+if [[ ! -e "$TARGET_OF_LINK" ]]; then
+  assert_pass "symlinked audit log is refused (nothing written through the link)"
+else
+  assert_fail "symlinked audit log is refused" "the link target was created"
+fi
+
+echo "--- Test 5: an uncreatable audit directory is tolerated ---"
+BLOCKER="${SB_RUNTIME_STATE_DIR}/audit-blocker"
+rm -rf "$BLOCKER"
+: > "$BLOCKER"
+rc=0
+SILVER_BULLET_HOOK_AUDIT_LOG="${BLOCKER}/sub/audit.jsonl" sb_hook_audit_record "dev-cycle-check" "PreToolUse" "deny" "mkdir-fails" || rc=$?
+if [[ "$rc" -eq 0 && -f "$BLOCKER" && ! -d "$BLOCKER" ]]; then
+  assert_pass "an audit directory that cannot be created returns success without writing"
+else
+  assert_fail "an uncreatable audit directory is tolerated" "rc=$rc"
+fi
+
 echo
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ $FAIL -eq 0 ]]

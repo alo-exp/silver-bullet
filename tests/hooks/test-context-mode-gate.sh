@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Tests for hooks/context-mode-gate.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -68,9 +72,10 @@ EOF
 
 wire_platform() {
   TEST_HOME="$(mktemp -d)"
-  mkdir -p "$TEST_HOME/.cursor"
-  printf '{"mcpServers":{"context-mode":{"command":"context-mode"}}}\n' >"$TEST_HOME/.cursor/mcp.json"
-  export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor
+  mkdir -p "$TEST_HOME/.codex"
+  printf '[mcp_servers.context-mode]\ncommand = "context-mode"\n' >"$TEST_HOME/.codex/config.toml"
+  printf '{"hooks":{"PreToolUse":[{"hooks":[{"command":"context-mode hook"}]}]}}\n' >"$TEST_HOME/.codex/hooks.json"
+  export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=codex
 }
 
 write_cfg() {

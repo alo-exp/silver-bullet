@@ -30,7 +30,7 @@ usage() {
 Verify two consecutive strict-clean rounds from ROUND-*-GATES.md gate tables.
 
 Options:
-  --host claude|codex|cursor   Default gate file pair for host track
+  --host claude|codex          Default gate file pair for host track
   --json                       Machine-readable result on stdout
   -h, --help
 
@@ -51,10 +51,6 @@ enterprise_e2e_consecutive_rounds_resolve_host_defaults() {
     codex)
       printf '%s\n' "${ROUND1:-${root}/.planning/enterprise-e2e/ROUND-CODEX-1-GATES.md}"
       printf '%s\n' "${ROUND2:-${root}/.planning/enterprise-e2e/ROUND-CODEX-2-GATES.md}"
-      ;;
-    cursor)
-      printf '%s\n' "${ROUND1:-${root}/.planning/enterprise-e2e/ROUND-CURSOR-1-GATES.md}"
-      printf '%s\n' "${ROUND2:-${root}/.planning/enterprise-e2e/ROUND-CURSOR-2-GATES.md}"
       ;;
     *)
       echo "enterprise-e2e-consecutive-rounds-check: unknown host track: $host" >&2
@@ -149,14 +145,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -n "$HOST_ARG" ]]; then
-    read -r ROUND1 < <(enterprise_e2e_consecutive_rounds_resolve_host_defaults "$HOST_ARG" "$SB_ROOT" | sed -n '1p')
-    read -r ROUND2 < <(enterprise_e2e_consecutive_rounds_resolve_host_defaults "$HOST_ARG" "$SB_ROOT" | sed -n '2p')
+  defaults="$(enterprise_e2e_consecutive_rounds_resolve_host_defaults "$HOST_ARG" "$SB_ROOT")" || exit 2
+  ROUND1="$(sed -n '1p' <<<"$defaults")"
+  ROUND2="$(sed -n '2p' <<<"$defaults")"
 elif [[ -z "$ROUND1" || -z "$ROUND2" ]]; then
   host="${SB_E2E_LIVE_RUNTIME:-${SILVER_BULLET_RUNTIME:-claude}}"
-    read -r _default1 < <(enterprise_e2e_consecutive_rounds_resolve_host_defaults "$host" "$SB_ROOT" | sed -n '1p')
-    read -r _default2 < <(enterprise_e2e_consecutive_rounds_resolve_host_defaults "$host" "$SB_ROOT" | sed -n '2p')
-    ROUND1="${ROUND1:-$_default1}"
-    ROUND2="${ROUND2:-$_default2}"
+  defaults="$(enterprise_e2e_consecutive_rounds_resolve_host_defaults "$host" "$SB_ROOT")" || exit 2
+  ROUND1="${ROUND1:-$(sed -n '1p' <<<"$defaults")}"
+  ROUND2="${ROUND2:-$(sed -n '2p' <<<"$defaults")}"
 fi
 
 # Resolve relative paths against SB_ROOT

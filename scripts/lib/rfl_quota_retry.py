@@ -125,7 +125,7 @@ def parse_reset_seconds(blob: str) -> int | None:
     if not match:
         return None
     rest = text[match.end() :]
-    cut = re.search(r"[.\n;]|\[", rest)
+    cut = re.search(r"\.(?:\s|$)|[\n;]|\[", rest)
     span = rest[: cut.start()] if cut else rest
     total = 0.0
     found = False
@@ -517,16 +517,6 @@ def wake_argv(*, project_root: Path, run_dir: Path) -> list[str]:
     ]
 
 
-def _attach_timer(run_dir: Path, job_id: str, timer: dict[str, Any]) -> None:
-    store = load_schedule(run_dir)
-    jobs = list(store.get("jobs") or [])
-    for job in jobs:
-        if job.get("id") == job_id:
-            job["timer"] = timer
-    store["jobs"] = jobs
-    _write_json(schedule_path(run_dir), store)
-
-
 def _xml_escape(value: str) -> str:
     return (
         value.replace("&", "&amp;")
@@ -601,8 +591,6 @@ def arm_quota_retry_timer(
         return None
 
     def _try_launchd() -> dict[str, Any] | None:
-        if sys.platform != "darwin" and mode not in {"launchd", "launchd-only"}:
-            return None
         launchd_dir = Path(
             os.environ.get("SB_RFL_LAUNCHD_DIR")
             or (Path.home() / "Library" / "LaunchAgents")
@@ -635,6 +623,15 @@ def arm_quota_retry_timer(
         try:
             launchd_dir.mkdir(parents=True, exist_ok=True)
             plist.write_text(body, encoding="utf-8")
+            armed = True
+            result: dict[str, Any] = {
+                "backend": "launchd",
+                "fire_at": job.get("fire_at"),
+                "command": command,
+                "argv": argv,
+                "label": label,
+                "plist": str(plist),
+            }
             if os.environ.get("SB_RFL_LAUNCHCTL") != "0":
                 subprocess.run(
                     ["launchctl", "unload", str(plist)],
@@ -646,16 +643,11 @@ def arm_quota_retry_timer(
                     capture_output=True,
                     check=False,
                 )
-                payload["launchctl_rc"] = loaded.returncode
-            return {
-                "armed": True,
-                "backend": "launchd",
-                "fire_at": job.get("fire_at"),
-                "command": command,
-                "argv": argv,
-                "label": label,
-                "plist": str(plist),
-            }
+                armed = loaded.returncode == 0
+                result["launchctl_rc"] = loaded.returncode
+                if not armed:
+                    result["launchd_error"] = f"launchctl load exited with status {loaded.returncode}"
+            return {"armed": armed, **result}
         except OSError as exc:
             payload["launchd_error"] = str(exc)
             return None
@@ -663,19 +655,19 @@ def arm_quota_retry_timer(
     # Darwin: launchd is the reliable wake (atrun is often disabled).
     # Linux/other: `at`. Hooks still activate due jobs when a session returns.
     prefer_launchd = sys.platform == "darwin" or mode in {"launchd", "launchd-only"}
+    launchd_failure: dict[str, Any] = {}
     if prefer_launchd and mode != "at-only":
         launched = _try_launchd()
-        if launched:
+        if launched and (launched["armed"] or mode == "launchd-only"):
             return launched
+        if launched:
+            launchd_failure = {key: launched[key] for key in ("launchctl_rc", "launchd_error")}
     if mode != "launchd-only":
         queued = _try_at()
         if queued:
-            return queued
-    if not prefer_launchd:
-        launched = _try_launchd()
-        if launched:
-            return launched
+            return {**queued, **launchd_failure}
 
+    payload.update(launchd_failure)
     payload["reason"] = "no at/launchd backend available"
     return payload
 

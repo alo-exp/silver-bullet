@@ -1,0 +1,262 @@
+#!/usr/bin/env bash
+# End-to-end tests for hooks/agent-delegation-guard.sh, the progress surface it embeds
+# and hooks/lib/agent-delegation-state.sh.
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/b-orchestrator-helpers.sh"
+tl_init
+
+HOOK=hooks/agent-delegation-guard.sh
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
+unset SB_AGENT_DELEGATE_V2 SB_AGENT_DELEGATE_GUARD SB_AGENT_CERT_RUN SILVER_BULLET_PROJECT_ROOT
+# shellcheck source=../../hooks/lib/agent-delegation-state.sh
+source "$TL_REPO_ROOT/hooks/lib/agent-delegation-state.sh"
+
+PROJ="$TL_TMP/proj"
+orch_make_project "$PROJ"
+mkdir -p "$PROJ/src" "$PROJ/docs" "$PROJ/hooks" "$PROJ/.planning/agent-codex/T1"
+: >"$PROJ/src/owned.txt"
+: >"$PROJ/docs/free.md"
+LOG="$PROJ/.planning/agent-codex/T1/delegate.log"
+AUDIT_LOG="$SB_RUNTIME_STATE_DIR/hook-audit.jsonl"
+
+edit_json() { # edit_json TOOL PATH [event]
+  jq -cn --arg t "$1" --arg p "$2" --arg e "${3:-PreToolUse}" \
+    '{hook_event_name:$e, tool_name:$t, tool_input:{file_path:$p}}'
+}
+
+activate() {
+  sb_agent_delegation_activate codex T1 "$PROJ" "[\"$PROJ/src\",\"\",\"$PROJ/missing/../x\"]" "$LOG"
+}
+
+cd "$PROJ"
+
+echo "=== guard: early exits ==="
+# Partially installed plugin (no hooks/lib): the guard fails open silently.
+staged="$(orch_stage_hook agent-delegation-guard.sh)"
+activate
+tl_run_stdin "$(edit_json Edit "$PROJ/src/owned.txt")" bash "$staged"
+assert_eq "staged guard without lib exits 0" 0 "$TL_STATUS"
+assert_eq "staged guard without lib prints nothing" "" "$TL_OUT"
+
+# Outside an SB workspace nothing is enforced.
+mkdir -p "$TL_TMP/plain/.git"
+( cd "$TL_TMP/plain" && tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/src/owned.txt")" && printf '%s|%s' "$TL_STATUS" "$TL_OUT" ) >"$TL_TMP/plain.out"
+assert_eq "non-SB workspace: allow silently" "0|" "$(cat "$TL_TMP/plain.out")"
+
+SB_AGENT_DELEGATE_V2=0 tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/src/owned.txt")"
+assert_eq "V2 rollback (SB_AGENT_DELEGATE_V2=0) disables guard" "0|" "$TL_STATUS|$TL_OUT"
+
+sb_agent_delegation_deactivate
+tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/src/owned.txt")"
+assert_eq "no active delegation: allow" "0|" "$TL_STATUS|$TL_OUT"
+activate
+
+tl_run_hook "$HOOK" ""
+assert_eq "empty stdin: allow" "0|" "$TL_STATUS|$TL_OUT"
+
+SB_AGENT_CERT_RUN=1 tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/src/owned.txt")"
+assert_eq "cert run bypass: allow" "0|" "$TL_STATUS|$TL_OUT"
+
+tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/src/owned.txt" PostToolUse)"
+assert_eq "PostToolUse event ignored" "0|" "$TL_STATUS|$TL_OUT"
+
+tl_run_hook "$HOOK" "$(edit_json Read "$PROJ/src/owned.txt")"
+assert_eq "read-only tool ignored" "0|" "$TL_STATUS|$TL_OUT"
+
+tl_run_hook "$HOOK" '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{}}'
+assert_eq "Write without a path ignored" "0|" "$TL_STATUS|$TL_OUT"
+
+tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/docs/free.md")"
+assert_eq "path outside ownership scope allowed" "0|" "$TL_STATUS|$TL_OUT"
+
+tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/.planning/agent-codex/T1/brief.md")"
+assert_eq "own evidence dir always allowed" "0|" "$TL_STATUS|$TL_OUT"
+
+echo "=== guard: block tier (claude/codex parents) ==="
+: >"$SB_RUNTIME_STATE_DIR/hook-audit-enabled"
+tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/src/owned.txt")"
+assert_eq "scoped edit: exit 0 with JSON decision" 0 "$TL_STATUS"
+assert_eq "scoped edit denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+assert_contains "deny reason cites AF-AGENT-DELEGATE" "$(jq -r '.hookSpecificOutput.permissionDecisionReason' <<<"$TL_OUT")" "AF-AGENT-DELEGATE"
+assert_contains "deny decision audited" "$(cat "$AUDIT_LOG")" '"decision":"deny"'
+
+tl_run_hook "$HOOK" "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"apply_patch", tool_input:{path:"src/owned.txt"}}')"
+assert_eq "apply_patch with relative tool_input.path denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+
+# R4-17: real Codex apply_patch payloads name the files only inside the patch body.
+patch_in="$(jq -cn --arg b $'*** Begin Patch\n*** Update File: src/owned.txt\n@@\n-a\n+b\n*** End Patch' '{hook_event_name:"PreToolUse", tool_name:"apply_patch", tool_input:{input:$b}}')"
+tl_run_hook "$HOOK" "$patch_in"
+assert_eq "apply_patch body (input string) naming an owned file denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+patch_cmd="$(jq -cn --arg b $'*** Begin Patch\n*** Add File: src/new.txt\n+x\n*** End Patch' '{hook_event_name:"PreToolUse", tool_name:"apply_patch", tool_input:{command:["apply_patch",$b]}}')"
+tl_run_hook "$HOOK" "$patch_cmd"
+assert_eq "apply_patch body (command array) adding an owned file denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+patch_mixed="$(jq -cn --arg b $'*** Begin Patch\n*** Update File: docs/free.md\n@@\n-a\n+b\n*** Update File: src/owned.txt\n@@\n-a\n+b\n*** End Patch' '{hook_event_name:"PreToolUse", tool_name:"apply_patch", tool_input:{input:$b}}')"
+tl_run_hook "$HOOK" "$patch_mixed"
+assert_eq "a patch touching one owned file among free ones is denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+patch_free="$(jq -cn --arg b $'*** Begin Patch\n*** Update File: docs/free.md\n@@\n-a\n+b\n*** End Patch' '{hook_event_name:"PreToolUse", tool_name:"apply_patch", tool_input:{input:$b}}')"
+tl_run_hook "$HOOK" "$patch_free"
+assert_eq "a patch touching only free files allowed" "0|" "$TL_STATUS|$TL_OUT"
+bash_json() { jq -cn --arg c "$1" '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$c}}'; }
+tl_run_hook "$HOOK" "$(bash_json "sed -i 's/a/b/' src/owned.txt")"
+assert_eq "Bash sed -i on an owned file denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+tl_run_hook "$HOOK" "$(bash_json "echo x > src/owned.txt")"
+assert_eq "Bash redirect into an owned file denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+tl_run_hook "$HOOK" "$(bash_json "cat src/owned.txt | tee src/copy.txt")"
+assert_eq "Bash tee into the owned scope denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+tl_run_hook "$HOOK" "$(bash_json "cat src/owned.txt")"
+assert_eq "Bash read of an owned file allowed" "0|" "$TL_STATUS|$TL_OUT"
+tl_run_hook "$HOOK" "$(bash_json "echo x > docs/free.md")"
+assert_eq "Bash write outside the scope allowed" "0|" "$TL_STATUS|$TL_OUT"
+tl_run_hook "$HOOK" "$(bash_json "git reset --hard")"
+assert_eq "Bash git reset --hard (tree scope over the owned dir) denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+tl_run_hook "$HOOK" "$(bash_json "git apply x.patch")"
+assert_eq "Bash git apply (tree scope) denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+tl_run_hook "$HOOK" "$(bash_json "git status")"
+assert_eq "Bash git status allowed" "0|" "$TL_STATUS|$TL_OUT"
+# Commands that overwrite the owned tree without a modeled "tree" write (git restore . reports the repo root
+# as a path write; git checkout/switch <branch|.> reports nothing at all).
+mkdir -p "$PROJ/src/inner"
+for deny in "git restore ." "git checkout ." "git checkout -- ." "git checkout other-branch" "git switch other-branch" \
+            "git checkout -b copy main" "git -C src checkout ." "cd src && git checkout ." "git -C $PROJ checkout other-branch" \
+            "git --no-pager checkout other-branch" "git checkout HEAD~1 -- src" "git -c core.x=y checkout ." "git restore src" \
+            "git checkout -f" "git checkout --force" "git checkout -" "git switch -" "git switch --discard-changes other" "git checkout -m other" \
+            "git checkout --pathspec-from-file=list.txt" "git restore --pathspec-from-file=list.txt" \
+            "git -c alias.co=checkout co ." "git -calias.co=checkout co main" "git config alias.co checkout" "git config --global alias.co checkout" \
+            "git read-tree -u --reset HEAD" "git read-tree -mu HEAD" "git checkout-index -a -f" "git checkout-index -f src/owned.txt" \
+            "git sparse-checkout set docs" "git submodule update --init" "git worktree add src/wt" "git worktree add -b nb src/wt2"; do
+  tl_run_hook "$HOOK" "$(bash_json "$deny")"
+  assert_eq "delegation active, owned tree overwritten: $deny" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+done
+ln -s loop "$PROJ/docs/loop"
+tl_run_hook "$HOOK" "$(bash_json "git -C docs/loop checkout .")"
+assert_eq "delegation active, -C directory that cannot be resolved (symlink loop): fail closed" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+rm -f "$PROJ/docs/loop"
+for allow in "git diff" "git log --oneline" "ls src" "grep -rn x src" "git checkout -b feature" "git switch -c feature" "git checkout -- docs/free.md" \
+             "git restore docs/free.md" "cd docs && git checkout ." "git -C docs checkout ." "git -C /abs/elsewhere checkout ." "git add -A" "git commit -m wip" "git branch -a" \
+             "git checkout" "git -C docs status" "cp docs/free.md docs/copy.md" \
+             "git checkout -b feature" "git checkout -f -- docs/free.md" "git config user.name x" "git config --get alias.co" "git read-tree HEAD" \
+             "git sparse-checkout list" "git submodule status" "git worktree add ../wt-elsewhere" "git worktree list" "git restore --staged docs/free.md"; do
+  tl_run_hook "$HOOK" "$(bash_json "$allow")"
+  assert_eq "delegation active, honest command allowed: $allow" "0|" "$TL_STATUS|$TL_OUT"
+done
+tl_run_hook "$HOOK" "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"exec_command", tool_input:{cmd:"sed -i s/a/b/ src/owned.txt"}}')"
+assert_eq "Codex exec_command writing an owned file denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+
+tl_run_hook "$HOOK" "$(edit_json MultiEdit "$PROJ/src/new-file.txt")"
+assert_eq "new file inside scope denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/src/newdir/deeper/a.txt")"
+assert_eq "new file in a new subdirectory of an owned scope denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/docs/newdir/a.txt")"
+assert_eq "new file in a new subdirectory outside the scope allowed" "0|" "$TL_STATUS|$TL_OUT"
+for p in "$PROJ/other/../src/x.txt" "$PROJ/newdir/../src/x.txt" "$PROJ/src/a/../../src/x.txt"; do
+  tl_run_hook "$HOOK" "$(edit_json Write "$p")"
+  assert_eq "dot-dot path landing in the owned scope denied: ${p#"$PROJ"/}" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+done
+# Symlinks are compared by their real location: docs/l -> ../src lands inside the owned src/.
+ln -sfn "$PROJ/src" "$PROJ/docs/l"
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/docs/l/x.txt")"
+assert_eq "write through a symlink into the owned scope denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+ln -sfn "$PROJ/docs" "$PROJ/src/outlink"
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/src/outlink/x.txt")"
+assert_eq "write through a symlink out of the owned scope allowed" "0|" "$TL_STATUS|$TL_OUT"
+ln -sfn "$PROJ/src/owned.txt" "$PROJ/docs/filelink"
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/docs/filelink")"
+assert_eq "write to a symlinked file inside the owned scope denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/docs/l/../free.md")"
+assert_eq "dot-dot after a symlink resolves from the real directory (docs/free.md is outside src)" "0|" "$TL_STATUS|$TL_OUT"
+rm -f "$PROJ/docs/l" "$PROJ/src/outlink" "$PROJ/docs/filelink"
+for p in "$PROJ/src/../docs/x.txt" "$PROJ/src/newdir/../../docs/a.txt"; do
+  tl_run_hook "$HOOK" "$(edit_json Write "$p")"
+  assert_eq "dot-dot path leaving the owned scope allowed: ${p#"$PROJ"/}" "0|" "$TL_STATUS|$TL_OUT"
+done
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/hooks/repair.sh")"
+assert_eq "harness repair path under hooks/ allowed" "0|" "$TL_STATUS|$TL_OUT"
+
+echo "=== guard: jq unavailable ==="
+nojq="$(tl_path_without jq)"
+PATH="$nojq" tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/src/owned.txt")"
+assert_eq "without jq the guard cannot resolve paths and fails open" "0|" "$TL_STATUS|$TL_OUT"
+
+echo "=== guard: malformed and degenerate input ==="
+activate
+tl_run_hook "$HOOK" 'this is not json'
+assert_eq "invalid JSON input: allow" "0|" "$TL_STATUS|$TL_OUT"
+tl_run_hook "$HOOK" '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":"just-a-string"}'
+assert_eq "tool_input that is not an object: allow" "0|" "$TL_STATUS|$TL_OUT"
+tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/no/such/dir/f.txt")"
+assert_eq "target under a missing directory is not scoped: allow" "0|" "$TL_STATUS|$TL_OUT"
+# stdin is a directory: cat fails, the guard sees no input and allows.
+status=0
+out="$(bash "$TL_REPO_ROOT/$HOOK" <"$TL_TMP")" || status=$?
+assert_eq "unreadable stdin: allow" "0|" "$status|$out"
+
+echo "=== guard: progress surface missing ==="
+staged_lib="$(orch_stage_hook agent-delegation-guard.sh with-lib)"
+tl_run_stdin "$(edit_json Edit "$PROJ/src/owned.txt")" bash "$staged_lib"
+assert_eq "no progress surface file: still denies" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+
+echo "=== guard: jq-less hosts ==="
+# Without jq from the start the guard cannot read a target path and allows.
+for ev in '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"x"}}' \
+          '{"hook_event_name":"PostToolUse","tool_name":"Edit"}' \
+          '{"hook_event_name":"PreToolUse","tool_name":"Read"}' \
+          '{"tool_name":"Edit"}'; do
+  PATH="$nojq" tl_run_hook "$HOOK" "$ev"
+  assert_eq "no jq, event $(printf '%s' "$ev" | cut -c1-40): allow" "0|" "$TL_STATUS|$TL_OUT"
+done
+
+# jq present for the path lookup and then gone: the block tier falls back to a stderr
+# message and exit 2. The stub jq removes itself after extracting the target path.
+real_jq="$(command -v jq)"
+stubdir="$TL_TMP/selfdel"
+mkdir -p "$stubdir"
+cat >"$stubdir/jq" <<STUB
+#!/usr/bin/env bash
+if [[ "\$*" == *tool_input.file_path* ]]; then
+  "$real_jq" "\$@"; rc=\$?
+  rm -f "\$0"
+  exit \$rc
+fi
+exec "$real_jq" "\$@"
+STUB
+chmod +x "$stubdir/jq"
+activate
+PATH="$stubdir:$nojq" tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/src/owned.txt")"
+assert_eq "block tier without jq exits 2" 2 "$TL_STATUS"
+assert_contains "block tier without jq explains on stderr" "$TL_ERR" "AF-AGENT-DELEGATE"
+assert_eq "block tier without jq prints no JSON" "" "$TL_OUT"
+# Same end-to-end jq-less deny for a new file in a new subdirectory of the owned scope, and an
+# in-scope check that is not satisfied by an early allow.
+cat >"$stubdir/jq" <<STUB
+#!/usr/bin/env bash
+if [[ "\$*" == *tool_input.file_path* ]]; then
+  "$real_jq" "\$@"; rc=\$?
+  rm -f "\$0"
+  exit \$rc
+fi
+exec "$real_jq" "\$@"
+STUB
+chmod +x "$stubdir/jq"
+PATH="$stubdir:$nojq" tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/src/brand/new/dir/f.txt")"
+assert_eq "jq-less deny for a new file in a new subdirectory exits 2" 2 "$TL_STATUS"
+assert_contains "jq-less deny explains itself" "$TL_ERR" "AF-AGENT-DELEGATE"
+
+
+echo "=== guard: jq-less payload without a tool name ==="
+activate
+PATH="$nojq" tl_run_hook "$HOOK" '{"hook_event_name":"PreToolUse"}'
+assert_eq "no jq, no tool_name in the payload: allow" "0|" "$TL_STATUS|$TL_OUT"
+
+echo "=== guard: jq-less field extraction (sb_adg_hook_field) ==="
+# The hook runs its main flow on source, so load just the function definition.
+eval "$(sed -n '/^sb_adg_hook_field()/,/^}/p' "$TL_REPO_ROOT/$HOOK")"
+_sb_adg_have_jq=false
+pre='{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"x"}}'
+assert_eq "no-jq event name: PreToolUse recognised" "PreToolUse" "$(sb_adg_hook_field "$pre" hook_event_name dflt)"
+assert_eq "no-jq event name: other event falls back to default" "dflt" "$(sb_adg_hook_field '{"hook_event_name":"PostToolUse"}' hook_event_name dflt)"
+assert_eq "no-jq tool_name is extracted" "Edit" "$(sb_adg_hook_field "$pre" tool_name dflt)"
+assert_eq "no-jq tool_name missing falls back to default" "dflt" "$(sb_adg_hook_field '{"x":1}' tool_name dflt)"
+
+tl_results

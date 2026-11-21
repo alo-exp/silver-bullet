@@ -28,7 +28,7 @@ assert_contains() {
 assert_not_contains() {
   local desc="$1" needle="$2"
   shift 2
-  local tmp="/tmp/sb-model-boundary.$$"
+  local tmp="${TMPDIR:-/tmp}/sb-model-boundary.$$"
   if ! grep -R -n -E "$needle" "$@" >"$tmp" 2>/dev/null; then
     pass "$desc"
   else

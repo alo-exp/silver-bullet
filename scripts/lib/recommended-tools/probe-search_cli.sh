@@ -1,9 +1,9 @@
 # shellcheck shell=bash
-# search-cli probe — PATH + non-secret version. Consent/registry pattern (not Cursor-only).
+# search-cli probe — PATH + non-secret version. Consent/registry pattern (not host-specific).
 # Official pin (v0.9.0): https://github.com/paperfoot/search-cli/blob/v0.9.0/README.md@v0.9.0
 # Formula: https://github.com/paperfoot/homebrew-tap/blob/main/Formula/search-cli.rb@0.9.0
 # Health is PATH plus `search --version`. Provider-missing is WARN (ready + evidence).
-# Do not dump provider secrets or API keys. Do not copy Alumnium Cursor-only rt_host_supported.
+# Do not dump provider secrets or API keys. Do not copy Alumnium's rt_host_supported.
 
 # shellcheck source=common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
@@ -15,6 +15,7 @@ fi
 rt_search_cli_pin_version() {
   local pin
   pin="$(sb_recommended_tool_install_pin search_cli 2>/dev/null || true)"
+  [[ -n "$pin" ]] || pin='{}'
   printf '%s' "$pin" | jq -r '.version // "0.9.0"'
 }
 
@@ -58,7 +59,7 @@ rt_probe_search_cli_providers() {
   # Never dump config secrets or API keys.
   local out
   out="$(search config check </dev/null 2>/dev/null || true)"
-  if printf '%s' "$out" | grep -qiE '(:[[:space:]]*set\b|\bok\b|configured)'; then
+  if grep -qiE '(:[[:space:]]*set\b|\bok\b|configured)' <<<"$out"; then
     return 0
   fi
   return 1
@@ -67,9 +68,7 @@ rt_probe_search_cli_providers() {
 rt_search_cli_project_install_commands() {
   local cfg
   cfg="$(rt_project_config)" || { printf ''; return 0; }
-  [[ -n "$cfg" && -f "$cfg" ]] || { printf ''; return 0; }
-  jq -r '.recommended_tools.search_cli.install_commands[]? // empty' "$cfg" 2>/dev/null \
-    | paste -sd ' && ' -
+  jq -r '[.recommended_tools.search_cli.install_commands[]?] | join(" && ")' "$cfg" 2>/dev/null
 }
 
 rt_probe_search_cli() {
@@ -79,7 +78,7 @@ rt_probe_search_cli() {
   local installed_ver pin_ver
 
   consent="$(rt_consent_for "$tool_id")"
-  # Extra-tool: Cursor + Claude + Codex. Do not mark unsupported via rt_host_supported.
+  # Extra-tool: Claude + Codex. Do not mark unsupported via rt_host_supported.
   case "$consent" in
     disabled) fd=1 ;;
     pending|"") fp=1 ;;
@@ -136,7 +135,7 @@ rt_repair_search_cli() {
   local actions=() failures=()
   local project_cmd pin_argv
 
-  if ! rt_mutation_allowed search_cli; then
+  if ! rt_mutation_allowed search_cli install; then
     echo '{"actions":[],"failures":["mutation_not_authorized"],"restart_required":false}'
     return 0
   fi
@@ -167,9 +166,9 @@ rt_repair_search_cli() {
     return 0
   fi
 
-  # Registry pin only — never execute project-local install_commands.
-  # shellcheck disable=SC2086
-  if bash -lc "$pin_argv" >&2; then
+  # Registry pin only — never execute project-local install_commands. The pin is run as plain
+  # commands (no shell, no login profile).
+  if rt_run_registry_chain "$pin_argv" brew >&2; then
     actions+=("brew_install_search_cli_pin")
   else
     failures+=("brew_install_failed")

@@ -6,7 +6,7 @@ Report: [`landscape-report.html`](../landscape-report.html)
 
 ## file:// verify: **PASS**
 
-- URL: `file:///Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html`
+- URL: `file:///Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html`
 - Screenshots: ['AFTER-1280.png', 'AFTER-375.png', 'AFTER-dark-1280.png']
 - Checks: `{"hasContent": true, "markedPinned": true, "noAgentsysAi": true, "hasAgentSysGithub": true, "noAwsAiDlc": true, "noDeepworkAi": true, "hasMetaGPT": true, "hasClaudeHarness": true, "noHarnessApoCandidate": true, "saasSectionMentionsFactory": true, "underlines": 0, "overflow375": 0, "noCursorInSaasMq": true, "metaGptInApoMq": true, "harnessInPluginsOss": true, "noClaudeCodeExpertInRankings": true, "pageErrors": 0}`
 

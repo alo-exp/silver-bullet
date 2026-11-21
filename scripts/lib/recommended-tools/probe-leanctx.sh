@@ -7,7 +7,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/vendor-doctor.sh"
 
 rt_leanctx_mcp_file() {
-  rt_host_mcp_config_path "${RT_HOST:-cursor}"
+  rt_host_mcp_config_path "${RT_HOST:-claude}"
 }
 
 # Duplicate leanctx + lean-ctx keys are a config FAIL when LeanCTX is opted in.
@@ -15,12 +15,12 @@ rt_probe_leanctx_duplicate_mcp() {
   local f
   f="$(rt_leanctx_mcp_file)"
   [[ -f "$f" ]] || return 1
-  if [[ "${RT_HOST:-cursor}" == "codex" ]]; then
+  if [[ "${RT_HOST:-claude}" == "codex" ]]; then
     grep -q '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null \
       && grep -q '^\[mcp_servers\.lean-ctx\]$' "$f" 2>/dev/null
-  elif [[ "${RT_HOST:-cursor}" == "opencode" ]]; then
+  elif [[ "${RT_HOST:-claude}" == "opencode" ]]; then
     jq -e '.mcp | has("leanctx") and (has("lean-ctx") or has("lean-ctx-standalone") or has("user-leanctx") or has("user-lean-ctx"))' "$f" >/dev/null 2>&1
-  elif [[ "${RT_HOST:-cursor}" == "pi" ]]; then
+  elif [[ "${RT_HOST:-claude}" == "pi" ]]; then
     return 1
   else
     jq -e '.mcpServers | has("leanctx") and has("lean-ctx")' "$f" >/dev/null 2>&1
@@ -28,9 +28,9 @@ rt_probe_leanctx_duplicate_mcp() {
 }
 
 rt_probe_leanctx_mcp() {
-  local host="${RT_HOST:-cursor}" f
+  local host="${RT_HOST:-claude}" f
   case "$host" in
-    cursor|claude)
+    claude)
       f="$(rt_leanctx_mcp_file)"
       [[ -f "$f" ]] || return 1
       jq -e '.mcpServers.leanctx
@@ -46,12 +46,13 @@ rt_probe_leanctx_mcp() {
 }
 
 rt_leanctx_mcp_env() {
-  local f key="${1:-}" host="${RT_HOST:-cursor}"
+  local f key="${1:-}" host="${RT_HOST:-claude}"
   f="$(rt_leanctx_mcp_file)"
   [[ -f "$f" && -n "$key" ]] || return 1
   if [[ "$host" == "codex" ]]; then
-    grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null \
-      | grep -m1 -E "^${key}[[:space:]]*=[[:space:]]*\"" \
+    local block
+    block="$(grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null)"
+    grep -m1 -E "^${key}[[:space:]]*=[[:space:]]*\"" <<<"$block" \
       | sed -E 's/^[^=]+=[[:space:]]*"([^"]*)".*$/\1/'
     return 0
   fi
@@ -78,16 +79,17 @@ rt_probe_leanctx_lctx_prefix() {
 
 rt_probe_leanctx_overlaps_disabled() {
   [[ -f "$(rt_leanctx_mcp_file)" ]] || return 1
-  if [[ "${RT_HOST:-cursor}" == "codex" ]]; then
-    local f="$(rt_leanctx_mcp_file)"
+  if [[ "${RT_HOST:-claude}" == "codex" ]]; then
+    local f block
+    f="$(rt_leanctx_mcp_file)"
     local key
     for key in LEANCTX_DISABLE_SHELL_MCP LEANCTX_DISABLE_SANDBOX_MCP LEANCTX_DISABLE_FETCH_MCP LEANCTX_DISABLE_FTS; do
-      grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null \
-        | grep -qE "^${key}[[:space:]]*=[[:space:]]*\"1\"" || return 1
+      block="$(grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null)"
+      grep -qE "^${key}[[:space:]]*=[[:space:]]*\"1\"" <<<"$block" || return 1
     done
     return 0
   fi
-  if [[ "${RT_HOST:-cursor}" == "pi" ]]; then
+  if [[ "${RT_HOST:-claude}" == "pi" ]]; then
     local pi_f="${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}/extensions/pi-lean-ctx/config.json"
     [[ -f "$pi_f" ]] || return 1
     for key in LEANCTX_DISABLE_SHELL_MCP LEANCTX_DISABLE_SANDBOX_MCP LEANCTX_DISABLE_FETCH_MCP LEANCTX_DISABLE_FTS; do
@@ -125,9 +127,9 @@ rt_probe_leanctx_vendor_doctor() {
   fi
   [[ -n "$bin" ]] || return 2
   rt_vendor_doctor_subcommand_usable "$bin" || return 2
-  if "$bin" doctor --help </dev/null 2>&1 | grep -qiE -- '--non-interactive'; then
+  if grep -qiE -- '--non-interactive' < <("$bin" doctor --help </dev/null 2>&1); then
     extra+=(--non-interactive)
-  elif "$bin" doctor --help </dev/null 2>&1 | grep -qiE -- '--yes'; then
+  elif grep -qiE -- '--yes' < <("$bin" doctor --help </dev/null 2>&1); then
     extra+=(--yes)
   fi
   # Bash 3.2 + set -u: empty extra[@] is unbound and aborts the reconciler.
@@ -154,7 +156,10 @@ rt_probe_leanctx_version_ok() {
   fi
   local cli_path
   cli_path="$(sb_leanctx_cli_path "$cfg" 2>/dev/null || true)"
-  raw="$( [[ -n "$cli_path" ]] && "$cli_path" --version </dev/null 2>/dev/null || true)"
+  raw=""
+  if [[ -n "$cli_path" ]]; then
+    raw="$("$cli_path" --version </dev/null 2>/dev/null)" || true
+  fi
   ver="$(printf '%s' "$raw" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 || true)"
   [[ -n "$ver" ]] || return 1
   [[ "$(rt_leanctx_version_int "$ver")" -ge "$(rt_leanctx_version_int "$min_ver")" ]]
@@ -168,7 +173,7 @@ rt_probe_leanctx() {
   local vd_rc=0
 
   consent="$(rt_consent_for "$tool_id")"
-  if ! rt_host_supported "${RT_HOST:-cursor}"; then fu=1
+  if ! rt_host_supported "${RT_HOST:-claude}"; then fu=1
   else
     case "$consent" in
       disabled) fd=1 ;;
@@ -208,8 +213,12 @@ rt_repair_leanctx() {
     return 0
   fi
   local install="${RT_REPO_ROOT}/scripts/install-leanctx-sb.sh"
-  if [[ -f "$install" ]]; then
-    local -a install_args=(--host "${RT_HOST:-cursor}" --project-root "${RT_PROJECT_ROOT:-}")
+  if ! rt_mutation_allowed leanctx wire; then
+    # Install-only consent: the installer would skip every step, so do not run it or claim success.
+    rt_wire_skipped_notice leanctx
+    failures+=("wire_not_consented")
+  elif [[ -f "$install" ]]; then
+    local -a install_args=(--host "${RT_HOST:-claude}" --project-root "${RT_PROJECT_ROOT:-}")
     rt_cross_tool_batch_active && install_args+=(--skip-merge)
     bash "$install" "${install_args[@]}" >&2 \
       && actions+=("install_leanctx_sb") || failures+=("install_leanctx_failed")

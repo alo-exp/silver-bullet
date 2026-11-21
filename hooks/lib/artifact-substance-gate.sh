@@ -1,33 +1,50 @@
 # shellcheck shell=bash
 # Substantive artifact validation at delivery (P2).
 
+# The artifact of the work in progress: the most recently modified match among .planning/<name> and the
+# phase directories, not the first one in glob order (an old phase's file must not be judged, R1-34).
 _sb_substance_find_artifact() {
   local repo_root="$1"
   local pattern="$2"
-  local f
+  local f newest=""
   for f in \
     "$repo_root/.planning/$pattern" \
     "$repo_root/.planning/phases"/*/"$pattern" \
     "$repo_root/.planning/phases"/*/*-"$pattern"; do
     [[ -f "$f" && ! -L "$f" ]] || continue
-    printf '%s' "$f"
-    return 0
+    if [[ -z "$newest" || "$f" -nt "$newest" ]]; then
+      newest="$f"
+    fi
   done
-  return 1
+  [[ -n "$newest" ]] || return 1
+  printf '%s' "$newest"
 }
 
+# A stub has no content once headings, table rules and lines that are only a placeholder token
+# (TODO, TBD, <placeholder>, "coming soon"...) are removed. A line that merely mentions such a word
+# ("no TODO markers remain") is content (R1-34).
 _sb_substance_is_stub() {
   local file="$1"
   local body
-  body="$(grep -vE '^#|^$|^\s*$|^\|[-: ]+\|' "$file" 2>/dev/null | tr -d '[:space:]' || true)"
-  [[ -z "$body" ]] && return 0
-  grep -qiE '\bTODO\b|\bFIXME\b|placeholder|coming soon|not available|lorem ipsum|\bTBD\b' "$file" 2>/dev/null && return 0
-  return 1
+  body="$(grep -vE '^#|^[[:space:]]*$|^\|[-: |]+\|?[[:space:]]*$' "$file" 2>/dev/null |
+    grep -viE '^[[:space:]>*|-]*(\[[ x]\][[:space:]]*)?<?(todo|tbd|fixme|placeholder|lorem ipsum|coming soon|not available|n/a)>?[.:!]?[[:space:]|]*$' |
+    tr -d '[:space:]' || true)"
+  [[ -z "$body" ]]
 }
 
+# Command output: a fenced bash/sh/shell/console/text block with at least one non-blank line in it (an empty
+# fence proves nothing, R9-11), or an unfenced `$ <test command>` transcript line.
 _sb_substance_has_command_output() {
   local file="$1"
-  grep -qE '```(bash|sh|shell|console|text)' "$file" 2>/dev/null && return 0
+  awk '
+    /^[[:space:]]*```/ {
+      if (infence) { infence = 0; next }
+      if ($0 ~ /^[[:space:]]*```(bash|sh|shell|console|text)/) { infence = 1 }
+      next
+    }
+    infence && $0 ~ /[^[:space:]]/ { found = 1 }
+    END { exit !found }
+  ' "$file" 2>/dev/null && return 0
   grep -qiE '\$ (bash|npm|pytest|cargo|go test|make test)' "$file" 2>/dev/null && return 0
   return 1
 }
@@ -42,10 +59,13 @@ sb_artifact_substance_gate_enforce() {
   local issues="" vfile rfile
 
   # Only validate REVIEW when review skill was recorded this session
+  # A recorded skill whose artifact does not exist at all is the lifecycle gate's finding (ARTIFACT BLOCKED in
+  # completion-audit/deploy-tier.sh, which also names the phase files it looked for): this gate judges the
+  # substance of the artifact that is there.
   local check_review=false check_verify=false
   if [[ -n "$state_contents" ]]; then
-    printf '%s\n' "$state_contents" | grep -Fqx 'silver-review' 2>/dev/null && check_review=true
-    printf '%s\n' "$state_contents" | grep -Fqx 'silver-verify' 2>/dev/null && check_verify=true
+    grep -Fqx 'silver-review' <<<"$state_contents" 2>/dev/null && check_review=true
+    grep -Fqx 'silver-verify' <<<"$state_contents" 2>/dev/null && check_verify=true
   else
     check_review=true
     check_verify=true
@@ -74,7 +94,11 @@ sb_artifact_substance_gate_enforce() {
       local rounds_file="${repo_root}/.planning/REVIEW-ROUNDS.md"
       if [[ -f "$rounds_file" && ! -L "$rounds_file" ]]; then
         local round_count
-        round_count=$(grep -cE '^## Round [0-9]+' "$rounds_file" 2>/dev/null || echo 0)
+        # grep -c prints 0 AND exits 1 when nothing matches; `|| echo 0` would append a
+        # second 0 ("0\n0"), which makes the numeric comparison below error out and
+        # silently pass a rounds file with no rounds at all.
+        round_count=$(grep -cE '^## Round [0-9]+' "$rounds_file" 2>/dev/null || true)
+        round_count="${round_count:-0}"
         if [[ "$round_count" -lt 2 ]]; then
           issues="${issues}  ❌ REVIEW-ROUNDS.md has ${round_count} round(s) — two consecutive clean passes required (see hooks/core-rules.md §3a) ($rounds_file)"$'\n'
         fi
@@ -84,7 +108,7 @@ sb_artifact_substance_gate_enforce() {
     fi
   fi
 
-  if printf '%s\n' "$state_contents" | grep -Fqx 'silver-plan' 2>/dev/null; then
+  if grep -Fqx 'silver-plan' <<<"$state_contents" 2>/dev/null; then
     pfile="$(_sb_substance_find_artifact "$repo_root" "PLAN.md" 2>/dev/null || true)"
     if [[ -n "$pfile" ]]; then
       if _sb_substance_is_stub "$pfile"; then

@@ -379,10 +379,10 @@ PreToolUse:Bash hook error
 feld "hookEventName" | row 2; tui-watch @ 2026-06-29T17:52:46Z |
 | E2E-037 | annoyance | hook | PreToolUse:Bsh hook rrr
 ⎿ Failed withnon-blockingstatuscode:bash:
-  /Users/shafqt/.claud/hoks/gsd-validate-commit.sh:Nos | row 2; tui-watch @ 2026-06-29T17:52:46Z |
+  /Users/<user>/.claud/hoks/gsd-validate-commit.sh:Nos | row 2; tui-watch @ 2026-06-29T17:52:46Z |
 | E2E-036 | annoyance | hook | PreToolUse:Bash hook error
 ⎿ Faied with no-blockingstatuscode:bash:
-  /Users/shafqt/.claud/hoks/gsd-validate-commit.sh:N | row 2; tui-watch @ 2026-06-29T17:52:46Z |
+  /Users/<user>/.claud/hoks/gsd-validate-commit.sh:N | row 2; tui-watch @ 2026-06-29T17:52:46Z |
 | E2E-035 | annoyance | hook | PreToolUse:Bashhookerror
  ⎿  Failed with non-blocing statuscode:bash:
   $HOME/.claude/hooks/gsd-vaidate-commit. | row 2; tui-watch @ 2026-06-29T17:52:46Z |

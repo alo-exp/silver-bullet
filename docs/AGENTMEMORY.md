@@ -4,7 +4,7 @@ Silver Bullet uses [agentmemory](https://github.com/rohitg00/agentmemory) as an 
 
 ## Opt-In Policy
 
-agentmemory is a **recommended tool**, not a hard prerequisite like `jq`. SB asks for explicit permission at `/sb:init`, `/sb:update`, and session start. Consent is stored in `.silver-bullet.json`:
+agentmemory is a **recommended tool**, not a hard prerequisite like `jq`. SB asks for explicit permission at `/sb:init`, `/sb:update`, and session start. Your consent is recorded per user, outside the repository (`scripts/sb-consent.sh`; see [CONSENT.md](CONSENT.md)). `.silver-bullet.json` can only recommend the tool or turn it off:
 
 ```json
 "recommended_tools": {
@@ -20,9 +20,9 @@ agentmemory is a **recommended tool**, not a hard prerequisite like `jq`. SB ask
 
 | `enabled_by_user` | Behavior |
 |-------------------|----------|
-| `null` | Consent pending — SB prompts; no hook enforcement |
-| `true` | Mandatory — hooks block substantive edits until CLI, server, MCP, and export root are ready |
-| `false` | Opted out — no enforcement |
+| `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project .`) |
+| `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 **Install failure after opt-in:** SB sets `enforcement_suspended: true` and preserves `enabled_by_user: true`. Hooks treat suspended agentmemory like opted-out until the next `/sb:init` or `/sb:update` retry succeeds.
 
@@ -67,7 +67,7 @@ CLAUDE_MEMORY_BRIDGE=true
 AGENTMEMORY_EXPORT_ROOT=/absolute/path/to/project/.agentmemory
 ```
 
-**launchd (macOS):** `com.agentmemory.server` with `KeepAlive` and absolute export root in plist env (see `SETUP_REPORT.md` deviations). **Bridge:** `com.agentmemory.bridge` watches `.agentmemory/` when `~/.agentmemory/bridge.py` exists. The bridge plist includes `GITLEAKS_PATH` and `PATH` so the second-line gitleaks scan runs reliably.
+**launchd (macOS):** `com.agentmemory.server` with `KeepAlive` and absolute export root in plist env (see the locally generated setup report (`sb-verify-synergy.sh --write-setup-report`, not committed) deviations). **Bridge:** `com.agentmemory.bridge` watches `.agentmemory/` when `~/.agentmemory/bridge.py` exists. The bridge plist includes `GITLEAKS_PATH` and `PATH` so the second-line gitleaks scan runs reliably.
 
 ### gitleaks (required with bridge)
 
@@ -103,21 +103,7 @@ SB uses one user-global agentmemory installation for every supported host. The h
 |------|-----------|--------------------------|----------|
 | Claude Code | *(none)* | `agentmemory connect claude-code` | `~/.claude.json` |
 | Codex | `codex plugin marketplace add rohitg00/agentmemory`; `codex plugin add agentmemory@agentmemory` | `agentmemory connect codex --with-hooks` | `~/.codex/config.toml` |
-| Cursor | *(none)* | SB reconciles the global `agentmemory mcp` entry; Cursor Settings may be used to reload it | `~/.cursor/mcp.json` |
 | OpenCode / Goose / Hermes | *(varies)* | See `platform_install_commands` in template | host config |
-
-**Cursor:** The reconciler atomically converges `~/.cursor/mcp.json` when agentmemory is consented. It preserves unrelated servers and uses the global executable from `~/.silver-bullet/five-tool-stack/instances.json`.
-
-**Manual Cursor MCP block** (preserve existing servers):
-
-```bash
-jq --arg agentmemory "$(jq -r '.tools.agentmemory.command' ~/.silver-bullet/five-tool-stack/instances.json)" \
-  '.mcpServers.agentmemory = {
-    "command": $agentmemory,
-    "args": ["mcp"],
-    "env": { "AGENTMEMORY_URL": "http://localhost:3111" }
-  }' ~/.cursor/mcp.json
-```
 
 ### Step 5 — Git-backed auto-save (optional bridge)
 

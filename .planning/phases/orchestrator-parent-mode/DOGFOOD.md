@@ -1,13 +1,13 @@
 # Dogfood — Orchestrator Parent Mode
 
-**Target project:** `/Users/shafqat/projects/todo-app`  
+**Target project:** `/Users/<user>/projects/todo-app`  
 **Date:** 2026-06-14
 
 ## Setup
 
 ```bash
-cd /Users/shafqat/projects/todo-app
-bash /Users/shafqat/projects/silver-bullet/repo/scripts/sb-migrate-orchestrator-parent.sh .
+cd /Users/<user>/projects/todo-app
+bash /Users/<user>/projects/silver-bullet/repo/scripts/sb-migrate-orchestrator-parent.sh .
 # or re-run /silver:init from updated SB plugin
 ```
 

@@ -16,6 +16,14 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-10-17 — documentation-accuracy-overhaul
+**What**: Audited the docs against the code: fixed stale counts, the CI-red, two-tier, jq-missing, trivial-marker and release-process descriptions, prerequisites and licensing; added generated `docs/HOOKS.md`, `docs/CONFIGURATION.md`, `docs/TROUBLESHOOTING.md`, `docs/CICD.md`, `docs/README.md` and `scripts/README.md`; rewrote `docs/TESTING.md`; merged the GSD comparison pages; added docs tests for links, stated counts and hook-reference freshness.
+**Commits**: (this branch)
+**Skills run**: graphify
+**Virtual cost**: —
+**KNOWLEDGE.md**: updated (generated hook reference, jq-missing and enterprise-policy gotchas)
+**Learnings**: updated (test-checked facts in prose, vacuous CI assertions)
+
 ## 2026-08-08 — repository-consistency-reconciliation
 **What**: Reconciled v0.51.7 release metadata, security posture, standalone lifecycle language, and documentation governance; marked superseded GSD/site analyses as historical, expanded release-surface parity checks, removed host/external-state coupling from the default test harness, kept isolated Codex installs from materializing package symlinks inside the source checkout, and made Sentinel manifest generation tests preserve the frozen audit input.
 **Commits**: —
@@ -23,6 +31,10 @@
 **Virtual cost**: —
 **KNOWLEDGE.md**: updated (live guidance vs historical evidence; complete release identity surface)
 **Learnings**: updated (documentation classification and release parity checks)
+
+## 2026-06-27 — doc-scheme-gate-remediation-session
+**What**: Verified filing of issue #237 (Orchestrator parent mode frictions) into alo-exp/silver-bullet; re-touched mandatory docs to clear doc-scheme gate.
+**Evidence**: gh issue list/view confirmed issue #237 OPEN; gh project item-list confirmed #237 Backlog status.
 
 ## 2026-06-14 — phase-056-zuvo-runtime-parity-release (doc-scheme session pass)
 **What**: Doc-scheme gate remediation for v0.40.0 delivery — full 79-key checklist, fresh mandated-doc mtimes after Cursor session-start-time, TESTING.md phase 057 cursor test matrix.
@@ -63,6 +75,22 @@
 **Virtual cost**: ~$0.20 (medium complexity — hook fixes, release gate, doc-scheme remediation)
 **KNOWLEDGE.md**: updated (cross-runtime receipt dirs, release notes validation)
 **Learnings**: updated (hook tests need closed stdin; doc-scheme gate uses session mtime)
+
+## 2026-06-14 — phase-056-zuvo-runtime-parity-release (cursor doc-scheme)
+**What**: Cursor-session doc-scheme gate pass for v0.40.0 — phases 056+057 runtime parity release artifacts, public site refresh, and Cursor marketplace packaging; checklist and mandated monthly knowledge/learnings touched after `~/.cursor/.silver-bullet/session-start-time`.
+**Commits**: (this session)
+**Skills run**: sb:ensure-docs
+**Virtual cost**: ~$0.02 (gate remediation — checklist + mandated doc mtimes)
+**KNOWLEDGE.md**: updated (Cursor runtime state path for doc-scheme enforcement)
+**Learnings**: updated (session mtime gate under Cursor)
+
+## Doc-scheme session (2026-06-14)
+
+Task `phase-056-zuvo-runtime-parity-release`: v0.40.0 shipped (phase 056 runtime parity, phase 057 Cursor marketplace, site refresh). Doc-scheme gate refreshed in Cursor runtime (`~/.cursor/.silver-bullet`).
+
+## Doc-scheme refresh (2026-06-14, Cursor session)
+
+Task `phase-056-zuvo-runtime-parity-release`: v0.40.0 on `main` (phase 056 runtime parity enforcement, phase 057 Cursor marketplace, site refresh). Checklist rebuilt after corrupt empty-key state.
 
 ## 2026-06-11 — release-live-marker-host-state
 **What**: Fixed the Kay/Codex live release runners so successful isolated runtime gates write their completion markers into the host Silver Bullet state directory that `completion-audit.sh` checks before `gh release create`.
@@ -185,25 +213,3 @@
 **Skills run**: quality-gates, test-driven-development, code-review, requesting-code-review, receiving-code-review, testing-strategy, tech-debt, documentation
 **Virtual cost**: ~$1.20 (Sonnet, complex — 3 review passes, 2 plans, multiple doc updates)
 **KNOWLEDGE.md**: updated (architecture patterns, known gotchas, key decisions, recurring patterns, open questions)
-
-## 2026-06-14 — phase-056-zuvo-runtime-parity-release (cursor doc-scheme)
-**What**: Cursor-session doc-scheme gate pass for v0.40.0 — phases 056+057 runtime parity release artifacts, public site refresh, and Cursor marketplace packaging; checklist and mandated monthly knowledge/learnings touched after `~/.cursor/.silver-bullet/session-start-time`.
-**Commits**: (this session)
-**Skills run**: sb:ensure-docs
-**Virtual cost**: ~$0.02 (gate remediation — checklist + mandated doc mtimes)
-**KNOWLEDGE.md**: updated (Cursor runtime state path for doc-scheme enforcement)
-**Learnings**: updated (session mtime gate under Cursor)
-
-## Doc-scheme session (2026-06-14)
-
-Task `phase-056-zuvo-runtime-parity-release`: v0.40.0 shipped (phase 056 runtime parity, phase 057 Cursor marketplace, site refresh). Doc-scheme gate refreshed in Cursor runtime (`~/.cursor/.silver-bullet`).
-
-
-## Doc-scheme refresh (2026-06-14, Cursor session)
-
-Task `phase-056-zuvo-runtime-parity-release`: v0.40.0 on `main` (phase 056 runtime parity enforcement, phase 057 Cursor marketplace, site refresh). Checklist rebuilt after corrupt empty-key state.
-
-
-## 2026-06-27 — doc-scheme-gate-remediation-session
-**What**: Verified filing of issue #237 (Orchestrator parent mode frictions) into alo-exp/silver-bullet; re-touched mandatory docs to clear doc-scheme gate.
-**Evidence**: gh issue list/view confirmed issue #237 OPEN; gh project item-list confirmed #237 Backlog status.

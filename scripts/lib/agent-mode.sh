@@ -4,6 +4,8 @@
 # Host adapters implement native ctl start/send/key/snapshot/status/abort.
 # shellcheck shell=bash
 
+_AGENT_MODE_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 agent_mode_iso_now() {
   date -u +%Y-%m-%dT%H:%M:%SZ
 }
@@ -52,7 +54,7 @@ agent_mode_reset
 agent_mode_reason_ok() {
   local r="$1"
   case "$r" in
-    tui-unavailable|mode-unavailable|incomplete|result-missing|escalate-unavailable|escalated|d3-process-alive|d3-continue|d3-in-wave-cursor|classifier-interactive|classifier-ni|pin)
+    tui-unavailable|mode-unavailable|incomplete|result-missing|escalate-unavailable|escalated|d3-process-alive|d3-continue|classifier-interactive|classifier-ni|pin)
       return 0 ;;
     fallback_drop:attach|fallback_drop:control-dir|fallback_drop:max-turns|fallback_drop:auto-policy)
       return 0 ;;
@@ -90,6 +92,7 @@ agent_mode_reasons_json() {
 
 agent_mode_fail_conflict() {
   SB_AM_FAILURE_CLASS="mode-conflict"
+  # shellcheck disable=SC2034  # SB_AM_* state is read by scripts that source agent-mode.sh
   SB_AM_CONFLICT_DETAIL="$1"
   printf 'ERROR: mode-conflict (%s)\n' "$1" >&2
   return 2
@@ -236,14 +239,22 @@ agent_mode_handle_flag() {
       ;;
     --task-id)
       SB_AM_SHIFT=2
+      # The id becomes a directory name under .planning/agent-<host>/ and a JSON/Markdown value.
+      # (An empty value is reported by the caller as "requires a value".)
+      if [[ -n "$value" ]] && { ! [[ "$value" =~ ^[A-Za-z0-9._-]{1,64}$ ]] || [[ "$value" == "." || "$value" == ".." ]]; }; then
+        printf 'ERROR: --task-id must match ^[A-Za-z0-9._-]{1,64}$ (and not be . or ..): %s\n' "$value" >&2
+        return 2
+      fi
       SB_AM_TASK_ID="$value"
       return 0
       ;;
     --quota-retry)
+      # shellcheck disable=SC2034  # read by the sibling agent-delegate-common.sh
       SB_AM_QUOTA_RETRY=1
       return 0
       ;;
     --skip-preflight)
+      # shellcheck disable=SC2034  # read by the sibling agent-delegate-common.sh
       SB_AM_SKIP_PREFLIGHT=1
       return 0
       ;;
@@ -368,10 +379,6 @@ agent_mode_preflight_flags() {
     fi
     if [[ -n "$SB_AM_AUTO_POLICY" ]]; then
       agent_mode_fail_conflict "auto-policy-on-ni"
-      return 2
-    fi
-    if [[ "$SB_AM_ALLOW_FALLBACK" -eq 1 ]]; then
-      agent_mode_fail_conflict "fallback-not-pinned"
       return 2
     fi
   fi
@@ -514,14 +521,13 @@ agent_mode_d4_eligible_from_state() {
   return 0
 }
 
-# Sets SB_AM_D3_SIGNAL to process-alive | continue | in-wave-cursor | ""
+# Sets SB_AM_D3_SIGNAL to process-alive | continue | ""
 agent_mode_detect_d3() {
   local task_dir="$1" host="$2" utterance="${3:-}"
   SB_AM_D3_SIGNAL=""
   local session="${task_dir}/session.json"
   [[ -f "$session" ]] || return 1
-  local status conv pid started updated
-  status="$(agent_mode_read_json_field "$session" "status")"
+  local conv pid started updated
   conv="$(agent_mode_read_json_field "$session" "conversation_id")"
   pid="$(agent_mode_read_json_field "$session" "pid")"
   started="$(agent_mode_read_json_field "$session" "pid_started_at")"
@@ -545,11 +551,6 @@ agent_mode_detect_d3() {
   fi
 
   [[ "$ttl_ok" -eq 1 ]] || return 1
-
-  if [[ "$host" == "cursor" && -n "$conv" && "$status" == "live" ]]; then
-    SB_AM_D3_SIGNAL="in-wave-cursor"
-    return 0
-  fi
 
   local ut
   ut="$(printf '%s' "$utterance" | tr '[:upper:]' '[:lower:]')"
@@ -590,6 +591,7 @@ PY
 agent_mode_classify_task() {
   local brief="$1" task_dir="$2" host="${3:-}" utterance="${4:-}"
   SB_AM_CLASSIFIED="non-interactive"
+  # shellcheck disable=SC2034  # SB_AM_* state record exposed to scripts that source agent-mode.sh
   SB_AM_UTTERANCE="$utterance"
 
   if [[ "$SB_AM_NO_ESCALATE" -eq 0 ]] && agent_mode_pending_escalate "$task_dir"; then
@@ -603,7 +605,6 @@ agent_mode_classify_task() {
     case "$SB_AM_D3_SIGNAL" in
       process-alive) agent_mode_reason_append "d3-process-alive" ;;
       continue) agent_mode_reason_append "d3-continue" ;;
-      in-wave-cursor) agent_mode_reason_append "d3-in-wave-cursor" ;;
     esac
     return 0
   fi
@@ -656,11 +657,6 @@ agent_mode_tui_available() {
     opencode)
       command -v opencode >/dev/null 2>&1 || return 1
       return 0
-      ;;
-    cursor)
-      command -v cursor-agent >/dev/null 2>&1 && return 0
-      command -v agent >/dev/null 2>&1 && return 0
-      return 1
       ;;
     pi)
       agent_mode_pi_tui_probe
@@ -769,7 +765,6 @@ agent_mode_resolve_mode() {
     case "$SB_AM_D3_SIGNAL" in
       process-alive) agent_mode_reason_append "d3-process-alive" ;;
       continue) agent_mode_reason_append "d3-continue" ;;
-      in-wave-cursor) agent_mode_reason_append "d3-in-wave-cursor" ;;
     esac
     agent_mode_apply_tui_gate "$host" "interactive" 1 0
     return $?
@@ -928,15 +923,6 @@ agent_mode_apply_host_launch_env() {
         export PI_USE_INTERACTIVE=0
       fi
       ;;
-    cursor)
-      if [[ "$SB_AM_RESOLVED" == "interactive" ]]; then
-        export SB_AGENT_CURSOR_SESSION=1
-        export SB_LIVE_CURSOR_FORCE_HEADLESS=0
-      else
-        export SB_AGENT_CURSOR_SESSION=0
-        export SB_LIVE_CURSOR_FORCE_HEADLESS=1
-      fi
-      ;;
   esac
   if [[ -n "$SB_AM_IDLE_SEC" ]]; then
     export SB_AGENT_IDLE_SEC="$SB_AM_IDLE_SEC"
@@ -1052,7 +1038,7 @@ agent_mode_maybe_escalate() {
     agent_mode_reason_append "escalate-unavailable"
     return 1
   fi
-  agent_mode_prepare_artifact_dir "$host" "$(dirname "$(dirname "$task_dir")")" >/dev/null
+  agent_mode_prepare_artifact_dir "$host" "$(dirname "$(dirname "$(dirname "$task_dir")")")" >/dev/null
   agent_mode_append_event "$task_dir" "escalated" ""
   agent_mode_append_event "$task_dir" "mode_resolved" "interactive"
   return 0
@@ -1062,11 +1048,20 @@ agent_mode_maybe_escalate() {
 agent_mode_ctl_write() {
   local control="$1" json="$2"
   [[ -p "${control}/cmd.fifo" ]] || return 1
-  python3 - "${control}/cmd.fifo" "$json" <<'PY'
-import sys
-path, payload = sys.argv[1], sys.argv[2]
-with open(path, "w", encoding="utf-8") as fh:
-    fh.write(payload.rstrip() + "\n")
+  python3 - "${control}/cmd.fifo" "$json" "${_AGENT_MODE_LIB_DIR}" <<'PY'
+import os, sys
+path, payload, lib_dir = sys.argv[1], sys.argv[2], sys.argv[3]
+sys.path.insert(0, lib_dir)
+import agent_fifo
+try:
+    try:
+        timeout = float(os.environ.get("SB_AGENT_CTL_TIMEOUT") or "8")
+    except ValueError:
+        timeout = 8.0
+    agent_fifo.write_line(path, payload, timeout)
+except (OSError, TimeoutError) as exc:
+    sys.stderr.write("ERROR: could not open cmd.fifo (no driver reading it?): %s\n" % exc)
+    sys.exit(2)
 PY
 }
 
@@ -1157,6 +1152,7 @@ agent_mode_run_delegate_resolver() {
   printf '%s' "$brief" >"${task_dir}/brief.md"
   # Pinned NI: persist mode.json and return — no classify / D3 / TUI / D4.
   if [[ "$SB_AM_CONCRETE_PIN" -eq 1 && "$SB_AM_REQUESTED" == "non-interactive" ]]; then
+    # shellcheck disable=SC2034  # SB_AM_* state record exposed to scripts that source agent-mode.sh
     SB_AM_HOST="$host"
     SB_AM_TASK_DIR="$task_dir"
     SB_AM_REASONS=()

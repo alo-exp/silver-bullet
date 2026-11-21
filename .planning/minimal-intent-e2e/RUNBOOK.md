@@ -12,14 +12,14 @@
 ## Phase 0 — Orientation
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo
+cd /Users/<user>/projects/silver-bullet/repo
 graphify query "minimal intent orchestrator parent autonomous development lifecycle"
 ```
 
 ## Phase 1 — Preflight (structural only)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 bash scripts/minimal-intent-autonomous-e2e.sh preflight
 ```
 
@@ -30,8 +30,8 @@ Verifies: matrix JSON, driver executable, fixture vision/prefs, structural tests
 ## Phase 2 — Start (live — operator)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export SB_MINIMAL_INTENT_WORK_DIR=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export SB_MINIMAL_INTENT_WORK_DIR=/Users/<user>/projects/enterprise-grade-test-app
 
 # Prepare run dir (dry-run)
 bash scripts/minimal-intent-autonomous-e2e.sh start --row MI-01 --dry-run

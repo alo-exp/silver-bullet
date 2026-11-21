@@ -15,7 +15,7 @@ run_hook() {
 
 is_blocked() {
   local output="$1"
-  [[ -n "$output" ]] && printf '%s' "$output" | grep -qE '"permissionDecision"\s*:\s*"deny"'
+  [[ -n "$output" ]] && grep -qE '"permissionDecision"\s*:\s*"deny"' <<<"$output"
 }
 
 assert_blocks() {
@@ -55,6 +55,16 @@ assert_blocks "Edit with lean-ctx marker blocked" "$(run_hook "$payload_edit_mar
 
 payload_bash=$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:"echo hi"}}')
 assert_passes "Bash ignored" "$(run_hook "$payload_bash")"
+
+# R2-03: a payload over the 128 KiB argv limit must still reach the scanner (stdin transport)
+big_file="$(mktemp)"
+trap 'rm -f "$big_file"' EXIT
+{ head -c 200000 /dev/zero | tr '\0' 'a'; printf '\n... [lean-ctx: omitted 1 lines]'; } >"$big_file"
+payload_big_marker=$(jq -n --rawfile c "$big_file" '{hook_event_name:"PreToolUse",tool_name:"Write",tool_input:{file_path:"/tmp/example.md",content:$c}}')
+assert_blocks "200 KB Write with lean-ctx marker blocked" "$(run_hook "$payload_big_marker")"
+head -c 200000 /dev/zero | tr '\0' 'a' >"$big_file"
+payload_big_clean=$(jq -n --rawfile c "$big_file" '{hook_event_name:"PreToolUse",tool_name:"Write",tool_input:{file_path:"/tmp/example.md",content:$c}}')
+assert_passes "200 KB clean Write passes" "$(run_hook "$payload_big_clean")"
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

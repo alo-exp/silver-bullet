@@ -2,7 +2,7 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# SubagentStart (Cursor) / SessionStart worker branch — inject worker banner + tool requirements.
+# SubagentStart / SessionStart worker branch — inject worker banner + tool requirements.
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
@@ -21,18 +21,10 @@ case "$hook_event" in
   *) exit 0 ;;
 esac
 
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" && -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir="$(dirname "$search_dir")"
-done
+# The project: the nearest root with a record, else the nearest directory with both contract files.
+config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity-anchor.sh" && sb_integrity_activation_config "$PWD") 2>/dev/null; true)"
+search_dir="${config_file:+${config_file%/*}}"
+search_dir="${search_dir:-$PWD}"
 [[ -n "$config_file" ]] || exit 0
 sb_project_gate_or_exit 2>/dev/null || exit 0
 
@@ -44,15 +36,16 @@ if [[ -n "$prompt_preview" ]]; then
 fi
 
 now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+# Evidence record only (e2e scorers, diagnostics): who is a worker is decided per call from the
+# payload's agent_id, never from this file (R4-02).
 marker_file="$(sb_orchestrator_worker_marker_file)"
-mkdir -p "$(dirname "$marker_file")" 2>/dev/null || true
-jq -n \
+marker_json="$(jq -n \
   --arg at "$now" \
   --arg st "$subagent_type" \
   --arg skill "$assigned_skill" \
   --arg preview "$prompt_preview" \
-  '{spawned_at:$at, subagent_type:$st, assigned_skill:$skill, prompt_preview:$preview, source:"subagent-start"}' \
-  >"${marker_file}.tmp" 2>/dev/null && mv "${marker_file}.tmp" "$marker_file"
+  '{spawned_at:$at, subagent_type:$st, assigned_skill:$skill, prompt_preview:$preview, source:"subagent-start"}' 2>/dev/null || true)"
+[[ -z "$marker_json" ]] || sb_orchestrator_atomic_write "$marker_file" "$marker_json" || true
 
 if [[ -f "$_lib_dir/orchestrator-scheduler.sh" ]]; then
   # shellcheck source=lib/orchestrator-scheduler.sh

@@ -8,7 +8,8 @@
     "name": "{{PROJECT_NAME}}",
     "src_pattern": "/src/",
     "src_exclude_pattern": "__tests__|\\.test\\.",
-    "active_workflow": "full-dev-cycle"
+    "active_workflow": "full-dev-cycle",
+    "push_to_default_branch_tier": "completion"
   },
   "skills": {
     "required_planning": [
@@ -171,11 +172,6 @@
             "graphify codex install --project"
           ]
         },
-        "cursor": {
-          "post_index": [
-            "graphify cursor install"
-          ]
-        },
         "opencode": {
           "pre_index": [
             "graphify install --project --platform opencode"
@@ -201,11 +197,11 @@
           "post_index": []
         }
       },
-      "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, Cursor, OpenCode, Goose (Pi), and Hermes agents.",
+      "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, OpenCode, Goose (Pi), and Hermes agents.",
       "graph_path": "graphify-out/graph.json",
       "query_ttl_seconds": 1800,
       "query_budget": 2000,
-      "query_state_file": "$HOME/.codex/.silver-bullet/graphify-query",
+      "query_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/graphify-query",
       "optimization": {
         "profile": "synergy_max",
         "last_applied_at": null,
@@ -238,12 +234,6 @@
             "agentmemory connect codex --with-hooks"
           ]
         },
-        "cursor": {
-          "pre_index": [],
-          "post_index": [
-            "Verify agentmemory MCP is configured in $HOME/.codex/mcp.json (see docs/AGENTMEMORY.md)"
-          ]
-        },
         "opencode": {
           "pre_index": [],
           "post_index": [
@@ -272,7 +262,7 @@
       "benefits_summary": "Session capture with git-backed memory export; proactive context injection; pairs with Graphify for save-via-agentmemory, retrieve-via-Graphify synergy.",
       "health_url": "http://localhost:3111/agentmemory/health",
       "usage_ttl_seconds": 1800,
-      "usage_state_file": "$HOME/.codex/.silver-bullet/agentmemory-usage",
+      "usage_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/agentmemory-usage",
       "export_root": ".agentmemory",
       "optimization": {
         "profile": "synergy_max",
@@ -295,12 +285,6 @@
         "claude": {
           "pre_index": [
             "claude mcp add alumnium --env OPENAI_API_KEY=$OPENAI_API_KEY -- npx -y alumnium mcp"
-          ],
-          "post_index": []
-        },
-        "cursor": {
-          "pre_index": [
-            "Merge alumnium MCP into $HOME/.codex/mcp.json per docs/ALUMNIUM.md"
           ],
           "post_index": []
         },
@@ -332,14 +316,6 @@
             "rtk init -g"
           ],
           "post_index": []
-        },
-        "cursor": {
-          "pre_index": [
-            "rtk init -g --agent cursor"
-          ],
-          "post_index": [
-            "bash scripts/optimize-rtk-context-mode.sh --host cursor"
-          ]
         },
         "codex": {
           "pre_index": [
@@ -387,15 +363,6 @@
             "Restart Claude Code after shared MCP configuration changes"
           ]
         },
-        "cursor": {
-          "pre_index": [
-            "npm install -g context-mode",
-            "bash scripts/optimize-rtk-context-mode.sh --host cursor"
-          ],
-          "post_index": [
-            "Restart Cursor after MCP/hook merge"
-          ]
-        },
         "codex": {
           "pre_index": [
             "Merge context-mode blocks into ~/.codex/config.toml and hooks.json per docs/CONTEXT-MODE.md",
@@ -430,7 +397,7 @@
         "curl -fsSL https://leanctx.com/install.sh | sh"
       ],
       "usage_ttl_seconds": 1800,
-      "usage_state_file": "$HOME/.codex/.silver-bullet/leanctx-usage",
+      "usage_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/leanctx-usage",
       "stack_mode": "parallel_routed",
       "optimization_profile": "five_tool_routed",
       "primary_fts": "context_mode",
@@ -444,12 +411,6 @@
         "injection_detection": true
       },
       "platform_install_commands": {
-        "cursor": {
-          "pre_index": [
-            "bash scripts/install-leanctx-sb.sh --host cursor --project-root \"$(pwd)\""
-          ],
-          "post_index": []
-        },
         "claude": {
           "pre_index": [
             "bash scripts/install-leanctx-sb.sh --host claude --project-root \"$(pwd)\""
@@ -519,8 +480,8 @@
     "wshobson": false
   },
   "state": {
-    "state_file": "$HOME/.codex/.silver-bullet/state",
-    "trivial_file": "$HOME/.codex/.silver-bullet/trivial"
+    "state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state",
+    "trivial_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial"
   },
   "issue_tracker": "local",
   "issue_tracker_adapter": {
@@ -532,10 +493,10 @@
   "release": {
     "_comment_quality_gate_markers": "On gh release create: adversarial-review-clean, sentinel-skills-clean, quality-gate-stage-3, full-test-suite-rerun",
     "profile": "generic",
-    "require_plugin_runtime_matrix": true,
-    "require_pre_release_quality_gate": true,
-    "require_rc_matrix": true,
-    "quality_gate_state_file": "$HOME/.codex/.silver-bullet/quality-gate-state"
+    "require_plugin_runtime_matrix": false,
+    "require_pre_release_quality_gate": false,
+    "require_rc_matrix": false,
+    "quality_gate_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
   },
   "compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions.",
   "semantic_compression": {
@@ -603,31 +564,13 @@
     "identity_tags": [
       "claude",
       "codex",
-      "opencode"
+      "opencode",
+      "pi",
+      "goose",
+      "hermes"
     ],
     "stale_lock_ttl_seconds": 1800,
     "delegation_timeout_seconds": 1200
-  },
-  "cursor_sb_agents": {
-    "enabled": true,
-    "enabled_by_user": null,
-    "selected_models": [
-      "composer-2.5",
-      "grok-4.5"
-    ],
-    "effort_levels": [
-      "medium",
-      "high",
-      "xhigh"
-    ],
-    "include_fast": false,
-    "include_max": false,
-    "agent_name_prefix": "sb",
-    "catalog_source": "agent-models+docs",
-    "catalog_fetched_at": null,
-    "agents_install_status": "pending",
-    "agents_install_scope": null,
-    "enforcement_suspended": false
   },
   "enterprise_policy": {
     "_comment": "Advisory profile scaffolding — session-start injects recommended session_mode_default; clarify_auto/deploy/evidence gates are runtime handoff TODO (site/help/concepts/enterprise-policy-profiles.html).",

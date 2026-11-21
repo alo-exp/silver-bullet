@@ -52,7 +52,7 @@ enterprise_e2e_ledger_header_ok() {
   [[ -n "$header_line" ]] || return 1
   while IFS= read -r col; do
     [[ -z "$col" ]] && continue
-    if ! printf '%s' "$header_line" | grep -qF "$col"; then
+    if ! grep -qF "$col" <<<"$header_line"; then
       return 1
     fi
   done < <(enterprise_e2e_ledger_required_columns)

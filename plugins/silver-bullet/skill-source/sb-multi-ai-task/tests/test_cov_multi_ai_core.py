@@ -1,0 +1,418 @@
+"""Behavioral tests for multi_ai_core: ids, money, registry, host gating, pool resolution."""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import unittest
+from decimal import Decimal
+from pathlib import Path
+from unittest import mock
+
+from cov_helpers import HermeticCase
+
+import multi_ai_core as core
+from json_hash import sha256_json
+
+
+class IdAndMoneyTests(HermeticCase):
+    def test_ids_have_prefix_and_are_unique(self) -> None:
+        self.assertRegex(core.new_run_id(), r"^run-[0-9a-f]{32}$")
+        self.assertRegex(core.new_work_item_id(), r"^work-[0-9a-f]{32}$")
+        self.assertRegex(core.new_attempt_id(), r"^attempt-[0-9a-f-]{36}$")
+        self.assertNotEqual(core.new_work_item_id(), core.new_work_item_id())
+        self.assertNotEqual(core.new_attempt_id(), core.new_attempt_id())
+
+    def test_utc_now_iso_shape(self) -> None:
+        self.assertRegex(core.utc_now_iso(), r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
+
+    def test_usd_to_micro_usd_rounds_half_up(self) -> None:
+        self.assertEqual(core.usd_to_micro_usd("25.00"), 25_000_000)
+        self.assertEqual(core.usd_to_micro_usd(Decimal("0.0000005")), 1)
+        self.assertEqual(core.usd_to_micro_usd("0.0000004"), 0)
+        self.assertEqual(core.usd_to_micro_usd(3), 3_000_000)
+        with self.assertRaises(Exception):
+            core.usd_to_micro_usd("not-a-number")
+
+    def test_budget_policy_defaults(self) -> None:
+        budget = core.BudgetPolicy()
+        self.assertEqual(budget.max_cost_micro_usd, 25_000_000)
+        self.assertEqual((budget.max_total_tokens, budget.max_agents, budget.concurrency), (2_000_000, 11, 6))
+
+
+class RegistryTests(HermeticCase):
+    def test_registry_hash_covers_only_identity_keys(self) -> None:
+        reg = core.load_registry()
+        base = core.registry_sha256(reg)
+        self.assertEqual(base, core.registry_sha256())
+        noisy = dict(reg, ocg_lite_pool=["something-else"])
+        self.assertEqual(core.registry_sha256(noisy), base)
+        changed = dict(reg, version="9.9.9")
+        self.assertNotEqual(core.registry_sha256(changed), base)
+        partial = {"schema_id": "s", "other": 1}
+        self.assertEqual(core.registry_sha256(partial), sha256_json({"schema_id": "s"}))
+
+    def test_normalize_and_family(self) -> None:
+        self.assertEqual(core.normalize_logical_id("sb-dr-glm-5.2"), "glm-5.2")
+        self.assertEqual(core.normalize_logical_id("composer-2.5"), "composer-2.5")
+        reg = {"aliases": {"a": "b"}, "logical_to_family": {"b": "fam"}}
+        self.assertEqual(core.normalize_logical_id("a", reg), "b")
+        self.assertEqual(core.family_for_logical("a", reg), "fam")
+        self.assertEqual(core.family_for_logical("composer-2.5"), core.load_registry()["logical_to_family"]["composer-2.5"])
+        with self.assertRaisesRegex(ValueError, "unknown logical model id: nope"):
+            core.family_for_logical("nope", reg)
+        with self.assertRaises(ValueError):
+            core.family_for_logical("x", {})
+
+
+class HostDetectionTests(HermeticCase):
+    def host(self, **env: str) -> str:
+        with mock.patch.dict(os.environ, env):
+            return core.detect_host()
+
+    def test_detect_host_from_ambient_markers(self) -> None:
+        self.assertEqual(self.host(), "unknown")
+        self.assertEqual(self.host(CLAUDECODE="1"), "claude-code")
+        self.assertEqual(self.host(CLAUDE_CODE="1"), "claude-code")
+        for marker in ("CODEX_SANDBOX", "SB_AGENT_CODEX_DELEGATE", "CODEX_CI", "CODEX_THREAD_ID", "CODEX_INTERNAL_ORIGINATOR_OVERRIDE"):
+            self.assertEqual(self.host(**{marker: "1"}), "codex", marker)
+        # Both supported hosts at once: a fixed order, never an error.
+        self.assertEqual(self.host(CLAUDECODE="1", CODEX_SANDBOX="seatbelt"), "claude-code")
+
+    def test_detect_host_explicit_supported_names(self) -> None:
+        self.assertEqual(self.host(SB_HOST="Claude"), "claude-code")
+        self.assertEqual(self.host(SB_HOST="claude-code"), "claude-code")
+        self.assertEqual(self.host(SB_HOST=" CODEX "), "codex")
+        # Real process evidence beats a supported override (both are supported: nothing weaker is selectable).
+        self.assertEqual(self.host(CODEX_SANDBOX="seatbelt", SB_HOST="claude"), "codex")
+        self.assertEqual(self.host(CLAUDECODE="1", SB_HOST="codex"), "claude-code")
+
+    def test_cursor_is_never_a_host(self) -> None:
+        self.assertEqual(self.host(SB_HOST="cursor"), "cursor")
+        self.assertEqual(self.host(CURSOR_AGENT="1"), "cursor")
+        self.assertEqual(self.host(CURSOR_TRACE_ID="t"), "cursor")
+        # Claude Code or Codex started from a Cursor terminal inherits CURSOR_* markers: it is still that host.
+        self.assertEqual(self.host(CLAUDECODE="1", CURSOR_TRACE_ID="t"), "claude-code")
+        self.assertEqual(self.host(CODEX_CI="1", CURSOR_AGENT="1"), "codex")
+        # Order pinned: an explicit supported SB_HOST outranks the weak CURSOR_* markers (a user's own statement),
+        # while the same markers alone are refused.
+        self.assertEqual(self.host(SB_HOST="claude", CURSOR_AGENT="1"), "claude-code")
+        self.assertEqual(self.host(SB_HOST="codex", CURSOR_TRACE_ID="t"), "codex")
+        self.assertEqual(self.host(CURSOR_AGENT="1"), "cursor")
+
+    def test_explicit_unsupported_override_always_fails_closed(self) -> None:
+        # An override can only make the gate stricter, never hide an unsupported or unknown host.
+        self.assertEqual(self.host(SB_HOST="cursor", CLAUDECODE="1"), "cursor")
+        self.assertEqual(self.host(SB_HOST="Weird", CODEX_SANDBOX="1"), "weird")
+        self.assertEqual(self.host(SB_HOST="Weird"), "weird")
+        self.assertEqual(self.host(SB_HOST="  "), "unknown")
+
+    def test_host_gate_supports_claude_and_codex(self) -> None:
+        for env, host in (({"CLAUDECODE": "1"}, "claude-code"), ({"SB_HOST": "claude"}, "claude-code"),
+                          ({"CODEX_THREAD_ID": "t"}, "codex"), ({"SB_HOST": "codex"}, "codex")):
+            with mock.patch.dict(os.environ, env):
+                self.assertEqual(core.host_gate(), {"ok": True, "host": host}, env)
+
+    def test_host_gate_cursor_says_it_is_no_longer_a_host(self) -> None:
+        for env in ({"SB_HOST": "cursor"}, {"CURSOR_AGENT": "1"}, {"CURSOR_TRACE_ID": "t"}, {"SB_HOST": "cursor", "CLAUDECODE": "1"}):
+            with mock.patch.dict(os.environ, env):
+                gate = core.host_gate()
+            self.assertFalse(gate["ok"], env)
+            self.assertEqual(gate["host"], "cursor")
+            self.assertEqual(gate["error_code"], core.UNSUPPORTED_HOST_ERROR)
+            self.assertIn("Cursor is no longer a supported host", gate["message"])
+            self.assertIn("Claude Code or Codex", gate["message"])
+            self.assertNotIn("packaged-fail-closed", gate["message"])
+
+    def test_host_gate_unknown_host_is_unsupported(self) -> None:
+        gate = core.host_gate()
+        self.assertEqual(gate["host"], "unknown")
+        self.assertEqual(gate["error_code"], "SB_MULTI_AI_UNSUPPORTED_HOST")
+        self.assertIn("unsupported for multi-ai-task", gate["message"])
+        self.assertIn("Claude Code or Codex", gate["message"])
+
+    def test_shipped_matrix_lists_exactly_claude_and_codex(self) -> None:
+        matrix = json.loads(core.HOST_MATRIX_PATH.read_text(encoding="utf-8"))
+        status = {name: entry["status"] for name, entry in matrix["hosts"].items()}
+        self.assertEqual(status, {"claude-code": "supported", "codex": "supported", "cursor": "unsupported"})
+        self.assertEqual(matrix["execution_hosts"], ["claude-code", "codex"])
+        self.assertEqual(sorted(matrix["backends"]), ["claude", "codex", "cursor", "ocg"])
+
+    def test_host_gate_non_supported_entry_without_error_code_or_message_uses_defaults(self) -> None:
+        matrix = self.tmp / "matrix.json"
+        matrix.write_text(json.dumps({"hosts": {"claude-code": {"status": "beta"}, "codex": {"status": "off", "error_code": "CUSTOM", "message": "custom words"}}}))
+        with mock.patch.object(core, "HOST_MATRIX_PATH", matrix):
+            with mock.patch.dict(os.environ, {"SB_HOST": "claude"}):
+                gate = core.host_gate()
+                self.assertEqual(gate["error_code"], core.UNSUPPORTED_HOST_ERROR)
+                self.assertIn("not supported for multi-ai-task", gate["message"])
+            with mock.patch.dict(os.environ, {"SB_HOST": "codex"}):
+                gate = core.host_gate()
+                self.assertEqual((gate["error_code"], gate["message"]), ("CUSTOM", "custom words"))
+
+
+class OutputRootPolicyTests(HermeticCase):
+    """A run writes only below its output root, so the root may not be a place Silver Bullet protects."""
+
+    def refusal(self, path, **env: str):
+        with mock.patch.dict(os.environ, env):
+            return core.output_root_refusal(Path(path))
+
+    def delegation(self, scopes, *, host="codex", task="T1", active=True, state_dir=None, raw=None):
+        state_dir = state_dir or self.home / ".claude" / ".silver-bullet"
+        state_dir.mkdir(parents=True, exist_ok=True)
+        body = raw if raw is not None else json.dumps({"active": active, "host": host, "task_id": task, "work_dir": str(self.tmp), "ownership_scope": scopes})
+        (state_dir / "agent-delegation-active.json").write_text(body)
+
+    def test_ordinary_places_are_sanctioned(self) -> None:
+        for path in (self.tmp / ".planning" / "multi-ai" / "run-1", self.tmp / "research" / "2026-11-21-x", self.tmp / "out", Path("relative/out")):
+            self.assertIsNone(self.refusal(path), path)
+
+    def test_runtime_state_and_plugin_cache_are_refused(self) -> None:
+        for sub in (".claude/.silver-bullet", ".claude/.silver-bullet/x/y", ".codex/.silver-bullet", ".claude/plugins/cache/alo/sb/1.0/hooks", ".codex/plugins"):
+            reason = self.refusal(self.home / sub)
+            self.assertIn("Silver Bullet", reason, sub)
+        self.assertIsNotNone(self.refusal(self.tmp / "state" / "deep", SB_RUNTIME_STATE_DIR=str(self.tmp / "state")))
+        self.assertIsNotNone(self.refusal(self.tmp / "cache", SB_RUNTIME_PLUGIN_CACHE_ROOT=str(self.tmp / "cache")))
+        self.assertIsNotNone(self.refusal(self.tmp / "ch" / "plugins" / "z", CODEX_HOME=str(self.tmp / "ch")))
+        # Outside the home directory a sibling or prefix of a protected root is not inside it.
+        self.assertIsNone(self.refusal(self.tmp / "state-notes", SB_RUNTIME_STATE_DIR=str(self.tmp / "state")))
+        self.assertIsNone(self.refusal(self.tmp / "ch2" / "plugins", CODEX_HOME=str(self.tmp / "ch")))
+
+    def test_symlink_into_a_protected_root_is_refused(self) -> None:
+        target = self.home / ".claude" / ".silver-bullet"
+        target.mkdir(parents=True)
+        link = self.tmp / "innocent"
+        link.symlink_to(target)
+        self.assertIsNotNone(self.refusal(link / "run"))
+
+    def test_git_directories_are_refused(self) -> None:
+        self.assertIn(".git", self.refusal(self.tmp / "repo" / ".git" / "hooks"))
+        self.assertIsNone(self.refusal(self.tmp / "repo" / ".github" / "multi-ai"))
+        self.assertIsNone(self.refusal(self.tmp / "repo" / "x.git" / "run"))
+
+    def test_runtime_homes_and_hidden_home_directories_are_refused(self) -> None:
+        for sub in (".claude", ".claude/projects", ".codex", ".ssh", ".ssh/keys", ".aws", ".gnupg", ".config/x", ".planning"):
+            self.assertIsNotNone(self.refusal(self.home / sub), sub)
+        self.assertIsNotNone(self.refusal(self.tmp / "ch", CODEX_HOME=str(self.tmp / "ch")))
+        self.assertIsNone(self.refusal(self.home / "work" / ".hidden-below" / "run"))
+        self.assertIsNone(self.refusal(self.home / "projects" / "run"))
+
+    def test_protected_places_are_compared_case_insensitively(self) -> None:
+        for sub in (".CLAUDE/.Silver-Bullet/run", ".Claude/Plugins/cache/x", ".SSH", "../" + self.home.name.upper() + "/.Codex"):
+            self.assertIsNotNone(self.refusal(self.home / sub), sub)
+        self.assertIn(".git", self.refusal(self.tmp / "r" / ".GIT" / "hooks"))
+
+    def test_the_output_root_is_resolved_once_for_check_and_writes(self) -> None:
+        resolved = core.resolve_output_root("~/some/run")
+        self.assertEqual(resolved, Path(os.path.realpath(self.home / "some" / "run")))
+        self.assertEqual(core.resolve_output_root("rel/x"), Path(os.path.realpath(Path.cwd() / "rel" / "x")))
+        link = self.tmp / "lnk"
+        link.symlink_to(self.home / ".claude" / ".silver-bullet", target_is_directory=True)
+        self.assertEqual(core.resolve_output_root(str(link / ".." / "x")), Path(os.path.realpath(link / ".." / "x")))
+        # A literal "~" that the shell did not expand never becomes a directory named "~" in the cwd.
+        self.assertNotIn("~", core.resolve_output_root("~/elsewhere").parts)
+
+    def test_filesystem_root_and_home_are_refused(self) -> None:
+        self.assertIsNotNone(self.refusal("/"))
+        self.assertIsNotNone(self.refusal(self.home))
+
+    def test_active_delegation_scope_is_refused_but_its_evidence_directory_is_not(self) -> None:
+        owned = self.tmp / "proj" / "src"
+        self.delegation([str(owned), "", "rel/owned"])
+        self.assertIn("delegation", self.refusal(owned))
+        self.assertIn("delegation", self.refusal(owned / "deep" / "out"))
+        self.assertIsNotNone(self.refusal(Path("rel/owned") / "x"))
+        self.assertIsNone(self.refusal(self.tmp / "proj" / "docs" / "out"))
+        self.assertIsNone(self.refusal(self.tmp / "proj" / "srcs" / "out"))
+        evidence = owned / ".planning" / "agent-codex" / "T1" / "multi-ai"
+        self.assertIsNone(self.refusal(evidence))
+        # A different task's or host's evidence directory is not the sanctioned one.
+        self.assertIsNotNone(self.refusal(owned / ".planning" / "agent-codex" / "T2" / "multi-ai"))
+        self.assertIsNotNone(self.refusal(owned / ".planning" / "agent-claude" / "T1" / "multi-ai"))
+
+    def test_inactive_disabled_or_unreadable_delegation_is_ignored(self) -> None:
+        owned = self.tmp / "proj" / "src"
+        self.delegation([str(owned)], active=False)
+        self.assertIsNone(self.refusal(owned))
+        self.delegation([str(owned)])
+        self.assertIsNone(self.refusal(owned, SB_AGENT_DELEGATE_GUARD="0"))
+        self.assertIsNone(self.refusal(owned, SB_AGENT_DELEGATE_V2="0"))
+        self.delegation(None, raw="{not json")
+        self.assertIsNone(self.refusal(owned))
+        self.delegation(None, raw="[1]")
+        self.assertIsNone(self.refusal(owned))
+        self.delegation(None, raw='{"active": true, "ownership_scope": "src", "task_id": 7, "host": null}')
+        self.assertIsNone(self.refusal(owned))
+
+    def test_delegation_state_in_the_codex_and_env_state_dirs_counts(self) -> None:
+        owned = self.tmp / "proj" / "src"
+        self.delegation([str(owned)], state_dir=self.home / ".codex" / ".silver-bullet")
+        self.assertIsNotNone(self.refusal(owned))
+        other = self.tmp / "envstate"
+        self.delegation([str(owned / "a")], state_dir=other)
+        self.assertIsNotNone(self.refusal(owned / "a" / "b", SB_RUNTIME_STATE_DIR=str(other)))
+
+
+def ids(resolved: list[dict]) -> list[str]:
+    return [r["logical_model_id"] for r in resolved]
+
+
+class ResolvePoolTests(HermeticCase):
+    def test_default_selection(self) -> None:
+        resolved = core.resolve_pool(core.PoolSelection())
+        reg = core.load_registry()
+        expected = list(reg["ocg_lite_pool"]) + [x for x in reg["cursor_default_pool"] if x != "glm-5.2"] + ["glm-5.2"]
+        self.assertEqual(ids(resolved), expected)
+        by_id = {r["logical_model_id"]: r for r in resolved}
+        self.assertEqual(by_id["ocg-minimax-m3"]["backend"], "ocg")
+        self.assertEqual(by_id["composer-2.5"]["backend"], "cursor")
+        self.assertEqual(by_id["gpt-5.6-luna-medium"]["backend"], "codex")
+        self.assertEqual(by_id["claude-opus-4.8-medium"]["backend"], "claude")
+        self.assertEqual(by_id["glm-5.2"]["backend"], "cursor")
+        self.assertEqual(by_id["glm-5.2"]["effective_model_id"], "glm-5.2")
+        for entry in resolved:
+            self.assertEqual(entry["requested_model_id"], entry["logical_model_id"])
+            self.assertEqual(entry["model_family_registry_version"], reg["version"])
+            self.assertEqual(entry["model_family_registry_sha256"], core.registry_sha256(reg))
+            self.assertEqual(entry["model_family_id"], reg["logical_to_family"][entry["logical_model_id"]])
+
+    def test_unsubscribed_routes_glm_through_ocg(self) -> None:
+        resolved = core.resolve_pool(core.PoolSelection(cursor_subscription="unsubscribed"))
+        glm = next(r for r in resolved if r["logical_model_id"] == "glm-5.2")
+        self.assertEqual((glm["backend"], glm["effective_model_id"]), ("ocg", "ocg-glm-5.2"))
+        # The explicit parameter wins over the selection's own setting.
+        resolved = core.resolve_pool(core.PoolSelection(cursor_subscription="unsubscribed"), subscription="subscribed")
+        glm = next(r for r in resolved if r["logical_model_id"] == "glm-5.2")
+        self.assertEqual(glm["backend"], "cursor")
+
+    def test_invalid_arguments(self) -> None:
+        with self.assertRaisesRegex(ValueError, "invalid ocg pool: huge"):
+            core.resolve_pool(core.PoolSelection(ocg_pool="huge"))
+        with self.assertRaisesRegex(ValueError, "invalid cursor pool: all"):
+            core.resolve_pool(core.PoolSelection(cursor_pool="all"))
+        with self.assertRaisesRegex(ValueError, "invalid cursor subscription: 'maybe'"):
+            core.resolve_pool(core.PoolSelection(cursor_subscription="maybe"))
+        with self.assertRaisesRegex(ValueError, "invalid cursor subscription: 'bad'"):
+            core.resolve_pool(core.PoolSelection(), subscription="bad")
+
+    def test_unknown_subscription_requires_declaring_glm(self) -> None:
+        with self.assertRaisesRegex(ValueError, "cursor subscription unknown"):
+            core.resolve_pool(core.PoolSelection(cursor_subscription="unknown"))
+        # Excluding glm makes the unknown state harmless.
+        resolved = core.resolve_pool(core.PoolSelection(cursor_subscription="unknown", exclude=["glm-5.2"]))
+        self.assertNotIn("glm-5.2", ids(resolved))
+        # No glm in the candidate set at all is also harmless.
+        resolved = core.resolve_pool(core.PoolSelection(ocg_pool="lite", cursor_pool="none", cursor_subscription="unknown"))
+        self.assertEqual(ids(resolved), core.load_registry()["ocg_lite_pool"])
+
+    def test_exclude_glm_by_alias_and_other_models(self) -> None:
+        resolved = core.resolve_pool(core.PoolSelection(exclude=["sb-dr-glm-5.2", "composer-2.5"]))
+        self.assertNotIn("glm-5.2", ids(resolved))
+        self.assertNotIn("composer-2.5", ids(resolved))
+
+    def test_include_only(self) -> None:
+        resolved = core.resolve_pool(core.PoolSelection(include_only=["composer-2.5", "grok-4.5", "composer-2.5"]))
+        self.assertEqual(ids(resolved), ["composer-2.5", "grok-4.5"])
+        resolved = core.resolve_pool(core.PoolSelection(include_only=["ocg-glm-5.2", "composer-2.5"]))
+        self.assertEqual(ids(resolved), ["composer-2.5", "glm-5.2"])
+        self.assertEqual(resolved[1]["backend"], "cursor")
+        resolved = core.resolve_pool(core.PoolSelection(include_only=["glm-5.2", "grok-4.5"], exclude=["glm-5.2"]))
+        self.assertEqual(ids(resolved), ["grok-4.5"])
+
+    def test_unsubscribed_glm_rules(self) -> None:
+        # Lite-only OCG pool: glm is not invented.
+        resolved = core.resolve_pool(core.PoolSelection(cursor_pool="none", cursor_subscription="unsubscribed"))
+        self.assertNotIn("glm-5.2", ids(resolved))
+        # Regular pool surviving glm slot is re-added, routed through OCG.
+        resolved = core.resolve_pool(core.PoolSelection(ocg_pool="regular", cursor_pool="none", cursor_subscription="unsubscribed"))
+        glm = [r for r in resolved if r["logical_model_id"] == "glm-5.2"]
+        self.assertEqual(len(glm), 1)
+        self.assertEqual((glm[0]["backend"], glm[0]["effective_model_id"]), ("ocg", "ocg-glm-5.2"))
+        self.assertEqual(ids(resolved)[-1], "glm-5.2")
+
+    def test_subscribed_without_cursor_pool_does_not_add_glm(self) -> None:
+        resolved = core.resolve_pool(core.PoolSelection(cursor_pool="none", cursor_subscription="subscribed"))
+        self.assertNotIn("glm-5.2", ids(resolved))
+
+    def test_empty_resolution_is_an_error(self) -> None:
+        with self.assertRaisesRegex(ValueError, "resolved agent set is empty"):
+            core.resolve_pool(core.PoolSelection(ocg_pool="none", cursor_pool="none"))
+        with self.assertRaisesRegex(ValueError, "resolved agent set is empty"):
+            core.resolve_pool(core.PoolSelection(include_only=["composer-2.5"], exclude=["composer-2.5"]))
+
+
+class DocumentBuilderTests(HermeticCase):
+    def test_empty_ledger(self) -> None:
+        ledger = core.empty_ledger("run-1")
+        self.assertEqual(ledger["run_id"], "run-1")
+        self.assertEqual(ledger["generation"], 0)
+        self.assertEqual(ledger["entries"], [])
+        self.assertEqual(ledger["head_hash"], sha256_json([]))
+        self.assertEqual(ledger["spine"], core.SPINE)
+
+    def test_work_item_manifest_budget(self) -> None:
+        resolved = core.resolve_pool(core.PoolSelection(include_only=["composer-2.5"]))
+        manifest = core.build_work_item_manifest("run-1", "work-1", "hash", resolved, core.BudgetPolicy())
+        self.assertEqual((manifest["run_id"], manifest["work_item_id"], manifest["input_hash"]), ("run-1", "work-1", "hash"))
+        self.assertEqual(manifest["resolved_logical_ids"], resolved)
+        self.assertEqual(manifest["budget"]["currency_micro_usd_cap"], 25_000_000)
+        self.assertEqual((manifest["budget"]["max_agents"], manifest["budget"]["concurrency"]), (11, 6))
+        # Nothing is metered, so the manifest claims neither prices nor actual usage.
+        self.assertFalse(manifest["budget"]["price_known"])
+        self.assertFalse(manifest["budget"]["usage_metered"])
+        self.assertNotIn("currency_micro_usd_actual", manifest["budget"])
+        self.assertNotIn("total_tokens_actual", manifest["budget"])
+
+    def test_append_ledger_entry_bumps_generation_and_rehashes(self) -> None:
+        ledger = core.empty_ledger("run-1")
+        first = core.append_ledger_entry(ledger, {"attempt_id": "a1", "status": "completed"})
+        self.assertEqual((first["entry_id"], ledger["generation"]), ("entry-000001", 1))
+        self.assertRegex(first["timestamp"], r"Z$")
+        head_one = ledger["head_hash"]
+        core.append_ledger_entry(ledger, {"attempt_id": "a2", "status": "failed"})
+        self.assertEqual(ledger["generation"], 2)
+        self.assertNotEqual(ledger["head_hash"], head_one)
+        self.assertEqual(ledger["head_hash"], core.sha256_json(ledger["entries"]))
+
+    def test_result_index_sorted_and_pending(self) -> None:
+        resolved = [{"logical_model_id": "b"}, {"logical_model_id": "a"}]
+        ledger = {"generation": 4, "head_hash": "abc"}
+        index = core.build_result_index("run-1", ledger, resolved, "work-1")
+        self.assertEqual([e["logical_model_id"] for e in index["entries"]], ["a", "b"])
+        self.assertTrue(all(e["status"] == "pending" and e["work_item_id"] == "work-1" for e in index["entries"]))
+        self.assertEqual((index["ledger_generation"], index["ledger_head_hash"]), (4, "abc"))
+        bare = core.build_result_index("run-1", {}, resolved, "work-1")
+        self.assertEqual((bare["ledger_generation"], bare["ledger_head_hash"]), (0, sha256_json([])))
+
+
+class DryRunReportTests(HermeticCase):
+    def test_ok_report(self) -> None:
+        with mock.patch.dict(os.environ, {"SB_HOST": "codex"}):
+            report = core.dry_run_report(core.PoolSelection(include_only=["composer-2.5"]))
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["host"], "codex")
+        self.assertFalse(report["host_gate_enforced"])
+        self.assertTrue(report["dry_run"])
+        self.assertEqual(report["resolved_count"], 1)
+        self.assertEqual(ids(report["resolved_pool"]), ["composer-2.5"])
+
+    def test_max_agents_exceeded(self) -> None:
+        report = core.dry_run_report(core.PoolSelection(), max_agents=2)
+        self.assertEqual(report["ok"], False)
+        self.assertEqual(report["error_code"], "MAX_AGENTS_EXCEEDED")
+        self.assertEqual(report["max_agents"], 2)
+        self.assertGreater(report["resolved_count"], 2)
+        # Exactly at the limit still passes.
+        n = len(core.resolve_pool(core.PoolSelection()))
+        self.assertTrue(core.dry_run_report(core.PoolSelection(), max_agents=n)["ok"])
+
+    def test_subscription_argument_is_forwarded(self) -> None:
+        report = core.dry_run_report(core.PoolSelection(), subscription="unsubscribed")
+        glm = next(r for r in report["resolved_pool"] if r["logical_model_id"] == "glm-5.2")
+        self.assertEqual(glm["backend"], "ocg")
+
+
+if __name__ == "__main__":
+    unittest.main()

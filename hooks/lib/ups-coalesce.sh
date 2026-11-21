@@ -10,19 +10,22 @@
 _sb_ups_coalesce_turn_ttl_seconds=5
 
 sb_ups_coalesce_turn_file() {
-  printf '%s/ups-coalesce-turn' "${SB_RUNTIME_STATE_DIR:-/tmp}"
+  [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 1
+  printf '%s/ups-coalesce-turn' "$SB_RUNTIME_STATE_DIR"
 }
 
 sb_ups_coalesce_seen_file() {
-  printf '%s/ups-coalesce-seen' "${SB_RUNTIME_STATE_DIR:-/tmp}"
+  [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 1
+  printf '%s/ups-coalesce-seen' "$SB_RUNTIME_STATE_DIR"
 }
 
 sb_ups_coalesce_fingerprint() {
   local content="${1:-}"
-  if command -v shasum >/dev/null 2>&1; then
-    printf '%s' "$content" | shasum -a 256 2>/dev/null | awk '{print $1}'
-  elif command -v sha256sum >/dev/null 2>&1; then
+  # sha256sum first: `shasum` is a Perl script that costs ~80 ms to start (R2-23).
+  if command -v sha256sum >/dev/null 2>&1; then
     printf '%s' "$content" | sha256sum 2>/dev/null | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    printf '%s' "$content" | shasum -a 256 2>/dev/null | awk '{print $1}'
   else
     printf '%s' "$content" | cksum 2>/dev/null | awk '{print $1}'
   fi
@@ -35,8 +38,8 @@ sb_ups_coalesce_reset() {
   seen="$(sb_ups_coalesce_seen_file)"
   mkdir -p "$(dirname "$state")" 2>/dev/null || true
   umask 0077
-  date +%s >"$state" 2>/dev/null || true
-  : >"$seen" 2>/dev/null || true
+  date +%s 2>/dev/null >"$state" || true
+  : 2>/dev/null >"$seen" || true
 }
 
 # Begin or continue a UPS turn. Resets when no turn is active or the prior turn is stale.
@@ -52,13 +55,13 @@ sb_ups_coalesce_begin() {
     if [[ "$prev" =~ ^[0-9]+$ ]]; then
       age=$((now - prev))
       if [[ "$age" -ge 0 && "$age" -le "${_sb_ups_coalesce_turn_ttl_seconds}" ]]; then
-        [[ -f "$seen" ]] || : >"$seen" 2>/dev/null || true
+        [[ -f "$seen" ]] || : 2>/dev/null >"$seen" || true
         return 0
       fi
     fi
   fi
-  printf '%s' "$now" >"$state" 2>/dev/null || true
-  : >"$seen" 2>/dev/null || true
+  printf '%s' "$now" 2>/dev/null >"$state" || true
+  : 2>/dev/null >"$seen" || true
 }
 
 # Returns 0 if this content is new for the turn (caller should emit); 1 if duplicate.
@@ -74,7 +77,7 @@ sb_ups_coalesce_claim() {
   if [[ -f "$seen" ]] && grep -qxF "$fp" "$seen" 2>/dev/null; then
     return 1
   fi
-  printf '%s\n' "$fp" >>"$seen" 2>/dev/null || true
+  printf '%s\n' "$fp" 2>/dev/null >>"$seen" || true
   return 0
 }
 

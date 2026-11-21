@@ -18,7 +18,10 @@ trap 'finish_noop' ERR
 # Fires before every user prompt is processed.
 # Injects a compact Silver Bullet compliance reminder into additionalContext.
 #
-# Must be FAST (< 200ms) — no git operations and no blocking stdin reads.
+# Must be FAST — no git operations and no blocking stdin reads. R2-23 measurement (sandbox, CPU time
+# per prompt): ~540 ms before, ~390 ms after one jq per config source, no dirname forks in the walks,
+# sha256sum before the Perl shasum, and one consent query per tool; tests/hooks/test-g3-repair.sh pins the
+# jq-call budget. The remainder is bash start-up and library sourcing; the 200 ms goal is not met yet.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -47,7 +50,6 @@ resolve_silver_bullet_codex_adapter() {
     "${SB_RUNTIME_PLUGIN_CACHE_ROOT:-}/alo-labs-codex/silver-bullet/current/scripts/silver-bullet" \
     "${SB_RUNTIME_HOME_ROOT:-}/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet" \
     "${SB_RUNTIME_HOME_ROOT:-}/bin/silver-bullet"; do
-    [[ -n "$candidate" ]] || continue
     if [[ -f "$candidate" ]]; then
       printf '%s' "$candidate"
       return 0
@@ -71,63 +73,69 @@ if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
 fi
 
 prompt=""
+SB_SESSION_KEY=""
 if [[ ! -t 0 ]]; then
   input="$(cat 2>/dev/null || true)"
+  # shellcheck disable=SC2034  # read by sb_orchestrator_is_worker_session (subagent identity)
+  SB_ORCH_HOOK_INPUT="$input"
   if [[ -n "$input" ]]; then
-    prompt="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)"
+    # One jq call: the session id (line 1, keys the per-session gate files, R2-22) and the prompt.
+    _in_out="$(printf '%s' "$input" | jq -r '(.session_id // ""), (.prompt // "")' 2>/dev/null || true)"
+    _in_sid="${_in_out%%$'\n'*}"
+    prompt="${_in_out#*$'\n'}"
+    [[ "$_in_sid" =~ ^[A-Za-z0-9_-]{1,64}$ ]] && SB_SESSION_KEY="$_in_sid"
   fi
 fi
 
-# ── Resolve config file by walking up from $PWD ──────────────────────────────
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir=$(dirname "$search_dir")
-done
-
+# ── The project: nearest root with a record, else nearest directory with both contract files ──
 if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"
 fi
-
-# No config → project not set up with Silver Bullet — return a no-op payload
-[[ -z "$config_file" ]] && finish_noop
-
-if declare -f sb_project_active >/dev/null 2>&1; then
-  sb_project_active "$config_file" || finish_noop
-elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
-  sb_project_is_initiated "$config_file" || finish_noop
+if [[ -f "$_lib_dir/integrity.sh" ]]; then
+  # shellcheck source=lib/integrity.sh
+  source "$_lib_dir/integrity.sh"
 fi
+
+# No project → not set up with Silver Bullet — return a no-op payload
+sb_integrity_gate "$PWD" || finish_noop
+if declare -f sb_project_active >/dev/null 2>&1; then
+  sb_project_active "$SB_IV_ROOT/.silver-bullet.json" || finish_noop
+elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+  sb_project_is_initiated "$SB_IV_ROOT/.silver-bullet.json" || finish_noop
+fi
+# The live config path is only for the tool-consent keys the hooks keep up to date themselves
+# (.recommended_tools, tier): the enforcement values below come from the verified record.
+config_file="$SB_IV_ROOT/.silver-bullet.json"
+sb_integrity_config_snapshot
+verified_config_file="$SB_IV_CONFIG_FILE"
 
 # ── Read config values (single jq call for speed) ────────────────────────────
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 
 sb_default_state="${SB_STATE_DIR}/state"
 sb_default_trivial="${SB_STATE_DIR}/trivial"
-config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
+# shellcheck disable=SC2016  # the jq program
+config_vals=$(sb_iv_jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
   (.state.state_file // $ds),
   (.state.trivial_file // $dt),
   ((.skills.required_deploy // []) | join(" ")),
   ((.skills.required_planning // []) | join(" ")),
   (.project.active_workflow // "full-dev-cycle"),
   ((.skills.required_planning_devops // []) | join(" "))
-] | join("\n")' "$config_file")
+] | join("\n")')
 
-state_file=$(printf '%s' "$config_vals" | sed -n '1p')
+# R2-23: one read per value instead of six `sed` forks (the hot path must stay cheap).
+{
+  IFS= read -r state_file
+  IFS= read -r trivial_file
+  IFS= read -r required_deploy_cfg
+  IFS= read -r required_planning_cfg
+  IFS= read -r active_workflow
+  IFS= read -r required_planning_devops_cfg
+} <<<"$config_vals" || true
 state_file="${state_file/#\~/$HOME}"
-trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
 trivial_file="${trivial_file/#\~/$HOME}"
-required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
-required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '4p')
-active_workflow=$(printf '%s' "$config_vals" | sed -n '5p')
-required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
@@ -141,18 +149,22 @@ if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
 fi
 
 # ── Trivial bypass (reject symlinks) ─────────────────────────────────────────
-if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
+if sb_integrity_trivial_ok "$SB_IV_ROOT"; then
   finish_noop
 fi
 
 # ── Read state file ───────────────────────────────────────────────────────────
 state_contents=""
-[[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
+if [[ -f "$state_file" ]]; then
+  # Only what the recorder sealed counts (hooks/lib/state-seal.sh): a state edited by anything else yields nothing.
+  source "$_lib_dir/integrity.sh"
+  state_contents=$(sb_integrity_state_contents "$state_file")
+fi
 
 # ── Detect current git branch (for main-branch exemptions) ───────────────────
 current_branch=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
-if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+if [[ -n "$current_branch" ]] && ! grep -qE '^[a-zA-Z0-9/_.-]+$' <<<"$current_branch"; then
   current_branch=""
 fi
 on_main=false
@@ -163,6 +175,7 @@ fi
 # ── Build required skills list ────────────────────────────────────────────────
 # Source canonical required-skills list (single source of truth — TD-01 fix)
 # shellcheck source=lib/required-skills.sh
+# A missing lib directory makes this fail (ERR trap -> no-op payload): keep the explicit lookup.
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   # shellcheck disable=SC1090
@@ -189,7 +202,7 @@ if [[ "$delivery_adjacent" != true ]]; then
     if sb_required_skill_is_recorded "$state_contents" "silver-execute"; then
       delivery_adjacent=true
     fi
-  elif printf '%s\n' "$state_contents" | grep -Fqx -- "silver-execute" 2>/dev/null; then
+  elif grep -Fqx -- "silver-execute" <<<"$state_contents" 2>/dev/null; then
     delivery_adjacent=true
   fi
 fi
@@ -204,15 +217,15 @@ fi
 
 if [[ "$delivery_adjacent" == true ]]; then
   if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
-    required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "$DEFAULT_REQUIRED")"
+    required_skills="$(sb_required_skills_normalize_configured_list "$verified_config_file" "$required_deploy_cfg" "${DEFAULT_REQUIRED:-silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review security silver-secure silver-validate silver-review-request silver-review-triage silver-triage silver-branch-finish silver-completion-audit tdd verify-tests}")"
   elif [[ -n "$required_deploy_cfg" ]]; then
     required_skills="$required_deploy_cfg"
   else
-    required_skills="$DEFAULT_REQUIRED"
+    required_skills="${DEFAULT_REQUIRED:-silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review security silver-secure silver-validate silver-review-request silver-review-triage silver-triage silver-branch-finish silver-completion-audit tdd verify-tests}"
   fi
 else
   if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
-    required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$planning_cfg" "$planning_default")"
+    required_skills="$(sb_required_skills_normalize_configured_list "$verified_config_file" "$planning_cfg" "$planning_default")"
   elif [[ -n "$planning_cfg" ]]; then
     required_skills="$planning_cfg"
   else
@@ -239,7 +252,7 @@ for skill in $required_skills; do
     else
       missing_list="${missing_list:+$missing_list, }${skill}"
     fi
-  elif printf '%s\n' "$state_contents" | grep -Fqx -- "$skill" 2>/dev/null; then
+  elif grep -Fqx -- "$skill" <<<"$state_contents" 2>/dev/null; then
     completed=$((completed + 1))
   else
     missing_list="${missing_list:+$missing_list, }${skill}"
@@ -277,6 +290,9 @@ if [[ -d "$workflows_dir" && ! -L "$workflows_dir" ]]; then
   for _wf in "$workflows_dir"/*.md; do
     [[ -f "$_wf" ]] || continue
     _id=$(basename "$_wf" .md)
+    # R2-23: file names come from the repository and are injected into model context, so only
+    # names matching the documented workflow id shape are listed (never free text).
+    [[ "$_id" =~ ^[0-9]{8}T[0-9]{6}Z-[A-Za-z0-9]+-[A-Za-z0-9-]+$ ]] || continue
     active_ids="${active_ids:+$active_ids,}${_id}"
   done
   shopt -u nullglob
@@ -311,7 +327,7 @@ bare_prompt_context=""
 if [[ -n "$prompt" ]] && declare -F sb_prompt_is_bare_work_request >/dev/null 2>&1; then
   if sb_prompt_is_bare_work_request "$prompt"; then
     _bare_host="${SILVER_BULLET_RUNTIME:-${SB_RUNTIME_NAME:-claude}}"
-    # Parent orchestrator and Claude/Cursor prefer Skill tool; Codex uses invoke-skill adapter (#260).
+    # Parent orchestrator and Claude prefer Skill tool; Codex uses invoke-skill adapter (#260).
     _prefer_skill=false
     if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
       # shellcheck source=lib/orchestrator-parent.sh
@@ -351,7 +367,7 @@ Do not inspect, edit, run tests, or implement directly before routing. After loa
         bare_prompt_context="SILVER BULLET ► BARE PROMPT INTERCEPTED
 
 This is non-trivial user work expressed as a bare prompt, not an explicit skill command.
-First action: invoke the Skill tool with skill \"sb\" (Claude/Cursor). Do not use Codex invoke-skill branding on this host.
+First action: invoke the Skill tool with skill \"sb\" (Claude). Do not use Codex invoke-skill branding on this host.
 
 Router context: ${prompt}
 
@@ -385,7 +401,9 @@ if [[ "$_sb_skip_directive" != true && -f "$_od_lib" ]]; then
     fi
   fi
   if declare -f sb_orchestrator_directive_from_pending_outcome >/dev/null 2>&1; then
-    if [[ -f "${SB_STATE_DIR}/outcomes-session.json" ]]; then
+    # shellcheck source=lib/outcomes-gate.sh
+    source "$_lib_dir/outcomes-gate.sh"
+    if [[ -f "${SB_STATE_DIR}/outcomes-session${SB_SESSION_KEY:+-$SB_SESSION_KEY}.json" ]]; then
       sb_orchestrator_directive_from_pending_outcome 2>/dev/null || true
     fi
   fi

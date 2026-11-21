@@ -20,6 +20,8 @@ sb_rfl_policy_c_gate_disabled 2>/dev/null && exit 0
 command -v jq >/dev/null 2>&1 || exit 0
 
 input="$(cat 2>/dev/null || true)"
+# shellcheck disable=SC2034  # read by sb_orchestrator_is_worker_session (subagent identity)
+SB_ORCH_HOOK_INPUT="$input"
 [[ -n "$input" ]] || exit 0
 
 hook_event="$(printf '%s' "$input" | jq -r '.hook_event_name // .hookEventName // "PreToolUse"' 2>/dev/null || echo PreToolUse)"
@@ -56,7 +58,7 @@ case "$tool_name" in
   Bash|Shell|exec_command)
     cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null || true)"
     prompt="$cmd"
-    if ! printf '%s' "$cmd" | grep -qiE 'agent-pi|agent-opencode|agent-codex/invoke|agent-claude/invoke|review-fix-ladder|rung_.*review|verify_1|verify_2|mark-ladder-status'; then
+    if ! grep -qiE 'agent-pi|agent-opencode|agent-codex/invoke|agent-claude/invoke|review-fix-ladder|rung_.*review|verify_1|verify_2|mark-ladder-status' <<<"$cmd"; then
       exit 0
     fi
     ;;

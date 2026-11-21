@@ -18,8 +18,6 @@ SCENARIO_DIR="${SCRIPT_DIR}/scenarios"
 DEPENDENCY_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/dependency-access-preflight.sh"
 HOOK_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/hook-delivery-preflight.sh"
 RECOMMENDED_TOOLS_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/recommended-tools-preflight.sh"
-E2E_LIVE_MATRIX_FILE=""
-INLINE_E2E_MATRIX_FILE=""
 HOST_E2E_LIVE_MATRIX_FILE="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
 HOST_INLINE_E2E_MATRIX_FILE="${SB_RUNTIME_STATE_DIR}/inline-e2e-matrix"
 HOST_VERIFY_TESTS_STATE_FILE="${SB_RUNTIME_STATE_DIR}/verify-tests-state"
@@ -39,6 +37,9 @@ if [[ "${SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY:-0}" == "1" ]]; then
 fi
 RUNTIMES=()
 full_matrix_requested=false
+# matrix=inline-full-surface is release evidence for the inline full-surface journey: it is
+# written only when that journey ran (and, as every scenario, passed) in this run.
+inline_journey_ran=false
 export CODEX_INTERACTIVE_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-300}"
 
 if [[ -n "${SB_E2E_LIVE_RUNTIMES:-}" ]]; then
@@ -226,18 +227,14 @@ for runtime in "${RUNTIMES[@]}"; do
   esac
 
   if [[ "$runtime" == "claude" ]]; then
-    E2E_LIVE_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/e2e-live-matrix"
-    INLINE_E2E_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/inline-e2e-matrix"
-    if ! /Users/shafqat/.local/bin/claude --version >/dev/null 2>&1; then
-      echo "ERROR: claude CLI not found or not working at /Users/shafqat/.local/bin/claude"
+    if ! "${CLAUDE_BIN:-claude}" --version >/dev/null 2>&1; then
+      echo "ERROR: claude CLI not found or not working at ${CLAUDE_BIN:-claude} (set CLAUDE_BIN or put claude on PATH)"
       exit 1
     fi
   elif [[ "$runtime" == "codex" ]]; then
     # shellcheck source=tests/live/lib/codex-cli-isolation.sh
     source "$CODEX_ISOLATION_HELPER"
     setup_codex_cli_isolation
-    E2E_LIVE_MATRIX_FILE="${CODEX_HOME}/.silver-bullet/e2e-live-matrix"
-    INLINE_E2E_MATRIX_FILE="${CODEX_HOME}/.silver-bullet/inline-e2e-matrix"
     if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
       echo "ERROR: native Codex CLI not found or not working"
       exit 1
@@ -250,8 +247,6 @@ for runtime in "${RUNTIMES[@]}"; do
     # shellcheck source=tests/live/lib/kay-codex-isolation.sh
     source "$KAY_ISOLATION_HELPER"
     setup_kay_codex_isolation
-    E2E_LIVE_MATRIX_FILE="${KAY_HOME}/.codex/.silver-bullet/e2e-live-matrix"
-    INLINE_E2E_MATRIX_FILE="${KAY_HOME}/.codex/.silver-bullet/inline-e2e-matrix"
     if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
       echo "ERROR: Kay CLI not found or not working"
       exit 1
@@ -289,6 +284,9 @@ for runtime in "${RUNTIMES[@]}"; do
   for scenario in "${SCENARIOS[@]}"; do
     [[ -f "$scenario" ]] || continue
     run_scenario "$runtime" "$scenario"
+    if [[ "$scenario" == "${LEGACY_SCENARIOS[0]}" ]]; then
+      inline_journey_ran=true
+    fi
   done
 
   if [[ -n "${E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE:-}" ]]; then
@@ -305,8 +303,6 @@ for runtime in "${RUNTIMES[@]}"; do
   elif [[ "$runtime" == "kay" ]]; then
     teardown_kay_codex_isolation
   fi
-  E2E_LIVE_MATRIX_FILE="$HOST_E2E_LIVE_MATRIX_FILE"
-  INLINE_E2E_MATRIX_FILE="$HOST_INLINE_E2E_MATRIX_FILE"
 done
 
 echo ""
@@ -329,9 +325,14 @@ else
     cat > "$HOST_E2E_LIVE_MATRIX_FILE" <<EOF
 matrix=${marker}
 EOF
-    cat > "$HOST_INLINE_E2E_MATRIX_FILE" <<'EOF'
+    if [[ "$inline_journey_ran" == true ]]; then
+      cat > "$HOST_INLINE_E2E_MATRIX_FILE" <<'EOF'
 matrix=inline-full-surface
 EOF
+    else
+      rm -f "$HOST_INLINE_E2E_MATRIX_FILE"
+      echo "  NOTE: inline-e2e-matrix not written: the inline full-surface journey did not run (SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1 runs it)."
+    fi
   else
     rm -f "$HOST_E2E_LIVE_MATRIX_FILE"
     rm -f "$HOST_INLINE_E2E_MATRIX_FILE"

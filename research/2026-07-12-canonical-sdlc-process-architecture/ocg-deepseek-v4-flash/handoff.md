@@ -25,4 +25,4 @@
 - vloop-rollup.json follows deep-research convention
 
 ## Repository Location
-/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/
+/Users/<user>/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/

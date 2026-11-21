@@ -24,7 +24,10 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --sb-root) SB_ROOT="$2"; shift 2 ;;
+    --sb-root)
+      [[ $# -ge 2 ]] || { printf 'ERROR: --sb-root requires a value\n' >&2; exit 2; }
+      SB_ROOT="$2"; shift 2
+      ;;
     --dry-run) DRY_RUN=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'ERROR: unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
@@ -43,8 +46,11 @@ else
 fi
 
 if [[ "$DRY_RUN" != "1" ]]; then
-  agent_pi_pin_mimo_model_env || PREFLIGHT_OK=0
-  printf 'OK: model pin opencode-go/mimo-v2.5\n'
+  if agent_pi_pin_mimo_model_env; then
+    printf 'OK: model pin opencode-go/mimo-v2.5\n'
+  else
+    PREFLIGHT_OK=0
+  fi
 else
   printf 'SKIP (dry-run): model pin\n'
 fi

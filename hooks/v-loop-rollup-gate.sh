@@ -17,25 +17,16 @@ input="$(cat 2>/dev/null || true)"
 hook_event="$(printf '%s' "$input" | jq -r '.hook_event_name // "Stop"' 2>/dev/null || echo Stop)"
 [[ "$hook_event" == "Stop" ]] || exit 0
 
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" && -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir="$(dirname "$search_dir")"
-done
+# The project: the nearest root with a record, else the nearest directory with both contract files.
+config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity-anchor.sh" && sb_integrity_activation_config "$PWD") 2>/dev/null; true)"
+search_dir="${config_file:+${config_file%/*}}"
+search_dir="${search_dir:-$PWD}"
 [[ -n "$config_file" ]] || exit 0
 sb_project_gate_or_exit 2>/dev/null || exit 0
+sb_site_profile_load || exit 0
 
-if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
-  source "$_lib_dir/orchestrator-parent.sh"
-  sb_orchestrator_is_worker_session 2>/dev/null && exit 0
-fi
+# A Stop event is always the parent session's: workers end with SubagentStop, which this gate
+# ignores above. Never skip on a worker marker here (R9-05).
 
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 trivial_file="${SB_STATE_DIR}/trivial"
@@ -44,10 +35,15 @@ if declare -f sb_trivial_bypass >/dev/null 2>&1; then
 fi
 
 sb_site_session_gates_apply || exit 0
-sb_site_session_sync_vloops_from_state 2>/dev/null || true
-sb_site_session_vloop_pending || exit 0
+# In a condition: a failing step inside the sync must not abort the hook (errexit is off there).
+if sb_site_session_sync_vloops_from_state 2>/dev/null; then :; fi
+if ! sb_site_session_vloop_pending; then
+  sb_site_stop_loop_reset v-loop-rollup-gate
+  exit 0
+fi
 
 summary="$(sb_site_session_vloop_pending_summary)"
+if sb_site_stop_loop_release v-loop-rollup-gate "$input" "$(jq -r '.edit_seq // 0' "$(sb_site_session_file)")|$summary"; then exit 0; fi
 reason=$(printf 'Site V-loop rollup gate — active site session has incomplete child V-loops.\n\n%s\n\nComplete sb:content batch steps (preflight → implement → regression → visual → publish).' "$summary")
 json_reason=$(printf '%s' "$reason" | jq -Rs '.')
 printf '{"decision":"block","reason":%s}' "$json_reason"

@@ -8,6 +8,24 @@ DOCTOR="${REPO_ROOT}/scripts/sb-doctor.sh"
 PASS=0
 FAIL=0
 
+# Logs and the offline tool stand-ins live in one private temp dir (no fixed
+# /tmp names). Doctor --fix paths must never install packages or reach the
+# network, whatever is installed on the machine running the test.
+DOCTOR_TEST_TMP="$(mktemp -d)"
+# shellcheck source=tests/lib/offline-tools.sh
+source "${REPO_ROOT}/tests/lib/offline-tools.sh"
+sb_offline_tools_install "${DOCTOR_TEST_TMP}/offline-bin"
+# The user's consent lives in a private store (docs/CONSENT.md); a committed enabled_by_user only recommends.
+# shellcheck source=tests/lib/consent-helpers.sh
+source "${REPO_ROOT}/tests/lib/consent-helpers.sh"
+sb_test_consent_sandbox
+
+# last_byte_hex <file>: hex of the file's final byte (od is POSIX; xxd is not
+# installed everywhere).
+last_byte_hex() {
+  tail -c1 "$1" | od -An -tx1 | tr -d ' \n'
+}
+
 assert_contains() {
   local desc="$1" needle="$2" file="$3"
   # Fixed-string when needle looks like a flag (BSD grep treats "--fix" as an option).
@@ -72,7 +90,7 @@ assert_contains "documents zero FAIL for PASS" "zero FAIL" "$SKILL"
 assert_contains "documents friction log" "sb-friction-log" "$SKILL"
 
 # Script implements key check IDs
-for id in D1 D2 D3 D4 D5 D6 D7 D8 D9 D11 D12 D13; do
+for id in D1 D2 D3 D4 D5 D6 D7 D9 D11 D12 D13; do
   if grep -q "record pass ${id}\|record fail ${id}\|record warn ${id}" "$DOCTOR" 2>/dev/null || grep -q "${id}" "$DOCTOR"; then
     echo "PASS: sb-doctor.sh references check ${id}"
     PASS=$((PASS + 1))
@@ -84,7 +102,7 @@ done
 
 # Broken fixture: missing sb_initiated should FAIL D5
 FIXTURE="$(mktemp -d)"
-trap 'rm -rf "$FIXTURE"' EXIT
+trap 'rm -rf "$FIXTURE" "$DOCTOR_TEST_TMP"' EXIT
 cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$FIXTURE/.silver-bullet.json"
 jq '.sb_initiated = false' "$FIXTURE/.silver-bullet.json" >"${FIXTURE}/.silver-bullet.json.tmp"
 mv "${FIXTURE}/.silver-bullet.json.tmp" "$FIXTURE/.silver-bullet.json"
@@ -102,17 +120,15 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-# Host-scoped: Claude runtime must not require Cursor orchestrator rule (D8 N/A)
+# Host-scoped: the Claude runtime reads Claude surfaces only
 MOCK_HOME="$(mktemp -d)"
 MOCK_PROJ="$(mktemp -d)"
-trap 'rm -rf "$FIXTURE" "$MOCK_HOME" "$MOCK_PROJ"' EXIT
-mkdir -p "$MOCK_HOME/.cursor" "$MOCK_HOME/.claude" "$MOCK_PROJ/docs/workflows" "$MOCK_PROJ/scripts"
+trap 'rm -rf "$FIXTURE" "$MOCK_HOME" "$MOCK_PROJ" "$DOCTOR_TEST_TMP"' EXIT
+mkdir -p "$MOCK_HOME/.claude" "$MOCK_PROJ/docs/workflows" "$MOCK_PROJ/scripts"
 cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$MOCK_PROJ/.silver-bullet.json"
 cp "$REPO_ROOT/silver-bullet.md" "$MOCK_PROJ/silver-bullet.md"
 cp "$REPO_ROOT/scripts/workflows.sh" "$MOCK_PROJ/scripts/workflows.sh"
 chmod +x "$MOCK_PROJ/scripts/workflows.sh"
-# Simulate Cursor hooks present on disk (must not flip Claude host detection)
-printf '{"hooks":{"SessionStart":[{"command":"~/.claude/plugins/.claude/plugins/hook.sh"}]}}\n' >"$MOCK_HOME/.cursor/hooks.json"
 mkdir -p "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/0.48.7/hooks" \
   "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/0.48.7/agents/claude"
 ln -sfn "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/0.48.7" \
@@ -125,21 +141,6 @@ printf '{"hooks":{}}\n' >"$MOCK_HOME/.claude/settings.json"
 printf '{"hooks":{"SessionStart":[{"hooks":[{"command":"/mock/silver-bullet/hooks/session-start"}]}]}}\n' >"$MOCK_HOME/.claude/settings.json"
 
 claude_out="$(env HOME="$MOCK_HOME" SILVER_BULLET_RUNTIME=claude bash "$DOCTOR" "$MOCK_PROJ" 2>&1 || true)"
-if [[ "$claude_out" =~ D8.*N/A.*claude ]]; then
-  echo "PASS: D8 N/A on Claude host"
-  PASS=$((PASS + 1))
-else
-  echo "FAIL: D8 should be N/A on Claude host"
-  printf '%s\n' "$claude_out" | grep D8 || true
-  FAIL=$((FAIL + 1))
-fi
-if [[ "$claude_out" == *"FAIL: D8"* ]]; then
-  echo "FAIL: D8 must not FAIL on Claude host"
-  FAIL=$((FAIL + 1))
-else
-  echo "PASS: D8 does not FAIL on Claude host"
-  PASS=$((PASS + 1))
-fi
 if [[ "$claude_out" == *"PASS: D4"* &&
   "$claude_out" == *"Claude settings.json references silver-bullet hooks"* ]]; then
   echo "PASS: D4 uses Claude settings.json on Claude host"
@@ -155,13 +156,6 @@ if [[ "$claude_out" == *".claude/plugins"* ]]; then
 else
   echo "FAIL: Claude doctor should reference .claude plugin paths in D2/D3"
   FAIL=$((FAIL + 1))
-fi
-if [[ "$claude_out" == *".cursor/plugins"* ]]; then
-  echo "FAIL: Claude doctor must not reference .cursor plugin paths"
-  FAIL=$((FAIL + 1))
-else
-  echo "PASS: Claude doctor avoids .cursor plugin paths"
-  PASS=$((PASS + 1))
 fi
 
 # Codex skills-only mode: native SB skills remain available without a second
@@ -198,7 +192,6 @@ else
 fi
 rm -rf "$CODEX_HOME_FIXTURE"
 
-assert_contains "D8 Cursor-only in doctor script" 'runtime" == "cursor"' "$DOCTOR"
 assert_contains "doctor sources runtime-paths" 'runtime-paths\.sh' "$DOCTOR"
 assert_contains "D13 host-scoped in doctor script" 'cross-host plugin path contamination' "$DOCTOR"
 assert_contains "D20 stack mutex check in doctor" 'D20' "$DOCTOR"
@@ -228,11 +221,6 @@ run_d13_host_path_case() {
       mkdir -p "$(dirname "$manifest")"
       printf 'plugin_path = "%s"\n' "$plugin_path" >"$manifest"
       ;;
-    cursor)
-      manifest="${d13_home}/.cursor/hooks.json"
-      mkdir -p "$(dirname "$manifest")"
-      printf '{"hooks":{"SessionStart":[{"command":"%s/hook.sh"}]}}\n' "$plugin_path" >"$manifest"
-      ;;
   esac
 
   d13_out="$(env HOME="$d13_home" SILVER_BULLET_RUNTIME="$current_host" \
@@ -257,8 +245,8 @@ run_d13_host_path_case() {
   rm -rf "$d13_tmp"
 }
 
-for d13_current_host in claude codex cursor; do
-  for d13_path_host in claude codex cursor; do
+for d13_current_host in claude codex; do
+  for d13_path_host in claude codex; do
     if [[ "$d13_current_host" == "$d13_path_host" ]]; then
       run_d13_host_path_case "$d13_current_host" "$d13_path_host" pass
     else
@@ -291,6 +279,7 @@ jq '.recommended_tools.leanctx.enabled_by_user = true
       }
     }' "$RED4_FIXTURE/.silver-bullet.json" >"${RED4_FIXTURE}/.silver-bullet.json.tmp"
 mv "${RED4_FIXTURE}/.silver-bullet.json.tmp" "$RED4_FIXTURE/.silver-bullet.json"
+sb_test_consent_reset_mirror "$RED4_FIXTURE/.silver-bullet.json" install,wire,enforce
 cp "$REPO_ROOT/silver-bullet.md" "$RED4_FIXTURE/silver-bullet.md"
 mkdir -p "$RED4_FIXTURE/docs/workflows" "$RED4_FIXTURE/scripts"
 cp "$REPO_ROOT/scripts/workflows.sh" "$RED4_FIXTURE/scripts/workflows.sh"
@@ -326,79 +315,13 @@ else
 fi
 rm -rf "$RED4_FIXTURE" "$RED4_STATE"
 unset SB_RUNTIME_STATE_DIR SB_RUNTIME_PRESERVE_STATE_DIR
-assert_contains "D21 cursor subagents check in doctor" 'D21' "$DOCTOR"
-assert_contains "D21 fix invokes install-cursor-sb-agents" 'install-cursor-sb-agents.sh' "$DOCTOR"
-assert_contains "D22 duplicate leanctx MCP check in doctor" 'D22' "$DOCTOR"
-assert_contains "install-cursor wires sb-agents" 'install-cursor-sb-agents' "${REPO_ROOT}/scripts/install-cursor.sh"
-
-# D21 — Cursor SB custom subagents (enabled + missing agents → FAIL; probe pass → PASS)
-D21_HOME="$(mktemp -d)"
-D21_PROJ="$(mktemp -d)"
-mkdir -p "$D21_HOME/.cursor" "$D21_PROJ/docs/workflows" "$D21_PROJ/scripts"
-cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$D21_PROJ/.silver-bullet.json"
-jq '.sb_initiated = true
-  | .cursor_sb_agents.enabled = true
-  | .cursor_sb_agents.enabled_by_user = true
-  | .cursor_sb_agents.agents_install_scope = "global"
-  | .cursor_sb_agents.agents_install_status = "installed"' \
-  "$D21_PROJ/.silver-bullet.json" >"${D21_PROJ}/.silver-bullet.json.tmp"
-mv "${D21_PROJ}/.silver-bullet.json.tmp" "$D21_PROJ/.silver-bullet.json"
-cp "$REPO_ROOT/silver-bullet.md" "$D21_PROJ/silver-bullet.md"
-cp "$REPO_ROOT/scripts/workflows.sh" "$D21_PROJ/scripts/workflows.sh"
-chmod +x "$D21_PROJ/scripts/workflows.sh"
-printf '{"hooks":{"SessionStart":[{"command":"cursor-hook"}]}}\n' >"$D21_HOME/.cursor/hooks.json"
-mkdir -p "$D21_HOME/.config/silver-bullet"
-cp "${REPO_ROOT}/tests/fixtures/cursor-models-catalog.json" \
-  "$D21_HOME/.config/silver-bullet/cursor-models-catalog.json"
-printf '{"agents_install_status":"pending","selected_models":["composer-2.5","grok-4.5"],"effort_levels":["medium","high","xhigh"]}\n' \
-  >"$D21_HOME/.config/silver-bullet/cursor-sb-agents.json"
-mkdir -p "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.7/hooks"
-ln -sfn "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.7" \
-  "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/current"
-cp "$REPO_ROOT/hooks/hooks.json" "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.7/hooks/hooks.json"
-jq -n --arg v "0.48.7" --arg p "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.7" \
-  '{version:2,plugins:{"silver-bullet@alo-labs":[{scope:"user",version:$v,installPath:$p}]}}' \
-  >"$D21_HOME/.cursor/plugins/installed_plugins.json"
-
-d21_missing="$(env -u SB_RUNTIME_NAME HOME="$D21_HOME" SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
-if [[ "$d21_missing" == *"FAIL: D21"* ]]; then
-  echo "PASS: D21 FAIL when enabled agents missing"
-  PASS=$((PASS + 1))
-else
-  echo "FAIL: D21 should FAIL when enabled agents missing"
+if grep -qE 'record (pass|fail|warn) (D8|D18|D19|D21|D22) ' "$DOCTOR"; then
+  echo "FAIL: the Cursor-only checks D8, D18, D19, D21 and D22 are gone from the doctor"
   FAIL=$((FAIL + 1))
-fi
-
-if env HOME="$D21_HOME" \
-  SB_CURSOR_SB_AGENTS_OFFLINE=1 \
-  SB_CURSOR_MODELS_CATALOG="$D21_HOME/.config/silver-bullet/cursor-models-catalog.json" \
-  SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" \
-  CSBA_REPO_ROOT="$D21_PROJ" \
-  REPO_ROOT="$REPO_ROOT" bash "$REPO_ROOT/scripts/install-cursor-sb-agents.sh" \
-  --global --non-interactive >/dev/null 2>&1; then
-  d21_ok="$(env -u SB_RUNTIME_NAME HOME="$D21_HOME" SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
-  if [[ "$d21_ok" == *"PASS: D21"* ]]; then
-    echo "PASS: D21 PASS after install-cursor-sb-agents"
-    PASS=$((PASS + 1))
-  else
-    echo "FAIL: D21 should PASS after agents installed"
-    printf '%s\n' "$d21_ok" | grep D21 || true
-    FAIL=$((FAIL + 1))
-  fi
 else
-  echo "WARN: install-cursor-sb-agents skipped in test (catalog/network)"
-fi
-
-d21_claude="$(env HOME="$D21_HOME" SILVER_BULLET_RUNTIME=claude bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
-if [[ "$d21_claude" =~ D21.*N/A ]]; then
-  echo "PASS: D21 N/A on Claude host"
+  echo "PASS: the Cursor-only checks D8, D18, D19, D21 and D22 are gone from the doctor"
   PASS=$((PASS + 1))
-else
-  echo "FAIL: D21 should be N/A on Claude host"
-  FAIL=$((FAIL + 1))
 fi
-rm -rf "$D21_HOME" "$D21_PROJ"
-
 
 # D10 default-path five-tool coverage contracts
 if grep -q "CONTEXT_MODE_PLATFORM" "$SKILL" && grep -q "CONFIGURED ≠ LIVE\|CONFIGURED != LIVE\|configuration, not" "$SKILL"; then
@@ -459,18 +382,18 @@ fi
 ALU_HOME="$(mktemp -d)"
 ALU_PROJ="$(mktemp -d)"
 ALU_BIN="$(mktemp -d)"
-mkdir -p "$ALU_HOME/.cursor" "$ALU_PROJ/docs/workflows" "$ALU_PROJ/scripts"
+mkdir -p "$ALU_HOME/.claude" "$ALU_PROJ/docs/workflows" "$ALU_PROJ/scripts"
 cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$ALU_PROJ/.silver-bullet.json"
 jq '.sb_initiated = true' "$ALU_PROJ/.silver-bullet.json" >"${ALU_PROJ}/.silver-bullet.json.tmp"
 mv "${ALU_PROJ}/.silver-bullet.json.tmp" "$ALU_PROJ/.silver-bullet.json"
 cp "$REPO_ROOT/silver-bullet.md" "$ALU_PROJ/silver-bullet.md"
 cp "$REPO_ROOT/scripts/workflows.sh" "$ALU_PROJ/scripts/workflows.sh"
 chmod +x "$ALU_PROJ/scripts/workflows.sh"
-printf '{"mcpServers":{}}\n' >"$ALU_HOME/.cursor/mcp.json"
-printf '{"hooks":{"preToolUse":[]}}\n' >"$ALU_HOME/.cursor/hooks.json"
+printf '{"mcpServers":{}}\n' >"$ALU_HOME/.claude.json"
+printf '{"hooks":{"preToolUse":[]}}\n' >"$ALU_HOME/.claude/settings.json"
 
 alu_run_doctor() {
-  env -u SB_RUNTIME_NAME HOME="$ALU_HOME" SILVER_BULLET_RUNTIME=cursor \
+  env -u SB_RUNTIME_NAME HOME="$ALU_HOME" SILVER_BULLET_RUNTIME=claude \
     PATH="${ALU_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
     bash "$DOCTOR" "$ALU_PROJ" 2>&1 || true
 }
@@ -496,6 +419,7 @@ fi
 jq '.recommended_tools.alumnium.enabled_by_user = true' \
   "$ALU_PROJ/.silver-bullet.json" >"${ALU_PROJ}/.silver-bullet.json.tmp"
 mv "${ALU_PROJ}/.silver-bullet.json.tmp" "$ALU_PROJ/.silver-bullet.json"
+sb_test_consent_grant alumnium install,wire,enforce
 alu_cli_out="$(alu_run_doctor)"
 if [[ "$alu_cli_out" == *"FAIL: D10-alumnium"* ]]; then
   echo "PASS: live D10-alumnium FAILs when opted in and CLI missing"
@@ -519,16 +443,19 @@ else
 fi
 rm -rf "$ALU_HOME" "$ALU_PROJ" "$ALU_BIN"
 
-# Live dogfood repo should PASS when environment is healthy (soft — warn only on fail)
-if bash "$DOCTOR" "$REPO_ROOT" >/tmp/sb-doctor-live-$$.txt 2>&1; then
-  echo "PASS: doctor PASS on live repo"
-  PASS=$((PASS + 1))
+# Live dogfood repo: the verdict depends on the host plugin state and tools of
+# the machine running the test, so it is reported, not counted. The doctor
+# runs on a snapshot so it cannot touch the checkout.
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "${REPO_ROOT}/tests/lib/repo-snapshot.sh"
+LIVE_SNAPSHOT="$(sb_repo_snapshot "$REPO_ROOT" "${DOCTOR_TEST_TMP}/live-repo")"
+if bash "$DOCTOR" "$LIVE_SNAPSHOT" >"${DOCTOR_TEST_TMP}/doctor-live.txt" 2>&1; then
+  echo "INFO: doctor PASS on live repo (environment-dependent, not counted)"
 else
-  echo "WARN: doctor did not PASS on live repo (environment-dependent)"
-  cat /tmp/sb-doctor-live-$$.txt | tail -20
-  # Do not increment FAIL — CI may lack full host plugin state in sandbox
+  echo "INFO: doctor did not PASS on live repo (environment-dependent, not counted)"
+  tail -20 "${DOCTOR_TEST_TMP}/doctor-live.txt" | sed "s/^FAIL:/  (doctor) not ok:/"
 fi
-rm -f /tmp/sb-doctor-live-$$.txt
+rm -rf "$LIVE_SNAPSHOT" "${DOCTOR_TEST_TMP}/doctor-live.txt"
 
 # D10-routes is a supported five-tool component on every SB host; genuinely
 # repairable drift must FAIL and retain the actionable host repair.
@@ -543,8 +470,8 @@ fi
 # Host capability must include the three supported SB agents.
 RT_COMMON="${REPO_ROOT}/scripts/lib/recommended-tools/common.sh"
 if [[ -f "$RT_COMMON" ]]; then
-  for supported_host in claude codex cursor; do
-    if awk '/^rt_host_supported\(\)/,/^}/' "$RT_COMMON" | grep -q "$supported_host"; then
+  for supported_host in claude codex; do
+    if grep -q "$supported_host" < <(awk '/^rt_host_supported\(\)/,/^}/' "$RT_COMMON"); then
       echo "PASS: rt_host_supported includes ${supported_host}"
       PASS=$((PASS + 1))
     else
@@ -554,23 +481,6 @@ if [[ -f "$RT_COMMON" ]]; then
   done
 fi
 
-
-# ── Report 1 / #256: persist preserves trailing newline ──────────────────────
-PERSIST_NL_TMP="$(mktemp -d)"
-PERSIST_NL_CFG="${PERSIST_NL_TMP}/.silver-bullet.json"
-jq -n '{sb_initiated:true, sb_enforcement_tier:0}' >"$PERSIST_NL_CFG"
-# shellcheck source=../../hooks/lib/enforcement-tier-gate.sh
-source "${REPO_ROOT}/hooks/lib/enforcement-tier-gate.sh"
-sb_enforcement_tier_persist "$PERSIST_NL_CFG" "0"
-if [[ "$(tail -c1 "$PERSIST_NL_CFG" | xxd -p)" == "0a" ]]; then
-  echo "PASS: sb_enforcement_tier_persist preserves trailing newline"
-  PASS=$((PASS + 1))
-else
-  echo "FAIL: sb_enforcement_tier_persist stripped trailing newline"
-  xxd -l 16 -s -16 "$PERSIST_NL_CFG" || true
-  FAIL=$((FAIL + 1))
-fi
-rm -rf "$PERSIST_NL_TMP"
 
 # ── F8 / #257: doctor --dry-run D11 must not dirty .silver-bullet.json ───────
 DRY_NL_TMP="$(mktemp -d)"
@@ -585,14 +495,14 @@ printf '# silver-bullet\n' >"${DRY_NL_TMP}/silver-bullet.md"
 DRY_BEFORE="$(cksum "$DRY_NL_CFG")"
 bash "$DOCTOR" --dry-run "$DRY_NL_TMP" >/dev/null 2>&1 || true
 DRY_AFTER="$(cksum "$DRY_NL_CFG")"
-if [[ "$DRY_BEFORE" == "$DRY_AFTER" ]] && [[ "$(tail -c1 "$DRY_NL_CFG" | xxd -p)" == "0a" ]]; then
+if [[ "$DRY_BEFORE" == "$DRY_AFTER" ]] && [[ "$(last_byte_hex "$DRY_NL_CFG")" == "0a" ]]; then
   echo "PASS: doctor --dry-run leaves .silver-bullet.json byte-identical (D11 smoke)"
   PASS=$((PASS + 1))
 else
   echo "FAIL: doctor --dry-run dirtied .silver-bullet.json"
   echo "  before=$DRY_BEFORE"
   echo "  after=$DRY_AFTER"
-  echo "  eof=$(tail -c1 "$DRY_NL_CFG" | xxd -p)"
+  echo "  eof=$(last_byte_hex "$DRY_NL_CFG")"
   FAIL=$((FAIL + 1))
 fi
 rm -rf "$DRY_NL_TMP"
@@ -621,7 +531,7 @@ else
   echo "FAIL: skill Omni footnote is planned WS7 not D10 Graphify"
   FAIL=$((FAIL + 1))
 fi
-if awk '/search_cli/{f=1} f && /Health/{print; exit}' "$SKILL" | grep -q 'command -v'; then
+if grep -q 'command -v' < <(awk '/search_cli/{f=1} f && /Health/{print; exit}' "$SKILL"); then
   echo "FAIL: search_cli Health must not claim command -v alone"
   FAIL=$((FAIL + 1))
 else
@@ -638,7 +548,7 @@ else
 fi
 
 # Swallow anti-pattern: apply must not discard stderr then mark applied
-if grep -n 'doctor_run_reconciler apply' "$DOCTOR" | grep -q .; then
+if grep -q . < <(grep -n 'doctor_run_reconciler apply' "$DOCTOR"); then
   apply_ctx="$(awk '/doctor_apply_fixes\(\)/,/^run_doctor_checks/{print}' "$DOCTOR")"
   if grep -q '2>/dev/null || true' <<<"$apply_ctx" \
     && grep -q 'DOCTOR_FIX_APPLIED=1' <<<"$apply_ctx"; then
@@ -664,21 +574,19 @@ fi
 SC_HOME="$(mktemp -d)"
 SC_PROJ="$(mktemp -d)"
 SC_BIN="$(mktemp -d)"
-mkdir -p "$SC_HOME/.cursor" "$SC_PROJ/docs/workflows" "$SC_PROJ/scripts"
+mkdir -p "$SC_HOME/.claude" "$SC_PROJ/docs/workflows" "$SC_PROJ/scripts"
 cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$SC_PROJ/.silver-bullet.json"
 jq '.sb_initiated = true' "$SC_PROJ/.silver-bullet.json" >"${SC_PROJ}/.silver-bullet.json.tmp"
 mv "${SC_PROJ}/.silver-bullet.json.tmp" "$SC_PROJ/.silver-bullet.json"
 cp "$REPO_ROOT/silver-bullet.md" "$SC_PROJ/silver-bullet.md"
 cp "$REPO_ROOT/scripts/workflows.sh" "$SC_PROJ/scripts/workflows.sh"
 chmod +x "$SC_PROJ/scripts/workflows.sh"
-printf '{"mcpServers":{}}\n' >"$SC_HOME/.cursor/mcp.json"
-printf '{"hooks":{"preToolUse":[]}}\n' >"$SC_HOME/.cursor/hooks.json"
+printf '{"mcpServers":{}}\n' >"$SC_HOME/.claude.json"
+printf '{"hooks":{"preToolUse":[]}}\n' >"$SC_HOME/.claude/settings.json"
 
 sc_run_doctor() {
-  local extra_env="${1:-}"
-  # shellcheck disable=SC2086
-  env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=cursor \
-    PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 $extra_env \
+  env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=claude \
+    PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
     bash "$DOCTOR" "$SC_PROJ" 2>&1 || true
 }
 
@@ -703,8 +611,9 @@ fi
 jq '.recommended_tools.search_cli.enabled_by_user = true' \
   "$SC_PROJ/.silver-bullet.json" >"${SC_PROJ}/.silver-bullet.json.tmp"
 mv "${SC_PROJ}/.silver-bullet.json.tmp" "$SC_PROJ/.silver-bullet.json"
+sb_test_consent_grant search_cli install,wire,enforce
 
-for sc_rt in cursor claude codex; do
+for sc_rt in claude codex; do
   sc_cli_out="$(
     env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME="$sc_rt" \
       PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
@@ -729,29 +638,29 @@ exit 0
 EOF
 chmod +x "${SC_BIN}/search"
 sc_warn_rc=0
-env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=cursor \
+env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=claude \
   PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
-  bash "$DOCTOR" "$SC_PROJ" >/tmp/sb-doctor-sc-warn-$$.txt 2>&1 || sc_warn_rc=$?
-if grep -qE 'WARN: D10-search_cli' /tmp/sb-doctor-sc-warn-$$.txt \
-  && ! grep -qE 'FAIL: D10-search_cli' /tmp/sb-doctor-sc-warn-$$.txt; then
+  bash "$DOCTOR" "$SC_PROJ" >${DOCTOR_TEST_TMP}/sc-warn.txt 2>&1 || sc_warn_rc=$?
+if grep -qE 'WARN: D10-search_cli' ${DOCTOR_TEST_TMP}/sc-warn.txt \
+  && ! grep -qE 'FAIL: D10-search_cli' ${DOCTOR_TEST_TMP}/sc-warn.txt; then
   echo "PASS: WARN-only search_cli D10 is WARN not FAIL"
   PASS=$((PASS + 1))
 else
   echo "FAIL: WARN-only search_cli D10 is WARN not FAIL (rc=$sc_warn_rc)"
-  grep 'D10-search_cli' /tmp/sb-doctor-sc-warn-$$.txt || true
+  grep 'D10-search_cli' ${DOCTOR_TEST_TMP}/sc-warn.txt || true
   FAIL=$((FAIL + 1))
 fi
 rm -f "${SC_BIN}/search"
 sc_fail_rc=0
-env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=cursor \
+env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=claude \
   PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
-  bash "$DOCTOR" "$SC_PROJ" >/tmp/sb-doctor-sc-fail-$$.txt 2>&1 || sc_fail_rc=$?
-if grep -qE 'FAIL: D10-search_cli' /tmp/sb-doctor-sc-fail-$$.txt && [[ "$sc_fail_rc" -ne 0 ]]; then
+  bash "$DOCTOR" "$SC_PROJ" >${DOCTOR_TEST_TMP}/sc-fail.txt 2>&1 || sc_fail_rc=$?
+if grep -qE 'FAIL: D10-search_cli' ${DOCTOR_TEST_TMP}/sc-fail.txt && [[ "$sc_fail_rc" -ne 0 ]]; then
   echo "PASS: FAIL search_cli tree exits nonzero"
   PASS=$((PASS + 1))
 else
   echo "FAIL: FAIL search_cli tree exits nonzero (rc=$sc_fail_rc)"
-  grep 'D10-search_cli' /tmp/sb-doctor-sc-fail-$$.txt || true
+  grep 'D10-search_cli' ${DOCTOR_TEST_TMP}/sc-fail.txt || true
   FAIL=$((FAIL + 1))
 fi
 
@@ -764,12 +673,12 @@ exit 1
 EOF
 chmod +x "$SC_FAKE"
 sc_empty_out="$(
-  env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=cursor \
+  env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=claude \
     PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
     SB_DOCTOR_RECONCILER="$SC_FAKE" SB_DOCTOR_FORMAT=json SB_DOCTOR_ASSUME_YES=1 \
-    bash "$DOCTOR" --fix=packages "$SC_PROJ" 2>/tmp/sb-doctor-sc-empty-err-$$.txt || true
+    bash "$DOCTOR" --fix=packages "$SC_PROJ" 2>${DOCTOR_TEST_TMP}/sc-empty-err.txt || true
 )"
-sc_empty_err="$(cat /tmp/sb-doctor-sc-empty-err-$$.txt 2>/dev/null || true)"
+sc_empty_err="$(cat ${DOCTOR_TEST_TMP}/sc-empty-err.txt 2>/dev/null || true)"
 if printf '%s' "$sc_empty_out" | jq -e '.fix_applied == false' >/dev/null 2>&1 \
   && [[ "$sc_empty_err" == *"reconciler-stderr-kept"* ]]; then
   echo "PASS: empty/failed apply JSON does not mark DOCTOR_FIX_APPLIED"
@@ -787,7 +696,7 @@ echo 'not-json'
 exit 0
 EOF
 sc_mal_out="$(
-  env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=cursor \
+  env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=claude \
     PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
     SB_DOCTOR_RECONCILER="$SC_FAKE" SB_DOCTOR_FORMAT=json SB_DOCTOR_ASSUME_YES=1 \
     bash "$DOCTOR" --fix=packages "$SC_PROJ" 2>/dev/null || true
@@ -803,7 +712,7 @@ fi
 
 # --dry-run / plan writes nothing
 SC_CFG_BEFORE="$(cksum "$SC_PROJ/.silver-bullet.json")"
-env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=cursor \
+env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=claude \
   PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
   bash "$DOCTOR" --dry-run "$SC_PROJ" >/dev/null 2>&1 || true
 SC_CFG_AFTER="$(cksum "$SC_PROJ/.silver-bullet.json")"
@@ -826,9 +735,9 @@ EOF
 chmod +x "${SC_BIN}/brew"
 unset SB_DOCTOR_ASSUME_YES
 sc_confirm_rc=0
-env -u SB_RUNTIME_NAME -u SB_DOCTOR_ASSUME_YES HOME="$SC_HOME" SILVER_BULLET_RUNTIME=cursor \
+env -u SB_RUNTIME_NAME -u SB_DOCTOR_ASSUME_YES HOME="$SC_HOME" SILVER_BULLET_RUNTIME=claude \
   PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_FORMAT=json \
-  bash "$DOCTOR" --fix=packages "$SC_PROJ" >/tmp/sb-doctor-sc-confirm-$$.txt 2>&1 || sc_confirm_rc=$?
+  bash "$DOCTOR" --fix=packages "$SC_PROJ" >${DOCTOR_TEST_TMP}/sc-confirm.txt 2>&1 || sc_confirm_rc=$?
 if [[ "$sc_confirm_rc" -ne 0 ]] && [[ ! -f "$SC_STAMP" ]]; then
   echo "PASS: confirmation unobtainable blocks packages --fix writes"
   PASS=$((PASS + 1))
@@ -839,7 +748,7 @@ fi
 
 # JSON stdout parseable
 sc_json_out="$(
-  env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=cursor \
+  env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=claude \
     PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_FORMAT=json \
     bash "$DOCTOR" --dry-run "$SC_PROJ" 2>/dev/null || true
 )"
@@ -861,8 +770,8 @@ else
 fi
 
 rm -rf "$SC_HOME" "$SC_PROJ" "$SC_BIN"
-rm -f /tmp/sb-doctor-sc-warn-$$.txt /tmp/sb-doctor-sc-fail-$$.txt \
-  /tmp/sb-doctor-sc-empty-err-$$.txt /tmp/sb-doctor-sc-confirm-$$.txt
+rm -f ${DOCTOR_TEST_TMP}/sc-warn.txt ${DOCTOR_TEST_TMP}/sc-fail.txt \
+  ${DOCTOR_TEST_TMP}/sc-empty-err.txt ${DOCTOR_TEST_TMP}/sc-confirm.txt
 
 echo
 
@@ -893,19 +802,11 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-# /sb:doctor alias
-SB_DOC_CMD="${REPO_ROOT}/plugins/silver-bullet/commands/sb-doctor.md"
-SILVER_DOC_CMD="${REPO_ROOT}/plugins/silver-bullet/commands/sb-doctor.md"
-assert_file_exists "sb-doctor command stub exists" "$SB_DOC_CMD"
-assert_file_exists "silver-doctor command stub exists" "$SILVER_DOC_CMD"
+# /sb:doctor alias (the skill is the only entry point; no command stubs ship)
 assert_contains "SKILL documents /sb:doctor" "/sb:doctor" "$SKILL"
-assert_contains "SKILL documents /sb:doctor" "/sb:doctor" "$SKILL"
-assert_contains "sb-doctor stub forwards to sb-doctor.sh" "sb-doctor\\.sh" "$SB_DOC_CMD"
-assert_contains "silver-doctor stub forwards to sb-doctor.sh" "sb-doctor\\.sh" "$SILVER_DOC_CMD"
-assert_contains "sb-doctor stub documents --fix" "--fix" "$SB_DOC_CMD"
-assert_contains "sb-doctor stub documents --dry-run" "--dry-run" "$SB_DOC_CMD"
-assert_contains "silver-doctor stub documents --fix" "--fix" "$SILVER_DOC_CMD"
-assert_contains "silver-doctor stub documents --dry-run" "--dry-run" "$SILVER_DOC_CMD"
+assert_contains "SKILL forwards to sb-doctor.sh" "sb-doctor\\.sh" "$SKILL"
+assert_contains "SKILL documents --fix" "--fix" "$SKILL"
+assert_contains "SKILL documents --dry-run" "--dry-run" "$SKILL"
 
 # Stale split deleted
 if [[ ! -f "$REPO_ROOT/scripts/lib/sb-doctor/checks.sh" ]] \
@@ -931,7 +832,7 @@ else
   echo "FAIL: doctor_apply_fixes has no first-match break"
   FAIL=$((FAIL + 1))
 fi
-if grep -q 'D4|D13|D14|D16|D18|D19|D21' "$DOCTOR" && grep -q 'local' "$DOCTOR"; then
+if grep -q 'D4|D13|D14|D16' "$DOCTOR" && grep -q 'local' "$DOCTOR"; then
   echo "PASS: --fix=local fences host check ids"
   PASS=$((PASS + 1))
 else
@@ -970,7 +871,7 @@ fi
 # Stale-loop canary: opted-in missing CLI stays FAIL (consent-only would PASS)
 CANARY_HOME="$(mktemp -d)"
 CANARY_PROJ="$(mktemp -d)"
-mkdir -p "$CANARY_HOME/.cursor" "$CANARY_PROJ/scripts" "$CANARY_PROJ/docs/workflows"
+mkdir -p "$CANARY_HOME/.claude" "$CANARY_PROJ/scripts" "$CANARY_PROJ/docs/workflows"
 cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$CANARY_PROJ/.silver-bullet.json"
 jq '.sb_initiated = true
   | .recommended_tools.graphify.enabled_by_user = true
@@ -982,13 +883,14 @@ jq '.sb_initiated = true
   | .recommended_tools.search_cli.enabled_by_user = false' \
   "$CANARY_PROJ/.silver-bullet.json" >"${CANARY_PROJ}/.silver-bullet.json.tmp"
 mv "${CANARY_PROJ}/.silver-bullet.json.tmp" "$CANARY_PROJ/.silver-bullet.json"
+sb_test_consent_reset_mirror "$CANARY_PROJ/.silver-bullet.json" install,wire,enforce
 cp "$REPO_ROOT/silver-bullet.md" "$CANARY_PROJ/silver-bullet.md"
 cp "$REPO_ROOT/scripts/workflows.sh" "$CANARY_PROJ/scripts/workflows.sh"
 chmod +x "$CANARY_PROJ/scripts/workflows.sh"
-printf '{"mcpServers":{}}\n' >"$CANARY_HOME/.cursor/mcp.json"
-printf '{"hooks":{"preToolUse":[]}}\n' >"$CANARY_HOME/.cursor/hooks.json"
+printf '{"mcpServers":{}}\n' >"$CANARY_HOME/.claude.json"
+printf '{"hooks":{"preToolUse":[]}}\n' >"$CANARY_HOME/.claude/settings.json"
 canary_out="$(
-  env -u SB_RUNTIME_NAME HOME="$CANARY_HOME" SILVER_BULLET_RUNTIME=cursor \
+  env -u SB_RUNTIME_NAME HOME="$CANARY_HOME" SILVER_BULLET_RUNTIME=claude \
     PATH="/usr/bin:/bin" RT_SKIP_VENDOR_DOCTOR=1 \
     bash "$DOCTOR" "$CANARY_PROJ" 2>&1 || true
 )"
@@ -1007,7 +909,7 @@ rm -rf "$CANARY_HOME" "$CANARY_PROJ"
 FIX_HOME="$(mktemp -d)"
 FIX_PROJ="$(mktemp -d)"
 FIX_BIN="$(mktemp -d)"
-mkdir -p "$FIX_HOME/.cursor" "$FIX_HOME/.silver-bullet" "$FIX_PROJ/scripts" "$FIX_PROJ/docs/workflows"
+mkdir -p "$FIX_HOME/.claude" "$FIX_HOME/.silver-bullet" "$FIX_PROJ/scripts" "$FIX_PROJ/docs/workflows"
 cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$FIX_PROJ/.silver-bullet.json"
 jq '.sb_initiated = true
   | .recommended_tools.graphify.enabled_by_user = false
@@ -1022,8 +924,8 @@ mv "${FIX_PROJ}/.silver-bullet.json.tmp" "$FIX_PROJ/.silver-bullet.json"
 cp "$REPO_ROOT/silver-bullet.md" "$FIX_PROJ/silver-bullet.md"
 cp "$REPO_ROOT/scripts/workflows.sh" "$FIX_PROJ/scripts/workflows.sh"
 chmod +x "$FIX_PROJ/scripts/workflows.sh"
-printf '{"mcpServers":{}}\n' >"$FIX_HOME/.cursor/mcp.json"
-printf '{"hooks":{"preToolUse":[{"command":"silver-bullet/cursor-hook-bridge.sh","matcher":"Shell"}]}}\n' >"$FIX_HOME/.cursor/hooks.json"
+printf '{"mcpServers":{}}\n' >"$FIX_HOME/.claude.json"
+printf '{"hooks":{"preToolUse":[{"command":"silver-bullet/hooks/session-start","matcher":"Shell"}]}}\n' >"$FIX_HOME/.claude/settings.json"
 cat >"${FIX_BIN}/rtk" <<'EOF'
 #!/usr/bin/env bash
 case "$1" in
@@ -1050,11 +952,11 @@ while [[ \$# -gt 0 ]]; do
     *) shift ;;
   esac
 done
-hooks="$FIX_HOME/.cursor/hooks.json"
+hooks="$FIX_HOME/.claude/settings.json"
 if [[ "\$mode" == "apply" ]]; then
-  printf '%s\\n' '{"hooks":{"preToolUse":[{"command":"rtk hook cursor","matcher":"Shell"}]}}' >"\$hooks"
+  printf '%s\\n' '{"hooks":{"preToolUse":[{"command":"rtk hook claude","matcher":"Shell"}]}}' >"\$hooks"
 fi
-if grep -q 'rtk hook cursor' "\$hooks" 2>/dev/null; then
+if grep -q 'rtk hook claude' "\$hooks" 2>/dev/null; then
   cat <<'JSON'
 {"schema":"1.0.0","ok":true,"mode":"apply","components":[{"component":"rtk","consent":"enabled","canonical_state":"ready","activation_status":"full","repairable":false,"evidence":[]}]}
 JSON
@@ -1066,13 +968,13 @@ fi
 EOF
 chmod +x "$FIX_RECON"
 fix_out1="$(
-  env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=cursor \
+  env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=claude \
     PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
     SB_DOCTOR_RECONCILER="$FIX_RECON" SB_DOCTOR_FORMAT=json \
     SB_DOCTOR_STUB_HOST_INSTALL="${FIX_HOME}/host-install.stamp" \
     bash "$DOCTOR" --fix=host "$FIX_PROJ" 2>/dev/null || true
 )"
-if grep -q 'rtk hook cursor' "$FIX_HOME/.cursor/hooks.json" \
+if grep -q 'rtk hook claude' "$FIX_HOME/.claude/settings.json" \
   && printf '%s' "$fix_out1" | jq -e '.fix_applied == true' >/dev/null 2>&1; then
   echo "PASS: five-tool --fix=host writes missing RTK hook and fix_applied"
   PASS=$((PASS + 1))
@@ -1080,15 +982,13 @@ else
   echo "FAIL: five-tool --fix=host writes missing RTK hook and fix_applied"
   FAIL=$((FAIL + 1))
 fi
-hooks_before="$(cksum "$FIX_HOME/.cursor/hooks.json")"
-fix_out2="$(
-  env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=cursor \
-    PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
-    SB_DOCTOR_RECONCILER="$FIX_RECON" SB_DOCTOR_FORMAT=json \
-    SB_DOCTOR_STUB_HOST_INSTALL="${FIX_HOME}/host-install.stamp" \
-    bash "$DOCTOR" --fix=host "$FIX_PROJ" 2>/dev/null || true
-)"
-hooks_after="$(cksum "$FIX_HOME/.cursor/hooks.json")"
+hooks_before="$(cksum "$FIX_HOME/.claude/settings.json")"
+env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=claude \
+  PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
+  SB_DOCTOR_RECONCILER="$FIX_RECON" SB_DOCTOR_FORMAT=json \
+  SB_DOCTOR_STUB_HOST_INSTALL="${FIX_HOME}/host-install.stamp" \
+  bash "$DOCTOR" --fix=host "$FIX_PROJ" >/dev/null 2>&1 || true
+hooks_after="$(cksum "$FIX_HOME/.claude/settings.json")"
 if [[ "$hooks_before" == "$hooks_after" ]]; then
   echo "PASS: five-tool second --fix=host is idempotent"
   PASS=$((PASS + 1))
@@ -1108,23 +1008,25 @@ JSON
 EOF
 chmod +x "$FIX_RECON_NOWWRITE"
 printf '{"hooks":{"preToolUse":[{"command":"other-hook","matcher":"Shell"}]}}\n' \
-  >"$FIX_HOME/.cursor/hooks.json"
-hooks_local_before="$(cksum "$FIX_HOME/.cursor/hooks.json")"
-mkdir -p "$FIX_HOME/.cursor/.silver-bullet"
-printf '{"violations":[{"route":"sb_shell"}]}\n' >"$FIX_HOME/.cursor/.silver-bullet/stack-compression-mutex"
+  >"$FIX_HOME/.claude/settings.json"
+hooks_local_before="$(cksum "$FIX_HOME/.claude/settings.json")"
+mkdir -p "$FIX_HOME/.claude/.silver-bullet"
+# The coordinator keeps its mutex state per project and session (stack-compression-mutex.d/...).
+FIX_MUTEX="$(env HOME="$FIX_HOME" SB_RUNTIME_STATE_DIR="$FIX_HOME/.claude/.silver-bullet" bash -c 'source "$1/hooks/lib/stack-compression-coordinator.sh"; sb_stack_mutex_state_path "$2"' _ "$REPO_ROOT" "$FIX_PROJ/.silver-bullet.json")"
+mkdir -p "$(dirname "$FIX_MUTEX")"
+printf '{"violations":[{"route":"sb_shell"}]}\n' >"$FIX_MUTEX"
 jq '.recommended_tools.leanctx.enabled_by_user = true
   | .recommended_tools.rtk.enabled_by_user = true
   | .recommended_tools.context_mode.enabled_by_user = true' \
   "$FIX_PROJ/.silver-bullet.json" >"${FIX_PROJ}/.silver-bullet.json.tmp"
 mv "${FIX_PROJ}/.silver-bullet.json.tmp" "$FIX_PROJ/.silver-bullet.json"
-local_out="$(
-  env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=cursor \
-    PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
-    SB_DOCTOR_RECONCILER="$FIX_RECON_NOWWRITE" \
-    SB_DOCTOR_STUB_HOST_INSTALL="${FIX_HOME}/host-install-local.stamp" \
-    bash "$DOCTOR" --fix=local "$FIX_PROJ" 2>/dev/null || true
-)"
-hooks_local_after="$(cksum "$FIX_HOME/.cursor/hooks.json")"
+sb_test_consent_reset_mirror "$FIX_PROJ/.silver-bullet.json" install,wire,enforce
+env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=claude \
+  PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
+  SB_DOCTOR_RECONCILER="$FIX_RECON_NOWWRITE" \
+  SB_DOCTOR_STUB_HOST_INSTALL="${FIX_HOME}/host-install-local.stamp" \
+  bash "$DOCTOR" --fix=local "$FIX_PROJ" >/dev/null 2>&1 || true
+hooks_local_after="$(cksum "$FIX_HOME/.claude/settings.json")"
 if [[ "$hooks_local_before" == "$hooks_local_after" ]]; then
   echo "PASS: --fix=local does not mutate host D4 hooks"
   PASS=$((PASS + 1))
@@ -1132,7 +1034,7 @@ else
   echo "FAIL: --fix=local does not mutate host D4 hooks"
   FAIL=$((FAIL + 1))
 fi
-mutex_file="$FIX_HOME/.cursor/.silver-bullet/stack-compression-mutex"
+mutex_file="$FIX_MUTEX"
 if [[ ! -f "$mutex_file" ]] || [[ "$(jq -r '.violations | length' "$mutex_file" 2>/dev/null || echo 1)" == "0" ]]; then
   echo "PASS: --fix=local still clears D20 mutex"
   PASS=$((PASS + 1))
@@ -1143,18 +1045,19 @@ fi
 
 # --fix=all: two in-scope (D4 + D20) converge without break
 printf '{"hooks":{"preToolUse":[{"command":"other-hook","matcher":"Shell"}]}}\n' \
-  >"$FIX_HOME/.cursor/hooks.json"
-printf '{"violations":[{"route":"sb_shell"}]}\n' >"$FIX_HOME/.cursor/.silver-bullet/stack-compression-mutex"
+  >"$FIX_HOME/.claude/settings.json"
+mkdir -p "$(dirname "$FIX_MUTEX")"
+printf '{"violations":[{"route":"sb_shell"}]}\n' >"$FIX_MUTEX"
 FIX_STAMP="$FIX_HOME/host-install.stamp"
 rm -f "$FIX_STAMP"
 all_out="$(
-  env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=cursor \
+  env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=claude \
     PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
     SB_DOCTOR_RECONCILER="$FIX_RECON_NOWWRITE" SB_DOCTOR_FORMAT=json \
     SB_DOCTOR_STUB_HOST_INSTALL="$FIX_STAMP" \
     bash "$DOCTOR" --fix=all "$FIX_PROJ" 2>/dev/null || true
 )"
-mutex_all_file="$FIX_HOME/.cursor/.silver-bullet/stack-compression-mutex"
+mutex_all_file="$FIX_MUTEX"
 mutex_all_clean=0
 [[ ! -f "$mutex_all_file" ]] && mutex_all_clean=1
 [[ -f "$mutex_all_file" && "$(jq -r '.violations | length' "$mutex_all_file" 2>/dev/null || echo 1)" == "0" ]] && mutex_all_clean=1

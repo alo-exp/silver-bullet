@@ -10,12 +10,12 @@ sb_core_rules_pin_file() {
 sb_core_rules_compute_hash() {
   local core_rules_file="${1:-}"
   [[ -f "$core_rules_file" ]] || return 1
-  if command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 "$core_rules_file" | awk '{print $1}'
-    return 0
-  fi
   if command -v sha256sum >/dev/null 2>&1; then
     sha256sum "$core_rules_file" | awk '{print $1}'
+    return 0
+  fi
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$core_rules_file" | awk '{print $1}'
     return 0
   fi
   return 1
@@ -71,6 +71,9 @@ sb_core_rules_compact_digest() {
   local core_rules_file="${2:-}"
   local max_bytes="${SB_CORE_RULES_DIGEST_MAX_BYTES:-3072}"
   local digest path_note non_neg
+  # The budget is in bytes: measure with the C locale so multi-byte characters
+  # (the em dashes in the header) are not counted as one.
+  local LC_ALL=C
 
   [[ -n "$verified" ]] || return 1
   path_note="${core_rules_file:-hooks/core-rules.md}"

@@ -15,6 +15,8 @@ done
 command -v jq >/dev/null 2>&1 || exit 0
 
 input="$(cat 2>/dev/null || true)"
+# shellcheck disable=SC2034  # read by sb_orchestrator_is_worker_session (subagent identity)
+SB_ORCH_HOOK_INPUT="$input"
 [[ -n "$input" ]] || exit 0
 
 hook_event="$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"')"
@@ -29,7 +31,7 @@ if declare -f sb_project_gate_or_exit >/dev/null 2>&1; then
   sb_project_gate_or_exit 2>/dev/null || exit 0
 fi
 
-SB_STATE_DIR="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}"
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
 
 emit_deny() {
@@ -110,7 +112,7 @@ case "$tool_name" in
     cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null || true)"
     phase="$(sb_rfl_read_field phase "")"
   if [[ "$phase" == orchestrator_grep_1 || "$phase" == orchestrator_grep_2 ]]; then
-    if printf '%s' "$cmd" | grep -qiE 'grep |rg |git diff|charter'; then
+    if grep -qiE 'grep |rg |git diff|charter' <<<"$cmd"; then
       sb_rfl_mark_orchestrator_grep
     fi
   fi

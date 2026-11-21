@@ -12,8 +12,8 @@
 - **Prior verify_1:** [`verify-1.md`](verify-1.md) — CLEAN / VERIFY_PASS (Grok substitute after Pi 401×2). Re-audited independently; that verdict was **not** copied. Parent orchestrator greps after verify_1 PASS are not this pass.
 - **Parent Policy A:** **no ACCEPT to apply** this rung
 - **Scope (independently re-hashed; disk wins):**
-  - [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
-  - [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
 
 Graphify CLI `query` first (MCP `user-graphify` unavailable). agentmemory `memory_save`. Freeze **not** edited this pass.
 
@@ -21,8 +21,8 @@ Graphify CLI `query` first (MCP `user-graphify` unavailable). agentmemory `memor
 
 | Copy | SHA-256 (as hashed) | Size (bytes) |
 |---|---|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
 
 - Byte-identical: **YES** (`cmp -s` true; same SHA and size)
 - Matches locked launcher SHA `d5343ac1…` / 621095 exactly. Charter start SHA `07b98609…` / 620985 is historical and is **not** current disk.

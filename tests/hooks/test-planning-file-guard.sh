@@ -27,7 +27,7 @@ TRIVIAL_FILE="${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 OVERRIDE_FILE="${SB_TEST_DIR}/planning-edit-override"
 
 cleanup_all() {
-  rm -f "$TRIVIAL_FILE" "$OVERRIDE_FILE" "${SB_TEST_DIR}/roadmap-edit-override" 2>/dev/null || true
+  rm -f "$TRIVIAL_FILE" "$OVERRIDE_FILE" "${SB_TEST_DIR}/roadmap-edit-override" "${SB_TEST_DIR}/state" "${SB_TEST_DIR}/trivial" 2>/dev/null || true
   [[ -n "${TMPDIR_TEST:-}" ]] && rm -rf "$TMPDIR_TEST" || true
 }
 trap cleanup_all EXIT
@@ -77,7 +77,7 @@ run_hook_apply_patch() {
 assert_blocks() {
   local label="$1"
   local output="$2"
-  if printf '%s' "$output" | grep -qE '"permissionDecision"\s*:\s*"deny"'; then
+  if grep -qE '"permissionDecision"\s*:\s*"deny"' <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -89,7 +89,7 @@ assert_blocks() {
 assert_passes() {
   local label="$1"
   local output="$2"
-  if ! printf '%s' "$output" | grep -qE '"permissionDecision"\s*:\s*"deny"'; then
+  if ! grep -qE '"permissionDecision"\s*:\s*"deny"' <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -171,10 +171,18 @@ teardown
 echo "--- Group 3: Bypasses ---"
 
 # Trivial bypass: trivial file present → allow edit
+# The default marker is honoured (a user creates it from a terminal); the configured path is not.
+setup
+touch "${SB_TEST_DIR}/trivial"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
+assert_passes "trivial bypass allows protected file edit" "$out"
+rm -f "${SB_TEST_DIR}/trivial"
+teardown
+
 setup
 touch "$TRIVIAL_FILE"
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
-assert_passes "trivial bypass allows protected file edit" "$out"
+assert_blocks "a configured trivial file is not honoured (R2-04)" "$out"
 teardown
 
 # File-based override — uses $OVERRIDE_FILE so EXIT trap covers crash-safe cleanup
@@ -196,13 +204,23 @@ teardown
 
 # roadmap-edit-override allows ROADMAP.md and STATE.md for sb:phase / sb:undo
 ROADMAP_OVERRIDE_FILE="${SB_TEST_DIR}/roadmap-edit-override"
+# ... but only while the owning skill is recorded: the sentinel alone is agent-reachable (R2-08).
 setup
 touch "$ROADMAP_OVERRIDE_FILE"
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
-assert_passes "roadmap-edit-override allows ROADMAP.md edit" "$out"
+assert_blocks "roadmap-edit-override alone does not allow ROADMAP.md edit" "$out"
+printf 'silver-phase\n' >"${SB_TEST_DIR}/state"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
+assert_passes "roadmap-edit-override with sb:phase recorded allows ROADMAP.md edit" "$out"
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/STATE.md")
-assert_passes "roadmap-edit-override allows STATE.md edit" "$out"
-rm -f "$ROADMAP_OVERRIDE_FILE"
+assert_passes "roadmap-edit-override with sb:phase recorded allows STATE.md edit" "$out"
+printf 'silver-undo\n' >"${SB_TEST_DIR}/state"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/STATE.md")
+assert_passes "roadmap-edit-override with sb:undo recorded allows STATE.md edit" "$out"
+printf 'silver-plan\n' >"${SB_TEST_DIR}/state"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
+assert_blocks "an unrelated recorded skill does not unlock the roadmap" "$out"
+rm -f "$ROADMAP_OVERRIDE_FILE" "${SB_TEST_DIR}/state"
 teardown
 
 # Env-var bypass: SB_ALLOW_PLANNING_EDITS=1 → allow edit
@@ -225,7 +243,7 @@ echo "--- Group 4: Block message contains skill hint ---"
 
 setup
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
-if printf '%s' "$out" | grep -q "sb:phase\|sb:plan\|sb:add\|sb:release"; then
+if grep -q "sb:phase\|sb:plan\|sb:add\|sb:release" <<<"$out"; then
   echo "  ✅ ROADMAP block message mentions owning skills"
   PASS=$((PASS + 1))
 else
@@ -267,6 +285,77 @@ teardown
 setup
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/x/../STATE.md")
 assert_blocks "path traversal .planning/x/../STATE.md is blocked" "$out"
+teardown
+
+echo "--- Group 7: owner allowance (sb:spec / sb:ingest -> REQUIREMENTS.md only, only while latest) ---"
+
+run_hook_bash() {
+  local cmd="$1" input
+  input=$(jq -n --arg c "$cmd" '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$c}}')
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+STATE="${SB_TEST_DIR}/state"
+# The skill invoked last, sealed the way record-skill.sh does it.
+own_at() { ( export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"; source "$REPO_ROOT/hooks/lib/state-seal.sh"; _sb_state_seal_ensure_key "$1"; sb_state_last_write "$1" "$2" ); }
+own() { own_at "$STATE" "$1"; }
+unown() { rm -f "$STATE.last" "$STATE.lasthwm"; }
+
+setup
+unown; own silver-plan; own silver-spec
+out=$(run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
+assert_passes "latest skill silver-spec may Write REQUIREMENTS.md" "$out"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
+assert_passes "latest skill silver-spec may Edit REQUIREMENTS.md" "$out"
+out=$(run_hook_multiedit "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
+assert_passes "latest skill silver-spec may MultiEdit REQUIREMENTS.md" "$out"
+out=$(run_hook_apply_patch "*** Begin Patch
+*** Update File: .planning/REQUIREMENTS.md
+@@
++- REQ-01
+*** End Patch")
+assert_passes "latest skill silver-spec may apply_patch REQUIREMENTS.md" "$out"
+out=$(run_hook_write "${TMPDIR_TEST}/.planning/requirements.md")
+assert_passes "the owner allowance is case-insensitive like the guard" "$out"
+for f in ROADMAP.md STATE.md PROJECT.md RELEASE.md UAT.md phases/p1/1-PLAN.md; do
+  out=$(run_hook_write "${TMPDIR_TEST}/.planning/$f")
+  assert_blocks "silver-spec does not own $f" "$out"
+done
+out=$(run_hook_write "${TMPDIR_TEST}/.planning/sub/../ROADMAP.md")
+assert_blocks "silver-spec path trick to ROADMAP.md is blocked" "$out"
+out=$(run_hook_write "${TMPDIR_TEST}/.planning/sub/../REQUIREMENTS.md")
+assert_passes "a harmless .. spelling of REQUIREMENTS.md still resolves to the owned file" "$out"
+out=$(run_hook_bash "printf x > .planning/REQUIREMENTS.md")
+assert_blocks "a shell redirect to REQUIREMENTS.md gets no owner allowance" "$out"
+out=$(run_hook_bash "rm .planning/REQUIREMENTS.md")
+assert_blocks "rm of REQUIREMENTS.md gets no owner allowance" "$out"
+out=$(run_hook_bash "cp /tmp/x .planning/REQUIREMENTS.md")
+assert_blocks "cp over REQUIREMENTS.md gets no owner allowance" "$out"
+ln -s ROADMAP.md "${TMPDIR_TEST}/.planning/REQUIREMENTS.md"
+out=$(run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
+assert_blocks "REQUIREMENTS.md symlinked to ROADMAP.md is blocked" "$out"
+rm -f "${TMPDIR_TEST}/.planning/REQUIREMENTS.md"
+teardown
+
+setup
+unown; own silver-ingest
+out=$(run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
+assert_passes "latest skill silver-ingest may Write REQUIREMENTS.md" "$out"
+own silver-spec; own silver-plan
+out=$(run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
+assert_blocks "a stale silver-spec (another skill recorded after it) gets no allowance" "$out"
+unown; own silver-plan
+out=$(run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
+assert_blocks "the wrong skill gets no allowance" "$out"
+unown
+out=$(run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
+assert_blocks "an empty state gets no allowance" "$out"
+rm -f "$STATE" "$STATE.last"
+out=$(run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
+assert_blocks "a missing state gets no allowance" "$out"
+own silver-plan
+own_at "${TMPDIR_TEST}/forged-state" silver-spec
+out=$(SILVER_BULLET_STATE_FILE="${TMPDIR_TEST}/forged-state" run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
+assert_blocks "a state file outside the state directory is ignored" "$out"
 teardown
 
 echo ""

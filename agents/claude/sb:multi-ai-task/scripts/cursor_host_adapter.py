@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Cursor host adapter for multi-ai-task-v2 live dispatch."""
+"""Cursor backend adapter for multi-ai-task-v2 live dispatch.
+
+Cursor is a backend here: the cursor-agent CLI runs as an external process under Claude Code or
+Codex. The ``cursor-host-adapter-v1`` schema and error-code names are kept as stable identifiers.
+"""
 
 from __future__ import annotations
 
@@ -7,11 +11,14 @@ import json
 import os
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 ADAPTER_ID = "cursor-host-adapter-v1"
 ADAPTER_VERSION = "1.1.0"
+# Upper bound for one worker run; the request deadline lowers it.
+MAX_TIMEOUT_SEC = 900
 
 
 def _stub_mode() -> bool:
@@ -50,7 +57,21 @@ def launch(request: LaunchRequest) -> dict[str, Any]:
             "live_status": "not-live",
             "ok": False,
             "error_code": "CURSOR_HOST_ADAPTER_NOT_LIVE",
-            "message": "Cursor host adapter stubbed (SB_MULTI_AI_STUB=1)",
+            "message": "Cursor backend adapter stubbed (SB_MULTI_AI_STUB=1)",
+            "launch": _launch_echo(request),
+            "handles": {},
+        }
+
+    remaining = seconds_until(request.deadline)
+    if remaining is None or remaining < 1:
+        code = "INVALID_DEADLINE" if remaining is None else "DEADLINE_EXCEEDED"
+        return {
+            "schema_id": ADAPTER_ID,
+            "version": ADAPTER_VERSION,
+            "live_status": "live",
+            "ok": False,
+            "error_code": code,
+            "message": f"deadline {request.deadline!r} leaves no time to run a worker",
             "launch": _launch_echo(request),
             "handles": {},
         }
@@ -73,7 +94,8 @@ def launch(request: LaunchRequest) -> dict[str, Any]:
         logical_model_id=request.logical_model_id,
         prompt=prompt,
         output_dir=out_dir,
-        timeout_sec=min(request.hard_token_ceiling // 100, 900),
+        # Seconds come from the deadline; hard_token_ceiling is a token cap, not a duration.
+        timeout_sec=int(min(remaining, MAX_TIMEOUT_SEC)),
     )
     payload = extract_json_payload(result.raw_output)
     status = "completed" if result.status == "completed" else "failed"
@@ -85,7 +107,7 @@ def launch(request: LaunchRequest) -> dict[str, Any]:
         "launch": _launch_echo(request),
         "result": {
             "status": status,
-            "effective_model_id": cursor_model_for(request.logical_model_id),
+            "effective_model_id": result.effective_model_id or cursor_model_for(request.logical_model_id),
             "usage": result.usage or {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0},
             "payload": payload,
             "error": result.error,
@@ -110,14 +132,31 @@ def _launch_echo(request: LaunchRequest) -> dict[str, Any]:
     }
 
 
+def seconds_until(deadline: str) -> float | None:
+    """Seconds from now until an ISO 8601 deadline (naive values are UTC); None if unparseable."""
+    try:
+        when = datetime.fromisoformat(str(deadline).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    return (when - datetime.now(timezone.utc)).total_seconds()
+
+
 def cancel(_attempt_id: str, _idempotency_key: str) -> dict[str, Any]:
+    """Cancellation is not implemented; say so instead of claiming a stop that never happened.
+
+    A running worker ends at its timeout, which terminates its whole process group.
+    """
     return {
         "schema_id": ADAPTER_ID,
         "version": ADAPTER_VERSION,
         "live_status": live_status(),
-        "ok": True,
-        "cancellation_acknowledged": True,
-        "child_liveness_verified": not _stub_mode(),
+        "ok": False,
+        "error_code": "CANCEL_NOT_SUPPORTED",
+        "message": "cancel is not implemented; the worker stops at its deadline-derived timeout",
+        "cancellation_acknowledged": False,
+        "child_liveness_verified": False,
     }
 
 
@@ -141,7 +180,7 @@ def cas_select_authoritative_attempt(current_generation: int, expected_generatio
 def main(argv: list[str] | None = None) -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(description="Cursor host adapter (live on cursor host)")
+    parser = argparse.ArgumentParser(description="Cursor backend adapter (runs the cursor-agent CLI; Cursor is not a host)")
     sub = parser.add_subparsers(dest="command", required=True)
 
     launch_p = sub.add_parser("launch")
@@ -166,11 +205,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "cancel":
         print(json.dumps(cancel(args.attempt_id, args.idempotency_key), indent=2))
         return 0
-    if args.command == "cas":
-        aid = args.authoritative_attempt_id or None
-        print(json.dumps(cas_select_authoritative_attempt(args.current_generation, args.expected_generation, aid), indent=2))
-        return 0
-    return 2
+    aid = args.authoritative_attempt_id or None
+    print(json.dumps(cas_select_authoritative_attempt(args.current_generation, args.expected_generation, aid), indent=2))
+    return 0
 
 
 if __name__ == "__main__":

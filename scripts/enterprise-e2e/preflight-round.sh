@@ -7,10 +7,10 @@
 # Usage:
 #   RTK_DISABLED=1 bash scripts/enterprise-e2e/preflight-round.sh
 #   RTK_DISABLED=1 bash scripts/enterprise-e2e/preflight-round.sh --harness-only
-#   RTK_DISABLED=1 bash scripts/enterprise-e2e/preflight-round.sh --host cursor
+#   RTK_DISABLED=1 bash scripts/enterprise-e2e/preflight-round.sh --host codex
 #
 # Environment:
-#   SB_E2E_LIVE_RUNTIME          claude | codex | cursor (default: claude)
+#   SB_E2E_LIVE_RUNTIME          claude | codex (default: claude)
 #   SB_E2E_PREFLIGHT_SKIP_SURFACE=1   Skip Gate 0 install surface (harness-only bring-up)
 #   SB_E2E_SURFACE_SKIP=1        Anti-pattern for live — strict-clean-check fails if set
 set -euo pipefail
@@ -28,7 +28,7 @@ HARNESS_ONLY=0
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--harness-only] [--host claude|codex|cursor]
+Usage: $(basename "$0") [--harness-only] [--host claude|codex]
 
 Gate 0: install contracts (surface + tri-host smoke)
 Gate 1: harness structural (offline suite, outcome, test-app branch, dry-run matrix)

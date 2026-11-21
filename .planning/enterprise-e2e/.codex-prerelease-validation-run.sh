@@ -16,7 +16,7 @@ export SB_LIVE_RUNTIMES=codex
 export SB_E2E_LIVE_RUNTIMES=codex
 export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1
 export SB_E2E_LEDGER_FILE="${SB_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-2-LEDGER.md"
-export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/<user>/projects/enterprise-grade-test-app}"
 export GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-alo-exp/silver-bullet}"
 
 TOTAL_PASS=0

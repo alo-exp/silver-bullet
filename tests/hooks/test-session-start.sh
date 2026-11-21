@@ -218,19 +218,49 @@ fi
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPBRANCH" "$SESSION_START_FILE"
 
-# Test 0c: SB project -> existing marker preserved across Codex process restarts
+# Test 0c: SB project -> existing marker preserved across Codex process restarts (Codex `startup` is a restart,
+# not a new session; Claude's `startup` and every host's `clear` rotate it: Test 0d)
 echo "--- Test 0c: SB project -> existing session marker preserved ---"
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf '%s' "$new_branch" > "$TMPBRANCH"
-printf '1234567890\n' > "$SESSION_START_FILE"
-run_hook "$HOOK_WORKDIR" >/dev/null
-if [[ "$(cat "$SESSION_START_FILE" 2>/dev/null)" == "1234567890" ]]; then
+YOUNG=$(( $(date +%s) - 100 ))   # a Codex startup without a session id rotates only an epoch over a day old
+printf '%s\n' "$YOUNG" > "$SESSION_START_FILE"
+SILVER_BULLET_RUNTIME=codex run_hook "$HOOK_WORKDIR" >/dev/null
+if [[ "$(cat "$SESSION_START_FILE" 2>/dev/null)" == "$YOUNG" ]]; then
   echo "  PASS: existing session marker preserved"
   PASS=$((PASS + 1))
 else
   echo "  FAIL: existing session marker should be preserved, got: $(cat "$SESSION_START_FILE" 2>/dev/null || true)"
   FAIL=$((FAIL + 1))
+fi
+rm -rf "$HOOK_WORKDIR"
+rm -f "$TMPBRANCH" "$SESSION_START_FILE"
+
+# Test 0d: a genuine new session rotates the epoch: Claude startup and clear; resume, compact and a Codex startup (a process restart) do not
+echo "--- Test 0d: new session -> session marker rotated ---"
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+printf '%s' "$new_branch" > "$TMPBRANCH"
+rot() { # RUNTIME SOURCE EXPECT(rotated|kept)
+  local young=$(( $(date +%s) - 100 ))
+  printf '%s\n' "$young" > "$SESSION_START_FILE"
+  SILVER_BULLET_RUNTIME="$1" SILVER_BULLET_SESSION_SOURCE="$2" run_hook "$HOOK_WORKDIR" >/dev/null
+  local now; now="$(cat "$SESSION_START_FILE" 2>/dev/null)"
+  if [[ "$3" == rotated && "$now" =~ ^[0-9]+$ && "$now" != "$young" ]] || [[ "$3" == kept && "$now" == "$young" ]]; then
+    echo "  PASS: $1 $2 -> marker $3"; PASS=$((PASS + 1))
+  else
+    echo "  FAIL: $1 $2 -> marker should be $3, got: $now"; FAIL=$((FAIL + 1))
+  fi
+}
+# (the Claude rows need Claude's state-dir layout: the override paths are scoped to the host under test)
+if [[ "${SILVER_BULLET_RUNTIME:-claude}" == claude ]]; then
+  rot claude startup rotated
+  rot claude clear rotated
+  rot claude resume kept
+  rot claude compact kept
+else
+  rot "$SILVER_BULLET_RUNTIME" startup kept
 fi
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPBRANCH" "$SESSION_START_FILE"
@@ -243,9 +273,14 @@ HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 # Write a state file and point branch file at a different branch
 printf 'silver-quality-gates\ncode-review\n' > "$TMPSTATE"
+printf 'silver-spec\n' > "${TMPSTATE}.last"; printf '1\n' > "${TMPSTATE}.lasthwm"; printf 'x\n' > "${TMPSTATE}.last.w1"; printf '1\n' > "${TMPSTATE}.lasthwm.w1"
 printf 'old-branch-xyz' > "$TMPBRANCH"
 run_hook "$HOOK_WORKDIR" >/dev/null
 assert_file_missing "branch changed -> state file deleted" "$TMPSTATE"
+assert_file_missing "branch changed -> the last-invoked-skill record is deleted" "${TMPSTATE}.last"
+assert_file_missing "branch changed -> its counter is deleted" "${TMPSTATE}.lasthwm"
+assert_file_missing "branch changed -> a worker's record is deleted" "${TMPSTATE}.last.w1"
+assert_file_missing "branch changed -> a worker's counter is deleted" "${TMPSTATE}.lasthwm.w1"
 # branch file should now reflect current branch
 if [[ -f "$TMPBRANCH" ]]; then
   stored=$(head -1 "$TMPBRANCH" 2>/dev/null | tr -d '\n')
@@ -427,25 +462,44 @@ printf '{"skill":"silver-plan","template":"PLAN","spawned_at":"2020-01-01T00:00:
   SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
   bash "$HOOK" </dev/null 2>/dev/null ) || true
 assert_file_missing "startup clears stale orchestrator-worker-active.json" "$OVERRIDE_DIR/orchestrator-worker-active.json"
+# R4-02: the spawn record is evidence only. A fresh one does not make a session a worker, so a
+# startup without a subagent id clears it and injects no worker banner.
 printf '{"skill":"silver-plan","template":"PLAN","spawned_at":"%s"}\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
   > "$OVERRIDE_DIR/orchestrator-worker-active.json"
-out_worker=$( cd "$HOOK_WORKDIR" && \
+out_parent=$( cd "$HOOK_WORKDIR" && \
   SB_RUNTIME_PRESERVE_STATE_DIR=1 \
   SB_RUNTIME_STATE_DIR="$OVERRIDE_DIR" \
   SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
   bash "$HOOK" </dev/null 2>/dev/null ) || true
+assert_file_missing "startup without a subagent id clears a fresh spawn record" "$OVERRIDE_DIR/orchestrator-worker-active.json"
+if grep -qF 'SB WORKER SUBAGENT' <<<"$out_parent"; then
+  echo "  FAIL: a fresh spawn record must not make the main session a worker"
+  FAIL=$((FAIL + 1))
+else
+  echo "  PASS: a fresh spawn record does not make the main session a worker"
+  PASS=$((PASS + 1))
+fi
+# A SessionStart that carries the host's subagent id is a worker: record preserved, banner injected.
+printf '{"skill":"silver-plan","template":"PLAN","spawned_at":"%s"}\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+  > "$OVERRIDE_DIR/orchestrator-worker-active.json"
+out_worker=$( cd "$HOOK_WORKDIR" && \
+  printf '{"hook_event_name":"SessionStart","source":"startup","agent_id":"agent-A","agent_type":"general-purpose"}' | \
+  SB_RUNTIME_PRESERVE_STATE_DIR=1 \
+  SB_RUNTIME_STATE_DIR="$OVERRIDE_DIR" \
+  SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
+  bash "$HOOK" 2>/dev/null ) || true
 if [[ -f "$OVERRIDE_DIR/orchestrator-worker-active.json" ]]; then
-  echo "  PASS: startup preserves fresh orchestrator-worker-active.json (#275)"
+  echo "  PASS: startup with a subagent id preserves the spawn record (#275)"
   PASS=$((PASS + 1))
 else
-  echo "  FAIL: startup should preserve fresh orchestrator-worker-active.json (#275)"
+  echo "  FAIL: startup with a subagent id should preserve the spawn record (#275)"
   FAIL=$((FAIL + 1))
 fi
-if printf '%s' "$out_worker" | grep -qF 'SB WORKER SUBAGENT'; then
-  echo "  PASS: SessionStart injects worker banner when marker fresh (#275)"
+if grep -qF 'SB WORKER SUBAGENT' <<<"$out_worker"; then
+  echo "  PASS: SessionStart injects worker banner for a subagent id (#275)"
   PASS=$((PASS + 1))
 else
-  echo "  FAIL: SessionStart should inject worker banner when marker fresh (#275)"
+  echo "  FAIL: SessionStart should inject worker banner for a subagent id (#275)"
   FAIL=$((FAIL + 1))
 fi
 rm -rf "$HOOK_WORKDIR" "$OVERRIDE_DIR"
@@ -554,14 +608,14 @@ except Exception:
   if [[ -z "$decoded" ]]; then
     decoded="$out"
   fi
-  if grep "Non-Negotiable\|Process is non-negotiable\|SessionStart digest" >/dev/null <<<"$decoded"; then
+  if grep "Non-Negotiable\|Process is non-negotiable\|SessionStart digest" <<<"$decoded" >/dev/null; then
     echo "  PASS: core-rules digest markers present in output"
     PASS=$((PASS + 1))
   else
     echo "  FAIL: core-rules digest not found in output: ${decoded:0:200}..."
     FAIL=$((FAIL + 1))
   fi
-  if grep "Full rules (on demand)\|core-rules.md" >/dev/null <<<"$decoded"; then
+  if grep "Full rules (on demand)\|core-rules.md" <<<"$decoded" >/dev/null; then
     echo "  PASS: digest points to full core-rules.md"
     PASS=$((PASS + 1))
   else
@@ -591,7 +645,7 @@ print(len(chunk.encode("utf-8")))
     echo "  FAIL: SessionStart digest size ${digest_bytes}B exceeds 3072B budget (or missing)"
     FAIL=$((FAIL + 1))
   fi
-  if printf '%s' "$decoded" | grep -q "16. \*\*Context Mode install gate\*\*"; then
+  if grep -q "16. \*\*Context Mode install gate\*\*" <<<"$decoded"; then
     echo "  FAIL: full core-rules layer list still inlined (digest not applied)"
     FAIL=$((FAIL + 1))
   else
@@ -613,7 +667,7 @@ echo "--- Test 9: Invalid SILVER_BULLET_STATE_FILE outside ${SB_RUNTIME_HOME_ROO
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf '%s' "$new_branch" > "$TMPBRANCH"
-OUTSIDE_PATH="/tmp/evil-state-file-${TEST_RUN_ID}"
+OUTSIDE_PATH="${TMPDIR:-/tmp}/evil-state-file-${TEST_RUN_ID}"
 REAL_STATE_FILE="${SB_TEST_DIR}/state"
 # Ensure the real default state file is absent so we can detect the fallback
 rm -f "$REAL_STATE_FILE" 2>/dev/null || true
@@ -664,11 +718,9 @@ if [[ -f "$TMPBRANCH" ]]; then
     FAIL=$((FAIL + 1))
   fi
 fi
-# State file must NOT have been wiped — skill recordings should survive
-assert_file_exists "branch file absent -> state file preserved" "$TMPSTATE"
-assert_file_contains "branch file absent -> skill recordings preserved" "$TMPSTATE" "silver-quality-gates"
-# Branch-file-absent and same-branch startup preserve SB lifecycle evidence.
-assert_file_contains "branch file absent -> SB lifecycle markers preserved" "$TMPSTATE" "silver-context"
+# R3-07: recorded state with no branch record cannot be tied to this branch (a deleted branch file
+# must not carry satisfied state onto a new branch), so it is reset.
+assert_file_missing "branch file absent -> unverifiable state reset" "$TMPSTATE"
 assert_file_missing "branch file absent -> pre-release quality gate file cleared" "$QUALITY_GATE_FILE"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH" "$QUALITY_GATE_FILE"

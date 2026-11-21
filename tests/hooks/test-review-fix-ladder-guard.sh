@@ -14,7 +14,7 @@ FAIL=0
 TEST_RUN_ID="$$"
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
 export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/rfl-guard-${TEST_RUN_ID}"
-export SILVER_BULLET_RUNTIME=cursor
+export SILVER_BULLET_RUNTIME=claude
 export SB_REVIEW_FIX_LADDER_GUARD=1
 mkdir -p "$SB_RUNTIME_STATE_DIR"
 
@@ -37,12 +37,12 @@ check() {
 
 is_denied() {
   local output="$1"
-  [[ -n "$output" ]] && printf '%s' "$output" | grep -qE '"permissionDecision"\s*:\s*"deny"|"decision"\s*:\s*"block"'
+  [[ -n "$output" ]] && grep -qE '"permissionDecision"\s*:\s*"deny"|"decision"\s*:\s*"block"' <<<"$output"
 }
 
 run_hook() {
-  local event="$1" tool="$2" json="$3"
-  (cd "$WORK" && printf '%s' "$json" | env SILVER_BULLET_RUNTIME=cursor bash "$HOOK" 2>/dev/null)
+  local json="$3" # $1 (event) and $2 (tool) label the call site only
+  (cd "$WORK" && printf '%s' "$json" | env SILVER_BULLET_RUNTIME=claude bash "$HOOK" 2>/dev/null)
 }
 
 WORK=$(mktemp -d)
@@ -57,7 +57,15 @@ cat >"$WORK/.silver-bullet.json" <<EOF
 EOF
 touch "${SB_RUNTIME_STATE_DIR}/state"
 mkdir -p "$WORK/scripts"
-ln -sf "$REPO_ROOT/scripts/review-fix-ladder.py" "$WORK/scripts/review-fix-ladder.py"
+# A fixed ladder with named custom subagents: the real resolver emits none for the kept hosts.
+cat >"$WORK/scripts/review-fix-ladder.py" <<'PYSTUB'
+import json
+rungs = [{"model": "m", "reasoning": e, "subagent_name": f"sb-composer-2-5-{e}", "model_param": "composer-2.5"}
+         for e in ("medium", "high", "xhigh")]
+rungs += [{"model": "g", "reasoning": e, "subagent_name": f"sb-grok-4-5-{e}", "model_param": "grok"} for e in ("medium", "high", "xhigh")]
+print(json.dumps({"host": "claude", "total_rungs": len(rungs), "rungs": rungs}))
+PYSTUB
+export SB_RFL_PROJECT_ROOT="$WORK"
 
 echo "=== review-fix-ladder guard tests ==="
 
@@ -146,7 +154,6 @@ run_hook PostToolUse Bash "$(jq -n '{hook_event_name:"PostToolUse",tool_name:"Ba
 
 [[ -x "$HOOK" ]] && check "guard hook executable" pass || check "guard hook executable" fail
 grep -q 'review-fix-ladder-guard.sh' "$REPO_ROOT/hooks/hooks.json" && check "registered in hooks.json" pass || check "registered in hooks.json" fail
-grep -q 'review-fix-ladder-guard.sh' "$REPO_ROOT/hooks/cursor-hooks.json" && check "registered in cursor-hooks.json" pass || check "registered in cursor-hooks.json" fail
 bash -n "$HOOK" && check "guard shell syntax" pass || check "guard shell syntax" fail
 
 sb_rfl_deactivate

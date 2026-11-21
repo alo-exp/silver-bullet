@@ -7,11 +7,11 @@ Planning-only. No product code, tests, hooks, or YAML todo status changes. Both 
 | Path | SHA-256 | Bytes |
 |------|---------|-------|
 | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](../router_subagent_surfaces_85bf9f09.plan.md) | `ff5f224ac6bf4c22e42d4a50421a77f37db8e9fa990189ee8d68bd51dec42654` | 618275 |
-| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
+| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
 
 Pre-edit pair: `dde658d822848f38466384ce081df7c6e3070fc0393b083ea208322c7a8b5960` / 608795 bytes.
 
-Omni companion plan unchanged: [`omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`.
+Omni companion plan unchanged: [`omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`.
 
 ## Critical gap addressed (this ship)
 

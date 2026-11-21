@@ -15,7 +15,11 @@ export SILVER_BULLET_TEST_HOOK_ENFORCED=1
 export SB_ENTERPRISE_HUMAN_DEPLOY_APPROVAL=1
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-HOOK="$REPO_ROOT/hooks/completion-audit.sh"
+# shellcheck source=tests/lib/testlib.sh
+source "$REPO_ROOT/tests/lib/testlib.sh"
+TL_TMP="$(mktemp -d "${TMPDIR:-/tmp}/ca-plugin.XXXXXX")"
+# the hook runs from a copy of the plugin: validators and the RC predicate are loaded from the plugin root
+HOOK="$(tl_fake_plugin_root)/hooks/completion-audit.sh"
 CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 PASS=0
 FAIL=0
@@ -41,6 +45,7 @@ SESSION_START_FILE="${SB_TEST_DIR}/test-session-start-${TEST_RUN_ID}"
 VERIFY_TESTS_FILE="${SB_TEST_DIR}/verify-tests-state-${TEST_RUN_ID}"
 
 cleanup_all() {
+  rm -rf "$TL_TMP"
   rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
   rm -f "$RELEASE_LIVE_MATRIX_FILE"
   rm -f "$E2E_LIVE_MATRIX_FILE"
@@ -87,9 +92,9 @@ EOF
 
 write_verify_tests_state() {
   mkdir -p "$(dirname "$VERIFY_TESTS_FILE")"
-  cat > "$VERIFY_TESTS_FILE" << 'EOF'
+  cat > "$VERIFY_TESTS_FILE" << EOF
 verified_at=2026-05-10T00:00:00Z
-repo_root=/tmp/test
+repo_root=$TMPDIR_TEST
 commands:
   - bash tests/run-all-tests.sh
 EOF
@@ -293,6 +298,11 @@ EOF
   touch "$TMPGIT/.gitkeep"
   git -C "$TMPGIT" add .gitkeep
   git -C "$TMPGIT" commit -q -m "init" 2>/dev/null || true
+  # an origin whose default branch is known locally: the push scope needs refs/remotes/origin/HEAD
+  base_branch="$(git -C "$TMPGIT" symbolic-ref --short HEAD)"
+  git -C "$TMPGIT" remote add origin https://example.test/acme/app.git
+  git -C "$TMPGIT" update-ref "refs/remotes/origin/${base_branch}" HEAD
+  git -C "$TMPGIT" symbolic-ref refs/remotes/origin/HEAD "refs/remotes/origin/${base_branch}"
   git -C "$TMPGIT" checkout -q -b feature/test 2>/dev/null || true
   write_cfg "full-dev-cycle"
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
@@ -301,7 +311,8 @@ EOF
   export SILVER_BULLET_SESSION_START_FILE="$SESSION_START_FILE"
   export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE"
   date +%s > "$SESSION_START_FILE"
-  export GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPGIT" rev-parse HEAD 2>/dev/null || echo unknown)" '[
+  export GH_RUN_LIST_OVERRIDE
+  GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPGIT" rev-parse HEAD 2>/dev/null || echo unknown)" '[
     {workflowName:"CI", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:01Z"},
     {workflowName:"Secret Scan", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:02Z"},
     {workflowName:"Deploy to GitHub Pages", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:03Z"}
@@ -353,7 +364,7 @@ is_blocked() {
   local output="$1"
   # A block occurs when output contains "block" decision or "deny" permissionDecision
   [[ -z "$output" ]] && return 1
-  printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"'
+  grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"' <<<"$output"
 }
 
 assert_blocks() {
@@ -403,7 +414,7 @@ assert_decoded_message_real_newlines() {
     FAIL=$((FAIL + 1))
     return
   fi
-  if printf '%s' "$decoded" | grep -qF '\n'; then
+  if grep -qF '\n' <<<"$decoded"; then
     echo "  FAIL: $label — decoded text still contains literal backslash-n"
     FAIL=$((FAIL + 1))
     return
@@ -416,7 +427,7 @@ assert_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -512,7 +523,12 @@ teardown
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook "PreToolUse" "RTK_DISABLED=1 git push origin feature/test")
-assert_passes "RTK_DISABLED git push allowed with planning skill" "$out"
+assert_passes "RTK_DISABLED=1 git push allowed with planning skill (allowlisted assignment)" "$out"
+out=$(run_hook "PreToolUse" "FOO=1 git push origin feature/test")
+assert_blocks "FOO=1 git push: any other assignment is final delivery (push scope)" "$out"
+assert_contains "FOO=1 git push: the block message names the assignment" "$out" "variable assignment"
+out=$(run_hook "PreToolUse" "git push origin feature/test")
+assert_passes "git push allowed with planning skill (RTK not involved)" "$out"
 teardown
 
 # Test 6: gh pr create blocked without full required_deploy
@@ -895,7 +911,7 @@ unset SB_ALLOW_CODEX_ONLY_LIVE_RELEASE
 assert_passes "release passes with codex-only live markers when legacy override is set" "$out"
 teardown
 
-# Test 13c-b: gh release create passes with cursor-smoke release marker + codex-only e2e
+# Test 13c-b: gh release create is blocked by the retired cursor-smoke release marker
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
@@ -930,7 +946,7 @@ full-test-suite-rerun
 EOF
 write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
-assert_passes "release passes with cursor-smoke live markers" "$out"
+assert_blocks "release blocked by the retired cursor-smoke live marker" "$out"
 teardown
 
 # Test 13d: gh release create blocked when the latest CI run is still in progress
@@ -967,7 +983,8 @@ quality-gate-stage-3
 full-test-suite-rerun
 EOF
 write_verify_tests_state
-export GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPDIR_TEST" rev-parse HEAD 2>/dev/null || echo unknown)" '[
+export GH_RUN_LIST_OVERRIDE
+GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPDIR_TEST" rev-parse HEAD 2>/dev/null || echo unknown)" '[
   {workflowName:"CI", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:01Z"},
   {workflowName:"CI", status:"in_progress", conclusion:"", headSha:$sha, createdAt:"2026-05-07T00:00:05Z"},
   {workflowName:"Secret Scan", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:02Z"},
@@ -1052,7 +1069,7 @@ write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
 assert_passes "correct review-stack order passes without ordering warning" "$out"
 # Should NOT contain "wrong order"
-if ! printf '%s' "$out" | grep -q "wrong order"; then
+if ! grep -q "wrong order" <<<"$out"; then
   echo "  ✅ no false ordering warning on correct sequence"
   PASS=$((PASS + 1))
 else
@@ -1116,9 +1133,20 @@ teardown
 # Test 18: Trivial file bypass
 echo "--- Group 6: Bypass mechanisms ---"
 setup
+# the config names a custom trivial file: only the state directory's own `trivial` file is honoured (R3-02)
 touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 out=$(run_hook "PreToolUse" "git commit -m 'test'")
+assert_blocks "R3-02: config trivial_file naming another existing file does not bypass the gates" "$out"
+rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+touch "${SB_TEST_DIR}/trivial"
+out=$(run_hook "PreToolUse" "git commit -m 'test'")
 assert_passes "trivial file bypasses completion check" "$out"
+rm -f "${SB_TEST_DIR}/trivial"
+touch "${SB_RUNTIME_HOME_ROOT}/trivial-outside-state"
+jq '.state.trivial_file = "${SB_RUNTIME_HOME_ROOT}/trivial-outside-state"' "$TMPCFG" >"$TMPCFG.new" && mv "$TMPCFG.new" "$TMPCFG"
+out=$(run_hook "PreToolUse" "git commit -m 'test'")
+assert_blocks "R3-02: trivial_file outside the state directory is ignored" "$out"
+rm -f "${SB_RUNTIME_HOME_ROOT}/trivial-outside-state"
 teardown
 
 # Test 19: gh pr merge blocked when skills missing (Tier 2 delivery gate)
@@ -1348,7 +1376,7 @@ WFEOF
 out=$(run_hook "PreToolUse" "git commit -m test")
 # Empty state = legacy gate exits 0 silently. Confirm the stale-WF message is
 # NOT in the output (would prove the old gate is gone).
-if printf '%s' "$out" | grep -q 'WORKFLOW\.md.*Intermediate commit allowed\|WORKFLOW\.md.*Delivery allowed'; then
+if grep -q 'WORKFLOW\.md.*Intermediate commit allowed\|WORKFLOW\.md.*Delivery allowed' <<<"$out"; then
   echo "  ❌ WF-PASS1-A: stale WORKFLOW.md still being read — Pass 1 hotfix incomplete"
   FAIL=$((FAIL+1))
 else
@@ -1378,7 +1406,7 @@ out=$(run_hook "PreToolUse" "git commit -m test")
 # With empty state, completion-audit's legacy gate exits 0 silently
 # (see HOOK-04 empty-state behavior). The key assertion: no WORKFLOW.md
 # message in the output proves Pass 1 hotfix is engaged.
-if printf '%s' "$out" | grep -q 'flows complete\|Delivery allowed\|Intermediate commit allowed'; then
+if grep -q 'flows complete\|Delivery allowed\|Intermediate commit allowed' <<<"$out"; then
   echo "  ❌ WF-PASS1-B: workflows/ dir incorrectly bypassed legacy gate"
   FAIL=$((FAIL+1))
 else
@@ -1671,7 +1699,7 @@ finishing-a-development-branch
 EOF
 out=$(run_hook "PreToolUse" "gh pr create --title 'docs'")
 assert_passes "#282 docs-only PR passes with light floor (no tdd/verify-tests)" "$out"
-if printf '%s' "$out" | grep -qE "tdd|verify-tests|test-driven-development|silver-execute"; then
+if grep -qE "tdd|verify-tests|test-driven-development|silver-execute" <<<"$out"; then
   echo "  FAIL: docs-only still demanding src skills"
   FAIL=$((FAIL + 1))
 else

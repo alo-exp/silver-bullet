@@ -65,7 +65,7 @@ sb_planning_clarify_yymmdd() {
 # Relative path under repo root, e.g. .planning/foo-CLARIFY-260716-20260716T011730Z.md
 sb_planning_clarify_output_relpath() {
   local plan_path="${1:-}" topic_slug="${2:-}" ts="${3:-}" ymd="${4:-}"
-  local base segment
+  local base
   base="$(sb_planning_clarify_basename_segment "$plan_path" "$topic_slug")"
   ts="${ts:-$(sb_planning_clarify_timestamp)}"
   ymd="${ymd:-$(sb_planning_clarify_yymmdd)}"
@@ -90,21 +90,20 @@ sb_planning_clarify_filename_matches() {
 sb_planning_find_newest_clarify_doc() {
   local work_dir="$1"
   local planning="${work_dir}/.planning"
-  local newest="" candidate mtime best=0 cur
+  local newest="" candidate best=0 cur
   [[ -d "$planning" ]] || return 1
 
   if [[ -f "${planning}/CLARIFY.md" ]]; then
     newest="${planning}/CLARIFY.md"
-    best="$(stat -f '%m' "$newest" 2>/dev/null || stat -c '%Y' "$newest" 2>/dev/null || echo 0)"
+    best="$(stat -c '%Y' "$newest" 2>/dev/null || stat -f '%m' "$newest" 2>/dev/null || echo 0)"
     [[ "$best" =~ ^[0-9]+$ ]] || best=0
   fi
 
   shopt -s nullglob
   for candidate in "${planning}"/*-CLARIFY-*-*.md; do
     [[ -f "$candidate" ]] || continue
-    [[ "$(basename "$candidate")" == "CLARIFY.md" ]] && continue
     if sb_planning_clarify_filename_matches "$(basename "$candidate")"; then
-      cur="$(stat -f '%m' "$candidate" 2>/dev/null || stat -c '%Y' "$candidate" 2>/dev/null || echo 0)"
+      cur="$(stat -c '%Y' "$candidate" 2>/dev/null || stat -f '%m' "$candidate" 2>/dev/null || echo 0)"
       [[ "$cur" =~ ^[0-9]+$ ]] || cur=0
       if [[ "$cur" -ge "$best" ]]; then
         best="$cur"

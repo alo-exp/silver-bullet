@@ -37,10 +37,17 @@ assert_equal() {
   fi
 }
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT="$REPO_ROOT/scripts/sync-codex-marketplace-version.sh"
+SOURCE_REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+# sync-codex-package.sh (run below) regenerates package trees inside the
+# checkout it runs from: work on a snapshot so the repository is never written.
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "$SOURCE_REPO_ROOT/tests/lib/repo-snapshot.sh"
+REPO_ROOT="$(sb_repo_snapshot --git "$SOURCE_REPO_ROOT" "$TMP/repo")"
+SCRIPT="$REPO_ROOT/scripts/sync-codex-marketplace-version.sh"
+# CI is green for the tagged commit (the real gate queries GitHub).
+printf '#!/usr/bin/env bash\nexit 0\n' >"$REPO_ROOT/scripts/verify-release-commit-ci.sh"
 
 MARKETPLACE="$TMP/marketplace"
 REMOTE="$TMP/remote.git"
@@ -64,8 +71,26 @@ git -C "$MARKETPLACE" push -q -u origin HEAD:main
 
 bash "$REPO_ROOT/scripts/sync-codex-package.sh" >/dev/null
 plugin_v="$(jq -r '.version' "$REPO_ROOT/package.json")"
+snap_git() { git -C "$REPO_ROOT" -c user.name=Tests -c user.email=tests@example.invalid -c commit.gpgsign=false -c tag.gpgsign=false "$@"; }
 
+# Release step 1 (this repository only), then step 2 once the release commit is tagged.
 AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" >/dev/null
+assert_equal "in-repo sync publishes nothing" "0.0.1" \
+  "$(git -C "$REMOTE" show main:.agents/plugins/marketplace.json | jq -r '.plugins[] | select(.name=="silver-bullet") | .version')"
+snap_git add -A
+snap_git commit -q --allow-empty -m "chore(release): $plugin_v"
+snap_git tag -a "v$plugin_v" -m "Release $plugin_v"
+
+# The release tag must exist on origin too: a local-only tag is refused, then pushed to a fake origin.
+FAKE_ORIGIN="$TMP/release-origin.git"
+git init -q --bare "$FAKE_ORIGIN"
+snap_git remote remove origin 2>/dev/null || true
+snap_git remote add origin "$FAKE_ORIGIN"
+local_only_rc=0
+AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" --publish >/dev/null 2>&1 || local_only_rc=$?
+assert_equal "publish with a local-only tag is refused" "1" "$local_only_rc"
+snap_git push -q origin "v$plugin_v"
+AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" --publish >/dev/null
 
 manifest_v="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$MARKETPLACE/.agents/plugins/marketplace.json")"
 manifest_ref="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .source.ref' "$MARKETPLACE/.agents/plugins/marketplace.json")"

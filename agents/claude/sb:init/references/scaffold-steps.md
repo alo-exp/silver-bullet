@@ -15,7 +15,7 @@ If Phase 0 determined this is an update:
 3. If the project already has a project instruction file (`project instruction file` in Claude Code, `AGENTS.md` in Codex), strip any SB-owned sections from it (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, Legacy Lifecycle, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that do not mention silver-bullet.md.
 4. If the project instruction file already exists, verify it contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 5. Run conflict detection (same as step 3.1c below).
-5a. Run step 3.7.5 to re-register or refresh SB hooks in `$HOME/.claude/settings.json`.
+5a. Run step 3.7.5 to remove Silver Bullet's duplicate hook copies from `$HOME/.claude/settings.json` (it never adds hooks).
 6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All SB-owned lifecycle skills active."
 
 ### Template refresh (only when user explicitly requests it)
@@ -107,19 +107,12 @@ If user selects A, use the active runtime file-editing mechanism to remove the l
 ### 3.2 Create directories
 
 ```bash
-mkdir -p docs/specs docs/workflows host rules directory (install guide)
+mkdir -p docs/specs docs/workflows
 ```
 
-### 3.2.1 Install task host orchestrator rule
+### 3.2.1 Orchestrator rule
 
-When the active runtime is task host **or** `.task host/` already exists in the project, copy the SB orchestrator rule so agents see the directive contract even before hook injection:
-
-```bash
-mkdir -p host rules directory (install guide)
-cp "${PLUGIN_ROOT}/scripts/lib/install-<runtime>/templates/task host-rules/silver-orchestrator.mdc" host rules path (see install guide) silver-orchestrator.mdc
-```
-
-Idempotent — safe to overwrite on `/sb:init` refresh (SB-owned file).
+There is no orchestrator rule file to copy. On Claude Code and Codex the directive contract is delivered by hook injection (`hooks/lib/orchestrator-parent.sh`), so nothing is written for it here.
 
 ### 3.2.2 Install orchestrator worker templates
 
@@ -132,36 +125,6 @@ cp -R "${PLUGIN_ROOT}/templates/orchestrator-workers/." .silver-bullet/orchestra
 
 Set `orchestrator_mode` to `"parent"` in `.silver-bullet.json` (only supported mode).
 
-
-### 3.2.3 Cursor SB custom subagents (cursor_sb_agents — Cursor host only)
-
-Tri-state consent mirrors §1.1a Graphify / §1.1b agentmemory (`cursor_sb_agents.enabled_by_user`: `null` | `true` | `false`).
-
-**Skip-if-global:** before writing project `.cursor/agents/`, probe global install:
-
-```bash
-bash "${PLUGIN_ROOT}/scripts/lib/cursor-sb-agents/probe-global-agents.sh" --quiet
-```
-
-When probe passes (expected managed count + name set + `agents_install_status: installed` in `~/.config/silver-bullet/cursor-sb-agents.json`), **skip** project agents.
-
-**Steps:**
-
-1. Read `cursor_sb_agents.enabled_by_user` and `enforcement_suspended` from `.silver-bullet.json`.
-2. If `null`, ask: "Install SB custom subagents for review ladders?" — **Yes** → install path; **No** → set `enabled: false`, skip.
-3. If `true`, run global probe; on pass skip; on fail run `bash scripts/install-cursor-sb-agents.sh --project` (priced multi-select when TTY).
-4. On install failure with consent `true`: set `enforcement_suspended: true`, preserve consent, retry next init.
-5. If `false`, skip with "SB custom subagents opted out".
-
-Commands:
-
-```bash
-# Global probe (skip project install when PASS)
-bash scripts/lib/cursor-sb-agents/probe-global-agents.sh --quiet
-
-# Project fallback only when global probe fails
-bash scripts/install-cursor-sb-agents.sh --project
-```
 
 ### 3.2.5 CI setup
 
@@ -176,26 +139,25 @@ If no CI workflow exists, create `.github/workflows/` and generate `ci.yml` base
 
 Applies only when an existing project instruction file was found in step 3.1b. If none was found, skip this step — Silver Bullet does not synthesize a new project instruction file during Codex init.
 
-Read `${PLUGIN_ROOT}/scripts/lib/install-<runtime>/templates/project instruction file.base`, perform replacements, write back to the existing filename (`project instruction file` or `AGENTS.md`):
+Read `${PLUGIN_ROOT}/scripts/lib/install-claude/templates/CLAUDE.md.base`, perform replacements, write back to the existing filename (`project instruction file` or `AGENTS.md`):
 - `{{PROJECT_NAME}}` → the detected/confirmed project name
 - `{{TECH_STACK}}` → the detected/confirmed tech stack
 - `{{GIT_REPO}}` → the detected/confirmed repo URL
 
 ### 3.4 Write config
 
-Read `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value (replacing default `/src/` if different), set **`sb_initiated` to `true`**, write `issue_tracker` from Phase 2.9 (`issue_tracker_value`), and merge `issue_tracker_adapter` from Phase 2.9 (`issue_tracker_adapter_value` or template default). Adapter `type` must match `issue_tracker` (`github`/`local`/`custom`). For `recommended_tools.graphify`, `agentmemory`, `rtk`, and `context_mode`, always default `enabled_by_user` to `null` on fresh init until Phase 1.1 records an explicit user choice; include suspension fields when install was attempted.
+Read `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value (replacing default `/src/` if different), set **`sb_initiated` to `true`**, write `issue_tracker` from Phase 2.9 (`issue_tracker_value`), and merge `issue_tracker_adapter` from Phase 2.9 (`issue_tracker_adapter_value` or template default). Adapter `type` must match `issue_tracker` (`github`/`local`/`custom`). For `recommended_tools.graphify`, `agentmemory`, `rtk`, and `context_mode`, always default `enabled_by_user` to `null` on fresh init until Phase 1.1 records an explicit user choice (the user's consent itself is recorded with `bash "${PLUGIN_ROOT}/scripts/sb-consent.sh"`, not in this file); include suspension fields when install was attempted.
 
 ### 3.4.1 Context Mode instruction fragment (when opted in)
 
-When Phase 1.1f opts in, inject `templates/context-mode-hint.md.base` into `silver-bullet.md` and the project instruction file (`project instruction file` or `AGENTS.md`):
+When Phase 1.1f opts in, inject `${PLUGIN_ROOT}/templates/context-mode-hint.md.base` into `silver-bullet.md` and the project instruction file (`project instruction file` or `AGENTS.md`):
 
 1. If sentinel `<!-- BEGIN context-mode hint (do not edit) -->` exists, replace the block idempotently (drop old block, append fresh template).
 2. Otherwise append the template block to each file.
-3. Copy upstream `context-mode.mdc` to `host rules path (see install guide) context-mode.mdc` on task host hosts (see `docs/CONTEXT-MODE.md`).
 
 ### 3.4.2 RTK awareness (Codex / optional)
 
-On active host when RTK is opted in, merge `templates/rtk-awareness.md.base` into `AGENTS.md` if not already present (after Context Mode routing template when both are enabled).
+On active host when RTK is opted in, merge `${PLUGIN_ROOT}/templates/rtk-awareness.md.base` into `AGENTS.md` if not already present (after Context Mode routing template when both are enabled).
 
 ### 3.5 Copy workflow files
 
@@ -249,19 +211,18 @@ fi
 if test -f AGENTS.md; then
   git add AGENTS.md
 fi
-git commit -m "$(cat <<'EOF'
+git commit -F - <<'EOF'
 feat: initialize Silver Bullet enforcement
 
 Co-Authored-By: host-appropriate co-author line
 EOF
-)"
 ```
 
 If the commit fails due to a pre-commit hook, read the error, fix the issue, re-stage, and create a new commit (do NOT use `--amend`).
 
-### 3.7.5 Register SB hooks in the host settings file
+### 3.7.5 Remove duplicate SB hook copies from the host settings file
 
-Merges the SB hook entries into the user's global host settings file so hooks remain active in projects installed without the marketplace (e.g. manual installs, workspace clones). Target the active host hooks manifest path (see `docs/RUNTIME-COMPATIBILITY.md`).
+On Claude Code an installed plugin delivers `hooks/hooks.json` itself, so a copy of those hooks in the user's settings would run every hook twice. When the plugin is registered, this step removes Silver Bullet's own copies from the settings file (an earlier `/sb:init` or a manual install may have left them) and adds nothing. The step resolves the install path from the plugin registry, so on a machine without a registry entry it is skipped. A manual install (a workspace clone without the marketplace) is registered by running `python3 <checkout>/scripts/lib/install-claude/merge-hooks.py <checkout>` directly, outside `/sb:init`. On Codex the step changes nothing. Target the active host hooks manifest path (see `docs/RUNTIME-COMPATIBILITY.md`).
 
 **Resolve the plugin install path:**
 
@@ -302,15 +263,18 @@ fi
 **Merge hooks idempotently:**
 
 ```bash
-if [[ "${SILVER_BULLET_RUNTIME:-}" == "task host" ]]; then
-  python3 "${PLUGIN_ROOT}/scripts/lib/install-<runtime>/merge-hooks.py" "$INSTALL_PATH"
-else
-  python3 "${PLUGIN_ROOT}/scripts/lib/install-<runtime>/merge-hooks.py" "$INSTALL_PATH"
+if [[ "${SILVER_BULLET_RUNTIME:-}" == "claude" ]]; then
+  python3 "${PLUGIN_ROOT}/scripts/lib/install-claude/merge-hooks.py" "$INSTALL_PATH"
 fi
 ```
 
-`scripts/lib/install-<runtime>/merge-hooks.py` substitutes the plugin install path, removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries, and appends only new hook entries — never duplicates. On nonzero exit, warn but do NOT stop init:
-> ⚠️  Could not auto-register hooks in the host settings file. Run `/sb:init` again after installation completes, or add hooks manually from `hooks/hooks.json`.
+`scripts/lib/install-claude/merge-hooks.py` behaves by install type:
+
+- **Plugin registered** (what `/sb:init` always sees here): removes the settings copies Silver Bullet owns and adds nothing. When there is nothing to remove, the settings file is not created, rewritten or backed up, and the plugin cache is not touched.
+- **Manual install** (run directly): removes stale Silver Bullet registrations, then registers every (event, matcher, command) of the manifest with the install path substituted, each matcher in its own group.
+
+Only Silver Bullet's own entries are ever touched; the user's hooks stay as they are. The file is written atomically with a `.sb-backup` of the previous content. On nonzero exit, warn but do NOT stop init:
+> ⚠️  Could not clean up stale Silver Bullet hook entries in the host settings file. Run `/sb:init` again after installation completes. Do not add hooks by hand: a registered plugin already supplies its own hooks, and a hand-added copy would run them twice.
 
 Idempotent — re-running `/sb:init` adds no duplicate entries.
 

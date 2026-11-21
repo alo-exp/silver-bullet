@@ -75,7 +75,7 @@ sb_rfl_policy_c_run_assert() {
     printf '%s' "$json"
     return 1
   fi
-  if printf '%s' "$json" | grep -q '"ok"[[:space:]]*:[[:space:]]*true'; then
+  if grep -q '"ok"[[:space:]]*:[[:space:]]*true' <<<"$json"; then
     return 0
   fi
   printf '%s' "$json"

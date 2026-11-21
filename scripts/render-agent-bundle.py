@@ -15,8 +15,19 @@ import sys
 import time
 
 # Canonical authoring directories retain their historical ``silver-*`` names;
-# rendered host surfaces expose the public ``sb:<route>`` namespace.
-NAME_RE = re.compile(r"^(name:\s*)silver(?:-([A-Za-z0-9_-]+))?\s*$", re.MULTILINE)
+# rendered host surfaces expose the public ``sb:<route>`` namespace. The
+# lookahead keeps a CRLF line's ``\r`` out of the match so endings survive.
+NAME_RE = re.compile(r"^(name:[ \t]*)silver(?:-([A-Za-z0-9_-]+))?[ \t]*(?=\r?$)", re.MULTILINE)
+HOSTS = ("claude", "codex")
+# Host prose is rewritten in documentation only. Skill code and data (Python,
+# JSON, shell) run or are read as-is, so a product name such as "Claude Code"
+# in a research data pack must not be rewritten.
+DOC_SUFFIXES = frozenset({".md"})
+LAYOUTS = ("picker", "source")
+
+
+class RenderError(Exception):
+    """A render precondition failed (missing source root, route collision)."""
 CODEX_TITLE_WORD_OVERRIDES = {
     "ai": "AI",
     "api": "API",
@@ -42,17 +53,6 @@ def resolve_codex_host_agnostic_terms(text: str) -> str:
     return updated
 
 
-def resolve_cursor_host_agnostic_terms(text: str) -> str:
-    updated = text
-    for old, new in (
-        ("alo-labs-secondary host", "alo-labs"),
-        (".secondary host", ".cursor"),
-        ("secondary host", "Cursor"),
-    ):
-        updated = updated.replace(old, new)
-    return updated
-
-
 def resolve_claude_host_agnostic_terms(text: str) -> str:
     updated = text
     for old, new in (
@@ -64,17 +64,6 @@ def resolve_claude_host_agnostic_terms(text: str) -> str:
         updated = updated.replace(old, new)
     return updated
 
-
-CURSOR_REPLACEMENTS = [
-    ("${CLAUDE_PLUGIN_ROOT}", "${CURSOR_PLUGIN_ROOT}"),
-    ("Claude Code", "Cursor"),
-    ("Claude settings", "Cursor hooks.json"),
-    (".claude/settings.json", ".cursor/hooks.json"),
-    ("merge-hooks.py", "merge-cursor-hooks.py"),
-    ("PostToolUse/Skill or Codex `silver-bullet invoke-skill`", "PostToolUse/Skill (Cursor Skill tool) or `silver-bullet invoke-skill`"),
-    ("`/compact`", "context compaction"),
-    ("AskUserQuestion", "direct user interaction"),
-]
 
 CODEX_REPLACEMENTS = [
     ("`context compaction`", "context compaction"),
@@ -198,7 +187,9 @@ def quote_codex_frontmatter_scalars(text: str) -> str:
         stripped = value.strip()
         if stripped in {">", "|", ">-", "|-"} or not stripped:
             continue
-        if stripped[0] in {'"', "'"}:
+        # Already quoted, or a YAML flow sequence/mapping (`aliases: ["sb:x"]`)
+        # that quoting would turn into a string.
+        if stripped[0] in {'"', "'", "[", "{"}:
             continue
         if ":" in stripped or stripped.startswith(("/", "@", "`")):
             lines[idx] = f"{prefix}{yaml_quote_scalar(stripped)}{newline}"
@@ -234,7 +225,8 @@ def ensure_codex_picker_title(text: str) -> str:
         return text
 
     title = codex_title_for_name(skill_name, current_title=current_title)
-    title_line = f"title: {yaml_quote_scalar(title)}\n"
+    newline = "\r\n" if lines[name_idx].endswith("\r\n") else "\n"
+    title_line = f"title: {yaml_quote_scalar(title)}{newline}"
     if title_idx is not None and title_idx < frontmatter_end:
         lines[title_idx] = title_line
     else:
@@ -243,35 +235,9 @@ def ensure_codex_picker_title(text: str) -> str:
     return "".join(lines)
 
 
-PROTECTED_RUNTIME_SUBSTRINGS = (
-    "scripts/lib/install-cursor/templates/cursor-rules/",
-    "templates/cursor-rules/",
-    ".cursor/rules/",
-)
-
-
-def _mask_protected_runtime_subs(text: str) -> tuple[str, list[tuple[str, str]]]:
-    masks: list[tuple[str, str]] = []
-    updated = text
-    for index, protected in enumerate(PROTECTED_RUNTIME_SUBSTRINGS):
-        if protected not in updated:
-            continue
-        token = f"__SB_PROTECTED_RUNTIME_{index}__"
-        masks.append((token, protected))
-        updated = updated.replace(protected, token)
-    return updated, masks
-
-
-def _unmask_protected_runtime_subs(text: str, masks: list[tuple[str, str]]) -> str:
-    updated = text
-    for token, protected in masks:
-        updated = updated.replace(token, protected)
-    return updated
-
-
 def runtime_placeholders(agent: str) -> list[tuple[str, str]]:
     current_home = f"$HOME/.{agent}"
-    others = [name for name in ("claude", "codex", "cursor") if name != agent]
+    others = [name for name in ("claude", "codex") if name != agent]
 
     pairs: list[tuple[str, str]] = [
         ("${SB_RUNTIME_HOME_ROOT}", current_home),
@@ -301,26 +267,6 @@ def runtime_placeholders(agent: str) -> list[tuple[str, str]]:
     return pairs
 
 
-def sanitize_cursor_text(text: str) -> str:
-    # Preserve cross-host delegation rows — do not rewrite Claude Code host label to Cursor.
-    host_row_token = "__SB_CURSOR_HOST_ROW_CLAUDE_CODE__"
-    delegate_executor_tui = "__SB_CURSOR_DELEGATE_CLAUDE_CODE_TUI__"
-    delegate_executor_runs = "__SB_CURSOR_DELEGATE_CLAUDE_CODE_EXECUTES__"
-    updated = resolve_cursor_host_agnostic_terms(text).replace("| **Claude Code** |", f"| **{host_row_token}** |")
-    updated = updated.replace(
-        "when Claude Code TUI is the intended executor", delegate_executor_tui
-    )
-    updated = updated.replace("while Claude Code executes", delegate_executor_runs)
-    for old, new in CURSOR_REPLACEMENTS:
-        updated = updated.replace(old, new)
-    updated = updated.replace(f"| **{host_row_token}** |", "| **Claude Code** |")
-    updated = updated.replace(
-        delegate_executor_tui, "when Claude Code TUI is the intended executor"
-    )
-    updated = updated.replace(delegate_executor_runs, "while Claude Code executes")
-    return updated
-
-
 def sanitize_codex_text(text: str) -> str:
     updated = resolve_codex_host_agnostic_terms(text)
     for old, new in CODEX_REPLACEMENTS:
@@ -328,28 +274,67 @@ def sanitize_codex_text(text: str) -> str:
     return updated
 
 
+# Canonical skills say where the plugin root is relative to the SOURCE layout (the directory above skills/). An installed skill sits elsewhere, so each host render rewrites that definition, and the
+# ${PLUGIN_ROOT}/skills/... references to sibling skills, to the host's real layout:
+#   claude: <plugin root>/agents/claude/sb:<route>/SKILL.md (the directory above agents/claude/); siblings in agents/claude
+#   codex:  the installed package $HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current; the skill
+#           sits at $HOME/.codex/skills/sb-<route>/SKILL.md and the package keeps sibling sources in skill-source/
+PLUGIN_ROOT_DEFINITION_RE = re.compile(
+    r"the directory above `skills/` \(`\$\{(PLUGIN_ROOT|SB_ROOT)\}/skills/([A-Za-z0-9_-]+)/SKILL\.md`\)"
+)
+SKILLS_DIR_REF_RE = re.compile(r"\$\{(PLUGIN_ROOT|SB_ROOT)\}/skills(?=[/\"'`)\s]|$)(/silver(?:-[A-Za-z0-9_-]+)?)?")
+CODEX_PACKAGE_ROOT = "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
+
+
+def _route_dirname(dirname: str, *, colon: bool) -> str:
+    if dirname == "silver":
+        return "sb"
+    if dirname.startswith("silver-"):
+        return ("sb:" if colon else "sb-") + dirname.removeprefix("silver-")
+    return dirname
+
+
+def rewrite_plugin_root_paths(text: str, agent: str) -> str:
+    if "${PLUGIN_ROOT}/skills" not in text and "${SB_ROOT}/skills" not in text:
+        return text
+
+    def definition(match: re.Match[str]) -> str:
+        var, skill = match.group(1), match.group(2)
+        if agent == "claude":
+            where = _route_dirname(skill, colon=True)
+            return f"the directory above `agents/claude/` (`${{{var}}}/agents/claude/{where}/SKILL.md`)"
+        where = _route_dirname(skill, colon=False)
+        return (
+            f"the installed Silver Bullet package `{CODEX_PACKAGE_ROOT}` (this skill is installed at "
+            f"`$HOME/.codex/skills/{where}/SKILL.md`; use that package directory as `{var}`)"
+        )
+
+    def skills_dir(match: re.Match[str]) -> str:
+        var, sub = match.group(1), match.group(2)
+        base = "agents/claude" if agent == "claude" else "skill-source"
+        if sub:
+            return f"${{{var}}}/{base}/{_route_dirname(sub[1:], colon=agent == 'claude')}"
+        return f"${{{var}}}/{base}"
+
+    updated = PLUGIN_ROOT_DEFINITION_RE.sub(definition, text)
+    return SKILLS_DIR_REF_RE.sub(skills_dir, updated)
+
+
 def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = False) -> str:
     updated = text
-    if agent in {"claude", "codex", "cursor"}:
+    if agent in {"claude", "codex"}:
         updated = rewrite_names(updated)
+        updated = rewrite_plugin_root_paths(updated, agent)
     if agent == "claude":
         updated = resolve_claude_host_agnostic_terms(updated)
     if agent == "codex":
         updated = ensure_codex_picker_title(updated)
         updated = quote_codex_frontmatter_scalars(updated)
     if not preserve_runtime_placeholders:
-        updated, protected_masks = _mask_protected_runtime_subs(updated)
         for old, new in runtime_placeholders(agent):
             updated = updated.replace(old, new)
-        updated = _unmask_protected_runtime_subs(updated, protected_masks)
-        if agent == "codex":
-            home = os.path.expanduser("~")
-            if home:
-                updated = updated.replace(f"{home}/.codex", "$HOME/.codex")
     if agent == "codex":
         updated = sanitize_codex_text(updated)
-    elif agent == "cursor":
-        updated = sanitize_cursor_text(updated)
     return updated
 
 
@@ -357,7 +342,6 @@ def _safe_rmtree(path: pathlib.Path, *, retries: int = 8, delay: float = 0.05) -
     if not path.exists() and not path.is_symlink():
         return
 
-    last_error: OSError | None = None
     for attempt in range(retries):
         try:
             if path.is_symlink() or path.is_file():
@@ -368,14 +352,10 @@ def _safe_rmtree(path: pathlib.Path, *, retries: int = 8, delay: float = 0.05) -
         except FileNotFoundError:
             return
         except OSError as exc:
-            last_error = exc
             if exc.errno in {errno.ENOTEMPTY, errno.EBUSY, errno.EEXIST} and attempt + 1 < retries:
                 time.sleep(delay * (attempt + 1))
                 continue
             raise
-
-    if last_error is not None:
-        raise last_error
 
 
 @contextlib.contextmanager
@@ -387,40 +367,53 @@ def _render_lock(dest_root: pathlib.Path):
         yield
 
 
-def rewrite_file(path: pathlib.Path, agent: str) -> bool:
-    if path.name == "runtime-paths.sh" and "hooks" in path.parts:
+def _backoff(attempt: int, attempts: int = 3) -> None:
+    """Sleep between retries; the last attempt does not wait."""
+    if attempt + 1 < attempts:
+        time.sleep(0.05 * (attempt + 1))
+
+
+def rewrite_file(path: pathlib.Path, agent: str, *, root: pathlib.Path, docs_only: bool = False) -> bool:
+    """Rewrite one file for ``agent``; return True when it changed.
+
+    ``root`` is the tree being sanitized: the ``hooks`` checks look only at the
+    path below it, so a checkout under a directory named ``hooks`` renders
+    like any other. Bytes are decoded and re-encoded as-is, so CRLF and LF
+    endings both survive whether or not a replacement fires. With
+    ``docs_only`` only Markdown is rewritten (skill bundles); the install-time
+    package sanitizer rewrites every text file.
+    """
+    rel_parts = path.relative_to(root).parts
+    if path.name == "runtime-paths.sh" and "hooks" in rel_parts:
+        return False
+    if docs_only and path.suffix not in DOC_SUFFIXES:
         return False
 
     for attempt in range(3):
         try:
             if not path.is_file():
                 return False
-            text = path.read_text()
+            text = path.read_bytes().decode("utf-8")
         except UnicodeDecodeError:
             return False
         except OSError:
-            if attempt + 1 >= 3:
-                return False
-            time.sleep(0.05 * (attempt + 1))
+            _backoff(attempt)
             continue
 
-        preserve_runtime_placeholders = "hooks" in path.parts
+        preserve_runtime_placeholders = "hooks" in rel_parts
         updated = sanitize_text(text, agent, preserve_runtime_placeholders=preserve_runtime_placeholders)
         if updated == text:
             return False
 
         try:
-            path.write_text(updated)
+            path.write_bytes(updated.encode("utf-8"))
             return True
         except OSError:
-            if attempt + 1 >= 3:
-                return False
-            time.sleep(0.05 * (attempt + 1))
-
+            _backoff(attempt)
     return False
 
 
-def sanitize_root(root: pathlib.Path, agent: str) -> None:
+def sanitize_root(root: pathlib.Path, agent: str, *, docs_only: bool = False) -> None:
     if not root.exists():
         return
 
@@ -434,20 +427,23 @@ def sanitize_root(root: pathlib.Path, agent: str) -> None:
                 stack.append(child)
             continue
         if current.is_file():
-            rewrite_file(current, agent)
+            rewrite_file(current, agent, root=root, docs_only=docs_only)
 
 
-def rename_route_skill_directories(root: pathlib.Path, *, host: str) -> None:
+def rename_route_skill_directories(root: pathlib.Path, *, host: str, layout: str = "picker") -> None:
     """Align rendered skill folders with the public sb: frontmatter routes.
 
     Hosts list skills from both directory names and SKILL.md ``name:`` fields.
     Canonical authoring names (``silver-feature``) are internal; rendered
-    Claude/Cursor routes use ``sb:feature`` and the filesystem-safe Codex
-    bundle uses ``sb-feature``.
+    Claude picker routes use ``sb:feature`` and the filesystem-safe
+    Codex bundle uses ``sb-feature``. Hidden source trees (``layout="source"``)
+    are read by path, never listed by a picker, so they always use the
+    filesystem-safe ``sb-feature`` form.
     """
     if not root.is_dir():
         return
 
+    colon_routes = host == "claude" and layout == "picker"
     for child in sorted(root.iterdir(), key=lambda path: path.name):
         if not child.is_dir() or child.is_symlink():
             continue
@@ -456,132 +452,37 @@ def rename_route_skill_directories(root: pathlib.Path, *, host: str) -> None:
             target = child.parent / "sb"
         elif dirname.startswith("silver-"):
             route = dirname.removeprefix("silver-")
-            target_name = f"sb:{route}" if host in {"claude", "cursor"} else f"sb-{route}"
+            target_name = f"sb:{route}" if colon_routes else f"sb-{route}"
             target = child.parent / target_name
         else:
             continue
         if target.exists():
-            raise SystemExit(f"{host} skill rename collision: {dirname} -> {target.name}")
+            raise RenderError(f"{host} skill rename collision: {dirname} -> {target.name}")
         child.rename(target)
 
 
-def read_skill_frontmatter(path: pathlib.Path) -> dict[str, str]:
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-    except UnicodeDecodeError:
-        lines = path.read_text(errors="replace").splitlines()
-    if not lines or lines[0].strip() != "---":
-        return {}
+def convert_to_hidden_sources(root: pathlib.Path) -> None:
+    """Rename every SKILL.md to an extensionless SILVER_SOURCE.
 
-    meta: dict[str, str] = {}
-    for line in lines[1:]:
-        if line.strip() == "---":
-            break
-        match = re.match(r"^([A-Za-z0-9_-]+):\s*(.*)$", line)
-        if not match:
-            continue
-        meta[match.group(1)] = match.group(2).strip().strip('"').strip("'")
-    return meta
-
-
-def set_user_invocable_false(path: pathlib.Path) -> bool:
-    try:
-        text = path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        text = path.read_text(errors="replace")
-    lines = text.splitlines()
-    if not lines or lines[0].strip() != "---":
-        return False
-
-    end = 1
-    while end < len(lines) and lines[end].strip() != "---":
-        end += 1
-    if end >= len(lines):
-        return False
-
-    fm_lines = lines[1:end]
-    body_lines = lines[end + 1 :]
-    found = False
-    updated_fm: list[str] = []
-    for line in fm_lines:
-        if line.startswith("user-invocable:"):
-            if line.strip() != "user-invocable: false":
-                updated_fm.append("user-invocable: false")
-            else:
-                updated_fm.append(line)
-            found = True
-        else:
-            updated_fm.append(line)
-    if not found:
-        updated_fm.append("user-invocable: false")
-
-    trailing_newline = "\n" if text.endswith("\n") else ""
-    updated = "---\n" + "\n".join(updated_fm) + "\n---"
-    if body_lines:
-        updated += "\n" + "\n".join(body_lines)
-    updated += trailing_newline
-    if updated == text:
-        return False
-    path.write_text(updated, encoding="utf-8")
-    return True
-
-
-def command_stub_routes(commands_dir: pathlib.Path) -> set[str]:
-    routes: set[str] = set()
-    if not commands_dir.is_dir():
-        return routes
-    for path in sorted(commands_dir.glob("*.md")):
-        name = read_skill_frontmatter(path).get("name", "").strip() or path.stem
-        if name == "sb":
-            pass
-        elif name.startswith("sb-"):
-            name = "sb:" + name[len("sb-") :]
-        if name:
-            routes.add(name)
-    return routes
-
-
-def suppress_command_stub_skills_from_picker(root: pathlib.Path, commands_dir: pathlib.Path) -> None:
-    """Hide picker skills that already have plugin command stubs.
-
-    Codex still discovers mirrored bundle skills in some layouts; mark them
-    internal so only native slash/command surfaces stay public.
+    Hosts discover picker entries from ``*SKILL.md`` files; the hidden source
+    trees under the plugin package are read by path only.
     """
-    routes = command_stub_routes(commands_dir)
-    if not routes:
-        return
-
-    for skill_md in sorted(root.glob("*/SKILL.md")):
-        name = read_skill_frontmatter(skill_md).get("name", "").strip()
-        if name in routes:
-            set_user_invocable_false(skill_md)
+    for skill_md in sorted(root.rglob("SKILL.md")):
+        skill_md.replace(skill_md.with_name("SILVER_SOURCE"))
 
 
-def exclude_command_stub_skills_from_cursor_subagent_surface(
-    root: pathlib.Path, commands_dir: pathlib.Path
+def render_bundle(
+    source_root: pathlib.Path, dest_root: pathlib.Path, agent: str, *, layout: str = "picker"
 ) -> None:
-    """Drop command-covered skills from the Cursor subagent surface.
+    """Render ``source_root`` for ``agent`` into ``dest_root``.
 
-    Cursor registers plugin ``commands/`` as slash entries and every directory
-    under ``plugin.json`` ``skills`` as subagents, regardless of
-    ``user-invocable: false``. Routes with both surfaces duplicate in the menu;
-    keep slash commands public and retain full instructions in ``skill-source/``.
+    ``layout="picker"`` is the host picker bundle (``agents/claude``,
+    ``host-bundles/<host>``); ``layout="source"`` is a hidden source tree
+    (``plugins/silver-bullet/skill-source``): filesystem-safe
+    directory names, SILVER_SOURCE files, and every route kept.
     """
-    routes = command_stub_routes(commands_dir)
-    if not routes:
-        return
-
-    for skill_md in sorted(root.glob("*/SKILL.md")):
-        name = read_skill_frontmatter(skill_md).get("name", "").strip()
-        if name not in routes:
-            continue
-        skill_dir = skill_md.parent
-        _safe_rmtree(skill_dir)
-
-
-def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str) -> None:
     if not source_root.is_dir():
-        raise SystemExit(f"source root missing: {source_root}")
+        raise RenderError(f"source root missing: {source_root}")
 
     dest_root.parent.mkdir(parents=True, exist_ok=True)
     with _render_lock(dest_root):
@@ -589,19 +490,21 @@ def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str
         try:
             _safe_rmtree(staging)
             shutil.copytree(source_root, staging, symlinks=False)
-            if agent in {"claude", "cursor"}:
+            if agent == "claude":
                 for metadata in staging.glob("*/agents/openai.yaml"):
                     metadata.unlink()
-            sanitize_root(staging, agent)
-            if agent in {"claude", "codex", "cursor"}:
-                rename_route_skill_directories(staging, host=agent)
-            if agent == "cursor":
-                commands_dir = source_root.parent / "plugins" / "silver-bullet" / "commands"
-                suppress_command_stub_skills_from_picker(staging, commands_dir)
-                exclude_command_stub_skills_from_cursor_subagent_surface(staging, commands_dir)
+                    with contextlib.suppress(OSError):
+                        metadata.parent.rmdir()  # only when it is now empty
+            sanitize_root(staging, agent, docs_only=True)
+            if agent in HOSTS:
+                rename_route_skill_directories(staging, host=agent, layout=layout)
+            if layout == "source":
+                convert_to_hidden_sources(staging)
             _safe_rmtree(dest_root)
             staging.rename(dest_root)
-        except Exception:
+        except BaseException:
+            # BaseException: a SystemExit or Ctrl-C must not leave the staging
+            # copy of the whole skills tree beside agents/ or host-bundles/.
             _safe_rmtree(staging)
             raise
 
@@ -609,16 +512,23 @@ def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("render", "sanitize"))
-    parser.add_argument("--agent", required=True, choices=("claude", "codex", "cursor"))
+    parser.add_argument("--agent", required=True, choices=HOSTS)
     parser.add_argument("--source-root")
     parser.add_argument("--dest-root")
+    parser.add_argument("--layout", choices=LAYOUTS, default="picker")
     parser.add_argument("--root")
     args = parser.parse_args()
 
     if args.mode == "render":
         if not args.source_root or not args.dest_root:
             parser.error("render mode requires --source-root and --dest-root")
-        render_bundle(pathlib.Path(args.source_root), pathlib.Path(args.dest_root), args.agent)
+        try:
+            render_bundle(
+                pathlib.Path(args.source_root), pathlib.Path(args.dest_root), args.agent, layout=args.layout
+            )
+        except Exception as exc:
+            print(f"ERROR: render failed: {exc}", file=sys.stderr)
+            return 1
         return 0
 
     if not args.root:

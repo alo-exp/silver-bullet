@@ -51,8 +51,6 @@ Options:
 EOF
 }
 
-utc_now() { date -u '+%Y-%m-%dT%H:%M:%SZ'; }
-
 run_id_new() {
   date -u '+%Y%m%dT%H%M%SZ'
 }
@@ -206,10 +204,16 @@ cmd_start() {
   local row_id="" use_print=0 use_tmux=0 work_dir="" dry_run=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --row) row_id="$2"; shift 2 ;;
+      --row)
+      [[ $# -ge 2 ]] || { echo "ERROR: --row requires a value" >&2; exit 2; }
+      row_id="$2"; shift 2
+      ;;
       --use-print) use_print=1; shift ;;
       --tmux) use_tmux=1; shift ;;
-      --work-dir) work_dir="$2"; shift 2 ;;
+      --work-dir)
+      [[ $# -ge 2 ]] || { echo "ERROR: --work-dir requires a value" >&2; exit 2; }
+      work_dir="$2"; shift 2
+      ;;
       --dry-run) dry_run=1; shift ;;
       *) echo "Unknown start arg: $1" >&2; exit 2 ;;
     esac
@@ -263,18 +267,22 @@ cmd_start() {
 
   local launch_log="${run_dir}/launch.log"
   echo "Launching agent-claude invoke (log: $launch_log) ..."
+  # The launcher records the session/pid and "running" in the ledger after the fork; the
+  # delegate must not write its completion first or the launcher would overwrite it.
+  local ready_marker="${run_dir}/.launch-ready"
 
   if [[ "$use_tmux" -eq 1 ]]; then
     command -v tmux >/dev/null 2>&1 || { echo "ERROR: tmux required for --tmux" >&2; exit 1; }
-    local session="agent-claude-auto-$(printf '%s' "$row_id" | tr '[:upper:]' '[:lower:]')"
-    local invoke_cmd="bash $(printf '%q' "$INVOKE")"
+    local session invoke_cmd
+    session="agent-claude-auto-$(printf '%s' "$row_id" | tr '[:upper:]' '[:lower:]')"
+    invoke_cmd="bash $(printf '%q' "$INVOKE")"
     local arg
     for arg in "${invoke_args[@]}"; do
       invoke_cmd+=" $(printf '%q' "$arg")"
     done
     tmux kill-session -t "$session" 2>/dev/null || true
     tmux new-session -d -s "$session" \
-      "cd $(printf '%q' "$REPO_ROOT") && source $(printf '%q' "${REPO_ROOT}/scripts/agent-claude/lib.sh") && export CLAUDE_WORK_DIR=$(printf '%q' "$work_dir") && agent_claude_apply_delegate_env && ${invoke_cmd} >>$(printf '%q' "$launch_log") 2>&1; exit_code=\$?; python3 - $(printf '%q' "$run_dir/ledger.json") \"\$exit_code\" <<'PY'
+      "for i in \$(seq 1 100); do [ -e $(printf '%q' "$ready_marker") ] && break; sleep 0.05; done; rm -f $(printf '%q' "$ready_marker"); cd $(printf '%q' "$REPO_ROOT") && source $(printf '%q' "${REPO_ROOT}/scripts/agent-claude/lib.sh") && export CLAUDE_WORK_DIR=$(printf '%q' "$work_dir") && agent_claude_apply_delegate_env && ${invoke_cmd} >>$(printf '%q' "$launch_log") 2>&1; exit_code=\$?; python3 - $(printf '%q' "$run_dir/ledger.json") \"\$exit_code\" <<'PY'
 import json, sys
 from datetime import datetime, timezone
 path, exit_code = sys.argv[1], int(sys.argv[2])
@@ -300,6 +308,7 @@ with open(path, "w", encoding="utf-8") as f:
     json.dump(doc, f, indent=2)
     f.write("\n")
 PY
+    : >"$ready_marker"
     echo "STARTED: tmux session $session"
     echo "ATTACH:  tmux attach -t $session"
     echo "MONITOR: bash scripts/agent-claude/monitor.sh --log ${run_dir}/claude-run.log"
@@ -308,8 +317,14 @@ PY
   fi
 
   # Background launch — TUI sessions are long-running
+  # Wait (bounded) for the launcher's ready marker before invoking.
   (
     set +e
+    for ((wait_i = 0; wait_i < 100; wait_i++)); do
+      [[ -e "$ready_marker" ]] && break
+      sleep 0.05
+    done
+    rm -f "$ready_marker"
     bash "$INVOKE" "${invoke_args[@]}" >>"$launch_log" 2>&1
     exit_code=$?
     python3 - "$run_dir/ledger.json" "$exit_code" <<'PY'
@@ -341,6 +356,7 @@ with open(path, "w", encoding="utf-8") as f:
     json.dump(doc, f, indent=2)
     f.write("\n")
 PY
+  : >"$ready_marker"
 
   echo "STARTED: delegate PID $pid"
   echo "MONITOR: bash scripts/agent-claude/monitor.sh --log ${run_dir}/claude-run.log"
@@ -351,7 +367,10 @@ cmd_score() {
   local run_id=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --run) run_id="$2"; shift 2 ;;
+      --run)
+      [[ $# -ge 2 ]] || { echo "ERROR: --run requires a value" >&2; exit 2; }
+      run_id="$2"; shift 2
+      ;;
       *) echo "Unknown score arg: $1" >&2; exit 2 ;;
     esac
   done
@@ -484,7 +503,10 @@ cmd_status() {
   local run_id=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --run) run_id="$2"; shift 2 ;;
+      --run)
+      [[ $# -ge 2 ]] || { echo "ERROR: --run requires a value" >&2; exit 2; }
+      run_id="$2"; shift 2
+      ;;
       *) echo "Unknown status arg: $1" >&2; exit 2 ;;
     esac
   done

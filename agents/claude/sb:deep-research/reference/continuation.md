@@ -18,13 +18,13 @@ Trigger auto-continuation when report exceeds 18,000 words in single run.
 
 ## Continuation State File
 
-**Location:** `.codex/research_output/continuation_state_[report_id].json` (Codex host; use project-local `.planning/research/` when host-agnostic)
+**Location:** `$SB_RESEARCH_OUT_DIR/continuation_state_[report_id].json` (inside the run folder on every host)
 
 ```json
 {
   "version": "3.0.0",
   "report_id": "[unique_id]",
-  "file_path": "[absolute_path_to_report.md]",
+  "file_path": "research_report.md",
   "mode": "[quick|standard|deep|ultradeep]",
 
   "progress": {
@@ -79,7 +79,7 @@ Task(
 CONTINUATION TASK: Continue existing deep-research report.
 
 CRITICAL INSTRUCTIONS:
-1. Read continuation state: `.codex/research_output/continuation_state_[report_id].json`
+1. Read continuation state: `$SB_RESEARCH_OUT_DIR/continuation_state_[report_id].json`
 2. Read existing report: [file_path from state]
 3. Read LAST 3 completed sections for flow/style
 4. Load research context: themes, narrative arc, writing style
@@ -150,7 +150,7 @@ Calculate: Current words + remaining sections x avg_words_per_section
 - Generate final content sections
 - Generate COMPLETE bibliography from state.citations.bibliography_entries
 - Read entire assembled report
-- Run validation: `python scripts/validate_report.py --report [path]`
+- Run validation: `python3 "${SKILL_DIR}/scripts/validate_report.py" --report [path]`
 - Delete continuation_state.json (cleanup)
 - Report complete to user
 

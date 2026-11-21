@@ -48,6 +48,10 @@ The artifact must include:
 6. Prefer a dry run, preview, or staging deploy before production when available.
 7. Run the deploy command only when the release/ship workflow allows it and the
    user has not constrained deployment.
+   Under the default `supervised` enterprise profile a deploy command is blocked
+   (`ENTERPRISE POLICY BLOCK`) until a human creates
+   `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` from their own
+   terminal; ask the user to approve, never create the marker yourself.
 8. Verify health endpoints, core routes, logs/metrics where available, and
    rollback readiness.
 9. Hand off to `sb:canary` for post-deploy watch.

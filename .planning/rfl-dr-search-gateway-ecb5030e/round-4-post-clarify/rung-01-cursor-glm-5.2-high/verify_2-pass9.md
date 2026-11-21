@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 (`verify_2`, independent of verify_1)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `763b4ada2509833124c682bfa58c3308a41bd0d01a2f77242d4af3491364dcdb` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr_search_gateway plan X1 X2 X3 quota-dir max-chars doctor"` (39 nodes; oriented quota-dir / doctor / fingerprint contract)  
 **Apply ref:** X1–X3 / I-27–I-29 (round-4 post-clarify rung 1 pass 9)

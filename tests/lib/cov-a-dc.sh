@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC2034  # variables are consumed by the sourcing tests
+# shellcheck shell=bash
+
+HOOK="$TL_REPO_ROOT/hooks/dev-cycle-check.sh"
+CFG_VERSION="$(jq -r '.config_version' "$TL_REPO_ROOT/templates/silver-bullet.config.json.default")"
+
+SKILLS="$TL_TMP/skills"
+for s in inst-a inst-b; do
+  mkdir -p "$SKILLS/skills/$s"; printf -- '---\nname: %s\n---\n' "$s" >"$SKILLS/skills/$s/SKILL.md"
+done
+STATE="$SB_RUNTIME_STATE_DIR/state-test"
+BRANCHF="$SB_RUNTIME_STATE_DIR/branch-test"
+export SILVER_BULLET_STATE_FILE="$STATE"
+export SILVER_BULLET_SKILL_ROOTS="$SKILLS"
+export SILVER_BULLET_BRANCH_FILE="$BRANCHF"
+export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$SB_RUNTIME_STATE_DIR/verify-tests-test"
+
+_dc_tpl() {
+  if [[ -z "${_DC_TPL:-}" ]]; then
+    _DC_TPL="$TL_TMP/.tpl"
+    tl_git_repo "$_DC_TPL"
+    mkdir -p "$_DC_TPL/src"
+    : >"$_DC_TPL/src/app.js"
+  fi
+}
+# mkproj <name> [jq filter]: SB project with a git repo, src/ files and a config.
+mkproj() {
+  PROJ="$TL_TMP/$1"
+  _dc_tpl
+  # a name used twice is a fresh project (cp -a into an existing directory would nest the template, and fails for a non-root user: its objects are read-only)
+  rm -rf "$PROJ"
+  cp -a "$_DC_TPL" "$PROJ"
+  printf '# SB\n' >"$PROJ/silver-bullet.md"
+  jq -n --arg v "$CFG_VERSION" "{config_version:\$v, sb_initiated:true,
+      project:{src_pattern:\"/src/\", active_workflow:\"full-dev-cycle\"},
+      skills:{required_planning:[\"inst-a\"], required_deploy:[\"inst-a\",\"inst-b\"]}} | ${2:-.}" >"$PROJ/.silver-bullet.json"
+  : >"$STATE"
+  printf 'feature/test\n' >"$BRANCHF"
+  rm -f "$SILVER_BULLET_VERIFY_TESTS_STATE_FILE" "$SB_RUNTIME_STATE_DIR/small-edit-budget" "$SB_RUNTIME_STATE_DIR/unlock-hint" "${STATE}.seal" "${STATE}.hwm"
+  # Once the install has made its key every project needs its record (hooks/lib/integrity.sh).
+  if [[ -f "$SB_RUNTIME_STATE_DIR/seal.key" ]]; then sb_integrity_baseline "$(cd "$PROJ" && pwd -P)" session; fi
+}
+# unlock SKILL: the unlock entry the recorder leaves in the project's record when a contract-writing
+# skill runs (the project is baselined first when it has no record yet).
+source "$TL_REPO_ROOT/hooks/lib/integrity.sh"
+unlock() {
+  local root
+  root="$(cd "$PROJ" && pwd -P)"
+  [[ -f "$(_sb_iv_rec_file "$root")" ]] || sb_integrity_baseline "$root" session
+  sb_integrity_baseline "$root" unlock "$1"
+  sb_integrity_forget
+}
+# unlock_clear: the unlock is gone (a session start re-baselined the project).
+unlock_clear() {
+  sb_integrity_baseline "$(cd "$PROJ" && pwd -P)" session
+  sb_integrity_forget
+}
+# state SKILL...: the recorded skills (sealed once the install has a key, like the recorder does).
+state() {
+  printf '%s\n' "$@" >"$STATE"
+  if [[ -f "$SB_RUNTIME_STATE_DIR/seal.key" ]]; then sb_state_seal_write "$STATE"; fi
+}
+
+# run_dc <json> [env...]: run the hook in $PROJ.
+run_dc() {
+  local json="$1"
+  shift
+  tl_run_stdin "$json" env "$@" bash -c 'cd "$1" && exec bash "${HOOK_UNDER_TEST:-$2}"' _ "${RUN_DIR:-$PROJ}" "$HOOK"
+}
+edit_json() { jq -cn --arg e "${3:-PreToolUse}" --arg f "$1" --arg t "${2:-Edit}" --arg o "${4:-}" --arg n "${5:-}" \
+  '{hook_event_name:$e,tool_name:$t,tool_input:({file_path:$f}+(if $o!="" then {old_string:$o,new_string:$n} else {} end))}'; }
+bash_json() { jq -cn --arg e "${2:-PreToolUse}" --arg c "$1" '{hook_event_name:$e,tool_name:"Bash",tool_input:{command:$c}}'; }
+# The hook prints at most ONE JSON document (R2-01/R2-33): a host cannot parse two concatenated
+# objects, so a second one makes the verdict "invalid" instead of being skipped over.
+decision() {
+  if [[ -z "$TL_OUT" ]]; then echo none; return; fi
+  [[ "$(jq -s length <<<"$TL_OUT" 2>/dev/null || echo 0)" == 1 ]] || { echo invalid; return; }
+  jq -r 'if .hookSpecificOutput.permissionDecision then .hookSpecificOutput.permissionDecision
+         elif .decision then .decision else "allow" end' <<<"$TL_OUT" 2>/dev/null || echo invalid
+}
+message() { jq -rs 'map([.reason, .hookSpecificOutput.permissionDecisionReason, .systemMessage, .hookSpecificOutput.additionalContext, .hookSpecificOutput.message] | map(select(. != null)) | join("\n")) | join("\n")' <<<"$TL_OUT"; }
+BIG_OLD="$(printf 'x%.0s' {1..80})"
+BIG_NEW="$(printf 'y%.0s' {1..80})"
+
+PATCH_SRC=$'*** Begin Patch\n*** Update File: src/app.js\n@@\n-a\n+b\n*** End Patch'
+NOCFG="$TL_TMP/nocfg"; tl_git_repo "$NOCFG"; mkdir -p "$NOCFG/src"
+dc_cmd() { run_dc "$(bash_json "$1" "${2:-PreToolUse}")" "${@:3}"; }
+edit() { run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"; }

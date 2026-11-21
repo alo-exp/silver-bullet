@@ -8,7 +8,7 @@
   "multiwf_criteria": ".planning/sb-tri-criteria-e2e/CURSOR-MULTIWF-CRITERIA.md",
   "harness": "scripts/sb-tri-criteria-e2e.sh",
   "fixture": {
-    "work_dir_default": "/Users/shafqat/projects/enterprise-grade-test-app",
+    "work_dir_default": "/Users/<user>/projects/enterprise-grade-test-app",
     "branch_prefix": "feature/tc"
   },
   "tracks": [

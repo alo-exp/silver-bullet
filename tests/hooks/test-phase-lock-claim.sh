@@ -31,7 +31,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
 fi
 HOOK="$REPO_ROOT/hooks/phase-lock-claim.sh"
-HELPER_SRC="$REPO_ROOT/.planning/scripts/phase-lock.sh"
+HELPER_SRC="$REPO_ROOT/scripts/phase-lock.sh"   # the hooks run the plugin's copy (R3-03)
 
 PASS=0
 FAIL=0
@@ -58,8 +58,6 @@ setup() {
   git config user.email t@t
   git config user.name t
   mkdir -p .planning/scripts .planning/phases/099-test
-  cp "$HELPER_SRC" .planning/scripts/phase-lock.sh
-  chmod +x .planning/scripts/phase-lock.sh
   export SB_PHASE_LOCK_FILE="$TMPDIR_TEST/.planning/.phase-locks.json"
   rm -f "${SB_TEST_DIR}/claimed-phases-test-${TEST_RUN_ID}.txt" \
         "${SB_TEST_DIR}/claimed-phases-test2-${TEST_RUN_ID}.txt" \
@@ -131,36 +129,36 @@ teardown
 echo "--- T5: another runtime holds lock → exit 2 + stderr names owner ---"
 setup
 # Have opencode claim phase 099 directly via helper
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 opencode "simulated-other-runtime" >/dev/null 2>&1
+bash "$HELPER_SRC" claim 099 opencode "simulated-other-runtime" >/dev/null 2>&1
 
 json=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":".planning/phases/099-test/y.md"},"session_id":"test2-%s"}' "$TEST_RUN_ID")
 set +e
-stderr_capture=$(printf '%s' "$json" | bash "$HOOK" 2> >(cat) 1>/tmp/claim-stdout.$$)
+stderr_capture=$(printf '%s' "$json" | bash "$HOOK" 2>&1 1>"$TMPDIR_TEST/claim-stdout")
 rc=$?
-stdout_capture=$(cat /tmp/claim-stdout.$$ 2>/dev/null)
-rm -f /tmp/claim-stdout.$$
+stdout_capture=$(cat "$TMPDIR_TEST/claim-stdout" 2>/dev/null)
+rm -f "$TMPDIR_TEST/claim-stdout"
 set -e
 
 [[ "$rc" == "2" ]] && ok "T5: rc == 2 (PreToolUse block via exit-2)" || nope "T5: rc" "got $rc, expected 2"
-if printf '%s' "$stderr_capture" | grep -q '099 is locked by'; then
+if grep -q '099 is locked by' <<<"$stderr_capture"; then
   ok "T5: stderr contains 'phase 099 is locked by'"
 else
   nope "T5: stderr conflict phrasing" "got: $stderr_capture"
 fi
-printf '%s' "$stderr_capture" | grep -q 'opencode' \
+grep -q 'opencode' <<<"$stderr_capture" \
   && ok "T5: stderr names owner runtime opencode" \
   || nope "T5: opencode" "stderr did not mention opencode"
-printf '%s' "$stderr_capture" | grep -q 'peek' \
+grep -q 'peek' <<<"$stderr_capture" \
   && ok "T5: stderr suggests peek hint" \
   || nope "T5: peek hint" "stderr did not mention peek"
-if printf '%s' "$stdout_capture" | grep -q 'permissionDecision'; then
+if grep -q 'permissionDecision' <<<"$stdout_capture"; then
   nope "T5: no permissionDecision JSON" "stdout contained it"
 else
   ok "T5: stdout does NOT contain permissionDecision (CONTEXT.md locks exit-2 path)"
 fi
 
 # Cleanup opencode claim
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release 099 opencode >/dev/null 2>&1
+bash "$HELPER_SRC" release 099 opencode >/dev/null 2>&1
 teardown
 
 # ── Test 6: jq-missing fail-open (best-effort) ──────────────────────────────

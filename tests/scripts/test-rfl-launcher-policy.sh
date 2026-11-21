@@ -13,7 +13,7 @@ fail() { echo "FAIL: $1"; (( FAIL++ )) || true; }
 
 assert_jq_true() {
   local desc="$1" filter="$2" json="$3"
-  if jq -e "$filter" >/dev/null <<<"$json"; then
+  if jq -e "$filter" <<<"$json" >/dev/null; then
     pass "$desc"
   else
     fail "$desc"
@@ -50,20 +50,12 @@ assert_jq_true "cannot_launch attempt 2 skips" \
   '.action == "skip" and .skipped == true' \
   "$launch2"
 
-oc401="$(python3 "$RESOLVER" --launch-policy --attempts 2 --outcome cannot_launch --policy-phase rung --host opencode)"
-assert_jq_true "OpenCode cannot_launch attempt 2 substitutes Grok 4.6 High" \
-  '.action == "substitute_grok" and .skipped == false and .substitute_model == "cursor-grok-4.6-high" and .substitute_host == "cursor" and .failed_host == "opencode"' \
-  "$oc401"
-
-pi401="$(python3 "$RESOLVER" --launch-policy --attempts 2 --outcome cannot_launch --policy-phase rung --host pi)"
-assert_jq_true "Pi cannot_launch attempt 2 substitutes Grok 4.6 High" \
-  '.action == "substitute_grok" and .skipped == false and .substitute_model == "cursor-grok-4.6-high" and .failed_host == "pi"' \
-  "$pi401"
-
-cursor_skip="$(python3 "$RESOLVER" --launch-policy --attempts 2 --outcome timeout --policy-phase rung --host cursor)"
-assert_jq_true "Cursor timeout attempt 2 still skips" \
-  '.action == "skip" and .skipped == true' \
-  "$cursor_skip"
+for skip_host in opencode pi cursor; do
+  host_skip="$(python3 "$RESOLVER" --launch-policy --attempts 2 --outcome cannot_launch --policy-phase rung --host "$skip_host")"
+  assert_jq_true "$skip_host attempt 2 skips and substitutes no model" \
+    '.action == "skip" and .skipped == true and (has("substitute_model") | not)' \
+    "$host_skip"
+done
 
 post_ok="$(python3 "$RESOLVER" --launch-policy --attempts 1 --outcome success --policy-phase post_ladder)"
 assert_jq_true "post-ladder success recovers skipped rung" \
@@ -81,8 +73,8 @@ assert_jq_true "skip artifact records retry/skip for launcher" \
   "$skip_art"
 
 sub_art="$(python3 "$RESOLVER" --skip-artifact --rung-id 4 --next-rung 5 --attempts 2 --outcome cannot_launch --policy-phase rung --host opencode)"
-assert_jq_true "OpenCode skip-artifact after retry records Grok substitute" \
-  '.action == "substitute_grok" and .skipped == false and (.skipped_md | contains("SUBSTITUTE GROK")) and (.skipped_md | contains("cursor-grok-4.6-high"))' \
+assert_jq_true "OpenCode skip-artifact after retry is a plain skip" \
+  '.action == "skip" and .skipped == true and (.skipped_md | startswith("# SKIPPED"))' \
   "$sub_art"
 
 # --- mandatory launcher tables ---
@@ -93,11 +85,11 @@ assert_jq_true "launcher mandatory steps include issue/triage/resolved/matrix" \
 
 issues_json='[{"id":"H1","severity":"HIGH","title":"broken lock"},{"id":"M1","severity":"MED","title":"missing table"},{"id":"L1","severity":"LOW","title":"typo"},{"id":"N1","severity":"NIT","title":"nitpick"}]'
 issue_md="$(python3 "$RESOLVER" --issue-table --table-json "$issues_json")"
-if printf '%s' "$issue_md" | grep -qF '### HIGH' \
-  && printf '%s' "$issue_md" | grep -qF '### MED' \
-  && printf '%s' "$issue_md" | grep -qF '### LOW' \
-  && printf '%s' "$issue_md" | grep -qF '### NIT' \
-  && printf '%s' "$issue_md" | grep -qF '| H1 | broken lock |'; then
+if grep -qF '### HIGH' <<<"$issue_md" \
+  && grep -qF '### MED' <<<"$issue_md" \
+  && grep -qF '### LOW' <<<"$issue_md" \
+  && grep -qF '### NIT' <<<"$issue_md" \
+  && grep -qF '| H1 | broken lock |' <<<"$issue_md"; then
   pass "issue table grouped by HIGH/MED/LOW/NIT"
 else
   fail "issue table grouped by HIGH/MED/LOW/NIT"
@@ -106,9 +98,9 @@ fi
 
 triage_json='[{"id":"H1","severity":"HIGH","decision":"ACCEPT","reason":"valid"},{"id":"N1","severity":"NIT","decision":"REJECT","reason":"factually false"}]'
 triage_md="$(python3 "$RESOLVER" --triage-table --table-json "$triage_json")"
-if printf '%s' "$triage_md" | grep -qF '| Decision | Reason |' \
-  && printf '%s' "$triage_md" | grep -qF '| H1 | HIGH | ACCEPT | valid |' \
-  && printf '%s' "$triage_md" | grep -qF '| N1 | NIT | REJECT | factually false |'; then
+if grep -qF '| Decision | Reason |' <<<"$triage_md" \
+  && grep -qF '| H1 | HIGH | ACCEPT | valid |' <<<"$triage_md" \
+  && grep -qF '| N1 | NIT | REJECT | factually false |' <<<"$triage_md"; then
   pass "triage table accepted vs rejected + reason"
 else
   fail "triage table accepted vs rejected + reason"
@@ -117,8 +109,8 @@ fi
 
 resolved_json='[{"id":"H1","severity":"HIGH","title":"broken lock","decision":"ACCEPT","resolved":"yes"},{"id":"N1","severity":"NIT","title":"nitpick","decision":"REJECT","resolved":"n/a"}]'
 resolved_md="$(python3 "$RESOLVER" --resolved-table --table-json "$resolved_json")"
-if printf '%s' "$resolved_md" | grep -qF '| Resolved |' \
-  && printf '%s' "$resolved_md" | grep -qF '| H1 | HIGH | broken lock | ACCEPT | yes |'; then
+if grep -qF '| Resolved |' <<<"$resolved_md" \
+  && grep -qF '| H1 | HIGH | broken lock | ACCEPT | yes |' <<<"$resolved_md"; then
   pass "resolved table includes Resolved column"
 else
   fail "resolved table includes Resolved column"
@@ -127,11 +119,11 @@ fi
 
 matrix_json='[{"rung":"1","reviewer":"Composer 2.5 High","high":1,"med":1,"low":0,"nit":1,"reported":3,"accepted":2,"clean":false},{"rung":"2","reviewer":"Grok 4.6 High","high":0,"med":0,"low":0,"nit":0,"reported":0,"accepted":0,"clean":true},{"rung":"4","reviewer":"GLM 5.2 High","high":0,"med":0,"low":0,"nit":0,"reported":0,"accepted":0,"skipped_then_retried":true,"id_collision":true}]'
 matrix_md="$(python3 "$RESOLVER" --ladder-matrix --table-json "$matrix_json")"
-if printf '%s' "$matrix_md" | grep -qF '| Rung | Reviewer | HIGH | MED | LOW | NIT | Reported | Accepted |' \
-  && printf '%s' "$matrix_md" | grep -qF '| 1 | Composer 2.5 High | 1 | 1 | 0 | 1 | 3 | 2 |' \
-  && printf '%s' "$matrix_md" | grep -qF 'skipped-then-retried' \
-  && printf '%s' "$matrix_md" | grep -qF 'ID collision' \
-  && printf '%s' "$matrix_md" | grep -qF 'CLEAN'; then
+if grep -qF '| Rung | Reviewer | HIGH | MED | LOW | NIT | Reported | Accepted |' <<<"$matrix_md" \
+  && grep -qF '| 1 | Composer 2.5 High | 1 | 1 | 0 | 1 | 3 | 2 |' <<<"$matrix_md" \
+  && grep -qF 'skipped-then-retried' <<<"$matrix_md" \
+  && grep -qF 'ID collision' <<<"$matrix_md" \
+  && grep -qF 'CLEAN' <<<"$matrix_md"; then
   pass "ladder-complete matrix with footnotes"
 else
   fail "ladder-complete matrix with footnotes"
@@ -190,14 +182,9 @@ fi
 
 # --- default host routing matrix (user override wins) ---
 grok_host="$(python3 "$RESOLVER" --default-host-route --model grok-4.6)"
-assert_jq_true "Grok defaults to /sb:agent-cursor" \
-  '.host == "cursor" and .route == "/sb:agent-cursor" and .family == "grok" and .preserves_host_mode == true' \
+assert_jq_true "Grok has no dedicated host and defaults to Pi" \
+  '.host == "pi" and .route == "/sb:agent-pi" and .family == "other" and .preserves_host_mode == true' \
   "$grok_host"
-
-composer_host="$(python3 "$RESOLVER" --default-host-route --model composer-2.5)"
-assert_jq_true "Composer defaults to /sb:agent-cursor" \
-  '.host == "cursor" and .skill == "silver-agent-cursor" and .family == "composer"' \
-  "$composer_host"
 
 gpt_host="$(python3 "$RESOLVER" --default-host-route --model gpt-5.6-sol)"
 assert_jq_true "GPT defaults to Codex" \
@@ -214,7 +201,7 @@ assert_jq_true "Gemini defaults to Gemini CLI when unnamed" \
   '.host == "gemini-cli" and .source == "gemini_cascade" and .family == "gemini"' \
   "$gemini_host"
 
-gemini_no_cli="$(python3 "$RESOLVER" --default-host-route --model gemini-3.7-flash --available-hosts pi,opencode,cursor,codex,claude)"
+gemini_no_cli="$(python3 "$RESOLVER" --default-host-route --model gemini-3.7-flash --available-hosts pi,opencode,codex,claude)"
 assert_jq_true "Gemini cascade falls to Pi when Gemini CLI absent" \
   '.host == "pi" and .route == "/sb:agent-pi"' \
   "$gemini_no_cli"
@@ -225,13 +212,13 @@ assert_jq_true "Other models default to Pi" \
   "$other_host"
 
 override="$(python3 "$RESOLVER" --default-host-route --model grok-4.6 --user-agent /sb:agent-pi)"
-assert_jq_true "user override wins over Grok→Cursor default" \
+assert_jq_true "user override wins over the Grok default" \
   '.host == "pi" and .user_override == true and .source == "user_override"' \
   "$override"
 
 gpt_override="$(python3 "$RESOLVER" --default-host-route --model gpt-5.6-sol --user-agent cursor)"
 assert_jq_true "user override can move GPT off Codex" \
-  '.host == "cursor" and .user_override == true' \
+  '.host == "cursor" and .user_override == true and .skill == "cursor"' \
   "$gpt_override"
 
 named="$(python3 "$RESOLVER" --default-host-route --model glm-5.2 --user-agent windsurf)"
@@ -240,8 +227,8 @@ assert_jq_true "named external agent wins for other models" \
   "$named"
 
 decide_grok="$(python3 "$RESOLVER" --decide-launch --model grok-4.6 --reasoning high)"
-assert_jq_true "decide-launch attaches Cursor default host without remapping GPT/Claude" \
-  '.action == "cursor_task" and .default_agent_route == "/sb:agent-cursor" and .preserves_host_mode == true' \
+assert_jq_true "decide-launch attaches the default host without remapping GPT/Claude" \
+  '.default_agent_route == "/sb:agent-pi" and .preserves_host_mode == true' \
   "$decide_grok"
 
 decide_gpt="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high)"
@@ -249,8 +236,7 @@ assert_jq_true "GPT decide-launch stays Codex, not Grok High" \
   '.action == "invoke_subscription" and .subscription_host == "codex" and .default_agent_host == "codex"' \
   "$decide_gpt"
 
-if grep -qF '/sb:agent-cursor' "$SKILL" \
-  && grep -qF 'Do **not** smash host `--mode`' "$SKILL" \
+if grep -qF 'Do **not** smash host `--mode`' "$SKILL" \
   && grep -qF 'Do **not** remap RFL GPT/Claude rungs onto Grok High' "$SKILL" \
   && grep -qF -- '--default-host-route' "$SKILL"; then
   pass "SKILL encodes default host routing matrix"

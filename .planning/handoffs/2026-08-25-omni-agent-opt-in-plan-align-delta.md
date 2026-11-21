@@ -7,7 +7,7 @@ Planning-only. No product code. Git stayed on `main`. Both freeze copies stayed 
 | Path | SHA-256 | Bytes |
 |------|---------|-------|
 | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](../router_subagent_surfaces_85bf9f09.plan.md) | `dde658d822848f38466384ce081df7c6e3070fc0393b083ea208322c7a8b5960` | 608795 |
-| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
+| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
 
 Start pair (confirmed before edits): `cd7db06bc17f72df16a95800dbff90c9d9f22e084a377f3f6d2c96c703889f87` / 592212 bytes.
 
@@ -15,7 +15,7 @@ Start pair (confirmed before edits): `cd7db06bc17f72df16a95800dbff90c9d9f22e084a
 
 | Path | SHA-256 | Bytes | Repo copy |
 |------|---------|-------|-----------|
-| [`/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) | `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` | 7284 | **none** (no `.planning/omni_agent_opt-in_67f2f73a.plan.md`) |
+| [`/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) | `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` | 7284 | **none** (no `.planning/omni_agent_opt-in_67f2f73a.plan.md`) |
 
 Owns: Graphify-style `recommended_tools` consent (`omniroute` + five `agent_*`), transport-first slug grammar, `/sb:init` 1.1h–1.1m after LeanCTX, `install-omniroute-sb.sh`, thin `agent-omni-delegate.sh`, doctor `--fix`, SKILL/D17/tests. Public prefix in this freeze is `/sb` (omni draft used `/silver:`; composed, not a dual-prefix window).
 

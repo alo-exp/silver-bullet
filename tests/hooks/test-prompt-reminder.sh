@@ -73,7 +73,7 @@ setup() {
   TMPDIR_TEST=$(mktemp -d)
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
-  rm -f "$TMPSTATE"
+  rm -f "$TMPSTATE" "${SB_TEST_DIR}/seal.key" "${SB_TEST_DIR}/trivial" "${SB_TEST_DIR}"/integrity-*
   rm -f "${SB_TEST_DIR}/ups-coalesce-turn" "${SB_TEST_DIR}/ups-coalesce-seen" 2>/dev/null || true
   # Init a git repo so branch-detection tests work (hook silently handles no-git too)
   git -C "$TMPDIR_TEST" init -q
@@ -107,7 +107,7 @@ assert_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  PASS: $label"
     PASS=$((PASS + 1))
   else
@@ -120,7 +120,7 @@ assert_not_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if ! printf '%s' "$output" | grep -q "$needle"; then
+  if ! grep -q "$needle" <<<"$output"; then
     echo "  PASS: $label"
     PASS=$((PASS + 1))
   else
@@ -212,10 +212,19 @@ setup
 write_cfg
 # No skills recorded — would normally output missing list
 rm -f "$TMPSTATE"
-# Create trivial file (not a symlink)
-touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+# The user's marker, blessed by a session start (hooks/lib/integrity.sh): the reminder stays quiet
+touch "${SB_TEST_DIR}/trivial"
+source "$REPO_ROOT/hooks/lib/integrity.sh"
+sb_integrity_baseline "$(cd "$TMPDIR_TEST" && pwd -P)" session
 out=$(run_hook)
-assert_noop_json "trivial file present -> valid no-op hook JSON" "$out"
+assert_noop_json "blessed trivial marker -> valid no-op hook JSON" "$out"
+# a marker nobody blessed (and one named only by the config) does not silence it
+rm -f "${SB_TEST_DIR}/trivial"
+sb_integrity_baseline "$(cd "$TMPDIR_TEST" && pwd -P)" session
+touch "${SB_TEST_DIR}/trivial"
+out=$(run_hook)
+assert_not_contains "an unblessed marker does not silence the reminder" "$out" '"hookEventName":"UserPromptSubmit"}'
+rm -f "${SB_TEST_DIR}/trivial"
 teardown
 
 # Test 6: Main branch -> finishing-a-development-branch NOT in missing (TD-02)
@@ -253,7 +262,7 @@ echo "--- Test 8: Bare work prompt -> route through Silver before direct work --
 setup
 write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
-export SILVER_BULLET_RUNTIME=cursor
+export SILVER_BULLET_RUNTIME=claude
 out=$(run_hook 'Add a due date field to todos. Keep it simple: accept dueDate in the API payload and return it in todo responses.')
 unset SILVER_BULLET_RUNTIME
 assert_contains "bare work prompt: hook identifies bare prompt interception" "$out" "BARE PROMPT INTERCEPTED"
@@ -333,7 +342,7 @@ write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
 mkdir -p "$TMPDIR_TEST/.planning/workflows"
 out=$(run_hook)
-if printf '%s' "$out" | grep -q 'Active composed workflows'; then
+if grep -q 'Active composed workflows' <<<"$out"; then
   echo "  FAIL: WF2: empty dir should not emit position line"
   FAIL=$((FAIL+1))
 else
@@ -355,7 +364,7 @@ Last-flow: 7
 FLOW 12: VERIFY
 WFEOF
 out=$(run_hook)
-if printf '%s' "$out" | grep -q 'Composable path'; then
+if grep -q 'Composable path' <<<"$out"; then
   echo "  FAIL: WF3: legacy WORKFLOW.md still being read — Pass 1 incomplete"
   FAIL=$((FAIL+1))
 else

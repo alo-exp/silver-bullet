@@ -16,7 +16,6 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
   source "$_lib_dir/nofollow-guard.sh"
 else
   sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
-  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
 fi
 if [[ -n "$_lib_dir" && -f "$_lib_dir/skill-discovery.sh" ]]; then
   # shellcheck source=lib/skill-discovery.sh
@@ -46,9 +45,36 @@ if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"
 fi
+if [[ -f "$_lib_dir/skill-gates.sh" ]]; then
+  # shellcheck source=lib/skill-gates.sh
+  source "$_lib_dir/skill-gates.sh"
+fi
 if [[ -f "$_lib_dir/hook-output.sh" ]]; then
   # shellcheck source=lib/hook-output.sh
   source "$_lib_dir/hook-output.sh"
+fi
+if [[ -f "$_lib_dir/state-seal.sh" ]]; then
+  # shellcheck source=lib/state-seal.sh
+  source "$_lib_dir/state-seal.sh"
+fi
+if ! declare -F sb_state_seal_write >/dev/null 2>&1; then
+  sb_state_seal_write() { :; }
+  sb_state_last_write() { :; }
+  sb_state_seal_enforce() { :; }
+  sb_state_seal_lock() { :; }
+  sb_state_seal_unlock() { :; }
+fi
+if [[ -f "$_lib_dir/contract-unlock.sh" ]]; then
+  # shellcheck source=lib/contract-unlock.sh
+  source "$_lib_dir/contract-unlock.sh"
+fi
+if [[ -f "$_lib_dir/integrity.sh" ]]; then
+  # shellcheck source=lib/integrity.sh
+  source "$_lib_dir/integrity.sh"
+fi
+if ! declare -F sb_contract_is_writer >/dev/null 2>&1; then
+  # Without the libraries there is nothing to keep in step.
+  sb_contract_is_writer() { return 1; }
 fi
 
 # jq is required for JSON parsing
@@ -79,15 +105,15 @@ else
   cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
 fi
 
-extract_invoke_skill_adapter_skill() {
-  local command_str="$1"
-  python3 - "$command_str" <<'PY' 2>/dev/null || true
+# The command arrives on stdin, never argv (no size limit, nothing visible in `ps`).
+# (read -d '' rather than $(cat <<...): Bash 3.2 mis-parses quotes inside a heredoc in $(...).)
+IFS= read -r -d '' _SB_ADAPTER_PARSER_PY <<'PY' || true
 import pathlib
 import re
 import shlex
 import sys
 
-command = sys.argv[1]
+command = sys.stdin.read()
 assignment_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*$")
 shell_names = {"bash", "sh", "zsh"}
 
@@ -138,6 +164,11 @@ skill = inspect_tokens(parse(command))
 if skill:
     print(skill)
 PY
+
+extract_invoke_skill_adapter_skill() {
+  # Cheap guard (R3-19): most Bash calls are not adapter calls, so skip starting python for them.
+  [[ "$1" == *invoke-skill* ]] || return 0
+  printf '%s' "$1" | python3 -c "$_SB_ADAPTER_PARSER_PY" 2>/dev/null || true
 }
 
 invoke_skill_adapter_receipt_is_valid() {
@@ -189,17 +220,22 @@ invoke_skill_adapter_receipt_is_valid() {
 }
 
 skills_to_record=()
-if [[ -n "$raw_skill" ]]; then
+# tool_input.skill is honoured only for the Skill tool itself: a Bash or exec_command payload that
+# happens to carry a `skill` key records nothing (its only route is the invoke-skill adapter below).
+if [[ -n "$raw_skill" && "$tool_name" == "Skill" ]]; then
   skills_to_record+=("$raw_skill")
 elif { [[ "$tool_name" == "Bash" ]] || { declare -f sb_tool_is_shell_like >/dev/null 2>&1 && sb_tool_is_shell_like "$tool_name"; }; }; then
   adapter_skill="$(extract_invoke_skill_adapter_skill "$cmd")"
   adapter_exit_code="$(printf '%s' "$input" | jq -r '.tool_response.exit_code // .tool_response.exitCode // 0' 2>/dev/null || printf '0')"
   if [[ -n "$adapter_skill" && "$adapter_exit_code" == "0" ]] && invoke_skill_adapter_receipt_is_valid "$adapter_skill"; then
+    if adapter_denial="$(sb_skill_gates_denial "$adapter_skill" "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"; then
+      sb_emit_hook_message "PostToolUse" "⚠️ Skill not recorded: the Skill gates deny ${adapter_skill} — ${adapter_denial}"
+      exit 0
+    fi
     skills_to_record+=("$adapter_skill")
   elif [[ "$cmd" == *"SKILL.md"* ]]; then
     # Extract any SKILL.md paths embedded in the command string.
     while IFS= read -r token; do
-      [[ -n "$token" ]] || continue
       token="${token#\"}"
       token="${token%\"}"
       token="${token#\'}"
@@ -208,7 +244,6 @@ elif { [[ "$tool_name" == "Bash" ]] || { declare -f sb_tool_is_shell_like >/dev/
       token="${token%;}"
       token="${token#(}"
       token="${token%)}"
-      [[ "$token" == *"SKILL.md"* ]] || continue
 
       # Prefer deriving the skill from the directory name so we can record the
       # canonical hyphenated marker (e.g. silver-init, silver-context).
@@ -221,9 +256,9 @@ fi
 
 [[ ${#skills_to_record[@]} -gt 0 ]] || exit 0
 
-if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
-  :
-fi
+# Only a host hook event records: the payload must carry the host's PostToolUse event name. (A
+# crafted payload can still say so; the planning gates refuse commands that run the recorder.)
+[[ "$(printf '%s' "$input" | jq -r '.hook_event_name // ""')" == "PostToolUse" ]] || exit 0
 
 debug_record_skill() {
   [[ "${SILVER_BULLET_DEBUG_RECORD_SKILL:-0}" == "1" ]] || return 0
@@ -234,7 +269,7 @@ debug_record_skill() {
     printf '--- %s ---\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || date)"
     printf 'pwd=%s\n' "$PWD"
     printf 'raw_skill=%s\n' "$raw_skill"
-    printf 'canonical_skill=%s\n' "$skill"
+    printf 'skills_to_record=%s\n' "${skills_to_record[*]}"
     printf 'config_file=%s\n' "${config_file:-}"
   } >>"$dbg_file" 2>/dev/null || true
 }
@@ -308,7 +343,11 @@ fi
 debug_record_skill
 
 recorded_any=false
+last_invoked=""
+payload_agent_id="$(jq -r 'def v: if type != "string" then "!" elif . == "" then "!" elif test("\\A[A-Za-z0-9_-]{1,64}\\z") then . else "!" end; if type != "object" then "" else (if has("agent_id") then .agent_id elif has("agentId") then .agentId else null end) | if . == null then "" else v end end' <<<"$input")"
 completed_skills_to_mark=()
+sb_state_seal_lock "$STATE_FILE"
+trap 'sb_state_seal_unlock' EXIT
 
 for raw in "${skills_to_record[@]}"; do
   loaded_only=false
@@ -322,7 +361,7 @@ for raw in "${skills_to_record[@]}"; do
   if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
     skill="$(sb_skill_canonical_name "$skill")"
   else
-    while printf '%s' "$skill" | grep -qE '^[a-zA-Z0-9_-]+:'; do
+    while grep -qE '^[a-zA-Z0-9_-]+:' <<<"$skill"; do
       skill=$(printf '%s' "$skill" | sed 's/^[a-zA-Z0-9_-]*://')
     done
   fi
@@ -357,12 +396,25 @@ for raw in "${skills_to_record[@]}"; do
   fi
 
   completed_skills_to_mark+=("$skill")
+  # The skill invoked last, re-invocations included (the state lists a skill only once), sealed after the loop.
+  # Only a skill this recorder tracks counts (exact canonical name: an untracked helper such as
+  # artifact-reviewer neither becomes nor displaces it). The record is the caller's own: a call made inside a
+  # subagent carries a top-level agent_id and updates that agent's record, the main session its own, so a
+  # worker's sb:spec grants only that worker (state-seal.sh).
+  last_invoked="$skill"
+  if sb_contract_is_writer "$skill"; then
+    # A contract-writing skill starts: an unlock entry of the verified record (nothing is written
+    # when the project has no valid record), and a hint that wakes dev-cycle-check's PostToolUse up.
+    sb_integrity_baseline "$(sb_integrity_root "$PWD")" unlock "$skill"
+    if : 2>/dev/null >"${SB_STATE_DIR}/unlock-hint"; then :; fi
+  fi
 
   # --- Record completed skill invocation (no duplicates) ---
   mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true
   # SEC-02: refuse to write through a symlink at STATE_FILE
   sb_guard_nofollow "$STATE_FILE"
   touch -- "$STATE_FILE"
+  sb_state_seal_enforce "$STATE_FILE"
   if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then
     printf '%s\n' "$skill" >> "$STATE_FILE"
     recorded_any=true
@@ -398,6 +450,15 @@ for raw in "${skills_to_record[@]}"; do
     fi
   fi
 done
+
+if [[ "${recorded_any:-false}" == true ]]; then
+  sb_state_seal_write "$STATE_FILE"
+  # the keyed record remembers that skills were tracked here (a deleted counter file proves nothing)
+  if declare -F sb_integrity_baseline >/dev/null 2>&1; then sb_integrity_baseline "$(sb_integrity_root "$PWD")" tracked; fi
+fi
+# Keyed record of the skill invoked last: read by planning-file-guard's owner allowance.
+if [[ -n "$last_invoked" ]]; then sb_state_last_write "$STATE_FILE" "$last_invoked" "$payload_agent_id"; fi
+sb_state_seal_unlock
 
 if [[ ${#completed_skills_to_mark[@]} -gt 0 ]] && declare -F sb_session_ledger_mark_completed >/dev/null 2>&1; then
   for skill in "${completed_skills_to_mark[@]}"; do

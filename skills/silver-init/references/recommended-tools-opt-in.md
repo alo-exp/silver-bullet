@@ -6,8 +6,10 @@ Load this reference when executing Phase 1.1a–§1.1g during `/sb:init` or upda
 ### 1.1a Graphify (recommended tool — opt-in)
 
 Graphify powers SB's retrieval-oriented project memory. SB **asks for explicit permission**
-before enabling mandatory enforcement. Consent is stored in `.silver-bullet.json` under
-`recommended_tools.graphify.enabled_by_user` (`null` = pending, `true` = opted in, `false` = opted out).
+before enabling mandatory enforcement. The user's consent is recorded with
+`bash "${PLUGIN_ROOT}/scripts/sb-consent.sh"` in their own consent store (`docs/CONSENT.md`), never in the repository.
+`.silver-bullet.json` carries only the project's recommendation,
+`recommended_tools.graphify.enabled_by_user` (`null` = pending, `true` = recommended, `false` = turned off).
 
 **Benefits (present concisely when asking):**
 - Scoped retrieval saves tokens vs broad file reads
@@ -42,6 +44,17 @@ If `graphify_consent` is `null`, use ask the user directly (do **not** auto-inst
   - "B. No — skip Graphify (advisory/docs fallback only)"
 
 If **A**: set `graphify_consent=true`. If **B**: set `graphify_consent=false`.
+
+**Record the answer as the user's consent (required).** `.silver-bullet.json` is committed
+repository content and never grants consent; hooks enforce a tool only after the user's own
+consent store says so (`docs/CONSENT.md`). After the user answers, run (substitute the tool id):
+```bash
+bash "${PLUGIN_ROOT}/scripts/sb-consent.sh" grant <tool> --project "$PWD"     # Yes
+bash "${PLUGIN_ROOT}/scripts/sb-consent.sh" decline <tool> --project "$PWD"   # No
+```
+Yes also allows installing and wiring the tool on this machine; use `--capabilities enforce`
+to allow enforcement only. Writing `enabled_by_user` into the file (below) is only the project's
+recommendation.
 
 Record the choice — it will be written to `.silver-bullet.json` in Phase 3.4 (fresh) or preserved in update mode:
 ```json
@@ -177,6 +190,17 @@ If `agentmemory_consent` is `null`, ask the user (do **not** auto-install):
 
 If **A**: set `agentmemory_consent=true`. If **B**: set `agentmemory_consent=false`.
 
+**Record the answer as the user's consent (required).** `.silver-bullet.json` is committed
+repository content and never grants consent; hooks enforce a tool only after the user's own
+consent store says so (`docs/CONSENT.md`). After the user answers, run (substitute the tool id):
+```bash
+bash "${PLUGIN_ROOT}/scripts/sb-consent.sh" grant agentmemory --project "$PWD"     # Yes
+bash "${PLUGIN_ROOT}/scripts/sb-consent.sh" decline agentmemory --project "$PWD"   # No
+```
+Yes also allows installing and wiring the tool on this machine; use `--capabilities enforce`
+to allow enforcement only. Writing `enabled_by_user` into the file (below) is only the project's
+recommendation.
+
 #### Step 3 — Install and wire (when opted in or retrying suspended install)
 
 Run when `agentmemory_consent` is `true` AND (fresh opt-in OR `agentmemory_suspended` is `true`).
@@ -206,8 +230,8 @@ Add agentmemory gitignore block if missing (see `docs/AGENTMEMORY.md`).
 
 | Host | Pre-index | Post-index |
 |------|-----------|------------|
-| `<SB_HOST>` | *(none)* | `agentmemory connect (see install guide)` |
-| `<SB_HOST>` | `host plugin marketplace (see install guide) add rohitg00/agentmemory`; `host plugin add agentmemory@agentmemory` | `agentmemory connect (see install guide) --with-hooks` |
+| `<SB_HOST>` | *(none)* | `agentmemory connect claude-code` |
+| `<SB_HOST>` | `codex plugin marketplace add rohitg00/agentmemory`; `host plugin add agentmemory@agentmemory` | `agentmemory connect codex --with-hooks` |
 | `<SB_HOST>` | *(none)* | Merge MCP block per `docs/AGENTMEMORY.md` (host MCP config) |
 
 Read `recommended_tools.agentmemory.platform_install_commands.<host>` from config when present.
@@ -241,8 +265,8 @@ Same rules as Graphify §1.1a Step 5: re-prompt when `null`; retry when suspende
 When **either** Graphify or agentmemory is opted in (`enabled_by_user: true`), run the synergy optimizer after install steps complete:
 
 ```bash
-bash scripts/sb-optimize-stack.sh --apply
-bash scripts/sb-optimize-stack.sh --verify
+bash "${PLUGIN_ROOT}/scripts/sb-optimize-stack.sh" --apply
+bash "${PLUGIN_ROOT}/scripts/sb-optimize-stack.sh" --verify
 ```
 
 - Default profile: `synergy_max` (see `optimization_profiles` in config template)
@@ -269,8 +293,8 @@ jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.jso
 
 Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBenefits: automatic PreToolUse rewrite for git, npm, cargo, kubectl, etc.\n\n**Note:** secondary host uses AGENTS.md awareness only (no live Bash rewrite yet).\n\nEnable RTK for this project?"
 
-- **Yes** → `enabled_by_user: true`
-- **No** → `enabled_by_user: false`
+- **Yes** → `sb-consent.sh grant <tool> --project "$PWD"` (then the recommendation `enabled_by_user: true`)
+- **No** → `sb-consent.sh decline <tool> --project "$PWD"` (then `enabled_by_user: false`)
 
 #### Step 3 — Install when opted in or retrying suspended
 
@@ -278,10 +302,10 @@ Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBen
 
 1. Run `install_commands` from config (Homebrew or curl installer — see `docs/RTK.md`)
 2. Verify: `rtk --version` (v0.4x), `rtk gain --help`
-3. Run host `platform_install_commands` (`rtk init -g`, `rtk init -g (see install guide)`, or `rtk init -g (see install guide)`)
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto --project-root "$(pwd)"` — merges hooks, MCP, host CLI config allow-list, and global rules (see `docs/RTK.md` optimization checklist)
+3. Run host `platform_install_commands` (`rtk init -g` on Claude Code, `rtk init -g --codex` on Codex; see `docs/RTK.md`)
+4. **Run optimization:** `bash "${PLUGIN_ROOT}/scripts/optimize-rtk-context-mode.sh" --host <runtime>|auto --project-root "$(pwd)"` — merges hooks, MCP, host CLI config allow-list, and global rules (see `docs/RTK.md` optimization checklist)
 5. Verify host hook artifact (grep `rtk` in settings/hooks/AGENTS.md)
-6. Run `bash scripts/enable-rtk-context-mode.sh --tool rtk`
+6. Run `bash "${PLUGIN_ROOT}/scripts/enable-rtk-context-mode.sh" --tool rtk`
 
 On success: `install_status: "ok"`, `enforcement_suspended: false`. On failure: suspend, preserve consent.
 
@@ -315,11 +339,10 @@ Include ELv2 license disclosure and MCP-value note in the question.
 1. **Node >= 22.5** check first
 2. `npm install -g context-mode` (or host plugin path per host — see `docs/CONTEXT-MODE.md`)
 3. Host-specific plugin/MCP/hook steps from `platform_install_commands`
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto --project-root "$(pwd)"` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, task host allow-list, global host rules directory directory (see `docs/CONTEXT-MODE.md`)
-5. **Scaffold instruction fragment** into `silver-bullet.md` and `project instruction file` from `templates/context-mode-hint.md.base` (idempotent sentinel block — see `references/scaffold-steps.md`)
-6. **Host-specific:** copy `context-mode.mdc` to `host rules path (see install guide) ` per upstream (also done by optimize script)
-7. Remind user to **restart agent** after plugin install
-8. Run `bash scripts/enable-rtk-context-mode.sh --tool context_mode`
+4. **Run optimization:** `bash "${PLUGIN_ROOT}/scripts/optimize-rtk-context-mode.sh" --host <runtime>|auto --project-root "$(pwd)"` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, host allow-list, global rules (see `docs/CONTEXT-MODE.md`)
+5. **Scaffold instruction fragment** into `silver-bullet.md` and `project instruction file` from `${PLUGIN_ROOT}/templates/context-mode-hint.md.base` (idempotent sentinel block — see `references/scaffold-steps.md`)
+6. Remind user to **restart agent** after plugin install
+7. Run `bash "${PLUGIN_ROOT}/scripts/enable-rtk-context-mode.sh" --tool context_mode`
 
 On success/failure: same jq pattern as Graphify/agentmemory.
 
@@ -350,15 +373,15 @@ jq -r '.recommended_tools.leanctx.enforcement_suspended // false' .silver-bullet
 
 Question: "Silver Bullet recommends **LeanCTX** for parallel-routed compression (wire proxy, AST read, PathJail, ledger).\n\n**Note:** Requires explicit surface routing with RTK and Context Mode — no double-compression.\n\nEnable LeanCTX for this project?"
 
-- **Yes** → `enabled_by_user: true`
-- **No** → `enabled_by_user: false`
+- **Yes** → `sb-consent.sh grant <tool> --project "$PWD"` (then the recommendation `enabled_by_user: true`)
+- **No** → `sb-consent.sh decline <tool> --project "$PWD"` (then `enabled_by_user: false`)
 
 #### Step 3 — Install when opted in or retrying suspended
 
 1. Run `install_commands` from config (`curl -fsSL https://leanctx.com/install.sh | sh`)
 2. Verify: `lean-ctx --version`
-3. Run host `platform_install_commands` (`bash scripts/install-leanctx-sb.sh --host <runtime> --project-root "$(pwd)"`)
-4. **Phase 2:** Run `bash scripts/optimize-five-tool-stack.sh --host <runtime>|auto --project-root "$(pwd)"` instead of `optimize-rtk-context-mode.sh`
+3. Run host `platform_install_commands` (`bash "${PLUGIN_ROOT}/scripts/install-leanctx-sb.sh" --host <runtime> --project-root "$(pwd)"`)
+4. **Phase 2:** Run `bash "${PLUGIN_ROOT}/scripts/optimize-five-tool-stack.sh" --host <runtime>|auto --project-root "$(pwd)"` instead of `optimize-rtk-context-mode.sh`
 
 On success/failure: same jq pattern as Graphify/agentmemory.
 

@@ -4,7 +4,6 @@
 # Default (no API cost): resolver + invoke-skill adapter + fixture charter checks.
 # Optional live agent turn: SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_RUNTIME=codex|kay|claude
 #
-# Cursor automated path: detects CURSOR_AGENT=1 and validates the cursor ladder.
 # Not part of the default run-live-tests.sh matrix (opt-in, like test-silver-init-migration.sh).
 set -euo pipefail
 
@@ -24,10 +23,6 @@ detect_smoke_host() {
     printf '%s\n' "$SB_REVIEW_FIX_LADDER_HOST"
     return 0
   fi
-  if [[ "${SILVER_BULLET_RUNTIME:-}" == "cursor" || -n "${CURSOR_PLUGIN_ROOT:-}" || "${CURSOR_AGENT:-}" == "1" ]]; then
-    printf 'cursor\n'
-    return 0
-  fi
   if [[ "${SILVER_BULLET_RUNTIME:-}" == "codex" ]] || [[ -n "${CODEX_CI:-}${CODEX_THREAD_ID:-}" ]]; then
     printf 'codex\n'
     return 0
@@ -37,7 +32,7 @@ detect_smoke_host() {
 
 assert_json_true() {
   local label="$1" filter="$2" json="$3"
-  if jq -e "$filter" >/dev/null <<<"$json"; then
+  if jq -e "$filter" <<<"$json" >/dev/null; then
     pass "$label"
   else
     fail "$label"
@@ -111,7 +106,7 @@ PY
 
 assert_output_contains() {
   local label="$1" haystack="$2" needle="$3"
-  if printf '%s' "$haystack" | grep -qiE "$needle"; then
+  if grep -qiE "$needle" <<<"$haystack"; then
     pass "$label"
   else
     fail "$label"
@@ -121,7 +116,7 @@ assert_output_contains() {
 
 assert_output_not_contains() {
   local label="$1" haystack="$2" needle="$3"
-  if printf '%s' "$haystack" | grep -qiE "$needle"; then
+  if grep -qiE "$needle" <<<"$haystack"; then
     fail "$label"
     printf '  snippet: %s\n' "$(printf '%s' "$haystack" | head -c 400)"
   else
@@ -173,14 +168,14 @@ ${cleaned_transcript}"
 
   assert_output_not_contains "live turn did not report silver-bullet command missing" "$combined" 'command not found: silver-bullet|silver-bullet: command not found|bash: silver-bullet: command not found|silver-bullet invoke-skill [^[:space:]]+ not available'
 
-  if printf '%s' "$combined" | grep -qiE 'BEGIN SKILL silver-review-fix-ladder'; then
+  if grep -qiE 'BEGIN SKILL silver-review-fix-ladder' <<<"$combined"; then
     invoke_ok=1
     pass "live turn ran silver-bullet invoke-skill"
   else
     printf 'NOTE: live turn did not run silver-bullet invoke-skill\n'
   fi
 
-  if printf '%s' "$combined" | grep -qiE 'Explored.*Read.*(CHARTER\.md|smoke-target\.py)|Read[[:space:]]+CHARTER\.md|Read[[:space:]]+smoke-target\.py|ReadCHARTER\.md,[[:space:]]*smoke-target\.py|BUG: no zero check|Review Charter \(smoke\)|must reject division by zero'; then
+  if grep -qiE 'Explored.*Read.*(CHARTER\.md|smoke-target\.py)|Read[[:space:]]+CHARTER\.md|Read[[:space:]]+smoke-target\.py|ReadCHARTER\.md,[[:space:]]*smoke-target\.py|BUG: no zero check|Review Charter \(smoke\)|must reject division by zero' <<<"$combined"; then
     file_read_ok=1
     pass "live turn read fixture charter or target file"
   else
@@ -243,9 +238,6 @@ run_automated_smoke() {
   assert_json_true "first rung has model and reasoning" '.rungs[0].model and .rungs[0].reasoning' "$ladder_json"
 
   case "$host" in
-    cursor)
-      assert_json_true "cursor ladder starts composer-2.5 low" '.rungs[0] == {"model":"composer-2.5","reasoning":"low"}' "$ladder_json"
-      ;;
     codex)
       assert_json_true "codex ladder excludes mini tier" '[.rungs[].model] | index("gpt-5.4-mini") | not' "$ladder_json"
       ;;
@@ -277,12 +269,8 @@ run_live_agent_smoke() {
     return 0
   fi
   if [[ -z "$runtime" ]]; then
-    if [[ "${CURSOR_AGENT:-}" == "1" || "${SILVER_BULLET_RUNTIME:-}" == "cursor" ]]; then
-      runtime="cursor"
-    else
-      fail "live agent phase requires SB_LIVE_RUNTIME or SB_LIVE_AGENT"
-      return 0
-    fi
+    fail "live agent phase requires SB_LIVE_RUNTIME or SB_LIVE_AGENT"
+    return 0
   fi
 
   export SB_LIVE_AGENT="$runtime"
@@ -302,9 +290,6 @@ run_live_agent_smoke() {
       ;;
     claude)
       SILVER_BULLET_RUNTIME="claude"
-      ;;
-    cursor)
-      SILVER_BULLET_RUNTIME="cursor"
       ;;
     *)
       fail "unsupported live runtime: $runtime"
@@ -336,9 +321,6 @@ run_live_agent_smoke() {
   case "$runtime" in
     codex|kay)
       prompt="Run exactly this command as your first and only non-hook command: \`silver-bullet invoke-skill sb:review-fix-ladder smoke-target.py\`. After the adapter prints the skill, read only smoke-target.py and CHARTER.md. Reply with one sentence naming the divide() defect from the charter. Do not edit files, run tests, or invoke additional commands."
-      ;;
-    cursor)
-      prompt="Use /sb:review-fix-ladder on smoke-target.py only. Read smoke-target.py and CHARTER.md. Derive the charter, run python3 scripts/review-fix-ladder.py --json, and reply with one sentence naming the divide() defect. Do not edit files or expand scope."
       ;;
     *)
       prompt="Use /sb:review-fix-ladder on smoke-target.py only. Read smoke-target.py and CHARTER.md. Derive the charter, run python3 scripts/review-fix-ladder.py --json, and reply with one sentence naming the divide() defect. Do not edit files or expand scope."

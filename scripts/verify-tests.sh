@@ -53,8 +53,10 @@ detect_default_commands() {
     return 0
   fi
 
-  if [[ -f "$repo_root/package.json" ]]; then
-    printf '%s\n' "npm test --if-present"
+  # a package.json without a test script has no tests to run: `npm test --if-present` would exit 0 and
+  # the marker would claim a test run that never happened (R1-35)
+  if [[ -f "$repo_root/package.json" ]] && jq -e '(.scripts.test // "") != ""' "$repo_root/package.json" >/dev/null 2>&1; then
+    printf '%s\n' "npm test"
     return 0
   fi
 
@@ -143,7 +145,6 @@ main() {
     local default_commands=()
     if default_output=$(detect_default_commands "$repo_root"); then
       while IFS= read -r command_str; do
-        [[ -n "$command_str" ]] || continue
         default_commands+=("$command_str")
       done <<< "$default_output"
     fi

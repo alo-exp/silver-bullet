@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Shared plugin-cache version resolution for Claude/Cursor install scripts.
-# Excludes stable alias (current), orphaned markers, and non-version dirs (e.g. test).
+# Shared plugin-cache version resolution for the install scripts.
+# Only version-named directories (v?MAJOR.MINOR.PATCH[-pre][+build]) with a
+# plugin surface count: the stable alias (current), orphaned markers and other
+# directories (test/, dev/) never win, whatever they contain.
 set -euo pipefail
 
 # Print absolute path to the latest semver-like version directory under plugin_root.
@@ -20,23 +22,33 @@ if not plugin_root.is_dir():
     sys.exit(1)
 
 
+VERSION_RE = re.compile(
+    r"^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
+    r"(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z.-]+)?$"
+)
+
+
 def version_sort_key(path: pathlib.Path):
-    return tuple(int(part) if part.isdigit() else part for part in re.split(r"([0-9]+)", path.name))
+    """Semver precedence: a pre-release ranks below its release; pre-release
+    identifiers compare numerically when numeric, numeric below alphanumeric,
+    and a longer list above its prefix. Build metadata is ignored."""
+    major, minor, patch, pre = VERSION_RE.match(path.name).groups()
+    if pre is None:
+        return (int(major), int(minor), int(patch), 1, ())
+    identifiers = tuple(
+        (0, int(part), "") if part.isdigit() else (1, 0, part) for part in pre.split(".")
+    )
+    return (int(major), int(minor), int(patch), 0, identifiers)
 
 
 def is_valid_version_dir(path: pathlib.Path) -> bool:
-    if not path.is_dir():
+    if not path.is_dir() or not VERSION_RE.match(path.name):
         return False
-    if path.name == "current":
-        return False
+    # A version dir that holds only an .orphaned_at marker has no surface.
     has_plugin = (path / ".claude-plugin" / "plugin.json").is_file()
     has_codex_plugin = (path / ".codex-plugin" / "plugin.json").is_file()
     has_hooks = (path / "hooks").is_dir()
-    if has_plugin or has_codex_plugin or has_hooks:
-        return True
-    if (path / ".orphaned_at").is_file():
-        return False
-    return False
+    return has_plugin or has_codex_plugin or has_hooks
 
 
 version_dirs = sorted(
@@ -104,6 +116,16 @@ for child in plugin_root.iterdir():
 PY
 }
 
+# Refresh the plugin cache's own `current` alias and drop orphaned version dirs. Cache-internal:
+# no project file is read or copied (used by sb-prerequisite-repair.sh, which also ships to Codex
+# installs and so must not name the Claude cache path itself).
+sb_claude_refresh_plugin_cache_alias() {
+  local cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+  [[ -d "$cache_root" ]] || return 0
+  sb_plugin_cache_prune_orphaned_dirs "$cache_root" 2>/dev/null || true
+  sb_plugin_cache_refresh_current_alias "$cache_root" 2>/dev/null || true
+}
+
 # Ensure Claude Silver Bullet plugin cache has current alias + hooks (dev checkout).
 sb_claude_ensure_plugin_cache_ready() {
   local repo_root="${1:-}"
@@ -117,7 +139,10 @@ sb_claude_ensure_plugin_cache_ready() {
   latest="$(sb_plugin_cache_latest_version_dir "$cache_root" 2>/dev/null || true)"
   [[ -n "$latest" ]] || return 1
 
-  if [[ -n "$repo_root" && -d "${repo_root}/hooks" ]]; then
+  # Copy hooks only from a Silver Bullet source checkout (R2-12/R8-07): a project that merely
+  # has a hooks/ directory must never overwrite the installed plugin.
+  if [[ -n "$repo_root" && -d "${repo_root}/hooks" ]] \
+     && [[ "$(jq -r '.name // ""' "${repo_root}/.claude-plugin/plugin.json" 2>/dev/null || true)" == "silver-bullet" ]]; then
     install -d -m 755 "${latest}/hooks"
     rsync -a --chmod=Du=rwx,go=rx,Fu=rx,Fgo=rx \
       "${repo_root}/hooks/" "${latest}/hooks/"

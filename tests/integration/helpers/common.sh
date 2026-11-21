@@ -354,7 +354,8 @@ EOF
 }
 
 write_release_ci_runs_marker() {
-  export GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPDIR_TEST" rev-parse HEAD 2>/dev/null || echo unknown)" '[
+  export GH_RUN_LIST_OVERRIDE
+  GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPDIR_TEST" rev-parse HEAD 2>/dev/null || echo unknown)" '[
     {workflowName:"CI", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:01Z"},
     {workflowName:"Secret Scan", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:02Z"},
     {workflowName:"Deploy to GitHub Pages", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:03Z"}
@@ -362,7 +363,20 @@ write_release_ci_runs_marker() {
 }
 
 # --- Hook runners ---
+# Once the install has made its key (the recorder does it on the first recorded skill) every
+# project needs a record, and a state the recorder did not seal counts for nothing
+# (hooks/lib/integrity.sh). These scenarios write their fixtures directly, so each gate call is
+# preceded by what a session start does: seal the state as it is and record the project as it is.
+# shellcheck source=hooks/lib/integrity.sh
+source "${REPO_ROOT}/hooks/lib/integrity.sh"
+_integ_session() {
+  [[ -f "${SB_RUNTIME_STATE_DIR}/seal.key" && -d "${TMPDIR_TEST:-}" ]] || return 0
+  if [[ -n "${TMPSTATE:-}" && -f "$TMPSTATE" ]]; then sb_state_seal_write "$TMPSTATE"; fi
+  sb_integrity_baseline "$(cd "$TMPDIR_TEST" && pwd -P)" session
+  sb_integrity_forget
+}
 run_dev_cycle_edit() {
+  _integ_session
   local event="$1" filepath="$2"
   local old_str="${3:-old content here long enough to exceed the small-edit bypass threshold value}"
   local new_str="${4:-new content here long enough to exceed the small-edit bypass threshold value}"
@@ -373,6 +387,7 @@ run_dev_cycle_edit() {
 }
 
 run_completion_audit() {
+  _integ_session
   local event="$1" cmd="$2"
   local input
   input=$(jq -n --arg e "$event" --arg c "$cmd" \
@@ -381,6 +396,7 @@ run_completion_audit() {
 }
 
 run_stop_check() {
+  _integ_session
   local event="${1:-Stop}"
   local input
   input=$(jq -n --arg e "$event" '{hook_event_name: $e}')
@@ -410,11 +426,13 @@ run_record_skill() {
 }
 
 run_prompt_reminder() {
+  _integ_session
   local input='{"hook_event_name":"UserPromptSubmit","prompt":"hello"}'
   ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/prompt-reminder.sh" 2>/dev/null )
 }
 
 run_ci_status_check() {
+  _integ_session
   local event="$1" cmd="$2"
   local input
   input=$(jq -n --arg e "$event" --arg c "$cmd" \
@@ -438,7 +456,7 @@ run_session_start() {
 is_blocked() {
   local output="$1"
   [[ -z "$output" ]] && return 1
-  printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"'
+  grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"' <<<"$output"
 }
 
 assert_blocked() {
@@ -461,7 +479,7 @@ assert_allowed() {
 
 assert_contains() {
   local label="$1" output="$2" needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     PASS=$((PASS + 1)); printf 'PASS: %s\n' "$label"
   else
     FAIL=$((FAIL + 1)); printf 'FAIL: %s (expected "%s" in: %s)\n' "$label" "$needle" "$output"
@@ -470,7 +488,7 @@ assert_contains() {
 
 assert_not_contains() {
   local label="$1" output="$2" needle="$3"
-  if ! printf '%s' "$output" | grep -q "$needle"; then
+  if ! grep -q "$needle" <<<"$output"; then
     PASS=$((PASS + 1)); printf 'PASS: %s\n' "$label"
   else
     FAIL=$((FAIL + 1)); printf 'FAIL: %s (unexpected "%s" in: %s)\n' "$label" "$needle" "$output"
@@ -525,6 +543,7 @@ run_semantic_compress() {
 }
 
 run_dev_cycle_bash() {
+  _integ_session
   local event="$1" cmd="$2"
   local input
   input=$(jq -n --arg e "$event" --arg c "$cmd" \

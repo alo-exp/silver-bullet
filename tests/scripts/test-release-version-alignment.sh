@@ -25,8 +25,6 @@ echo "[release-version-alignment]"
 
 for manifest in \
   "$REPO_ROOT/.claude-plugin/plugin.json" \
-  "$REPO_ROOT/.cursor-plugin/plugin.json" \
-  "$REPO_ROOT/plugins/silver-bullet/.cursor-plugin/plugin.json" \
   "$REPO_ROOT/plugins/silver-bullet/.codex-plugin/plugin.json"
 do
   name="$(basename "$(dirname "$manifest")")/$(basename "$manifest")"
@@ -35,7 +33,6 @@ done
 
 for marketplace in \
   "$REPO_ROOT/.claude-plugin/marketplace.json" \
-  "$REPO_ROOT/.cursor-plugin/marketplace.json" \
   "$REPO_ROOT/.agents/plugins/marketplace.json"
 do
   name="$(basename "$marketplace")"
@@ -43,10 +40,42 @@ do
     "$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$marketplace")"
 done
 
+# R13-02: every distribution entry installs the release tag, never a branch. A sha, when
+# present, is a full commit id, and it is the tag's commit whenever the tag is known here.
+TAG_COMMIT="$(git -C "$REPO_ROOT" rev-parse --verify --quiet "refs/tags/v${PKG_V}^{commit}" 2>/dev/null || true)"
+check_pin() {
+  local desc="$1" ref="$2" sha="$3"
+  check_eq "$desc is pinned to v$PKG_V" "v$PKG_V" "$ref"
+  if [[ "$sha" == "null" || -z "$sha" ]]; then
+    return 0
+  fi
+  if [[ "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+    check_eq "$desc sha is a full commit id" ok ok
+  else
+    check_eq "$desc sha is a full commit id" "40 hex digits" "$sha"
+  fi
+  if [[ -n "$TAG_COMMIT" ]]; then
+    check_eq "$desc sha is the v$PKG_V tag commit" "$TAG_COMMIT" "$sha"
+  fi
+}
+for marketplace in \
+  "$REPO_ROOT/.claude-plugin/marketplace.json" \
+  "$REPO_ROOT/.agents/plugins/marketplace.json"
+do
+  entry='.plugins[] | select(.name=="silver-bullet") | .source'
+  check_pin "$(basename "$marketplace") silver-bullet source" \
+    "$(jq -r "$entry | .ref" "$marketplace")" "$(jq -r "$entry | .sha" "$marketplace")"
+done
+for runtime in claude codex; do
+  check_eq "agent-plugins catalog $runtime ref pins the release tag" "v$PKG_V" \
+    "$(jq -r --arg runtime "$runtime" '.plugins[] | select(.name=="silver-bullet") | .[$runtime].ref' \
+      "$REPO_ROOT/scripts/lib/agent-plugins-catalog.json")"
+done
+
 check_eq "config template config_version matches package.json" "$PKG_V" "$CFG_V"
 check_eq "Codex plugin config_version matches package.json" "$PKG_V" "$CODEX_CFG_V"
 
-for runtime in cursor claude codex; do
+for runtime in claude codex; do
   catalog_version="$(jq -r --arg runtime "$runtime" \
     '.plugins[] | select(.name=="silver-bullet") | .[$runtime].version' \
     "$REPO_ROOT/scripts/lib/agent-plugins-catalog.json")"

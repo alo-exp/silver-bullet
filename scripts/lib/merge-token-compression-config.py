@@ -7,10 +7,15 @@ import argparse
 import json
 import os
 import pathlib
+import re
 import shutil
 import sys
+from typing import Any
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "global-toolstack"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+
+import sb_host_config as sbc  # noqa: E402
 
 from five_tool_instances import (  # noqa: E402
     disable_claude_native_context_mode,
@@ -42,96 +47,47 @@ LEANCTX_ENV_BASE = {"LEANCTX_MCP_TOOL_PREFIX": "lctx_"}
 
 
 def load_json(path: pathlib.Path, default: dict | None = None) -> dict:
+    """The JSON object in PATH; DEFAULT when it is absent; sbc.ConfigError (a ValueError) when
+    it cannot be parsed, in which case the caller leaves the file alone."""
     if path.is_file():
-        with path.open(encoding="utf-8") as handle:
-            return json.load(handle)
+        return sbc.read_json(path)
     return default or {}
 
 
+def json_member(data: dict, key: str, kind: type, path: pathlib.Path) -> Any:
+    """Return ``data[key]`` as ``kind`` (dict or list).
+
+    A missing, null or empty ({} / []) value is replaced by a fresh ``kind()``.
+    Any other value of the wrong type is user data we must not destroy, so raise
+    before anything is written.
+    """
+    value = data.get(key)
+    if isinstance(value, kind):
+        return value
+    if value is None or value == {} or value == []:
+        value = kind()
+        data[key] = value
+        return value
+    label = "object" if kind is dict else "array"
+    raise ValueError(f"{path}: {key} must be a JSON {label}")
+
+
 def save_json(path: pathlib.Path, data: dict, dry_run: bool) -> None:
+    """Write DATA atomically, through a symlink, keeping the mode and the previous content in
+    <file>.sb-backup; nothing is written when the bytes would not change."""
     if dry_run:
         print(f"DRY-RUN: would write {path}")
         return
-    path.parent.mkdir(parents=True, exist_ok=True)
-    backup_file(path)
-    with path.open("w", encoding="utf-8") as handle:
-        json.dump(data, handle, indent=2)
-        handle.write("\n")
-
-
-def backup_file(path: pathlib.Path) -> None:
-    if path.is_file():
-        shutil.copy2(path, path.with_suffix(path.suffix + ".bak"))
-
-
-def hook_command(entry: dict) -> str:
-    return str(entry.get("command", ""))
-
-
-def hook_entry_key(entry: dict) -> tuple[str, str]:
-    """Dedupe key: same command with different matchers must both be kept."""
-    return (hook_command(entry), str(entry.get("matcher", "")))
-
-
-def merge_hook_entries(existing: list, new_entries: list) -> tuple[list, int]:
-    merged = list(existing)
-    added = 0
-    for entry in new_entries:
-        cmd = hook_command(entry)
-        if not cmd:
-            continue
-        new_key = hook_entry_key(entry)
-        if any(hook_entry_key(item) == new_key for item in merged):
-            continue
-        merged.append(entry)
-        added += 1
-    return merged, added
-
-
-def reorder_pretooluse_rtk_before_cm(hooks: dict) -> bool:
-    """Ensure rtk hook cursor runs before context-mode pretooluse on preToolUse."""
-    pretool = hooks.get("preToolUse")
-    if not isinstance(pretool, list):
-        return False
-    rtk_idx = cm_idx = None
-    for idx, entry in enumerate(pretool):
-        cmd = hook_command(entry)
-        if cmd == "rtk hook cursor":
-            rtk_idx = idx
-        elif "context-mode hook cursor pretooluse" in cmd:
-            cm_idx = idx
-    if rtk_idx is None or cm_idx is None or rtk_idx < cm_idx:
-        return False
-    rtk_entry = pretool.pop(rtk_idx)
-    insert_at = cm_idx - 1 if cm_idx > rtk_idx else cm_idx
-    pretool.insert(insert_at, rtk_entry)
-    hooks["preToolUse"] = pretool
-    return True
-
-
-def merge_hooks_file(target: pathlib.Path, fragments: list[dict], dry_run: bool) -> int:
-    settings = load_json(target, {"version": 1, "hooks": {}})
-    settings.setdefault("version", 1)
-    hooks = settings.setdefault("hooks", {})
-    total_added = 0
-    for fragment in fragments:
-        for event, entries in fragment.get("hooks", {}).items():
-            event_list = hooks.setdefault(event, [])
-            merged, added = merge_hook_entries(event_list, entries)
-            hooks[event] = merged
-            total_added += added
-    reorder_pretooluse_rtk_before_cm(hooks)
-    save_json(target, settings, dry_run)
-    return total_added
+    sbc.write_json(path, data)
 
 
 def merge_codex_hooks_file(target: pathlib.Path, fragment: dict, dry_run: bool) -> int:
     """Merge Codex hooks.json (nested hooks[].hooks structure)."""
     settings = load_json(target, {"hooks": {}})
-    hooks = settings.setdefault("hooks", {})
+    hooks = json_member(settings, "hooks", dict, target)
     added = 0
     for event, groups in fragment.get("hooks", {}).items():
-        event_list = hooks.setdefault(event, [])
+        event_list = json_member(hooks, event, list, target)
         for group in groups:
             cmd_entries = group.get("hooks", [])
             new_cmds = [
@@ -151,21 +107,12 @@ def merge_codex_hooks_file(target: pathlib.Path, fragment: dict, dry_run: bool) 
                 if any(c in existing_cmds for c in new_cmds):
                     found = True
                     break
-            if not found:
+            if not found and group not in event_list:
                 event_list.append(group)
                 added += 1
-    save_json(target, settings, dry_run)
+    if added or not target.is_file():
+        save_json(target, settings, dry_run)
     return added
-
-
-def merge_mcp_server(target: pathlib.Path, server_name: str, server_cfg: dict, dry_run: bool) -> bool:
-    data = load_json(target, {"mcpServers": {}})
-    servers = data.setdefault("mcpServers", {})
-    if server_name in servers:
-        return False
-    servers[server_name] = server_cfg
-    save_json(target, data, dry_run)
-    return True
 
 
 def merge_shared_claude_context_mode(
@@ -173,7 +120,7 @@ def merge_shared_claude_context_mode(
 ) -> bool:
     """Keep Claude's Context Mode server canonical and manifest-backed."""
     data = load_json(target, {"mcpServers": {}})
-    servers = data.setdefault("mcpServers", {})
+    servers = json_member(data, "mcpServers", dict, target)
     changed = False
     existing = servers.get("context-mode")
     legacy = servers.get("user-context-mode")
@@ -198,20 +145,6 @@ def merge_shared_claude_context_mode(
     return changed
 
 
-def merge_cli_allowlist(target: pathlib.Path, allow_entries: list[str], dry_run: bool) -> int:
-    data = load_json(target, {"version": 1, "permissions": {"allow": [], "deny": []}})
-    data.setdefault("version", 1)
-    perms = data.setdefault("permissions", {})
-    allow = perms.setdefault("allow", [])
-    added = 0
-    for entry in allow_entries:
-        if entry not in allow:
-            allow.append(entry)
-            added += 1
-    save_json(target, data, dry_run)
-    return added
-
-
 def copy_file(src: pathlib.Path, dest: pathlib.Path, dry_run: bool) -> bool:
     if not src.is_file():
         return False
@@ -223,10 +156,7 @@ def copy_file(src: pathlib.Path, dest: pathlib.Path, dry_run: bool) -> bool:
     if dry_run:
         print(f"DRY-RUN: would copy {src} -> {dest}")
         return True
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    backup_file(dest)
-    shutil.copy2(src, dest)
-    return True
+    return sbc.write_atomic(dest, src.read_bytes())
 
 
 def stage_agents_template(src: pathlib.Path, dest: pathlib.Path, dry_run: bool) -> str:
@@ -247,7 +177,7 @@ def stage_agents_template(src: pathlib.Path, dest: pathlib.Path, dry_run: bool) 
     if dry_run:
         print(f"DRY-RUN: would stage {src} -> {staged} (existing {dest} kept)")
         return "staged"
-    shutil.copy2(src, staged)
+    sbc.write_atomic(staged, src.read_bytes(), backup=False)
     print(
         f"NOTICE: kept existing {dest}; Context Mode template staged at {staged}. "
         f"Merge any new rules into {dest} by hand.",
@@ -279,10 +209,7 @@ def write_opencode_rtk_plugin(
     if dry_run:
         print(f"DRY-RUN: would write {target}")
         return True
-    target.parent.mkdir(parents=True, exist_ok=True)
-    backup_file(target)
-    target.write_text(rendered, encoding="utf-8")
-    return True
+    return sbc.write_atomic(target, rendered.encode("utf-8"))
 
 
 def context_mode_pkg_root() -> pathlib.Path | None:
@@ -310,35 +237,9 @@ def context_mode_pkg_root() -> pathlib.Path | None:
     return None
 
 
-def context_mode_cursor_hooks_path(repo_root: pathlib.Path) -> pathlib.Path | None:
-    cm_pkg = context_mode_pkg_root()
-    if cm_pkg:
-        candidate = cm_pkg / "configs" / "cursor" / "hooks.json"
-        if candidate.is_file():
-            return candidate
-    bundled = repo_root / "scripts" / "lib" / "context-mode-cursor-hooks.json"
-    if bundled.is_file():
-        return bundled
-    return None
-
-
-def context_mode_extended_cursor_hooks() -> dict:
-    return {
-        "hooks": {
-            "sessionStart": [
-                {
-                    "command": "context-mode hook cursor sessionstart",
-                    "matcher": "startup|clear|compact",
-                }
-            ],
-            "afterAgentResponse": [
-                {"command": "context-mode hook cursor afteragentresponse"}
-            ],
-        }
-    }
-
-
 def merge_codex_config_toml(target: pathlib.Path, dry_run: bool) -> bool:
+    """Add [mcp_servers.context-mode] to Codex's config.toml unless the table exists; the file is
+    edited structurally and written atomically (a config that does not parse is refused)."""
     cm_pkg = context_mode_pkg_root()
     manifest = ensure_global_instances(dry_run=dry_run)
     if not cm_pkg:
@@ -346,121 +247,104 @@ def merge_codex_config_toml(target: pathlib.Path, dry_run: bool) -> bool:
     snippet_path = cm_pkg / "configs" / "codex" / "config.toml"
     if not snippet_path.is_file():
         return False
-    marker = "[mcp_servers.context-mode]"
-    if target.is_file() and marker in target.read_text(encoding="utf-8"):
+    doc = sbc.read_toml(target)
+    if doc.headers(("mcp_servers", "context-mode")):
         return False
-    spec = mcp_server_spec(ensure_global_instances(dry_run=dry_run), "context_mode")
-    snippet = (
-        f"{marker}\n"
-        f"command = {json.dumps(spec['command'])}\n"
-        f"args = {json.dumps(spec['args'])}\n"
+    spec = mcp_server_spec(manifest, "context_mode")
+    doc.append_tables(
+        [
+            (
+                ("mcp_servers", "context-mode"),
+                [
+                    ("command", json.dumps(spec["command"], ensure_ascii=False)),
+                    ("args", json.dumps(spec["args"], ensure_ascii=False)),
+                ],
+            )
+        ]
     )
     if dry_run:
         print(f"DRY-RUN: would append context-mode block to {target}")
         return True
-    target.parent.mkdir(parents=True, exist_ok=True)
-    if target.is_file():
-        backup_file(target)
-    with target.open("a", encoding="utf-8") as handle:
-        if target.stat().st_size > 0:
-            handle.write("\n")
-        handle.write(snippet)
-        if not snippet.endswith("\n"):
-            handle.write("\n")
+    sbc.write_toml(target, doc)
     return True
 
 
+def _hermes_child_block(indent: str, marker: str, end_marker: str) -> str:
+    step = indent + "  "
+    return (
+        f"{indent}{marker}\n"
+        f"{indent}context-mode:\n"
+        f"{step}command: context-mode\n"
+        f"{step}args: [mcp]\n"
+        f"{step}env: {{}}\n"
+        f"{indent}{end_marker}"
+    )
+
+
+def _hermes_child_indent(lines: list[str]) -> str | None:
+    """Indent of the first child under ``mcp_servers:``; None if we cannot extend it.
+
+    Defaults to two spaces when the key has no children. Block sequences and
+    tab indentation are refused because inserting a mapping would corrupt them.
+    """
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if line[0] not in " \t":
+            return None if stripped.startswith("-") else "  "
+        indent = line[: len(line) - len(line.lstrip(" \t"))]
+        if "\t" in indent or stripped.startswith("-"):
+            return None
+        return indent
+    return "  "
+
+
 def merge_hermes_context_mode_mcp(config_path: pathlib.Path, dry_run: bool) -> bool:
+    """Register Context Mode under Hermes ``mcp_servers`` without duplicating the key.
+
+    Returns False (and writes nothing) when Context Mode is already configured,
+    or when ``mcp_servers`` is in a form we cannot safely extend (inline value,
+    quoted key, block sequence, tab indentation).  Line endings are preserved.
+    """
     marker = "# === rtk-cm context-mode MCP block ==="
     end_marker = "# === end rtk-cm context-mode MCP block ==="
-    block = f"""{marker}
-mcp_servers:
-  context-mode:
-    command: context-mode
-    args: [mcp]
-    env: {{}}
-{end_marker}
-"""
-    if config_path.is_file():
-        text = config_path.read_text(encoding="utf-8")
-        if "context-mode:" in text and "mcp_servers:" in text:
+    original = config_path.read_bytes().decode("utf-8") if config_path.is_file() else ""
+    crlf = "\r\n" in original
+    text = original.replace("\r\n", "\n")
+    if marker in text or re.search(r"^[ \t]+context-mode:", text, re.M):
+        return False
+    if re.search(r"""^["']mcp_servers["'][ \t]*:""", text, re.M):
+        return False
+    header = re.search(r"^mcp_servers:[ \t]*(#.*)?$", text, re.M)
+    if header is None and re.search(r"^mcp_servers:", text, re.M):
+        return False  # inline value such as ``mcp_servers: {}``
+    indent = "  "
+    if header is not None:
+        found = _hermes_child_indent(text[header.end():].split("\n")[1:])
+        if found is None:
             return False
-        if marker in text:
-            return False
+        indent = found
     if dry_run:
         print(f"DRY-RUN: would append context-mode MCP to {config_path}")
         return True
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    if config_path.is_file():
-        backup_file(config_path)
-        with config_path.open("a", encoding="utf-8") as handle:
-            handle.write("\n")
-            handle.write(block)
+    if header is not None:
+        rest = text[header.end():]
+        child = _hermes_child_block(indent, marker, end_marker)
+        updated = text[: header.end()] + "\n" + child + (rest if rest else "\n")
     else:
-        config_path.write_text(f"plugins:\n  enabled: []\n\n{block}", encoding="utf-8")
+        block = f"{marker}\nmcp_servers:\n" + _hermes_child_block("  ", marker, end_marker).split(
+            "\n", 1
+        )[1].replace(f"  {end_marker}", end_marker) + "\n"
+        if config_path.is_file():
+            updated = text + "\n" + block
+        else:
+            updated = f"plugins:\n  enabled: []\n\n{block}"
+    if crlf:
+        updated = updated.replace("\n", "\r\n")
+    sbc.write_atomic(config_path, updated.encode("utf-8"))
     return True
-
-
-def optimize_cursor(repo_root: pathlib.Path, dry_run: bool, skip_cli_config: bool = False) -> dict:
-    cursor_home = pathlib.Path.home() / ".cursor"
-    hooks_path = cursor_home / "hooks.json"
-    mcp_path = cursor_home / "mcp.json"
-    cli_config_path = cursor_home / "cli-config.json"
-    global_rules = cursor_home / "rules"
-    project_rules = repo_root / ".cursor" / "rules"
-
-    cm_pkg = context_mode_pkg_root()
-    manifest = ensure_global_instances(dry_run=dry_run)
-    fragments: list[dict] = []
-    cm_hooks = context_mode_cursor_hooks_path(repo_root)
-    if cm_hooks:
-        fragments.append(load_json(cm_hooks))
-    fragments.append(context_mode_extended_cursor_hooks())
-
-    hooks_added = merge_hooks_file(hooks_path, fragments, dry_run) if fragments else 0
-
-    mcp_added = False
-    if cm_pkg:
-        cm_mcp = cm_pkg / "configs" / "cursor" / "mcp.json"
-        if cm_mcp.is_file():
-            mcp_data = load_json(cm_mcp)
-            servers = mcp_data.get("mcpServers", {})
-            for name, cfg in servers.items():
-                if name in ("context-mode", "user-context-mode"):
-                    cfg = mcp_server_spec(manifest, "context_mode")
-                if merge_mcp_server(mcp_path, name, cfg, dry_run):
-                    mcp_added = True
-
-    allow_added = 0
-    if not skip_cli_config:
-        allowlist_path = repo_root / "scripts" / "lib" / "cursor-cli-allowlist.json"
-        allow_data = load_json(allowlist_path, {"allow": []})
-        allow_added = merge_cli_allowlist(cli_config_path, allow_data.get("allow", []), dry_run)
-
-    rules_copied = 0
-    rule_sources = [
-        (repo_root / "templates" / "cursor" / "token-compression-enforcement.mdc", global_rules / "token-compression-enforcement.mdc"),
-        (repo_root / ".cursor" / "rules" / "context-mode.mdc", global_rules / "context-mode.mdc"),
-    ]
-    if cm_pkg:
-        rule_sources.insert(
-            1,
-            (cm_pkg / "configs" / "cursor" / "context-mode.mdc", global_rules / "context-mode.mdc"),
-        )
-    for src, dest in rule_sources:
-        if copy_file(src, dest, dry_run):
-            rules_copied += 1
-        if src.name == "context-mode.mdc":
-            copy_file(src, project_rules / "context-mode.mdc", dry_run)
-
-    return {
-        "host": "cursor",
-        "status": "supported",
-        "hooks_added": hooks_added,
-        "mcp_added": mcp_added,
-        "allow_added": allow_added,
-        "rules_copied": rules_copied,
-    }
 
 
 def optimize_codex(dry_run: bool) -> dict:
@@ -520,7 +404,6 @@ def optimize_opencode(
     opencode_home = pathlib.Path.home() / ".config" / "opencode"
     cfg_path = opencode_home / "opencode.json"
     cm_pkg = context_mode_pkg_root()
-    manifest = ensure_global_instances(dry_run=dry_run)
 
     data = load_json(
         cfg_path,
@@ -531,10 +414,10 @@ def optimize_opencode(
         },
     )
     data.setdefault("$schema", "https://opencode.ai/config.json")
-    plugins = data.setdefault("plugin", [])
-    if not isinstance(plugins, list):
-        plugins = []
-        data["plugin"] = plugins
+    # Validate the user's config before any side effect (manifest, rtk.ts).
+    plugins = json_member(data, "plugin", list, cfg_path)
+    mcp = json_member(data, "mcp", dict, cfg_path)
+    manifest = ensure_global_instances(dry_run=dry_run)
     configure_rtk = not context_mode_only
     configure_context_mode = not rtk_only
     plugin_added = False
@@ -559,10 +442,6 @@ def optimize_opencode(
             dry_run,
         )
 
-    mcp = data.setdefault("mcp", {})
-    if not isinstance(mcp, dict):
-        mcp = {}
-        data["mcp"] = mcp
     mcp_added = False
     if cm_plugin_active:
         mcp_added = opencode_remove_context_mode_mcp(mcp) or mcp_added
@@ -645,12 +524,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Merge RTK + Context Mode global host config")
     parser.add_argument(
         "--host",
-        choices=["cursor", "codex", "claude", "opencode", "hermes", "goose", "all"],
-        default="cursor",
+        choices=["codex", "claude", "opencode", "hermes", "goose", "all"],
+        default="claude",
     )
     parser.add_argument("--repo-root", default=".")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--skip-cli-config", action="store_true")
     parser.add_argument("--rtk-only", action="store_true", help="Only materialize OpenCode's RTK plugin")
     parser.add_argument("--context-mode-only", action="store_true", help="Only materialize OpenCode Context Mode")
     args = parser.parse_args()
@@ -660,13 +538,12 @@ def main() -> int:
     repo_root = pathlib.Path(args.repo_root).resolve()
     results: list[dict] = []
     hosts = (
-        ["cursor", "codex", "claude", "opencode", "hermes", "goose"]
+        ["codex", "claude", "opencode", "hermes", "goose"]
         if args.host == "all"
         else [args.host]
     )
 
     optimizers = {
-        "cursor": lambda: optimize_cursor(repo_root, args.dry_run, args.skip_cli_config),
         "codex": lambda: optimize_codex(args.dry_run),
         "claude": lambda: optimize_claude(args.dry_run),
         "opencode": lambda: optimize_opencode(
