@@ -34,6 +34,16 @@ hung_setup() { # batch alive, log idle 6000s (hung), row 5 running with a fresh-
   live_batch 7000
   echo "1234 agent" >"$P/pgrep.claude-interactive"
   echo "1234 agent" >"$P/pgrep.codex-interactive"
+  # the batch runner (7000) has these descendants; 7005 is a grandchild; 1234 (the pgrep -f pattern
+  # hit) is NOT in its tree, so it must never be signalled (R14-10)
+  printf '7001\n7002\n7003\n7004\n' >"$P/pgrep.-P 7000"
+  echo "7005" >"$P/pgrep.-P 7004"
+  echo "expect scripts/claude-interactive-invoke.expect" >"$P/ps.7001.command"
+  echo "/usr/local/bin/claude --model sonnet" >"$P/ps.7002.command"
+  echo "expect scripts/codex-interactive-invoke.expect" >"$P/ps.7003.command"
+  echo "vim notes.txt" >"$P/ps.7004.command"
+  echo "/opt/claude --model haiku" >"$P/ps.7005.command"
+  f4_alive 7001 7002 7003 7005
   idle_state 6000
   printf 'abc' >"$R/.e2e-row5-attempt.log"
   touch -d "@$((NOW - 7000))" "$R/.e2e-row5-attempt.log"
@@ -42,22 +52,33 @@ hung_setup
 f4_mon_run
 calls="$(cat "$F4_CALLS")"
 assert_contains "hung logged" "$(cat "$POLL")" "HUNG: killing claude children after 6000s idle"
-assert_contains "claude: TERM expect wrapper" "$calls" "pkill -TERM -f claude-interactive-invoke\\.expect"
-assert_contains "claude: TERM claude binary" "$calls" "pkill -TERM -f /claude --model"
-assert_contains "claude: KILL expect wrapper" "$calls" "pkill -KILL -f claude-interactive-invoke\\.expect"
-assert_contains "claude: KILL claude binary" "$calls" "pkill -KILL -f /claude --model"
+assert_contains "claude: TERM expect wrapper by exact pid" "$calls" "kill -TERM 7001"
+assert_contains "claude: TERM claude binary by exact pid" "$calls" "kill -TERM 7002"
+assert_contains "claude: TERM reaches a grandchild agent" "$calls" "kill -TERM 7005"
+assert_contains "claude: KILL survivors by exact pid" "$calls" "kill -KILL 7001"
 assert_contains "grace sleep between TERM and KILL" "$calls" "sleep 3"
-assert_not_contains "claude host never pkills the codex wrapper" "$calls" "codex-interactive-invoke"
-assert_eq "TERM precedes KILL" "TERM" "$(grep -m1 '^pkill' "$F4_CALLS" | awk '{print $2}' | sed 's/^-//')"
+assert_not_contains "no process is ever signalled by pattern" "$calls" "pkill"
+assert_not_contains "claude host leaves the codex wrapper alone" "$calls" "kill -TERM 7003"
+assert_not_contains "an unrelated child is never TERMed" "$calls" "kill -TERM 7004"
+assert_not_contains "an unrelated child is never KILLed" "$calls" "kill -KILL 7004"
+assert_not_contains "a look-alike outside the batch tree is never signalled" "$calls" "kill -TERM 1234"
+assert_eq "TERM precedes KILL" "TERM" "$(grep -m1 -E '^kill -(TERM|KILL) ' "$F4_CALLS" | awk '{print $2}' | sed 's/^-//')"
 assert_contains "live batch is not restarted" "$(cat "$STATE")" "LAST_GROWTH_EPOCH=$NOW"
 assert_file_absent "alive batch -> no restart" "$P/batch-ran"
 
 hung_setup
 f4_mon_run SB_E2E_LIVE_RUNTIME=codex
 calls="$(cat "$F4_CALLS")"
-assert_contains "codex: TERM wrapper" "$calls" "pkill -TERM -f codex-interactive-invoke\\.expect"
-assert_contains "codex: KILL wrapper" "$calls" "pkill -KILL -f codex-interactive-invoke\\.expect"
-assert_not_contains "codex host leaves claude alone" "$calls" "pkill -TERM -f /claude"
+assert_contains "codex: TERM wrapper by exact pid" "$calls" "kill -TERM 7003"
+assert_contains "codex: KILL survivor by exact pid" "$calls" "kill -KILL 7003"
+assert_not_contains "codex host leaves claude alone" "$calls" "kill -TERM 7001"
+
+# a batch pid file that is missing or not numeric signals nothing
+hung_setup
+echo "not-a-pid" >"$BPID"
+f4_mon_run
+assert_not_contains "non-numeric batch pid: no agent signalled" "$(cat "$F4_CALLS")" "kill -TERM 700"
+assert_not_contains "non-numeric batch pid: no pkill" "$(cat "$F4_CALLS")" "pkill"
 
 # hung while a live-test driver runs: no restart, clock reset
 hung_setup
@@ -70,18 +91,18 @@ assert_file_absent "no batch while live driver active" "$P/batch-ran"
 
 # hung and the batch pid file vanished / points at a dead process: restart incomplete rows
 hung_setup
-echo 'rm -f "$BPID_FOR_HOOK"' >"$P/on-pkill"
+echo 'rm -f "$BPID_FOR_HOOK"' >"$P/on-sleep.3"
 f4_mon_run BPID_FOR_HOOK="$BPID"
 assert_contains "pid file gone -> hung restart" "$(batch_ran)" "rows=[5 21 22]"
 assert_contains "hung restart logged" "$(cat "$POLL")" "ACTION: starting batch rows: 5 21 22"
 
 hung_setup
-echo 'echo 424242 >"$BPID_FOR_HOOK"' >"$P/on-pkill"
+echo 'echo 424242 >"$BPID_FOR_HOOK"' >"$P/on-sleep.3"
 f4_mon_run BPID_FOR_HOOK="$BPID"
 assert_contains "dead batch pid -> hung restart" "$(batch_ran)" "rows=[5 21 22]"
 
 hung_setup
-echo 'rm -f "$BPID_FOR_HOOK"' >"$P/on-pkill"
+echo 'rm -f "$BPID_FOR_HOOK"' >"$P/on-sleep.3"
 f4_mon_run BPID_FOR_HOOK="$BPID" SB_E2E_MONITOR_AUTO_RESTART=0
 assert_contains "auto-restart off defers the hung restart" "$(cat "$POLL")" "defer hung restart: SB_E2E_MONITOR_AUTO_RESTART=0"
 assert_file_absent "nothing started" "$P/batch-ran"
@@ -91,24 +112,24 @@ hung_setup
 idle_state 5400
 f4_mon_run
 assert_contains "idle == HUNG_SEC is hung" "$(cat "$POLL")" "HUNG: killing claude children after 5400s idle"
-assert_contains "idle == HUNG_SEC kills" "$(cat "$F4_CALLS")" "pkill -TERM"
+assert_contains "idle == HUNG_SEC kills" "$(cat "$F4_CALLS")" "kill -TERM 7001"
 hung_setup
 idle_state 5399
 f4_mon_run
 assert_contains "idle == HUNG_SEC-1 still stalls" "$(cat "$POLL")" "STALL: row=5 idle=5399s"
 assert_not_contains "idle == HUNG_SEC-1 is not hung" "$(cat "$POLL")" "HUNG:"
-assert_not_contains "idle == HUNG_SEC-1 kills nothing" "$(cat "$F4_CALLS")" "pkill"
+assert_not_contains "idle == HUNG_SEC-1 kills nothing" "$(cat "$F4_CALLS")" "kill -TERM 700"
 
 # stall without hang kills nothing; thresholds are configurable
 hung_setup
 idle_state 3000
 f4_mon_run
 assert_contains "stall logged" "$(cat "$POLL")" "STALL: row=5 idle=3000s (threshold 2700)"
-assert_not_contains "stall below hung kills nothing" "$(cat "$F4_CALLS")" "pkill"
+assert_not_contains "stall below hung kills nothing" "$(cat "$F4_CALLS")" "kill -TERM 700"
 hung_setup
 idle_state 3000
 f4_mon_run SB_E2E_MATRIX_HUNG_SEC=2800
-assert_contains "lowered hung threshold kills" "$(cat "$F4_CALLS")" "pkill -TERM"
+assert_contains "lowered hung threshold kills" "$(cat "$F4_CALLS")" "kill -TERM 7001"
 
 # --- agent child gone while the batch runs ---
 nochild_setup() { # attempt log is fresh (no stall) but the matrix log is idle 6000s and no agent runs
@@ -195,12 +216,15 @@ w="$(grep -o 'waiting [0-9]*s' "$POLL" | head -1 | tr -dc '0-9')"
 assert_match "network wait within 20..25" '^2[0-5]$' "$w"
 
 # --- fallbacks of failing helper commands ---
-# pkill matching nothing (status 1) and kill failing for an exited batch are tolerated
+# a failing kill (agent already gone) and an agent that exits on TERM are tolerated
 hung_setup
-echo 1 >"$P/pkill-status"
+f4_mon_run F4_KILL_FAIL=1
+assert_contains "a failing kill does not stop the hung handling" "$(cat "$POLL")" "poll 2026-01-01T00:00:00Z row=5 batch=RUNNING"
+assert_eq "both claude agent pids and the grandchild were signalled" "3" "$(grep -c '^kill -TERM' "$F4_CALLS")"
+hung_setup
+: >"$P/alive"; f4_alive 7000
 f4_mon_run
-assert_contains "pkill finding nothing does not stop the hung handling" "$(cat "$POLL")" "poll 2026-01-01T00:00:00Z row=5 batch=RUNNING"
-assert_eq "all four claude-host pkill calls were attempted" "4" "$(grep -c '^pkill' "$F4_CALLS")"
+assert_not_contains "agents that exited on TERM are not KILLed" "$(cat "$F4_CALLS")" "kill -KILL"
 h=codex
   hung_setup
   rm -f "$P/pgrep.codex-interactive" "$P/pgrep.claude-interactive"
@@ -227,7 +251,9 @@ live_batch 7000
 idle_state 6000
 printf 'abc' >"$R/.e2e-row5-attempt.log"
 touch -d "@$((NOW - 7000))" "$R/.e2e-row5-attempt.log"
-echo 'rm -f "$BPID_FOR_HOOK"' >"$P/on-pkill"
+printf '7001\n' >"$P/pgrep.-P 7000"
+echo "expect scripts/claude-interactive-invoke.expect" >"$P/ps.7001.command"
+echo 'rm -f "$BPID_FOR_HOOK"' >"$P/on-sleep.3"
 f4_mon_run BPID_FOR_HOOK="$BPID"
 assert_contains "nothing to restart is logged" "$(cat "$POLL")" "start_batch: no incomplete rows — skip"
 assert_file_absent "no batch started" "$P/batch-ran"

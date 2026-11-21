@@ -216,11 +216,23 @@ fi
 # --- Dual-role monitor + watch (driver-owned; replace stale harness children) ---
 start_harness_background() {
   local name="$1" pattern="$2" script="$3" pid_file="$4"
-  local pid
-  if pgrep -f "$pattern" >/dev/null 2>&1; then
-    echo "${name}: replacing existing instance (driver-owned harness)"
-    pkill -f "$pattern" 2>/dev/null || true
-    sleep 1
+  local pid old_pid old_cmd old_pgid
+  # Only the instance this driver started earlier (the PID in its own pid file, still running and
+  # still a $pattern process) is replaced, as its own process group. Another operator's or
+  # checkout's monitor that merely matches the pattern is never signalled (R14-10).
+  old_pid="$(tr -d '[:space:]' <"$pid_file" 2>/dev/null || true)"
+  if [[ "$old_pid" =~ ^[0-9]+$ ]] && kill -0 "$old_pid" 2>/dev/null; then
+    old_cmd="$(ps -p "$old_pid" -o command= 2>/dev/null || true)"
+    if [[ "$old_cmd" == *"$pattern"* ]]; then
+      echo "${name}: replacing existing instance (driver-owned harness)"
+      old_pgid="$(ps -p "$old_pid" -o pgid= 2>/dev/null | tr -d '[:space:]' || true)"
+      if [[ "$old_pgid" == "$old_pid" ]]; then
+        kill -TERM -- "-${old_pgid}" 2>/dev/null || true
+      else
+        kill -TERM "$old_pid" 2>/dev/null || true
+      fi
+      sleep 1
+    fi
   fi
   echo "${name}: starting in background..."
   pid="$(sb_run_detached -- bash "$script")"
