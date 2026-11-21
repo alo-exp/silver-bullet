@@ -20,7 +20,7 @@ roster() {
     [[ "${spec#*:}" == none ]] || printf '  %s: x\n' "${spec#*:}" >>"$MLOG"
   done
 }
-live_batch() { echo "${1:-7000}" >"$BPID"; f4_alive "${1:-7000}"; }
+live_batch() { f4_trust "$BPID" "${1:-7000}"; }
 # idle_state SECONDS: the matrix log has not grown for SECONDS, row attempt log is fresh
 idle_state() {
   printf 'LAST_GROWTH_EPOCH=%s\nLAST_GROWTH_BYTES=%s\nLAST_ROW_BYTES=3\n' "$((NOW - $1))" "$(wc -c <"$MLOG" | tr -d ' ')" >"$STATE"

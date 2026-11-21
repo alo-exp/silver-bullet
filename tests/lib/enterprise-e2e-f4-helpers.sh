@@ -115,6 +115,17 @@ F4_LAUNCH='echo $$ >"$F4_CTL/launched.pid"; exec bash "$@"'
 # f4_alive PID...: mark PIDs as alive for the fake `kill -0`.
 f4_alive() { printf '%s\n' "$@" >>"$F4_CTL/alive"; }
 
+# f4_trust PIDFILE PID: the identity record the process that started PID would have written
+# (scripts/lib/pid-identity.sh), plus the ps answers (start time, group) that match it; PID is alive.
+f4_trust() {
+  local file="$1" pid="$2"
+  printf '%s\n' "$pid" >"$file"
+  printf 'Mon Jan  1 00:00:00 2026\n' >"$F4_CTL/ps.$pid.lstart"
+  printf '%s\n' "$pid" >"$F4_CTL/ps.$pid.pgid"
+  printf '%s|%s|%s\n' "$pid" "$pid" "Mon Jan  1 00:00:00 2026" >"${file}.id"
+  f4_alive "$pid"
+}
+
 # f4_calls_has PATTERN: success when a recorded call matches the ERE.
 f4_calls_has() { grep -qE -- "$1" "$F4_CALLS"; }
 
@@ -180,7 +191,7 @@ EOS
 
 # f4_mon_reset: clean per-scenario state.
 f4_mon_reset() {
-  rm -rf "$MLOG" "$POLL" "$STATUS" "$BPID" "$MPID" "$LEDGER" "$STATE" "$R"/.e2e-row*.log "$F4_CTL"
+  rm -rf "$MLOG" "$POLL" "$STATUS" "$BPID" "${BPID}.id" "$MPID" "$LEDGER" "$STATE" "$R"/.e2e-row*.log "$F4_CTL"
   mkdir -p "$F4_CTL"
   : >"$F4_CALLS"
   unset F4_LOOP_MAX F4_NOW_STEP F4_NO_LOGBYTES F4_ENSURE_FAIL F4_ROWLOG_FAIL F4_RECONCILE_FAIL F4_KILL_FAIL F4_CD_FAIL_IN F4_PRINTF_FAIL_ONCE

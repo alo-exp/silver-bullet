@@ -20,8 +20,7 @@ roster() { # roster ROW:STATUS...  -> matrix log with rows in order
   done
 }
 live_batch() { # a running batch recorded in the pid file
-  echo "${1:-7000}" >"$BPID"
-  f4_alive "${1:-7000}"
+  f4_trust "$BPID" "${1:-7000}"
 }
 
 # --- completion and ledger reconciliation ---

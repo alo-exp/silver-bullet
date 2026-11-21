@@ -73,6 +73,8 @@ fi
 
 # shellcheck source=scripts/lib/matrix-quota.sh
 source "${SB_ROOT}/scripts/lib/matrix-quota.sh"
+# shellcheck source=scripts/lib/pid-identity.sh
+source "${SB_ROOT}/scripts/lib/pid-identity.sh"
 # shellcheck source=scripts/lib/enterprise-e2e-token-telemetry.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-token-telemetry.sh"
 
@@ -753,11 +755,13 @@ main() {
   if declare -f enterprise_e2e_matrix_batch_pid_file >/dev/null 2>&1; then
     _matrix_batch_pid_file="$(enterprise_e2e_matrix_batch_pid_file)"
     printf '%s\n' "$$" >"$_matrix_batch_pid_file"
+    # The runner records its own identity so a monitor can tell it from a reused pid (R14-10).
+    sb_pid_identity_write "$_matrix_batch_pid_file" "$$" || true
   fi
   setup_workspace
   if [[ -n "$_matrix_batch_pid_file" ]]; then
     # shellcheck disable=SC2064  # capture the pid-file path now, as intended
-    trap "rm -f '$_matrix_batch_pid_file'; cleanup_workspace" EXIT
+    trap "rm -f '$_matrix_batch_pid_file' '${_matrix_batch_pid_file}.id'; cleanup_workspace" EXIT
   else
     trap cleanup_workspace EXIT
   fi
