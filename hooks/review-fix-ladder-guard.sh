@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Review-fix ladder guard (SessionStart, UserPromptSubmit, PreToolUse and PostToolUse for the spawn and edit
 # tools, Stop). A thin wrapper: every decision is made by the plugin's own scripts/review-fix-ladder.py --hook,
-# run with `python3 -I` from the plugin root located relative to THIS file (never a project copy, R4-09).
+# run with `python3 -I -B` from the plugin root located relative to THIS file (never a project copy, R4-09).
 # Inert unless this session started or resumed a run (runtime pointer rfl-live.json), so a repo-shipped
 # .planning/rfl-* cannot trigger anything. While a run is live a guard failure fails closed.
 set -euo pipefail
@@ -79,7 +79,7 @@ trap 'rm -rf "$tmp_dir"' EXIT
 printf '%s' "$input" >"$tmp_dir/in"
 rc=0
 sb_run_hooked_command 8 "$tmp_dir/in" "$tmp_dir/out" "$tmp_dir/err" \
-  python3 -I "$resolver" --hook --project-root "$project_root" || rc=$?
+  python3 -I -B "$resolver" --hook --project-root "$project_root" || rc=$?
 
 if [[ "$rc" -ne 0 ]] || ! jq -e 'type == "object"' "$tmp_dir/out" >/dev/null 2>&1; then
   fail_closed "Review-fix ladder guard could not check this ${hook_event} event (exit ${rc}); run review-fix-ladder.py --status, or ask the user to end the run by typing: RFL ABORT <run-id>"
