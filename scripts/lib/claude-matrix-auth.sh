@@ -60,9 +60,39 @@ claude_matrix_auth_should_strip_settings() {
   return 1
 }
 
+# The octal mode of a file (GNU stat first, BSD stat as the fallback), 600 when neither answers.
+_claude_matrix_file_mode() {
+  local mode
+  mode="$(stat -c %a "$1" 2>/dev/null || true)"
+  if [[ ! "$mode" =~ ^[0-7]+$ ]]; then
+    mode="$(stat -f %Lp "$1" 2>/dev/null || true)"
+  fi
+  if [[ ! "$mode" =~ ^[0-7]+$ ]]; then
+    mode=600
+  fi
+  printf '%s\n' "$mode"
+}
+
+# A SIGINT/SIGTERM during the stripped window restores the operator's settings, then re-raises
+# the signal with its default action. SIGKILL cannot be caught: the backup stays next to the
+# settings file and the next prepare puts it back first (R14-04).
+_claude_matrix_auth_on_signal() {
+  local sig="$1" me
+  # BASHPID (the current subshell) where Bash has it; macOS Bash 3.2 does not, and `$$` would
+  # name the parent shell when this runs inside a command substitution.
+  me="${BASHPID:-$(sh -c 'echo $PPID')}"
+  claude_matrix_auth_restore
+  trap - INT TERM
+  kill -s "$sig" "$me"
+}
+
 claude_matrix_auth_prepare() {
-  local settings_file backup_file
+  local settings_file backup_file tmp_file mode
   settings_file="$(claude_matrix_settings_path)"
+  # A backup left by a killed earlier run is the operator's real file: put it back first.
+  if [[ -f "${settings_file}.sb-matrix-backup" ]]; then
+    mv -f "${settings_file}.sb-matrix-backup" "$settings_file"
+  fi
   if ! claude_matrix_auth_should_strip_settings; then
     return 0
   fi
@@ -74,10 +104,16 @@ claude_matrix_auth_prepare() {
     return 0
   fi
 
-  backup_file="$(mktemp "${TMPDIR:-/tmp}/claude-matrix-settings.XXXXXX")"
-  cp "$settings_file" "$backup_file"
+  # The backup lives beside the settings file (same mode via cp -p) so a restore is one atomic
+  # rename that returns the operator's file byte for byte, mode included.
+  backup_file="${settings_file}.sb-matrix-backup"
+  cp -p "$settings_file" "$backup_file"
   _claude_matrix_auth_backup="$backup_file"
 
+  # The stripped copy is written beside the original and given the original's mode before the
+  # rename, so a 0600 settings file never becomes 0644.
+  mode="$(_claude_matrix_file_mode "$settings_file")"
+  tmp_file="$(mktemp "${settings_file}.matrix-auth.XXXXXX")"
   jq '
     if .env then
       .env |= del(
@@ -94,17 +130,20 @@ claude_matrix_auth_prepare() {
     else
       .
     end
-  ' "$settings_file" > "${settings_file}.matrix-auth.tmp"
-  mv "${settings_file}.matrix-auth.tmp" "$settings_file"
+  ' "$settings_file" > "$tmp_file"
+  chmod "$mode" "$tmp_file"
+  mv "$tmp_file" "$settings_file"
   _claude_matrix_auth_prepared=1
+  trap '_claude_matrix_auth_on_signal INT' INT
+  trap '_claude_matrix_auth_on_signal TERM' TERM
 }
 
 claude_matrix_auth_restore() {
   local settings_file
   settings_file="$(claude_matrix_settings_path)"
   if [[ "$_claude_matrix_auth_prepared" == "1" && -n "$_claude_matrix_auth_backup" && -f "$_claude_matrix_auth_backup" ]]; then
-    cp "$_claude_matrix_auth_backup" "$settings_file"
-    rm -f "$_claude_matrix_auth_backup"
+    mv -f "$_claude_matrix_auth_backup" "$settings_file"
+    trap - INT TERM
   fi
   _claude_matrix_auth_backup=""
   _claude_matrix_auth_prepared=0
