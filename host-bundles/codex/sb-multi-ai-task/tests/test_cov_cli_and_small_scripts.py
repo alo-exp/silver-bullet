@@ -215,7 +215,7 @@ class MultiAiCliTests(HermeticCase):
         self.assertEqual(ctx.exception.code, 0)
         self.assertTrue(json.loads(out.getvalue())["ok"])
         # Started as a script outside isolated mode, it re-runs itself with -I before importing anything else.
-        execv.assert_called_once_with(sys.executable, [sys.executable, "-I", str(SCRIPTS / "multi_ai_cli.py"), "--dry-run", "--include-only", "grok-4.5"])
+        execv.assert_called_once_with(sys.executable, [sys.executable, "-I", "-B", str(SCRIPTS / "multi_ai_cli.py"), "--dry-run", "--include-only", "grok-4.5"])
 
     @mock.patch.dict(os.environ, {"SB_HOST": "claude"})
     def test_isolated_start_does_not_re_exec(self) -> None:
@@ -224,6 +224,26 @@ class MultiAiCliTests(HermeticCase):
             with contextlib.redirect_stdout(io.StringIO()), self.assertRaises(SystemExit):
                 runpy.run_path(str(SCRIPTS / "multi_ai_cli.py"), run_name="__main__")
         execv.assert_not_called()
+
+    def test_a_cli_start_never_writes_bytecode_into_the_plugin_directory(self) -> None:
+        """-I ignores PYTHONDONTWRITEBYTECODE, so the re-exec carries -B: no __pycache__ appears, whatever the environment says."""
+        import shutil
+
+        skills = SCRIPTS.parents[1]
+        copy = self.tmp / "plugin" / "skills"
+        for name in ("silver-multi-ai-task", "silver-deep-research-multi-ai"):
+            shutil.copytree(skills / name, copy / name, ignore=shutil.ignore_patterns("tests", "__pycache__", "fixtures"))
+        clis = [(copy / "silver-multi-ai-task/scripts/multi_ai_cli.py", ["--dry-run", "--include-only", "composer-2.5"]),
+                (copy / "silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py", ["probe", "--dry-run"])]
+        for flag in ("1", None):
+            env = {k: v for k, v in os.environ.items() if not k.startswith(("PYTHON", "COVERAGE", "CLAUDE", "CODEX", "CURSOR", "SB_"))}
+            env.update({"SB_HOST": "claude", "HOME": str(self.home)})
+            if flag:
+                env["PYTHONDONTWRITEBYTECODE"] = flag
+            for cli, args in clis:
+                proc = subprocess.run([sys.executable, str(cli), *args], capture_output=True, text=True, env=env, cwd=str(self.tmp), check=False)
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(sorted(str(p) for p in copy.rglob("__pycache__")), [])
 
     def test_hostile_python_environment_never_gets_to_run_for_a_real_start(self) -> None:
         """PYTHONPATH/PYTHONSTARTUP are not visible to the hooks: the CLI re-runs isolated, so a shadowing module never loads."""
