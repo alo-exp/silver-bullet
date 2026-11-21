@@ -443,7 +443,10 @@ rt_receipt_clear() {
   lock_dir="$(rt_reload_receipt_lock_dir "$host" "$project_id" "$worktree_id" "$scope")"
   [[ -f "$path" ]] || return 1
   local updated
-  updated="$(jq -c --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '.consumed_at = $now | .activation_status = "full"' <<<"$receipt_json")"
+  # The attestation comes from whoever ran the reconciler with --host-evidence-stdin: record that it
+  # is self-reported, so a cleared receipt is never mistaken for independent proof of liveness.
+  updated="$(jq -c --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    '.consumed_at = $now | .activation_status = "full" | .cleared_by = "host_evidence_stdin" | .evidence_assurance = "self_reported"' <<<"$receipt_json")"
   rt_with_lock "$lock_dir" 15 rt_atomic_write_json "$path" "$updated"
 }
 
@@ -545,8 +548,8 @@ rt_apply_host_convergence_batches() {
   change_set_id="$(rt_receipt_random_id)"
   export RT_CHANGE_SET_ID="$change_set_id"
 
-  if rt_mutation_allowed graphify || rt_mutation_allowed agentmemory || rt_mutation_allowed rtk \
-    || rt_mutation_allowed context_mode || rt_mutation_allowed leanctx; then
+  if rt_mutation_allowed graphify wire || rt_mutation_allowed agentmemory wire || rt_mutation_allowed rtk wire \
+    || rt_mutation_allowed context_mode wire || rt_mutation_allowed leanctx wire; then
     batch_json="$(rt_apply_host_hooks_batch)"
     while IFS= read -r a; do
       [[ -n "$a" ]] && actions+=("$a")
@@ -556,11 +559,11 @@ rt_apply_host_convergence_batches() {
     done < <(printf '%s' "$batch_json" | jq -r '.failures[]? // empty')
     if printf '%s' "$batch_json" | jq -e '.changed == true' >/dev/null 2>&1; then
       restart=1
-      rt_mutation_allowed context_mode && affected+=("context-mode")
+      rt_mutation_allowed context_mode wire && affected+=("context-mode")
     fi
   fi
 
-  if rt_mutation_allowed graphify || rt_mutation_allowed leanctx || rt_mutation_allowed agentmemory; then
+  if rt_mutation_allowed graphify wire || rt_mutation_allowed leanctx wire || rt_mutation_allowed agentmemory wire; then
     batch_json="$(rt_apply_host_mcp_batch)"
     while IFS= read -r a; do
       [[ -n "$a" ]] && actions+=("$a")
@@ -570,9 +573,9 @@ rt_apply_host_convergence_batches() {
     done < <(printf '%s' "$batch_json" | jq -r '.failures[]? // empty')
     if printf '%s' "$batch_json" | jq -e '.changed == true' >/dev/null 2>&1; then
       restart=1
-      rt_mutation_allowed graphify && affected+=("graphify")
-      rt_mutation_allowed leanctx && affected+=("leanctx")
-      rt_mutation_allowed agentmemory && affected+=("agentmemory")
+      rt_mutation_allowed graphify wire && affected+=("graphify")
+      rt_mutation_allowed leanctx wire && affected+=("leanctx")
+      rt_mutation_allowed agentmemory wire && affected+=("agentmemory")
     fi
   fi
 
@@ -607,7 +610,7 @@ rt_apply_host_hooks_batch() {
     local errors=() merge_err_file merge_err_line
     if [[ -f "$merge_py" ]]; then
       merge_err_file="$(mktemp)"
-      if rt_mutation_allowed rtk; then
+      if rt_mutation_allowed rtk wire; then
         if python3 "$merge_py" --host opencode --repo-root "$repo" --rtk-only >/dev/null 2>"$merge_err_file"; then
           actions+=("opencode_rtk_plugin")
           changed=1
@@ -617,7 +620,7 @@ rt_apply_host_hooks_batch() {
           [[ -z "$merge_err_line" ]] || errors+=("opencode_rtk_plugin: ${merge_err_line}")
         fi
       fi
-      if rt_mutation_allowed context_mode; then
+      if rt_mutation_allowed context_mode wire; then
         if python3 "$merge_py" --host opencode --repo-root "$repo" --context-mode-only >/dev/null 2>"$merge_err_file"; then
           actions+=("opencode_context_mode_plugin")
           changed=1
@@ -640,9 +643,9 @@ rt_apply_host_hooks_batch() {
   if [[ "${RT_HOST:-claude}" == "pi" ]]; then
     local pi_installer="${repo}/scripts/lib/global-toolstack/install-pi.py"
     local -a pi_args=(python3 "$pi_installer" --repo-root "$repo")
-    if rt_mutation_allowed rtk; then pi_args+=(--enable-tool rtk); fi
-    if rt_mutation_allowed context_mode; then pi_args+=(--enable-tool context_mode); fi
-    if [[ -f "$pi_installer" ]] && (rt_mutation_allowed rtk || rt_mutation_allowed context_mode); then
+    if rt_mutation_allowed rtk wire; then pi_args+=(--enable-tool rtk); fi
+    if rt_mutation_allowed context_mode wire; then pi_args+=(--enable-tool context_mode); fi
+    if [[ -f "$pi_installer" ]] && (rt_mutation_allowed rtk wire || rt_mutation_allowed context_mode wire); then
       if "${pi_args[@]}" >/dev/null 2>&1; then
         actions+=("pi_host_adapter")
         changed=1
@@ -674,22 +677,28 @@ rt_apply_host_mcp_batch() {
     return 0
   }
   export TOOLSTACK_REPO_ROOT="$repo"
-  if rt_mutation_allowed graphify; then
+  if rt_mutation_allowed graphify wire; then
     export RT_PATCH_GRAPHIFY=1
   else
     export RT_PATCH_GRAPHIFY=0
   fi
-  if rt_mutation_allowed leanctx; then
+  if rt_mutation_allowed leanctx wire; then
     export RT_PATCH_LEANCTX=1
   else
     export RT_PATCH_LEANCTX=0
   fi
-  if rt_mutation_allowed agentmemory; then
+  # Pi lists the pi-lean-ctx npm package (the host installs code) only with install consent too.
+  if rt_mutation_allowed leanctx install; then
+    export RT_LEANCTX_ALLOW_INSTALL=1
+  else
+    export RT_LEANCTX_ALLOW_INSTALL=0
+  fi
+  if rt_mutation_allowed agentmemory wire; then
     export RT_PATCH_AGENTMEMORY=1
   else
     export RT_PATCH_AGENTMEMORY=0
   fi
-  if rt_mutation_allowed context_mode; then
+  if rt_mutation_allowed context_mode wire; then
     export RT_PATCH_CONTEXT_MODE=1
   else
     export RT_PATCH_CONTEXT_MODE=0
@@ -711,7 +720,7 @@ rt_apply_host_mcp_batch() {
       fi
     fi
   fi
-  unset RT_PATCH_GRAPHIFY RT_PATCH_LEANCTX RT_PATCH_AGENTMEMORY RT_PATCH_CONTEXT_MODE
+  unset RT_PATCH_GRAPHIFY RT_PATCH_LEANCTX RT_PATCH_AGENTMEMORY RT_PATCH_CONTEXT_MODE RT_LEANCTX_ALLOW_INSTALL
   jq -n \
     --argjson actions "$(rt_json_string_array ${actions[@]+"${actions[@]}"})" \
     --argjson failures "$(rt_json_string_array ${failures[@]+"${failures[@]}"})" \

@@ -92,8 +92,21 @@ run_patch() {
     SB_GLOBAL_TOOLSTACK_HOME="$TMP_HOME/.silver-bullet/five-tool-stack" \
     SB_GLOBAL_CONTEXT_MODE_COMMAND="$TMP_CONTEXT_ROOT/cli.bundle.mjs" \
     RT_HOST="$host" RT_PATCH_GRAPHIFY=1 RT_PATCH_AGENTMEMORY=1 RT_PATCH_CONTEXT_MODE=1 RT_PATCH_LEANCTX=1 \
+    RT_LEANCTX_ALLOW_INSTALL=1 \
     python3 "$PATCH_MCP" >/dev/null
 }
+
+# Without the install-consent switch Pi neither lists the pi-lean-ctx npm package nor enables leanctx
+NOINST_PI="$TMP_HOME/.pi-noinstall"
+HOME="$TMP_HOME" PATH="$TMP_BIN:$PATH" PI_CODING_AGENT_DIR="$NOINST_PI" \
+  SB_GLOBAL_TOOLSTACK_HOME="$TMP_HOME/.silver-bullet/five-tool-stack" \
+  SB_GLOBAL_CONTEXT_MODE_COMMAND="$TMP_CONTEXT_ROOT/cli.bundle.mjs" \
+  RT_HOST=pi RT_PATCH_GRAPHIFY=1 RT_PATCH_LEANCTX=1 python3 "$PATCH_MCP" >/dev/null
+jq -e '((.packages // []) | map(select(contains("pi-lean-ctx"))) | length) == 0' "$NOINST_PI/settings.json" >/dev/null \
+  || { printf 'wire-only Pi run listed the pi-lean-ctx package\n' >&2; exit 1; }
+jq -e '.servers.leanctx.enabled == false and .servers.graphify.enabled == true' \
+  "$NOINST_PI/extensions/silver-bullet-five-tool-stack/config.json" >/dev/null \
+  || { printf 'wire-only Pi run enabled leanctx (or lost graphify)\n' >&2; exit 1; }
 
 for host in claude codex opencode pi; do
   run_patch "$host"

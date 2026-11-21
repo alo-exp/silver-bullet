@@ -136,6 +136,11 @@ run_one() {
     export HOME="$sandbox/home"
     export TMPDIR="$sandbox/tmp"
     export PATH="$TEST_PATH"
+    # variables that redirect git (a CI runner or an agent sandbox may export them) would make the push scope
+    # refuse every push: each test file runs against its own repositories
+    for _v in $(compgen -e | grep -E '^GIT_(DIR|WORK_TREE|COMMON_DIR|NAMESPACE|EXEC_PATH|CONFIG($|_))' || true); do
+      unset "$_v"
+    done
     unset XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME \
       SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME \
       SB_RUNTIME_PRESERVE_STATE_DIR SILVER_BULLET_STATE_FILE SILVER_BULLET_BRANCH_FILE

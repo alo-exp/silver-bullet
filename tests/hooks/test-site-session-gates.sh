@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # test-site-session-gates.sh — Wave 1 site session hooks (instruction ledger + site gates).
 set -euo pipefail
+# The opt-in tools act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -58,7 +62,7 @@ teardown() {
 
 setup_with_agentmemory() {
   setup
-  AM_STATE="${SB_TEST_DIR}/agentmemory-usage-$$"
+  AM_STATE="${SB_TEST_DIR}/t$$-agentmemory-usage"
   CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
   cat >"$TMPDIR_TEST/.silver-bullet.json" <<EOF
 {"sb_initiated":true,"config_version":"${CURRENT_CONFIG_VERSION}","orchestrator_mode":"parent","project":{"name":"test","active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"]},"recommended_tools":{"agentmemory":{"enabled_by_user":true,"usage_state_file":"${AM_STATE}"}}}
@@ -156,6 +160,30 @@ jq -n '{commit_sha:"abc123",urls:["https://sb.alolabs.dev/"],markers_matched:["h
   >"${SB_TEST_DIR}/live-publish-evidence.json"
 out=$(run_hook "$LIVE_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_allow "Stop allows with valid live-publish-evidence.json" "$out"
+teardown
+
+echo "--- R9-05: a fresh spawn marker never skips the parent's Stop gates ---"
+setup
+jq -n '{active:true,push_intent:true,live_claim_pending:false,last_touch_at:"2026-06-28T12:00:00Z"}' \
+  >"${SB_TEST_DIR}/site-session.json"
+printf '{"spawned_at":"%s"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"${SB_TEST_DIR}/orchestrator-worker-active.json"
+out=$(run_hook "$LIVE_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
+assert_block "live-publish gate still blocks Stop with a fresh worker marker" "$out"
+out=$(run_hook "$VLOOP_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
+assert_block "v-loop rollup gate still blocks Stop with a fresh worker marker" "$out"
+teardown
+
+echo "--- R9-31: a prompt that names a delegation keeps the delegation guard on ---"
+setup
+jq -n '{active:true,host:"codex",task_id:"t1",ownership_scope:["src/"]}' >"${SB_TEST_DIR}/agent-delegation-active.json"
+run_hook "$RECORD_HOOK" UserPromptSubmit "$(jq -n --arg p 'Quick question: is the silver-agent-codex delegation still running? Do not change anything.' '{hook_event_name:"UserPromptSubmit",prompt:$p}')" >/dev/null
+if [[ -f "${SB_TEST_DIR}/agent-delegation-active.json" ]]; then
+  echo "  ok: delegation state survives a prompt that mentions the delegation"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: a status question deleted the active delegation state"
+  FAIL=$((FAIL + 1))
+fi
 teardown
 
 echo "--- subagent-stop-enforcement ---"
@@ -303,8 +331,8 @@ teardown
 
 echo "--- record-recommended-mcp ---"
 setup_with_agentmemory
-EXPECTED_AM_STATE="${SB_TEST_DIR}/agentmemory-usage"
-out=$(run_hook "$MCP_RECORD_HOOK" PostToolUse "$(jq -n '{hook_event_name:"PostToolUse",tool_name:"MCP",tool_input:{server:"user-agentmemory",toolName:"save_memory"}}')")
+EXPECTED_AM_STATE="$AM_STATE"
+out=$(run_hook "$MCP_RECORD_HOOK" PostToolUse "$(jq -n '{hook_event_name:"PostToolUse",tool_name:"MCP",tool_input:{server:"user-agentmemory",toolName:"memory_recall"}}')")
 if [[ -f "$EXPECTED_AM_STATE" ]] && grep -qE '^[0-9]+$' "$EXPECTED_AM_STATE"; then
   echo "  ok: records agentmemory MCP usage"
   PASS=$((PASS + 1))
@@ -312,7 +340,7 @@ else
   echo "  FAIL: agentmemory MCP usage not recorded"
   FAIL=$((FAIL + 1))
 fi
-if grep -q 'recommended MCP usage recorded' <<<"$out"; then
+if grep -q 'agentmemory usage recorded' <<<"$out"; then
   echo "  ok: emits recorded confirmation message"
   PASS=$((PASS + 1))
 else

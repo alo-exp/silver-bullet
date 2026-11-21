@@ -29,6 +29,7 @@ Called by skills and hooks while Silver Bullet runs in a project.
 | `uninstall-cursor-legacy.sh` | One-time cleanup of what an older Silver Bullet left in the Cursor config directory (Cursor is no longer a supported host); `--dry-run` previews, nothing is installed |
 | `install-recommended-tools-global.sh` | Always-on rules / instruction artifacts for the recommended tools |
 | `reconcile-recommended-tools.sh` | Canonical five-tool reconciliation engine (Graphify, agentmemory, Context Mode, LeanCTX, RTK) |
+| `sb-consent.sh` | Record and query your per-user consent (install, wire, enforce) for the opt-in tool stack; the store lives outside every repository (see [docs/CONSENT.md](../docs/CONSENT.md)) |
 | `install-leanctx-sb.sh` | Host-aware LeanCTX install in library mode |
 | `optimize-five-tool-stack.sh`, `optimize-rtk-context-mode.sh` | Apply the five-tool routed profile, or the RTK + Context Mode host optimization |
 | `enable-alumnium.sh`, `enable-rtk-context-mode.sh` | Verify Alumnium, RTK and Context Mode install and wiring |
@@ -44,7 +45,8 @@ Called by skills and hooks while Silver Bullet runs in a project.
 | `sb-bootstrap.sh` | Onboarding probe with next steps |
 | `sb-diagnostics.sh` | Capability tier, hook config, jq, Graphify, package version (`SB_DIAG_FORMAT=json`) |
 | `sb-doctor.sh` | Install and project-activation audit behind `/sb:doctor` (`--deep`, `--dry-run`, `--fix=...`) |
-| `sb-prerequisite-repair.sh` | Automatic prerequisite repair, called from `session-start` |
+| `sb-prerequisite-repair.sh` | Report-only prerequisite repair (prints the jq install command, refreshes the plugin cache alias), called from `session-start` |
+| `phase-lock.sh` | Phase-ownership lock helper; the phase-lock hooks run this plugin copy, never a script from the project |
 | `sb-migrate-config.sh`, `sb-migrate-initiated.sh`, `sb-migrate-orchestrator-parent.sh`, `sb-migrate-project.sh` | Merge `.silver-bullet.json` forward and migrate legacy projects |
 
 ## Sync, render and generate
@@ -66,7 +68,9 @@ Called by skills and hooks while Silver Bullet runs in a project.
 | Script | Purpose |
 |--------|---------|
 | `lint-shell.sh` | ShellCheck over all first-party Bash (`--all`, `--list`); used by `make lint` and CI |
+| `audit-protected-reads.py` | Protected-read audit: every place in hooks, scripts and skills that reads the state file, the trivial marker, the config, `silver-bullet.md`, the roadmap or an instruction file directly, classified Y/A/X/N (`--json`, `--markdown`, `--check FIXTURE`, `--rev REV`); `tests/hooks/test-integrity-audit.sh` fails on an N row, output in `docs/PROTECTED-READS.md` |
 | `check-repo-invariants.sh` | Repository invariants CI's `validate` job checks: manifests and versions, hook executability and references, template placeholders, required-skill lists, workflow mirror (`--list`, `--check NAME`) |
+| `check-git-key-drift.sh` | Non-blocking drift check: lists the `git help -c` keys of the installed git that the vendored snapshot lacks (so they get classified in the push-gate mechanism tables); `--update` rewrites the snapshot |
 | `validate-plugin-mirror.sh` | The plugin package mirrors source hooks and skills |
 | `validate-host-agnostic-core.sh`, `validate-host-install-surface.sh`, `validate-host-skill-surface.sh` | Host-neutral core, per-host install layout, namespaced skill surfaces |
 | `validate-claude-agent-token-budget.sh` | Claude agent descriptions stay under the host token budget |

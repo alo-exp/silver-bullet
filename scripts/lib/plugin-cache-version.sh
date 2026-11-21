@@ -116,6 +116,16 @@ for child in plugin_root.iterdir():
 PY
 }
 
+# Refresh the plugin cache's own `current` alias and drop orphaned version dirs. Cache-internal:
+# no project file is read or copied (used by sb-prerequisite-repair.sh, which also ships to Codex
+# installs and so must not name the Claude cache path itself).
+sb_claude_refresh_plugin_cache_alias() {
+  local cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+  [[ -d "$cache_root" ]] || return 0
+  sb_plugin_cache_prune_orphaned_dirs "$cache_root" 2>/dev/null || true
+  sb_plugin_cache_refresh_current_alias "$cache_root" 2>/dev/null || true
+}
+
 # Ensure Claude Silver Bullet plugin cache has current alias + hooks (dev checkout).
 sb_claude_ensure_plugin_cache_ready() {
   local repo_root="${1:-}"
@@ -129,7 +139,10 @@ sb_claude_ensure_plugin_cache_ready() {
   latest="$(sb_plugin_cache_latest_version_dir "$cache_root" 2>/dev/null || true)"
   [[ -n "$latest" ]] || return 1
 
-  if [[ -n "$repo_root" && -d "${repo_root}/hooks" ]]; then
+  # Copy hooks only from a Silver Bullet source checkout (R2-12/R8-07): a project that merely
+  # has a hooks/ directory must never overwrite the installed plugin.
+  if [[ -n "$repo_root" && -d "${repo_root}/hooks" ]] \
+     && [[ "$(jq -r '.name // ""' "${repo_root}/.claude-plugin/plugin.json" 2>/dev/null || true)" == "silver-bullet" ]]; then
     install -d -m 755 "${latest}/hooks"
     rsync -a --chmod=Du=rwx,go=rx,Fu=rx,Fgo=rx \
       "${repo_root}/hooks/" "${latest}/hooks/"

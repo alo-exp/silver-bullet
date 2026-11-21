@@ -29,7 +29,16 @@ OFFLINE_TMP="$(mktemp -d)"
 # machine, whatever happens to be installed.
 # shellcheck source=tests/lib/offline-tools.sh
 source "$REPO_ROOT/tests/lib/offline-tools.sh"
+# shellcheck source=tests/lib/consent-helpers.sh
+source "$REPO_ROOT/tests/lib/consent-helpers.sh"
 sb_offline_tools_install "${OFFLINE_TMP}/bin"
+# patch-hooks replaces older LeanCTX hooks / rewrites Context Mode hooks only when the replacement
+# command exists (R6-25): these stand-ins make rtk and context-mode resolvable for those runs.
+RTK_STUB_BIN="${OFFLINE_TMP}/hookbin"
+mkdir -p "$RTK_STUB_BIN"
+printf '#!/bin/sh\nexit 0\n' >"$RTK_STUB_BIN/rtk"
+printf '#!/bin/sh\nexit 0\n' >"$RTK_STUB_BIN/context-mode"
+chmod +x "$RTK_STUB_BIN/rtk" "$RTK_STUB_BIN/context-mode"
 export HOME="$TEST_HOME"
 mkdir -p "${TEST_HOME}/.claude"
 printf '{"mcpServers":{}}\n' >"${TEST_HOME}/.claude.json"
@@ -41,6 +50,7 @@ jq '.recommended_tools.graphify.enabled_by_user = false
   | .recommended_tools.context_mode.enabled_by_user = false
   | .recommended_tools.leanctx.enabled_by_user = false
   | .sb_initiated = true' "$TEMPLATE" >"$TMP/.silver-bullet.json"
+  sb_test_consent_reset_mirror "$TMP/.silver-bullet.json" install,wire,enforce
 cp "$REPO_ROOT/silver-bullet.md" "$TMP/silver-bullet.md" 2>/dev/null || printf '# SB\n' >"$TMP/silver-bullet.md"
 git -C "$TMP" init -q
 
@@ -102,6 +112,7 @@ jq '.recommended_tools.graphify.enabled_by_user = true
   | .recommended_tools.context_mode.enabled_by_user = false
   | .recommended_tools.leanctx.enabled_by_user = false
   | .sb_initiated = true' "$TEMPLATE" >"$TMP/.silver-bullet.json"
+  sb_test_consent_reset_mirror "$TMP/.silver-bullet.json" install,wire,enforce
 consent_summary="$(RT_PROJECT_ROOT="$TMP" bash -c 'source "'"$REPO_ROOT"'/scripts/lib/recommended-tools/heartbeat.sh"; rt_heartbeat_consent_summary' 2>/dev/null || true)"
 echo "$consent_summary" | jq -e 'length > 0 and .graphify == "enabled" and .rtk == "enabled"' >/dev/null 2>&1 \
   && pass "heartbeat consent summary non-empty with consents" || fail "heartbeat consent summary non-empty with consents"
@@ -131,6 +142,7 @@ jq '.recommended_tools.graphify.enabled_by_user = false
   | .recommended_tools.context_mode.enabled_by_user = false
   | .recommended_tools.leanctx.enabled_by_user = false
   | .sb_initiated = true' "$TEMPLATE" >"$TMP_AM_ONLY/.silver-bullet.json"
+  sb_test_consent_reset_mirror "$TMP_AM_ONLY/.silver-bullet.json" install,wire,enforce
 cp "$REPO_ROOT/silver-bullet.md" "$TMP_AM_ONLY/silver-bullet.md" 2>/dev/null || printf '# SB\n' >"$TMP_AM_ONLY/silver-bullet.md"
 git -C "$TMP_AM_ONLY" init -q
 am_env='RT_PROJECT_ROOT="'"$TMP_AM_ONLY"'" RT_HOST=claude RT_MODE=apply RT_ENTRY_POINT=doctor-fix RT_REPO_ROOT="'"$REPO_ROOT"'"'
@@ -164,6 +176,7 @@ jq '.recommended_tools.graphify.enabled_by_user = true
   | .recommended_tools.rtk.enabled_by_user = true
   | .recommended_tools.context_mode.enabled_by_user = true
   | .sb_initiated = true' "$TEMPLATE" >"$TMP_IDEM/.silver-bullet.json"
+  sb_test_consent_reset_mirror "$TMP_IDEM/.silver-bullet.json" install,wire,enforce
 cp "$REPO_ROOT/silver-bullet.md" "$TMP_IDEM/silver-bullet.md" 2>/dev/null || printf '# SB\n' >"$TMP_IDEM/silver-bullet.md"
 git -C "$TMP_IDEM" init -q
 # deploy minimal toolstack hook stubs so patch-hooks can reference them
@@ -205,6 +218,7 @@ rm -f "${TMP_MCP_CREATE}/.claude.json"
 printf '{"hooks":{"preToolUse":[]}}\n' >"${TMP_MCP_CREATE}/.claude/settings.json"
 jq '.recommended_tools.graphify.enabled_by_user = true
   | .sb_initiated = true' "$TEMPLATE" >"$TMP_MCP_CREATE/.silver-bullet.json"
+  sb_test_consent_reset_mirror "$TMP_MCP_CREATE/.silver-bullet.json" install,wire,enforce
 cp "$REPO_ROOT/silver-bullet.md" "$TMP_MCP_CREATE/silver-bullet.md" 2>/dev/null || printf '# SB\n' >"$TMP_MCP_CREATE/silver-bullet.md"
 git -C "$TMP_MCP_CREATE" init -q
 mcp_create_env='RT_PROJECT_ROOT="'"$TMP_MCP_CREATE"'" RT_HOST=claude RT_MODE=apply RT_ENTRY_POINT=doctor-fix RT_REPO_ROOT="'"$REPO_ROOT"'"'
@@ -254,6 +268,7 @@ jq '.recommended_tools.graphify.enabled_by_user = true
   | .recommended_tools.context_mode.enabled_by_user = true
   | .recommended_tools.leanctx.enabled_by_user = true
   | .sb_initiated = true' "$TEMPLATE" >"$TMP_HB/.silver-bullet.json"
+  sb_test_consent_reset_mirror "$TMP_HB/.silver-bullet.json" install,wire,enforce
 cp "$REPO_ROOT/silver-bullet.md" "$TMP_HB/silver-bullet.md" 2>/dev/null || printf '# SB\n' >"$TMP_HB/silver-bullet.md"
 git -C "$TMP_HB" init -q
 cross_out="$(bash "$RECONCILE" --project-root "$TMP_HB" --host claude --mode verify --format json 2>/dev/null || true)"
@@ -284,6 +299,7 @@ jq '.recommended_tools.graphify.enabled_by_user = true
   | .recommended_tools.context_mode.enabled_by_user = true
   | .recommended_tools.leanctx.enabled_by_user = true
   | .sb_initiated = true' "$TEMPLATE" >"$TMP_HB_VALID/.silver-bullet.json"
+  sb_test_consent_reset_mirror "$TMP_HB_VALID/.silver-bullet.json" install,wire,enforce
 cp "$REPO_ROOT/silver-bullet.md" "$TMP_HB_VALID/silver-bullet.md" 2>/dev/null || printf '# SB\n' >"$TMP_HB_VALID/silver-bullet.md"
 git -C "$TMP_HB_VALID" init -q
 mkdir -p "${TMP_HB_VALID}/.agentmemory/memory"
@@ -333,6 +349,7 @@ jq '.recommended_tools.graphify.enabled_by_user = false
   | .recommended_tools.context_mode.enabled_by_user = false
   | .recommended_tools.leanctx.enabled_by_user = false
   | .sb_initiated = true' "$TEMPLATE" >"$TMP_CONSENT/.silver-bullet.json"
+  sb_test_consent_reset_mirror "$TMP_CONSENT/.silver-bullet.json" install,wire,enforce
 cp "$REPO_ROOT/silver-bullet.md" "$TMP_CONSENT/silver-bullet.md" 2>/dev/null || printf '# SB\n' >"$TMP_CONSENT/silver-bullet.md"
 git -C "$TMP_CONSENT" init -q
 repair_json="$(RT_PROJECT_ROOT="$TMP_CONSENT" RT_HOST=claude RT_MODE=apply RT_ENTRY_POINT=doctor-fix RT_SCOPE=host \
@@ -375,6 +392,7 @@ printf '{"mcpServers":{}}\n' >"${TMP_GF_REPAIR}/.claude.json"
 jq '.recommended_tools.graphify.enabled_by_user = true
   | .recommended_tools.leanctx.enabled_by_user = true
   | .sb_initiated = true' "$TEMPLATE" >"$TMP_GF_REPAIR/.silver-bullet.json"
+  sb_test_consent_reset_mirror "$TMP_GF_REPAIR/.silver-bullet.json" install,wire,enforce
 cp "$REPO_ROOT/silver-bullet.md" "$TMP_GF_REPAIR/silver-bullet.md" 2>/dev/null || printf '# SB\n' >"$TMP_GF_REPAIR/silver-bullet.md"
 git -C "$TMP_GF_REPAIR" init -q
 if command -v graphify-mcp >/dev/null 2>&1; then
@@ -423,6 +441,7 @@ jq '.recommended_tools.graphify.enabled_by_user = true
   | .recommended_tools.context_mode.enabled_by_user = true
   | .recommended_tools.leanctx.enabled_by_user = true
   | .sb_initiated = true' "$TEMPLATE" >"$TMP_DOUBLE/.silver-bullet.json"
+  sb_test_consent_reset_mirror "$TMP_DOUBLE/.silver-bullet.json" install,wire,enforce
 cp "$REPO_ROOT/silver-bullet.md" "$TMP_DOUBLE/silver-bullet.md" 2>/dev/null || printf '# SB\n' >"$TMP_DOUBLE/silver-bullet.md"
 git -C "$TMP_DOUBLE" init -q
 export RT_CROSS_TOOL_BATCH=1
@@ -467,6 +486,7 @@ jq '.recommended_tools.graphify.enabled_by_user = true
   | .recommended_tools.context_mode.enabled_by_user = true
   | .recommended_tools.leanctx.enabled_by_user = true
   | .sb_initiated = true' "$TEMPLATE" >"$TMP_REENTRY/.silver-bullet.json"
+  sb_test_consent_reset_mirror "$TMP_REENTRY/.silver-bullet.json" install,wire,enforce
 printf '# SB\n' >"$TMP_REENTRY/silver-bullet.md"
 git -C "$TMP_REENTRY" init -q
 mkdir -p "${TMP_REENTRY_HOME}/.claude"
@@ -523,6 +543,7 @@ d10_enable() {
   jq --arg t "$tool" '.recommended_tools[$t].enabled_by_user = true | .sb_initiated = true' \
     "${D10_PROJ}/.silver-bullet.json" >"${D10_PROJ}/.silver-bullet.json.tmp"
   mv "${D10_PROJ}/.silver-bullet.json.tmp" "${D10_PROJ}/.silver-bullet.json"
+  sb_test_consent_grant "$tool" install,wire,enforce
 }
 
 d10_probe() {
@@ -697,6 +718,7 @@ echo "$cm_ok" | jq -e '.evidence | index("vendor_doctor_failed") == null' >/dev/
 jq '.recommended_tools.alumnium.enabled_by_user = null' \
   "${D10_PROJ}/.silver-bullet.json" >"${D10_PROJ}/.silver-bullet.json.tmp"
 mv "${D10_PROJ}/.silver-bullet.json.tmp" "${D10_PROJ}/.silver-bullet.json"
+sb_consent_set unset alumnium install,wire,enforce machine test >/dev/null
 alu_na="$(d10_probe probe-alumnium.sh rt_probe_alumnium 2>/dev/null || true)"
 echo "$alu_na" | jq -e '.canonical_state == "pending" or .canonical_state == "disabled"' >/dev/null 2>&1 \
   && pass "D10 alumnium PASSes N/A when not opted in" \
@@ -795,6 +817,7 @@ cp "$TEMPLATE" "${D10_PROJ}/.silver-bullet.json"
 jq '.sb_initiated = true | .recommended_tools.search_cli.enabled_by_user = null' \
   "${D10_PROJ}/.silver-bullet.json" >"${D10_PROJ}/.silver-bullet.json.tmp"
 mv "${D10_PROJ}/.silver-bullet.json.tmp" "${D10_PROJ}/.silver-bullet.json"
+sb_consent_set unset search_cli install,wire,enforce machine test >/dev/null
 sc_na="$(d10_probe probe-search_cli.sh rt_probe_search_cli 2>/dev/null || true)"
 echo "$sc_na" | jq -e '.canonical_state == "pending" or .canonical_state == "disabled"' >/dev/null 2>&1 \
   && pass "D10 search_cli PASSes N/A when not opted in" \
@@ -806,6 +829,7 @@ echo "$sc_na" | jq -e '.canonical_state == "failed" or .canonical_state == "repa
 jq '.recommended_tools.search_cli.enabled_by_user = true | .recommended_tools.search_cli.required_when_enabled = false' \
   "${D10_PROJ}/.silver-bullet.json" >"${D10_PROJ}/.silver-bullet.json.tmp"
 mv "${D10_PROJ}/.silver-bullet.json.tmp" "${D10_PROJ}/.silver-bullet.json"
+sb_test_consent_grant search_cli install,wire,enforce
 if sb_recommended_tool_enforced "${D10_PROJ}/.silver-bullet.json" search_cli; then
   fail "search_cli required_when_enabled false skips hook enforcement"
 else

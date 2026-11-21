@@ -107,6 +107,21 @@ tl_run_hook "$HOOK" "$(tool_json Shell 'touch x')"
 assert_eq "mutating Shell denied for the parent" deny "$(decision)"
 tl_run_hook "$HOOK" "$(tool_json Bash 'silver-bullet invoke-skill silver')"
 assert_eq "router invoke-skill adapter allowed" "0|" "$TL_STATUS|$TL_OUT"
+# R4-03: the exceptions parse the command; naming an allowed tool does not whitelist the rest.
+write_directive silver-plan PLAN
+for evil in "rm -f x # scripts/resolve-instruction-ledger.sh" "echo scripts/resolve-instruction-ledger.sh; rm x" "silver-bullet invoke-skill silver && rm -f x" $'silver-bullet invoke-skill sb\ntouch pwned' "bash -c 'silver-bullet invoke-skill silver' ; touch pwned2" "$TL_REPO_ROOT/scripts/resolve-instruction-ledger.sh list > out.txt" "$TL_TMP/evil/silver-bullet invoke-skill silver" "scripts/resolve-instruction-ledger.sh list"; do
+  tl_run_hook "$HOOK" "$(tool_json Bash "$evil")"
+  assert_eq "parent Bash denied: ${evil//$'\n'/ }" deny "$(decision)"
+done
+for honest in "silver-bullet invoke-skill silver 2>/dev/null" "$TL_REPO_ROOT/scripts/resolve-instruction-ledger.sh list 2>&1" "bash $TL_REPO_ROOT/scripts/resolve-instruction-ledger.sh done 3" "git status 2>&1 | head" "bash -c 'silver-bullet invoke-skill silver'"; do
+  tl_run_hook "$HOOK" "$(tool_json Bash "$honest")"
+  assert_eq "parent Bash allowed: $honest" "0|" "$TL_STATUS|$TL_OUT"
+done
+# A classifier failure is denied with a message that says how to proceed.
+PATH="$(tl_path_without python3)" tl_run_hook "$HOOK" "$(tool_json Bash 'git status')"
+assert_eq "no python3: parent Bash denied" deny "$(decision)"
+assert_contains "no python3: the denial names python3 and how to proceed" "$(reason)" "python3 is a required prerequisite"
+rm -f "$DIRF"
 printf '{"sb_initiated":false}\n' >"$PROJ/.silver-bullet.json"
 tl_run_hook "$HOOK" "$(tool_json Edit src/a.txt)"
 assert_eq "project not initiated yet: allow" "0|" "$TL_STATUS|$TL_OUT"
@@ -162,7 +177,7 @@ tl_run_hook "$HOOK" "$(tool_json Edit src/a.txt)"
 assert_eq "blocking directive denies Edit" deny "$(decision)"
 assert_contains "denial names the expected skill" "$(reason)" "Invoke /silver-plan before Edit"
 assert_contains "denial includes the directive reason" "$(reason)" "queued by test"
-assert_contains "denial explains the override" "$(reason)" "SB OVERRIDE: <reason>"
+assert_contains "denial explains the override" "$(reason)" "SB OVERRIDE, a colon and your reason"
 tl_run_hook "$HOOK" "$(tool_json Read src/a.txt)"
 assert_eq "read-only tools are not gated" "0|" "$TL_STATUS|$TL_OUT"
 tl_run_hook "$HOOK" "$(tool_json Bash 'rm x')"
@@ -208,24 +223,21 @@ tl_run_hook "$HOOK" "$(tool_json Edit src/a.txt)"
 assert_eq "directive of another project: allowed" "0|" "$TL_STATUS|$TL_OUT"
 rm -f "$(orch_state_file)" "$PROJ/.planning/workflows/WF.md"
 
-echo "=== worker mode: SB OVERRIDE ==="
+echo "=== worker mode: SB OVERRIDE is not honoured at PreToolUse (R4-07) ==="
 reset
 write_directive silver-plan PLAN
-ov="$(jq -cn '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:"a"},prompt:"please SB OVERRIDE: hotfix in prod"}')"
+ov="$(jq -cn '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:"a"},prompt:"SB OVERRIDE: hotfix in prod outage"}')"
 tl_run_hook "$HOOK" "$ov"
-assert_eq "override allows the edit" "0|" "$TL_STATUS|$TL_OUT"
-assert_file_absent "override clears the directive" "$DIRF"
-log="$PROJ/.planning/orchestrator-override-log.jsonl"
-assert_eq "override logged with its reason" "hotfix in prod" "$(jq -r .reason "$log")"
-assert_eq "override logged with the skipped skill" silver-plan "$(jq -r .expected_skill "$log")"
+assert_eq "a PreToolUse prompt field cannot override the directive" deny "$(decision)"
+assert_file_exists "directive stays" "$DIRF"
+assert_file_absent "no audit record forged by the guard" "$PROJ/.planning/orchestrator-override-log.jsonl"
 write_directive silver-plan PLAN
 np="$(jq -cn '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:"a"},prompt:"just edit it"}')"
 tl_run_hook "$HOOK" "$np"
 assert_eq "prompt without the marker does not bypass" deny "$(decision)"
+assert_not_contains "denial text no longer carries the literal marker (R4-12)" "$(reason)" "OVERRIDE: <reason>"
+assert_contains "denial text still explains how to override" "$(reason)" "SB OVERRIDE, a colon and your reason"
 reset
-write_directive silver-plan PLAN
-PATH="$NOJQ" tl_run_hook "$HOOK" '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"a"},"prompt":"SB OVERRIDE: because"}'
-assert_eq "no jq: fails open before the override is evaluated" "0|" "$TL_STATUS|$TL_OUT"
 
 echo "=== worker mode: edits without a workflow (P6) ==="
 reset

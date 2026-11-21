@@ -80,6 +80,7 @@ k2_stage_agent_lib() {
     multi-ai-opencode-worker.sh pi-cli.sh; do
     cp "$TL_REPO_ROOT/scripts/lib/$f" "$d/scripts/lib/"
   done
+  cp "$TL_REPO_ROOT/scripts/lib/agent_redact.py" "$TL_REPO_ROOT/scripts/lib/agent_fifo.py" "$d/scripts/lib/"
   cat >"$d/scripts/lib/pi-zero-byte-guard.py" <<'PY'
 import os, sys
 a = sys.argv[1:]
@@ -94,6 +95,9 @@ if cnt != "/dev/null":
 ent = plan[min(n, len(plan) - 1)].split(":")
 with open(os.environ["FAKE_LOG"], "a") as f:
     f.write("GUARD idle=%s hard=%s expect=%s min=%s cwd=%s argv=%s\n" % (a[0], a[1], a[2], a[3], os.getcwd(), " ".join(a[4:])))
+if "--continue" in a[4:]:
+    import subprocess
+    sys.exit(subprocess.call(a[4:]))
 if os.environ.get("GUARD_OUT"):
     print(os.environ["GUARD_OUT"])
 if len(ent) > 1 and ent[1]:

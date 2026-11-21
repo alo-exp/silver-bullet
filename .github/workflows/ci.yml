@@ -119,6 +119,11 @@ jobs:
       - name: Record the checkout before the tests
         run: git status --porcelain --ignored --untracked-files=all >"$RUNNER_TEMP/checkout-before.txt"
 
+      # Non-blocking: list the git config keys of this runner's git that the vendored snapshot lacks, so someone
+      # classifies them (the required tests diff the table against the snapshot, never against the installed git).
+      - name: Report git config key drift
+        run: bash scripts/check-git-key-drift.sh
+
       - name: Run all test suites
         run: bash tests/run-all-tests.sh --jobs 4
 

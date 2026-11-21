@@ -17,6 +17,7 @@ graphify-out/converted/
 # Silver Bullet runtime files written into a project (caches, telemetry, scan state); the
 # audit logs (orchestrator-override-log.jsonl) are deliberately not ignored
 /.planning/.context-cache/
+/.planning/.phase-locks.json*
 /.planning/orchestrator-composition-log.jsonl
 /.planning/enterprise-e2e/token-telemetry.jsonl
 /.silver-bullet/scan-state.json

@@ -6,6 +6,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 
 STAGE="$TL_TMP/repo"
 OPT="$STAGE/scripts/optimize-five-tool-stack.sh"
@@ -14,12 +15,14 @@ export LOG
 
 mkdir -p "$STAGE/scripts/lib/global-toolstack" "$STAGE/hooks" "$STAGE/templates"
 cp "$TL_REPO_ROOT/scripts/optimize-five-tool-stack.sh" "$OPT"
+cp "$TL_REPO_ROOT/scripts/lib/sb_host_config.py" "$STAGE/scripts/lib/"
 ln -s "$TL_REPO_ROOT/hooks/lib" "$STAGE/hooks/lib"
 cp "$TL_REPO_ROOT/templates/silver-bullet.config.json.default" "$STAGE/templates/"
 for s in install-leanctx-sb optimize-rtk-context-mode sb-optimize-stack; do
   cat >"$STAGE/scripts/$s.sh" <<EOF
 #!/usr/bin/env bash
 printf '%s %s\n' "$s" "\$*" >>"\$LOG"
+printf '%s\n' "\${SB_INSTALL_RUN_START:-unset}" >>"\$LOG.start"
 exit "\${STUB_RC_${s//-/_}:-0}"
 EOF
 done
@@ -32,7 +35,8 @@ EOF
 
 PROJ="$TL_TMP/proj"
 mkdir -p "$PROJ"
-write_cfg() { printf '%s\n' "$1" >"$PROJ/.silver-bullet.json"; }
+# The project file is only a recommendation; consent is the user's own (docs/CONSENT.md), granted for every tool here.
+write_cfg() { printf '%s\n' "$1" >"$PROJ/.silver-bullet.json"; sb_test_consent_grant_all; }
 run_opt() { : >"$LOG"; tl_run bash "$OPT" "$@"; }
 calls() { cat "$LOG"; }
 
@@ -58,25 +62,40 @@ assert_eq "invalid host exits 2" "2" "$TL_STATUS"
 assert_contains "invalid host message" "$TL_ERR" "Invalid --host: emacs"
 assert_eq "invalid host runs no helper" "" "$(calls)"
 
-# ---- not opted in: nothing runs unless forced
-for cfg in '{}' '{"recommended_tools":{"leanctx":{"enabled_by_user":false}}}' 'not json'; do
+# ---- not consented: nothing runs unless forced
+for cfg in '{}' 'not json'; do
   write_cfg "$cfg"
+  sb_test_consent_revoke_all
   run_opt --host claude --project-root "$PROJ"
-  assert_eq "not opted in ($cfg) exits 0" "0" "$TL_STATUS"
-  assert_contains "not opted in ($cfg) message" "$TL_OUT" "leanctx not opted in"
-  assert_eq "not opted in ($cfg) runs nothing" "" "$(calls)"
+  assert_eq "no consent ($cfg) exits 0" "0" "$TL_STATUS"
+  assert_contains "no consent ($cfg) message" "$TL_OUT" "LeanCTX is not consented"
+  assert_contains "no consent ($cfg) grant command" "$TL_OUT" "sb-consent.sh grant leanctx --all-projects --capabilities wire"
+  assert_eq "no consent ($cfg) runs nothing" "" "$(calls)"
 done
+# a project recommendation alone is not consent (R6-03)
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+sb_test_consent_revoke_all
+run_opt --host claude --project-root "$PROJ"
+assert_contains "a recommendation alone does not run the optimizer" "$TL_OUT" "LeanCTX is not consented"
+assert_eq "a recommendation alone runs nothing" "" "$(calls)"
+# consent, but the project turns the tool off
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":false}}}'
+run_opt --host claude --project-root "$PROJ"
+assert_contains "the project can turn a consented tool off" "$TL_OUT" "LeanCTX is not consented"
+assert_eq "a project veto runs nothing" "" "$(calls)"
+
+# R6-24: with no project config the bundled configs are never used or rewritten
 rm -f "$PROJ/.silver-bullet.json"
-run_opt --host claude --project-root "$PROJ"
-assert_contains "missing project config falls back to the repo/template config" "$TL_OUT" "leanctx not opted in"
+sb_test_consent_grant_all
 cp "$STAGE/templates/silver-bullet.config.json.default" "$STAGE/.silver-bullet.json"
+BUNDLED_BEFORE="$(cksum <"$STAGE/.silver-bullet.json")|$(cksum <"$STAGE/templates/silver-bullet.config.json.default")"
 run_opt --host claude --project-root "$PROJ"
-assert_contains "repo config consulted next" "$TL_OUT" "leanctx not opted in"
+assert_eq "consented, no project config: exits 0" "0" "$TL_STATUS"
+assert_contains "consented, no project config: the helpers ran" "$(calls)" "install-leanctx-sb --host claude --project-root ${PROJ}"
+assert_file_absent "no project config is invented" "$PROJ/.silver-bullet.json"
+assert_eq "the bundled configs were not rewritten" "$BUNDLED_BEFORE" "$(cksum <"$STAGE/.silver-bullet.json")|$(cksum <"$STAGE/templates/silver-bullet.config.json.default")"
+assert_not_contains "no profile metadata was stamped anywhere" "$TL_OUT" "profile metadata applied"
 rm -f "$STAGE/.silver-bullet.json"
-rm -f "$STAGE/templates/silver-bullet.config.json.default"
-run_opt --host claude --project-root "$PROJ"
-assert_contains "no config at all means not opted in" "$TL_OUT" "leanctx not opted in"
-cp "$TL_REPO_ROOT/templates/silver-bullet.config.json.default" "$STAGE/templates/"
 
 # ---- real run for one host: helpers called in order, profile stamped
 write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
@@ -84,8 +103,8 @@ run_opt --host claude --project-root "$PROJ"
 assert_eq "claude run exits 0" "0" "$TL_STATUS"
 expected="install-leanctx-sb --host claude --project-root ${PROJ}
 optimize-rtk-context-mode --host claude --project-root ${PROJ} --skip-cm-doctor
-patch-mcp ${STAGE}/scripts/lib/global-toolstack/patch-mcp.py RT_HOST=claude RT_PATCH_AGENTMEMORY=1 RT_PATCH_CONTEXT_MODE=1 RT_PATCH_GRAPHIFY=1 RT_PATCH_LEANCTX=1 TOOLSTACK_REPO_ROOT=${STAGE}
-sb-optimize-stack --apply --host claude"
+patch-mcp ${STAGE}/scripts/lib/global-toolstack/patch-mcp.py RT_HOST=claude RT_LEANCTX_ALLOW_INSTALL=1 RT_PATCH_AGENTMEMORY=1 RT_PATCH_CONTEXT_MODE=1 RT_PATCH_GRAPHIFY=1 RT_PATCH_LEANCTX=1 TOOLSTACK_REPO_ROOT=${STAGE}
+sb-optimize-stack --apply --project-root ${PROJ} --host claude"
 assert_eq "claude: helper sequence and arguments" "$expected" "$(calls)"
 assert_contains "profile stamped announcement" "$TL_OUT" "OK: five_tool_routed profile metadata applied to .silver-bullet.json"
 assert_eq "profile stamped: name" "five_tool_routed" "$(jq -r '.recommended_tools.leanctx.optimization_profile' "$PROJ/.silver-bullet.json")"
@@ -118,6 +137,33 @@ run_opt --host pi --project-root "$PROJ" --skip-rtcm --skip-synergy
 assert_not_contains "both skips: no MCP patching" "$(calls)" "patch-mcp"
 assert_eq "both skips: only the leanctx installer runs" "install-leanctx-sb --host pi --project-root ${PROJ}" "$(calls)"
 
+# ---- patch switches follow the user's per-tool consent (R6-04): nothing is forced to 1
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+sb_test_consent_revoke_all
+sb_test_consent_grant leanctx wire
+sb_test_consent_grant graphify wire
+run_opt --host claude --project-root "$PROJ"
+assert_contains "only consented tools are patched" "$(calls)" "RT_PATCH_AGENTMEMORY=0 RT_PATCH_CONTEXT_MODE=0 RT_PATCH_GRAPHIFY=1 RT_PATCH_LEANCTX=1"
+assert_contains "wire-only leanctx: the optimizer withholds the package-install consent" "$(calls)" "RT_LEANCTX_ALLOW_INSTALL=0"
+assert_not_contains "no RTK/Context Mode optimizer without their consent" "$(calls)" "optimize-rtk-context-mode"
+sb_test_consent_grant context_mode wire
+run_opt --host claude --project-root "$PROJ"
+assert_contains "Context Mode consent brings its optimizer" "$(calls)" "optimize-rtk-context-mode --host claude"
+assert_contains "and its patch switch" "$(calls)" "RT_PATCH_CONTEXT_MODE=1"
+sb_test_consent_grant_all
+
+# ---- one install run: every helper shares one SB_INSTALL_RUN_START, so the first backup survives (R6-26)
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+rm -f "$LOG.start"
+run_opt --host claude --project-root "$PROJ"
+starts="$(sort -u "$LOG.start")"
+assert_eq "all helpers of one run share a single run start" "1" "$(printf '%s\n' "$starts" | wc -l | tr -d ' ')"
+assert_contains "the run start is epoch seconds" "$starts" "1"
+case "$starts" in *[!0-9]*|"") tl_fail "run start is numeric" ;; *) tl_pass "run start is numeric" ;; esac
+rm -f "$LOG.start"
+: >"$LOG"; tl_run env SB_INSTALL_RUN_START=1234 bash "$OPT" --host claude --project-root "$PROJ"
+assert_eq "an outer run start is kept" "1234" "$(sort -u "$LOG.start")"
+
 # ---- dry run
 write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
 run_opt --host claude --project-root "$PROJ" --dry-run
@@ -126,7 +172,7 @@ assert_eq "dry-run runs no helper" "" "$(calls)"
 assert_contains "dry-run leanctx" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/install-leanctx-sb.sh --host claude --project-root ${PROJ} --dry-run"
 assert_contains "dry-run rtcm" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/optimize-rtk-context-mode.sh --host claude --project-root ${PROJ} --skip-cm-doctor --dry-run"
 assert_contains "dry-run patch" "$TL_OUT" "DRY-RUN: env RT_HOST=claude TOOLSTACK_REPO_ROOT=${STAGE} RT_PATCH_GRAPHIFY=1"
-assert_contains "dry-run synergy" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/sb-optimize-stack.sh --apply --dry-run --host claude"
+assert_contains "dry-run synergy" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/sb-optimize-stack.sh --apply --project-root ${PROJ} --dry-run --host claude"
 assert_contains "dry-run metadata" "$TL_OUT" "DRY-RUN: stamp optimization_profiles.five_tool_routed metadata"
 assert_eq "dry-run does not modify the config" "null" "$(jq -r '.recommended_tools.leanctx.optimization_profile' "$PROJ/.silver-bullet.json")"
 assert_contains "dry-run reports the default profile as active" "$TL_OUT" "Profile: five_tool_routed"
@@ -142,8 +188,9 @@ assert_contains "all: synergy without --host" "$(calls)" "sb-optimize-stack --ap
 assert_not_contains "all: synergy not pinned to a host" "$(calls)" "sb-optimize-stack --apply --host"
 
 write_cfg '{}'
+sb_test_consent_revoke_all
 run_opt --host opencode --project-root "$PROJ" --force --skip-rtcm --skip-synergy
-assert_eq "--force runs even when not opted in" "install-leanctx-sb --host opencode --project-root ${PROJ}" "$(calls)"
+assert_eq "--force runs even when not consented" "install-leanctx-sb --host opencode --project-root ${PROJ}" "$(calls)"
 assert_eq "--force stamps the profile into a bare config" "five_tool_routed" "$(jq -r '.recommended_tools.leanctx.optimization_profile' "$PROJ/.silver-bullet.json")"
 
 # ---- profile not active -> warning (a dry run does not stamp the profile)
@@ -170,9 +217,9 @@ detect() {
   tl_run env -u CODEX_HOME -u PI_CODING_AGENT_DIR -u RT_HOST "$@" bash -c 'source "$1"; detect_host' _ "$FN"
 }
 rm -rf "$HOME/.codex" "$HOME/.claude" "$HOME/.pi" "$HOME/.config"
-detect; assert_eq "detect: nothing found falls back to claude" "claude" "$TL_OUT"
+detect; assert_eq "detect: nothing found is reported as none" "none" "$TL_OUT"
 detect RT_HOST=pi; assert_eq "detect: RT_HOST wins" "pi" "$TL_OUT"
-mkdir -p "$HOME/.cursor"; detect; assert_eq "detect: a leftover ~/.cursor is not a host" "claude" "$TL_OUT"
+mkdir -p "$HOME/.cursor"; detect; assert_eq "detect: a leftover ~/.cursor is not a host" "none" "$TL_OUT"
 rmdir "$HOME/.cursor"
 detect CODEX_HOME=/c; assert_eq "detect: CODEX_HOME" "codex" "$TL_OUT"
 mkdir -p "$HOME/.codex"; detect; assert_eq "detect: ~/.codex" "codex" "$TL_OUT"
@@ -189,11 +236,24 @@ rm -rf "$HOME/.claude"
 tl_run bash -c 'source "$1"; PROJECT_ROOT=""; DRY_RUN=0; if five_tool_profile_active; then echo active=0; else echo active=1; fi; apply_profile_metadata; echo "apply=$?"' _ "$FN"
 assert_contains "profile active: no config file" "$TL_OUT" "active=1"
 assert_contains "apply metadata: no config file is a no-op" "$TL_OUT" "apply=0"
-# an unparsable config counts as the default (five_tool_routed) profile
+# an unparsable config counts as the default (five_tool_routed) profile and is no veto
 printf 'garbage' >"$PROJ/.silver-bullet.json"
+sb_test_consent_grant_all
 tl_run bash -c 'source "$1"; PROJECT_ROOT="$2"; if five_tool_profile_active; then echo active=0; else echo active=1; fi; if leanctx_opted_in; then echo opted=0; else echo opted=1; fi' _ "$FN" "$PROJ"
 assert_contains "profile active: unparsable config" "$TL_OUT" "active=0"
-assert_contains "opted in: unparsable config" "$TL_OUT" "opted=1"
+assert_contains "consented: an unparsable project file is no veto" "$TL_OUT" "opted=0"
+sb_test_consent_revoke_all
+tl_run bash -c 'source "$1"; PROJECT_ROOT="$2"; if leanctx_opted_in; then echo opted=0; else echo opted=1; fi' _ "$FN" "$PROJ"
+assert_contains "not consented: not opted in" "$TL_OUT" "opted=1"
+sb_test_consent_grant_all
+
+# --host auto with no detected host writes nothing and says so (even with --force)
+rm -rf "$HOME/.codex" "$HOME/.claude" "$HOME/.pi" "$HOME/.config"
+run_opt --host auto --project-root "$PROJ" --force
+assert_eq "auto with no host: exits 0" "0" "$TL_STATUS"
+assert_eq "auto with no host: no helper ran" "" "$(calls)"
+assert_contains "auto with no host: says so" "$TL_OUT" "No host detected"
+assert_eq "auto with no host: nothing written under HOME" "0" "$(find "$HOME" -type f ! -path "$HOME/.local/*" 2>/dev/null | wc -l | tr -d ' ')"
 
 # --host auto resolves through detect_host before the opt-in check
 mkdir -p "$HOME/.codex"

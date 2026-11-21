@@ -24,9 +24,9 @@ Consent lives in `.silver-bullet.json`:
 
 | `enabled_by_user` | Behavior |
 |-----------------|----------|
-| `null` | Consent pending — SB prompts at init, update, session start |
-| `true` | Mandatory when install succeeded — hooks require LeanCTX for owned surfaces |
-| `false` | Advisory only — two-tool RTK + Context Mode stack unchanged |
+| `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project .`) |
+| `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 **MCP namespace:** LeanCTX tools are registered with the `lctx_` prefix. Never register raw `ctx_*` from LeanCTX when Context Mode is opted in — SB merge scripts enforce this separation.
 
@@ -87,7 +87,7 @@ Registry helpers (Phase 1):
 | Host | Wire + ledger | AST read | PathJail | Injection | RTK shell | CM sandbox | CM webfetch | Graphify | agentmemory | `lctx_graph` | `lctx_remember` | Notes |
 |------|---------------|----------|----------|-----------|-----------|------------|-------------|----------|-------------|--------------|-----------------|-------|
 | **Claude Code** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Hook chain verified in Phase 4 tests |
-| **Codex** | ✅ LeanCTX | ❌ deny-only | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | AST blocked until PreToolUse rewrite; wire-proxy ordering validator mandatory |
+| **Codex** | ✅ LeanCTX | ❌ deny-only | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | AST blocked until PreToolUse rewrite; wire-proxy ordering validator (checks captured evidence: `install-leanctx-sb.sh --wire-proxy-evidence FILE`) |
 | **OpenCode** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Native MCP + plugin convergence verified |
 | **Pi** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Native extension adapter + pi-lean-ctx bridge |
 
@@ -106,7 +106,7 @@ Codex PreToolUse is **deny-only** — no `updatedInput` rewrite. When LeanCTX is
 - **Wire proxy + ledger + PathJail + injection detection** run normally
 - **AST read-path (`lctx_read_ast`)** is unavailable — RTK + Context Mode remain primary compressors for shell and analysis
 - **LeanCTX shell and sandbox MCP** are explicitly OFF (RTK and CM own those surfaces)
-- Install-time **wire-proxy JSON message ordering** is validated by `scripts/lib/verify-leanctx-wire-proxy-ordering.py` (Phase 2)
+- **Wire-proxy JSON message ordering** evidence is validated by `scripts/lib/verify-leanctx-wire-proxy-ordering.py`: pass captured traffic with `install-leanctx-sb.sh --wire-proxy-evidence FILE`. Without evidence the installer only runs the validator's self-test, which proves the validator, not the proxy.
 
 ## Deep-Research Fetch Routing
 

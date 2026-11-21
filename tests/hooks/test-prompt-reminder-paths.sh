@@ -2,6 +2,10 @@
 # hooks/prompt-reminder.sh: planning/delivery tiers, bare-prompt routing per host,
 # orchestrator directive, opt-in tool lines and library fallbacks.
 set -euo pipefail
+# The opt-in tools act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 source "$TL_REPO_ROOT/tests/lib/e-core-helpers.sh"
@@ -110,8 +114,11 @@ reset
 SILVER_BULLET_RUNTIME=claude run_pr "please fix the failing login test"
 assert_contains "claude host: Skill tool routing" "$(ctx)" 'invoke the Skill tool with skill "sb" (Claude)'
 reset
+SILVER_BULLET_RUNTIME=codex SB_ORCHESTRATOR_PARENT=1 run_pr "please fix the failing login test"
+assert_contains "codex parent (forced): prefers the Skill tool" "$(ctx)" "(parent mode)"
+reset
 SILVER_BULLET_RUNTIME=codex run_pr "please fix the failing login test"
-assert_contains "codex parent: prefers the Skill tool" "$(ctx)" "(parent mode)"
+assert_not_contains "codex without worker identity: no parent-mode wording" "$(ctx)" "(parent mode)"
 reset
 SB_ORCHESTRATOR_WORKER=1 SILVER_BULLET_RUNTIME=codex run_pr "please fix the user's login test"
 assert_contains "codex worker: adapter invocation" "$(ctx)" "invoke-skill sb"
@@ -171,6 +178,13 @@ cfg '{"recommended_tools":{"graphify":{"enabled_by_user":true},"agentmemory":{"e
 run_pr "continue"
 assert_contains "graphify reminder" "$(ctx)" "Graphify"
 assert_contains "agentmemory reminder" "$(ctx)" "agentmemory"
+reset
+cfg '{"recommended_tools":{"graphify":{"enabled_by_user":true},"agentmemory":{"enabled_by_user":true}}}'
+XDG_CONFIG_HOME="$TL_TMP/no-consent" run_pr "continue"
+assert_not_contains "no opt-in lines without the user's consent (R5-04)" "$(ctx)" "CODE INTELLIGENCE"
+reset
+cfg '{"recommended_tools":{"graphify":{"enabled_by_user":true},"agentmemory":{"enabled_by_user":true}}}'
+run_pr "continue"
 assert_contains "code intelligence synergy on the first prompt" "$(ctx)" "CODE INTELLIGENCE"
 reset
 : >"$SD/session-rules-injected"
@@ -181,7 +195,7 @@ reset
 cfg '{"recommended_tools":{"rtk":{"enabled_by_user":true,"install_status":"installed"},"context_mode":{"enabled_by_user":true,"install_status":"installed"}}}'
 run_pr "continue"
 assert_contains "rtk reminder" "$(ctx)" 'RTK: CLI `rtk` missing'
-assert_contains "context mode reminder" "$(ctx)" 'Context Mode: CLI `context_mode` missing'
+assert_contains "context mode reminder" "$(ctx)" 'Context Mode: CLI `context-mode` missing'
 reset
 cfg '{"recommended_tools":{"rtk":{"enabled_by_user":true,"install_status":"installed"}}}'
 date +%s >"$SD/rtk-usage"

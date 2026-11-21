@@ -19,9 +19,9 @@ Consent lives in `.silver-bullet.json`:
 
 | `enabled_by_user` | Behavior |
 |-----------------|----------|
-| `null` | Consent pending — SB prompts at init, update, session start |
-| `true` | Mandatory install/wiring gate — hooks block until CLI + host hook present |
-| `false` | Advisory only |
+| `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project .`) |
+| `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 **Wrong binary trap:** `reachingforthejack/rtk` (Rust Type Kit) shares the `rtk` command name. SB verifies `rtk gain --help` succeeds and rejects the wrong binary.
 
@@ -61,6 +61,8 @@ Run from project root after CLI install. SB stores commands in `recommended_tool
 | Goose | — | — | **Unsupported** upstream |
 
 **Global setup (no SB):** `bash scripts/optimize-rtk-context-mode.sh --host <host> --project-root "$(pwd)"` — see [docs/rtk-cm/README.md](rtk-cm/README.md).
+
+Codex limitation: PreToolUse on Codex supports deny rules only — RTK savings on Codex are primarily via `AGENTS.md` awareness ([openai/codex#18491](https://github.com/openai/codex/issues/18491)).
 
 ## Verification
 
@@ -133,6 +135,6 @@ See `silver-bullet.md` §2g-ii.
 
 ## Shell ownership and reload receipts
 
-In `five_tool_routed` mode RTK is the **sole** `sb_shell` owner. Context Mode owns grep/slice/webfetch; LeanCTX shell MCP is disabled. Hook order is RTK before Context Mode; `lean-ctx hook rewrite` entries are removed on repair.
+In `five_tool_routed` mode RTK is the **sole** `sb_shell` owner. Context Mode owns grep/slice/webfetch; LeanCTX shell MCP is disabled. Hook order is RTK before Context Mode; `lean-ctx hook rewrite` entries are removed on repair only for a user who also consented to LeanCTX wiring (they are LeanCTX's hooks, not Silver Bullet's); otherwise remove them yourself.
 
 Host hook changes batch into one reload receipt (not multiple restart prompts). RTK liveness is proven only when the session attestation reports successful shell-hook evidence alongside MCP tools — config presence alone is insufficient for canonical `ready`.
