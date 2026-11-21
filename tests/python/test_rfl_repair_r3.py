@@ -94,7 +94,7 @@ class ConservativeScan(Fire):
         try:
             for i in range(5):
                 self.agent_file(f"a{i}.md", "---\nname: a\n---\n")
-            self.assertIn("more than 3", native.shadow_agent_files(self.root)[-1])
+            self.assertIn("5 agent files", native.shadow_agent_files(self.root)[-1])
         finally:
             native.MAX_AGENT_FILES = old
 
@@ -112,7 +112,7 @@ class ConservativeScan(Fire):
         self.start()
         for label, text in spellings("sb-rfl-reviewer").items():
             with self.subTest(label=label):
-                self.assertIn("over-broad", self.reason(self.edit("Write", file_path=str(self.root / "docs/n.md"), content=text)))
+                self.assertIn("over-broad", self.reason(self.edit("Write", file_path=str(self.root / "docs/agents/n.md"), content=text)))
 
 
 class NestedEscapes(unittest.TestCase):

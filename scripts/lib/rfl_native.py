@@ -670,7 +670,7 @@ def _own_plugin_agents(directory: Path) -> bool:
 
 
 MAX_AGENT_FILE_BYTES = 1024 * 1024
-MAX_AGENT_FILES = 500
+MAX_AGENT_FILES = 5000
 _ESCAPE_RES = (
     (re.compile(r"\\[xX]([0-9a-fA-F]{2})"), 16), (re.compile(r"\\[uU]([0-9a-fA-F]{8})"), 16),
     (re.compile(r"\\[uU]([0-9a-fA-F]{4})"), 16), (re.compile(r"\\([0-7]{1,3})"), 8),
@@ -703,27 +703,49 @@ SHADOW_NOTE = ("the scan is deliberately over-broad: any agent file whose text m
                "is refused even if it only talks about them; rename or move it")
 
 
-def shadow_agent_files(project_root: Path, role: str = "") -> list[str]:
-    """Agent files (any depth, project, user and other plugins) that could carry a reserved sb-rfl-* name. A file that
-    cannot be read in full, is too large or is not UTF-8 counts as a match (fail closed)."""
+def _agent_scan_dirs(project_root: Path) -> list[Path]:
+    """Agent folders to scan: the usual ones plus the ``.claude/agents`` of every ancestor of the project (the host's
+    lookup upward from the working directory is undocumented, so the scan goes up to the filesystem root)."""
+    root = Path(project_root).resolve()
+    dirs = agent_dirs(root) + [a / ".claude" / "agents" for a in (root, *root.parents)]
+    seen: set[str] = set()
+    return [d for d in dirs if not (str(d) in seen or seen.add(str(d))) and not _own_plugin_agents(d)]
+
+
+def _scan_agent_dir(directory: Path) -> list[str]:
+    """Matches in one agents folder. Any symbolic link (file or folder, dangling or not) is a match: it is never followed."""
+    if os.path.islink(directory) or os.path.islink(directory.parent):
+        return [f"{directory} (symbolic link)"]
     found: list[str] = []
-    seen = 0
-    for directory in agent_dirs(project_root):
-        if not directory.is_dir():
-            continue
-        for path in sorted(directory.rglob("*")):
-            if path.suffix.lower() != ".md" or path.is_dir():
-                continue
-            seen += 1
-            if seen > MAX_AGENT_FILES:
-                return found + [f"{directory} (more than {MAX_AGENT_FILES} agent files)"]
-            try:
-                size = path.stat().st_size
-                text = path.read_bytes().decode("utf-8") if size <= MAX_AGENT_FILE_BYTES else None
-            except (OSError, UnicodeDecodeError):
-                text = None
-            if text is None or mentions_reserved_agent(path.stem) or mentions_reserved_agent(text):
-                found.append(str(path))
+    files: list[Path] = []
+    for base, dirnames, filenames in os.walk(directory, followlinks=False):
+        for name in dirnames + filenames:
+            full = Path(base) / name
+            if os.path.islink(full):
+                found.append(f"{full} (symbolic link)")
+            elif name.lower().endswith(".md") and name in filenames:
+                files.append(full)
+    if len(files) > MAX_AGENT_FILES:
+        return found + [f"{directory} ({len(files)} agent files; the limit is {MAX_AGENT_FILES})"]
+    for path in sorted(files):
+        try:
+            size = path.stat().st_size
+            text = path.read_bytes().decode("utf-8") if size <= MAX_AGENT_FILE_BYTES else None
+        except (OSError, UnicodeDecodeError):
+            text = None
+        if text is None or mentions_reserved_agent(path.stem) or mentions_reserved_agent(text):
+            found.append(str(path))
+    return found
+
+
+def shadow_agent_files(project_root: Path, role: str = "") -> list[str]:
+    """Agent files (any depth; project, ancestors, user, other plugins) that could carry a reserved sb-rfl-* name, and
+    anything that cannot be scanned safely: a symbolic link, a file that is unreadable, oversized or not UTF-8, a folder
+    with too many files (fail closed)."""
+    found: list[str] = []
+    for directory in _agent_scan_dirs(project_root):
+        if os.path.lexists(directory):
+            found += _scan_agent_dir(directory)
     return found
 
 
