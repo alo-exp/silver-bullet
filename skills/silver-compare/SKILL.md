@@ -9,6 +9,8 @@ version: 1.0.0
 
 # /sb:compare — Named Solution Comparison
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `skills/` (`${PLUGIN_ROOT}/skills/silver-compare/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 Thin orchestrator route into **`silver-deep-research`** with
 `research_type=solution-compare`. Does **not** invoke MultAI or multi-AI orchestration.
 
@@ -46,8 +48,8 @@ with `"auto_assumed": true`. Never silently invent must-haves.
 ## Validation
 
 ```bash
-python3 skills/silver-deep-research/scripts/validate_compare.py --dir "$SB_RESEARCH_OUT_DIR"
-python3 skills/silver-deep-research/scripts/validate_spa_report.py --report "$SB_RESEARCH_OUT_DIR/report.html"
+python3 "${PLUGIN_ROOT}/skills/silver-deep-research/scripts/validate_compare.py" --dir "$SB_RESEARCH_OUT_DIR"
+python3 "${PLUGIN_ROOT}/skills/silver-deep-research/scripts/validate_spa_report.py" --report "$SB_RESEARCH_OUT_DIR/report.html"
 ```
 
 ## Catalog

@@ -5,7 +5,7 @@
 ### Citation Verification
 
 ```bash
-python scripts/verify_citations.py --report [path]
+python3 "${SKILL_DIR}/scripts/verify_citations.py" --report [path]
 ```
 
 **Checks:**
@@ -26,7 +26,7 @@ userinfo or `%` in the host are not requested.
 ### Structure & Quality Validation
 
 ```bash
-python scripts/validate_report.py --report [path]
+python3 "${SKILL_DIR}/scripts/validate_report.py" --report [path]
 ```
 
 **9 automated checks:**
@@ -48,8 +48,8 @@ python scripts/validate_report.py --report [path]
 
 **After generating ANY report, run this loop:**
 
-1. Run `python scripts/validate_report.py --report [path]`
-2. Run `python scripts/verify_citations.py --report [path]`
+1. Run `python3 "${SKILL_DIR}/scripts/validate_report.py" --report [path]`
+2. Run `python3 "${SKILL_DIR}/scripts/verify_citations.py" --report [path]`
 3. If EITHER fails:
    - Read error output carefully
    - Fix the specific issues identified

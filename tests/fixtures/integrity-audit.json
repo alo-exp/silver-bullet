@@ -17,7 +17,7 @@
   ]
  },
  "counts": {
-  "X": 114,
+  "X": 113,
   "A": 22
  },
  "rows": [
@@ -356,14 +356,6 @@
    "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]] && [[ -f \"$search_dir/silver-bullet.md\" ]]; then",
    "record": "X",
    "reason": "session log bookkeeping: finds the project directory for the ledger file, decides no gate"
-  },
-  {
-   "file": "hooks/lib/site-session.sh",
-   "line": 19,
-   "kind": "config",
-   "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" && -f \"$search_dir/silver-bullet.md\" ]]; then",
-   "record": "X",
-   "reason": "site-session bookkeeping: finds the project directory, decides no gate"
   },
   {
    "file": "hooks/record-skill.sh",

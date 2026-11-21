@@ -62,8 +62,8 @@ cross-artifact review when release artifacts exist, fresh `verify-tests`, `sb:ve
 
 ## Step-skip protocol
 
-On skip request: explain → offer A/B/C → record permanent skips in `silver-bullet.md` +
-`templates/silver-bullet.md.base`.
+On skip request: explain → offer A/B/C → record permanent skips in the project's `silver-bullet.md` §9b (in the Silver Bullet
+source repo, mirror it into `templates/silver-bullet.md.base` §9b).
 
 ## Release execution summary
 
