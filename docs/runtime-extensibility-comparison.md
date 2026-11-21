@@ -106,7 +106,7 @@ Focused gaps where Goose, OpenCode, and OMP trail Claude (and Codex where noted)
 
 [^omp-config]: OMP config is `config.yml` at `~/.omp/agent/config.yml` (primary) or `settings.json` (legacy). Context files and `config.yml` are used for rule injection; no `silver-bullet.md` hook merge. See [oh-my-pi docs](https://omp.sh/docs).
 
-[^codex-tool-names]: Codex canonical tool names are `Bash` (shell) and `apply_patch` (file edits). SB's `hooks.json` uses `exec_command` in matchers, which is an SB-specific alias translated by `codex-hook-adapter.sh`, not a Codex native name. See [Codex hooks docs](https://developers.openai.com/codex/hooks).
+[^codex-tool-names]: Codex canonical tool names are `Bash` (shell) and `apply_patch` (file edits). SB's `hooks.json` uses `exec_command` in matchers, which is an SB-specific alias, not a Codex native name. The Codex installer expands each shell matcher into `Bash`, `shell` and `exec_command` entries; `codex-hook-adapter.sh` does no tool-name translation and only reshapes hook output. See [Codex hooks docs](https://developers.openai.com/codex/hooks).
 
 [^codex-skills]: Codex has a **native built-in Skill tool** documented at [Codex skills](https://developers.openai.com/codex/skills). Skills use `SKILL.md` files with progressive disclosure. SB's `invoke-skill` adapter is supplementary glue for SB-specific state recording, not a replacement for a missing feature.
 
