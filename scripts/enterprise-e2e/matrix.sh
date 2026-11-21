@@ -336,14 +336,14 @@ verify_row_internal() {
     21) marker='post-exec-gates'; parent_row=3 ;;
     22) marker='validate-substep'; parent_row=4 ;;
   esac
-  enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
+  # The marker is accepted only when the agent's rows 3/4 (or their ledger status) produced it;
+  # nothing is seeded here before the check, or the check could never fail (R14-02).
   if matrix_marker_present "$marker"; then
     return 0
   fi
   parent_log="$(enterprise_e2e_row_attempt_log "$parent_row" 2>/dev/null || true)"
-  if [[ -n "$parent_log" && -f "$parent_log" ]] && grep -q "$marker" "$parent_log" 2>/dev/null; then
-    return 0
-  fi
+  # A parent attempt log that merely mentions the marker is not evidence: the matrix prompt and the
+  # agent's own echo contain the words. Only the outcome scorer or the ledger can vouch (R14-02).
   if [[ -n "$parent_log" && -f "$parent_log" && -s "$parent_log" ]] && \
      [[ -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]]; then
     # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
@@ -394,23 +394,22 @@ enterprise_e2e_matrix_seed_internal_gate_markers() {
   esac
 }
 
+# Rows 21/22 are derived from rows 3/4. A marker is written for a parent row only when the
+# ledger records that row as passed; an empty or non-empty attempt log, or merely being asked to
+# run, never creates one (R14-02).
 enterprise_e2e_matrix_ensure_internal_gate_markers() {
-  local row_num parent="" ledger="${SB_E2E_LEDGER_FILE:-}"
+  local row_num ledger="${SB_E2E_LEDGER_FILE:-}"
+  [[ -n "$ledger" && -f "$ledger" && -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]] || return 0
+  # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
+  source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
   for row_num in 3 4; do
-    enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
-    if [[ -n "$ledger" && -f "$ledger" && -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]]; then
-      # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
-      source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
-      local line="" status=""
-      line="$(enterprise_e2e_outcome_ledger_workflow_line "$ledger" "$row_num" 2>/dev/null || true)"
-      if [[ -n "$line" ]]; then
-        status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
-        [[ "$status" == "pass" || "$status" == "Pass" ]] && enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
+    local line="" status=""
+    line="$(enterprise_e2e_outcome_ledger_workflow_line "$ledger" "$row_num" 2>/dev/null || true)"
+    if [[ -n "$line" ]]; then
+      status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
+      if [[ "$status" == "pass" || "$status" == "Pass" ]]; then
+        enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
       fi
-    fi
-    parent="$(enterprise_e2e_row_attempt_log "$row_num" 2>/dev/null || true)"
-    if [[ -n "$parent" && -f "$parent" && -s "$parent" ]]; then
-      enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
     fi
   done
 }
@@ -488,12 +487,9 @@ run_matrix_row() {
   fi
 
   prompt="$(build_matrix_prompt "$route" "$prompt_card" "$evidence_path" "$row_num" "$slug")"
-  local matrix_state_file
-  matrix_state_file="$(enterprise_e2e_runtime_state_dir)/state"
-  mkdir -p "$(dirname "$matrix_state_file")" 2>/dev/null || true
-  if ! grep -Fqx -- "$slug" "$matrix_state_file" 2>/dev/null; then
-    printf '%s\n' "$slug" >>"$matrix_state_file" 2>/dev/null || true
-  fi
+  # The row slug is NOT written into the runtime state before the agent turn: row 1 accepts a
+  # routing slug found in that state as proof of routing, so pre-seeding it would pass the row
+  # without the agent routing anything (R14-02).
   local quiet_timeout="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
   if [[ "$row_num" == "1" ]]; then
     quiet_timeout="${SB_E2E_ROW1_QUIET_TIMEOUT:-300}"
