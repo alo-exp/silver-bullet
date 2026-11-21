@@ -78,6 +78,35 @@ for protected in "$SB_RUNTIME_STATE_DIR/run" "$HOME/.claude/plugins/cache/x/run"
   assert_file_absent "nothing written: ${protected#"$HOME"/}" "$protected"
 done
 
+echo "=== system directories are never an output root (both CLIs) ==="
+for sysdir in /etc /etc/sb-fu1 /usr/sb-fu1 /usr/local/sb-fu1 /bin/sb-fu1 /sbin/sb-fu1 /lib/sb-fu1 /lib64/sb-fu1 /sys/sb-fu1 /proc/sb-fu1 /dev/sb-fu1 /boot/sb-fu1 /var/lib/sb-fu1 /opt/sb-fu1; do
+  tl_run env SB_HOST=claude python3 "$MAT" --output-root "$sysdir" --dry-run
+  assert_eq "multi-ai-task refuses $sysdir (exit)" 2 "$TL_STATUS"
+  assert_contains "multi-ai-task refuses $sysdir (code and reason)" "$TL_OUT" "OUTPUT_ROOT_NOT_ALLOWED"
+  assert_contains "multi-ai-task names the system directory for $sysdir" "$TL_OUT" "system directory"
+  tl_run env SB_HOST=claude python3 "$DRM" probe --output-root "$sysdir" --dry-run
+  assert_eq "deep-research refuses $sysdir (exit)" 2 "$TL_STATUS"
+  assert_contains "deep-research refuses $sysdir (code)" "$TL_OUT" "OUTPUT_ROOT_NOT_ALLOWED"
+done
+assert_file_absent "nothing was created under /opt" /opt/sb-fu1
+# /var and /opt are fine for a project that lives there (the working directory is below them) and for the temp dir
+VARPROJ="$(mktemp -d /var/tmp/sb-fu1-proj.XXXXXX)"
+tl_run bash -c 'cd "$1" && env SB_HOST=claude python3 "$2" --output-root "$1/out" --dry-run' _ "$VARPROJ" "$MAT"
+assert_eq "multi-ai-task accepts an output root under a project in /var" 0 "$TL_STATUS"
+tl_run bash -c 'cd "$1" && env SB_HOST=claude python3 "$2" probe --output-root "$1/out" --dry-run' _ "$VARPROJ" "$DRM"
+assert_eq "deep-research accepts an output root under a project in /var" 0 "$TL_STATUS"
+tl_run bash -c 'cd "$1" && env SB_HOST=claude python3 "$2" --output-root /var/tmp/not-the-project --dry-run' _ "$VARPROJ" "$MAT"
+assert_eq "...but not a /var directory outside the project" 2 "$TL_STATUS"
+tl_run bash -c 'cd / && env SB_HOST=claude python3 "$1" --output-root /var/sb-fu1 --dry-run' _ "$MAT"
+assert_eq "a working directory of / does not make /var a project" 2 "$TL_STATUS"
+rm -rf "$VARPROJ"
+tl_run env SB_HOST=claude python3 "$MAT" --output-root "$(mktemp -d)/out" --dry-run
+assert_eq "the system temp directory stays usable" 0 "$TL_STATUS"
+VARTMP="$(mktemp -d /var/tmp/sb-fu1-tmp.XXXXXX)"
+tl_run env SB_HOST=claude TMPDIR="$VARTMP" python3 "$MAT" --output-root "$VARTMP/out" --dry-run
+assert_eq "a temp directory that lives under /var stays usable (macOS)" 0 "$TL_STATUS"
+rm -rf "$VARTMP"
+
 echo "=== a live run through stub backends works from a worker on either host ==="
 STUB="$TL_TMP/stub-cursor-agent"
 printf '#!/usr/bin/env bash\necho %q\n' '{"result":"stubbed","sources":[],"confidence":"high"}' >"$STUB"
