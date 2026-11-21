@@ -69,7 +69,9 @@
     "silver-ui-contract": "AF-DESIGN-CONTRACT",
     "silver-ui-review": "AF-UI-QUALITY",
     "silver-validate": "AF-VALIDATE",
-    "silver-verify": "AF-VERIFY"
+    "silver-verify": "AF-VERIFY",
+    "tdd": "AF-EXECUTE",
+    "verify-tests": "AF-VERIFY"
   },
   "skill_worker_templates": {
     "AF-DOCUMENT": {

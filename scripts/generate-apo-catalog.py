@@ -702,6 +702,7 @@ def build_catalog() -> dict:
                 "silver-handoff": "AF-DOCUMENT", "silver-scan": "AF-ORIENT",
                 "silver-review-fix-ladder": "AF-REVIEW-TRIAGE", "silver-new-workflow": "AF-PLAN",
                 "silver-triage": "AF-REVIEW-TRIAGE",
+                "tdd": "AF-EXECUTE", "verify-tests": "AF-VERIFY",
                 "silver-multi-ai-task": "AF-MULTI-AI-TASK",
                 "silver-deep-research-multi-ai": "AF-DECIDE",
             },
