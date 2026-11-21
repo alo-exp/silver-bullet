@@ -434,10 +434,22 @@ enterprise_e2e_matrix_gate_state_dir() {
   fi
 }
 
-# True when the SB checkout has uncommitted or untracked changes (git-ignored files do not count): that tree
-# is what the nested sessions install and test, so evidence from a dirty tree proves nothing about a commit.
+# The files the supervised matrix itself writes inside the SB checkout: the round ledger (markdown, no executable
+# behaviour; docs/RELEASE.md and hooks/lib/completion-audit/release-surface-allowlist.txt name the same path). They
+# are the ONLY paths ignored when deciding whether the tree is dirty. Every other harness output (attempt logs, pid
+# files, telemetry, the row-pass registry, transcripts) is git-ignored.
+ENTERPRISE_E2E_HARNESS_OUTPUTS=(".planning/enterprise-e2e/ROUND-*-LEDGER.md")
+
+# True when the SB checkout has uncommitted or untracked changes (git-ignored files and the declared harness
+# outputs do not count): that tree is what the nested sessions install and test, so evidence from a dirty tree
+# proves nothing about a commit.
 enterprise_e2e_matrix_tree_dirty() {
-  [[ -n "$(git -C "$SB_ROOT" status --porcelain 2>/dev/null)" ]]
+  local -a spec=(.)
+  local out
+  for out in "${ENTERPRISE_E2E_HARNESS_OUTPUTS[@]}"; do
+    spec+=(":(exclude,glob)${out}")
+  done
+  [[ -n "$(git -C "$SB_ROOT" status --porcelain -- "${spec[@]}" 2>/dev/null)" ]]
 }
 
 # At run start: bind the run to the checkout's HEAD and cleanliness, and snapshot the gate's evidence files so the

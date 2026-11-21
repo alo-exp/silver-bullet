@@ -68,6 +68,41 @@ run env SB_E2E_MATRIX_FORCE_ALL=1 bash "$MATRIX"
 mv "$TL_TMP/git.bak" "$R/.git"
 assert_file_absent "no git commit: no marker" "$MARKER"
 assert_contains "no-commit reason is stated" "$TL_OUT" "has no commit to bind it to"
+# the round ledger is the harness's own output: it never makes the tree "dirty" (declared harness outputs), and the
+# documented flow works end to end: matrix -> ledger written -> marker written -> ledger + version bump committed -> gate accepts
+mkdir -p "$R/.planning/enterprise-e2e"
+printf '# ledger baseline\n' >"$R/.planning/enterprise-e2e/ROUND-1-LEDGER.md"
+printf '!.planning/\n.planning/*\n!.planning/enterprise-e2e/\n.planning/enterprise-e2e/*\n!.planning/enterprise-e2e/ROUND-*-LEDGER.md\n' >>"$R/.gitignore"
+printf '{"name":"sb","version":"1.0.0"}\n' >"$R/package.json"; printf '!package.json\n' >>"$R/.gitignore"
+git -C "$R" add -A; git -C "$R" -c user.email=t@e.x -c user.name=t commit -q -m "ledger baseline"
+HEAD_SHA="$(git -C "$R" rev-parse HEAD)"
+reset; rm -f "$MARKER"
+agent <<'EOS'
+mkdir -p "$WORK_DIR/$(dirname "$SB_E2E_MATRIX_EVIDENCE_PATH")"
+[[ "$SB_E2E_MATRIX_EVIDENCE_PATH" == */ ]] && mkdir -p "$WORK_DIR/$SB_E2E_MATRIX_EVIDENCE_PATH" || echo ev >"$WORK_DIR/$SB_E2E_MATRIX_EVIDENCE_PATH"
+echo "| row | pass |" >>"$SB_ROOT/.planning/enterprise-e2e/ROUND-1-LEDGER.md"
+echo "SILVER BULLET ▸ ROUTING silver-feature"
+EOS
+run env SB_E2E_MATRIX_FORCE_ALL=1 bash "$MATRIX"
+assert_eq "a run that only rewrites the round ledger still writes the marker" "commit=$HEAD_SHA" "$(sed -n 2p "$MARKER")"
+assert_contains "the ledger really changed during the run" "$(git -C "$R" status --porcelain)" "ROUND-1-LEDGER.md"
+# the release commit: ledger + version bump
+jq '.version="1.1.0"' "$R/package.json" >"$R/p.tmp" && mv "$R/p.tmp" "$R/package.json"
+git -C "$R" add -A; git -C "$R" -c user.email=t@e.x -c user.name=t commit -q -m "release 1.1.0"
+REL_SHA="$(git -C "$R" rev-parse HEAD)"
+# the gate's marker check (the real functions of deploy-tier.sh; the full hook is exercised in test-completion-audit-release.sh)
+# accepts the supervised marker for that release commit
+GFN="$TL_TMP/gatefn"; mkdir -p "$GFN"
+sed -n '/^ca_marker_commit_ok()/,/^}/p;/^ca_surface_change_ok()/,/^}/p;/^ca_json_equal_modulo()/,/^}/p' "$TL_REPO_ROOT/hooks/lib/completion-audit/deploy-tier.sh" >"$GFN/gate.sh"
+cp "$TL_REPO_ROOT/hooks/lib/completion-audit/release-surface-allowlist.txt" "$GFN/"
+gate_rc() { ( source "$GFN/gate.sh"; ca_marker_commit_ok "$MARKER" "$R" "$REL_SHA" ) && echo 0 || echo $?; }
+assert_eq "the gate accepts the supervised marker for the release commit (ledger + bump)" 0 "$(gate_rc)"
+echo "hook" >"$R/dirty.txt"; git -C "$R" add -f dirty.txt; git -C "$R" -c user.email=t@e.x -c user.name=t commit -q -m "code after"
+REL_SHA="$(git -C "$R" rev-parse HEAD)"
+assert_eq "...but not once other files changed after the matrix ran" 1 "$(gate_rc)"
+rm -f "$MARKER"
+git -C "$R" reset -q --hard "$HEAD_SHA"
+
 # a dirty tree (untracked file at start) writes nothing: that tree is what the nested sessions test
 reset; rm -f "$MARKER"; all_rows_agent
 echo x >"$R/dirty.txt"
