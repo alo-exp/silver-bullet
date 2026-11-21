@@ -322,6 +322,8 @@ parse_orchestrator_pre_exec() {
   IFS=',' read -ra parts <<< "$queue"
   for token in "${parts[@]}"; do
     [[ "$token" == "silver-execute" ]] && break
+    # tdd is a delivery-floor token (R10-02 part B), not a chain-guard marker.
+    [[ "$token" == "tdd" ]] && continue
     pre+=("$token")
   done
   to_sorted_csv "${pre[@]}"
