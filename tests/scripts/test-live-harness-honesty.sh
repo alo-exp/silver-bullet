@@ -185,13 +185,15 @@ assert_eq "kay preflight failure exits 1" 1 "$TL_STATUS"
 assert_contains "the kay isolated home is torn down on the failing exit" "$(cat "$TL_TMP/kay-teardown.log")" "KAY-TORN-DOWN"
 
 # --- R14-09: Kay transcripts are private, redacted and never default into the checkout -----------
+# the token-shaped fixture is assembled from pieces so no secret-shaped literal is committed
+FAKE_PAT="ghp""_abcdefghijklmnopqrstuvwxyz0123456789""ABCD"
 cat >"$TL_TMP/kay.sh" <<EOS
 source "$TL_REPO_ROOT/tests/live/agents/kay/agent.sh"
 KAY_HOME="$TL_TMP/kayhome"; mkdir -p "\$KAY_HOME"
 SB_ROOT="$TL_REPO_ROOT"
 kay_resolve_session_archive() { return 1; }
 src="$TL_TMP/rollout.jsonl"
-printf '%s\n' '{"type":"thread.started","thread_id":"th-1"}' '{"type":"tool","out":"token ghp_abcdefghijklmnopqrstuvwxyz0123456789ABCD"}' >"\$src"
+printf '%s\n' '{"type":"thread.started","thread_id":"th-1"}' '{"type":"tool","out":"token ${FAKE_PAT}"}' >"\$src"
 printf 'prompt text' >"$TL_TMP/prompt.txt"
 dir="\$(codex_transcript_dir)"
 echo "DIR=\$dir"
@@ -199,7 +201,7 @@ kay_capture_transcript "\$src" "$TL_TMP/prompt.txt" "2020-01-01T00:00:00Z" "$TL_
 echo "MODE_DIR=\$(stat -c %a "\$dir")"
 echo "MODE_LATEST=\$(stat -c %a "\$dir/latest.jsonl")"
 echo "MODE_SESSION=\$(stat -c %a "\$dir/th-1.jsonl" 2>/dev/null || echo none)"
-grep -c 'ghp_abcdefghijklmnopqrstuvwxyz0123456789ABCD' "\$dir/latest.jsonl" || true
+grep -c '${FAKE_PAT}' "\$dir/latest.jsonl" || true
 EOS
 tl_run bash "$TL_TMP/kay.sh"
 assert_contains "kay default transcript dir is inside the isolated home" "$TL_OUT" "DIR=$TL_TMP/kayhome/.sb-transcripts"
