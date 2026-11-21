@@ -1277,7 +1277,7 @@ class DrMultiAiCliTests(unittest.TestCase):
             with self.assertRaises(SystemExit) as cm:
                 _run(runpy.run_path, str(SCRIPTS / "dr_multi_ai_cli.py"), run_name="__main__")
         self.assertEqual(cm.exception.code, 2)
-        execv.assert_called_once_with(sys.executable, [sys.executable, "-I", str(SCRIPTS / "dr_multi_ai_cli.py")])
+        execv.assert_called_once_with(sys.executable, [sys.executable, "-I", "-B", str(SCRIPTS / "dr_multi_ai_cli.py")])
 
     def test_isolated_start_does_not_re_exec(self) -> None:
         with mock.patch.object(sys, "argv", ["dr_multi_ai_cli.py"]), mock.patch.object(os, "execv") as execv, \
