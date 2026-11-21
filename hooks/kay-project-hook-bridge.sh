@@ -916,14 +916,14 @@ PY
 # Undo one state file (shared locks, shim dirs), then delete it.
 restore_state_file() {
   local state_path="$1"
-  local kind path mode
+  local kind path
   local line
 
   [[ -f "$state_path" ]] || return 0
 
   release_locks state "$state_path"
   while IFS= read -r line || [[ -n "$line" ]]; do
-    IFS=$'\t' read -r kind path mode <<<"$line"
+    IFS=$'\t' read -r kind path _ <<<"$line"
     if [[ "$kind" == "SHIMDIR" ]]; then
       rm -rf -- "$path"
     fi
