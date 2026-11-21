@@ -193,6 +193,15 @@ for f in enterprise-human-deploy-approved ci-red-override; do
   assert_file_absent "startup clears $f" "$SD/$f"
 done
 
+# ---- the sealed doc-scheme baseline lives for one session (H6 r2): startup clears it, compact keeps it
+fresh
+printf 'feature/test\n%s\n' "$EC_PROJ" >"$BRANCH"
+printf 'abc' >"$SD/doc-scheme-baseline-123"
+run_ss '{"source":"compact"}'
+assert_file_exists "compact keeps the sealed doc-scheme baseline" "$SD/doc-scheme-baseline-123"
+run_ss '{"source":"startup"}'
+assert_file_absent "startup clears the sealed doc-scheme baseline" "$SD/doc-scheme-baseline-123"
+
 # ---- compact is benign (R3-25) ------------------------------------------------------------------
 fresh
 printf 'feature/test\n%s\n' "$EC_PROJ" >"$BRANCH"

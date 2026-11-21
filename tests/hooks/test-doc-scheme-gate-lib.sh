@@ -96,7 +96,7 @@ assert_file_exists "gap report: legacy cleanup failure tolerated" "$SB_DOC_SCHEM
 EMITTED="$TL_TMP/emitted"
 emit() { printf '%s' "$1" >"$EMITTED"; }
 setup_repo() {
-  rm -rf "$R" "$EMITTED" "$ST/doc-scheme-gaps"
+  rm -rf "$R" "$EMITTED" "$ST/doc-scheme-gaps" "$ST"/doc-scheme-baseline-*
   mkdir -p "$R/docs/knowledge"
   echo "# scheme" >"$R/docs/doc-scheme.md"
   cat >"$R/docs/doc-scheme.json" <<'JSON'
@@ -248,12 +248,12 @@ assert_file_absent "enforce: a contract the comparison cannot read is not report
 reset_docs
 printf '{ not json' >"$R/docs/doc-scheme.json"; git -C "$R" add docs/doc-scheme.json; git -C "$R" -c user.email=a@b -c user.name=n commit -q -m "break HEAD contract"
 git -C "$R" show HEAD:docs/doc-scheme.json >/dev/null
-printf '%s' '{"enforcement":{"enabled":false},"required_docs":[{"key":"docs/CHANGELOG.md","required_sections":[]}]}' >"$R/docs/doc-scheme.json"; rm -f "$EMITTED"; run_enforce
+printf '%s' '{"enforcement":{"enabled":false},"required_docs":[{"key":"docs/CHANGELOG.md","required_sections":[]}]}' >"$R/docs/doc-scheme.json"; rm -f "$EMITTED" "$ST"/doc-scheme-baseline-*; run_enforce
 assert_file_absent "enforce: a HEAD contract that is not JSON gives nothing to compare with" "$EMITTED"
 git -C "$R" checkout -q HEAD~1 -- docs
 git -C "$R" -c user.email=a@b -c user.name=n commit -q -m "restore HEAD contract"
 git -C "$R" rm -q --cached docs/doc-scheme.md docs/doc-scheme.json; git -C "$R" -c user.email=a@b -c user.name=n commit -q -m untrack
-rm -f "$EMITTED" "$R/docs/doc-scheme.md" "$R/docs/doc-scheme.json"; run_enforce
+rm -f "$EMITTED" "$R/docs/doc-scheme.md" "$R/docs/doc-scheme.json" "$ST"/doc-scheme-baseline-*; run_enforce
 assert_file_absent "enforce: a repo whose scheme git does not track is not governed once the files are gone" "$EMITTED"
 
 # R9-09 (review r1): the baseline is the default branch, so a commit on this branch cannot redefine the contract
@@ -283,9 +283,37 @@ for edit in '.required_docs[0].key="docs/OTHER.md"|a governed doc was dropped or
   dirty_log; rm -f "$EMITTED"; run_enforce delivery
   assert_contains "enforce: ${edit#*|} (committed) is weakening" "$(cat "$EMITTED")" "${edit#*|}"
 done
+# Sealed baseline (H6 r2): the first use records the baseline commit; moving the default branch onto a later commit
+# (git branch -f main HEAD / git update-ref refs/remotes/origin/main HEAD) cannot move it.
+rm -f "$ST"/doc-scheme-baseline-*
+fresh_branch_repo
+SEALED="$(git -C "$R" rev-parse origin/main)"
+assert_eq "sealed baseline: first use computes it" "$SEALED" "$(sb_doc_scheme__baseline "$R")"
+assert_eq "sealed baseline: and records it in the state dir" "$SEALED" "$(cat "$ST"/doc-scheme-baseline-* | tr -d '\n')"
+git -C "$R" rm -q docs/doc-scheme.md docs/doc-scheme.json; gitq commit -q -m "delete the scheme"
+git -C "$R" branch -f main HEAD; git -C "$R" update-ref refs/remotes/origin/main HEAD
+assert_eq "sealed baseline: git branch -f main HEAD / update-ref origin/main HEAD cannot move it" "$SEALED" "$(sb_doc_scheme__baseline "$R")"
+assert_eq "sealed baseline: the repo still counts as governed" "0" "$(sb_doc_scheme__head_tracks "$R" && echo 0 || echo 1)"
+dirty_log; rm -f "$EMITTED"; run_enforce delivery
+assert_contains "sealed baseline: the deletion is still a gap on delivery after the branch was moved" "$(cat "$EMITTED")" "Missing required policy file: docs/doc-scheme.md"
+# a record that is not an ancestor of HEAD (another branch, a rewritten history) or not a commit is ignored and replaced
+printf '%s' "0000000000000000000000000000000000000000" >"$(ls "$ST"/doc-scheme-baseline-* | head -1)"
+assert_eq "sealed baseline: an unknown commit in the record is recomputed" "$(git -C "$R" merge-base HEAD main)" "$(sb_doc_scheme__baseline "$R")"
+printf 'garbage' >"$(ls "$ST"/doc-scheme-baseline-* | head -1)"
+assert_eq "sealed baseline: a malformed record is recomputed" "$(git -C "$R" merge-base HEAD main)" "$(sb_doc_scheme__baseline "$R")"
+git -C "$R" checkout -q --orphan other; gitq commit -q --allow-empty -m other
+assert_eq "sealed baseline: a record that is not an ancestor of HEAD is recomputed" "$(git -C "$R" merge-base HEAD main 2>/dev/null || echo HEAD)" "$(sb_doc_scheme__baseline "$R")"
+# a symlinked record is never followed or written through
+rm -f "$ST"/doc-scheme-baseline-*; fresh_branch_repo
+KEY="$(printf '%s' "$(cd "$R" && pwd -P)" | cksum | cut -d' ' -f1)"
+ln -s "$TL_TMP/elsewhere" "$ST/doc-scheme-baseline-$KEY"
+sb_doc_scheme__baseline "$R" >/dev/null
+assert_file_absent "sealed baseline: nothing is written through a symlinked record" "$TL_TMP/elsewhere"
+rm -f "$ST"/doc-scheme-baseline-*
 # without origin: the local main is the baseline; with no default branch at all it is HEAD
 fresh_branch_repo; git -C "$R" update-ref -d refs/remotes/origin/main
 assert_eq "baseline: the local main when there is no origin" "$(git -C "$R" rev-parse main)" "$(sb_doc_scheme__baseline "$R")"
+rm -f "$ST"/doc-scheme-baseline-*
 git -C "$R" branch -q -m main trunk
 assert_eq "baseline: no default branch at all falls back to HEAD" HEAD "$(sb_doc_scheme__baseline "$R")"
 

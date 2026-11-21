@@ -196,6 +196,13 @@ assert_eq "loop: block 2 of an identical condition" 1 "$(lr gate-a '{"stop_hook_
 assert_eq "loop: block 3 of an identical condition" 1 "$(lr gate-a '{"stop_hook_active":true}' fp1)"
 assert_eq "loop: the default limit (3) released the condition that never changed" 0 "$(lr gate-a '{"stop_hook_active":true}' fp1)"
 assert_contains "loop: the release is logged with the reason" "$(cat "$SLOG")" "gate-a released: unchanged after 3 consecutive blocks (fp1)"
+# a release is shown to the user (a systemMessage on stdout), not only logged
+sb_site_stop_loop_reset gate-m
+for _ in 1 2 3; do sb_site_stop_loop_release gate-m '{}' fpm >/dev/null || true; done
+assert_contains "loop: the release prints a visible notice naming the gate and the count" "$(sb_site_stop_loop_release gate-m '{}' fpm | jq -r '.systemMessage')" "gate-m released this Stop (after 3 identical blocks)"
+assert_eq "loop: a block prints nothing" "" "$(sb_site_stop_loop_release gate-m '{}' fpm || true)"
+assert_contains "loop: an unclearable release prints a notice with the reason" "$(sb_site_stop_loop_release gate-n '{"stop_hook_active":true}' fpn "gate setup problem" | jq -r '.systemMessage')" "gate setup problem"
+sb_site_stop_loop_reset gate-m; sb_site_stop_loop_reset gate-n
 assert_eq "loop: after a release the count starts again" 1 "$(lr gate-a '{}' fp1)"
 assert_eq "loop: a changed condition starts the count again" 1 "$(lr gate-a '{}' fp2)"
 sb_site_stop_loop_reset gate-a
