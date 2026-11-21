@@ -176,6 +176,40 @@ tool_names_for_hook_matching() {
   esac
 }
 
+# Every path a file.* write touches, one per line. Every path is gated: a
+# multi-file write must not hide a protected file behind a harmless first entry.
+native_file_paths() {
+  python3 - "$native_payload" <<'PY'
+import json
+import sys
+
+try:
+    payload = json.loads(sys.argv[1] or "{}")
+except Exception:
+    payload = {}
+if not isinstance(payload, dict):
+    payload = {}
+
+changes = payload.get("changes") or []
+seen = []
+if isinstance(changes, list):
+    for change in changes:
+        if not isinstance(change, dict):
+            continue
+        path = (
+            change.get("path")
+            or change.get("filePath")
+            or change.get("new_path")
+            or change.get("newPath")
+            or ""
+        )
+        if path and path not in seen:
+            seen.append(path)
+for path in seen:
+    print(path)
+PY
+}
+
 bridge_state_path() {
   printf '%s\n' "${BRIDGE_ROOT}/blocks/${source_call_id}.state"
 }
@@ -183,6 +217,7 @@ bridge_state_path() {
 build_synthetic_payload() {
   local hook_event_name="$1"
   local tool_name="$2"
+  local file_path_arg="${3:-}"
 
   case "$native_event" in
     tool.before|tool.after)
@@ -228,53 +263,38 @@ print(json.dumps(out, separators=(",", ":")))
 PY
       ;;
     file.before_write|file.after_write)
-      python3 - "$hook_event_name" "$tool_name" "$native_payload" <<'PY'
+      python3 - "$hook_event_name" "$tool_name" "$native_payload" "$file_path_arg" <<'PY'
 import json
 import sys
 
 hook_event_name = sys.argv[1]
 tool_name = sys.argv[2]
+file_path = sys.argv[4]
 
 try:
     payload = json.loads(sys.argv[3])
 except Exception:
     payload = {}
 
-changes = payload.get("changes") or []
-first_path = ""
-if isinstance(changes, list):
-    for change in changes:
-        if not isinstance(change, dict):
-            continue
-        first_path = (
-            change.get("path")
-            or change.get("filePath")
-            or change.get("new_path")
-            or change.get("newPath")
-            or ""
-        )
-        if first_path:
-            break
+if not isinstance(payload, dict):
+    payload = {}
 
 out = {
     "hook_event_name": hook_event_name,
     "tool_name": tool_name,
     "tool_input": {
-        "file_path": first_path,
+        "file_path": file_path,
     },
 }
 
 if hook_event_name == "PostToolUse":
     out["tool_response"] = {
-        "filePath": first_path,
+        "filePath": file_path,
         "success": bool(payload.get("success", True)),
     }
 
 print(json.dumps(out, separators=(",", ":")))
 PY
-      ;;
-    *)
-      printf '{}\n'
       ;;
   esac
 }
@@ -325,16 +345,27 @@ PY
 
 parse_hook_block_reason() {
   local hook_stdout="$1"
-
-  printf '%s' "$hook_stdout" | jq -r '
+  local filter out
+  # "ask" cannot be answered on Kay, so it is a block (fail closed).
+  filter='
     if (.hookSpecificOutput.permissionDecision // "") == "deny" then
       .hookSpecificOutput.permissionDecisionReason // .reason // ""
+    elif (.hookSpecificOutput.permissionDecision // "") == "ask" then
+      .hookSpecificOutput.permissionDecisionReason // .reason // "Silver Bullet hook requires approval, which this host cannot give."
     elif (.decision // "") == "block" then
       .reason // ""
     else
       ""
     end
-  ' 2>/dev/null || true
+  '
+
+  if out="$(printf '%s' "$hook_stdout" | jq -r "$filter" 2>/dev/null)"; then
+    printf '%s\n' "$out"
+    return 0
+  fi
+  # Not one JSON document: use the last non-empty line (a noisy stream must not
+  # turn a deny into an allow).
+  printf '%s\n' "$hook_stdout" | grep -v '^[[:space:]]*$' | tail -n 1 | jq -r "$filter" 2>/dev/null || true
 }
 
 run_matching_hooks() {
@@ -362,7 +393,7 @@ run_matching_hooks() {
     if printf '%s' "$payload_json" | \
       CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT" \
       SB_KAY_HOOK_BRIDGE_INVOKED=1 \
-      bash -lc "$command" >"$stdout_file" 2>"$stderr_file"; then
+      bash -c "$command" >"$stdout_file" 2>"$stderr_file"; then
       status=0
     else
       status=$?
@@ -374,6 +405,10 @@ run_matching_hooks() {
     fi
     if [[ -z "$reason" ]]; then
       reason="$(parse_hook_block_reason "$(cat "$stdout_file")")"
+    fi
+    if [[ -z "$reason" && $status -eq 2 ]]; then
+      # Exit 2 is the host's blocking error even when the hook said nothing.
+      reason="Silver Bullet hook blocked this call (exit 2): ${command}"
     fi
     bridge_debug "hook_command=${command}"
     bridge_debug "hook_status=${status} hook_reason=${reason}"
@@ -458,25 +493,40 @@ collect_git_commit_write_targets() {
     -type f -print 2>/dev/null || true
 }
 
+# Lock the targets read-only. Each record is appended to the state file BEFORE
+# the path is changed, so a failure part-way (EPERM, a crash) still leaves the
+# record needed to restore every earlier change. scope "exact" locks only the
+# target (its parent only when the target does not exist yet); scope "parents"
+# also locks the parent directory of every target (shell commands can create
+# files next to a target).
 apply_permission_block() {
   local state_path="$1"
   local target_list="$2"
-  local records
+  local scope="${3:-parents}"
+  local count
 
-  records="$(python3 - "$target_list" <<'PY'
+  count="$(python3 - "$target_list" "$state_path" "$scope" <<'PY'
 import os
+import shutil
 import stat
 import subprocess
 import sys
 from pathlib import Path
-import shutil
 
 targets_path = Path(sys.argv[1])
+state_path = sys.argv[2]
+scope = sys.argv[3]
 seen = set()
-records = []
+count = 0
 can_lock = shutil.which("chflags") is not None
 
-def add_record(path: Path):
+def record(state, kind, key, value):
+    state.write(f"{kind}\t{key}\t{value}\n")
+    state.flush()
+    os.fsync(state.fileno())
+
+def add_record(state, path: Path):
+    global count
     if not path.exists():
         return
     path = path.resolve()
@@ -484,40 +534,43 @@ def add_record(path: Path):
     if key in seen:
         return
     seen.add(key)
-    mode = stat.S_IMODE(path.stat().st_mode)
-    new_mode = mode & ~0o222
-    if new_mode != mode:
-        os.chmod(path, new_mode)
-    records.append(("PATH", key, str(mode)))
-    if can_lock:
-        locked = subprocess.run(
-            ["chflags", "uchg", key],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
-        if locked.returncode == 0:
-            records.append(("IMMUTABLE", key, "uchg"))
+    try:
+        mode = stat.S_IMODE(path.stat().st_mode)
+        record(state, "PATH", key, str(mode))
+        count += 1
+        new_mode = mode & ~0o222
+        if new_mode != mode:
+            os.chmod(path, new_mode)
+        if can_lock:
+            locked = subprocess.run(
+                ["chflags", "uchg", key],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+            if locked.returncode == 0:
+                record(state, "IMMUTABLE", key, "uchg")
+    except OSError:
+        return
 
-for raw in targets_path.read_text().splitlines():
-    raw = raw.strip()
-    if not raw:
-        continue
-    target = Path(raw)
-    if target.exists():
-        add_record(target)
-        add_record(target.parent)
-        continue
-    add_record(target.parent)
+with open(state_path, "a", encoding="utf-8") as state:
+    for raw in targets_path.read_text().splitlines():
+        raw = raw.strip()
+        if not raw:
+            continue
+        target = Path(raw)
+        if target.exists():
+            add_record(state, target)
+            if scope != "exact":
+                add_record(state, target.parent)
+            continue
+        add_record(state, target.parent)
 
-for kind, path, mode in records:
-    print(f"{kind}\t{path}\t{mode}")
+print(count)
 PY
 )"
 
-  [[ -n "$records" ]] || return 1
-  printf '%s\n' "$records" >> "$state_path"
-  return 0
+  [[ "${count:-0}" -gt 0 ]]
 }
 
 extract_shell_entry_command() {
@@ -659,17 +712,16 @@ apply_denial_filesystem_block() {
 
 apply_file_write_block() {
   local state_path="$1"
-  local payload_json="$2"
+  local paths="$2"
   local reason="$3"
-  local targets_file file_path
+  local targets_file
 
-  file_path="$(printf '%s' "$payload_json" | jq -r '.tool_input.file_path // ""' 2>/dev/null || true)"
-  [[ -n "$file_path" ]] || return 0
+  [[ -n "$paths" ]] || return 0
 
   : > "$state_path"
   targets_file="$(mktemp "${TMPDIR:-/tmp}/sb-kay-hook-targets.XXXXXX")"
-  printf '%s\n' "$file_path" >"$targets_file"
-  apply_permission_block "$state_path" "$targets_file" || true
+  printf '%s\n' "$paths" >"$targets_file"
+  apply_permission_block "$state_path" "$targets_file" exact || true
   # In an if-condition so a failing shim install cannot trip errexit before the deny is reported.
   if install_mutation_shims "$state_path" "$reason"; then :; fi
   rm -f -- "$targets_file"
@@ -709,69 +761,123 @@ install_mutation_shims() {
   return 0
 }
 
-restore_block_state() {
-  local state_path
+# Undo one state file (permissions, immutability, shim dirs), then delete it.
+restore_state_file() {
+  local state_path="$1"
   local kind path mode
   local -a state_lines=()
   local line
 
-  state_path="$(bridge_state_path)"
   [[ -f "$state_path" ]] || return 0
 
   while IFS= read -r line || [[ -n "$line" ]]; do
     state_lines+=("$line")
   done < "$state_path"
 
-  for line in "${state_lines[@]}"; do
-    IFS=$'\t' read -r kind path mode <<<"$line"
-    [[ -n "$kind" ]] || continue
-    case "$kind" in
-      IMMUTABLE)
-        chflags nouchg "$path" >/dev/null 2>&1 || true
-        ;;
-    esac
-  done
+  if ((${#state_lines[@]})); then
+    for line in "${state_lines[@]}"; do
+      IFS=$'\t' read -r kind path mode <<<"$line"
+      [[ -n "$kind" ]] || continue
+      case "$kind" in
+        IMMUTABLE)
+          chflags nouchg "$path" >/dev/null 2>&1 || true
+          ;;
+      esac
+    done
 
-  for line in "${state_lines[@]}"; do
-    IFS=$'\t' read -r kind path mode <<<"$line"
-    [[ -n "$kind" ]] || continue
-    case "$kind" in
-      PATH)
-        python3 - "$path" "$mode" <<'PY'
+    for line in "${state_lines[@]}"; do
+      IFS=$'\t' read -r kind path mode <<<"$line"
+      [[ -n "$kind" ]] || continue
+      case "$kind" in
+        PATH)
+          python3 - "$path" "$mode" <<'PY'
 import os
 import sys
 from pathlib import Path
 
 path = Path(sys.argv[1])
 mode = int(sys.argv[2])
-if path.exists():
-    os.chmod(path, mode)
+try:
+    if path.exists():
+        os.chmod(path, mode)
+except OSError:
+    pass
 PY
-        ;;
-      SHIMDIR)
-        rm -rf -- "$path"
-        ;;
-    esac
-  done
+          ;;
+        SHIMDIR)
+          rm -rf -- "$path"
+          ;;
+      esac
+    done
+  fi
 
   rm -f -- "$state_path"
 }
 
+restore_block_state() {
+  restore_state_file "$(bridge_state_path)"
+}
+
+# session.start / session.end: a denied call whose tool.after never arrived (a
+# crash, a host that skips the after event, a missing call id) must not leave
+# the project read-only. Restore every stale state file, newest first (a later
+# state can record the already-locked mode of a path an earlier one restores).
+restore_all_stale_blocks() {
+  local stale
+  while IFS= read -r stale; do
+    restore_state_file "$stale"
+  done < <(ls -1t "${BRIDGE_ROOT}"/blocks/*.state 2>/dev/null || true)
+  if [[ -d "$ACTIVE_PATH_PREPEND_DIR" && "${ACTIVE_PATH_PREPEND_DIR##*/}" == "active" ]]; then
+    rm -rf -- "$ACTIVE_PATH_PREPEND_DIR"
+  fi
+}
+
 main() {
-  local hook_event_name tool_name synthetic_payload state_path targets_file command_str
+  local hook_event_name tool_name synthetic_payload state_path file_path
+  local -a file_paths=()
 
   hook_event_name="$(hook_event_name_for_native "$native_event" 2>/dev/null || true)"
   tool_name="$(synthetic_tool_name_for_native "$native_event")"
   [[ -n "$hook_event_name" ]] || exit 0
 
-  synthetic_payload="$(build_synthetic_payload "$hook_event_name" "$tool_name")"
+  # Kay has no SessionStart/Stop gating: session events only repair stale
+  # denial state. No SessionStart/Stop/UserPromptSubmit hook runs on Kay (see
+  # docs/RUNTIME-COMPATIBILITY.md, "Kay limits").
+  case "$native_event" in
+    session.start|session.end)
+      restore_all_stale_blocks
+      exit 0
+      ;;
+  esac
+
   state_path="$(bridge_state_path)"
+  BRIDGE_BLOCK_REASON=""
+  BRIDGE_FILE_PATHS=""
+  case "$native_event" in
+    file.before_write|file.after_write)
+      while IFS= read -r file_path; do
+        file_paths+=("$file_path")
+      done < <(native_file_paths)
+      if ((${#file_paths[@]})); then
+        BRIDGE_FILE_PATHS="$(printf '%s\n' "${file_paths[@]}")"
+      else
+        file_paths=("")
+      fi
+      synthetic_payload=""
+      for file_path in "${file_paths[@]}"; do
+        synthetic_payload="$(build_synthetic_payload "$hook_event_name" "$tool_name" "$file_path")"
+        bridge_debug "synthetic_payload=${synthetic_payload}"
+        run_all_matching_hooks "$hook_event_name" "$tool_name" "$synthetic_payload"
+      done
+      ;;
+    *)
+      synthetic_payload="$(build_synthetic_payload "$hook_event_name" "$tool_name")"
+      bridge_debug "synthetic_payload=${synthetic_payload}"
+      run_all_matching_hooks "$hook_event_name" "$tool_name" "$synthetic_payload"
+      ;;
+  esac
   bridge_debug "native_event=${native_event}"
   bridge_debug "native_payload=${native_payload}"
-  bridge_debug "synthetic_payload=${synthetic_payload}"
-
-  BRIDGE_BLOCK_REASON=""
-  run_all_matching_hooks "$hook_event_name" "$tool_name" "$synthetic_payload"
 
   case "$native_event" in
     tool.before)
@@ -783,7 +889,7 @@ main() {
     file.before_write)
       [[ -n "${BRIDGE_BLOCK_REASON:-}" ]] || exit 0
       bridge_debug "block_reason=${BRIDGE_BLOCK_REASON}"
-      apply_file_write_block "$state_path" "$synthetic_payload" "$BRIDGE_BLOCK_REASON"
+      apply_file_write_block "$state_path" "$BRIDGE_FILE_PATHS" "$BRIDGE_BLOCK_REASON"
       bridge_block_denied_tool "$BRIDGE_BLOCK_REASON"
       ;;
     tool.after|file.after_write)

@@ -20,8 +20,9 @@ shift || true
 # allows (R7-01). SB_CODEX_HOOK_SUBPROC_TIMEOUT overrides it (tests, operators).
 manifest_timeout=""
 if [[ "${1:-}" == "--timeout" ]]; then
-  manifest_timeout="${2:-}"
-  shift 2 || true
+  [[ "$#" -ge 3 ]] || exit 2
+  manifest_timeout="$2"
+  shift 2
 fi
 case "$manifest_timeout" in
   '' | *[!0-9]* | 0) manifest_timeout=120 ;;

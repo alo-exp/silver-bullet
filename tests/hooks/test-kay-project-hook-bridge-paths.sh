@@ -144,11 +144,72 @@ for spec in "deny2:stderr reason" "denyjson:json deny reason" "denyjson_noreason
   assert_eq "$s: native deny status" "2" "$TL_STATUS"
   assert_contains "$s: reason on stderr" "$TL_ERR" "$want"
 done
-for s in allowjson fail1 deny2quiet; do
+for s in allowjson fail1; do
   write_hooks "$(jq -cn --argjson h "$(cmd_of "$s")" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
   run_bridge tool.before '{"command":"echo hi"}' "r-$s"
   assert_eq "$s: no usable reason, call allowed" "0" "$TL_STATUS"
 done
+# R7-07: a bare exit 2 is still the host's blocking error; "ask" cannot be
+# answered on Kay and blocks too; a noisy stream falls back to its last line.
+write_hooks "$(jq -cn --argjson h "$(cmd_of deny2quiet)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+run_bridge tool.before '{"command":"echo hi"}' r-quiet
+assert_eq "exit 2 with no output blocks" "2" "$TL_STATUS"
+assert_contains "exit 2 default reason names the hook" "$TL_ERR" "blocked this call (exit 2)"
+mk_script askjson 'cat >/dev/null; echo "{\"hookSpecificOutput\":{\"permissionDecision\":\"ask\"}}"'
+write_hooks "$(jq -cn --argjson h "$(cmd_of askjson)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+run_bridge tool.before '{"command":"echo hi"}' r-ask
+assert_eq "permissionDecision ask blocks (fail closed)" "2" "$TL_STATUS"
+assert_contains "ask has a default reason" "$TL_ERR" "requires approval"
+mk_script noisyjson 'cat >/dev/null; echo "banner text"; echo "{\"decision\":\"block\",\"reason\":\"noisy block\"}"'
+write_hooks "$(jq -cn --argjson h "$(cmd_of noisyjson)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+run_bridge tool.before '{"command":"echo hi"}' r-noisy
+assert_eq "noisy stdout: last-line JSON block honoured" "2" "$TL_STATUS"
+assert_contains "noisy stdout reason" "$TL_ERR" "noisy block"
+mk_script blanknoise 'cat >/dev/null; echo "just text"'
+write_hooks "$(jq -cn --argjson h "$(cmd_of blanknoise)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+run_bridge tool.before '{"command":"echo hi"}' r-text
+assert_eq "plain text stdout is not a block" "0" "$TL_STATUS"
+
+# R7-04: hooks run under a non-login shell: a login profile that prints or
+# exits cannot disable a gate.
+PROFILE_HOME="$TL_TMP/profilehome"
+mkdir -p "$PROFILE_HOME"
+write_hooks "$(jq -cn --argjson h "$(cmd_of denyjson)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+for profile_body in 'echo "Welcome back"' 'exit 0'; do
+  printf '%s\n' "$profile_body" >"$PROFILE_HOME/.bash_profile"
+  cp "$PROFILE_HOME/.bash_profile" "$PROFILE_HOME/.profile"
+  tl_run bash -c 'cd "$1" && exec env HOME="$2" CLAUDE_PLUGIN_ROOT="$3" CODE_HOOK_EVENT=tool.before CODE_HOOK_PAYLOAD="$4" CODE_HOOK_SOURCE_CALL_ID=prof bash "$5"' \
+    _ "$WORK" "$PROFILE_HOME" "$PLUG" '{"command":"echo hi"}' "$BRIDGE"
+  assert_eq "profile [$profile_body] cannot disable the deny" "2" "$TL_STATUS"
+  assert_contains "profile [$profile_body]: reason kept" "$TL_ERR" "json deny reason"
+done
+
+# R7-03: every path of a multi-file write is gated, not just the first.
+mk_script protect 'p="$(cat)"; case "$p" in *PROTECTED*) echo "{\"hookSpecificOutput\":{\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"protected path\"}}";; esac'
+write_hooks "$(jq -cn --argjson h "$(cmd_of protect)" '{hooks:{PreToolUse:[{matcher:"Write|Edit|MultiEdit|apply_patch",hooks:[$h]}]}}')"
+run_bridge file.before_write '{"changes":[{"path":"/x/PROTECTED.md"}]}' mf1
+assert_eq "single protected path denied" "2" "$TL_STATUS"
+run_bridge file.after_write '{}' mf1
+run_bridge file.before_write '{"changes":[{"path":"/x/ok.md"},{"path":"/x/PROTECTED.md"}]}' mf2
+assert_eq "protected SECOND path is denied" "2" "$TL_STATUS"
+assert_contains "multi-file deny reason surfaced" "$TL_ERR" "protected path"
+run_bridge file.after_write '{}' mf2
+run_bridge file.before_write '{"changes":[{"path":"/x/a.md"},{"path":"/x/b.md"},{"path":"/x/a.md"}]}' mf3
+assert_eq "all-clean multi-file write allowed" "0" "$TL_STATUS"
+
+# R7-05 (documented limit): Kay has no SessionStart/Stop/UserPromptSubmit
+# events. session.start/session.end run no hooks, so the Stop planning floor and
+# session-start reset do not exist on Kay (docs/RUNTIME-COMPATIBILITY.md,
+# "Kay limits"). This pins the limit so a change to it is deliberate.
+write_hooks "$(jq -cn --argjson h "$(cmd_of dump)" --argjson b "$(cmd_of blockjson)" '{hooks:{SessionStart:[{matcher:".*",hooks:[$h]}],Stop:[{matcher:".*",hooks:[$b,$h]}]}}')"
+rm -f "$TL_TMP_DUMP"
+run_bridge session.start '{}' lim1
+assert_eq "documented limit: session.start runs no SessionStart hook" "0" "$TL_STATUS"
+run_bridge session.end '{}' lim2
+assert_eq "documented limit: a Stop block is not enforced on session.end" "0" "$TL_STATUS"
+assert_file_absent "documented limit: no session hook output was produced" "$TL_TMP_DUMP"
+write_hooks "$(jq -cn --argjson h "$(cmd_of denyjson)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+
 # the first reason wins
 write_hooks "$(jq -cn --argjson a "$(cmd_of deny2)" --argjson b "$(cmd_of blockjson)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$a,$b]}]}}')"
 run_bridge tool.before '{"command":"echo hi"}' r-first

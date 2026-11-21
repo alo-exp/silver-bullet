@@ -138,4 +138,58 @@ assert_file_absent "no state for an empty path" "$BR/blocks/fw-empty.state"
 run_bridge file.before_write "$(jq -cn --arg p "$WORK/not-yet/new.txt" '{changes:[{path:$p}]}')" fw-missing
 assert_eq "missing target and parent: still denied" "2" "$TL_STATUS"
 
+# R7-06: a denial whose tool.after never arrives does not leave the project
+# read-only: session.start/session.end restore every stale state (newest first)
+# and remove the shared shim dir.
+printf 'x' >"$WORK/dir/stale.txt"
+chmod 644 "$WORK/dir/stale.txt"
+write_hooks "$(jq -cn --argjson h "$(cmd_of deny2)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+run_bridge tool.before "$(jq -cn --arg c "touch $WORK/dir/stale.txt" '{command:$c}')" stale1
+run_bridge tool.before "$(jq -cn --arg c "touch $WORK/dir/stale.txt" '{command:$c}')" stale2
+assert_eq "stale denial left the file locked" "444" "$(stat -c %a "$WORK/dir/stale.txt")"
+assert_eq "stale denial left the parent locked" "555" "$(stat -c %a "$WORK/dir")"
+run_bridge session.start '{}' fresh-session
+assert_eq "session.start restores the stale file mode" "644" "$(stat -c %a "$WORK/dir/stale.txt")"
+assert_eq "session.start restores the stale parent mode" "755" "$(stat -c %a "$WORK/dir")"
+assert_eq "session.start empties blocks/" "" "$(ls "$BR/blocks")"
+assert_file_absent "session.start removes the shim dir" "$ACTIVE"
+run_bridge tool.before "$(jq -cn --arg c "touch $WORK/dir/stale.txt" '{command:$c}')" stale3
+run_bridge session.end '{}' fresh-end
+assert_eq "session.end also restores" "755" "$(stat -c %a "$WORK/dir")"
+assert_file_absent "session.end removes the shim dir" "$ACTIVE"
+
+# a leftover shim dir with no state file is removed on session.start too
+mkdir -p "$ACTIVE"
+run_bridge session.start '{}' fresh-orphan
+assert_file_absent "orphan shim dir removed on session.start" "$ACTIVE"
+
+# a file write denial locks only the target, never its parent directory
+printf 'doc' >"$WORK/dir/exact.txt"
+write_hooks "$(jq -cn --argjson h "$(cmd_of deny2)" '{hooks:{PreToolUse:[{matcher:"Write",hooks:[$h]}]}}')"
+run_bridge file.before_write "$(jq -cn --arg p "$WORK/dir/exact.txt" '{changes:[{path:$p}]}')" exact1
+assert_eq "exact: target locked" "444" "$(stat -c %a "$WORK/dir/exact.txt")"
+assert_eq "exact: parent directory untouched" "755" "$(stat -c %a "$WORK/dir")"
+# every path of a multi-file denial is locked
+printf 'a' >"$WORK/dir/m1.txt"; printf 'b' >"$WORK/dir/m2.txt"
+run_bridge file.before_write "$(jq -cn --arg a "$WORK/dir/m1.txt" --arg b "$WORK/dir/m2.txt" '{changes:[{path:$a},{path:$b}]}')" multi1
+assert_eq "multi-file denial locks the first path" "444" "$(stat -c %a "$WORK/dir/m1.txt")"
+assert_eq "multi-file denial locks the second path" "444" "$(stat -c %a "$WORK/dir/m2.txt")"
+run_bridge session.start '{}' fresh2
+assert_eq "stale multi-file locks restored" "644" "$(stat -c %a "$WORK/dir/m2.txt")"
+assert_eq "stale exact lock restored" "644" "$(stat -c %a "$WORK/dir/exact.txt")"
+
+# the state record is written before the path is changed: a path whose mode
+# cannot be changed (a /proc file raises EPERM even for root) keeps its record,
+# the deny still goes out, and the restore tolerates the same failure.
+if [[ -r /proc/self/status ]]; then
+  run_bridge file.before_write '{"changes":[{"path":"/proc/self/status"}]}' chmodfail
+  assert_eq "chmod failure: still denied" "2" "$TL_STATUS"
+  assert_contains "record written before the change" "$(cat "$BR/blocks/chmodfail.state")" "/proc/"
+  printf 'd' >"$WORK/dir/d.txt"
+  run_bridge file.before_write "$(jq -cn --arg p "$WORK/dir/d.txt" '{changes:[{path:$p}]}')" chmodfail2
+  run_bridge session.start '{}' fresh3
+  assert_eq "restore survives an unrestorable path" "644" "$(stat -c %a "$WORK/dir/d.txt")"
+  assert_eq "stale state with unrestorable path removed" "" "$(ls "$BR/blocks")"
+fi
+
 tl_results
