@@ -115,6 +115,14 @@ class ConservativeScan(Fire):
                 self.assertIn("over-broad", self.reason(self.edit("Write", file_path=str(self.root / "docs/n.md"), content=text)))
 
 
+class NestedEscapes(unittest.TestCase):
+    def test_escapes_that_keep_unfolding_stop_after_three_passes(self):
+        out = native._normalise_agent_text("\\x5cx5cx5cx72")
+        self.assertIn("x72", out)  # three passes unfolded it; a fourth is never taken
+        self.assertNotIn("r", out)
+        self.assertEqual(native._normalise_agent_text("\\Uffffffffz"), "z")  # an out-of-range code point is dropped
+
+
 class ExactSpawnParameters(Fire):
     def test_r2_isolation_and_every_other_extra_key_is_denied(self):
         self.start()
