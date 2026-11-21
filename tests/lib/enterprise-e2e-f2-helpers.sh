@@ -66,6 +66,7 @@ f2_stage_matrix() {
   rm -f "$root/tests/live/lib"
   mkdir -p "$root/tests/live/lib"
   printf 'sb_prepend_harness_path() { :; }\n' >"$root/tests/live/lib/detach-background.sh"
+  ln -s "$TL_REPO_ROOT/tests/live/lib/evidence-guard.sh" "$root/tests/live/lib/evidence-guard.sh"
 
   rm -f "$root/scripts/enterprise-e2e/lib"
   mkdir -p "$root/scripts/enterprise-e2e/lib/deterministic"

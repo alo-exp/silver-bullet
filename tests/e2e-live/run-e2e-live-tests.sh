@@ -107,7 +107,7 @@ echo ""
 # release evidence.
 PENDING_E2E_MARKER=""
 PENDING_INLINE_MARKER=false
-sb_evidence_snapshot "$SB_RUNTIME_STATE_DIR"
+sb_evidence_snapshot "$SB_RUNTIME_STATE_DIR" "$REPO_ROOT"
 sb_evidence_restore e2e-live-matrix inline-e2e-matrix
 
 runner_exit() {

@@ -128,25 +128,45 @@ assert_contains "newer foreign release evidence is kept" "$(cat "$STATE/release-
 assert_eq "newer foreign quality-gate-state is kept" "earned-by-another-session" "$(cat "$STATE/quality-gate-state")"
 assert_eq "no snapshot directory is left behind" 0 "$(find "$STATE" -maxdepth 1 -name '.sb-evidence-snapshot.*' | wc -l | tr -d ' ')"
 
-# a snapshot left by a SIGKILLed runner is recovered by the next start (missing files only)
+# a snapshot left by a SIGKILLed runner is recovered by the next start: only markers earned at THIS checkout's HEAD
+# come back; stage markers of an earlier session and markers of another commit are discarded
+tl_git_repo "$TL_TMP/rtree"
+cp -R "$TREE/tests" "$TL_TMP/rtree/"
+rm -rf "$TREE"; mv "$TL_TMP/rtree" "$TREE"; E2E="$TREE/tests/e2e-live"
+HEAD_NOW="$(git -C "$TREE" rev-parse HEAD)"
 mkdir -p "$STATE/.sb-evidence-snapshot.dead"
-printf 'matrix=claude-only\ncommit=old\n' >"$STATE/.sb-evidence-snapshot.dead/release-live-matrix"
+printf 'matrix=claude-only\ncommit=%s\n' "$HEAD_NOW" >"$STATE/.sb-evidence-snapshot.dead/release-live-matrix"
+printf 'matrix=claude-only\ncommit=%s\n' "$(printf '%040d' 7)" >"$STATE/.sb-evidence-snapshot.dead/e2e-live-matrix"
 printf 'stale\n' >"$STATE/.sb-evidence-snapshot.dead/quality-gate-state"
+printf 'stale\n' >"$STATE/.sb-evidence-snapshot.dead/verify-tests-state"
 echo 2147483646 >"$STATE/.sb-evidence-snapshot.dead/owner.pid"
 mkdir -p "$STATE/.sb-evidence-snapshot.live"
 printf 'live-owner\n' >"$STATE/.sb-evidence-snapshot.live/verify-tests-state"
 echo $$ >"$STATE/.sb-evidence-snapshot.live/owner.pid"
-rm -f "$STATE/release-live-matrix"
+rm -f "$STATE/release-live-matrix" "$STATE/quality-gate-state" "$STATE/verify-tests-state"
 cat >"$E2E/scenarios/test-e2e-live-hook-failures.sh" <<'EOS'
 #!/usr/bin/env bash
 exit 0
 EOS
 run_suite
-assert_contains "the crashed runner's missing evidence is put back" "$(cat "$STATE/release-live-matrix")" "commit=old"
-assert_eq "recovery never overwrites existing evidence" "earned-by-another-session" "$(cat "$STATE/quality-gate-state")"
+assert_contains "a marker earned at this HEAD is put back" "$(cat "$STATE/release-live-matrix")" "commit=$HEAD_NOW"
+assert_file_absent "a marker of another commit is discarded, not recovered" "$STATE/.sb-evidence-snapshot.dead/e2e-live-matrix"
+assert_eq "the e2e marker is the fresh run's, not the stale one" "claude-only" "$(sed -n 1p "$E2EM" | cut -d= -f2)"
+assert_not_contains "stale e2e commit not resurrected" "$(cat "$E2EM")" "0000000000000000000000000000000000000007"
+assert_file_absent "an earlier session's quality-gate-state is not recovered" "$STATE/quality-gate-state"
+assert_file_absent "an earlier session's verify-tests-state is not recovered" "$STATE/verify-tests-state"
 assert_file_absent "the dead runner's snapshot is removed" "$STATE/.sb-evidence-snapshot.dead"
 assert_file_exists "a snapshot of a live runner is left alone" "$STATE/.sb-evidence-snapshot.live/owner.pid"
 rm -rf "$STATE/.sb-evidence-snapshot.live"
+# without a repository to compare against, nothing is recovered
+mkdir -p "$STATE/.sb-evidence-snapshot.dead2"
+printf 'matrix=claude-only\ncommit=%s\n' "$HEAD_NOW" >"$STATE/.sb-evidence-snapshot.dead2/release-live-matrix"
+echo 2147483646 >"$STATE/.sb-evidence-snapshot.dead2/owner.pid"
+rm -f "$STATE/release-live-matrix"
+mv "$TREE/.git" "$TL_TMP/git.rt"
+run_suite
+mv "$TL_TMP/git.rt" "$TREE/.git"
+assert_file_absent "no repository: nothing is recovered" "$STATE/release-live-matrix"
 
 # --- R14-15: every post-setup exit tears the isolated home down ---------------------------------
 cat >"$TREE/tests/live/lib/codex-cli-isolation.sh" <<EOS

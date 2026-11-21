@@ -9,8 +9,12 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/enterprise-e2e-f2-matrix-setup.sh"
 
 MARKER="$SB_RUNTIME_STATE_DIR/inline-e2e-matrix"
 git -C "$R" init -q -b main
-git -C "$R" -c user.email=t@example.com -c user.name=t commit -q --allow-empty -m "sb root"
+# everything staged here is git-ignored except dirty.txt, so the tree is clean until a test creates that file
+printf '*\n!.gitignore\n!/dirty.txt\n' >"$R/.gitignore"
+git -C "$R" add .gitignore
+git -C "$R" -c user.email=t@example.com -c user.name=t commit -q -m "sb root"
 HEAD_SHA="$(git -C "$R" rev-parse HEAD)"
+GATE_DIR="$HOME/.claude/.silver-bullet"
 # every row's evidence is produced by the stub agent (a file or directory at the row's evidence path)
 all_rows_agent() { agent <<'EOS'
 mkdir -p "$WORK_DIR/$(dirname "$SB_E2E_MATRIX_EVIDENCE_PATH")"
@@ -64,6 +68,66 @@ run env SB_E2E_MATRIX_FORCE_ALL=1 bash "$MATRIX"
 mv "$TL_TMP/git.bak" "$R/.git"
 assert_file_absent "no git commit: no marker" "$MARKER"
 assert_contains "no-commit reason is stated" "$TL_OUT" "has no commit to bind it to"
+# a dirty tree (untracked file at start) writes nothing: that tree is what the nested sessions test
+reset; rm -f "$MARKER"; all_rows_agent
+echo x >"$R/dirty.txt"
+run env SB_E2E_MATRIX_FORCE_ALL=1 bash "$MATRIX"
+assert_file_absent "a tree dirty at start writes no marker" "$MARKER"
+assert_contains "the dirty-tree reason is stated" "$TL_OUT" "has uncommitted or untracked changes"
+rm -f "$R/dirty.txt"
+# a tree that becomes dirty during the run writes nothing
+reset; rm -f "$MARKER"
+agent <<'EOS'
+mkdir -p "$WORK_DIR/$(dirname "$SB_E2E_MATRIX_EVIDENCE_PATH")"
+[[ "$SB_E2E_MATRIX_EVIDENCE_PATH" == */ ]] && mkdir -p "$WORK_DIR/$SB_E2E_MATRIX_EVIDENCE_PATH" || echo ev >"$WORK_DIR/$SB_E2E_MATRIX_EVIDENCE_PATH"
+echo x >"$SB_ROOT/dirty.txt"
+echo "SILVER BULLET ▸ ROUTING silver-feature"
+EOS
+run env SB_E2E_MATRIX_FORCE_ALL=1 bash "$MATRIX"
+assert_file_absent "a tree dirtied during the run writes no marker" "$MARKER"
+rm -f "$R/dirty.txt"
+# HEAD moving during the run writes nothing
+reset; rm -f "$MARKER"
+agent <<'EOS'
+mkdir -p "$WORK_DIR/$(dirname "$SB_E2E_MATRIX_EVIDENCE_PATH")"
+[[ "$SB_E2E_MATRIX_EVIDENCE_PATH" == */ ]] && mkdir -p "$WORK_DIR/$SB_E2E_MATRIX_EVIDENCE_PATH" || echo ev >"$WORK_DIR/$SB_E2E_MATRIX_EVIDENCE_PATH"
+[[ -e "$F2_CTL/moved" ]] || { : >"$F2_CTL/moved"; git -C "$SB_ROOT" -c user.email=t@e.x -c user.name=t commit -q --allow-empty -m moved; }
+echo "SILVER BULLET ▸ ROUTING silver-feature"
+EOS
+run env SB_E2E_MATRIX_FORCE_ALL=1 bash "$MATRIX"
+assert_file_absent "HEAD moved during the run: no marker" "$MARKER"
+assert_contains "the HEAD-moved reason is stated" "$TL_OUT" "HEAD moved during the run"
+HEAD_SHA="$(git -C "$R" rev-parse HEAD)"
+
+# the nested sessions' SessionStart resets must not destroy the operator's evidence (full pass and failing run)
+EVD="release-live-matrix quality-gate-state verify-tests-state e2e-live-matrix"
+seed_evidence() { mkdir -p "$GATE_DIR"; for f in $EVD; do printf 'keep-%s\n' "$f" >"$GATE_DIR/$f"; done; }
+resetting_agent() { agent <<EOS
+for f in $EVD; do rm -f "$GATE_DIR/\$f"; done
+mkdir -p "\$WORK_DIR/\$(dirname "\$SB_E2E_MATRIX_EVIDENCE_PATH")"
+[[ "\$SB_E2E_MATRIX_EVIDENCE_PATH" == */ ]] && mkdir -p "\$WORK_DIR/\$SB_E2E_MATRIX_EVIDENCE_PATH" || echo ev >"\$WORK_DIR/\$SB_E2E_MATRIX_EVIDENCE_PATH"
+echo "SILVER BULLET ▸ ROUTING silver-feature"
+EOS
+}
+reset; rm -f "$MARKER"; seed_evidence; resetting_agent
+run env SB_E2E_MATRIX_FORCE_ALL=1 bash "$MATRIX"
+for f in $EVD; do assert_eq "full pass keeps the operator's $f" "keep-$f" "$(cat "$GATE_DIR/$f")"; done
+assert_eq "and still writes the marker" "matrix=inline-full-surface" "$(sed -n 1p "$MARKER")"
+reset; rm -f "$MARKER"; seed_evidence; resetting_agent
+run env SB_E2E_MATRIX_FORCE_ALL=1 F2_DELTA_FAIL_AT=3 SB_E2E_PRODUCT_WORK_GATE=1 bash "$MATRIX"
+for f in $EVD; do assert_eq "a failing run keeps the operator's $f (EXIT trap)" "keep-$f" "$(cat "$GATE_DIR/$f")"; done
+assert_file_absent "a failing run writes no marker" "$MARKER"
+
+# isolated-config mode (agent-claude wrapper): the nested sessions use a throw-away state dir, but the marker goes
+# where the GATE reads it (the releasing session's state dir), never into the isolated one
+reset; rm -f "$MARKER"; all_rows_agent
+ISO="$TL_TMP/isoconfig"; mkdir -p "$ISO/.silver-bullet-state"
+run env SB_E2E_MATRIX_FORCE_ALL=1 SB_E2E_ISOLATED_CLAUDE_CONFIG=1 CLAUDE_CONFIG_DIR="$ISO" \
+  SB_RUNTIME_STATE_DIR="$ISO/.silver-bullet-state" SB_RUNTIME_PRESERVE_STATE_DIR=1 bash "$MATRIX"
+assert_eq "isolated mode: the marker is where the gate reads it" "matrix=inline-full-surface" "$(sed -n 1p "$GATE_DIR/inline-e2e-matrix")"
+assert_file_absent "isolated mode: nothing in the isolated state dir" "$ISO/.silver-bullet-state/inline-e2e-matrix"
+rm -f "$GATE_DIR/inline-e2e-matrix"
+
 # the runner survives a ps that cannot describe its own pid (identity record skipped, tolerated)
 reset; rm -f "$MARKER"
 all_rows_agent

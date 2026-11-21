@@ -151,46 +151,59 @@ set_matrix codex-only claude-only inline-full-surface
 run_ca PreToolUse "$REL"; assert_eq "inconsistent matrix pair rejected" "deny" "$(decision)"
 set_matrix claude-only claude-only inline-partial
 run_ca PreToolUse "$REL"; assert_eq "inline matrix must be the full surface" "deny" "$(decision)"
-# ── R14-16: the inline marker must be bound to the commit being released ─────────────────────────
+# ── R14-16: the inline marker must be bound to the tree being released ─────────────────────────────
 INL="$SB_RUNTIME_STATE_DIR/inline-e2e-matrix"
 set_matrix claude-only claude-only inline-full-surface
 OLD_SHA="$(git -C "$PROJ" rev-parse HEAD)"
 printf 'matrix=inline-full-surface\n' >"$INL"
 run_ca PreToolUse "$REL"; assert_eq "marker without commit= is rejected (fail closed)" "deny" "$(decision)"
-assert_contains "the block says the commit is required" "$(message)" "commit= naming the commit being released"
+assert_contains "the block says the commit is required" "$(message)" "commit= naming the commit the matrix ran on"
 printf 'matrix=inline-full-surface\ncommit=HEAD\n' >"$INL"
 run_ca PreToolUse "$REL"; assert_eq "malformed commit= (not a sha) is rejected" "deny" "$(decision)"
 printf 'matrix=inline-full-surface\ncommit=%s\n' "${OLD_SHA:0:12}" >"$INL"
 run_ca PreToolUse "$REL"; assert_eq "abbreviated commit= is rejected" "deny" "$(decision)"
 printf 'matrix=inline-full-surface\ncommit=%s\n' "$OLD_SHA" >"$INL"
 run_ca PreToolUse "$REL"; assert_eq "commit= equal to the released commit is accepted" "allow" "$(decision)"
-# a later commit that only touches the changelog keeps the evidence valid
-printf 'notes\n' >"$PROJ/CHANGELOG.md"; mkdir -p "$PROJ/docs"; printf 'notes\n' >"$PROJ/docs/CHANGELOG.md"
-git -C "$PROJ" add CHANGELOG.md docs/CHANGELOG.md; git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit -q -m "changelog only"
-GREEN="[{\"workflowName\":\"CI\",\"status\":\"completed\",\"conclusion\":\"success\",\"headSha\":\"$(git -C "$PROJ" rev-parse HEAD)\",\"createdAt\":\"1\"}]"
-run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$GREEN"; assert_eq "ancestor commit with only changelog changes since is accepted" "allow" "$(decision)"
+green() { printf '[{"workflowName":"CI","status":"completed","conclusion":"success","headSha":"%s","createdAt":"1"}]' "$(git -C "$PROJ" rev-parse HEAD)"; }
+# a release commit that only bumps version-bearing files and the changelog is accepted
+printf '{"version":"9.9.9"}\n' >"$PROJ/package.json"; mkdir -p "$PROJ/docs" "$PROJ/.claude-plugin" "$PROJ/site/changelog"
+printf 'notes\n' >"$PROJ/CHANGELOG.md"; printf 'notes\n' >"$PROJ/docs/CHANGELOG.md"; printf '{}\n' >"$PROJ/.claude-plugin/marketplace.json"
+printf '<html>9.9.9</html>\n' >"$PROJ/site/changelog/index.html"
+git -C "$PROJ" add package.json CHANGELOG.md docs/CHANGELOG.md .claude-plugin/marketplace.json site/changelog/index.html
+git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit -q -m "release surface only"
+run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "a bump-only release commit after the matrix is accepted" "allow" "$(decision)"
+BUMP_SHA="$(git -C "$PROJ" rev-parse HEAD)"
+# squash/rebase equivalent: a new commit with the same tree and no ancestry is accepted
+SQ="$(git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit-tree "$BUMP_SHA^{tree}" -m squash)"
+git -C "$PROJ" checkout -q --detach "$SQ"
+printf 'matrix=inline-full-surface\ncommit=%s\n' "$BUMP_SHA" >"$INL"
+run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "a squash-equivalent commit (same tree, no ancestry) is accepted" "allow" "$(decision)"
+git -C "$PROJ" checkout -q "$BUMP_SHA" 2>/dev/null; git -C "$PROJ" checkout -q -
+printf 'matrix=inline-full-surface\ncommit=%s\n' "$OLD_SHA" >"$INL"
 # fail closed: when git cannot produce the diff since the marker's commit, the marker is rejected
 GIT_REAL="$(command -v git)"
 tl_stub git "if [[ \"\$*\" == *'diff --name-only'* ]]; then exit 1; fi; exec $GIT_REAL \"\$@\""
-run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$GREEN"; assert_eq "an unreadable diff since the marker's commit is rejected (fail closed)" "deny" "$(decision)"
+run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "an unreadable diff since the marker's commit is rejected (fail closed)" "deny" "$(decision)"
 rm -f "$TL_BIN/git"
-# a later commit touching anything else invalidates it
+# a hook/script/skill change after the matrix invalidates it
 printf 'x\n' >"$PROJ/hooks-changed.sh"
 git -C "$PROJ" add hooks-changed.sh; git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit -q -m "code change"
-run_ca PreToolUse "$REL"; assert_eq "ancestor commit with a code change since is rejected" "deny" "$(decision)"
-# a sha that is not an ancestor (another history) is rejected
-printf 'matrix=inline-full-surface\ncommit=%s\n' "$(printf '%040d' 1)" >"$INL"
-run_ca PreToolUse "$REL"; assert_eq "a commit that is not in the release history is rejected" "deny" "$(decision)"
-# a hand-written marker with a stale commit cannot satisfy the gate; the real hook also denies writing it
+run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "a code change since the marker is rejected" "deny" "$(decision)"
+# a marker from an unrelated history/branch (code differs) is rejected
 git -C "$PROJ" checkout -q -b side "$OLD_SHA"; printf 'side\n' >"$PROJ/side.txt"; git -C "$PROJ" add side.txt
 git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit -q -m side; SIDE_SHA="$(git -C "$PROJ" rev-parse HEAD)"
 git -C "$PROJ" checkout -q -
 printf 'matrix=inline-full-surface\ncommit=%s\n' "$SIDE_SHA" >"$INL"
-run_ca PreToolUse "$REL"; assert_eq "a commit on a diverged branch (not an ancestor) is rejected" "deny" "$(decision)"
-# G2 state-tamper guard: an agent cannot hand-write the marker through a shell redirect
+run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "a commit on a diverged branch with different code is rejected" "deny" "$(decision)"
+# a marker commit that is not in this checkout (shallow clone) fails closed with a clear instruction
+printf 'matrix=inline-full-surface\ncommit=%s\n' "$(printf '%040d' 1)" >"$INL"
+run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "a marker commit missing locally is rejected" "deny" "$(decision)"
+assert_contains "the block tells the operator to fetch full history" "$(message)" "git fetch --unshallow"
+# the tamper guard is lexical: a shell redirect to the marker is denied, but the gate's trust comes from re-verifying commit/tree
 TAMPER_CMD="printf 'matrix=inline-full-surface\\ncommit=$OLD_SHA\\n' > $INL"
 tl_run_hook hooks/dev-cycle-check.sh "$(jq -nc --arg c "$TAMPER_CMD" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}')"
-assert_contains "dev-cycle-check denies hand-writing the inline marker" "$TL_OUT" "STATE TAMPER BLOCKED"
+assert_contains "dev-cycle-check denies a shell redirect into the inline marker" "$TL_OUT" "STATE TAMPER BLOCKED"
+set_matrix claude-only claude-only inline-full-surface
 set_matrix claude-only claude-only inline-full-surface
 set_matrix claude-only claude-only inline-full-surface
 SHA="$(git -C "$PROJ" rev-parse HEAD)"

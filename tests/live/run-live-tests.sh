@@ -81,7 +81,7 @@ echo ""
 # (e2e-live-matrix, inline-e2e-matrix, quality-gate-state, verify-tests-state), tears down any
 # isolated Codex/Kay home and writes release-live-matrix only after a complete pass
 # (R14-03, R14-15).
-sb_evidence_snapshot "$SB_RUNTIME_STATE_DIR"
+sb_evidence_snapshot "$SB_RUNTIME_STATE_DIR" "$(cd "${LIVE_TEST_ROOT}/../.." && pwd)"
 sb_evidence_restore release-live-matrix
 
 runner_exit() {

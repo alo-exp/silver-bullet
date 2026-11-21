@@ -43,7 +43,7 @@ else
   ((FAIL++)) || true
 fi
 
-if grep -qF "trap \"rm -f '\$_matrix_batch_pid_file' '\${_matrix_batch_pid_file}.id'; cleanup_workspace\" EXIT" <<<"$script_body"; then
+if grep -qF "trap \"rm -f '\$_matrix_batch_pid_file' '\${_matrix_batch_pid_file}.id'; enterprise_e2e_matrix_evidence_finish; cleanup_workspace\" EXIT" <<<"$script_body"; then
   echo "PASS: batch pid EXIT trap captures path at registration"
   ((PASS++)) || true
 else
