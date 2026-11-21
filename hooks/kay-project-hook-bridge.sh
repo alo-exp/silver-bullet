@@ -620,14 +620,17 @@ def add_record(state, path: Path):
             first = True
         except FileExistsError:
             first = False
+        mode = stat.S_IMODE(path.stat().st_mode)
         if first:
-            mode = stat.S_IMODE(path.stat().st_mode)
             (lock_dir / "path").write_text(key, encoding="utf-8")
             (lock_dir / "mode").write_text(str(mode), encoding="utf-8")
         with open(lock_dir / "holders", "a", encoding="utf-8") as holders:
             holders.write(token + "\n")
-        if not first:
+        if not first and not mode & 0o222:
             return
+        # First holder, or a joining holder that finds the path writable again (it
+        # was re-enabled outside the bridge): (re)apply the lock. The recorded
+        # original mode is never replaced.
         new_mode = mode & ~0o222
         if new_mode != mode:
             os.chmod(path, new_mode)
@@ -644,6 +647,26 @@ def add_record(state, path: Path):
     except OSError:
         return
 
+home = os.path.realpath(os.path.expanduser("~"))
+
+def shared_dir(path: Path):
+    """Directories the bridge must never lock as a PARENT: the filesystem root, the
+    user's home, and any sticky or world-writable directory (/tmp, /var/tmp): a denied
+    write to /tmp/new.txt must not make all of /tmp read-only."""
+    real = os.path.realpath(path)
+    if real in ("/", home):
+        return True
+    try:
+        mode = os.stat(real).st_mode
+    except OSError:
+        return True
+    return bool(mode & stat.S_ISVTX or mode & stat.S_IWOTH)
+
+def add_parent(state, target: Path):
+    parent = target.parent
+    if not shared_dir(parent):
+        add_record(state, parent)
+
 with open(state_path, "a", encoding="utf-8") as state:
     for raw in targets_path.read_text().splitlines():
         raw = raw.strip()
@@ -653,9 +676,9 @@ with open(state_path, "a", encoding="utf-8") as state:
         if target.exists():
             add_record(state, target)
             if scope != "exact":
-                add_record(state, target.parent)
+                add_parent(state, target)
             continue
-        add_record(state, target.parent)
+        add_parent(state, target)
 
 print(count)
 PY

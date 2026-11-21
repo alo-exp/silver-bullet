@@ -93,4 +93,23 @@ deny_file "$WORK/d/f.txt" r2
 after r2
 assert_eq "re-lock after release restores the true original" "644" "$(stat -c %a "$WORK/d/f.txt")"
 
+# a path whose write bits were re-enabled outside the bridge (a stale lock record
+# remains) is locked again by the next denial, and still restores the TRUE original
+printf 'x' >"$WORK/d/g.txt"; chmod 640 "$WORK/d/g.txt"
+deny_file "$WORK/d/g.txt" st1
+assert_eq "first denial locks" "440" "$(stat -c %a "$WORK/d/g.txt")"
+chmod u+w "$WORK/d/g.txt"
+deny_file "$WORK/d/g.txt" st2
+assert_eq "a re-enabled path is locked again by the next denial" "440" "$(stat -c %a "$WORK/d/g.txt")"
+after st1
+assert_eq "one holder left after the re-lock" "440" "$(stat -c %a "$WORK/d/g.txt")"
+after st2
+assert_eq "last holder restores the true original mode" "640" "$(stat -c %a "$WORK/d/g.txt")"
+# an already read-only original joined by a second holder is left alone
+printf 'x' >"$WORK/d/h.txt"; chmod 444 "$WORK/d/h.txt"
+deny_file "$WORK/d/h.txt" ro1
+deny_file "$WORK/d/h.txt" ro2
+after ro1; after ro2
+assert_eq "read-only original stays read-only" "444" "$(stat -c %a "$WORK/d/h.txt")"
+
 tl_results
