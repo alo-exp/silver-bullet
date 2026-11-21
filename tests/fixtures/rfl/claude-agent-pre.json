@@ -1,0 +1,20 @@
+{
+  "_fixture": {
+    "source": "synthetic",
+    "host": "claude-code",
+    "note": "Hand-written from the Agent tool schema the orchestrator supplied (parameters description, prompt, subagent_type, model, effort, run_in_background, isolation; background launch text 'Async agent launched successfully.' with agentId and output_file; subagent hook payloads carry top-level agent_id/agent_type). Not captured from a live session: replace with real captures, see README.md."
+  },
+  "session_id": "synthetic-session",
+  "transcript_path": "/synthetic/transcript.jsonl",
+  "cwd": "__CWD__",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Agent",
+  "tool_use_id": "toolu_synthetic_1",
+  "tool_input": {
+    "description": "RFL __TICKET__",
+    "prompt": "__PROMPT__",
+    "subagent_type": "sb-rfl-reviewer",
+    "model": "sonnet",
+    "effort": "high"
+  }
+}

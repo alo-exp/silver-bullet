@@ -51,80 +51,41 @@ assert_jq_false() {
 
 assert_file_exists "$RESOLVER" "review-fix-ladder.py exists"
 
-cat > "$WORKDIR/models_cache.json" <<'EOF'
-{
-  "models": [
-    {
-      "slug": "gpt-5.4-mini",
-      "visibility": "list",
-      "priority": 23,
-      "supported_reasoning_levels": [
-        {"effort": "low"},
-        {"effort": "medium"},
-        {"effort": "high"},
-        {"effort": "xhigh"}
-      ]
-    },
-    {
-      "slug": "gpt-5.4",
-      "visibility": "list",
-      "priority": 16,
-      "supported_reasoning_levels": [
-        {"effort": "low"},
-        {"effort": "medium"},
-        {"effort": "high"},
-        {"effort": "xhigh"}
-      ]
-    },
-    {
-      "slug": "gpt-5.5",
-      "visibility": "list",
-      "priority": 9,
-      "supported_reasoning_levels": [
-        {"effort": "low"},
-        {"effort": "medium"},
-        {"effort": "high"},
-        {"effort": "xhigh"}
-      ]
-    }
-  ]
-}
-EOF
+# --- native Claude ladder resolution ---
+default_json="$(python3 "$RESOLVER" --json --host claude --project-root "$WORKDIR")"
+assert_jq_true "default Claude ladder: latest tiers by alias, Haiku and Luna-style start at xhigh" \
+  '[.rungs[] | "\(.model):\(.effort)"] == ["haiku:xhigh","sonnet:high","sonnet:xhigh","opus:low","opus:medium","opus:high"] and .enabled == true and .spawn_tool == "Agent"' \
+  "$default_json"
+assert_jq_false "Fable is never part of the ladder" '[.rungs[].model] | index("fable")' "$default_json"
+assert_jq_false "no Sonnet low/medium/max and no Opus xhigh/max by default" \
+  '[.rungs[] | select((.model == "sonnet" and (.effort == "low" or .effort == "medium" or .effort == "max")) or (.model == "opus" and (.effort == "xhigh" or .effort == "max")))] | length > 0' "$default_json"
 
-dynamic_json="$(python3 "$RESOLVER" --host codex --codex-home "$WORKDIR" --json)"
-assert_jq_true "Codex dynamic resolves host" '.host == "codex"' "$dynamic_json"
-assert_jq_true "Codex dynamic uses cache source" '.source == "dynamic"' "$dynamic_json"
-assert_jq_true "Codex dynamic starts at gpt-5.4 low" '.rungs[0] == {"model":"gpt-5.4","reasoning":"low"}' "$dynamic_json"
-assert_jq_false "Codex dynamic excludes gpt-5.4-mini" '[.rungs[].model] | index("gpt-5.4-mini")' "$dynamic_json"
+override_json="$(python3 "$RESOLVER" --json --host claude --project-root "$WORKDIR" --rungs 'rungs: +opus:xhigh -haiku:xhigh')"
+assert_jq_true "prompt override adds and removes rungs" \
+  '[.rungs[] | "\(.model):\(.effort)"] == ["sonnet:high","sonnet:xhigh","opus:low","opus:medium","opus:high","opus:xhigh"] and .source == "config"' \
+  "$override_json"
 
-fallback_json="$(python3 "$RESOLVER" --host codex --codex-home "$WORKDIR/missing" --json)"
-assert_jq_true "Codex fallback resolves host" '.host == "codex"' "$fallback_json"
-assert_jq_true "Codex fallback uses fallback source" '.source == "fallback"' "$fallback_json"
-assert_jq_true "Codex fallback includes gpt-5.4 low" '.rungs[0] == {"model":"gpt-5.4","reasoning":"low"}' "$fallback_json"
-assert_jq_true "Codex fallback includes gpt-5.5 xhigh" '.rungs[-1] == {"model":"gpt-5.5","reasoning":"xhigh"}' "$fallback_json"
-assert_jq_false "Codex fallback excludes gpt-5.4-mini" '[.rungs[].model] | index("gpt-5.4-mini")' "$fallback_json"
+mkdir -p "$WORKDIR/proj"
+printf '{"review_fix_ladder": {"rungs": ["sonnet:high", "opus:high"]}}\n' >"$WORKDIR/proj/.silver-bullet.json"
+cfg_json="$(python3 "$RESOLVER" --json --host claude --project-root "$WORKDIR/proj")"
+assert_jq_true ".silver-bullet.json review_fix_ladder.rungs replaces the defaults" \
+  '[.rungs[] | .model] == ["sonnet","opus"] and .source == "config"' "$cfg_json"
 
-claude_json="$(python3 "$RESOLVER" --host claude --json)"
-assert_jq_true "Claude fallback model chain" '
-  .rungs == [
-    {"model":"claude-sonnet-4-6","reasoning":"medium"},
-    {"model":"claude-sonnet-4-6","reasoning":"high"},
-    {"model":"claude-sonnet-4-6","reasoning":"xhigh"},
-    {"model":"claude-opus-4-7","reasoning":"medium"},
-    {"model":"claude-opus-4-7","reasoning":"high"},
-    {"model":"claude-opus-4-7","reasoning":"xhigh"},
-    {"model":"claude-opus-4-8","reasoning":"medium"},
-    {"model":"claude-opus-4-8","reasoning":"high"},
-    {"model":"claude-opus-4-8","reasoning":"xhigh"}
-  ]
-' "$claude_json"
+codex_json="$(python3 "$RESOLVER" --json --host codex)"
+assert_jq_true "Codex: the ladder is disabled with a clear message and documented defaults only" \
+  '.enabled == false and .rungs == [] and (.message | contains("not yet verified on Codex")) and .documented_defaults.luna == ["xhigh"] and .documented_defaults.terra == ["high","xhigh"] and (.documented_defaults.excluded | index("astra") != null)' \
+  "$codex_json"
+rc=0; SILVER_BULLET_RUNTIME=codex python3 "$RESOLVER" --start --charter-file "$WORKDIR/none.json" --project-root "$WORKDIR" >/dev/null 2>"$WORKDIR/err" || rc=$?
+if [[ "$rc" -eq 3 ]] && grep -q "not yet verified on Codex" "$WORKDIR/err"; then pass "Codex --start stops with the clear message"; else fail "Codex --start stops with the clear message (rc $rc)"; fi
 
-override_json="$(python3 "$RESOLVER" --host codex --json --codex-home "$WORKDIR/none")"
-assert_jq_true "Host override without env selects codex" '.host == "codex"' "$override_json"
-if python3 "$RESOLVER" --host cursor --json >/dev/null 2>&1; then
-  fail "the removed cursor host is rejected"
+for gone in --decide-launch --default-host-route --mark-quota-fallback --codex-home; do
+  rc=0; python3 "$RESOLVER" "$gone" x >/dev/null 2>&1 || rc=$?
+  if [[ "$rc" -eq 2 ]]; then pass "$gone (Cursor / subscription-first / Codex cache) is gone"; else fail "$gone is gone (rc $rc)"; fi
+done
+if grep -rniE 'cursor|subscription-first|grok|composer' "$REPO_ROOT/scripts/_review_fix_ladder_impl.py" "$REPO_ROOT/scripts/lib/rfl_native.py" "$REPO_ROOT/scripts/lib/rfl_hook.py" "$REPO_ROOT/scripts/lib/rfl_policy_c.py" "$REPO_ROOT/scripts/lib/rfl_launcher_policy.py" "$REPO_ROOT/scripts/lib/quota_window.py" "$REPO_ROOT/hooks/review-fix-ladder-guard.sh" "$REPO_ROOT/skills/silver-review-fix-ladder/SKILL.md" "$REPO_ROOT/subagents/claude" | grep -q .; then
+  fail "no Cursor / subscription-first / Grok wording in the RFL skill, impl or state libs"
 else
-  pass "the removed cursor host is rejected"
+  pass "no Cursor / subscription-first / Grok wording in the RFL skill, impl or state libs"
 fi
 
 SKILL="${REPO_ROOT}/skills/silver-review-fix-ladder/SKILL.md"
@@ -145,7 +106,7 @@ if grep -qF "After each rung’s review, the agent that launched the RFL applies
 else
   fail "SKILL Policy B: launcher applies ACCEPT fixes"
 fi
-if grep -qF 'The rung model does not implement' "$SKILL"; then
+if grep -qF 'The rung subagent does not implement' "$SKILL"; then
   pass "SKILL Policy B: rung model does not implement"
 else
   fail "SKILL Policy B: rung model does not implement"
@@ -192,10 +153,10 @@ if grep -qF 'parent orchestrator never implements' "$SKILL" \
 else
   fail "SKILL records RFL exception to parent-never-implements"
 fi
-if grep -qF 'Do not skip Extra High/Max when those slugs exist' "$SKILL"; then
-  pass "SKILL does not skip Extra High/Max"
+if grep -qF 'Not in the default ladder: Sonnet low/medium/max, Opus xhigh/max' "$SKILL"; then
+  pass "SKILL documents the excluded efforts"
 else
-  fail "SKILL does not skip Extra High/Max"
+  fail "SKILL documents the excluded efforts"
 fi
 if grep -qF 'Launch fix subagent(s) at **host model**' "$SKILL"; then
   fail "SKILL must not tell the rung/host-model subagent to apply fixes"
@@ -217,11 +178,11 @@ else
   fail "SKILL fix step is launcher APPLY ACCEPT"
 fi
 if grep -qF '### Policy F — two consecutive CLEAN reviews per rung (HARD)' "$SKILL" \
-  && grep -qF 'two consecutive review passes' "$SKILL" \
+  && grep -qF 'two consecutive captured review passes' "$SKILL" \
   && grep -qF 'consecutive_clean_reviews == 2' "$SKILL" \
   && grep -qF -- '--assert-consecutive-clean' "$SKILL" \
-  && grep -qF -- '--record-rung-review-outcome' "$SKILL" \
-  && grep -qF 'Parent MUST NOT launch the next ladder model' "$SKILL"; then
+  && grep -qF 'there is no command to record it by hand' "$SKILL" \
+  && grep -qF 'Do **not** start the next ladder model until' "$SKILL"; then
   pass "SKILL Policy F: two consecutive CLEAN reviews per rung"
 else
   fail "SKILL Policy F: two consecutive CLEAN reviews per rung"
@@ -233,7 +194,7 @@ if grep -qF '### Policy G — hop review (pack-ledger) (HARD)' "$SKILL" \
   && grep -qF 'Valid nits must be filed' "$SKILL" \
   && grep -qF -- '--issue-ledger' "$SKILL" \
   && grep -qF -- '--write-review-brief' "$SKILL" \
-  && grep -qF '{issue_ledger}' "$SKILL" \
+  && grep -qF 'issue ledger' "$SKILL" \
   && grep -qF 'as a pack' "$SKILL" \
   && grep -qF 'only legal review brief' "$SKILL"; then
   pass "SKILL Policy G: pack-ledger hop review, all severities"
@@ -242,8 +203,8 @@ else
 fi
 if grep -qF 'Policy map (A–G)' "$SKILL" \
   && grep -qF 'Canonical verify overlay (HARD)' "$SKILL" \
-  && grep -qF 'verify_2 is skipped on already-triaged' "$SKILL" \
-  && grep -qF '`verify_1` is **required** on already-triaged **NOT CLEAN**' "$SKILL"; then
+  && grep -qF '`verify_1` runs **every cycle**' "$SKILL" \
+  && grep -qF '`verify_2` runs once the streak is 2' "$SKILL"; then
   pass "SKILL A–G map + canonical verify overlay"
 else
   fail "SKILL A–G map + canonical verify overlay"
@@ -252,7 +213,7 @@ if grep -qF '### Policy E — rung-prompt user-approval (HARD)' "$SKILL" \
   && grep -qF 'concise bullet list of only the key tasks and instructions' "$SKILL" \
   && grep -qF 'Do **not** dump the entire prompt' "$SKILL" \
   && grep -qF 'Until approved:' "$SKILL" \
-  && grep -qF 'do not spawn reviewer Tasks / Pi invoke' "$SKILL" \
+  && grep -qF 'do not issue a reviewer ticket or spawn a reviewer subagent' "$SKILL" \
   && grep -qF 'RUNG-PROMPT-APPROVAL.md' "$SKILL" \
   && grep -qF 'approved: pending|yes' "$SKILL" \
   && grep -qF '5–12 bullets' "$SKILL" \
@@ -266,7 +227,7 @@ fi
 
 WORKER="${REPO_ROOT}/templates/orchestrator-workers/REVIEW-TRIAGE.md"
 assert_file_exists "$WORKER" "REVIEW-TRIAGE worker template exists"
-if grep -qF 'The rung model does not implement' "$WORKER" \
+if grep -qF 'The rung subagent does not implement' "$WORKER" \
   && grep -qF 'Forbidden reject reasons' "$WORKER"; then
   pass "REVIEW-TRIAGE worker encodes RFL triage and fix-owner policy"
 else
@@ -274,14 +235,14 @@ else
 fi
 if grep -qF 'APPLY ACCEPT completeness (HARD)' "$WORKER" \
   && grep -qF 'Low, deferred, nitpicks, and minor' "$WORKER" \
-  && grep -qF 'The fix step is launcher APPLY ACCEPT, not a fixer rung' "$WORKER"; then
+  && grep -qF 'the launcher applying fixes is an explicit exception' "$WORKER"; then
   pass "REVIEW-TRIAGE worker encodes APPLY ACCEPT lands all non-wrong nits"
 else
   fail "REVIEW-TRIAGE worker encodes APPLY ACCEPT lands all non-wrong nits"
 fi
 if grep -qF 'Policy C — launcher reports after every rung' "$WORKER" \
-  && grep -qF "the launcher (the agent that started the RFL) must message the user with a severity-grouped update" "$WORKER" \
-  && grep -qF 'Do this after every rung, not only at family or ladder end.' "$WORKER" \
+  && grep -qF 'the launcher must message the user with a severity-grouped update' "$WORKER" \
+  && grep -qF 'after each rung' "$WORKER" \
   && grep -qF 'Do not dump raw review.md.' "$WORKER" \
   && grep -qF 'Blockers / Highs / Mediums' "$WORKER" \
   && grep -qF 'CLEAN with no findings still gets the three none lines' "$WORKER"; then
@@ -292,9 +253,8 @@ fi
 if grep -qF 'rung-prompt user-approval' "$WORKER" \
   && grep -qF 'concise bullet list of only the key tasks and instructions' "$WORKER" \
   && grep -qF 'Do not dump the entire prompt' "$WORKER" \
-  && grep -qF 'Until approved: do not spawn reviewer Tasks / Pi invoke' "$WORKER" \
-  && grep -qF 'RUNG-PROMPT-APPROVAL.md' "$WORKER" \
-  && grep -qF 'approved: pending|yes' "$WORKER"; then
+  && grep -qF 'Until approved: do not issue a ticket or spawn a reviewer' "$WORKER" \
+  && grep -qF -- '--approve' "$WORKER"; then
   pass "REVIEW-TRIAGE worker encodes Policy E rung-prompt user-approval"
 else
   fail "REVIEW-TRIAGE worker encodes Policy E rung-prompt user-approval"
@@ -331,9 +291,9 @@ fi
 if grep -qF 'Rung-prompt user-approval (Policy E)' "$SCENARIO" \
   && grep -qF 'concise bullet list of only the key tasks and instructions' "$SCENARIO" \
   && grep -qF 'Do not dump the entire prompt' "$SCENARIO" \
-  && grep -qF 'Until approved: do not spawn reviewer Tasks / Pi invoke' "$SCENARIO" \
+  && grep -qF 'Until approved: do not issue a ticket or spawn a reviewer' "$SCENARIO" \
   && grep -qF 'RUNG-PROMPT-APPROVAL.md' "$SCENARIO" \
-  && grep -qF 'approved: pending|yes' "$SCENARIO" \
+  && grep -qF -- '--approve' "$SCENARIO" \
   && grep -qF 'materially change' "$SCENARIO"; then
   pass "Skill scenario encodes Policy E rung-prompt user-approval"
 else
@@ -342,29 +302,25 @@ fi
 
 if grep -qF 'Anti-stall (Policy B leftover loop — HARD)' "$SKILL" \
   && grep -qF 'Corpus sweep, not one-line cycles' "$SKILL" \
-  && grep -qF 'Empty / "Let" nested Tasks' "$SKILL" \
-  && grep -qF 'Quota STOP (once)' "$SKILL" \
-  && grep -qF 'Cap residual loops' "$SKILL" \
-  && grep -qF 'nested GLM under Grok dies after "Let"' "$SKILL"; then
+  && grep -qF '**Quota and rate limits:**' "$SKILL" \
+  && grep -qF 'Nothing is scheduled and no timer is armed' "$SKILL" \
+  && grep -qF 'Cap residual loops' "$SKILL"; then
   pass "SKILL encodes anti-stall leftover loop"
 else
   fail "SKILL encodes anti-stall leftover loop"
 fi
 if grep -qF 'Launch/timeout retry then skip (HARD)' "$SKILL" \
-  && grep -qF 'retry **once immediately**' "$SKILL" \
+  && grep -qF 'After **2** failed attempts' "$SKILL" \
   && grep -qF 'SKIPPED.md' "$SKILL" \
   && grep -qF 'failed to produce a verdict' "$SKILL" \
-  && grep -qF 'Endpoint is unavailable' "$SKILL" \
   && grep -qF 'Do **not** skip because of a CLEAN/NOT CLEAN review' "$SKILL" \
-  && grep -qF 'skip does not change the next rung' "$SKILL" \
-  && grep -qF 'Never Fast' "$SKILL" \
-  && grep -qF 'not a Fast/family substitute' "$SKILL" \
-  && grep -qF 'retry skipped rungs once more' "$SKILL" \
-  && grep -qF 'previous rung was skipped after launch/timeout retry-once-then-skip with `SKIPPED.md` recorded' "$SKILL" \
-  && grep -qF 'Quota STOP (once)' "$SKILL"; then
-  pass "SKILL encodes launch/timeout retry-once-then-skip"
+  && grep -qF 'never a substitution' "$SKILL" \
+  && grep -qF '**Never Fast.**' "$SKILL" \
+  && grep -qF 'each skipped rung is retried once more' "$SKILL" \
+  && grep -qF 'or after a recorded two-attempt skip' "$SKILL"; then
+  pass "SKILL encodes launch retry-then-skip"
 else
-  fail "SKILL encodes launch/timeout retry-once-then-skip"
+  fail "SKILL encodes launch retry-then-skip"
 fi
 if grep -qF 'Anti-Stall leftover loop (Policy B)' "$SCENARIO" \
   && grep -qF 'Corpus sweep, not one-line cycles' "$SCENARIO" \
@@ -373,152 +329,29 @@ if grep -qF 'Anti-Stall leftover loop (Policy B)' "$SCENARIO" \
 else
   fail "Skill scenario encodes anti-stall leftover loop"
 fi
-if grep -qF 'Skip after launch/timeout retry-once-then-skip' "$SCENARIO" \
-  && grep -qF 'Retry once immediately' "$SCENARIO" \
+if grep -qF 'Skip after two failed attempts' "$SCENARIO" \
   && grep -qF 'SKIPPED.md' "$SCENARIO" \
-  && grep -qF 'failed to produce a verdict' "$SCENARIO" \
-  && grep -qF 'Do not skip because of a CLEAN/NOT CLEAN review' "$SCENARIO" \
-  && grep -qF "skip does not change the next rung's required model" "$SCENARIO" \
-  && grep -qF 'Never Fast' "$SCENARIO" \
-  && grep -qF 'Quota STOP once still applies' "$SCENARIO" \
-  && grep -qF 'Sequential rung advance is allowed if the previous rung has SKIPPED.md' "$SCENARIO" \
-  && grep -qF 'Empty/"Let" after re-spawn counts toward the launch/timeout retry-once-then-skip policy' "$SCENARIO"; then
-  pass "Skill scenario encodes launch/timeout retry-once-then-skip"
+  && grep -qF 'RFL ABORT <run-id>' "$SCENARIO" \
+  && grep -qF 'Never substitute another model or vendor' "$SCENARIO" \
+  && grep -qF 'not caused by a CLEAN/NOT CLEAN review' "$SCENARIO" \
+  && grep -qF 'each skipped rung is retried once more' "$SCENARIO"; then
+  pass "Skill scenario encodes the skip policy"
 else
-  fail "Skill scenario encodes launch/timeout retry-once-then-skip"
+  fail "Skill scenario encodes the skip policy"
 fi
-if grep -qF 'Anti-stall (Policy B leftover loop)' "$WORKER" \
-  && grep -qF 'Corpus sweep if the same defect class fails verify more than twice' "$WORKER"; then
-  pass "REVIEW-TRIAGE worker encodes anti-stall leftover loop"
+if grep -qF 'Corpus sweep' "$WORKER" || grep -qF 'Anti-stall' "$WORKER"; then
+  pass "REVIEW-TRIAGE worker mentions the anti-stall loop"
 else
-  fail "REVIEW-TRIAGE worker encodes anti-stall leftover loop"
+  fail "REVIEW-TRIAGE worker mentions the anti-stall loop"
 fi
-if grep -qF 'retry once immediately' "$WORKER" \
-  && grep -qF 'SKIPPED.md' "$WORKER" \
-  && grep -qF 'Launch/timeout retry-once-then-skip (HARD)' "$WORKER" \
-  && grep -qF 'Do not skip because of CLEAN/NOT CLEAN' "$WORKER" \
-  && grep -qF "Mixed-host skip does not change the next rung's required model" "$WORKER" \
-  && grep -qF 'Never Fast' "$WORKER" \
-  && grep -qF 'empty Let' "$WORKER" \
-  && grep -qF 'Sequential rung advance is allowed if the previous rung has SKIPPED.md' "$WORKER" \
-  && grep -qF 'Quota STOP once' "$WORKER" \
-  && grep -qF 'retry skipped rungs once more' "$WORKER"; then
-  pass "REVIEW-TRIAGE worker encodes launch/timeout retry-once-then-skip"
+if grep -qF 'two failed attempts on a phase are recorded as `SKIPPED.md`' "$WORKER" \
+  && grep -qF 'skipped rungs are retried once after the ladder' "$WORKER" \
+  && grep -qF 'a quota response pauses the run' "$WORKER" \
+  && grep -qF 'RFL ABORT <run-id>' "$WORKER" \
+  && grep -qF 'untrusted data' "$WORKER"; then
+  pass "REVIEW-TRIAGE worker encodes the skip, pause, abort and untrusted-data rules"
 else
-  fail "REVIEW-TRIAGE worker encodes launch/timeout retry-once-then-skip"
-fi
-
-LIVE_COMMON="${REPO_ROOT}/tests/live/lib/review-fix-ladder-common.sh"
-LIVE_TRIAGE="${REPO_ROOT}/tests/live/lib/review-fix-ladder-triage-scenario.sh"
-assert_file_exists "$LIVE_COMMON" "live review-fix-ladder common harness exists"
-assert_file_exists "$LIVE_TRIAGE" "live review-fix-ladder triage harness exists"
-if grep -qE 'OR fix divide\(\)|Fix divide\(\) minimally' "$LIVE_COMMON" "$LIVE_TRIAGE"; then
-  fail "live harness must not tell the rung to fix"
-else
-  pass "live harness must not tell the rung to fix"
-fi
-if grep -q 'review_fix_ladder_launcher_apply_accept' "$LIVE_COMMON" \
-  && grep -q 'APPLY ACCEPT' "$LIVE_COMMON" "$LIVE_TRIAGE"; then
-  pass "launcher APPLY ACCEPT"
-else
-  fail "launcher APPLY ACCEPT"
-fi
-if grep -qF 'Low, deferred, nitpicks, and minor' "$LIVE_TRIAGE" \
-  && grep -qF 'every finding that is not wrong' "$LIVE_TRIAGE" \
-  && grep -qF 'Low/deferred/nitpicks/minor' "$LIVE_COMMON"; then
-  pass "live harness APPLY ACCEPT lands all non-wrong nits"
-else
-  fail "live harness APPLY ACCEPT lands all non-wrong nits"
-fi
-if grep -q '/sb:triage' "$LIVE_COMMON"; then
-  fail "live rung harness must not invoke /sb:triage as the rung"
-else
-  pass "live rung harness must not invoke /sb:triage as the rung"
-fi
-
-# --- Subscription-first GPT/Claude gate ---
-gpt_plan="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high)"
-assert_jq_true "GPT decide-launch tries Codex first" \
-  '.action == "invoke_subscription" and .subscription_host == "codex" and .subscription_skill == "silver-agent-codex"' \
-  "$gpt_plan"
-
-claude_plan="$(python3 "$RESOLVER" --decide-launch --model opus-5 --reasoning xhigh)"
-assert_jq_true "Claude decide-launch tries Claude CLI first" \
-  '.action == "invoke_subscription" and .subscription_host == "claude" and .subscription_invoke == "scripts/agent-claude/invoke.sh"' \
-  "$claude_plan"
-
-max_plan="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning max)"
-assert_jq_true "GPT Max still subscription-first" \
-  '.action == "invoke_subscription" and .reasoning == "max"' \
-  "$max_plan"
-
-reverify_plan="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning xhigh)"
-assert_jq_true "GPT Extra High re-verify still subscription-first" \
-  '.action == "invoke_subscription" and .reasoning == "xhigh"' \
-  "$reverify_plan"
-
-quota_plan="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high --subscription-exit 1 --subscription-output 'HTTP 429 rate limit; quota retries exhausted')"
-assert_jq_true "quota exhaustion allows Cursor fallback" \
-  '.action == "cursor_fallback" and .reason == "quota-exhaustion" and .cursor_fallback == true and .quota_exhaustion == true' \
-  "$quota_plan"
-
-claude_quota="$(python3 "$RESOLVER" --decide-launch --model opus-5 --reasoning high --subscription-exit 1 --subscription-output 'Token Plan usage limit')"
-assert_jq_true "Claude token-plan is quota fallback" \
-  '.action == "cursor_fallback" and .reason == "quota-exhaustion" and .subscription_host == "claude"' \
-  "$claude_quota"
-
-missing_cli="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high --subscription-exit 1 --subscription-output 'ERROR: native Codex CLI not found')"
-assert_jq_true "missing CLI does not Cursor-fallback" \
-  '.action == "fail" and .reason == "missing-cli" and .cursor_fallback == false' \
-  "$missing_cli"
-
-hash_mm="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high --subscription-exit 1 --subscription-output 'ERROR: HASH MISMATCH on brief')"
-assert_jq_true "HASH MISMATCH does not Cursor-fallback" \
-  '.action == "fail" and .reason == "hash-mismatch" and .cursor_fallback == false' \
-  "$hash_mm"
-
-not_clean="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high --subscription-exit 0 --subscription-output 'NOT CLEAN: leftover findings')"
-assert_jq_true "NOT CLEAN success does not Cursor-fallback" \
-  '.action == "accept_subscription" and .reason == "success" and .cursor_fallback == false' \
-  "$not_clean"
-
-network_fail="$(python3 "$RESOLVER" --decide-launch --model opus-5 --reasoning high --subscription-exit 1 --subscription-output 'ERROR: timed out waiting for Claude response')"
-assert_jq_true "network timeout does not Cursor-fallback" \
-  '.action == "fail" and .reason == "non-quota-failure" and .cursor_fallback == false' \
-  "$network_fail"
-
-other_plan="$(python3 "$RESOLVER" --decide-launch --model composer-2.5 --reasoning high)"
-assert_jq_true "Composer decide-launch skips gate" \
-  '.action == "cursor_task" and .subscription_first == false and (.subscription_invoke == null)' \
-  "$other_plan"
-
-grok_plan="$(python3 "$RESOLVER" --decide-launch --model grok-4.6 --reasoning xhigh)"
-assert_jq_true "Grok decide-launch skips gate" \
-  '.action == "cursor_task" and .subscription_first == false' \
-  "$grok_plan"
-
-assert_jq_true "Grok decide-launch default host is Pi (no dedicated host)" \
-  '.default_agent_route == "/sb:agent-pi" and .preserves_host_mode == true' \
-  "$grok_plan"
-assert_jq_true "GPT decide-launch default host is Codex" \
-  '.default_agent_host == "codex"' \
-  "$gpt_plan"
-
-
-if grep -qF 'Subscription-first (GPT / Claude)' "$SKILL" \
-  && grep -qF 'scripts/agent-codex/invoke.sh' "$SKILL" \
-  && grep -qF 'scripts/agent-claude/invoke.sh' "$SKILL" \
-  && grep -qF 'try the subsidized host CLI' "$SKILL"; then
-  pass "SKILL documents subscription-first GPT/Claude routing"
-else
-  fail "SKILL documents subscription-first GPT/Claude routing"
-fi
-if grep -qF 'Subscription-First GPT and Claude Launch' "$SCENARIO" \
-  && grep -qF '/sb:agent-codex' "$SCENARIO" \
-  && grep -qF '**no** Cursor fallback' "$SCENARIO"; then
-  pass "Skill scenario encodes subscription-first GPT/Claude launch"
-else
-  fail "Skill scenario encodes subscription-first GPT/Claude launch"
+  fail "REVIEW-TRIAGE worker encodes the skip, pause, abort and untrusted-data rules"
 fi
 
 echo "Results: ${PASS} passed, ${FAIL} failed"

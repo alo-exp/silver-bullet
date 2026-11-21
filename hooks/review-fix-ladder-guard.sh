@@ -9,7 +9,7 @@ trap 'exit 0' ERR
 
 umask 0077
 
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 for _lib in runtime-paths.sh sb-project-gate.sh hook-audit.sh hook-subproc-timeout.sh orchestrator-parent.sh orchestrator-directive.sh; do
   # shellcheck disable=SC1090
   [[ -f "$_lib_dir/$_lib" ]] && source "$_lib_dir/$_lib"
@@ -18,7 +18,7 @@ done
 command -v jq >/dev/null 2>&1 || exit 0
 command -v python3 >/dev/null 2>&1 || exit 0
 
-input="$(cat 2>/dev/null || true)"
+input="$(cat)"
 [[ -n "$input" ]] || exit 0
 
 hook_event="$(printf '%s' "$input" | jq -r '.hook_event_name // .hookEventName // empty' 2>/dev/null || true)"
@@ -27,7 +27,7 @@ live_file="${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}/rfl-live.json
 case "$hook_event" in
   SessionStart)
     # a fresh session (startup/clear) never inherits a live run; compact and resume keep it
-    case "$(printf '%s' "$input" | jq -r '.source // ""' 2>/dev/null || true)" in
+    case "$(printf '%s' "$input" | jq -r '.source // ""')" in
       startup | clear) rm -f -- "$live_file" ;;
     esac
     ;;
@@ -50,7 +50,7 @@ fi
 [[ -n "$config_file" ]] || exit 0
 project_root="$(dirname "$config_file")"
 if declare -f sb_project_gate_or_exit >/dev/null 2>&1; then
-  sb_project_gate_or_exit 2>/dev/null || exit 0
+  sb_project_gate_or_exit 2>/dev/null
 fi
 
 plugin_root="$(cd "$_lib_dir/../.." && pwd)"

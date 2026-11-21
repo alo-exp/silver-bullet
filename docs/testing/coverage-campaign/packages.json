@@ -108,8 +108,6 @@
    "hooks/lib/outcomes-gate.sh",
    "hooks/lib/phase-path.sh",
    "hooks/lib/prerequisite-probe.sh",
-   "hooks/lib/review-fix-ladder-state.sh",
-   "hooks/lib/rfl-policy-c-assert.sh",
    "hooks/lib/site-session.sh",
    "hooks/live-publish-evidence-gate.sh",
    "hooks/outcomes-check.sh",
@@ -119,8 +117,6 @@
    "hooks/phase-lock-release.sh",
    "hooks/planning-file-guard.sh",
    "hooks/review-fix-ladder-guard.sh",
-   "hooks/rfl-policy-c-gate.sh",
-   "hooks/rfl-quota-retry-due.sh",
    "hooks/site-chrome-guard.sh",
    "hooks/site-preview-preflight.sh",
    "hooks/site-regression-gate.sh",
@@ -331,8 +327,7 @@
    "scripts/lib/pi-zero-byte-guard.py",
    "scripts/lib/rfl_issue_ledger.py",
    "scripts/lib/rfl_launcher_policy.py",
-   "scripts/lib/rfl_policy_c.py",
-   "scripts/lib/rfl_quota_claude5h.py"
+   "scripts/lib/rfl_policy_c.py"
   ],
   "baseline": "scripts/lib/apo_multi_ai_catalog.py (python): statements 0/41, branches 0/8\nscripts/lib/cursor-sb-agents/cursor_sb_agents_lib.py (python): statements 132/344, branches 27/186\nscripts/lib/cursor-sb-agents/fetch-cursor-models.py (python): statements 38/49, branches 6/14\nscripts/lib/install-claude/merge-hooks.py (python): statements 61/71, branches 27/34\nscripts/lib/install-cursor/merge-cursor-hooks.py (python): statements 106/121, branches 45/58\nscripts/lib/merge-leanctx-mcp-config.py (python): statements 209/263, branches 68/112\nscripts/lib/merge-token-compression-config.py (python): statements 281/407, branches 90/170\nscripts/lib/pi-zero-byte-guard.py (python): statements 66/104, branches 22/34\nscripts/lib/rfl_issue_ledger.py (python): statements 154/195, branches 70/114\nscripts/lib/rfl_launcher_policy.py (python): statements 301/357, branches 123/150\nscripts/lib/rfl_policy_c.py (python): statements 449/556, branches 208/298\nscripts/lib/rfl_quota_claude5h.py (python): statements 103/136, branches 25/48"
  },
@@ -340,7 +335,6 @@
   "id": "I-scripts-py-3",
   "missing": 999,
   "files": [
-   "scripts/lib/rfl_quota_retry.py",
    "scripts/lib/verify-leanctx-wire-proxy-ordering.py",
    "scripts/minimax-openai-proxy.mjs",
    "scripts/render-agent-bundle.py",
@@ -469,7 +463,6 @@
    "scripts/pre-release-gate.sh",
    "scripts/regenerate-site-certification-status.sh",
    "scripts/resolve-instruction-ledger.sh",
-   "scripts/rfl-assert-advance.sh",
    "scripts/run-apo-authoring-compliance.sh",
    "scripts/run-rc-validation-matrix.sh",
    "scripts/run-visual-qa-pipeline.sh",

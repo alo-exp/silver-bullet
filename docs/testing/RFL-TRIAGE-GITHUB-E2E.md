@@ -37,6 +37,6 @@ bash .planning/enterprise-e2e/cursor-triage-ladder-driver.sh
 
 ## Hook enforcement
 
-`hooks/review-fix-ladder-guard.sh` enforces the ladder state machine when active (skill invoke or test harness). Disable with `SB_REVIEW_FIX_LADDER_GUARD=0`.
+`hooks/review-fix-ladder-guard.sh` enforces the ladder state machine when active (skill invoke or test harness). The guard is inert unless the session started or resumed a run (there is no off switch).
 
 Violations set `compliance_stop` and deny further Task spawns until the session state is cleared.

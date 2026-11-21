@@ -4,6 +4,9 @@
   "sb_initiated": false,
   "sb_enforcement_tier": null,
   "orchestrator_mode": "parent",
+  "review_fix_ladder": {
+    "rungs": ""
+  },
   "project": {
     "name": "{{PROJECT_NAME}}",
     "src_pattern": "/src/",

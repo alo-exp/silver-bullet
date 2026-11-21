@@ -50,12 +50,10 @@ assert_jq_true "cannot_launch attempt 2 skips" \
   '.action == "skip" and .skipped == true' \
   "$launch2"
 
-for skip_host in opencode pi cursor; do
-  host_skip="$(python3 "$RESOLVER" --launch-policy --attempts 2 --outcome cannot_launch --policy-phase rung --host "$skip_host")"
-  assert_jq_true "$skip_host attempt 2 skips and substitutes no model" \
-    '.action == "skip" and .skipped == true and (has("substitute_model") | not)' \
-    "$host_skip"
-done
+host_skip="$(python3 "$RESOLVER" --launch-policy --attempts 2 --outcome cannot_launch --policy-phase rung)"
+assert_jq_true "attempt 2 skips and substitutes no model" \
+  '.action == "skip" and .skipped == true and (has("substitute_model") | not)' \
+  "$host_skip"
 
 post_ok="$(python3 "$RESOLVER" --launch-policy --attempts 1 --outcome success --policy-phase post_ladder)"
 assert_jq_true "post-ladder success recovers skipped rung" \
@@ -72,8 +70,8 @@ assert_jq_true "skip artifact records retry/skip for launcher" \
   '.skipped == true and .post_ladder_retry_pending == true and (.skipped_md | contains("SKIPPED"))' \
   "$skip_art"
 
-sub_art="$(python3 "$RESOLVER" --skip-artifact --rung-id 4 --next-rung 5 --attempts 2 --outcome cannot_launch --policy-phase rung --host opencode)"
-assert_jq_true "OpenCode skip-artifact after retry is a plain skip" \
+sub_art="$(python3 "$RESOLVER" --skip-artifact --rung-id 4 --next-rung 5 --attempts 2 --outcome cannot_launch --policy-phase rung)"
+assert_jq_true "skip-artifact after retry is a plain skip" \
   '.action == "skip" and .skipped == true and (.skipped_md | startswith("# SKIPPED"))' \
   "$sub_art"
 
@@ -172,7 +170,7 @@ if grep -qF '### Policy E — rung-prompt user-approval (HARD)' "$SKILL" \
   && grep -qF 'concise bullet list of only the key tasks and instructions' "$SKILL" \
   && grep -qF 'Do **not** dump the entire prompt' "$SKILL" \
   && grep -qF 'Until approved:' "$SKILL" \
-  && grep -qF 'do not spawn reviewer Tasks / Pi invoke' "$SKILL" \
+  && grep -qF 'do not issue a reviewer ticket or spawn a reviewer subagent' "$SKILL" \
   && grep -qF 'RUNG-PROMPT-APPROVAL.md' "$SKILL" \
   && grep -qF 'approved: pending|yes' "$SKILL"; then
   pass "SKILL encodes Policy E rung-prompt user-approval gate"
@@ -180,69 +178,11 @@ else
   fail "SKILL encodes Policy E rung-prompt user-approval gate"
 fi
 
-# --- default host routing matrix (user override wins) ---
-grok_host="$(python3 "$RESOLVER" --default-host-route --model grok-4.6)"
-assert_jq_true "Grok has no dedicated host and defaults to Pi" \
-  '.host == "pi" and .route == "/sb:agent-pi" and .family == "other" and .preserves_host_mode == true' \
-  "$grok_host"
-
-gpt_host="$(python3 "$RESOLVER" --default-host-route --model gpt-5.6-sol)"
-assert_jq_true "GPT defaults to Codex" \
-  '.host == "codex" and .route == "/sb:agent-codex" and .family == "gpt"' \
-  "$gpt_host"
-
-claude_host="$(python3 "$RESOLVER" --default-host-route --model opus-5)"
-assert_jq_true "Claude defaults to /sb:agent-claude" \
-  '.host == "claude" and .route == "/sb:agent-claude" and .family == "claude"' \
-  "$claude_host"
-
-gemini_host="$(python3 "$RESOLVER" --default-host-route --model gemini-3.7-flash)"
-assert_jq_true "Gemini defaults to Gemini CLI when unnamed" \
-  '.host == "gemini-cli" and .source == "gemini_cascade" and .family == "gemini"' \
-  "$gemini_host"
-
-gemini_no_cli="$(python3 "$RESOLVER" --default-host-route --model gemini-3.7-flash --available-hosts pi,opencode,codex,claude)"
-assert_jq_true "Gemini cascade falls to Pi when Gemini CLI absent" \
-  '.host == "pi" and .route == "/sb:agent-pi"' \
-  "$gemini_no_cli"
-
-other_host="$(python3 "$RESOLVER" --default-host-route --model glm-5.2)"
-assert_jq_true "Other models default to Pi" \
-  '.host == "pi" and .family == "other" and .route == "/sb:agent-pi"' \
-  "$other_host"
-
-override="$(python3 "$RESOLVER" --default-host-route --model grok-4.6 --user-agent /sb:agent-pi)"
-assert_jq_true "user override wins over the Grok default" \
-  '.host == "pi" and .user_override == true and .source == "user_override"' \
-  "$override"
-
-gpt_override="$(python3 "$RESOLVER" --default-host-route --model gpt-5.6-sol --user-agent cursor)"
-assert_jq_true "user override can move GPT off Codex" \
-  '.host == "cursor" and .user_override == true and .skill == "cursor"' \
-  "$gpt_override"
-
-named="$(python3 "$RESOLVER" --default-host-route --model glm-5.2 --user-agent windsurf)"
-assert_jq_true "named external agent wins for other models" \
-  '.host == "windsurf" and .user_override == true' \
-  "$named"
-
-decide_grok="$(python3 "$RESOLVER" --decide-launch --model grok-4.6 --reasoning high)"
-assert_jq_true "decide-launch attaches the default host without remapping GPT/Claude" \
-  '.default_agent_route == "/sb:agent-pi" and .preserves_host_mode == true' \
-  "$decide_grok"
-
-decide_gpt="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high)"
-assert_jq_true "GPT decide-launch stays Codex, not Grok High" \
-  '.action == "invoke_subscription" and .subscription_host == "codex" and .default_agent_host == "codex"' \
-  "$decide_gpt"
-
-if grep -qF 'Do **not** smash host `--mode`' "$SKILL" \
-  && grep -qF 'Do **not** remap RFL GPT/Claude rungs onto Grok High' "$SKILL" \
-  && grep -qF -- '--default-host-route' "$SKILL"; then
-  pass "SKILL encodes default host routing matrix"
-else
-  fail "SKILL encodes default host routing matrix"
-fi
+# --- the old host routing / subscription flags are gone ---
+for flag in --default-host-route --decide-launch --record-rung-review-outcome; do
+  rc=0; python3 "$RESOLVER" "$flag" >/dev/null 2>&1 || rc=$?
+  if [[ "$rc" -eq 2 ]]; then pass "$flag is rejected"; else fail "$flag is rejected (rc $rc)"; fi
+done
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]]
