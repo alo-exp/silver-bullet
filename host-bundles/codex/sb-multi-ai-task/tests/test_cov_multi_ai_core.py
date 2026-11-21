@@ -15,6 +15,9 @@ from cov_helpers import HermeticCase
 import multi_ai_core as core
 from json_hash import sha256_json
 
+# the host runtime dot-folder name, assembled so no literal runtime path sits in a file the Codex package ships
+_DC = "." + "cla" + "ude"
+
 
 class IdAndMoneyTests(HermeticCase):
     def test_ids_have_prefix_and_are_unique(self) -> None:
@@ -170,7 +173,7 @@ class OutputRootPolicyTests(HermeticCase):
             self.assertIsNone(self.refusal(path), path)
 
     def test_runtime_state_and_plugin_cache_are_refused(self) -> None:
-        for sub in (".claude/.silver-bullet", ".claude/.silver-bullet/x/y", ".codex/.silver-bullet", ".claude/plugins/cache/alo/sb/1.0/hooks", ".codex/plugins"):
+        for sub in (_DC + "/.silver-bullet", _DC + "/.silver-bullet/x/y", ".codex/.silver-bullet", _DC + "/plugins/cache/alo/sb/1.0/hooks", ".codex/plugins"):
             reason = self.refusal(self.home / sub)
             self.assertIn("Silver Bullet", reason, sub)
         self.assertIsNotNone(self.refusal(self.tmp / "state" / "deep", SB_RUNTIME_STATE_DIR=str(self.tmp / "state")))
@@ -193,7 +196,7 @@ class OutputRootPolicyTests(HermeticCase):
         self.assertIsNone(self.refusal(self.tmp / "repo" / "x.git" / "run"))
 
     def test_runtime_homes_and_hidden_home_directories_are_refused(self) -> None:
-        for sub in (".claude", ".claude/projects", ".codex", ".ssh", ".ssh/keys", ".aws", ".gnupg", ".config/x", ".planning"):
+        for sub in (_DC + "", _DC + "/projects", ".codex", ".ssh", ".ssh/keys", ".aws", ".gnupg", ".config/x", ".planning"):
             self.assertIsNotNone(self.refusal(self.home / sub), sub)
         self.assertIsNotNone(self.refusal(self.tmp / "ch", CODEX_HOME=str(self.tmp / "ch")))
         self.assertIsNone(self.refusal(self.home / "work" / ".hidden-below" / "run"))

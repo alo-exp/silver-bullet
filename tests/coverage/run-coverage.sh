@@ -14,6 +14,9 @@
 #   --no-report         collect only (use with --keep across several invocations)
 #   --jobs N            run test files in parallel (passed to tests/run-all-tests.sh)
 #   --suite NAME        limit to matching suites (passed to tests/run-all-tests.sh)
+#   --timeout SECONDS   per-test-file limit (passed to tests/run-all-tests.sh). Traced runs are
+#                       slower than plain ones, so unless this or SB_TEST_FILE_TIMEOUT is set the
+#                       limit is 5400 s, three times the runner's 1800 s default; 0 disables it.
 #
 # Requirements: python3 with coverage, tree-sitter and tree-sitter-bash
 # (pip install -r tests/coverage/requirements.txt). See docs/TESTING.md.
@@ -37,7 +40,8 @@ while [[ $# -gt 0 ]]; do
     --no-report) REPORT=0; shift ;;
     --jobs) RUNNER_ARGS+=(--jobs "$2"); shift 2 ;;
     --suite) RUNNER_ARGS+=(--suite "$2"); shift 2 ;;
-    -h|--help) sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --timeout) RUNNER_ARGS+=(--timeout "$2"); shift 2 ;;
+    -h|--help) sed -n '2,22p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
     -*) echo "run-coverage: unknown option $1" >&2; exit 64 ;;
     *) TESTS+=("$1"); shift ;;
   esac
@@ -57,6 +61,8 @@ mkdir -p "$COV_DIR/raw" "$COV_DIR/py" "$COV_DIR/pyboot"
 
 python3 "${REPO_ROOT}/tests/coverage/sbcov.py" write-config --cov-dir "$COV_DIR"
 
+# tracing multiplies a test file's run time, so the per-file limit defaults to three times the plain one
+export SB_TEST_FILE_TIMEOUT="${SB_TEST_FILE_TIMEOUT:-5400}"
 export SB_COV_DIR="$COV_DIR"
 export BASH_ENV="${REPO_ROOT}/tests/coverage/bash-env.sh"
 export COVERAGE_PROCESS_START="${COV_DIR}/coveragerc"

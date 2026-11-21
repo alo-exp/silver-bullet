@@ -13,6 +13,8 @@
 # PYTHONUSERBASE is pinned to the real user base before HOME changes.
 
 TL_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=sandbox-env.sh
+source "$(dirname "${BASH_SOURCE[0]}")/sandbox-env.sh"
 TL_PASS=0
 TL_FAIL=0
 
@@ -41,11 +43,13 @@ tl_init() {
     chmod +x "$TL_BIN/$guarded"
   done
   export SILVER_BULLET_RUNTIME="$runtime"
-  unset SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME \
-    SB_RUNTIME_PRESERVE_STATE_DIR SILVER_BULLET_STATE_FILE SILVER_BULLET_BRANCH_FILE
+  # KAY_HOME, PI_CODING_AGENT_DIR, CODEX_HOME, CLAUDE_CONFIG_DIR, ...: none may point the
+  # recomputed runtime paths, or a fixture, at the developer's real install
+  sb_test_scrub_runtime_env
   # shellcheck source=../../hooks/lib/runtime-paths.sh
   source "$TL_REPO_ROOT/hooks/lib/runtime-paths.sh"
   export SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME
+  sb_test_assert_sandboxed || exit 70
   mkdir -p "$SB_RUNTIME_STATE_DIR"
   trap 'tl_cleanup' EXIT
 }
