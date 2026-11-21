@@ -178,7 +178,13 @@ def rewrite_hook_manifest(file_path, source_text=None):
                     continue
                 if adapter_path in command:
                     continue
-                hook["command"] = f'"{adapter_path}" "{event_name}" {command}'
+                # Pass the hook's own hooks.json budget so the adapter never stops a
+                # hook before the manifest allows (R7-01).
+                budget = hook.get("timeout")
+                timeout_arg = ""
+                if isinstance(budget, (int, float)) and not isinstance(budget, bool) and budget > 0:
+                    timeout_arg = f" --timeout {max(1, int(budget))}"
+                hook["command"] = f'"{adapter_path}" "{event_name}"{timeout_arg} {command}'
                 changed = True
 
     if normalized_hooks != updated.get("hooks", {}):
