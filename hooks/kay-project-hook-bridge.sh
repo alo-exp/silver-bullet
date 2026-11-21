@@ -570,7 +570,9 @@ collect_git_commit_write_targets() {
 # (EPERM, a crash) still leaves what is needed to restore. scope "exact" locks
 # only the target (its parent only when the target does not exist yet); scope
 # "parents" also locks the parent directory of every target (shell commands can
-# create files next to a target).
+# create files next to a target). The Python in the heredocs below (apply and release) is not measured by the
+# Bash coverage tool: it is exercised by tests/hooks/test-kay-project-hook-bridge-locks.sh (every completion order,
+# and the delay-injected race that pins the registry flock) and the other test-kay-project-hook-bridge-*.sh files.
 apply_permission_block() {
   local state_path="$1"
   local target_list="$2"

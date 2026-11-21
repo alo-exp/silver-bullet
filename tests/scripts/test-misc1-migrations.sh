@@ -154,6 +154,16 @@ assert_eq "project: appended gitignore exact" "node_modules
 # Phase-lock runtime state — local, never committed (Silver Bullet)
 .planning/.phase-locks.json*" "$(cat "$W/.gitignore")"
 
+# a commented or negated line is not the ignore: the line is still added; CRLF files match whole lines too
+for decoy in '# .planning/.phase-locks.json*' '!.planning/.phase-locks.json*' 'x.planning/.phase-locks.json*y'; do
+  printf '%s\n.planning/workflows/\n' "$decoy" >"$W/.gitignore"
+  tl_run bash "$PRJ" "$W"
+  assert_eq "project: '$decoy' does not count as the phase-lock ignore" 1 "$(grep -cxF '.planning/.phase-locks.json*' "$W/.gitignore")"
+done
+printf '.planning/workflows/\r\n.planning/.phase-locks.json*\r\n' >"$W/.gitignore"; cp "$W/.gitignore" "$TL_TMP/crlf.before"
+tl_run bash "$PRJ" "$W"
+assert_eq "project: a CRLF whole-line entry counts as present" "" "$(cmp "$TL_TMP/crlf.before" "$W/.gitignore" || true)"
+
 # a symlinked .gitignore is never written through (both blocks), whether it dangles or not
 printf 'mine\n' >"$TL_TMP/gi-victim"
 rm -f "$W/.gitignore"; ln -s "$TL_TMP/gi-victim" "$W/.gitignore"
