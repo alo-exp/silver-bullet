@@ -106,7 +106,6 @@ Run **all** green before `SB_ENTERPRISE_E2E_LIVE=1`.
 | Surface structural test | `bash tests/scripts/test-validate-host-install-surface.sh` |
 | Tri-host install smoke (per host) | `RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh --host <host>` |
 | Hook delivery preflight | `SB_E2E_LIVE_RUNTIME=<host> bash tests/e2e-live/hook-delivery-preflight.sh` |
-| Review-fix-ladder smoke | `SILVER_BULLET_RUNTIME=<host> bash tests/live/test-live-review-fix-ladder-smoke.sh` |
 | Host preflight | `bash scripts/run-enterprise-e2e-live-test.sh --host <host> --preflight-only` |
 | Dry-run matrix | `SB_E2E_MATRIX_DRY_RUN=1 SB_E2E_LIVE_RUNTIME=<host> bash scripts/run-enterprise-e2e-matrix.sh` |
 | Test-app branch structural | `RTK_DISABLED=1 bash tests/scripts/test-enterprise-e2e-test-app-branch.sh` |

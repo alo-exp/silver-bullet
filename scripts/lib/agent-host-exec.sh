@@ -177,12 +177,16 @@ agent_host_pi_is_auth_failure() {
   grep -qiE 'invalid_api_key|invalid[[:space:]]+api[[:space:]]+key|missing[[:space:]]+api[[:space:]]+key|(^|[^0-9])401([^0-9]|$)|insufficient[[:space:]]+(balance|credits|quota|funds)|insufficient_quota' <<<"$text"
 }
 
-# Continue only after EXIT 0 (plan-only / missing file) with no auth 401 in captured output.
+# Continue only after EXIT 0 (plan-only / missing file) with no auth 401 and no quota window in
+# captured output. This is the single definition (the quota text check used to live in a second copy).
 agent_host_pi_should_continue() {
   local rc="$1"
   local text="$2"
   [[ "$rc" == "0" ]] || return 1
   if agent_host_pi_is_auth_failure "$text"; then
+    return 1
+  fi
+  if grep -qiE '429|rate[_[:space:]-]*limit|rate_limit_error|5[-[:space:]]*h(ou)?r|quota[[:space:]]+(exhaust|exceed)|usage[[:space:]]+limit' <<<"$text"; then
     return 1
   fi
   return 0

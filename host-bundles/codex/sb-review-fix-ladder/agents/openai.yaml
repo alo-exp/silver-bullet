@@ -1,4 +1,4 @@
 interface:
   display_name: "Review Fix Ladder"
   short_description: "Escalate scoped review/fix loops by model level"
-  default_prompt: "Use $sb:review-fix-ladder to progressively review and fix scoped work against context-derived goals, escalating through the host-aware model ladder until two consecutive clean passes per rung."
+  default_prompt: "Use $sb:review-fix-ladder to progressively review and fix scoped work against context-derived goals, escalating through the native read-only subagent ladder (it runs only where that ladder is verified) until two consecutive captured clean reviews per rung."

@@ -178,24 +178,6 @@ if [[ -f "$lib_dir/phase-path.sh" ]]; then
   fi
 fi
 
-# ── RFL Policy C / failure-management (active LADDER-STATUS.json only) ──────
-# Blocks session end when rung_N_review has returned without POLICY-C.
-# Fail-open when no active RFL run exists (do not false-positive every chat).
-if [[ -f "$lib_dir/rfl-policy-c-assert.sh" ]]; then
-  # shellcheck source=lib/rfl-policy-c-assert.sh
-  source "$lib_dir/rfl-policy-c-assert.sh"
-  _rfl_root="${search_dir:-$PWD}"
-  if [[ "${SB_ORCHESTRATOR_WORKER:-}" != "1" ]] && ! sb_rfl_policy_c_gate_disabled && sb_rfl_policy_c_has_active_run "$_rfl_root"; then
-    _rfl_json=""
-    if ! _rfl_json="$(sb_rfl_policy_c_run_assert "$_rfl_root" stop "")"; then
-      _rfl_reason="$(sb_rfl_policy_c_reason_from_json "$_rfl_json")"
-      _rfl_json_reason=$(printf '%s' "$_rfl_reason" | jq -Rs '.')
-      printf '{"decision":"block","reason":%s}' "$_rfl_json_reason"
-      exit 0
-    fi
-  fi
-fi
-
 # ── Trivial bypass (sourced from shared helper — REF-01) ────────────────────
 # Admin session detection (BUG-05): purely administrative sessions (no Write/Edit
 # tool calls) are detected via the trivial file, which is created at SessionStart

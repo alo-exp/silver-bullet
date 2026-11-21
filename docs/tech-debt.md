@@ -8,7 +8,6 @@ Format: `| Item | Severity | Effort | Status |`. Priority score = (Impact + Risk
 
 | Item | Severity | Effort | Status |
 |------|----------|--------|--------|
-| `hooks/rfl-policy-c-gate.sh` runs under `set -euo pipefail` with no `ERR` trap, unlike the other hooks; an unexpected failure exits non-zero and surfaces as a hook error instead of failing open | Low | Low | Open (found 2026-10-17) |
 | Without `jq`, `hooks/completion-audit.sh` blocks `git commit`, `git push`, `gh pr create`, `gh release create` and deploy commands even outside an SB project (its jq fallback runs before the project-activation check), contradicting "enforcement engages only in initiated projects" | Medium | Low | Open (found 2026-10-17) |
 | The release-gate message for an incomplete SENTINEL manifest in `hooks/lib/completion-audit/deploy-tier.sh` hard-codes "85/85 clean rows"; the canonical skill count is now derived from `skills/*/SKILL.md` | Low | Low | Open (found 2026-10-17) |
 | `scripts/install-claude.sh` falls back to a maintainer-specific absolute path for the `claude` binary when it is not on `PATH` | Low | Low | Open (found 2026-10-17) |

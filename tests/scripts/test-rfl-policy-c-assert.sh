@@ -28,7 +28,7 @@ WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/rfl-policy-c.XXXXXX")"
 trap 'rm -rf "$WORKDIR" "${TMPDIR:-/tmp}/rfl-policy-c-out.$$" "${TMPDIR:-/tmp}/rfl-policy-c-err.$$"' EXIT
 
 HELP_OUT="$(python3 "$RESOLVER" --help 2>&1 || true)"
-for flag in --assert-policy-c --write-policy-c --assert-rfl-advance --assert-consecutive-clean --record-rung-review-outcome; do
+for flag in --assert-policy-c --write-policy-c --assert-rfl-advance --assert-consecutive-clean --issue-ledger --write-review-brief; do
   if grep -- "$flag" <<<"$HELP_OUT" >/dev/null; then
     pass "review-fix-ladder.py --help lists $flag"
   else
@@ -205,14 +205,19 @@ printf '# v2\n' >"$CC_RUNG/verify_2.md"
 printf '%s\n' '{"status":"active","current_rung":"rung-01-cursor-glm-5.2-high","current_phase":"rung_01_review","consecutive_clean_reviews":0,"consecutive_clean_rung":"rung-01-cursor-glm-5.2-high"}' >"$CC/LADDER-STATUS.json"
 assert_exit "advance after zero CLEAN reviews fails" 2 \
   python3 "$RESOLVER" --assert-rfl-advance --run-dir "$CC" --rung-dir "$CC_RUNG" --next-action next_rung_review
-assert_exit "record first CLEAN increments streak" 0 \
-  python3 "$RESOLVER" --record-rung-review-outcome clean --run-dir "$CC" --rung-id rung-01-cursor-glm-5.2-high
+# the streak is derived and signed by the encoder from captured reviews (tests/python/test_rfl_native.py);
+# the read-only assert only reports what the status file says
+set_streak() { # <dir> <rung> <n>
+  printf '{"status":"active","current_rung":"%s","current_phase":"rung_01_review","consecutive_clean_reviews":%s,"consecutive_clean_rung":"%s"}\n' "$2" "$3" "$2" >"$1/LADDER-STATUS.json"
+}
+set_streak "$CC" rung-01-cursor-glm-5.2-high 1
+rc=0; python3 "$RESOLVER" --record-rung-review-outcome clean --run-dir "$CC" >/dev/null 2>&1 || rc=$?
+[[ "$rc" -eq 2 ]] && pass "the streak cannot be recorded by hand (--record-rung-review-outcome is gone)" || fail "the streak cannot be recorded by hand (rc $rc)"
 assert_exit "advance after a single CLEAN fails" 2 \
   python3 "$RESOLVER" --assert-rfl-advance --run-dir "$CC" --rung-dir "$CC_RUNG" --next-action next_rung_review
 assert_exit "assert-consecutive-clean after a single CLEAN fails" 2 \
   python3 "$RESOLVER" --assert-consecutive-clean --run-dir "$CC" --rung-dir "$CC_RUNG"
-assert_exit "record second CLEAN increments streak to 2" 0 \
-  python3 "$RESOLVER" --record-rung-review-outcome clean --run-dir "$CC" --rung-id rung-01-cursor-glm-5.2-high
+set_streak "$CC" rung-01-cursor-glm-5.2-high 2
 assert_exit "advance after two consecutive CLEANs allowed" 0 \
   python3 "$RESOLVER" --assert-rfl-advance --run-dir "$CC" --rung-dir "$CC_RUNG" --next-action next_rung_review
 
@@ -251,8 +256,7 @@ rm -f "$NC_RUNG/verify-1.md"
 assert_exit "NOT CLEAN advance without verify-1.md fails" 2 \
   python3 "$RESOLVER" --assert-rfl-advance --run-dir "$NC" --rung-dir "$NC_RUNG" --next-action next_rung_review
 
-assert_exit "ACCEPT-apply resets consecutive CLEAN streak" 0 \
-  python3 "$RESOLVER" --record-rung-review-outcome accept-apply --run-dir "$CC" --rung-id rung-01-cursor-glm-5.2-high
+set_streak "$CC" rung-01-cursor-glm-5.2-high 0
 python3 "$RESOLVER" --write-policy-c --rung-dir "$CC_RUNG" --table-json-file "$WORKDIR/clean-nit.json" >/dev/null
 printf '# apply\n' >"$CC_RUNG/APPLY.md"
 assert_exit "advance after APPLY without two CLEANs fails" 2 \
@@ -266,28 +270,14 @@ printf '# stop\n\ncheck: policy_c\n' >"$SKIP_DIR/STOP.md"
 assert_exit "STOP.md present blocks Task advance" 2 \
   python3 "$RESOLVER" --assert-rfl-advance --run-dir "$RUN" --next-action task
 
-# --- mark-ladder-status completed ---
-COMP="$WORKDIR/.planning/rfl-complete"
-mkdir -p "$COMP/rung-01-x"
-printf '%s\n' '{"status":"active"}' >"$COMP/LADDER-STATUS.json"
-assert_exit "mark completed empty run still allowed" 0 \
-  python3 "$RESOLVER" --mark-ladder-status completed --run-dir "$COMP"
-
-MISS="$WORKDIR/.planning/rfl-missing-c"
-mkdir -p "$MISS/rung-01-x"
-printf '# review\n' >"$MISS/rung-01-x/review.md"
-printf '%s\n' '{"status":"active","current_rung":"rung-01-x"}' >"$MISS/LADDER-STATUS.json"
-assert_exit "cannot --mark-ladder-status completed if current rung missing Policy C" 2 \
-  python3 "$RESOLVER" --mark-ladder-status completed --run-dir "$MISS"
-
-# restore a completable run: CLEAN-none + skip artifacts not required if no review? has review.md
-python3 "$RESOLVER" --write-policy-c --rung-dir "$MISS/rung-01-x" --table-json "$(cat <<'EOF'
-{"schema":"rfl.policy_c.v1","rung_identity":{"family":"glm","effort":"high","display":"GLM 5.2 High"},"verdict":"SKIPPED","issues":{"HIGH":"none","MED":"none","LOW":"none","NIT":"none"},"triage":"none","blockers":"none","highs":"none","mediums":"none","disposition":"SKIP","resolved":"none"}
-EOF
-)" >/dev/null
-printf '# SKIPPED\n' >"$MISS/rung-01-x/SKIPPED.md"
-assert_exit "mark completed after Policy C + SKIPPED.md" 0 \
-  python3 "$RESOLVER" --mark-ladder-status completed --run-dir "$MISS"
+# --- the free status writer is gone; a hostile or corrupt status file blocks (R4-15) ---
+rc=0; python3 "$RESOLVER" --mark-ladder-status completed --run-dir "$WORKDIR" >/dev/null 2>&1 || rc=$?
+[[ "$rc" -eq 2 ]] && pass "--mark-ladder-status is gone" || fail "--mark-ladder-status is gone (rc $rc)"
+DEEP="$WORKDIR/.planning/rfl-deep"
+mkdir -p "$DEEP"
+python3 -c "import sys; sys.stdout.write('[' * 200000 + ']' * 200000)" >"$DEEP/LADDER-STATUS.json"
+assert_exit "a 200k-deep LADDER-STATUS.json fails closed (no RecursionError escape)" 2 \
+  python3 "$RESOLVER" --assert-rfl-advance --run-dir "$DEEP" --next-action stop
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]]

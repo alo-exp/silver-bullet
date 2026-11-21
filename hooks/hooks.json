@@ -18,7 +18,7 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-quota-retry-due.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -148,27 +148,15 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
             "async": false,
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
-            "async": false,
-            "timeout": 10
           }
         ]
       },
       {
-        "matcher": "Skill",
+        "matcher": "Edit|Write|MultiEdit|apply_patch|NotebookEdit",
         "hooks": [
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -366,12 +354,6 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
             "async": false,
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
-            "async": false,
-            "timeout": 10
           }
         ]
       }
@@ -458,12 +440,6 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
             "async": false,
             "timeout": 15
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
-            "async": false,
-            "timeout": 10
           }
         ]
       },
@@ -611,6 +587,19 @@
         ]
       }
     ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Task|Subagent|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "SubagentStart": [
       {
         "matcher": ".*",
@@ -630,7 +619,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
             "async": false,
             "timeout": 10
           },
@@ -770,7 +759,7 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-quota-retry-due.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
             "async": false,
             "timeout": 10
           }

@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""RFL Policy C + failure-management artifact schema and asserts."""
+"""RFL Policy C + failure-management artifact schema and asserts (read side; rfl_native writes run state)."""
 
 from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import rfl_json  # noqa: E402
 
 RFL_SEVERITIES = ("HIGH", "MED", "LOW", "NIT")
 
@@ -27,7 +31,6 @@ NEXT_ACTIONS = frozenset(
     {"task", "verify_1", "verify_2", "next_rung_review", "mark_completed", "stop"}
 )
 CONSECUTIVE_CLEAN_REQUIRED = 2
-RECORD_REVIEW_OUTCOMES = frozenset({"clean", "accept-apply", "accept_apply", "reset"})
 QUOTA_HINT_RE = re.compile(
     r"(429|401|quota|usage[_\s-]?limit|rate[_\s-]?limit|insufficient)",
     re.IGNORECASE,
@@ -37,13 +40,10 @@ RUNG_DIR_RE = re.compile(r"^rung-\d+", re.IGNORECASE)
 
 
 def _read_json(path: Path) -> dict[str, Any]:
+    """{} when the file is absent; raises rfl_json.BadJson when it is oversized, too deep or not an object."""
     if not path.is_file():
         return {}
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
-    return payload if isinstance(payload, dict) else {}
+    return rfl_json.read_bounded(path)
 
 
 def _read_text(path: Path) -> str:
@@ -100,20 +100,6 @@ def ladder_status_path(run_dir: Path) -> Path:
 def load_ladder_status(run_dir: Path) -> dict[str, Any]:
     return _read_json(ladder_status_path(run_dir))
 
-def write_ladder_status(run_dir: Path, payload: dict[str, Any]) -> Path:
-    path = ladder_status_path(run_dir)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    return path
-
-
-def _rung_bucket_key(rung_id: str | None) -> str:
-    match = re.match(r"^rung-(\d+)", str(rung_id or "").strip(), re.IGNORECASE)
-    if match:
-        return f"rung_{int(match.group(1))}"
-    return ""
-
-
 def _triage_accept_count(payload: dict[str, Any] | None) -> int:
     if not payload:
         return 0
@@ -135,92 +121,15 @@ def review_pass_is_clean(payload: dict[str, Any] | None) -> bool:
     return _triage_accept_count(payload) == 0
 
 
-def _stored_streak_for_rung(status: dict[str, Any], rung_id: str) -> int:
-    rid = str(rung_id or "").strip()
-    current_field = status.get("consecutive_clean_reviews")
-    current_rung = str(
-        status.get("consecutive_clean_rung") or status.get("current_rung") or ""
-    ).strip()
-    if rid and current_rung == rid and current_field is not None:
-        try:
-            return max(0, int(current_field))
-        except (TypeError, ValueError):
-            return 0
-    bucket = _rung_bucket_key(rid)
-    block = status.get(bucket)
-    if bucket and isinstance(block, dict):
-        try:
-            return max(0, int(block.get("consecutive_clean_reviews") or 0))
-        except (TypeError, ValueError):
-            pass
-    rungs = status.get("rungs")
-    if isinstance(rungs, list):
-        for item in rungs:
-            if isinstance(item, dict) and str(item.get("id") or "").strip() == rid:
-                try:
-                    return max(0, int(item.get("consecutive_clean_reviews") or 0))
-                except (TypeError, ValueError):
-                    return 0
-    return 0
-
-
-def get_consecutive_clean_reviews(
-    status: dict[str, Any], rung_id: str | None = None
-) -> int:
+def get_consecutive_clean_reviews(status: dict[str, Any], rung_id: str | None = None) -> int:
+    """Captured-clean streak that rfl_native derives and signs into LADDER-STATUS.json."""
     rid = str(rung_id or status.get("current_rung") or "").strip()
-    if not rid:
-        try:
-            return max(0, int(status.get("consecutive_clean_reviews") or 0))
-        except (TypeError, ValueError):
-            return 0
-    return _stored_streak_for_rung(status, rid)
-
-
-def _mirror_streak(status: dict[str, Any], rung_id: str, streak: int) -> None:
-    rid = str(rung_id or "").strip()
-    status["consecutive_clean_reviews"] = streak
-    if rid:
-        status["consecutive_clean_rung"] = rid
-    bucket = _rung_bucket_key(rid)
-    if bucket:
-        block = status.get(bucket)
-        if not isinstance(block, dict):
-            block = {}
-            status[bucket] = block
-        block["consecutive_clean_reviews"] = streak
-    rungs = status.get("rungs")
-    if isinstance(rungs, list):
-        for item in rungs:
-            if isinstance(item, dict) and str(item.get("id") or "").strip() == rid:
-                item["consecutive_clean_reviews"] = streak
-                break
-
-
-def record_rung_review_outcome(
-    run_dir: Path,
-    outcome: str,
-    *,
-    rung_id: str | None = None,
-) -> dict[str, Any]:
-    raw = (outcome or "").strip().lower().replace("_", "-")
-    if raw not in {"clean", "accept-apply", "reset"}:
-        raise ValueError(f"unsupported review outcome {outcome!r}")
-    normalized = "clean" if raw == "clean" else "accept-apply"
-    root = Path(run_dir)
-    status = load_ladder_status(root)
-    rid = str(rung_id or status.get("current_rung") or "").strip()
-    current = get_consecutive_clean_reviews(status, rid)
-    streak = current + 1 if normalized == "clean" else 0
-    _mirror_streak(status, rid, streak)
-    path = write_ladder_status(root, status)
-    return {
-        "ok": True,
-        "path": str(path),
-        "outcome": normalized,
-        "rung_id": rid,
-        "consecutive_clean_reviews": streak,
-        "required": CONSECUTIVE_CLEAN_REQUIRED,
-    }
+    if rid and str(status.get("consecutive_clean_rung") or "").strip() != rid:
+        return 0
+    try:
+        return max(0, int(status.get("consecutive_clean_reviews") or 0))
+    except (TypeError, ValueError):
+        return 0
 
 
 def _skipped_allows_advance(rung_dir: Path, payload: dict[str, Any]) -> bool:
@@ -245,7 +154,10 @@ def _assert_consecutive_clean_reviews(
         target = resolve_rung_dir(run_dir, status.get("current_rung"))
     if target is None:
         return []
-    payload = load_policy_c(target) or {}
+    try:
+        payload = load_policy_c(target) or {}
+    except rfl_json.BadJson as exc:
+        return [f"{POLICY_C_JSON} unreadable: {exc}"]
     if _skipped_allows_advance(target, payload):
         return []
     if action == "mark_completed" and not review_returned(target) and not policy_c_json_path(target).is_file():
@@ -257,9 +169,9 @@ def _assert_consecutive_clean_reviews(
             (
                 f"consecutive_clean_reviews={n} < {CONSECUTIVE_CLEAN_REQUIRED}; "
                 "do not start the next ladder model until two consecutive reviews "
-                "have zero ACCEPT findings (REJECT does not break the streak; "
-                "ACCEPT-apply resets to 0). Re-run the same rung reviewer. "
-                "Encoder: --record-rung-review-outcome clean|accept-apply"
+                "have zero ACCEPT findings at an unchanged worktree (REJECT does not "
+                "break the streak; an applied fix resets it to 0). The encoder derives "
+                "the streak from captured reviews: issue another review ticket."
             )
         ]
     return []
@@ -273,7 +185,10 @@ def discover_active_rfl_runs(project_root: Path) -> list[Path]:
         return []
     found: list[Path] = []
     for path in sorted(planning.glob("rfl-*/" + LADDER_STATUS_FILENAME)):
-        payload = _read_json(path)
+        try:
+            payload = _read_json(path)
+        except rfl_json.BadJson:
+            continue
         if str(payload.get("status") or "").strip().lower() == "active":
             found.append(path.parent)
     return found
@@ -573,6 +488,17 @@ def write_policy_c(
     }
 
 
+def triage_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """The triage rows of a Policy C payload ([] for 'none' or a malformed value)."""
+    return _as_rows(payload.get("triage")) or []
+
+
+def accept_rows(rung_dir: Path) -> list[dict[str, Any]]:
+    """Triage rows decided ACCEPT in the rung's POLICY-C.json."""
+    payload = load_policy_c(rung_dir) or {}
+    return [r for r in triage_rows(payload) if _normalize_decision(str(r.get("decision") or "")) == "ACCEPT"]
+
+
 def load_policy_c(rung_dir: Path) -> dict[str, Any] | None:
     path = policy_c_json_path(rung_dir)
     if not path.is_file():
@@ -594,9 +520,14 @@ def assert_policy_c(
         errors.append(f"missing {POLICY_C_JSON}")
     if not md_path.is_file():
         errors.append(f"missing {POLICY_C_MD}")
-    payload = load_policy_c(root) or {}
-    if json_path.is_file() and not payload:
-        errors.append(f"{POLICY_C_JSON} invalid or empty")
+    try:
+        payload = load_policy_c(root) or {}
+    except rfl_json.BadJson as exc:
+        payload = {}
+        errors.append(f"{POLICY_C_JSON} unreadable: {exc}")
+    else:
+        if json_path.is_file() and not payload:
+            errors.append(f"{POLICY_C_JSON} invalid or empty")
     if payload:
         errors.extend(
             validate_policy_c(
@@ -623,7 +554,10 @@ def _quota_classify_ok(rung_dir: Path) -> list[str]:
     path = Path(rung_dir) / QUOTA_CLASSIFY_JSON
     if not path.is_file():
         return [f"missing {QUOTA_CLASSIFY_JSON}"]
-    payload = _read_json(path)
+    try:
+        payload = _read_json(path)
+    except rfl_json.BadJson as exc:
+        return [f"{QUOTA_CLASSIFY_JSON} unreadable: {exc}"]
     errors: list[str] = []
     if "should_schedule" not in payload:
         errors.append(f"{QUOTA_CLASSIFY_JSON} missing should_schedule")
@@ -640,21 +574,6 @@ def _blocked_needs_quota(rung_dir: Path, payload: dict[str, Any]) -> bool:
         if QUOTA_HINT_RE.search(_read_text(blocked)):
             return True
     return False
-
-
-def infer_next_action(prompt: str = "", event: str = "") -> str:
-    text = f"{event} {prompt}".lower()
-    if "verify_2" in text or "verify-2" in text or "rung_n_verify_2" in text:
-        return "verify_2"
-    if "verify_1" in text or "verify-1" in text or "rung_n_verify_1" in text:
-        return "verify_1"
-    if "next rung" in text or "n+1_review" in text or "rung_n+1_review" in text:
-        return "next_rung_review"
-    if "mark-ladder-status" in text or "mark_ladder_status" in text:
-        return "mark_completed"
-    if str(event).lower() == "stop":
-        return "stop"
-    return "task"
 
 
 def _assert_rung_failure_artifacts(
@@ -725,13 +644,8 @@ def assert_rfl_advance(
     project_root: Path | None = None,
     next_action: str = "task",
     current_phase: str | None = None,
-    prompt: str = "",
 ) -> dict[str, Any]:
-    action = next_action if next_action in NEXT_ACTIONS else infer_next_action(prompt)
-    if action == "task":
-        inferred = infer_next_action(prompt)
-        if inferred != "task":
-            action = inferred
+    action = next_action if next_action in NEXT_ACTIONS else "task"
     errors: list[str] = []
     checked: list[str] = []
 
@@ -747,20 +661,16 @@ def assert_rfl_advance(
         return {"ok": True, "skipped": "no_active_run", "errors": [], "next_action": action}
 
     for active in run_dirs:
-        status = load_ladder_status(active)
+        try:
+            status = load_ladder_status(active)
+        except rfl_json.BadJson as exc:
+            errors.append(f"{active.name}: {LADDER_STATUS_FILENAME} unreadable ({exc}); run --resume <run-id> to re-validate")
+            continue
         status_name = str(status.get("status") or "").strip().lower()
         if action != "mark_completed" and status_name and status_name != "active":
             continue
         phase = current_phase or str(status.get("current_phase") or "")
         current_rung = status.get("current_rung")
-        if (
-            action == "task"
-            and "review" in prompt.lower()
-            and "verify" not in prompt.lower()
-        ):
-            maybe = resolve_rung_dir(active, rung_dir)
-            if maybe is not None and review_returned(maybe) and policy_c_json_path(maybe).is_file():
-                action = "next_rung_review"
         errors.extend(
             _assert_consecutive_clean_reviews(
                 active,
@@ -846,7 +756,3 @@ def assert_rfl_advance(
         "checked": checked,
         "run_dirs": [str(path) for path in run_dirs],
     }
-
-
-def assert_run_ready_for_complete(run_dir: Path) -> dict[str, Any]:
-    return assert_rfl_advance(Path(run_dir), next_action="mark_completed")

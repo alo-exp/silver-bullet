@@ -9,18 +9,9 @@ Canonical spec for the interaction-modes plan (`agent_interaction_modes_17ed9bf7
 
 Permission `--mode permissive|strict` is orthogonal. `--delegation-mode` is orthogonal. Do not smash host `--mode` with interaction values (`mode-conflict`).
 
-## Default `/sb:agent-*` host routing
+## Host choice for `/sb:agent-*`
 
-When the user env has Pi, OpenCode, Codex, and Claude, default routing unless the user names an agent:
-
-| Model family | Default host |
-|---|---|
-| Gemini | If the user did **not** specify an agent: Gemini CLI, else Pi, else OpenCode |
-| GPT | Codex (`/sb:agent-codex`) |
-| Claude | Claude (`/sb:agent-claude`) |
-| Other models | Pi or OpenCode, or any other external agent the user named |
-
-User override always wins. Do not smash host `--mode` permission flags. Do not remap RFL GPT/Claude rungs onto Grok High. Encoder: `python3 scripts/review-fix-ladder.py --default-host-route --model {model}`.
+The caller names the host (`/sb:agent-codex`, `/sb:agent-claude`, `/sb:agent-pi`, `/sb:agent-opencode`); there is no model-family router any more. It was a review-fix-ladder encoder feature (`--default-host-route`), removed when the ladder moved to native read-only Claude subagents (`skills/silver-review-fix-ladder/SKILL.md`). Do not smash host `--mode` permission flags.
 
 ## Resolver (locked)
 
