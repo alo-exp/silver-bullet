@@ -578,6 +578,8 @@ apply_permission_block() {
   local count
 
   count="$(python3 - "$target_list" "$state_path" "$scope" "${BRIDGE_ROOT}/locks" <<'PY'
+import contextlib
+import fcntl
 import hashlib
 import os
 import shutil
@@ -595,6 +597,17 @@ seen = set()
 count = 0
 can_lock = shutil.which("chflags") is not None
 lock_root.mkdir(parents=True, exist_ok=True)
+registry = open(lock_root / ".registry.lock", "a")
+
+@contextlib.contextmanager
+def registry_lock():
+    """One exclusive lock over every lock-registry operation (shared with release_locks): a joining holder's
+    chmod can never land between a releasing holder's restore-chmod and its lock-directory removal."""
+    fcntl.flock(registry, fcntl.LOCK_EX)
+    try:
+        yield
+    finally:
+        fcntl.flock(registry, fcntl.LOCK_UN)
 
 def record(state, kind, key, value):
     state.write(f"{kind}\t{key}\t{value}\n")
@@ -612,40 +625,41 @@ def add_record(state, path: Path):
     seen.add(key)
     lock_id = hashlib.sha1(key.encode("utf-8")).hexdigest()[:24]
     lock_dir = lock_root / lock_id
-    try:
-        record(state, "HOLD", lock_id, key)
-        count += 1
+    with registry_lock():
         try:
-            os.mkdir(lock_dir)
-            first = True
-        except FileExistsError:
-            first = False
-        mode = stat.S_IMODE(path.stat().st_mode)
-        if first:
-            (lock_dir / "path").write_text(key, encoding="utf-8")
-            (lock_dir / "mode").write_text(str(mode), encoding="utf-8")
-        with open(lock_dir / "holders", "a", encoding="utf-8") as holders:
-            holders.write(token + "\n")
-        if not first and not mode & 0o222:
+            record(state, "HOLD", lock_id, key)
+            count += 1
+            try:
+                os.mkdir(lock_dir)
+                first = True
+            except FileExistsError:
+                first = False
+            mode = stat.S_IMODE(path.stat().st_mode)
+            if first:
+                (lock_dir / "path").write_text(key, encoding="utf-8")
+                (lock_dir / "mode").write_text(str(mode), encoding="utf-8")
+            with open(lock_dir / "holders", "a", encoding="utf-8") as holders:
+                holders.write(token + "\n")
+            if not first and not mode & 0o222:
+                return
+            # First holder, or a joining holder that finds the path writable again (it
+            # was re-enabled outside the bridge): (re)apply the lock. The recorded
+            # original mode is never replaced.
+            new_mode = mode & ~0o222
+            if new_mode != mode:
+                os.chmod(path, new_mode)
+            if can_lock:
+                locked = subprocess.run(
+                    ["chflags", "uchg", key],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    check=False,
+                )
+                if locked.returncode == 0:
+                    (lock_dir / "immutable").write_text("uchg", encoding="utf-8")
+                    record(state, "IMMUTABLE", key, "uchg")
+        except OSError:
             return
-        # First holder, or a joining holder that finds the path writable again (it
-        # was re-enabled outside the bridge): (re)apply the lock. The recorded
-        # original mode is never replaced.
-        new_mode = mode & ~0o222
-        if new_mode != mode:
-            os.chmod(path, new_mode)
-        if can_lock:
-            locked = subprocess.run(
-                ["chflags", "uchg", key],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-            if locked.returncode == 0:
-                (lock_dir / "immutable").write_text("uchg", encoding="utf-8")
-                record(state, "IMMUTABLE", key, "uchg")
-    except OSError:
-        return
 
 home = os.path.realpath(os.path.expanduser("~"))
 
@@ -882,13 +896,27 @@ install_mutation_shims() {
 release_locks() {
   python3 - "${BRIDGE_ROOT}/locks" "$@" <<'PY'
 import os
+import contextlib
+import fcntl
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 lock_root = Path(sys.argv[1])
 mode_arg = sys.argv[2]
+lock_root.mkdir(parents=True, exist_ok=True)
+registry = open(lock_root / ".registry.lock", "a")
+
+@contextlib.contextmanager
+def registry_lock():
+    """The same exclusive registry lock apply_permission_block takes: restore and removal are one atomic step."""
+    fcntl.flock(registry, fcntl.LOCK_EX)
+    try:
+        yield
+    finally:
+        fcntl.flock(registry, fcntl.LOCK_UN)
 
 def restore(lock_dir: Path):
     try:
@@ -904,12 +932,15 @@ def restore(lock_dir: Path):
             os.chmod(path, original)
     except OSError:
         pass
+    # Test seam (tests/hooks/test-kay-project-hook-bridge-locks.sh): widens the window between the restore and the removal.
+    time.sleep(float(os.environ.get("SB_KAY_BRIDGE_TEST_RESTORE_DELAY", "0")))
     shutil.rmtree(lock_dir, ignore_errors=True)
 
 if mode_arg == "all":
-    if lock_root.is_dir():
-        for lock_dir in sorted(lock_root.iterdir()):
-            restore(lock_dir)
+    for lock_dir in sorted(lock_root.iterdir()):
+        if lock_dir.is_dir():
+            with registry_lock():
+                restore(lock_dir)
     raise SystemExit(0)
 
 state_path = Path(sys.argv[3])
@@ -924,15 +955,16 @@ for line in lines:
         continue
     lock_dir = lock_root / fields[1]
     holders_file = lock_dir / "holders"
-    try:
-        holders = holders_file.read_text(encoding="utf-8").splitlines()
-    except OSError:
-        continue
-    remaining = [holder for holder in holders if holder != token]
-    if remaining:
-        holders_file.write_text("".join(h + "\n" for h in remaining), encoding="utf-8")
-    else:
-        restore(lock_dir)
+    with registry_lock():
+        try:
+            holders = holders_file.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            continue
+        remaining = [holder for holder in holders if holder != token]
+        if remaining:
+            holders_file.write_text("".join(h + "\n" for h in remaining), encoding="utf-8")
+        else:
+            restore(lock_dir)
 PY
 }
 

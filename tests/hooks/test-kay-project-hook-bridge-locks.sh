@@ -112,4 +112,18 @@ deny_file "$WORK/d/h.txt" ro2
 after ro1; after ro2
 assert_eq "read-only original stays read-only" "444" "$(stat -c %a "$WORK/d/h.txt")"
 
+# ---- a joining holder cannot land between a releasing holder's restore and its lock-dir removal
+# (the registry is serialized by one lock): the delay is injected between the restore-chmod and the removal.
+printf 'x' >"$WORK/d/race.txt"; chmod 644 "$WORK/d/race.txt"
+deny_file "$WORK/d/race.txt" rc1
+( export SB_KAY_BRIDGE_TEST_RESTORE_DELAY=2; after rc1 ) &
+RACE_PID=$!
+sleep 0.7
+deny_file "$WORK/d/race.txt" rc2
+wait "$RACE_PID"
+assert_eq "the joiner waited for the release, then locked the path afresh" "444" "$(stat -c %a "$WORK/d/race.txt")"
+after rc2
+assert_eq "the late holder's record survived: the true original is restored" "644" "$(stat -c %a "$WORK/d/race.txt")"
+assert_eq "no lock directory is left behind" "" "$(find "$BR/locks" -mindepth 1 -maxdepth 1 -type d | tr -d '\n')"
+
 tl_results
