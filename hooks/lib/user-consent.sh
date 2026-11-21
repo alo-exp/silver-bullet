@@ -234,11 +234,12 @@ _sb_consent_lock_reclaim() { # LOCK: drop abandoned claims; status 0 when LOCK w
 }
 
 _sb_consent_lock_try() { # LOCK: one attempt; status 0 holding it (the claim is in _SB_CONSENT_CLAIM)
-  local lock="$1" claim entry names=""
+  local lock="$1" claim entry names="" _sb_cl_pid
   mkdir "$lock" 2>/dev/null || return 1
   # BASHPID is this (sub)shell; $$ is the top-level shell and the only choice before Bash 4
-  claim="${lock}/claim.${BASHPID:-$$}.${RANDOM}${RANDOM}"
-  if printf '%s' "${BASHPID:-$$}" >"$claim" 2>/dev/null; then
+  _sb_cl_pid="$$"; [[ "${BASHPID:-}" =~ ^[0-9]+$ ]] && _sb_cl_pid="$BASHPID"
+  claim="${lock}/claim.${_sb_cl_pid}.${RANDOM}${RANDOM}"
+  if printf '%s' "$_sb_cl_pid" >"$claim" 2>/dev/null; then
     for entry in "$lock"/*; do
       [[ -e "$entry" ]] && names="${names}${entry##*/} "
     done
