@@ -42,4 +42,7 @@ tl_stub ps 'exit 1'
 assert_eq "a dead pid is not trusted" "" "$(sb_pid_identity_verify "$PF" || true)"
 rc=0; sb_pid_identity_write "$PF" 2147483646 || rc=$?
 assert_eq "an unknown pid cannot be recorded" 1 "$rc"
+# a recorded pid that no longer exists (kill -0 fails) is not trusted
+echo 2147483646 >"$PF"; printf '2147483646|1|Mon Jan  1 00:00:00 2026\n' >"$PF.id"
+assert_eq "a vanished pid is not trusted" "" "$(sb_pid_identity_verify "$PF" || true)"
 tl_results

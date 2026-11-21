@@ -169,6 +169,11 @@ printf 'notes\n' >"$PROJ/CHANGELOG.md"; mkdir -p "$PROJ/docs"; printf 'notes\n' 
 git -C "$PROJ" add CHANGELOG.md docs/CHANGELOG.md; git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit -q -m "changelog only"
 GREEN="[{\"workflowName\":\"CI\",\"status\":\"completed\",\"conclusion\":\"success\",\"headSha\":\"$(git -C "$PROJ" rev-parse HEAD)\",\"createdAt\":\"1\"}]"
 run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$GREEN"; assert_eq "ancestor commit with only changelog changes since is accepted" "allow" "$(decision)"
+# fail closed: when git cannot produce the diff since the marker's commit, the marker is rejected
+GIT_REAL="$(command -v git)"
+tl_stub git "if [[ \"\$*\" == *'diff --name-only'* ]]; then exit 1; fi; exec $GIT_REAL \"\$@\""
+run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$GREEN"; assert_eq "an unreadable diff since the marker's commit is rejected (fail closed)" "deny" "$(decision)"
+rm -f "$TL_BIN/git"
 # a later commit touching anything else invalidates it
 printf 'x\n' >"$PROJ/hooks-changed.sh"
 git -C "$PROJ" add hooks-changed.sh; git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit -q -m "code change"
