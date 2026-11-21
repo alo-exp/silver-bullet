@@ -93,9 +93,9 @@ git -C "$R" add -A; git -C "$R" -c user.email=t@e.x -c user.name=t commit -q -m 
 REL_SHA="$(git -C "$R" rev-parse HEAD)"
 # the gate's marker check (the real functions of deploy-tier.sh; the full hook is exercised in test-completion-audit-release.sh)
 # accepts the supervised marker for that release commit
-GFN="$TL_TMP/gatefn"; mkdir -p "$GFN"
+GFN="$TL_TMP/gatefn/hooks/lib/completion-audit"; mkdir -p "$GFN" "$TL_TMP/gatefn/scripts/lib"
 sed -n '/^ca_marker_commit_ok()/,/^}/p;/^ca_surface_change_ok()/,/^}/p;/^ca_json_equal_modulo()/,/^}/p' "$TL_REPO_ROOT/hooks/lib/completion-audit/deploy-tier.sh" >"$GFN/gate.sh"
-cp "$TL_REPO_ROOT/hooks/lib/completion-audit/release-surface-allowlist.txt" "$GFN/"
+cp "$TL_REPO_ROOT/scripts/lib/release-surface-allowlist.txt" "$TL_TMP/gatefn/scripts/lib/"
 gate_rc() { ( source "$GFN/gate.sh"; ca_marker_commit_ok "$MARKER" "$R" "$REL_SHA" ) && echo 0 || echo $?; }
 assert_eq "the gate accepts the supervised marker for the release commit (ledger + bump)" 0 "$(gate_rc)"
 echo "hook" >"$R/dirty.txt"; git -C "$R" add -f dirty.txt; git -C "$R" -c user.email=t@e.x -c user.name=t commit -q -m "code after"
