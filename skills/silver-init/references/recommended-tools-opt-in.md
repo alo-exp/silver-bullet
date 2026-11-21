@@ -53,12 +53,13 @@ bash "${PLUGIN_ROOT}/scripts/sb-consent.sh" grant <tool> --project "$PWD"     # 
 bash "${PLUGIN_ROOT}/scripts/sb-consent.sh" decline <tool> --project "$PWD"   # No
 ```
 Yes also allows installing and wiring the tool on this machine; use `--capabilities enforce`
+to allow enforcement only. Writing `enabled_by_user` into the file (below) is only the project's
+recommendation.
+
 Check the exit status of every `sb-consent.sh` call. A non-zero status (for example 2: the
 store stays locked by another `sb-consent`) means **nothing was recorded**: tell the user,
 retry, and do not write `enabled_by_user` or continue as if the answer were stored (a grant that
 failed is no consent; a decline or revoke that failed leaves the old consent in force).
-to allow enforcement only. Writing `enabled_by_user` into the file (below) is only the project's
-recommendation.
 
 Record the choice — it will be written to `.silver-bullet.json` in Phase 3.4 (fresh) or preserved in update mode:
 ```json
