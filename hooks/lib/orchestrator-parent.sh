@@ -23,7 +23,7 @@ sb_orchestrator_worker_marker_file() {
 }
 
 # agent id the host puts in the payload of every hook call made inside a subagent
-# (Claude Code: agent_id/agent_type on PreToolUse, PostToolUse and SubagentStop). The main
+# (the claude host: agent_id/agent_type on PreToolUse, PostToolUse and SubagentStop). The main
 # session's payloads never carry it, so it is the one per-call signal a parent cannot
 # acquire by spawning something (R4-02). Only top-level fields count: tool_input content
 # is written by the model and proves nothing.
@@ -89,7 +89,7 @@ sb_orchestrator_guard_applies_to_workspace() {
 }
 
 # Parent orchestrator session — config parent mode and not a worker subagent.
-# Parent-mode enforcement needs the host to say who a worker is. Claude Code does (agent_id on every
+# Parent-mode enforcement needs the host to say who a worker is. The claude host does (agent_id on every
 # subagent call); Codex does not yet, so there a worker is indistinguishable from the parent and
 # enforcing parent mode would deny a worker's own edits. On such hosts parent mode is INACTIVE (a
 # clean no-op) unless SB_ORCHESTRATOR_PARENT=1 forces it.
@@ -418,9 +418,11 @@ sb_orchestrator_parent_delegate_bash_allowed() {
   _sb_orch_parent_prefix_free || return 1
   jq -e '
     .[0] as $p
-    | any(["codex", "claude", "opencode", "pi"][];
-          . as $h | ($p == "scripts/agent-" + $h + "-delegate.sh" or ($p | endswith("/scripts/agent-" + $h + "-delegate.sh"))
-                     or $p == "scripts/agent-" + $h + "/invoke.sh" or ($p | endswith("/scripts/agent-" + $h + "/invoke.sh"))))
+    | any(["scripts/agent-codex-delegate.sh", "scripts/agent-claude-delegate.sh",
+           "scripts/agent-opencode-delegate.sh", "scripts/agent-pi-delegate.sh", "scripts/agent-codex/invoke.sh",
+           "scripts/agent-claude/invoke.sh", "scripts/agent-opencode/invoke.sh",
+           "scripts/agent-pi/invoke.sh"][];
+          . as $s | $p == $s or ($p | endswith("/" + $s)))
     ' <<<"$argv" >/dev/null 2>&1
 }
 
