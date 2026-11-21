@@ -189,7 +189,7 @@ class RunCursorWorkerTests(HermeticCase):
                 raise item
             return item
 
-        with mock.patch.dict(os.environ, env):
+        with mock.patch.dict(os.environ, env), mock.patch.object(ld, "CURSOR_BIN", "/opt/cursor-agent"):
             with mock.patch.object(ld, "_run_cli", side_effect=fake):
                 result = ld.run_cursor_worker(logical_model_id=logical, prompt="P", output_dir=self.out, timeout_sec=7)
         return result, calls
@@ -201,7 +201,7 @@ class RunCursorWorkerTests(HermeticCase):
         self.assertEqual(result.effective_model_id, "composer-2.5")
         self.assertEqual(result.raw_output, '{"x": 1}\nwarn')
         cmd, kwargs = calls[0]
-        self.assertEqual(cmd[1:4], ["agent", "--print", "--output-format"])
+        self.assertEqual(cmd[1:3], ["--print", "--output-format"])  # the default binary is the standalone cursor-agent
         self.assertEqual(cmd[-2:], ["--", "P"])
         self.assertNotIn("--force", cmd)
         self.assertEqual(kwargs["timeout"], 7)
@@ -305,7 +305,10 @@ class RunCursorWorkerTests(HermeticCase):
 
     def test_missing_cli(self) -> None:
         result, _ = self.run_worker("composer-2.5", [FileNotFoundError("cursor")])
-        self.assertEqual((result.status, result.error, result.raw_output), ("failed", "cursor CLI not found", ""))
+        self.assertEqual((result.status, result.raw_output), ("failed", ""))
+        self.assertTrue(result.error.startswith("cursor CLI not found ("), result.error)
+        self.assertIn("cursor-agent", result.error)
+        self.assertIn("SB_CURSOR_BIN", result.error)
 
 
 class DelegateWorkerTests(HermeticCase):
@@ -395,7 +398,9 @@ class DelegateWorkerTests(HermeticCase):
         self.assertEqual((timeout.status, timeout.error, timeout.raw_output), ("partial", "timeout", "half"))
         self.assertEqual(self._run_codex(subprocess.TimeoutExpired("x", 1)).raw_output, "")
         gone = self._run_codex(FileNotFoundError("codex"))
-        self.assertEqual((gone.status, gone.error), ("failed", "codex CLI not found"))
+        self.assertEqual(gone.status, "failed")
+        self.assertTrue(gone.error.startswith("codex CLI not found ("), gone.error)
+        self.assertIn("CODEX_BIN", gone.error)
         denied = self._run_codex(PermissionError(13, "denied"))
         self.assertEqual(denied.status, "failed")
         self.assertIn("codex launch failed", denied.error)
@@ -460,7 +465,9 @@ class DelegateWorkerTests(HermeticCase):
         self.assertEqual((timeout.status, timeout.error, timeout.raw_output), ("partial", "timeout", "half"))
         self.assertEqual(self._run_claude(subprocess.TimeoutExpired("x", 1)).raw_output, "")
         gone = self._run_claude(FileNotFoundError("claude"))
-        self.assertEqual((gone.status, gone.error), ("failed", "claude CLI not found"))
+        self.assertEqual(gone.status, "failed")
+        self.assertTrue(gone.error.startswith("claude CLI not found ("), gone.error)
+        self.assertIn("CLAUDE_BIN", gone.error)
         denied = self._run_claude(PermissionError(13, "denied"))
         self.assertEqual(denied.status, "failed")
         self.assertIn("claude launch failed", denied.error)
@@ -540,6 +547,12 @@ class OcgPoolCohortTests(HermeticCase):
         patcher = mock.patch.object(ld, "AGENT_OPENCODE_DELEGATE", self.delegate)
         patcher.start()
         self.addCleanup(patcher.stop)
+        self.opencode = self.tmp / "opencode"
+        self.opencode.write_text("#!/bin/sh\n")
+        self.opencode.chmod(0o755)
+        patcher = mock.patch.object(ld, "OPENCODE_BIN", str(self.opencode))
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def cohort(self, outcome, *, items=None, write_result=None, timeout_sec=600):
         captured: dict = {}
@@ -566,6 +579,20 @@ class OcgPoolCohortTests(HermeticCase):
             )
         self.captured = captured
         return results
+
+    def test_missing_opencode_cli_fails_every_item_without_starting_the_delegate(self) -> None:
+        with mock.patch.object(ld, "OPENCODE_BIN", str(self.tmp / "no-such-opencode")):
+            results = self.cohort(proc(0, ""))
+        self.assertNotIn("cmd", self.captured)
+        self.assertEqual([r.status for r in results], ["failed", "failed"])
+        for r in results:
+            self.assertTrue(r.error.startswith("opencode CLI not found ("), r.error)
+            self.assertIn("SB_OPENCODE_BIN", r.error)
+        self.assertEqual(len(list(self.out.glob("ocg-cohort-request-*.json"))), 1)
+
+    def test_delegate_gets_the_resolved_opencode_binary_in_its_environment(self) -> None:
+        self.cohort(proc(5, "garbage"))
+        self.assertEqual(self.captured["kwargs"]["env"]["SB_OPENCODE_BIN"], ld.OPENCODE_BIN)
 
     def test_no_items_is_a_noop(self) -> None:
         with mock.patch.object(ld, "_run_cli") as run:
@@ -651,6 +678,10 @@ class OcgPoolCohortTests(HermeticCase):
         results = self.cohort(proc(0, stdout), items=[self.ITEMS[0]], write_result="{truncated")
         self.assertEqual(results[0].envelope["payload"], {"s": 1})
 
+    def test_unparseable_output_names_the_delegate_error_line(self) -> None:
+        results = self.cohort(proc(2, "", "noise\nERROR: recommended-tools preflight failed - fix Graphify\nmore"))
+        self.assertEqual(results[0].error, "ocg cohort parse failed (exit 2): ERROR: recommended-tools preflight failed - fix Graphify")
+
     def test_unparseable_output_fails_all_with_exit_code(self) -> None:
         results = self.cohort(proc(5, "garbage", "bad"))
         self.assertEqual([r.status for r in results], ["failed", "failed"])
@@ -661,7 +692,7 @@ class OcgPoolCohortTests(HermeticCase):
         results = self.cohort(subprocess.TimeoutExpired("x", 1))
         self.assertEqual([(r.status, r.error) for r in results], [("partial", "ocg cohort timeout")] * 2)
         results = self.cohort(FileNotFoundError("bash"))
-        self.assertEqual([(r.status, r.error) for r in results], [("failed", "agent-opencode delegate not found")] * 2)
+        self.assertEqual([(r.status, r.error) for r in results], [("failed", "agent-opencode delegate not found (bash is required to run it)")] * 2)
         results = self.cohort(PermissionError(13, "denied"))
         self.assertTrue(all(r.status == "failed" and "agent-opencode launch failed" in r.error for r in results))
 
@@ -771,6 +802,89 @@ class DispatchPhaseParallelTests(HermeticCase):
         rc.assert_not_called()
 
 
+class BackendResolutionTests(HermeticCase):
+    def executable(self, name: str) -> str:
+        path = self.tmp / "bin" / name
+        path.parent.mkdir(exist_ok=True)
+        path.write_text("#!/bin/sh\n")
+        path.chmod(0o755)
+        return str(path)
+
+    def test_cursor_bin_resolution_order(self) -> None:
+        agent, cursor = self.executable("cursor-agent"), self.executable("cursor")
+        path_env = {"PATH": str(self.tmp / "bin")}
+        with mock.patch.dict(os.environ, {**path_env, "SB_CURSOR_BIN": "/explicit/cursor"}):
+            self.assertEqual(ld.resolve_cursor_bin(), "/explicit/cursor")
+        with mock.patch.dict(os.environ, path_env):
+            self.assertEqual(ld.resolve_cursor_bin(), agent)
+        os.unlink(agent)
+        with mock.patch.dict(os.environ, path_env):
+            self.assertEqual(ld.resolve_cursor_bin(), cursor)
+        os.unlink(cursor)
+        with mock.patch.dict(os.environ, path_env):
+            self.assertEqual(ld.resolve_cursor_bin(), "cursor-agent")
+
+    def test_cursor_command_shape_follows_the_binary_name(self) -> None:
+        for binary, prefix in (("/x/cursor-agent", ["/x/cursor-agent"]), ("/x/agent", ["/x/agent"]), ("/x/cursor", ["/x/cursor", "agent"])):
+            with mock.patch.object(ld, "CURSOR_BIN", binary):
+                cmd = ld._cursor_cmd("m1", "P")
+            self.assertEqual(cmd[: len(prefix)], prefix, binary)
+            self.assertEqual(cmd[len(prefix):], ["--print", "--output-format", "text", "--model", "m1", "--trust", "--", "P"])
+
+    def test_opencode_bin_resolution_order(self) -> None:
+        home_bin = self.home / ".opencode" / "bin" / "opencode"
+        on_path = self.executable("opencode")
+        path_env = {"PATH": str(self.tmp / "bin")}
+        with mock.patch.dict(os.environ, {**path_env, "SB_OPENCODE_BIN": "/explicit/oc"}):
+            self.assertEqual(ld.resolve_opencode_bin(), "/explicit/oc")
+        with mock.patch.dict(os.environ, path_env):
+            self.assertEqual(ld.resolve_opencode_bin(), on_path)
+        home_bin.parent.mkdir(parents=True)
+        home_bin.write_text("#!/bin/sh\n")
+        home_bin.chmod(0o755)
+        with mock.patch.dict(os.environ, path_env):
+            self.assertEqual(ld.resolve_opencode_bin(), str(home_bin))
+        home_bin.unlink()
+        os.unlink(on_path)
+        with mock.patch.dict(os.environ, path_env):
+            self.assertEqual(ld.resolve_opencode_bin(), str(home_bin))
+
+    def test_backend_availability_reports_each_backend_in_the_pool_once(self) -> None:
+        present = self.executable("tool")
+        delegate = self.tmp / "delegate.sh"
+        delegate.write_text("#!/bin/sh\n")
+        pool = [{"backend": "cursor"}, {"backend": "cursor"}, {"backend": "codex"}, {"backend": "claude"}, {"backend": "ocg"}]
+        with mock.patch.object(ld, "CURSOR_BIN", present), \
+                mock.patch.object(ld, "_resolve_codex_bin", return_value=str(self.tmp / "no-codex")), \
+                mock.patch.dict(os.environ, {"CLAUDE_BIN": present}), \
+                mock.patch.object(ld, "OPENCODE_BIN", str(self.tmp / "no-opencode")), \
+                mock.patch.object(ld, "AGENT_OPENCODE_DELEGATE", delegate):
+            report = ld.backend_availability(pool)
+        self.assertEqual(sorted(report), ["claude", "codex", "cursor", "ocg"])
+        self.assertEqual(report["cursor"], {"available": True, "cli": present, "hint": None})
+        self.assertEqual(report["claude"], {"available": True, "cli": present, "hint": None})
+        self.assertFalse(report["codex"]["available"])
+        self.assertIn("CODEX_BIN", report["codex"]["hint"])
+        self.assertFalse(report["ocg"]["available"])
+        self.assertIn("SB_OPENCODE_BIN", report["ocg"]["hint"])
+
+    def test_ocg_needs_the_delegate_script_too(self) -> None:
+        present = self.executable("opencode")
+        with mock.patch.object(ld, "OPENCODE_BIN", present), \
+                mock.patch.object(ld, "AGENT_OPENCODE_DELEGATE", self.tmp / "gone.sh"):
+            report = ld.backend_availability([{"backend": "ocg"}])
+        self.assertFalse(report["ocg"]["available"])
+        self.assertIn("agent-opencode-delegate.sh", report["ocg"]["hint"])
+
+    def test_claude_availability_falls_back_to_path_and_unknown_backend_default_is_cursor(self) -> None:
+        claude = self.executable("claude")
+        with mock.patch.dict(os.environ, {"PATH": str(self.tmp / "bin")}), mock.patch.object(ld, "CURSOR_BIN", "nope-cursor"):
+            report = ld.backend_availability([{"backend": "claude"}, {}])
+        self.assertEqual(report["claude"]["cli"], claude)
+        self.assertEqual(sorted(report), ["claude", "cursor"])
+        self.assertFalse(report["cursor"]["available"])
+
+
 class RunMultiAiLiveTests(HermeticCase):
     def test_stub_mode_short_circuits_without_writing(self) -> None:
         root = self.tmp / "root"
@@ -826,6 +940,31 @@ class RunMultiAiLiveTests(HermeticCase):
         with mock.patch.object(ld, "_run_cli", return_value=proc(0, '{"result": 1}')):
             out = ld.run_multi_ai_live(output_root=self.tmp / "ok", selection=selection, task_prompt="t")
         self.assertEqual((out["ok"], out["status"], out["authoritative_count"]), (True, "completed", 1))
+
+    def test_missing_backend_cli_is_a_per_backend_error_and_the_other_backends_still_run(self) -> None:
+        """A missing CLI is never a host error: that backend's workers fail, the rest complete."""
+        present = self.tmp / "cursor-agent"
+        present.write_text("#!/bin/sh\n")
+        present.chmod(0o755)
+        selection = PoolSelection(ocg_pool="none", cursor_pool="none", include_only=["composer-2.5", "gpt-5.6-luna-medium"])
+
+        def fake(cmd, **kwargs):  # noqa: ANN001
+            if cmd[0] == str(present):
+                return proc(0, '{"result": 1}')
+            raise FileNotFoundError(cmd[0])
+
+        with mock.patch.object(ld, "CURSOR_BIN", str(present)), \
+                mock.patch.object(ld, "_resolve_codex_bin", return_value=str(self.tmp / "no-codex")), \
+                mock.patch.object(ld, "_run_cli", side_effect=fake):
+            out = ld.run_multi_ai_live(output_root=self.tmp / "partial", selection=selection, task_prompt="t")
+        self.assertEqual((out["ok"], out["status"]), (True, "partial"))
+        statuses = {w["logical_model_id"]: (w["status"], w["error"]) for w in out["worker_results"]}
+        self.assertEqual(statuses["composer-2.5"], ("completed", None))
+        self.assertEqual(statuses["gpt-5.6-luna-medium"][0], "failed")
+        self.assertTrue(statuses["gpt-5.6-luna-medium"][1].startswith("codex CLI not found ("))
+        self.assertEqual(out["missing_backends"], ["codex"])
+        self.assertTrue(out["backend_availability"]["cursor"]["available"])
+        self.assertNotIn("UNSUPPORTED_HOST", json.dumps(out))
 
     def test_defaults_phase_and_clamps_unknown_ocg_pool_to_lite(self) -> None:
         root = self.tmp / "root"

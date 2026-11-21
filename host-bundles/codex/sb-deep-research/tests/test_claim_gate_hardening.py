@@ -339,11 +339,12 @@ class DocumentedCommandsTests(Run):
                 joined = re.sub(r"\\\n\s*", " ", block)
                 for line in joined.splitlines():
                     line = line.strip()
-                    if not line.startswith("python3 skills/silver-deep-research/scripts/"):
+                    # The docs anchor the skill's scripts at ${SKILL_DIR} (the directory holding SKILL.md).
+                    if not line.startswith('python3 "${SKILL_DIR}/scripts/'):
                         continue
                     if any(t in line for t in ("<<", "|", "<run", "<dir", "...", "[")):
                         continue
-                    found.append((path.name, shlex.split(line.replace('"', '"'))))
+                    found.append((path.name, [x.replace("${SKILL_DIR}", str(SKILL)) for x in shlex.split(line)]))
         return found
 
     def test_every_documented_script_command_parses(self):
@@ -353,7 +354,6 @@ class DocumentedCommandsTests(Run):
         env = {**os.environ, "SB_RESEARCH_OUT_DIR": str(self.dir)}
         for doc, argv in cmds:
             argv = [os.path.expandvars(a.replace("$SB_RESEARCH_OUT_DIR", str(self.dir))) for a in argv]
-            argv = [str(SCRIPTS / Path(a).name) if a.startswith("skills/silver-deep-research/scripts/") else a for a in argv]
             if tuple(argv) in seen:
                 continue
             seen.add(tuple(argv))

@@ -69,6 +69,7 @@ class OpenWorldEndToEndTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, env), \
                 mock.patch.object(runner, "resolve_pool", return_value=pool), \
                 mock.patch.object(runner, "stub_mode", return_value=False), \
+                mock.patch.object(runner, "backend_availability", lambda resolved: {}), \
                 mock.patch.object(runner, "dispatch_phase_parallel", side_effect=_fake_dispatch):
             out = Path(tmp) / "run"
             out.mkdir()
@@ -114,6 +115,7 @@ class OpenWorldEndToEndTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, env), \
                 mock.patch.object(runner, "resolve_pool", return_value=pool), \
                 mock.patch.object(runner, "stub_mode", return_value=False), \
+                mock.patch.object(runner, "backend_availability", lambda resolved: {}), \
                 mock.patch.object(runner, "dispatch_phase_parallel", side_effect=_fake_dispatch):
             out = Path(tmp) / "run"
             out.mkdir()
@@ -159,6 +161,7 @@ class OpenWorldEndToEndTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, env), \
                 mock.patch.object(runner, "resolve_pool", return_value=pool), \
                 mock.patch.object(runner, "stub_mode", return_value=False), \
+                mock.patch.object(runner, "backend_availability", lambda resolved: {}), \
                 mock.patch.object(runner, "dispatch_phase_parallel", side_effect=_fake_dispatch):
             out = Path(tmp) / "run"
             out.mkdir()
