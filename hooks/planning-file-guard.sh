@@ -22,6 +22,8 @@ trap 'exit 0' ERR
 # terminal. The roadmap-edit-override sentinel (ROADMAP.md/STATE.md) is honoured only while
 # the owning skill (sb:phase or sb:undo) is recorded in this session's state, and the dev-cycle
 # gate refuses an agent writing any other sentinel or the audit logs. Overrides are audited.
+# Owner allowance: sb:spec / sb:ingest may write .planning/REQUIREMENTS.md, with a file tool, only
+# while that skill is the latest one recorded in this session's state (no other file or skill).
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -182,6 +184,12 @@ while IFS=$'\t' read -r via target; do
         continue
         ;;
     esac
+  fi
+
+  # ── Owner allowance: sb:spec / sb:ingest write .planning/REQUIREMENTS.md while latest recorded ──
+  if sb_pf_owner_may_write "$planning_rel" "$via"; then
+    note "ℹ️  planning-file-guard: ${basename_path} written by its owning skill (the latest recorded skill)."
+    continue
   fi
 
   # ── Trivial bypass (user-created marker; the configured path is never honoured) ──

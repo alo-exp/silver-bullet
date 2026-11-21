@@ -36,6 +36,7 @@
 #   sb_pf_mcp_write_tool NAME            an MCP tool name that writes files
 #   sb_pf_contract_unlocked              a skill that legitimately writes the contract files is recorded
 #   sb_pf_state_has_skill SKILL...       one of the skills is recorded in this session's state
+#   sb_pf_owner_may_write REL VIA        the owning skill is the latest recorded one and may write REL (REQUIREMENTS.md)
 #   sb_pf_workflow_id WF_DIR [COMMAND]   the active composed workflow id for this call
 #   sb_pf_config_files ROOT              the enforcement contract files of a project, one per line
 #   sb_pf_opaque_targets [all]           canonical path-like words of the command when it holds an
@@ -421,6 +422,31 @@ sb_pf_state_has_skill() {
     sb_required_skill_is_recorded "$contents" "$skill" && return 0
   done
   return 1
+}
+
+# The most recently recorded skill of this session's (trusted) state: its last non-blank line.
+sb_pf_state_latest_skill() {
+  local state_file
+  state_file="${SILVER_BULLET_STATE_FILE:-${SB_RUNTIME_STATE_DIR}/state}"
+  sb_runtime_path_is_state_scoped "$state_file" || state_file="${SB_RUNTIME_STATE_DIR}/state"
+  [[ -f "$state_file" ]] || return 0
+  sb_state_seal_trusted "$state_file" | awk 'NF { last = $0 } END { print last }'
+}
+
+# Owner allowance (narrow): the skill that compiles a planning file may write exactly that file, with a
+# file tool (via "edit"), while it is the LATEST skill recorded in this session. sb:spec and sb:ingest own
+# .planning/REQUIREMENTS.md. Any other file, skill, operation (shell write, copy, move, delete) or an
+# earlier-recorded skill gets no allowance. No environment or config switch exists.
+# Usage: sb_pf_owner_may_write <path relative to .planning> <via>
+sb_pf_owner_may_write() {
+  local rel="$1" via="$2" latest
+  [[ "$via" == edit ]] || return 1
+  case "$(printf '%s' "$rel" | tr '[:upper:]' '[:lower:]')" in
+    requirements.md) ;;
+    *) return 1 ;;
+  esac
+  latest="$(sb_pf_state_latest_skill)"
+  [[ "$latest" == silver-spec || "$latest" == silver-ingest ]]
 }
 
 # The active composed workflow: SB_WORKFLOW_ID (tests), the id persisted in
