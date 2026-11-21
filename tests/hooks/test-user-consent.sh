@@ -239,7 +239,7 @@ echo "=== concurrent writers do not lose updates (lock) ==="
 reset_store
 pids=()
 for t in graphify agentmemory alumnium rtk context_mode leanctx search_cli; do
-  bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
+  SB_CONSENT_LOCK_TRIES=1000 bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
   pids+=("$!")
 done
 for pid in "${pids[@]}"; do wait "$pid" || true; done
@@ -310,13 +310,16 @@ tl_run bash "$CLI" grant graphify --project "$PROJ" --capabilities enforce
 assert_eq "a directory outside any SB project is recorded as given" "granted" "$(sb_consent_decision graphify enforce "$PROJ")"
 
 echo "=== lock: stale takeover race, ownerless lock, bad tries ==="
+# The wait budget is 100 tries x 0.1 s by default; seven serial writers on a loaded runner can exceed it
+# (a writer then gives up: "another sb-consent is writing"). The race under test is the stale takeover, so
+# give the writers a wait that does not depend on how fast the machine is.
 for round in 1 2 3; do
   reset_store
   LOCK="$(dirname "$STORE")/.consent.lock"
   mkdir -p "$LOCK"; printf '999999' >"$LOCK/pid"
   pids=()
   for t in graphify agentmemory alumnium rtk context_mode leanctx search_cli; do
-    bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
+    SB_CONSENT_LOCK_TRIES=1000 bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
     pids+=("$!")
   done
   for pid in "${pids[@]}"; do wait "$pid" || true; done
