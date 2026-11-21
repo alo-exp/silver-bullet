@@ -18,7 +18,7 @@ This skill initializes Silver Bullet enforcement for a project. Follow each phas
 - **Never run `git clean`, `git checkout --`, `git reset --hard`**, or any command that discards uncommitted work
 - **Config is preserved** — in update mode, `.silver-bullet.json` customizations are read first and carried forward
 
-**Plugin root**: Determine `PLUGIN_ROOT` from this skill file's own path. This file lives at `${PLUGIN_ROOT}/skills/silver-init/SKILL.md`, so the plugin root is two directories up from this file's location.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-init/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory.
 
 ---
 
@@ -433,8 +433,7 @@ After core dependencies are confirmed, run the SB diagnostics probe when the
 script is available in the plugin or repo:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
-  bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
 ```
 
 Surface WARN/FAIL lines to the user. Capability tier and hook presence are
@@ -904,8 +903,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
   `silver-ui` workflow, or similar), stamp durable interface state:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || \
-  bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || true
 ```
 
 This creates `.planning/interface/STATE.md` from
@@ -918,13 +916,12 @@ it thereafter.
 - **3.5.5 Docs bootstrap/reconciliation**: invoke `sb:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel. This replaces direct doc migration and direct placeholder creation in `sb:init`. `sb:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `sb:ensure-docs` bootstrap run.
 - **3.7 Stage and commit**: `git add silver-bullet.md .silver-bullet.json docs/` plus any existing project instruction file that was actually updated, then a `feat: initialize Silver Bullet enforcement` commit (co-authored by the host-appropriate co-author line). On pre-commit-hook failure: read, fix, re-stage, new commit (never `--amend`).
-- **3.7.5 Remove duplicate SB hook copies from the host settings file**: resolve the install path from `installed_plugins.json` only (there is no `current/` fallback; with no registry entry, skip this step silently), then run the host-appropriate merge script from `${PLUGIN_ROOT}/skills/silver-init/scripts/` (see `docs/RUNTIME-COMPATIBILITY.md`). Pass `"$INSTALL_PATH"`. On a registered plugin the host delivers `hooks/hooks.json` itself, so the script only removes Silver Bullet's own copies from settings and adds nothing. Idempotent. On nonzero exit, warn but do not stop init.
+- **3.7.5 Remove duplicate SB hook copies from the host settings file**: resolve the install path from `installed_plugins.json` only (there is no `current/` fallback; with no registry entry, skip this step silently), then run the host-appropriate merge script from `${PLUGIN_ROOT}/skill-source/sb-init/scripts/` (see `docs/RUNTIME-COMPATIBILITY.md`). Pass `"$INSTALL_PATH"`. On a registered plugin the host delivers `hooks/hooks.json` itself, so the script only removes Silver Bullet's own copies from settings and adds nothing. Idempotent. On nonzero exit, warn but do not stop init.
 - **3.8 Optional plugin activation**: do not activate lifecycle-overlap plugins for core SB workflows. If the user explicitly requests an optional enrichment plugin later, route through that plugin's own install/activation flow at that time.
 - **3.9 Done**: run capability probe and surface enforcement tier honestly:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
-  bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
 ```
 
 Read `sb_enforcement_tier` / capability tier from diagnostics output. Completion message MUST reflect tier:

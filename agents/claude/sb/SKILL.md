@@ -7,7 +7,7 @@ version: 0.2.0
 
 # /sb — Smart Skill Orchestrator
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `agents/claude/` (`${PLUGIN_ROOT}/agents/claude/sb/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 Smart orchestrator for Silver Bullet. Accepts freeform natural language and routes to:
 
@@ -134,7 +134,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "retro", "retrospective", "release metrics", "delivery metrics", "process review" | `sb:retro` | Engineering retrospective path |
 | "benchmark", "compare agents", "compare models", "provider comparison", "agent quality" | `sb:benchmark` | Repeatable evaluation and adversarial benchmark path |
 | "content", "SEO", "GEO", "AI search", "article", "blog", "site content", "metadata", "link health" | `sb:content` | Public content/search workflow; **not** SB project upgrade (use `sb:migrate`) |
-| "site/", "help center", "help-center", "homepage", "sb.alolabs.dev", "github pages", "site/help", "chrome.css", "help page", "OG card", "publish site", "site publish" | `sb:content --mode fix` | **Default route** for public site/help work — use site batch protocol (Composer 2.5 workers) |
+| "site/", "help center", "help-center", "homepage", "sb.alolabs.dev", "github pages", "site/help", "chrome.css", "help page", "OG card", "publish site", "site publish" | `sb:content --mode fix` | **Default route** for public site/help work — use the site batch protocol (profile projects only) |
 | "I want to build", "I have an idea", "here's my concept", multi-sentence idea with no SPEC.md | `sb:clarify` | Shape before implementation; merged PM framing and structured brainstorming |
 | "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build", no SPEC.md | `sb:clarify --spec` then `sb:spec` | Interview then compile; not elicitation-in-spec |
 | "how should we", "which technology", "compare", "spike", "investigate", "architecture decision", "should we use", "best approach", "deep research", "state of the art" | `sb:deep-research` | Rigorous research/decision artifact, then handoff |

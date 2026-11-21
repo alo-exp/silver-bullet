@@ -10,7 +10,7 @@ version: 1.0.0
 
 # /sb:multi-ai-task — Multi-Model Task Primitive
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-multi-ai-task/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-multi-ai-task/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 **Catalog:** workflow `WF-SILVER-MULTI-AI-TASK` · atomic flow `AF-MULTI-AI-TASK` ·
 flow step `FS-SILVER_MULTI_AI_TASK` · spine `multi-ai-task-v2`.
@@ -88,7 +88,7 @@ the backends the user chose. It installs, wires and enables nothing (`consent.js
 Plan a run first with `--dry-run` (no workers start and nothing is written: it resolves the pool, checks the agent cap, the host and the output root, and looks for each backend CLI):
 
 ```bash
-python3 "${PLUGIN_ROOT}/skills/silver-multi-ai-task/scripts/multi_ai_cli.py" \
+python3 "${PLUGIN_ROOT}/skill-source/sb-multi-ai-task/scripts/multi_ai_cli.py" \
   --output-root .planning/multi-ai/<run-id>/ \
   --task-prompt "<task brief>" \
   --ocg-pool lite \

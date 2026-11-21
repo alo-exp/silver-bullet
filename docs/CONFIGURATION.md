@@ -142,6 +142,7 @@ The template's `_comment` calls the profiles "advisory scaffolding"; the human-a
 | `verify_commands` | Array of shell commands `/verify-tests` runs instead of the stack defaults (`bash tests/run-all-tests.sh`, `npm test --if-present`, `pytest`, `cargo test`, `go test ./...`) | `scripts/verify-tests.sh` |
 | `hooks.stop_check.transient_path_ignore_patterns` | See `hooks` above | `stop-check.sh` |
 | `project.tech_stack` | Stack label stamped into `.planning/interface/STATE.md` | `scripts/stamp-interface-state.sh` |
+| `site_profile.enabled`, `.dir`, `.regression_scripts`, `.live_url`, `.preview_port`, `.preview_script`, `.live_evidence_max_age_seconds`, `.trusted_helpers`, `.stop_block_limit` | Opt-in profile of a project that publishes a website. Without `enabled: true` every site hook is inert. `dir` is the site folder (default `site`), `regression_scripts` are project-relative scripts the regression gate runs (only when committed as they stand), `live_url` is fetched by `scripts/site-live-evidence.sh`, `preview_port`/`preview_script` feed the preview preflight, the evidence age defaults to 86400 s, `trusted_helpers` are project-relative files the regression scripts run (committed-as-they-stand rule), `stop_block_limit` (default 3) bounds how many identical Stop blocks a gate repeats. See `silver-bullet.md` §8.2 | `hooks/lib/site-session.sh` (read from the verified record) |
 | `graphify.required` | Legacy; migrated to `recommended_tools.graphify.enabled_by_user` | `hooks/lib/recommended-tools.sh` |
 
 Example:

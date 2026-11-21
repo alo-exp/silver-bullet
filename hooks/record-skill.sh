@@ -59,6 +59,7 @@ if [[ -f "$_lib_dir/state-seal.sh" ]]; then
 fi
 if ! declare -F sb_state_seal_write >/dev/null 2>&1; then
   sb_state_seal_write() { :; }
+  sb_state_last_write() { :; }
   sb_state_seal_enforce() { :; }
   sb_state_seal_lock() { :; }
   sb_state_seal_unlock() { :; }
@@ -342,6 +343,8 @@ fi
 debug_record_skill
 
 recorded_any=false
+last_invoked=""
+payload_agent_id="$(jq -r 'def v: if type != "string" then "!" elif . == "" then "!" elif test("\\A[A-Za-z0-9_-]{1,64}\\z") then . else "!" end; if type != "object" then "" else (if has("agent_id") then .agent_id elif has("agentId") then .agentId else null end) | if . == null then "" else v end end' <<<"$input")"
 completed_skills_to_mark=()
 sb_state_seal_lock "$STATE_FILE"
 trap 'sb_state_seal_unlock' EXIT
@@ -393,6 +396,12 @@ for raw in "${skills_to_record[@]}"; do
   fi
 
   completed_skills_to_mark+=("$skill")
+  # The skill invoked last, re-invocations included (the state lists a skill only once), sealed after the loop.
+  # Only a skill this recorder tracks counts (exact canonical name: an untracked helper such as
+  # artifact-reviewer neither becomes nor displaces it). The record is the caller's own: a call made inside a
+  # subagent carries a top-level agent_id and updates that agent's record, the main session its own, so a
+  # worker's sb:spec grants only that worker (state-seal.sh).
+  last_invoked="$skill"
   if sb_contract_is_writer "$skill"; then
     # A contract-writing skill starts: an unlock entry of the verified record (nothing is written
     # when the project has no valid record), and a hint that wakes dev-cycle-check's PostToolUse up.
@@ -447,6 +456,8 @@ if [[ "${recorded_any:-false}" == true ]]; then
   # the keyed record remembers that skills were tracked here (a deleted counter file proves nothing)
   if declare -F sb_integrity_baseline >/dev/null 2>&1; then sb_integrity_baseline "$(sb_integrity_root "$PWD")" tracked; fi
 fi
+# Keyed record of the skill invoked last: read by planning-file-guard's owner allowance.
+if [[ -n "$last_invoked" ]]; then sb_state_last_write "$STATE_FILE" "$last_invoked" "$payload_agent_id"; fi
 sb_state_seal_unlock
 
 if [[ ${#completed_skills_to_mark[@]} -gt 0 ]] && declare -F sb_session_ledger_mark_completed >/dev/null 2>&1; then
