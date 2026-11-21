@@ -12,7 +12,7 @@
 ca_marker_commit_ok() {
   local file="$1" root="$2" release_sha="$3" commit raw meta path rc=0
   local allowlist
-  allowlist="$(dirname "${BASH_SOURCE[0]}")/release-surface-allowlist.txt"
+  allowlist="$(dirname "${BASH_SOURCE[0]}")/../../../scripts/lib/release-surface-allowlist.txt"
   commit="$(grep -m1 -E '^commit=' "$file" 2>/dev/null | cut -d= -f2-)"
   [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || return 1
   [[ "$commit" == "$release_sha" ]] && return 0
@@ -187,7 +187,7 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
       if [[ "$inline_commit_missing" == true ]]; then
         inline_missing_note=" The marker commit is not in this checkout (shallow clone or another history): fetch full history (git fetch --unshallow) and retry."
       fi
-      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh in the standard Claude direct-OAuth configuration (or Kay/OpenCode Go/DeepSeek V4 Flash low when isolated Codex-compatible runs are required), and record matrix=inline-full-surface in the host runtime inline-e2e-matrix by completing the enterprise-grade-test-app journey: the Claude supervised enterprise-e2e-matrix (all 22 rows, per .planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md) or the inline journey (tests/e2e-live/run-e2e-live-tests.sh with SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1). The inline marker must carry commit= naming the commit the matrix ran on: the released commit, or a commit whose tree differs only in release-surface files (hooks/lib/completion-audit/release-surface-allowlist.txt: version bumps, manifests, changelog); a marker without it, or from a tree with other changes, is rejected. Note: this check binds the marker to a tree (the commit exists and the diff stays within the allowlist); it does not prove that a matrix ran. Then retry. A full Claude/Codex matrix is still accepted when explicitly run, but it is no longer required for the release gate.%s' "$inline_missing_note")"
+      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh in the standard Claude direct-OAuth configuration (or Kay/OpenCode Go/DeepSeek V4 Flash low when isolated Codex-compatible runs are required), and record matrix=inline-full-surface in the host runtime inline-e2e-matrix by completing the enterprise-grade-test-app journey: the Claude supervised enterprise-e2e-matrix (all 22 rows, per .planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md) or the inline journey (tests/e2e-live/run-e2e-live-tests.sh with SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1). The inline marker must carry commit= naming the commit the matrix ran on: the released commit, or a commit whose tree differs only in release-surface files (scripts/lib/release-surface-allowlist.txt: version bumps, manifests, changelog); a marker without it, or from a tree with other changes, is rejected. Note: this check binds the marker to a tree (the commit exists and the diff stays within the allowlist); it does not prove that a matrix ran. Then retry. A full Claude/Codex matrix is still accepted when explicitly run, but it is no longer required for the release gate.%s' "$inline_missing_note")"
       exit 0
     fi
   fi

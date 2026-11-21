@@ -125,6 +125,8 @@ HOOKS_ALLOWLIST = {
 }
 
 SCRIPTS_ALLOWLIST = {
+    # Release-surface allowlist data: names the host manifests the release process rewrites (R14-16).
+    "scripts/lib/release-surface-allowlist.txt",
     # The one-time ~/.cursor cleanup for users of the retired Cursor host.
     "scripts/uninstall-cursor-legacy.sh",
     "scripts/lib/uninstall_cursor_legacy.py",

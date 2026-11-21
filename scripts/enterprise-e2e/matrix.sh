@@ -436,7 +436,7 @@ enterprise_e2e_matrix_gate_state_dir() {
 
 # The files the supervised matrix itself writes inside the SB checkout: the round ledger (markdown) and the row-pass
 # registry (a tracked JSON data file); neither carries executable behaviour. docs/RELEASE.md and
-# hooks/lib/completion-audit/release-surface-allowlist.txt name the same paths. They
+# scripts/lib/release-surface-allowlist.txt name the same paths. They
 # are the ONLY paths ignored when deciding whether the tree is dirty. Every other harness output (attempt logs, pid
 # files, telemetry, the row-pass registry, transcripts) is git-ignored.
 ENTERPRISE_E2E_HARNESS_OUTPUTS=(".planning/enterprise-e2e/ROUND-*-LEDGER.md" ".planning/enterprise-e2e/.row-pass-registry.json")

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# The release-surface allowlist (hooks/lib/completion-audit/release-surface-allowlist.txt) is pinned against what the
+# The release-surface allowlist (scripts/lib/release-surface-allowlist.txt) is pinned against what the
 # release process really rewrites, so the gate cannot drift from it (R14-16).
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
-AL="$TL_REPO_ROOT/hooks/lib/completion-audit/release-surface-allowlist.txt"
+AL="$TL_REPO_ROOT/scripts/lib/release-surface-allowlist.txt"
 V="$(jq -r .version "$TL_REPO_ROOT/package.json")"
 
 json_entries() { grep -E '^json ' "$AL" | awk '{print $2}'; }
@@ -17,7 +17,7 @@ prose_allowed() {
   done < <(grep -E '^prose ' "$AL" | awk '{print $2}')
   return 1
 }
-is_json_entry() { json_entries | grep -qxF -- "$1"; }
+is_json_entry() { grep -qxF -- "$1" < <(json_entries); }
 
 # every *_rel path the sync scripts write is a json entry (or prose)
 for f in sync-marketplace-version sync-codex-marketplace-version sync-release-marketplace-versions; do
