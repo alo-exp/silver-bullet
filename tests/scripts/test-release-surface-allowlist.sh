@@ -41,7 +41,7 @@ for spec in ".claude-plugin/plugin.json:skills" "plugins/silver-bullet/.codex-pl
 done
 # prose entries are markdown, html or the ledger only, never code
 while IFS= read -r pattern; do
-  case "$pattern" in *.md|*.html) tl_pass "prose $pattern is a document" ;; *) tl_fail "prose $pattern is not a document pattern" ;; esac
+  case "$pattern" in *.md|*.html|.planning/enterprise-e2e/.row-pass-registry.json) tl_pass "prose $pattern is a document" ;; *) tl_fail "prose $pattern is not a document pattern" ;; esac
 done < <(grep -E '^prose ' "$AL" | awk '{print $2}')
 # code paths are never release surface
 for rel in hooks/dev-cycle-check.sh skills/silver-feature/SKILL.md scripts/sync-codex-package.sh tests/hooks/x.sh hooks/lib/completion-audit/deploy-tier.sh site/search.js site/serve.sh site/x/y.py hooks/hooks.json .agents/plugins/other.json; do
@@ -53,8 +53,10 @@ if prose_allowed ".planning/enterprise-e2e/ROUND-12-LEDGER.md"; then tl_pass "th
 while IFS= read -r rel; do
   if [[ -e "$TL_REPO_ROOT/$rel" ]]; then tl_pass "allowlist entry $rel exists"; else tl_fail "allowlist entry $rel does not exist"; fi
 done < <(json_entries)
+# the declared harness outputs are exactly the ledger and the (tracked) registry, both allowlisted prose
+if grep -qF 'ENTERPRISE_E2E_HARNESS_OUTPUTS=(".planning/enterprise-e2e/ROUND-*-LEDGER.md" ".planning/enterprise-e2e/.row-pass-registry.json")' "$TL_REPO_ROOT/scripts/enterprise-e2e/matrix.sh" && prose_allowed .planning/enterprise-e2e/.row-pass-registry.json; then tl_pass "declared harness outputs match the allowlist"; else tl_fail "declared harness outputs drifted from the allowlist"; fi
 # other harness outputs inside the checkout are git-ignored, so they cannot dirty the tree
-for rel in .planning/enterprise-e2e/.row-pass-registry.json .planning/enterprise-e2e/token-telemetry.jsonl .e2e-matrix-batch.pid .e2e-row1-attempt.log .e2e-matrix-pass-at-version.tsv tests/live/agents/kay/transcripts/latest.jsonl tests/live/agents/codex/transcripts/latest.jsonl; do
+for rel in .planning/enterprise-e2e/token-telemetry.jsonl .e2e-matrix-batch.pid .e2e-row1-attempt.log .e2e-matrix-pass-at-version.tsv tests/live/agents/kay/transcripts/latest.jsonl tests/live/agents/codex/transcripts/latest.jsonl; do
   if git -C "$TL_REPO_ROOT" check-ignore -q "$rel"; then tl_pass "$rel is git-ignored"; else tl_fail "$rel is NOT git-ignored"; fi
 done
 tl_results

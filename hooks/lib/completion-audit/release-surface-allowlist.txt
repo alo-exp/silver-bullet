@@ -18,8 +18,10 @@ prose README.md
 prose SECURITY.md
 prose docs/CONFIGURATION.md
 prose site/*.html
-# The supervised matrix logs every row in its round ledger (a harness output, markdown only).
+# The supervised matrix logs every row in its round ledger (a harness output, markdown only)
 prose .planning/enterprise-e2e/ROUND-*-LEDGER.md
+# ... and its row-pass registry, a tracked JSON data file that no hook or script executes.
+prose .planning/enterprise-e2e/.row-pass-registry.json
 json package.json .version
 json .claude-plugin/plugin.json .version
 json .claude-plugin/marketplace.json .plugins[].version, .plugins[].source.ref, .plugins[].source.sha

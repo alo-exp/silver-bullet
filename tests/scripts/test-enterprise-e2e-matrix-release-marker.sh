@@ -71,8 +71,8 @@ assert_contains "no-commit reason is stated" "$TL_OUT" "has no commit to bind it
 # the round ledger is the harness's own output: it never makes the tree "dirty" (declared harness outputs), and the
 # documented flow works end to end: matrix -> ledger written -> marker written -> ledger + version bump committed -> gate accepts
 mkdir -p "$R/.planning/enterprise-e2e"
-printf '# ledger baseline\n' >"$R/.planning/enterprise-e2e/ROUND-1-LEDGER.md"
-printf '!.planning/\n.planning/*\n!.planning/enterprise-e2e/\n.planning/enterprise-e2e/*\n!.planning/enterprise-e2e/ROUND-*-LEDGER.md\n' >>"$R/.gitignore"
+printf '# ledger baseline\n' >"$R/.planning/enterprise-e2e/ROUND-1-LEDGER.md"; echo "[]" >"$R/.planning/enterprise-e2e/.row-pass-registry.json"
+printf '!.planning/\n.planning/*\n!.planning/enterprise-e2e/\n.planning/enterprise-e2e/*\n!.planning/enterprise-e2e/ROUND-*-LEDGER.md\n!.planning/enterprise-e2e/.row-pass-registry.json\n' >>"$R/.gitignore"
 printf '{"name":"sb","version":"1.0.0"}\n' >"$R/package.json"; printf '!package.json\n' >>"$R/.gitignore"
 git -C "$R" add -A; git -C "$R" -c user.email=t@e.x -c user.name=t commit -q -m "ledger baseline"
 HEAD_SHA="$(git -C "$R" rev-parse HEAD)"
@@ -81,6 +81,7 @@ agent <<'EOS'
 mkdir -p "$WORK_DIR/$(dirname "$SB_E2E_MATRIX_EVIDENCE_PATH")"
 [[ "$SB_E2E_MATRIX_EVIDENCE_PATH" == */ ]] && mkdir -p "$WORK_DIR/$SB_E2E_MATRIX_EVIDENCE_PATH" || echo ev >"$WORK_DIR/$SB_E2E_MATRIX_EVIDENCE_PATH"
 echo "| row | pass |" >>"$SB_ROOT/.planning/enterprise-e2e/ROUND-1-LEDGER.md"
+echo "{}" >"$SB_ROOT/.planning/enterprise-e2e/.row-pass-registry.json"
 echo "SILVER BULLET ▸ ROUTING silver-feature"
 EOS
 run env SB_E2E_MATRIX_FORCE_ALL=1 bash "$MATRIX"
