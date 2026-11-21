@@ -285,4 +285,83 @@ assert_eq "a lock held by a live owner is waited for, then given up" "" "${SB_ST
 assert_file_exists "and left alone" "$LK/pid"
 rm -rf "$LK"
 
+# the skill invoked last (the .last record)
+fresh; rm -f "$S.last" "$S.lasthwm"
+_sb_state_seal_ensure_key "$S"
+assert_eq "no record: nothing" "" "$(sb_state_last_read "$S")"
+sb_state_last_write "$S" silver-spec
+assert_eq "a written record reads back" "silver-spec" "$(sb_state_last_read "$S")"
+assert_eq "its counter is 1" "1" "$(sed -n 3p "$S.last")"
+sb_state_last_write "$S" silver-spec
+assert_eq "a re-invocation is written again (counter 2)" "2" "$(sed -n 3p "$S.last")"
+sb_state_last_write "$S" silver-plan
+assert_eq "the latest skill wins" "silver-plan" "$(sb_state_last_read "$S")"
+cp "$S.last" "$TL_TMP/last.keep"
+sb_state_last_write "$S" silver-spec
+cp "$TL_TMP/last.keep" "$S.last"
+assert_eq "an older record put back is refused" "" "$(sb_state_last_read "$S")"
+sb_state_last_write "$S" silver-spec
+printf 'branch-a\n' >"$BR"; sb_state_last_write "$S" silver-spec
+assert_eq "same branch: verifies" "silver-spec" "$(sb_state_last_read "$S")"
+printf 'branch-b\n' >"$BR"
+assert_eq "another branch: refused" "" "$(sb_state_last_read "$S")"
+rm -f "$BR"; sb_state_last_write "$S" silver-spec
+printf 'v9\nsilver-spec\n9\n-\nx\n' >"$S.last"
+assert_eq "an unknown version is refused" "" "$(sb_state_last_read "$S")"
+printf 'v1\n\n9\n-\nx\n' >"$S.last"
+assert_eq "an empty skill is refused" "" "$(sb_state_last_read "$S")"
+printf 'v1\nsilver-spec\nnine\n-\nx\n' >"$S.last"
+assert_eq "a non-numeric counter is refused" "" "$(sb_state_last_read "$S")"
+sb_state_last_write "$S" silver-spec
+sed -i 's/silver-spec/silver-ingest/' "$S.last"
+assert_eq "an edited skill breaks the digest" "" "$(sb_state_last_read "$S")"
+rm -f "$S.last"; ln -s "$TL_TMP/elsewhere" "$S.last"
+sb_state_last_write "$S" silver-spec
+assert_eq "a symlinked .last is not written through" "" "$(sb_state_last_read "$S")"
+assert_file_absent "and nothing is created behind it" "$TL_TMP/elsewhere"
+rm -f "$S.last"; sb_state_last_write "$S" silver-spec
+rm -f "$S.lasthwm"; ln -s "$TL_TMP/elsewhere2" "$S.lasthwm"
+assert_eq "a symlinked counter file is refused on read" "" "$(sb_state_last_read "$S")"
+sb_state_last_write "$S" silver-spec
+assert_file_absent "and on write" "$TL_TMP/elsewhere2"
+rm -f "$S.lasthwm"
+# per-agent records
+rm -f "$S".last.* "$S".lasthwm.*
+sb_state_last_write "$S" silver-spec w1
+assert_eq "an agent's record reads back for that agent" "silver-spec" "$(sb_state_last_read "$S" w1)"
+assert_eq "and not for another agent" "" "$(sb_state_last_read "$S" w2)"
+assert_eq "nor for the main session" "" "$(sb_state_last_read "$S")"
+for bad in '../x' 'a/b' 'a b' '.h' "$(printf 'z%.0s' $(seq 1 65))"; do
+  sb_state_last_write "$S" silver-spec "$bad"
+  assert_eq "an invalid agent id reads nothing: $bad" "" "$(sb_state_last_read "$S" "$bad")"
+done
+assert_eq "only the valid agent has a file" "1" "$(ls "$S".last.* | wc -l | tr -d ' ')"
+cp "$S.last.w1" "$S.last.w3"; cp "$S.lasthwm.w1" "$S.lasthwm.w3"
+assert_eq "an agent's record copied to another agent id fails its digest" "" "$(sb_state_last_read "$S" w3)"
+touch "$S.last.w1.12345" "$S.last.not.valid.id"
+SB_LAST_AGENT_RECORDS=1 sb_state_last_write "$S" silver-spec w4
+assert_file_exists "pruning keeps files that are not agent records" "$S.last.not.valid.id"
+rm -f "$S".last.* "$S".lasthwm.*
+sb_state_last_write "$S" silver-spec
+rm -f "$S.lasthwm"
+assert_eq "a record whose counter file was deleted is refused" "" "$(sb_state_last_read "$S")"
+sb_state_last_write "$S" silver-spec
+printf 'v1' >"$S.last"
+assert_eq "a record cut short (no newline, missing lines) is refused" "" "$(sb_state_last_read "$S")"
+sb_state_last_write "$S" silver-spec
+cp "$S.last" "$TL_TMP/last.hi"; printf '1\n' >"$S.lasthwm"
+sb_state_last_write "$S" silver-plan
+assert_eq "the counter never goes back below the record's own (hwm was lowered)" "$(( $(sed -n 3p "$TL_TMP/last.hi") + 1 ))" "$(sed -n 3p "$S.last")"
+cp "$S.last" "$TL_TMP/last.before"
+( PATH="$(tl_path_without openssl python3)"; sb_state_last_write "$S" silver-spec )
+assert_eq "when the digest cannot be computed the record is left as it was" "$(cat "$TL_TMP/last.before")" "$(cat "$S.last")"
+rm -f "$SD/seal.key" "$S.last"
+sb_state_last_write "$S" silver-spec
+assert_file_absent "without a key nothing is written (a record never creates the key)" "$S.last"
+assert_file_absent "and no key was created" "$SD/seal.key"
+printf 'v1\nsilver-spec\n1\n-\nx\n' >"$S.last"
+assert_eq "an unkeyed record is not trusted" "" "$(sb_state_last_read "$S")"
+rm -f "$S.last" "$S.lasthwm"
+
+
 tl_results

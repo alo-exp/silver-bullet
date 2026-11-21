@@ -138,4 +138,97 @@ assert_file_absent "no state for an empty path" "$BR/blocks/fw-empty.state"
 run_bridge file.before_write "$(jq -cn --arg p "$WORK/not-yet/new.txt" '{changes:[{path:$p}]}')" fw-missing
 assert_eq "missing target and parent: still denied" "2" "$TL_STATUS"
 
+# R7-06: a denial whose tool.after never arrives does not leave the project
+# read-only: session.start/session.end restore every stale state (newest first)
+# and remove the shared shim dir.
+printf 'x' >"$WORK/dir/stale.txt"
+chmod 644 "$WORK/dir/stale.txt"
+write_hooks "$(jq -cn --argjson h "$(cmd_of deny2)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+run_bridge tool.before "$(jq -cn --arg c "touch $WORK/dir/stale.txt" '{command:$c}')" stale1
+run_bridge tool.before "$(jq -cn --arg c "touch $WORK/dir/stale.txt" '{command:$c}')" stale2
+assert_eq "stale denial left the file locked" "444" "$(stat -c %a "$WORK/dir/stale.txt")"
+assert_eq "stale denial left the parent locked" "555" "$(stat -c %a "$WORK/dir")"
+run_bridge session.start '{}' fresh-session
+assert_eq "session.start restores the stale file mode" "644" "$(stat -c %a "$WORK/dir/stale.txt")"
+assert_eq "session.start restores the stale parent mode" "755" "$(stat -c %a "$WORK/dir")"
+assert_eq "session.start empties blocks/" "" "$(ls "$BR/blocks")"
+assert_file_absent "session.start removes the shim dir" "$ACTIVE"
+run_bridge tool.before "$(jq -cn --arg c "touch $WORK/dir/stale.txt" '{command:$c}')" stale3
+run_bridge session.end '{}' fresh-end
+assert_eq "session.end also restores" "755" "$(stat -c %a "$WORK/dir")"
+assert_file_absent "session.end removes the shim dir" "$ACTIVE"
+
+# a leftover shim dir with no state file is removed on session.start too
+mkdir -p "$ACTIVE"
+run_bridge session.start '{}' fresh-orphan
+assert_file_absent "orphan shim dir removed on session.start" "$ACTIVE"
+
+# a file write denial locks only the target, never its parent directory
+printf 'doc' >"$WORK/dir/exact.txt"
+write_hooks "$(jq -cn --argjson h "$(cmd_of deny2)" '{hooks:{PreToolUse:[{matcher:"Write",hooks:[$h]}]}}')"
+run_bridge file.before_write "$(jq -cn --arg p "$WORK/dir/exact.txt" '{changes:[{path:$p}]}')" exact1
+assert_eq "exact: target locked" "444" "$(stat -c %a "$WORK/dir/exact.txt")"
+assert_eq "exact: parent directory untouched" "755" "$(stat -c %a "$WORK/dir")"
+# every path of a multi-file denial is locked
+printf 'a' >"$WORK/dir/m1.txt"; printf 'b' >"$WORK/dir/m2.txt"
+run_bridge file.before_write "$(jq -cn --arg a "$WORK/dir/m1.txt" --arg b "$WORK/dir/m2.txt" '{changes:[{path:$a},{path:$b}]}')" multi1
+assert_eq "multi-file denial locks the first path" "444" "$(stat -c %a "$WORK/dir/m1.txt")"
+assert_eq "multi-file denial locks the second path" "444" "$(stat -c %a "$WORK/dir/m2.txt")"
+run_bridge session.start '{}' fresh2
+assert_eq "stale multi-file locks restored" "644" "$(stat -c %a "$WORK/dir/m2.txt")"
+assert_eq "stale exact lock restored" "644" "$(stat -c %a "$WORK/dir/exact.txt")"
+
+# R7-06 (r1): a repeated call id (including the shared "hook" fallback) never
+# drops earlier restore records. State files are append-only.
+printf 'a' >"$WORK/dir/ra.txt"; printf 'b' >"$WORK/dir/rb.txt"
+chmod 644 "$WORK/dir/ra.txt" "$WORK/dir/rb.txt"
+write_hooks "$(jq -cn --argjson h "$(cmd_of deny2)" '{hooks:{PreToolUse:[{matcher:"Write",hooks:[$h]}]}}')"
+tl_run_nocall() { # event payload: no CODE_HOOK_SOURCE_CALL_ID at all
+  tl_run bash -c 'cd "$1" && exec env -u CODE_HOOK_SOURCE_CALL_ID -u CODE_HOOK_CALL_ID HOME="$2" CLAUDE_PLUGIN_ROOT="$3" CODE_HOOK_EVENT="$4" CODE_HOOK_PAYLOAD="$5" bash "$6"' _ "$WORK" "$BHOME" "$PLUG" "$1" "$2" "$BRIDGE"
+}
+tl_run_nocall file.before_write "$(jq -cn --arg p "$WORK/dir/ra.txt" '{changes:[{path:$p}]}')"
+tl_run_nocall file.before_write "$(jq -cn --arg p "$WORK/dir/rb.txt" '{changes:[{path:$p}]}')"
+assert_eq "no call id: both files locked" "444 444" "$(stat -c '%a' "$WORK/dir/ra.txt") $(stat -c '%a' "$WORK/dir/rb.txt")"
+run_bridge session.start '{}' fresh-nocall
+assert_eq "no call id: both restored by session.start" "644 644" "$(stat -c '%a' "$WORK/dir/ra.txt") $(stat -c '%a' "$WORK/dir/rb.txt")"
+# the same path denied twice with the same id
+run_bridge file.before_write "$(jq -cn --arg p "$WORK/dir/ra.txt" '{changes:[{path:$p}]}')" same
+run_bridge file.before_write "$(jq -cn --arg p "$WORK/dir/ra.txt" '{changes:[{path:$p}]}')" same
+run_bridge session.end '{}' fresh-same
+assert_eq "same path denied twice is restored to the original mode" "644" "$(stat -c %a "$WORK/dir/ra.txt")"
+run_bridge file.before_write "$(jq -cn --arg p "$WORK/dir/ra.txt" '{changes:[{path:$p}]}')" same2
+run_bridge file.before_write "$(jq -cn --arg p "$WORK/dir/ra.txt" '{changes:[{path:$p}]}')" same2
+run_bridge file.after_write '{}' same2
+assert_eq "tool.after/after_write restores a twice-denied path" "644" "$(stat -c %a "$WORK/dir/ra.txt")"
+# two denied git commits with no call id leave nothing read-only
+write_hooks "$(jq -cn --argjson h "$(cmd_of deny2)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+mkdir -p "$WORK/gdir"; git -C "$WORK/gdir" init -q
+GITC="$(jq -cn '{command:"git commit -m x"}')"
+gitc_run() { tl_run bash -c 'cd "$1/gdir" && exec env -u CODE_HOOK_SOURCE_CALL_ID -u CODE_HOOK_CALL_ID HOME="$2" CLAUDE_PLUGIN_ROOT="$3" CODE_HOOK_EVENT="$4" CODE_HOOK_PAYLOAD="$5" bash "$6"' _ "$WORK" "$BHOME" "$PLUG" "$1" "$2" "$BRIDGE"; }
+gitc_run tool.before "$GITC"
+gitc_run tool.before "$GITC"
+gitc_run tool.after '{"command":"x"}'
+assert_eq "two denied git commits: .git restored by tool.after" "755" "$(stat -c %a "$WORK/gdir/.git")"
+assert_eq "two denied git commits: repo dir restored" "755" "$(stat -c %a "$WORK/gdir")"
+gitc_run tool.before "$GITC"
+gitc_run tool.before "$GITC"
+run_bridge session.start '{}' fresh-git
+assert_eq "two denied git commits: restored by session.start" "755" "$(stat -c %a "$WORK/gdir/.git")"
+assert_eq "no state left behind" "" "$(ls "$BR/blocks")"
+
+# the state record is written before the path is changed: a path whose mode
+# cannot be changed (a /proc file raises EPERM even for root) keeps its record,
+# the deny still goes out, and the restore tolerates the same failure.
+write_hooks "$(jq -cn --argjson h "$(cmd_of deny2)" '{hooks:{PreToolUse:[{matcher:"Write",hooks:[$h]}]}}')"
+if [[ -r /proc/self/status ]]; then
+  run_bridge file.before_write '{"changes":[{"path":"/proc/self/status"}]}' chmodfail
+  assert_eq "chmod failure: still denied" "2" "$TL_STATUS"
+  assert_contains "record written before the change" "$(cat "$BR/blocks/chmodfail.state")" "/proc/"
+  printf 'd' >"$WORK/dir/d.txt"
+  run_bridge file.before_write "$(jq -cn --arg p "$WORK/dir/d.txt" '{changes:[{path:$p}]}')" chmodfail2
+  run_bridge session.start '{}' fresh3
+  assert_eq "restore survives an unrestorable path" "644" "$(stat -c %a "$WORK/dir/d.txt")"
+  assert_eq "stale state with unrestorable path removed" "" "$(ls "$BR/blocks")"
+fi
+
 tl_results

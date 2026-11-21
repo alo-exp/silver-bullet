@@ -71,6 +71,7 @@ class MultiAiCliTests(HermeticCase):
         self.assertEqual(rc, 2)
         self.assertEqual(json.loads(out)["error_code"], "OUTPUT_ROOT_REQUIRED")
 
+    @mock.patch.dict(os.environ, {"SB_HOST": "cursor"})
     def test_dry_run_prints_report(self) -> None:
         rc, out, _ = run_main(multi_ai_cli.main, ["--dry-run", "--include-only", "composer-2.5"])
         self.assertEqual(rc, 0)
@@ -78,10 +79,19 @@ class MultiAiCliTests(HermeticCase):
         self.assertTrue(report["ok"] and report["dry_run"])
         self.assertEqual(report["resolved_count"], 1)
 
+    @mock.patch.dict(os.environ, {"SB_HOST": "cursor"})
     def test_dry_run_failure_exit_code(self) -> None:
         rc, out, _ = run_main(multi_ai_cli.main, ["--dry-run", "--max-agents", "1"])
         self.assertEqual(rc, 1)
         self.assertEqual(json.loads(out)["error_code"], "MAX_AGENTS_EXCEEDED")
+
+    def test_unsupported_host_blocks_dry_run_like_live_dispatch(self) -> None:
+        with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}):
+            rc, out, _ = run_main(multi_ai_cli.main, ["--dry-run"])
+        self.assertEqual(rc, 2)
+        payload = json.loads(out)
+        self.assertEqual(payload["error_code"], "SB_MULTI_AI_UNSUPPORTED_HOST")
+        self.assertNotIn("dry_run", payload)
 
     def test_unsupported_host_blocks_live_dispatch(self) -> None:
         with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}), mock.patch.object(multi_ai_cli, "run_multi_ai_live") as live:
@@ -125,6 +135,7 @@ class MultiAiCliTests(HermeticCase):
                 rc, _, _ = run_main(multi_ai_cli.main, argv)
             self.assertEqual(rc, 1)
 
+    @mock.patch.dict(os.environ, {"SB_HOST": "cursor"})
     def test_script_entry_point_exit_status(self) -> None:
         with mock.patch.object(sys, "argv", ["multi_ai_cli.py", "--dry-run", "--include-only", "grok-4.5"]):
             with contextlib.redirect_stdout(io.StringIO()) as out, self.assertRaises(SystemExit) as ctx:

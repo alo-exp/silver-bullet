@@ -22,6 +22,8 @@ trap 'exit 0' ERR
 # terminal. The roadmap-edit-override sentinel (ROADMAP.md/STATE.md) is honoured only while
 # the owning skill (sb:phase or sb:undo) is recorded in this session's state, and the dev-cycle
 # gate refuses an agent writing any other sentinel or the audit logs. Overrides are audited.
+# Owner allowance: sb:spec / sb:ingest may write .planning/REQUIREMENTS.md, with a file tool, only
+# while that skill is the one invoked last (sealed by record-skill.sh; no other file or skill).
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -142,6 +144,15 @@ is_protected() {
   return "$ret"
 }
 
+# The owner allowance is for the owning skill's file tools: not MCP tools, and not an apply_patch that deletes
+# or moves a file.
+owner_tool_ok=0
+payload_agent_id="$(printf '%s' "$input" | jq -r 'def v: if type != "string" then "!" elif . == "" then "!" elif test("\\A[A-Za-z0-9_-]{1,64}\\z") then . else "!" end; if type != "object" then "" else (if has("agent_id") then .agent_id elif has("agentId") then .agentId else null end) | if . == null then "" else v end end')"
+case "$tool_name" in
+  Edit | Write | MultiEdit) owner_tool_ok=1 ;;
+  apply_patch) [[ "$input" == *'*** Delete File:'* || "$input" == *'*** Move to:'* ]] || owner_tool_ok=1 ;;
+esac
+
 notices=""
 nl=$'\n'
 note() {
@@ -182,6 +193,12 @@ while IFS=$'\t' read -r via target; do
         continue
         ;;
     esac
+  fi
+
+  # ── Owner allowance: sb:spec / sb:ingest write .planning/REQUIREMENTS.md while it was invoked last ──
+  if sb_pf_owner_may_write "$planning_rel" "$via" "$target" "$owner_tool_ok" "$payload_agent_id"; then
+    note "ℹ️  planning-file-guard: ${basename_path} written by its owning skill (the skill invoked last)."
+    continue
   fi
 
   # ── Trivial bypass (user-created marker; the configured path is never honoured) ──

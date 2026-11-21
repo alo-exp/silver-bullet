@@ -191,12 +191,6 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/site-chrome-guard.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/compression-marker-guard.sh\"",
             "async": false,
             "timeout": 10
@@ -264,6 +258,17 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/token-compression-tools-gate.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/site-chrome-guard.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -349,12 +354,6 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/site-regression-gate.sh\"",
             "async": false,
             "timeout": 120
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/live-publish-evidence-gate.sh\"",
-            "async": false,
-            "timeout": 15
           },
           {
             "type": "command",
@@ -558,6 +557,17 @@
             "async": false,
             "timeout": 10
           },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-site-session.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*screenshot.*|browser_take_screenshot|MCP",
+        "hooks": [
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-site-visual-evidence.sh\"",

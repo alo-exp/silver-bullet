@@ -46,7 +46,6 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | hooks/lib/sb-project-gate.sh:25 | config | `[[ -f "$root/.silver-bullet.json" && -f "$root/silver-bullet.md" ]] \|\| return 1` | A | activation helper: record-aware project lookup (root with a record wins) |
 | hooks/lib/sb-project-gate.sh:39 | config | `[[ -n "$cached" && -f "$cached/.silver-bullet.json" && -f "$cached/silver-bullet.md" ]] \|` | A | activation helper: record-aware project lookup (root with a record wins) |
 | hooks/lib/session-ledger.sh:26 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | X | session log bookkeeping: finds the project directory for the ledger file, decides no gate |
-| hooks/lib/site-session.sh:19 | config | `if [[ -f "$search_dir/.silver-bullet.json" && -f "$search_dir/silver-bullet.md" ]]; then` | X | site-session bookkeeping: finds the project directory, decides no gate |
 | hooks/record-skill.sh:280 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | A | sanctioned writer: keeps the record in step |
 | hooks/record-skill.sh:281 | config | `config_file="$search_dir/.silver-bullet.json"` | A | sanctioned writer: keeps the record in step |
 | hooks/record-skill.sh:304 | config | `STATE_FILE=$(jq -r '.state.state_file // ""' "$config_file")` | A | sanctioned writer: keeps the record in step |

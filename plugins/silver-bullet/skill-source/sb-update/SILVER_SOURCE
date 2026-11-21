@@ -7,6 +7,8 @@ version: 0.1.0
 
 # /sb:update — Update Silver Bullet
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-update/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 Check GitHub for the latest Silver Bullet release, display what changed since your installed version, and install the update.
 
 ## Process
@@ -212,9 +214,9 @@ without re-asking. Detect host the same way as `/sb:init` Phase 1.1a Step 3 (`SB
    - **task host:** skip
 3. `graphify update . --no-cluster`
 4. Post-index always-on (upstream "Make your assistant always use the graph"):
-   - **primary host:** `graphify host install (see install guide) --project`
-   - **Codex:** `graphify host install (see install guide) --project`
-   - **task host:** `graphify host install (see install guide)`
+   - **primary host:** `graphify claude install --project`
+   - **Codex:** `graphify codex install --project`
+   - **other hosts:** see `docs/GRAPHIFY.md`
 
 Read `recommended_tools.graphify.platform_install_commands.<host>.pre_index` / `.post_index` from `.silver-bullet.json` when present.
 
@@ -244,10 +246,10 @@ test -f .silver-bullet.json && jq -r '.recommended_tools.agentmemory.enforcement
 
 1. `npm install -g @agentmemory/agentmemory`
 2. Start server: `nohup agentmemory > ~/.agentmemory/server.log 2>&1 &`
-3. Pre-index (Codex): `host plugin marketplace (see install guide) add rohitg00/agentmemory`; `Codex plugin add agentmemory@agentmemory`
+3. Pre-index (Codex): `codex plugin marketplace add rohitg00/agentmemory`; `Codex plugin add agentmemory@agentmemory`
 4. Post-index MCP connect:
-   - **primary host:** `agentmemory connect (see install guide)`
-   - **Codex:** `agentmemory connect (see install guide) --with-hooks`
+   - **primary host:** `agentmemory connect claude-code`
+   - **Codex:** `agentmemory connect codex --with-hooks`
    - **task host:** merge MCP block per `docs/AGENTMEMORY.md` (host MCP config)
 5. Scaffold: `mkdir -p .agentmemory/memory .agentmemory/snapshots`
 6. **gitleaks:** `command -v gitleaks || brew install gitleaks` (macOS); verify with `gitleaks version`. Required for bridge second-line secret scan — SB optimizer also installs via `sb-optimize-stack.sh --apply`.
@@ -271,8 +273,8 @@ jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.jso
 
 1. Install RTK CLI per `docs/RTK.md` (verify `rtk gain --help`)
 2. Run host `rtk init` command from `platform_install_commands`
-3. `bash scripts/optimize-rtk-context-mode.sh --host auto --project-root "$(pwd)"`
-4. `bash scripts/enable-rtk-context-mode.sh --tool rtk`
+3. `bash "${PLUGIN_ROOT}/scripts/optimize-rtk-context-mode.sh" --host auto --project-root "$(pwd)"`
+4. `bash "${PLUGIN_ROOT}/scripts/enable-rtk-context-mode.sh" --tool rtk`
 
 On success, clear suspension. On failure, keep suspension.
 
@@ -283,8 +285,8 @@ On success, clear suspension. On failure, keep suspension.
 After Steps 8 (Graphify) and 8b (agentmemory), when either tool is opted in, re-apply the synergy optimizer (idempotent — safe on every update):
 
 ```bash
-bash scripts/sb-optimize-stack.sh --apply
-bash scripts/sb-optimize-stack.sh --verify
+bash "${PLUGIN_ROOT}/scripts/sb-optimize-stack.sh" --apply
+bash "${PLUGIN_ROOT}/scripts/sb-optimize-stack.sh" --verify
 ```
 
 Runs on upgrade, version bump, or when retrying `enforcement_suspended` installs. Records `optimization.last_applied_at` / `optimization.score`. See `docs/STACK-OPTIMIZATION.md`.
@@ -304,10 +306,10 @@ jq -r '.recommended_tools.context_mode.enforcement_suspended // false' .silver-b
 
 1. Verify Node >= 22.5
 2. `npm install -g context-mode` and/or primary host plugin steps per `docs/CONTEXT-MODE.md`
-3. `bash scripts/optimize-rtk-context-mode.sh --host auto --project-root "$(pwd)"`
-4. Re-scaffold instruction fragment (`templates/context-mode-hint.md.base`)
+3. `bash "${PLUGIN_ROOT}/scripts/optimize-rtk-context-mode.sh" --host auto --project-root "$(pwd)"`
+4. Re-scaffold instruction fragment (`${PLUGIN_ROOT}/templates/context-mode-hint.md.base`)
 5. Remind user to restart agent
-6. `bash scripts/enable-rtk-context-mode.sh --tool context_mode`
+6. `bash "${PLUGIN_ROOT}/scripts/enable-rtk-context-mode.sh" --tool context_mode`
 
 On success, clear suspension.
 
@@ -328,8 +330,8 @@ jq -r '.recommended_tools.leanctx.enforcement_suspended // false' .silver-bullet
 **If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry via reconciler (no re-ask):
 
 ```bash
-bash scripts/reconcile-recommended-tools.sh   --project-root "$(pwd)" --host "${SILVER_BULLET_RUNTIME:-claude}"   --mode apply --scope all --entry-point update --format text
-bash scripts/optimize-five-tool-stack.sh --host "${SILVER_BULLET_RUNTIME:-claude}" --project-root "$(pwd)"
+bash "${PLUGIN_ROOT}/scripts/reconcile-recommended-tools.sh"   --project-root "$(pwd)" --host "${SILVER_BULLET_RUNTIME:-claude}"   --mode apply --scope all --entry-point update --format text
+bash "${PLUGIN_ROOT}/scripts/optimize-five-tool-stack.sh" --host "${SILVER_BULLET_RUNTIME:-claude}" --project-root "$(pwd)"
 ```
 
 On success, clear suspension (same jq pattern as Graphify). On failure, keep suspension.
@@ -338,23 +340,23 @@ On success, clear suspension (same jq pattern as Graphify). On failure, keep sus
 
 ### Step 8g: Host snapshot reconciliation (after plugin update)
 
-Re-run the host installer from the updated plugin checkout (`bash scripts/install-claude.sh` or `bash scripts/install-codex.sh`), then reconcile the recommended tools:
+Re-run the host installer from the updated plugin checkout (`bash "${PLUGIN_ROOT}/scripts/install-claude.sh"` or `bash "${PLUGIN_ROOT}/scripts/install-codex.sh"`), then reconcile the recommended tools:
 
 ```bash
-bash scripts/reconcile-recommended-tools.sh --project-root "$(pwd)" --host "${SILVER_BULLET_RUNTIME:-claude}" --mode apply --scope all --entry-point update --format text
+bash "${PLUGIN_ROOT}/scripts/reconcile-recommended-tools.sh" --project-root "$(pwd)" --host "${SILVER_BULLET_RUNTIME:-claude}" --mode apply --scope all --entry-point update --format text
 ```
 
 Then verify (read-only):
 
 ```bash
-bash scripts/reconcile-recommended-tools.sh   --project-root "$(pwd)" --host "${SILVER_BULLET_RUNTIME:-claude}"   --mode verify --scope all --format text
+bash "${PLUGIN_ROOT}/scripts/reconcile-recommended-tools.sh"   --project-root "$(pwd)" --host "${SILVER_BULLET_RUNTIME:-claude}"   --mode verify --scope all --format text
 ```
 
 Report `reload_required` honestly — plugin update does not prove MCP liveness in the current session.
 
 ### Step 9: Project scaffolding migration (opt-in)
 
-After plugin install succeeds, compare the **project's** `.silver-bullet.json` `config_version` to `templates/silver-bullet.config.json.default`.
+After plugin install succeeds, compare the **project's** `.silver-bullet.json` `config_version` to `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`.
 
 **If project version is older** (minor/patch behind template):
 
@@ -365,7 +367,7 @@ Ask the user:
 - **B) Skip (plugin only)** — warn that dogfood may stay on stale enforcement
 
 **On A:**
-1. Invoke **`/sb:migrate`** — workflow tracker, orchestrator parent mode, config defaults merge, task host rule scaffold.
+1. Invoke **`/sb:migrate`** — workflow tracker, orchestrator parent mode, config defaults merge.
 2. Invoke **`/sb:init`** in **update mode** — refresh `silver-bullet.md` from template, remove duplicate SB hook copies from the host settings, conflict detection.
 3. Bump `config_version` in `.silver-bullet.json` (preserve user customizations).
 4. Run **`/sb:doctor`** automatically; surface every FAIL for inline fix.

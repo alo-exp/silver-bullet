@@ -17,7 +17,7 @@ This skill initializes Silver Bullet enforcement for a project. Follow each phas
 - **Never run `git clean`, `git checkout --`, `git reset --hard`**, or any command that discards uncommitted work
 - **Config is preserved** — in update mode, `.silver-bullet.json` customizations are read first and carried forward
 
-**Plugin root**: Determine `PLUGIN_ROOT` from this skill file's own path. This file lives at `${PLUGIN_ROOT}/skills/silver-init/SKILL.md`, so the plugin root is two directories up from this file's location.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `agents/claude/` (`${PLUGIN_ROOT}/agents/claude/sb:init/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory.
 
 ---
 
@@ -306,8 +306,8 @@ Add agentmemory gitignore block if missing (see `docs/AGENTMEMORY.md`).
 
 | Host | Pre-index | Post-index |
 |------|-----------|------------|
-| `<SB_HOST>` | *(none)* | `agentmemory connect (see install guide)` |
-| `<SB_HOST>` | `host plugin marketplace (see install guide) add rohitg00/agentmemory`; `host plugin add agentmemory@agentmemory` | `agentmemory connect (see install guide) --with-hooks` |
+| `<SB_HOST>` | *(none)* | `agentmemory connect claude-code` |
+| `<SB_HOST>` | `codex plugin marketplace add rohitg00/agentmemory`; `host plugin add agentmemory@agentmemory` | `agentmemory connect codex --with-hooks` |
 | `<SB_HOST>` | *(none)* | Merge MCP block per `docs/AGENTMEMORY.md` (host MCP config) |
 
 Read `recommended_tools.agentmemory.platform_install_commands.<host>` from config when present.
@@ -341,8 +341,8 @@ Same rules as Graphify §1.1a Step 5: re-prompt when `null`; retry when suspende
 When **either** Graphify or agentmemory is opted in (`enabled_by_user: true`), run the synergy optimizer after install steps complete:
 
 ```bash
-bash scripts/sb-optimize-stack.sh --apply
-bash scripts/sb-optimize-stack.sh --verify
+bash "${PLUGIN_ROOT}/scripts/sb-optimize-stack.sh" --apply
+bash "${PLUGIN_ROOT}/scripts/sb-optimize-stack.sh" --verify
 ```
 
 - Default profile: `synergy_max` (see `optimization_profiles` in config template)
@@ -378,10 +378,10 @@ Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBen
 
 1. Run `install_commands` from config (Homebrew or curl installer — see `docs/RTK.md`)
 2. Verify: `rtk --version` (v0.4x), `rtk gain --help`
-3. Run host `platform_install_commands` (`rtk init -g`, `rtk init -g (see install guide)`, or `rtk init -g (see install guide)`)
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto --project-root "$(pwd)"` — merges hooks, MCP, host CLI config allow-list, and global rules (see `docs/RTK.md` optimization checklist)
+3. Run host `platform_install_commands` (`rtk init -g` on Claude Code, `rtk init -g --codex` on Codex; see `docs/RTK.md`)
+4. **Run optimization:** `bash "${PLUGIN_ROOT}/scripts/optimize-rtk-context-mode.sh" --host <runtime>|auto --project-root "$(pwd)"` — merges hooks, MCP, host CLI config allow-list, and global rules (see `docs/RTK.md` optimization checklist)
 5. Verify host hook artifact (grep `rtk` in settings/hooks/AGENTS.md)
-6. Run `bash scripts/enable-rtk-context-mode.sh --tool rtk`
+6. Run `bash "${PLUGIN_ROOT}/scripts/enable-rtk-context-mode.sh" --tool rtk`
 
 On success: `install_status: "ok"`, `enforcement_suspended: false`. On failure: suspend, preserve consent.
 
@@ -415,11 +415,10 @@ Include ELv2 license disclosure and MCP-value note in the question.
 1. **Node >= 22.5** check first
 2. `npm install -g context-mode` (or host plugin path per host — see `docs/CONTEXT-MODE.md`)
 3. Host-specific plugin/MCP/hook steps from `platform_install_commands`
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto --project-root "$(pwd)"` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, task host allow-list, global host rules directory directory (see `docs/CONTEXT-MODE.md`)
-5. **Scaffold instruction fragment** into `silver-bullet.md` and `project instruction file` from `templates/context-mode-hint.md.base` (idempotent sentinel block — see `references/scaffold-steps.md`)
-6. **Host-specific:** copy `context-mode.mdc` to `host rules path (see install guide) ` per upstream (also done by optimize script)
-7. Remind user to **restart agent** after plugin install
-8. Run `bash scripts/enable-rtk-context-mode.sh --tool context_mode`
+4. **Run optimization:** `bash "${PLUGIN_ROOT}/scripts/optimize-rtk-context-mode.sh" --host <runtime>|auto --project-root "$(pwd)"` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, host allow-list, global rules (see `docs/CONTEXT-MODE.md`)
+5. **Scaffold instruction fragment** into `silver-bullet.md` and `project instruction file` from `${PLUGIN_ROOT}/templates/context-mode-hint.md.base` (idempotent sentinel block — see `references/scaffold-steps.md`)
+6. Remind user to **restart agent** after plugin install
+7. Run `bash "${PLUGIN_ROOT}/scripts/enable-rtk-context-mode.sh" --tool context_mode`
 
 On success/failure: same jq pattern as Graphify/agentmemory.
 
@@ -433,8 +432,7 @@ After core dependencies are confirmed, run the SB diagnostics probe when the
 script is available in the plugin or repo:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
-  bash scripts/sb-diagnostics.sh 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
 ```
 
 Surface WARN/FAIL lines to the user. Capability tier and hook presence are
@@ -446,14 +444,13 @@ Confirm Silver Bullet is installed for the active host before project init:
 
 | Host | Normal install | Development checkout |
 |------|----------------|----------------------|
-| the active host agent | Add marketplace `https://github.com/host marketplace (install guide)`, then `/plugin install silver-bullet@alo-labs` | `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` |
-| Codex | Public `host marketplace (install guide)` marketplace via `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh --public-release` | `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh --purge-legacy-skills` |
-| task host | Add marketplace `https://github.com/alo-labs/host marketplace (install guide)`, install `silver-bullet`, or run `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh --public-release` | `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` |
+| the active host agent | Add the `alo-labs/agent-plugins` marketplace, then `/plugin install silver-bullet@alo-labs` | `bash "${PLUGIN_ROOT}/scripts/install-${SILVER_BULLET_RUNTIME}.sh"` |
+| Codex | Public `alo-labs/agent-plugins` marketplace via `bash "${PLUGIN_ROOT}/scripts/install-${SILVER_BULLET_RUNTIME}.sh" --public-release` | `bash "${PLUGIN_ROOT}/scripts/install-${SILVER_BULLET_RUNTIME}.sh" --purge-legacy-skills` |
 
-**Orchestrator parent rule (active host):** On init, copy `scripts/lib/install-<runtime>/templates/task host-rules/silver-orchestrator.mdc` → `host rules path (see install guide) silver-orchestrator.mdc` (see `references/scaffold-steps.md` §3.2.1 and Phase 3 step 3.2.1).
+**Orchestrator parent rule (active host):** the orchestrator directive contract is delivered by hook injection on Claude Code and Codex; there is no rule file to copy (see `references/scaffold-steps.md` §3.2.1).
 
-After install, `bash scripts/sb-bootstrap.sh` (onboarding) or
-`bash scripts/sb-diagnostics.sh` (capability probe) confirms hook delivery and
+After install, `bash "${PLUGIN_ROOT}/scripts/sb-bootstrap.sh"` (onboarding) or
+`bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh"` (capability probe) confirms hook delivery and
 runtime tier. Per-host state and hook manifest paths are documented in `docs/RUNTIME-COMPATIBILITY.md`.
 
 ### 1.2 Legacy plugin note
@@ -524,7 +521,7 @@ bash "$RECONCILE" --project-root "$PWD" --host "$SB_HOST" --mode apply --scope a
 
 **When LeanCTX is enabled**, also run (idempotent):
 ```bash
-bash scripts/optimize-five-tool-stack.sh --host "$SB_HOST" --project-root "$(pwd)"
+bash "${PLUGIN_ROOT}/scripts/optimize-five-tool-stack.sh" --host "$SB_HOST" --project-root "$(pwd)"
 ```
 
 **Host hook merge:** use the host installer's merge script (`scripts/lib/install-<host>/`) only — do not duplicate host-detection pseudocode.
@@ -652,9 +649,17 @@ If A: create `.planning/PROJECT.md`, `.planning/REQUIREMENTS.md`,
 `.planning/ROADMAP.md`, and `.planning/STATE.md` if absent. Use SB-owned
 headings and mark the state as initialized, not complete. Then continue.
 
+**Order matters.** Create these four files now, in Phase 2, before Phase 3 writes
+`.silver-bullet.json`: planning-file-guard protects only projects that already carry
+Silver Bullet's contract files, so on a fresh project these writes pass, and it denies
+the same writes once Phase 3 has run. Never defer them to after Phase 3. If a write is
+denied anyway (the project was already activated), do not retry it and do not work
+around the guard with shell redirects or another tool: tell the user which files are
+missing, that planning-file-guard owns them, and continue as option C.
+
 If B: read the repository structure, package manifests, and existing docs first.
 Use Graphify when available for retrieval-oriented orientation. Capture the
-orientation summary in `.planning/PROJECT.md` and initialize the same SB-owned
+orientation summary in `.planning/PROJECT.md` (same ordering rule) and initialize the same SB-owned
 planning artifacts as option A. Then continue.
 
 If C: continue without project initialization.
@@ -782,7 +787,7 @@ If the runtime already implies a mode or the user chooses `auto` / confirmed `by
 
 If already set to `auto` or `bypassPermissions` → skip silently.
 
-> **Note on Autonomous mode:** If the user selects Autonomous, SB uses the `sb:execute` autonomous path for execution steps instead of checkpointed execution. This preference is stored in §10e of `silver-bullet.md`.
+> **Note on Autonomous mode:** If the user selects Autonomous, SB uses the `sb:execute` autonomous path for execution steps instead of checkpointed execution. This preference is stored in §9e of `silver-bullet.md`.
 
 ### 2.9 Project management system
 
@@ -814,7 +819,7 @@ This value is written during Phase 3.4 (Write `.silver-bullet.json`). Skills tha
 - `local` → add to `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md`
 - `custom` → invoke configured adapter command with JSON payload (stdin); no shell string interpolation of finding content
 
-Store the chosen values as `issue_tracker_value` and `issue_tracker_adapter_value` for use in Phase 3.4. Default: `"github"` when the remote is GitHub, otherwise `"local"` if detection fails or the user skips the prompt. Legacy local-tracker values in existing configs are normalized to `"local"` by `scripts/sb-migrate-config.sh` and filing skills.
+Store the chosen values as `issue_tracker_value` and `issue_tracker_adapter_value` for use in Phase 3.4. Default: `"github"` when the remote is GitHub, otherwise `"local"` if detection fails or the user skips the prompt. Legacy local-tracker values in existing configs are normalized to `"local"` by `bash "${PLUGIN_ROOT}/scripts/sb-migrate-config.sh"` and filing skills.
 
 ---
 
@@ -856,7 +861,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
 
 - **3.1c Conflict resolution** (only when an existing project instruction file is present — no silent override guarantee):
 
-  **3.1c-1 Build the section inventory.** Use the active runtime file-reading mechanism to load `${PLUGIN_ROOT}/scripts/lib/install-<runtime>/templates/project instruction file.base` (host-neutral project instruction template). Parse both the existing project instruction file and the template into named sections. A "section" is any `##` or `###` heading and its content. Also treat the preamble (text before the first heading) as a section named "Preamble". For each section, check whether the template contains a corresponding section with the same heading.
+  **3.1c-1 Build the section inventory.** Use the active runtime file-reading mechanism to load `${PLUGIN_ROOT}/scripts/lib/install-claude/templates/CLAUDE.md.base` (host-neutral project instruction template). Parse both the existing project instruction file and the template into named sections. A "section" is any `##` or `###` heading and its content. Also treat the preamble (text before the first heading) as a section named "Preamble". For each section, check whether the template contains a corresponding section with the same heading.
 
   **3.1c-2 Categorize each section:**
   - **SB-owned** (same heading exists in both existing and template): potential conflict — needs user decision. If the content is identical, preserve as-is (no prompt needed).
@@ -887,44 +892,41 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
   **3.1c-6 Ensure the reference line** `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**` is present at the top of the final project instruction file. If absent, prepend it. Do not duplicate it if already present.
 
   **Non-destructive guarantee**: Steps 3.1c-3 through 3.1c-5 together ensure that no project instruction file section is silently removed or overwritten without explicit user confirmation. User-owned sections (step 3.1c-2) are always preserved without prompting.
-- **3.2 Create dirs**: `mkdir -p docs/specs docs/workflows .silver-bullet/orchestrator-workers host rules directory (install guide)`.
+- **3.2 Create dirs**: `mkdir -p docs/specs docs/workflows .silver-bullet/orchestrator-workers`.
 - **3.2.1 Orchestrator surface (parent mode)**: when `orchestrator_mode` is `parent` (default), install mechanical orchestrator artifacts idempotently:
-  1. Copy `${PLUGIN_ROOT}/templates/orchestrator-workers/` → `.silver-bullet/orchestrator-workers/` (skip existing files).
+  1. Copy `${PLUGIN_ROOT}/templates/orchestrator-workers/` → `.silver-bullet/orchestrator-workers/` (skip existing files; reference copy only, workers load the plugin copy and a modified project copy is ignored with a drift warning).
   2. Copy `${PLUGIN_ROOT}/scripts/workflows.sh` → `scripts/workflows.sh` (`chmod +x`) when absent.
-  3. **When orchestrator parent applies:** copy `scripts/lib/install-<runtime>/templates/task host-rules/silver-orchestrator.mdc` → `host rules path (see install guide) silver-orchestrator.mdc`.
   See `references/scaffold-steps.md` §3.2.1–3.2.2 for full commands.
 - **3.2.2 Interface design state (UI/frontend projects)**: when the detected
   stack or workflow indicates a UI surface (React/Vue/Angular/Svelte/Flutter,
   `silver-ui` workflow, or similar), stamp durable interface state:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || \
-  bash scripts/stamp-interface-state.sh "$PWD" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || true
 ```
 
 This creates `.planning/interface/STATE.md` from
-`templates/interface/STATE.md.base` when absent. `sb:ui-contract` maintains
+`${PLUGIN_ROOT}/templates/interface/STATE.md.base` when absent. `sb:ui-contract` maintains
 it thereafter.
 - **3.2.5 CI setup**: if no `.github/workflows/*.yml`, generate `ci.yml` from `references/ci-templates.md` based on the detected stack; for unknown stacks, prompt and store `verify_commands` in `.silver-bullet.json`.
 - **3.3 Write the project instruction file** only when 3.1b found an existing project instruction file that needed reconciliation; otherwise skip this step entirely. Preserve the existing project instruction filename when writing it back out.
-- **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value, set **`"sb_initiated": true`** (authoritative marker that SB may enforce hooks in this workspace). For `recommended_tools.graphify`, `agentmemory`, `rtk`, `context_mode`, and `leanctx`, always write `enabled_by_user` from the user's Phase 1.1a–§1.1f choices — default **`null` (pending)** on fresh init until the user explicitly chooses; never pre-opt-in or pre-opt-out from org defaults. Include suspension fields from Phase 1.1 install outcomes when applicable.
+- **3.4 Write `.silver-bullet.json`** from `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value, set **`"sb_initiated": true`** (authoritative marker that SB may enforce hooks in this workspace). For `recommended_tools.graphify`, `agentmemory`, `rtk`, `context_mode`, and `leanctx`, always write `enabled_by_user` from the user's Phase 1.1a–§1.1f choices — default **`null` (pending)** on fresh init until the user explicitly chooses; never pre-opt-in or pre-opt-out from org defaults. Include suspension fields from Phase 1.1 install outcomes when applicable.
 - **3.5 Copy workflow files** (`full-dev-cycle.md`, `devops-cycle.md`) into `docs/workflows/`; back up any existing file to `.backup` first.
 - **3.5.5 Docs bootstrap/reconciliation**: invoke `sb:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel. This replaces direct doc migration and direct placeholder creation in `sb:init`. `sb:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `sb:ensure-docs` bootstrap run.
 - **3.7 Stage and commit**: `git add silver-bullet.md .silver-bullet.json docs/` plus any existing project instruction file that was actually updated, then a `feat: initialize Silver Bullet enforcement` commit (co-authored by the host-appropriate co-author line). On pre-commit-hook failure: read, fix, re-stage, new commit (never `--amend`).
-- **3.7.5 Remove duplicate SB hook copies from the host settings file**: resolve the install path from `installed_plugins.json` only (there is no `current/` fallback; with no registry entry, skip this step silently), then run the host-appropriate merge script from `${PLUGIN_ROOT}/skills/silver-init/scripts/` (see `docs/RUNTIME-COMPATIBILITY.md`). Pass `"$INSTALL_PATH"`. On a registered plugin the host delivers `hooks/hooks.json` itself, so the script only removes Silver Bullet's own copies from settings and adds nothing. Idempotent. On nonzero exit, warn but do not stop init.
+- **3.7.5 Remove duplicate SB hook copies from the host settings file**: resolve the install path from `installed_plugins.json` only (there is no `current/` fallback; with no registry entry, skip this step silently), then run the host-appropriate merge script from `${PLUGIN_ROOT}/agents/claude/sb:init/scripts/` (see `docs/RUNTIME-COMPATIBILITY.md`). Pass `"$INSTALL_PATH"`. On a registered plugin the host delivers `hooks/hooks.json` itself, so the script only removes Silver Bullet's own copies from settings and adds nothing. Idempotent. On nonzero exit, warn but do not stop init.
 - **3.8 Optional plugin activation**: do not activate lifecycle-overlap plugins for core SB workflows. If the user explicitly requests an optional enrichment plugin later, route through that plugin's own install/activation flow at that time.
 - **3.9 Done**: run capability probe and surface enforcement tier honestly:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
-  bash scripts/sb-diagnostics.sh 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
 ```
 
 Read `sb_enforcement_tier` / capability tier from diagnostics output. Completion message MUST reflect tier:
 
 - **Tier 2 (hook-enforced):** “Silver Bullet initialized with hook enforcement active (tier 2). Start any task and the active workflow will be enforced automatically.”
-- **Tier 1 (state-tracked):** “Silver Bullet initialized (tier 1 — state tracked only). Hooks may not fire on this host; run `bash scripts/sb-diagnostics.sh` and install host hooks per `docs/RUNTIME-COMPATIBILITY.md` before claiming SB gated delivery.”
+- **Tier 1 (state-tracked):** “Silver Bullet initialized (tier 1 — state tracked only). Hooks may not fire on this host; run `bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh"` and install host hooks per `docs/RUNTIME-COMPATIBILITY.md` before claiming SB gated delivery.”
 - **Tier 0 (guidance-only):** “Silver Bullet initialized (tier 0 — guidance only). Mechanical enforcement is INACTIVE until host hooks are installed. Do not claim SB enforced this work until tier ≥ 2.”
 
 Never use “fully enforced” unless tier ≥ 2 is confirmed.
@@ -939,5 +941,4 @@ Never use “fully enforced” unless tier ≥ 2 is confirmed.
 
 ### Scripts
 
-- **`scripts/lib/install-<runtime>/merge-hooks.py`** — Host global settings hook merge for Phase 3.7.5
-- **`scripts/lib/install-<runtime>/merge-hooks.py`** — task host host hooks manifest merge for Phase 3.7.5
+- **`scripts/lib/install-claude/merge-hooks.py`** — host settings hook cleanup for Phase 3.7.5 (Claude Code; Codex needs none)

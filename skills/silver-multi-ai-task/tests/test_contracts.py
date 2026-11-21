@@ -15,6 +15,16 @@ REGISTRY = SKILL_ROOT / "reference" / "model-family-registry-v1.json"
 sys.path.insert(0, str(SCRIPTS))
 
 
+def cursor_env(**extra: str) -> dict[str, str]:
+    """Process environment for the supported (Cursor) host: ambient Claude or Codex markers win over SB_HOST."""
+    import os
+
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("CLAUDE", "CODEX", "CURSOR", "SB_HOST", "SB_AGENT_CODEX"))}
+    env["SB_HOST"] = "cursor"
+    env.update(extra)
+    return env
+
+
 class MultiAiContractTests(unittest.TestCase):
     def test_registry_has_eleven_slot_mappings(self) -> None:
         data = json.loads(REGISTRY.read_text(encoding="utf-8"))
@@ -22,7 +32,7 @@ class MultiAiContractTests(unittest.TestCase):
         lite = data["ocg_lite_pool"]
         self.assertEqual(len(cursor), 6)
         self.assertGreaterEqual(len(lite), 1)
-        env = {**dict(__import__("os").environ), "SB_HOST": "cursor"}
+        env = cursor_env()
         dry = subprocess.run(
             [
                 sys.executable,
@@ -53,6 +63,19 @@ class MultiAiContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             resolve_pool(PoolSelection(ocg_pool="none", cursor_pool="none"))
 
+    def test_dry_run_fails_on_an_unsupported_host_like_a_live_run(self) -> None:
+        """R10-05: a dry run is a plan for a run, so it reports the unsupported host the way a live run does."""
+        results = {}
+        for label, extra in (("dry", ["--dry-run"]), ("live", [])):
+            proc = subprocess.run(
+                [sys.executable, str(SCRIPTS / "multi_ai_cli.py"), "--output-root", "/tmp/sb-multi-ai-unsupported", *extra],
+                capture_output=True, text=True, check=False, env=cursor_env(CLAUDECODE="1"),
+            )
+            results[label] = (proc.returncode, json.loads(proc.stdout))
+        self.assertEqual(results["dry"], results["live"])
+        self.assertEqual(results["dry"][0], 2)
+        self.assertEqual(results["dry"][1]["error_code"], "SB_MULTI_AI_UNSUPPORTED_HOST")
+
     def test_skill_md_cli_block_runs_as_documented(self) -> None:
         """R11-15: the documented command must work exactly as written (with placeholders filled)."""
         import os
@@ -66,12 +89,13 @@ class MultiAiContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             command = block.replace("\\\n", " ").replace("<run-id>", "probe").replace("<task brief>", "probe task")
             argv = shlex.split(command)
-            self.assertEqual(argv[:2], ["python3", "skills/silver-multi-ai-task/scripts/multi_ai_cli.py"])
+            # The documented command reaches the script through the plugin root, never the project cwd (R10-02).
+            self.assertEqual(argv[:2], ["python3", "${PLUGIN_ROOT}/skills/silver-multi-ai-task/scripts/multi_ai_cli.py"])
             repo = SKILL_ROOT.parents[1]
             proc = subprocess.run(
-                [sys.executable, str(repo / argv[1]), *argv[2:]],
+                [sys.executable, argv[1].replace("${PLUGIN_ROOT}", str(repo)), *argv[2:]],
                 capture_output=True, text=True, check=False, cwd=tmp,
-                env={**os.environ, "SB_HOST": "cursor"},
+                env=cursor_env(),
             )
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertTrue(json.loads(proc.stdout)["ok"])
