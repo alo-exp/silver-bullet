@@ -88,10 +88,9 @@
    "hooks/record-token-compression-usage.sh",
    "hooks/rtk-gate.sh",
    "hooks/stack-compression-coordinator.sh",
-   "hooks/stack-compression-lifecycle.sh",
    "hooks/token-compression-tools-gate.sh"
   ],
-  "baseline": "hooks/record-agentmemory-usage.sh (bash): statements 70/88, functions 0/0\nhooks/record-graphify-query.sh (bash): statements 56/71, functions 0/0\nhooks/record-leanctx-usage.sh (bash): statements 68/85, functions 0/0\nhooks/record-recommended-mcp.sh (bash): statements 56/72, functions 0/0\nhooks/record-requested-skill.sh (bash): statements 89/116, functions 3/3\nhooks/record-site-session.sh (bash): statements 46/81, functions 0/0\nhooks/record-site-visual-evidence.sh (bash): statements 40/66, functions 0/0\nhooks/record-skill.sh (bash): statements 215/293, functions 3/6\nhooks/record-token-compression-usage.sh (bash): statements 50/61, functions 0/0\nhooks/rtk-gate.sh (bash): statements 92/126, functions 1/1\nhooks/stack-compression-coordinator.sh (bash): statements 109/165, functions 1/1\nhooks/stack-compression-lifecycle.sh (bash): statements 0/40, functions 0/0\nhooks/token-compression-tools-gate.sh (bash): statements 76/112, functions 0/1"
+  "baseline": "hooks/record-agentmemory-usage.sh (bash): statements 70/88, functions 0/0\nhooks/record-graphify-query.sh (bash): statements 56/71, functions 0/0\nhooks/record-leanctx-usage.sh (bash): statements 68/85, functions 0/0\nhooks/record-recommended-mcp.sh (bash): statements 56/72, functions 0/0\nhooks/record-requested-skill.sh (bash): statements 89/116, functions 3/3\nhooks/record-site-session.sh (bash): statements 46/81, functions 0/0\nhooks/record-site-visual-evidence.sh (bash): statements 40/66, functions 0/0\nhooks/record-skill.sh (bash): statements 215/293, functions 3/6\nhooks/record-token-compression-usage.sh (bash): statements 50/61, functions 0/0\nhooks/rtk-gate.sh (bash): statements 92/126, functions 1/1\nhooks/stack-compression-coordinator.sh (bash): statements 109/165, functions 1/1\nhooks/token-compression-tools-gate.sh (bash): statements 76/112, functions 0/1"
  },
  {
   "id": "D-gates",
@@ -586,10 +585,9 @@
    "skills/silver-multi-ai-task/scripts/live_dispatch.py",
    "skills/silver-multi-ai-task/scripts/multi_ai_cli.py",
    "skills/silver-multi-ai-task/scripts/multi_ai_core.py",
-   "skills/silver-multi-ai-task/scripts/ocg_pool_cohort.py",
-   "skills/silver-multi-ai-task/scripts/provision-cursor-agents.sh"
+   "skills/silver-multi-ai-task/scripts/ocg_pool_cohort.py"
   ],
-  "baseline": "skills/silver-init/scripts/merge-hooks.py (python): statements 0/11, branches 0/2\nskills/silver-init/scripts/merge-host-hooks.py (python): statements 0/11, branches 0/2\nskills/silver-multi-ai-task/scripts/capability_spike.py (python): statements 35/35, branches 4/6\nskills/silver-multi-ai-task/scripts/cursor_host_adapter.py (python): statements 60/80, branches 6/14\nskills/silver-multi-ai-task/scripts/json_hash.py (python): statements 12/13, branches 0/0\nskills/silver-multi-ai-task/scripts/live_dispatch.py (python): statements 125/435, branches 22/140\nskills/silver-multi-ai-task/scripts/multi_ai_cli.py (python): statements 34/48, branches 4/12\nskills/silver-multi-ai-task/scripts/multi_ai_core.py (python): statements 144/181, branches 38/64\nskills/silver-multi-ai-task/scripts/ocg_pool_cohort.py (python): statements 0/79, branches 0/12\nskills/silver-multi-ai-task/scripts/provision-cursor-agents.sh (bash): statements 0/62, functions 0/2"
+  "baseline": "skills/silver-init/scripts/merge-hooks.py (python): statements 0/11, branches 0/2\nskills/silver-init/scripts/merge-host-hooks.py (python): statements 0/11, branches 0/2\nskills/silver-multi-ai-task/scripts/capability_spike.py (python): statements 35/35, branches 4/6\nskills/silver-multi-ai-task/scripts/cursor_host_adapter.py (python): statements 60/80, branches 6/14\nskills/silver-multi-ai-task/scripts/json_hash.py (python): statements 12/13, branches 0/0\nskills/silver-multi-ai-task/scripts/live_dispatch.py (python): statements 125/435, branches 22/140\nskills/silver-multi-ai-task/scripts/multi_ai_cli.py (python): statements 34/48, branches 4/12\nskills/silver-multi-ai-task/scripts/multi_ai_core.py (python): statements 144/181, branches 38/64\nskills/silver-multi-ai-task/scripts/ocg_pool_cohort.py (python): statements 0/79, branches 0/12"
  },
  {
   "id": "P-site-js",
