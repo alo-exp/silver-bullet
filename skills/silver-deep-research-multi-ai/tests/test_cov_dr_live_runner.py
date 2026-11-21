@@ -192,7 +192,7 @@ class RunDrLiveTests(unittest.TestCase):
         with mock.patch.object(drl, "dispatch_phase_parallel", dispatch), \
                 mock.patch.object(drl, "materialize_solution_artifacts", mat), \
                 mock.patch.object(drl, "synthesize_landscape", syn), \
-                mock.patch.object(drl, "detect_host", return_value="cursor"):
+                mock.patch.object(drl, "detect_host", return_value="claude-code"):
             result = drl.run_dr_live(query="the query", output_root=root, selection=sel, **kw)
         return result, mat, syn
 
@@ -224,7 +224,7 @@ class RunDrLiveTests(unittest.TestCase):
             self.assertEqual(result["envelopes_count"], 4)
             self.assertEqual(result["materialize"], {"materialized": True})
             self.assertEqual(result["landscape_synthesis"], {"synthesized": True})
-            self.assertEqual(result["host"], "cursor")
+            self.assertEqual(result["host"], "claude-code")
             mat.assert_called_once()
             self.assertEqual(len(mat.call_args.kwargs["envelopes"]), 4)
             syn.assert_called_once_with(root, force=True)
