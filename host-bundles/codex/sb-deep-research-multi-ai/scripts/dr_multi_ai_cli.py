@@ -216,6 +216,14 @@ def _output_root_not_allowed(output_root: Path) -> int | None:
     return 2
 
 
+def _resolved_output_root(raw: str | Path) -> Path:
+    """The output root as one physical path (`~` expanded): checked and written as the same value."""
+    _bootstrap()
+    from multi_ai_core import resolve_output_root  # noqa: E402
+
+    return resolve_output_root(raw)
+
+
 def _package_solution_outputs(args: argparse.Namespace) -> int:
     if not needs_solution_packaging(args.research_type):
         print(json.dumps({"ok": False, "error_code": "SOLUTION_PACKAGING_TYPE_MISMATCH", "message": "--package-only requires solution-landscape or solution-compare"}, indent=2))
@@ -224,7 +232,8 @@ def _package_solution_outputs(args: argparse.Namespace) -> int:
         print(json.dumps({"ok": False, "error_code": "OUTPUT_ROOT_REQUIRED", "message": "--package-only requires --output-root"}, indent=2))
         return 2
 
-    refused = _output_root_not_allowed(Path(args.output_root))
+    package_root = _resolved_output_root(args.output_root)
+    refused = _output_root_not_allowed(package_root)
     if refused is not None:
         return refused
 
@@ -232,7 +241,7 @@ def _package_solution_outputs(args: argparse.Namespace) -> int:
         _bootstrap()
         from package_solution_outputs import package_solution_outputs  # noqa: E402
 
-        result = package_solution_outputs(Path(args.output_root), skip_compare=args.skip_compare, skip_xlsx=args.skip_xlsx, skip_spa=args.skip_spa)
+        result = package_solution_outputs(package_root, skip_compare=args.skip_compare, skip_xlsx=args.skip_xlsx, skip_spa=args.skip_spa)
     except Exception as exc:  # noqa: BLE001
         print(json.dumps({"ok": False, "error_code": "SOLUTION_PACKAGING_FAILED", "message": str(exc)}, indent=2))
         return 1
@@ -278,9 +287,10 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if args.output_root or not args.dry_run:
-        output_root = Path(args.output_root) if args.output_root else default_output_root(args.query)
-        # --force on a path it cannot move aside reports that itself (FORCE_REFUSED) below.
-        force_will_refuse = args.force and output_root.exists() and force_refusal(output_root)
+        output_root = _resolved_output_root(args.output_root if args.output_root else default_output_root(args.query))
+        # --force on a path it cannot move aside reports that itself (FORCE_REFUSED) in a live run; a
+        # dry run has no such step, so it always reports an output root that is not allowed.
+        force_will_refuse = args.force and not args.dry_run and output_root.exists() and force_refusal(output_root)
         refused = None if force_will_refuse else _output_root_not_allowed(output_root)
         if refused is not None:
             return refused
@@ -308,7 +318,6 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(report, indent=2))
         return 0 if report.get("ok") else 1
 
-    output_root = Path(args.output_root) if args.output_root else default_output_root(args.query)
     moved_aside: Path | None = None
     if output_root.exists() and (args.force or _is_previous_run(output_root)):
         refusal = force_refusal(output_root) if args.force else (

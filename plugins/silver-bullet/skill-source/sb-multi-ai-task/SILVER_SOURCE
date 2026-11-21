@@ -30,10 +30,10 @@ workflows compose this skill; it does **not** own DR phase state or consolidatio
 The host is the coding agent session that runs this CLI. It is detected from the process: Claude Code
 sets `CLAUDECODE`; Codex sets one of `CODEX_SANDBOX`, `CODEX_CI`, `CODEX_THREAD_ID`,
 `CODEX_INTERNAL_ORIGINATOR_OVERRIDE`. `SB_HOST` (`claude`, `codex`) can name the host when the markers are
-missing (a plain terminal), but it can only make the gate stricter: `SB_HOST=cursor` or any other name
-always fails closed, and a real Claude or Codex marker beats a different supported name. `CURSOR_*`
-variables only count when no Claude or Codex marker is present (a Cursor terminal passes them on to the
-agents started inside it). Unset a stale `SB_HOST` if the gate names a host you are not on.
+missing (a plain terminal). Any other name (`SB_HOST=cursor`, a typo) always fails closed, whatever else is
+set. A real Claude or Codex marker beats a different supported name. `SB_HOST=claude|codex` is your own
+statement and also outranks `CURSOR_*` variables, which are weak markers (a Cursor terminal passes them on
+to the agents started inside it); `CURSOR_*` alone is refused. Unset a stale `SB_HOST` if the gate names a host you are not on.
 
 A run on an unsupported host fails **before** preferences, caches, provisioning, writes or dispatch. A
 dry run is a plan for a run, so it fails the same way (exit 2, nothing written).
@@ -64,6 +64,11 @@ the backends the user chose. It installs, wires and enables nothing (`consent.js
   (`Agent` on Claude Code, `spawn_agent` on Codex) with the `MULTI-AI-TASK` worker template; the worker
   runs the CLI. The Claude and Codex workers this skill starts carry `SB_ORCHESTRATOR_WORKER=1` (and
   `SB_ORCHESTRATOR_PARENT=0`), so a nested session is never mistaken for a parent.
+- **Planning floor.** `dev-cycle-check` does not treat exactly `python3 <plugin>/skills/silver-multi-ai-task/scripts/multi_ai_cli.py ...`
+  (or the deep-research `dr_multi_ai_cli.py`) as an opaque writer, so the run works in a fresh session before the planning
+  skills are recorded, and at any flow step. Nothing else gets this: `python3 -c`, a copy or symlink of the script, a
+  `PATH=`/`env` prefix, a chain, a pipe or a redirect are judged as before, and an output root under source is still
+  held by the floor.
 - **Output root.** The hooks cannot see what a Python CLI writes, so the CLI keeps their boundaries
   itself. Use a project directory such as `.planning/multi-ai/<run-id>/` or `research/<run>/`. The CLI
   refuses (`OUTPUT_ROOT_NOT_ALLOWED`, exit 2, before any worker starts, in a dry run too) an output root

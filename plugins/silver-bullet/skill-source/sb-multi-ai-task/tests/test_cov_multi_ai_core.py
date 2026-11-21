@@ -95,6 +95,11 @@ class HostDetectionTests(HermeticCase):
         # Claude Code or Codex started from a Cursor terminal inherits CURSOR_* markers: it is still that host.
         self.assertEqual(self.host(CLAUDECODE="1", CURSOR_TRACE_ID="t"), "claude-code")
         self.assertEqual(self.host(CODEX_CI="1", CURSOR_AGENT="1"), "codex")
+        # Order pinned: an explicit supported SB_HOST outranks the weak CURSOR_* markers (a user's own statement),
+        # while the same markers alone are refused.
+        self.assertEqual(self.host(SB_HOST="claude", CURSOR_AGENT="1"), "claude-code")
+        self.assertEqual(self.host(SB_HOST="codex", CURSOR_TRACE_ID="t"), "codex")
+        self.assertEqual(self.host(CURSOR_AGENT="1"), "cursor")
 
     def test_explicit_unsupported_override_always_fails_closed(self) -> None:
         # An override can only make the gate stricter, never hide an unsupported or unknown host.
@@ -171,9 +176,9 @@ class OutputRootPolicyTests(HermeticCase):
         self.assertIsNotNone(self.refusal(self.tmp / "state" / "deep", SB_RUNTIME_STATE_DIR=str(self.tmp / "state")))
         self.assertIsNotNone(self.refusal(self.tmp / "cache", SB_RUNTIME_PLUGIN_CACHE_ROOT=str(self.tmp / "cache")))
         self.assertIsNotNone(self.refusal(self.tmp / "ch" / "plugins" / "z", CODEX_HOME=str(self.tmp / "ch")))
-        # Siblings and prefixes of a protected root are not inside it.
-        self.assertIsNone(self.refusal(self.home / ".claude" / ".silver-bullet-notes"))
-        self.assertIsNone(self.refusal(self.home / ".claude" / "projects"))
+        # Outside the home directory a sibling or prefix of a protected root is not inside it.
+        self.assertIsNone(self.refusal(self.tmp / "state-notes", SB_RUNTIME_STATE_DIR=str(self.tmp / "state")))
+        self.assertIsNone(self.refusal(self.tmp / "ch2" / "plugins", CODEX_HOME=str(self.tmp / "ch")))
 
     def test_symlink_into_a_protected_root_is_refused(self) -> None:
         target = self.home / ".claude" / ".silver-bullet"
@@ -186,6 +191,28 @@ class OutputRootPolicyTests(HermeticCase):
         self.assertIn(".git", self.refusal(self.tmp / "repo" / ".git" / "hooks"))
         self.assertIsNone(self.refusal(self.tmp / "repo" / ".github" / "multi-ai"))
         self.assertIsNone(self.refusal(self.tmp / "repo" / "x.git" / "run"))
+
+    def test_runtime_homes_and_hidden_home_directories_are_refused(self) -> None:
+        for sub in (".claude", ".claude/projects", ".codex", ".ssh", ".ssh/keys", ".aws", ".gnupg", ".config/x", ".planning"):
+            self.assertIsNotNone(self.refusal(self.home / sub), sub)
+        self.assertIsNotNone(self.refusal(self.tmp / "ch", CODEX_HOME=str(self.tmp / "ch")))
+        self.assertIsNone(self.refusal(self.home / "work" / ".hidden-below" / "run"))
+        self.assertIsNone(self.refusal(self.home / "projects" / "run"))
+
+    def test_protected_places_are_compared_case_insensitively(self) -> None:
+        for sub in (".CLAUDE/.Silver-Bullet/run", ".Claude/Plugins/cache/x", ".SSH", "../" + self.home.name.upper() + "/.Codex"):
+            self.assertIsNotNone(self.refusal(self.home / sub), sub)
+        self.assertIn(".git", self.refusal(self.tmp / "r" / ".GIT" / "hooks"))
+
+    def test_the_output_root_is_resolved_once_for_check_and_writes(self) -> None:
+        resolved = core.resolve_output_root("~/some/run")
+        self.assertEqual(resolved, Path(os.path.realpath(self.home / "some" / "run")))
+        self.assertEqual(core.resolve_output_root("rel/x"), Path(os.path.realpath(Path.cwd() / "rel" / "x")))
+        link = self.tmp / "lnk"
+        link.symlink_to(self.home / ".claude" / ".silver-bullet", target_is_directory=True)
+        self.assertEqual(core.resolve_output_root(str(link / ".." / "x")), Path(os.path.realpath(link / ".." / "x")))
+        # A literal "~" that the shell did not expand never becomes a directory named "~" in the cwd.
+        self.assertNotIn("~", core.resolve_output_root("~/elsewhere").parts)
 
     def test_filesystem_root_and_home_are_refused(self) -> None:
         self.assertIsNotNone(self.refusal("/"))

@@ -1096,6 +1096,38 @@ class DrMultiAiCliTests(unittest.TestCase):
             rc, _, _ = _run(dr_multi_ai_cli.main, ["q", "--dry-run"])
             self.assertEqual(rc, 0)
 
+    def test_force_dry_run_on_a_protected_existing_root_is_refused_too(self) -> None:
+        with tempfile.TemporaryDirectory() as home, mock.patch.dict(os.environ, {"HOME": home, "SB_HOST": "claude"}):
+            protected = Path(home) / ".claude" / ".silver-bullet"
+            protected.mkdir(parents=True)
+            rc, stdout, _ = _run(dr_multi_ai_cli.main, ["q", "--dry-run", "--force", "--output-root", str(protected)])
+        self.assertEqual((rc, json.loads(stdout)["error_code"]), (2, "OUTPUT_ROOT_NOT_ALLOWED"))
+
+    def test_a_tilde_root_is_resolved_once_for_the_check_and_the_run(self) -> None:
+        seen = {}
+
+        def fake_run(**kw):
+            seen["root"] = kw["output_root"]
+            return {"ok": True}
+
+        runner = types.ModuleType("dr_live_runner")
+        runner.run_dr_live = fake_run
+        import multi_ai_core
+
+        with tempfile.TemporaryDirectory() as home, tempfile.TemporaryDirectory() as cwd, \
+                mock.patch.dict(os.environ, {"HOME": home, "SB_HOST": "claude"}), \
+                mock.patch.dict(sys.modules, {"dr_live_runner": runner}):
+            old = os.getcwd()
+            os.chdir(cwd)
+            try:
+                rc, _, _ = _run(dr_multi_ai_cli.main, ["q", "--output-root=~/elsewhere/run"])
+            finally:
+                os.chdir(old)
+            self.assertEqual(rc, 0)
+            self.assertEqual(seen["root"], multi_ai_core.resolve_output_root("~/elsewhere/run"))
+            self.assertEqual(seen["root"], Path(os.path.realpath(Path(home) / "elsewhere" / "run")))
+            self.assertEqual(os.listdir(cwd), [])
+
     def test_dry_run_on_an_unsupported_host_fails_like_a_live_run(self) -> None:
         for env in ({"SB_HOST": "cursor"}, {"CURSOR_AGENT": "1"}, {}):
             for argv in (["q", "--dry-run"], ["q"]):

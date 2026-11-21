@@ -180,6 +180,13 @@ main() {
     skill_adapter="${SB_SA_SKILL_ADAPTER:-false}"
     shell_command="${SB_TI_COMMAND:-}"
     invoked_script="${SB_SA_INVOKED_SCRIPT:-}"
+    # The plugin's own multi-AI CLIs: their script is neither an opaque writer nor a shell script to
+    # analyse, but the other path words of the command (an output root under source) are still judged.
+    # Nothing else is exempt.
+    if [[ "$parse_failed_shell" != true ]] && sb_pf_multi_ai_cli_exempt; then
+      opaque_records="$(printf '%s\n' "$opaque_records" | grep -vxF "opaque"$'\t'"$SB_PF_EXEMPT_SCRIPT" || true)"
+      invoked_script=""
+    fi
     # The body of a script the command runs is analysed too: its writes are this command's writes.
     if [[ -n "$invoked_script" && -f "$invoked_script" ]]; then
       script_body="$(cat "$invoked_script" 2>/dev/null)"
