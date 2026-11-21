@@ -65,8 +65,24 @@ Writes are atomic (temp file in the same directory, then rename), keep the file'
 previous version up to `consent.json.bak`, change nothing when the decision is already
 recorded, and refuse to write through a symlink (the `.bak` backup is written as a fresh file,
 so a symlink planted there is replaced, never followed). Concurrent writers are serialized with a
-lock directory (`.consent.lock`, taken over when its owner process is gone), so parallel grants
-and revokes do not lose one another's update.
+lock directory (`.consent.lock`), so parallel grants, declines and revokes do not lose one
+another's update; the store is re-read inside the lock.
+
+The lock is taken by creating the directory and then being the only claim in it: each writer
+puts a file `claim.<pid>.<nonce>` into the directory and proceeds only when that is the sole
+entry. A waiter reclaims only what is provably abandoned, and only by removing a claim file
+by its unique name (never the directory recursively): a claim whose process is gone, a claim
+older than ten minutes (a reused pid), a claim without a pid, or an empty directory, each older
+than a minute for the last two. So a waiter can never remove a lock another writer has just
+taken, and two waiters reclaiming at once cannot both win. A writer whose fresh directory is
+removed under it, or replaced by another writer's, withdraws its claim and retries.
+
+A writer that cannot take the lock within its wait (`SB_CONSENT_LOCK_TRIES` tries 0.1 s apart,
+default 200, integer 1 to 1000, anything else means the default) records nothing, prints
+`another sb-consent is writing ...` and exits with status 2 (`sb_consent_set` returns 2). It
+never reports success without recording, and a revoke gets exactly the same guarantee as a
+grant: a revoke that exits 0 has been recorded. Callers must check the status. If no
+`sb-consent` is running and the message persists, remove `.consent.lock`.
 
 ## What consent does and does not defend against
 

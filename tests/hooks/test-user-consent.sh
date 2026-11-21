@@ -239,7 +239,7 @@ echo "=== concurrent writers do not lose updates (lock) ==="
 reset_store
 pids=()
 for t in graphify agentmemory alumnium rtk context_mode leanctx search_cli; do
-  SB_CONSENT_LOCK_TRIES=1000 bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
+  bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
   pids+=("$!")
 done
 for pid in "${pids[@]}"; do wait "$pid" || true; done
@@ -251,11 +251,105 @@ for t in graphify agentmemory alumnium rtk; do
   bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1
 done
 for t in graphify agentmemory alumnium rtk; do
-  SB_CONSENT_LOCK_TRIES=1000 bash "$CLI" revoke "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
+  bash "$CLI" revoke "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
   pids+=("$!")
 done
 for pid in "${pids[@]}"; do wait "$pid" || true; done
 assert_eq "all four parallel revokes are recorded" "0" "$(jq '[.machine // {} | .[] | .enforce // empty] | length' "$STORE")"
+
+echo "=== lock: mutual exclusion and no lost update under stale-lock contention (stress) ==="
+# Probes: mktemp is the first command inside the critical section and mv the last, so a stub on
+# each brackets it. A second writer entering while the sentinel directory exists is a violation
+# of mutual exclusion, whatever the lock does internally. The pause widens the window.
+PROBE="$TL_TMP/probe"; mkdir -p "$PROBE"; export PROBE
+tl_stub mktemp 'real="$(command -v -p mktemp)"; mkdir "$PROBE/in" 2>/dev/null || echo v >>"$PROBE/violations"; sleep 0.02; exec "$real" "$@"'
+tl_stub mv 'real="$(command -v -p mv)"; "$real" "$@"; rc=$?; rmdir "$PROBE/in" 2>/dev/null; exit $rc'
+hash -r
+stress_round() { # KIND: grant seven tools in parallel (default wait budget), return how many were recorded
+  local kind="$1" t pids=() lock
+  reset_store; rm -rf "$PROBE/in" "$PROBE/violations" "$PROBE/failed"
+  lock="$(dirname "$STORE")/.consent.lock"
+  mkdir -p "$lock"
+  case "$kind" in
+    stale) printf '999999' >"$lock/pid" ;;
+    ownerless) touch -d '10 minutes ago' "$lock" 2>/dev/null || touch -t 200001010000 "$lock" ;;
+  esac
+  for t in graphify agentmemory alumnium rtk context_mode leanctx search_cli; do
+    bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
+    pids+=("$!")
+  done
+  for pid in "${pids[@]}"; do wait "$pid" || echo f >>"$PROBE/failed"; done
+  jq '[.machine[] | select(.enforce.decision == "granted")] | length' "$STORE"
+}
+lost=0; viol=0; failed=0; ROUNDS="${SB_CONSENT_STRESS_ROUNDS:-30}"
+for ((round = 1; round <= ROUNDS; round++)); do
+  kind=stale; ((round % 3 == 0)) && kind=ownerless
+  n="$(stress_round "$kind")" || n=0
+  [[ "$n" == 7 ]] || { lost=$((lost + 1)); echo "  round $round ($kind): recorded $n of 7"; }
+  [[ ! -e "$PROBE/violations" ]] || { viol=$((viol + 1)); echo "  round $round ($kind): two writers inside the critical section"; }
+  [[ ! -e "$PROBE/failed" ]] || { failed=$((failed + 1)); echo "  round $round ($kind): a writer exited non-zero"; }
+done
+assert_eq "$ROUNDS stress rounds: no grant lost" "0" "$lost"
+assert_eq "$ROUNDS stress rounds: never two writers at once" "0" "$viol"
+assert_eq "$ROUNDS stress rounds: every writer succeeded within the default wait" "0" "$failed"
+# Revokes racing grants behind a stale lock: a revoke must never be lost (a revoked consent that
+# survives is worse than a lost grant), and the grants around it all land.
+revoke_lost=0; revoke_viol=0; revoke_failed=0
+for ((round = 1; round <= 8; round++)); do
+  reset_store; rm -rf "$PROBE/in" "$PROBE/violations" "$PROBE/failed"
+  bash "$CLI" grant rtk --all-projects --capabilities enforce >/dev/null 2>&1
+  bash "$CLI" grant agentmemory --all-projects --capabilities enforce >/dev/null 2>&1
+  mkdir -p "$(dirname "$STORE")/.consent.lock"; printf '999999' >"$(dirname "$STORE")/.consent.lock/pid"
+  pids=()
+  for t in rtk agentmemory; do
+    bash "$CLI" revoke "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
+    pids+=("$!")
+  done
+  for t in graphify alumnium context_mode leanctx search_cli; do
+    bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
+    pids+=("$!")
+  done
+  for pid in "${pids[@]}"; do wait "$pid" || echo f >>"$PROBE/failed"; done
+  state="$(jq -r '[(.machine // {}) | to_entries[] | select(.value.enforce.decision == "granted") | .key] | sort | join(",")' "$STORE")"
+  [[ "$state" == "alumnium,context_mode,graphify,leanctx,search_cli" ]] || { revoke_lost=$((revoke_lost + 1)); echo "  revoke round $round: granted set is '$state'"; }
+  [[ ! -e "$PROBE/violations" ]] || revoke_viol=$((revoke_viol + 1))
+  [[ ! -e "$PROBE/failed" ]] || revoke_failed=$((revoke_failed + 1))
+done
+assert_eq "8 revoke-vs-grant rounds: both revokes and all five grants recorded" "0" "$revoke_lost"
+assert_eq "8 revoke-vs-grant rounds: never two writers at once" "0" "$revoke_viol"
+assert_eq "8 revoke-vs-grant rounds: every writer succeeded" "0" "$revoke_failed"
+rm -f "$TL_BIN/mktemp" "$TL_BIN/mv"; hash -r
+
+echo "=== lock: a stray entry that appears while the lock is held does not fail the write ==="
+reset_store
+LOCK="$(dirname "$STORE")/.consent.lock"
+tl_stub mktemp 'real="$(command -v -p mktemp)"; printf 999999 >"$TL_LOCK/claim.7.7"; exec "$real" "$@"'; hash -r
+export TL_LOCK="$LOCK"
+tl_run bash "$CLI" grant rtk --all-projects --capabilities enforce
+assert_eq "the write succeeds although another claim appeared (release leaves the directory)" "0" "$TL_STATUS"
+assert_eq "and is recorded" "granted" "$(sb_consent_decision rtk enforce)"
+rm -f "$TL_BIN/mktemp"; hash -r
+[[ -d "$LOCK" && -f "$LOCK/claim.7.7" ]] && tl_pass "the leftover claim stays until a later writer reclaims it" || tl_fail "the leftover claim stays until a later writer reclaims it"
+tl_run bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "the next writer reclaims the dead leftover and writes" "0" "$TL_STATUS"
+assert_eq "and is recorded" "granted" "$(sb_consent_decision graphify enforce)"
+[[ ! -d "$LOCK" ]] && tl_pass "and the lock is gone again" || tl_fail "and the lock is gone again"
+
+echo "=== lock: a lock another writer took after the waiter judged the old one stale is left alone ==="
+# The race the stress rounds above hit only rarely: a waiter judges the stale lock abandoned, the
+# stale lock is released and another writer (this shell, alive) takes a fresh one, and only then does
+# the waiter remove what it judged stale. It must not remove the fresh lock. The stub on rm stands in
+# for the scheduler: just before the waiter's removal it swaps the stale lock for the fresh one.
+reset_store
+LOCK="$(dirname "$STORE")/.consent.lock"
+mkdir -p "$LOCK"; printf '999999' >"$LOCK/pid"
+tl_stub rm 'real="$(command -v -p rm)"; for a in "$@"; do case "$a" in */.consent.lock|*/.consent.lock/pid) if [ ! -e "$TL_FLAG" ]; then : >"$TL_FLAG"; "$real" -rf "${a%/pid}"; mkdir "${a%/pid}"; printf "%s" "$TL_LIVE_PID" >"${a%/pid}/claim.9.9"; fi;; esac; done; exec "$real" "$@"'; hash -r
+export TL_FLAG="$TL_TMP/aba" TL_LIVE_PID="$$"; rm -f "$TL_FLAG"
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant rtk --all-projects --capabilities enforce
+assert_eq "the waiter does not enter a lock another writer just took: status 2" "2" "$TL_STATUS"
+assert_eq "and records nothing" "unset" "$(sb_consent_decision rtk enforce)"
+[[ "$(cat "$LOCK/claim.9.9" 2>/dev/null)" == "$$" ]] && tl_pass "and the other writer's lock is intact" || tl_fail "and the other writer's lock is intact"
+rm -f "$TL_BIN/rm"; hash -r; rm -rf "$LOCK"
 
 echo "=== lock: stale owner taken over, live owner waited on ==="
 reset_store
@@ -269,19 +363,32 @@ assert_eq "a live lock owner makes the writer give up with status 2" "2" "$TL_ST
 assert_contains "the message names the lock" "$TL_ERR" ".consent.lock"
 assert_eq "nothing was written while the lock was held" "unset" "$(sb_consent_decision graphify enforce)"
 rm -rf "$LOCK"
-# a lock whose pid file cannot be written is still held and released
-tl_stub mkdir 'real="$(command -v -p mkdir)"; "$real" "$@" || exit $?; for a in "$@"; do case "$a" in *.consent.lock) "$real" "$a/pid";; esac; done'; hash -r
+# the fresh lock directory is removed under its creator (an empty directory looks abandoned to a
+# waiter): the claim cannot land, so the writer retries instead of proceeding unlocked
+tl_stub mkdir 'real="$(command -v -p mkdir)"; "$real" "$@" || exit $?; for a in "$@"; do case "$a" in *.consent.lock) if [ ! -e "$TL_FLAG" ]; then : >"$TL_FLAG"; rmdir "$a"; fi;; esac; done'; hash -r
 reset_store
-sb_consent_set granted rtk enforce machine test >/dev/null && tl_pass "a pid file that cannot be written does not stop the grant" || tl_fail "a pid file that cannot be written does not stop the grant"
-assert_eq "grant recorded without a pid file" "granted" "$(sb_consent_decision rtk enforce)"
+export TL_FLAG="$TL_TMP/once"; rm -f "$TL_FLAG"
+sb_consent_set granted rtk enforce machine test >/dev/null && tl_pass "a lock directory removed under its creator is retaken" || tl_fail "a lock directory removed under its creator is retaken"
+assert_eq "and the grant is recorded" "granted" "$(sb_consent_decision rtk enforce)"
 [[ ! -d "$LOCK" ]] && tl_pass "and the lock is released" || tl_fail "and the lock is released"
+# another writer's claim lands next to ours (the directory was replaced under us): we are not the
+# sole claimant, so we withdraw our claim and write nothing
+tl_stub mkdir 'real="$(command -v -p mkdir)"; "$real" "$@" || exit $?; for a in "$@"; do case "$a" in *.consent.lock) printf "%s" "$TL_LIVE_PID" >"$a/claim.1.1";; esac; done'; hash -r
+reset_store
+export TL_LIVE_PID="$$"
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "a claim that is not alone: the writer gives up with status 2" "2" "$TL_STATUS"
+assert_contains "and says nothing was recorded" "$TL_ERR" "nothing was recorded"
+assert_eq "and writes nothing" "unset" "$(sb_consent_decision graphify enforce)"
+[[ -f "$LOCK/claim.1.1" && "$(find "$LOCK" -type f | wc -l | tr -d ' ')" == 1 ]] && tl_pass "the other claim is untouched and ours is withdrawn" || tl_fail "the other claim is untouched and ours is withdrawn"
+rm -rf "$LOCK"
 rm -f "$TL_BIN/mkdir"; hash -r
 mkdir -p "$LOCK"
 (sleep 0.3; rm -rf "$LOCK") &
 bgpid=$!
 tl_run env SB_CONSENT_LOCK_TRIES=50 bash "$CLI" grant graphify --all-projects --capabilities enforce
 wait "$bgpid" || true
-assert_eq "a writer waits for a lock without a pid file" "0" "$TL_STATUS"
+assert_eq "a writer waits for a lock that has no claim yet" "0" "$TL_STATUS"
 assert_eq "and then records" "granted" "$(sb_consent_decision graphify enforce)"
 reset_store
 printf 'file' >"$HOME/.config-blocker" 2>/dev/null || true
@@ -309,64 +416,63 @@ assert_eq "no key was recorded for the subdirectory" "false" "$(jq --arg k "$SUB
 tl_run bash "$CLI" grant graphify --project "$PROJ" --capabilities enforce
 assert_eq "a directory outside any SB project is recorded as given" "granted" "$(sb_consent_decision graphify enforce "$PROJ")"
 
-echo "=== lock: stale takeover race, ownerless lock, bad tries ==="
-# The wait budget is 100 tries x 0.1 s by default; seven serial writers on a loaded runner can exceed it
-# (a writer then gives up: "another sb-consent is writing"). The race under test is the stale takeover, so
-# give the writers a wait that does not depend on how fast the machine is.
-for round in 1 2 3; do
-  reset_store
-  LOCK="$(dirname "$STORE")/.consent.lock"
-  mkdir -p "$LOCK"; printf '999999' >"$LOCK/pid"
-  pids=()
-  for t in graphify agentmemory alumnium rtk context_mode leanctx search_cli; do
-    SB_CONSENT_LOCK_TRIES=1000 bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
-    pids+=("$!")
-  done
-  for pid in "${pids[@]}"; do wait "$pid" || true; done
-  assert_eq "round $round: a stale lock and 7 parallel grants: all recorded" "7" "$(jq '[.machine[] | select(.enforce.decision == "granted")] | length' "$STORE")"
-done
+echo "=== lock: abandoned claims, ownerless lock, bad tries ==="
+age() { touch -d '10 minutes ago' "$@" 2>/dev/null || touch -t 200001010000 "$@"; }
 reset_store
 LOCK="$(dirname "$STORE")/.consent.lock"
-mkdir -p "$LOCK"
+mkdir -p "$LOCK"; age "$LOCK"
 tl_run env SB_CONSENT_LOCK_TRIES=3 bash "$CLI" grant graphify --all-projects --capabilities enforce
-assert_eq "a lock without an owner record is reclaimed after the wait" "0" "$TL_STATUS"
+assert_eq "an old lock directory without any claim is reclaimed" "0" "$TL_STATUS"
 assert_eq "and the grant is recorded" "granted" "$(sb_consent_decision graphify enforce)"
-mkdir -p "$LOCK" "${LOCK}.takeover"
+mkdir -p "$LOCK"
 tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant rtk --all-projects --capabilities enforce
-assert_eq "an ownerless lock whose takeover is busy gives up with status 2" "2" "$TL_STATUS"
-rm -rf "$LOCK" "${LOCK}.takeover"
+assert_eq "a fresh lock directory without a claim (its creator is mid-write) is waited on: status 2" "2" "$TL_STATUS"
+assert_eq "and nothing was recorded" "unset" "$(sb_consent_decision rtk enforce)"
+rm -rf "$LOCK"; mkdir -p "$LOCK"; printf 'junk' >"$LOCK/pid"
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant rtk --all-projects --capabilities enforce
+assert_eq "a fresh claim without a pid is not reclaimed: status 2" "2" "$TL_STATUS"
+age "$LOCK/pid"
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant rtk --all-projects --capabilities enforce
+assert_eq "an old claim without a pid is reclaimed" "0" "$TL_STATUS"
+rm -rf "$LOCK"; mkdir -p "$LOCK"; printf '%s' "$$" >"$LOCK/pid"; age "$LOCK/pid"
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant agentmemory --all-projects --capabilities enforce
+assert_eq "a claim older than ten minutes is reclaimed even when its pid is alive (reused pid)" "0" "$TL_STATUS"
+rm -rf "$LOCK"; mkdir -p "$LOCK/pid"
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant alumnium --all-projects --capabilities enforce
+assert_eq "an entry that is not a claim file is never removed: status 2" "2" "$TL_STATUS"
+[[ -d "$LOCK/pid" ]] && tl_pass "and it is left in place" || tl_fail "and it is left in place"
+rm -rf "$LOCK"
+mkdir -p "$LOCK"; printf '999999' >"$LOCK/pid"; printf '%s' "$$" >"$LOCK/claim.2.2"
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant alumnium --all-projects --capabilities enforce
+assert_eq "one dead and one live claim: only the dead one goes, the lock stays held: status 2" "2" "$TL_STATUS"
+[[ ! -e "$LOCK/pid" && -e "$LOCK/claim.2.2" ]] && tl_pass "the dead claim was removed by name, the live one kept" || tl_fail "the dead claim was removed by name, the live one kept"
+rm -rf "$LOCK"
+# SB_CONSENT_LOCK_TRIES: an integer from 1 to 1000, anything else means 200. The wait is one sleep per
+# try, so counting the sleeps of a writer that gives up measures the budget without waiting for it.
+export TL_SLEEPS="$TL_TMP/sleeps"
+tl_stub sleep 'echo s >>"$TL_SLEEPS"'; hash -r
+mkdir -p "$LOCK"; printf '%s' "$$" >"$LOCK/pid"
+for pair in "5:4" "1000:999" "1001:199" "abc:199" "0:199" "-5:199" "1.5:199" "99999999999999999999:199" ":199"; do
+  tries="${pair%%:*}"; want="${pair##*:}"; rm -f "$TL_TMP/sleeps"; : >"$TL_TMP/sleeps"
+  tl_run env SB_CONSENT_LOCK_TRIES="$tries" bash "$CLI" grant rtk --all-projects --capabilities enforce
+  assert_eq "SB_CONSENT_LOCK_TRIES='$tries': a live lock ends in status 2" "2" "$TL_STATUS"
+  assert_eq "SB_CONSENT_LOCK_TRIES='$tries': $want waits" "$want" "$(wc -l <"$TL_TMP/sleeps" | tr -d ' ')"
+done
+rm -f "$TL_BIN/sleep"; hash -r
+rm -rf "$LOCK"
 for bad in abc -5 0 "" 1.5 1001 99999999999999999999; do
   tl_run env SB_CONSENT_LOCK_TRIES="$bad" bash "$CLI" grant rtk --all-projects --capabilities enforce
   assert_eq "SB_CONSENT_LOCK_TRIES='$bad' with no lock: grant works" "0" "$TL_STATUS"
 done
-# With an ownerless lock held, the default wait (not the bad value) governs: the lock is
-# reclaimed after about 10 s instead of waiting 10^20 tries.
-for bad in abc 99999999999999999999; do
-  rm -rf "$LOCK"; mkdir -p "$LOCK"
-  start=$SECONDS
-  tl_run env SB_CONSENT_LOCK_TRIES="$bad" bash "$CLI" grant rtk --all-projects --capabilities enforce
-  assert_eq "SB_CONSENT_LOCK_TRIES='$bad' with an ownerless lock: reclaimed" "0" "$TL_STATUS"
-  [[ $((SECONDS - start)) -lt 40 ]] && tl_pass "SB_CONSENT_LOCK_TRIES='$bad': the default wait applies" || tl_fail "SB_CONSENT_LOCK_TRIES='$bad': the default wait applies"
-done
-# A leftover takeover directory from a killed process does not disable takeover for good.
-rm -rf "$LOCK"; mkdir -p "$LOCK" "${LOCK}.takeover"; printf '999999' >"$LOCK/pid"
-touch -d '10 minutes ago' "${LOCK}.takeover" 2>/dev/null || touch -t 200001010000 "${LOCK}.takeover"
-tl_run env SB_CONSENT_LOCK_TRIES=3 bash "$CLI" grant graphify --all-projects --capabilities enforce
-assert_eq "an old takeover directory is cleared and the stale lock taken over" "0" "$TL_STATUS"
-rm -rf "$LOCK" "${LOCK}.takeover"; mkdir -p "$LOCK" "${LOCK}.takeover"; printf '%s' "$$" >"$LOCK/pid"
-tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant graphify --all-projects --capabilities enforce
-assert_contains "the give-up message names the takeover directory too" "$TL_ERR" ".consent.lock.takeover"
-rm -rf "$LOCK" "${LOCK}.takeover"
-
-echo "=== an unwritable pid file does not fail the grant ==="
+# a lock that cannot be taken is an error for every command, not a silent success
 reset_store
-_sb_consent_write_owner() { return 1; }   # the owner record cannot be written
-rc=0; sb_consent_set granted rtk enforce machine test >/dev/null 2>&1 || rc=$?
-unset -f _sb_consent_write_owner
-# shellcheck source=../../hooks/lib/user-consent.sh
-source "$LIB"
-assert_eq "grant succeeds although the lock's pid file cannot be written" "0" "$rc"
-assert_eq "and is recorded" "granted" "$(sb_consent_decision rtk enforce)"
-[[ ! -d "$(dirname "$STORE")/.consent.lock" ]] && tl_pass "the lock is released" || tl_fail "the lock is released"
+bash "$CLI" grant rtk --all-projects --capabilities enforce >/dev/null
+mkdir -p "$LOCK"; printf '%s' "$$" >"$LOCK/pid"
+for cmd in grant decline revoke; do
+  tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" "$cmd" rtk --all-projects --capabilities enforce
+  assert_eq "$cmd with the lock held: status 2" "2" "$TL_STATUS"
+done
+assert_eq "the revoke that could not run left the grant as it was" "granted" "$(sb_consent_decision rtk enforce)"
+rm -rf "$LOCK"
 
 tl_results
