@@ -38,9 +38,7 @@ project; the directory holding .silver-bullet.json is recorded). install and wir
 grant and revoke record them for the machine; decline --project records enforce only.
 --all-projects records every listed capability for the machine (all projects).
 
-Exit status: 0 success (check: granted), 1 check: not granted, 2 error, 64 usage error.
-Status 2 includes a store that another sb-consent keeps locked for the whole wait: nothing is
-recorded then, so a grant, decline or revoke that exits 0 has always been recorded.
+Exit status: 0 success (check: granted), 1 check: not granted, 2 error (also: the store stays locked, nothing recorded), 64 usage error.
 USAGE
 }
 
