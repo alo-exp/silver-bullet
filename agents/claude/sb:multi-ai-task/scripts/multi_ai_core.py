@@ -100,11 +100,12 @@ def _any_set(names: tuple[str, ...]) -> bool:
 def detect_host() -> str:
     """Name the host this process runs under: ``claude-code``, ``codex``, ``cursor``, ``unknown`` or another name.
 
-    ``SB_HOST`` can only make the gate stricter: an explicit name that is not Claude Code or Codex
-    (``cursor``, or anything unrecognised) is returned as is, whatever else is in the environment,
-    so no override can hide an unsupported host. Real process markers (``CLAUDECODE``, ``CODEX_*``)
-    beat a supported override. ``CURSOR_*`` markers only count when neither is present, because a
-    Claude Code or Codex session started from a Cursor terminal inherits them.
+    An explicit ``SB_HOST`` that is not Claude Code or Codex (``cursor``, or anything unrecognised) is
+    returned as is, whatever else is in the environment, so no override can hide an unsupported host
+    or name a different one. Real process markers (``CLAUDECODE``, ``CODEX_*``) beat a supported
+    ``SB_HOST``. A supported ``SB_HOST`` is the user's own statement and outranks the ``CURSOR_*``
+    markers, which are weak (a Claude Code or Codex session started from a Cursor terminal inherits
+    them); those markers alone are refused.
     """
     explicit = os.environ.get("SB_HOST", "").strip().lower()
     if explicit and explicit not in _EXPLICIT_HOSTS:
@@ -145,8 +146,23 @@ def _real(path: str | Path) -> Path:
     return Path(os.path.realpath(os.path.expanduser(str(path))))
 
 
+def resolve_output_root(raw: str | Path) -> Path:
+    """The one physical path of an output root: ``~`` expanded, symlinks and ``..`` resolved.
+
+    Callers check this value and write below this same value, so a literal ``~`` that the shell
+    did not expand (``--output-root=~/x``) cannot be checked as one place and written as another.
+    """
+    return _real(raw)
+
+
+def _fold(path: Path) -> tuple[str, ...]:
+    # Case-folded: a case-insensitive filesystem (macOS) reaches ~/.Claude through ~/.CLAUDE.
+    return tuple(part.casefold() for part in path.parts)
+
+
 def _inside(path: Path, root: Path) -> bool:
-    return path == root or root in path.parents
+    inner, outer = _fold(path), _fold(root)
+    return inner[: len(outer)] == outer
 
 
 def _runtime_homes() -> list[Path]:
@@ -197,22 +213,26 @@ def output_root_refusal(output_root: Path) -> str | None:
     """
     root = _real(output_root)
     home = _real("~")
-    if root == home or root in home.parents:
+    if _inside(home, root):
         return f"output root {root} is the home directory or one of its parents; use a project directory such as .planning/multi-ai/<run-id>/"
-    if ".git" in root.parts:
+    if ".git" in _fold(root):
         return f"output root {root} is inside a .git directory"
     protected = [_real(d) for d in _state_dirs()]
-    protected += [_real(h / "plugins") for h in _runtime_homes()]
+    protected += [_real(h) for h in _runtime_homes()]
     if os.environ.get("SB_RUNTIME_PLUGIN_CACHE_ROOT"):
         protected.append(_real(os.environ["SB_RUNTIME_PLUGIN_CACHE_ROOT"]))
     for base in protected:
         if _inside(root, base):
             return f"output root {root} is inside Silver Bullet's runtime state or plugin cache ({base}); use a project directory such as .planning/multi-ai/<run-id>/"
+    # Hidden directories directly under the home directory hold credentials and host configuration
+    # (~/.ssh, ~/.aws, ~/.claude, ~/.codex ...): never an output root.
+    if _inside(root, home) and len(root.parts) > len(home.parts) and root.parts[len(home.parts)].startswith("."):
+        return f"output root {root} is inside a hidden directory of the home directory (credentials or host configuration); use a project directory such as .planning/multi-ai/<run-id>/"
     scopes, host, task = _active_delegation()
     for scope in scopes:
         if _inside(root, scope):
             marker = (".planning", f"agent-{host}", task)
-            parts = root.relative_to(scope).parts
+            parts = root.parts[len(scope.parts):]
             if any(parts[i : i + 3] == marker for i in range(len(parts))):
                 continue
             return (

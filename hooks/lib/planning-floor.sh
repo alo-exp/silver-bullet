@@ -307,6 +307,42 @@ sb_pf_opaque_targets() {
     done
 }
 
+# sb_pf_multi_ai_cli_exempt: status 0 when the loaded shell command is exactly one plain
+# `python3 <script> ...` of the plugin's own multi-AI CLIs (silver-multi-ai-task/scripts/multi_ai_cli.py,
+# silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py), and nothing else. The script must resolve (physical
+# directory plus file name, no symlinked file) to the plugin's own skills/<skill>/scripts or, in the Codex
+# package, skill-source/<sb-skill>/scripts; the launcher is a bare python name with no -c/-m/option before the
+# script; no redirection or other write, no env/NAME=value/rtk prefix, no chain, pipe or substitution. Those
+# CLIs write only below an output root they validate themselves (multi_ai_core.output_root_refusal), so the
+# planning floor does not treat the run as an opaque writer of its own script; the path words of the
+# command (an output root under source) are still judged, and every other protection still applies.
+# Sets SB_PF_EXEMPT_SCRIPT to the canonical script path on success.
+sb_pf_multi_ai_cli_exempt() {
+  SB_PF_EXEMPT_SCRIPT=""
+  [[ "${SB_TI_STATUS:-}" == "ok" && -z "${SB_SA_WRITE_PATHS:-}" && -z "${SB_SA_RTK_UNWRAPPED:-}" ]] || return 1
+  [[ -z "${SB_SA_UNSEEN_REASONS:-}" ]] || return 1
+  local plugin_root script dir
+  script="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '
+    (.commands // []) as $c
+    | select(($c | length) == 1)
+    | ($c[0].argv // []) as $a
+    | select(($a | length) >= 2 and ($a[0] | test("^python[0-9.]*$")) and ($a[1] | startswith("-") | not))
+    | $a[1]' 2>/dev/null || true)"
+  [[ -n "$script" && ! -L "$script" && -f "$script" ]] || return 1
+  plugin_root="$(cd "${_sb_pf_dir}/../.." && pwd -P || true)"
+  dir="$(cd "$(dirname "$script")" 2>/dev/null && pwd -P || true)"
+  case "$dir/$(basename "$script")" in
+    "$plugin_root/skills/silver-multi-ai-task/scripts/multi_ai_cli.py" \
+      | "$plugin_root/skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py" \
+      | "$plugin_root/skill-source/sb-multi-ai-task/scripts/multi_ai_cli.py" \
+      | "$plugin_root/skill-source/sb-deep-research-multi-ai/scripts/dr_multi_ai_cli.py")
+      SB_PF_EXEMPT_SCRIPT="$(sb_pf_canon "$script")"
+      return 0
+      ;;
+  esac
+  return 1
+}
+
 # sb_pf_opaque_records [all]: sb_pf_opaque_targets as "opaque<TAB>path" records.
 sb_pf_opaque_records() {
   local p

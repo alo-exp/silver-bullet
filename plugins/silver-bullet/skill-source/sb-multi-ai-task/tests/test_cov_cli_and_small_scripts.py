@@ -147,6 +147,24 @@ class MultiAiCliTests(HermeticCase):
             rc, _, _ = run_main(multi_ai_cli.main, ["--dry-run"])
         self.assertEqual(rc, 0)
 
+    def test_a_tilde_root_is_checked_and_written_as_the_same_expanded_path(self) -> None:
+        cwd = self.subdir("cwd")
+        old = os.getcwd()
+        os.chdir(cwd)
+        self.addCleanup(os.chdir, old)
+        state = self.home / ".claude" / ".silver-bullet"
+        state.mkdir(parents=True)
+        (state / "agent-delegation-active.json").write_text(json.dumps(
+            {"active": True, "host": "codex", "task_id": "T1", "ownership_scope": [str(self.home / "owned")]}))
+        with mock.patch.dict(os.environ, {"SB_HOST": "claude"}), \
+                mock.patch.object(multi_ai_cli, "run_multi_ai_live", return_value={"ok": True}) as live:
+            rc, out, _ = run_main(multi_ai_cli.main, ["--output-root=~/elsewhere/run"])
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(live.call_args.kwargs["output_root"], Path(os.path.realpath(self.home / "elsewhere" / "run")))
+            self.assertFalse((cwd / "~").exists())
+            rc, out, _ = run_main(multi_ai_cli.main, ["--output-root", "~/owned/run"])
+        self.assertEqual((rc, json.loads(out)["error_code"]), (2, "OUTPUT_ROOT_NOT_ALLOWED"))
+
     def test_live_dispatch_runs_on_claude_and_codex(self) -> None:
         for env in ({"CLAUDECODE": "1"}, {"CODEX_SANDBOX": "seatbelt"}):
             with mock.patch.dict(os.environ, env), \

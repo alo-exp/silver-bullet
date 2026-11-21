@@ -25,7 +25,7 @@ a backend CLI that is not installed (`cursor-agent`, OpenCode, `codex`, `claude`
 any phase or file write with `BACKEND_CLI_MISSING` and a fix per backend (a host error it is not); narrow
 the pool (`--ocg-pool none`, `--cursor-pool none`, `--exclude`, `--include-only`) to run on the backends
 you have. `--dry-run` lists `backend_availability` for the planned pool. Under an orchestrator parent
-session, run the CLI from a worker (the parent may not run Bash). The CLI refuses an output root inside
+session, run the CLI from a worker (the parent may not run Bash: in a parent-mode project delegate the run to an `Agent`/`spawn_agent` worker first). The planning floor does not hold back exactly `python3 <plugin>/skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py ...`, so the run works at its own flow step (`AF-DECIDE`, before PLAN) in a fresh session. The CLI refuses an output root inside
 Silver Bullet's runtime state or plugin cache, a `.git` directory, the home directory or the ownership
 scope of an active agent delegation (`OUTPUT_ROOT_NOT_ALLOWED`). The details are in
 [`/sb:multi-ai-task`](../silver-multi-ai-task/SKILL.md).
