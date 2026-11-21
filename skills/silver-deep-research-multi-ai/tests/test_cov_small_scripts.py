@@ -1083,6 +1083,19 @@ class DrMultiAiCliTests(unittest.TestCase):
             self.assertEqual(report["parallel_phases"], ["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"])
             self.assertEqual(sorted(report["backend_availability"]), ["claude", "codex", "cursor", "ocg"])
 
+    def test_output_root_in_a_protected_place_is_refused_for_every_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as home, mock.patch.dict(os.environ, {"HOME": home, "SB_HOST": "claude"}):
+            protected = str(Path(home) / ".codex" / ".silver-bullet" / "run")
+            for argv in (["q", "--dry-run", "--output-root", protected], ["q", "--output-root", protected],
+                         ["q", "--package-only", "--research-type", "solution-landscape", "--output-root", protected]):
+                rc, stdout, _ = _run(dr_multi_ai_cli.main, argv)
+                payload = json.loads(stdout)
+                self.assertEqual((rc, payload["ok"], payload["error_code"]), (2, False, "OUTPUT_ROOT_NOT_ALLOWED"), argv)
+            self.assertFalse(Path(protected).exists())
+            # No output root given on a dry run: the default under the working directory is never checked.
+            rc, _, _ = _run(dr_multi_ai_cli.main, ["q", "--dry-run"])
+            self.assertEqual(rc, 0)
+
     def test_dry_run_on_an_unsupported_host_fails_like_a_live_run(self) -> None:
         for env in ({"SB_HOST": "cursor"}, {"CURSOR_AGENT": "1"}, {}):
             for argv in (["q", "--dry-run"], ["q"]):

@@ -131,6 +131,22 @@ class MultiAiCliTests(HermeticCase):
         self.assertFalse(payload["ok"])
         self.assertFalse((self.tmp / "o").exists())
 
+    def test_output_root_in_a_protected_place_is_refused_before_anything_runs(self) -> None:
+        protected = self.home / ".claude" / ".silver-bullet" / "run"
+        for extra in (["--dry-run"], []):
+            with mock.patch.dict(os.environ, {"SB_HOST": "claude"}), \
+                    mock.patch.object(multi_ai_cli, "run_multi_ai_live") as live:
+                rc, out, _ = run_main(multi_ai_cli.main, ["--output-root", str(protected), *extra])
+            live.assert_not_called()
+            payload = json.loads(out)
+            self.assertEqual((rc, payload["ok"], payload["error_code"]), (2, False, "OUTPUT_ROOT_NOT_ALLOWED"))
+            self.assertIn("runtime state", payload["message"])
+            self.assertFalse(protected.exists())
+        # A dry run without an output root has nothing to refuse.
+        with mock.patch.dict(os.environ, {"SB_HOST": "claude"}):
+            rc, _, _ = run_main(multi_ai_cli.main, ["--dry-run"])
+        self.assertEqual(rc, 0)
+
     def test_live_dispatch_runs_on_claude_and_codex(self) -> None:
         for env in ({"CLAUDECODE": "1"}, {"CODEX_SANDBOX": "seatbelt"}):
             with mock.patch.dict(os.environ, env), \

@@ -7,6 +7,7 @@ import os
 import re
 import unittest
 from decimal import Decimal
+from pathlib import Path
 from unittest import mock
 
 from cov_helpers import HermeticCase
@@ -144,6 +145,87 @@ class HostDetectionTests(HermeticCase):
             with mock.patch.dict(os.environ, {"SB_HOST": "codex"}):
                 gate = core.host_gate()
                 self.assertEqual((gate["error_code"], gate["message"]), ("CUSTOM", "custom words"))
+
+
+class OutputRootPolicyTests(HermeticCase):
+    """A run writes only below its output root, so the root may not be a place Silver Bullet protects."""
+
+    def refusal(self, path, **env: str):
+        with mock.patch.dict(os.environ, env):
+            return core.output_root_refusal(Path(path))
+
+    def delegation(self, scopes, *, host="codex", task="T1", active=True, state_dir=None, raw=None):
+        state_dir = state_dir or self.home / ".claude" / ".silver-bullet"
+        state_dir.mkdir(parents=True, exist_ok=True)
+        body = raw if raw is not None else json.dumps({"active": active, "host": host, "task_id": task, "work_dir": str(self.tmp), "ownership_scope": scopes})
+        (state_dir / "agent-delegation-active.json").write_text(body)
+
+    def test_ordinary_places_are_sanctioned(self) -> None:
+        for path in (self.tmp / ".planning" / "multi-ai" / "run-1", self.tmp / "research" / "2026-11-21-x", self.tmp / "out", Path("relative/out")):
+            self.assertIsNone(self.refusal(path), path)
+
+    def test_runtime_state_and_plugin_cache_are_refused(self) -> None:
+        for sub in (".claude/.silver-bullet", ".claude/.silver-bullet/x/y", ".codex/.silver-bullet", ".claude/plugins/cache/alo/sb/1.0/hooks", ".codex/plugins"):
+            reason = self.refusal(self.home / sub)
+            self.assertIn("Silver Bullet", reason, sub)
+        self.assertIsNotNone(self.refusal(self.tmp / "state" / "deep", SB_RUNTIME_STATE_DIR=str(self.tmp / "state")))
+        self.assertIsNotNone(self.refusal(self.tmp / "cache", SB_RUNTIME_PLUGIN_CACHE_ROOT=str(self.tmp / "cache")))
+        self.assertIsNotNone(self.refusal(self.tmp / "ch" / "plugins" / "z", CODEX_HOME=str(self.tmp / "ch")))
+        # Siblings and prefixes of a protected root are not inside it.
+        self.assertIsNone(self.refusal(self.home / ".claude" / ".silver-bullet-notes"))
+        self.assertIsNone(self.refusal(self.home / ".claude" / "projects"))
+
+    def test_symlink_into_a_protected_root_is_refused(self) -> None:
+        target = self.home / ".claude" / ".silver-bullet"
+        target.mkdir(parents=True)
+        link = self.tmp / "innocent"
+        link.symlink_to(target)
+        self.assertIsNotNone(self.refusal(link / "run"))
+
+    def test_git_directories_are_refused(self) -> None:
+        self.assertIn(".git", self.refusal(self.tmp / "repo" / ".git" / "hooks"))
+        self.assertIsNone(self.refusal(self.tmp / "repo" / ".github" / "multi-ai"))
+        self.assertIsNone(self.refusal(self.tmp / "repo" / "x.git" / "run"))
+
+    def test_filesystem_root_and_home_are_refused(self) -> None:
+        self.assertIsNotNone(self.refusal("/"))
+        self.assertIsNotNone(self.refusal(self.home))
+
+    def test_active_delegation_scope_is_refused_but_its_evidence_directory_is_not(self) -> None:
+        owned = self.tmp / "proj" / "src"
+        self.delegation([str(owned), "", "rel/owned"])
+        self.assertIn("delegation", self.refusal(owned))
+        self.assertIn("delegation", self.refusal(owned / "deep" / "out"))
+        self.assertIsNotNone(self.refusal(Path("rel/owned") / "x"))
+        self.assertIsNone(self.refusal(self.tmp / "proj" / "docs" / "out"))
+        self.assertIsNone(self.refusal(self.tmp / "proj" / "srcs" / "out"))
+        evidence = owned / ".planning" / "agent-codex" / "T1" / "multi-ai"
+        self.assertIsNone(self.refusal(evidence))
+        # A different task's or host's evidence directory is not the sanctioned one.
+        self.assertIsNotNone(self.refusal(owned / ".planning" / "agent-codex" / "T2" / "multi-ai"))
+        self.assertIsNotNone(self.refusal(owned / ".planning" / "agent-claude" / "T1" / "multi-ai"))
+
+    def test_inactive_disabled_or_unreadable_delegation_is_ignored(self) -> None:
+        owned = self.tmp / "proj" / "src"
+        self.delegation([str(owned)], active=False)
+        self.assertIsNone(self.refusal(owned))
+        self.delegation([str(owned)])
+        self.assertIsNone(self.refusal(owned, SB_AGENT_DELEGATE_GUARD="0"))
+        self.assertIsNone(self.refusal(owned, SB_AGENT_DELEGATE_V2="0"))
+        self.delegation(None, raw="{not json")
+        self.assertIsNone(self.refusal(owned))
+        self.delegation(None, raw="[1]")
+        self.assertIsNone(self.refusal(owned))
+        self.delegation(None, raw='{"active": true, "ownership_scope": "src", "task_id": 7, "host": null}')
+        self.assertIsNone(self.refusal(owned))
+
+    def test_delegation_state_in_the_codex_and_env_state_dirs_counts(self) -> None:
+        owned = self.tmp / "proj" / "src"
+        self.delegation([str(owned)], state_dir=self.home / ".codex" / ".silver-bullet")
+        self.assertIsNotNone(self.refusal(owned))
+        other = self.tmp / "envstate"
+        self.delegation([str(owned / "a")], state_dir=other)
+        self.assertIsNotNone(self.refusal(owned / "a" / "b", SB_RUNTIME_STATE_DIR=str(other)))
 
 
 def ids(resolved: list[dict]) -> list[str]:

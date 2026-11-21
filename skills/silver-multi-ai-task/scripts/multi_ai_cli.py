@@ -19,6 +19,7 @@ from multi_ai_core import (  # noqa: E402
     PoolSelection,
     dry_run_report,
     host_gate,
+    output_root_refusal,
 )
 
 
@@ -62,6 +63,12 @@ def main(argv: list[str] | None = None) -> int:
     if not gate["ok"]:
         payload = {"ok": False, "error_code": gate["error_code"], "message": gate["message"]}
         print(json.dumps(payload, indent=2))
+        return 2
+
+    # The hooks cannot see what this script writes, so it keeps their boundaries itself.
+    refusal = output_root_refusal(Path(args.output_root)) if args.output_root else None
+    if refusal:
+        print(json.dumps({"ok": False, "error_code": "OUTPUT_ROOT_NOT_ALLOWED", "message": refusal}, indent=2))
         return 2
 
     selection = PoolSelection(
