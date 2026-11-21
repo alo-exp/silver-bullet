@@ -3,9 +3,16 @@
 
 from __future__ import annotations
 
+import os
+import sys
+
+if __name__ == "__main__" and not sys.flags.isolated:
+    # PYTHONPATH, PYTHONSTARTUP and the user site are invisible to the hooks that let this CLI run, so a script
+    # start re-runs itself in isolated mode (-I) before it imports anything but the interpreter's own modules.
+    os.execv(sys.executable, [sys.executable, "-I", *sys.argv])
+
 import argparse
 import json
-import os
 import re
 import shutil
 from datetime import datetime, timezone
@@ -21,6 +28,8 @@ def _bootstrap() -> None:
     global _BOOTSTRAPPED
     if _BOOTSTRAPPED:
         return
+    if str(DRM_SCRIPTS) not in sys.path:  # isolated mode (-I) does not put the script's directory on the path
+        sys.path.insert(0, str(DRM_SCRIPTS))
     from skill_paths import ensure_dir_on_path, ensure_scripts_on_path
 
     ensure_scripts_on_path("silver-multi-ai-task", marker="multi_ai_core.py")

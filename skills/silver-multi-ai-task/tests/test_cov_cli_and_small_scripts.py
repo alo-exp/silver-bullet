@@ -11,6 +11,7 @@ import os
 import runpy
 import subprocess
 import sys
+import types
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -207,11 +208,37 @@ class MultiAiCliTests(HermeticCase):
 
     @mock.patch.dict(os.environ, {"SB_HOST": "claude"})
     def test_script_entry_point_exit_status(self) -> None:
-        with mock.patch.object(sys, "argv", ["multi_ai_cli.py", "--dry-run", "--include-only", "grok-4.5"]):
+        with mock.patch.object(sys, "argv", ["multi_ai_cli.py", "--dry-run", "--include-only", "grok-4.5"]), \
+                mock.patch.object(os, "execv") as execv:
             with contextlib.redirect_stdout(io.StringIO()) as out, self.assertRaises(SystemExit) as ctx:
                 runpy.run_path(str(SCRIPTS / "multi_ai_cli.py"), run_name="__main__")
         self.assertEqual(ctx.exception.code, 0)
         self.assertTrue(json.loads(out.getvalue())["ok"])
+        # Started as a script outside isolated mode, it re-runs itself with -I before importing anything else.
+        execv.assert_called_once_with(sys.executable, [sys.executable, "-I", str(SCRIPTS / "multi_ai_cli.py"), "--dry-run", "--include-only", "grok-4.5"])
+
+    @mock.patch.dict(os.environ, {"SB_HOST": "claude"})
+    def test_isolated_start_does_not_re_exec(self) -> None:
+        with mock.patch.object(sys, "argv", ["multi_ai_cli.py", "--dry-run", "--include-only", "grok-4.5"]), \
+                mock.patch.object(sys, "flags", types.SimpleNamespace(isolated=1)), mock.patch.object(os, "execv") as execv:
+            with contextlib.redirect_stdout(io.StringIO()), self.assertRaises(SystemExit):
+                runpy.run_path(str(SCRIPTS / "multi_ai_cli.py"), run_name="__main__")
+        execv.assert_not_called()
+
+    def test_hostile_python_environment_never_gets_to_run_for_a_real_start(self) -> None:
+        """PYTHONPATH/PYTHONSTARTUP are not visible to the hooks: the CLI re-runs isolated, so a shadowing module never loads."""
+        evil = self.subdir("evil")
+        marker = self.tmp / "pwned"
+        for name in ("json", "argparse", "pathlib", "live_dispatch", "multi_ai_core"):
+            (evil / f"{name}.py").write_text(f"open({str(marker)!r}, 'w').write('x')\nraise ImportError('shadowed')\n")
+        (evil / "startup.py").write_text(f"open({str(marker)!r}, 'w').write('x')\n")
+        env = {k: v for k, v in os.environ.items() if not k.startswith(("PYTHON", "CLAUDE", "CODEX", "CURSOR", "SB_"))}
+        env.update({"PYTHONPATH": str(evil), "SB_HOST": "claude", "HOME": str(self.home)})
+        proc = subprocess.run([sys.executable, str(SCRIPTS / "multi_ai_cli.py"), "--dry-run", "--include-only", "composer-2.5"],
+                              capture_output=True, text=True, env=env, cwd=str(self.tmp), check=False)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertTrue(json.loads(proc.stdout)["ok"])
+        self.assertFalse(marker.exists())
 
 
 class CapabilitySpikeTests(HermeticCase):
