@@ -333,7 +333,7 @@ assert_eq "and not for another agent" "" "$(sb_state_last_read "$S" w2)"
 assert_eq "nor for the main session" "" "$(sb_state_last_read "$S")"
 for bad in '../x' 'a/b' 'a b' '.h' "$(printf 'z%.0s' $(seq 1 65))"; do
   sb_state_last_write "$S" silver-spec "$bad"
-  assert_eq "an invalid agent id writes nothing: $bad" "" "$(ls "$SD" | grep -c 'last\.' | grep -v '^1$' || true)$(sb_state_last_read "$S" "$bad")"
+  assert_eq "an invalid agent id reads nothing: $bad" "" "$(sb_state_last_read "$S" "$bad")"
 done
 assert_eq "only the valid agent has a file" "1" "$(ls "$S".last.* | wc -l | tr -d ' ')"
 cp "$S.last.w1" "$S.last.w3"; cp "$S.lasthwm.w1" "$S.lasthwm.w3"
