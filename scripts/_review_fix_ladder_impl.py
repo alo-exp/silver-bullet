@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -29,22 +28,14 @@ EXIT_TAMPER = 4
 LIFECYCLE_PHASES = ("review", "verify_1", "verify_2")
 
 
-def detect_host() -> str:
-    runtime = os.environ.get("SILVER_BULLET_RUNTIME", "").strip().lower()
-    if runtime in {"claude", "codex"}:
-        return runtime
-    if any(os.environ.get(k) for k in ("CODEX_CI", "CODEX_THREAD_ID", "CODEX_INTERNAL_ORIGINATOR_OVERRIDE")):
-        return "codex"
-    if "/.codex/" in os.environ.get("CLAUDE_PLUGIN_ROOT", ""):
-        return "codex"
-    return "claude"
+detect_host = native.detect_host
 
 
 def resolve_ladder(host: str, project_root: Path | None = None, rungs_spec: str = "") -> dict[str, Any]:
     if host.lower() == "codex":
         return {"host": "codex", "enabled": False, "source": "disabled", "total_rungs": 0, "rungs": [],
                 "message": native.CODEX_MESSAGE, "documented_defaults": native.CODEX_DEFAULTS}
-    rungs = native.configured_rungs(project_root or Path.cwd(), rungs_spec)
+    rungs = native.configured_rungs(project_root or Path.cwd(), rungs_spec, enforce=False)
     default = [native.parse_rung(t) for t in native.DEFAULT_RUNGS]
     custom = [(r["model"], r["effort"]) for r in rungs] != default
     return {"host": "claude", "enabled": True, "source": "config" if custom else "default", "total_rungs": len(rungs),
@@ -63,10 +54,10 @@ def build_parser() -> argparse.ArgumentParser:
     life = p.add_argument_group("run lifecycle (each command checks the order)")
     life.add_argument("--start", action="store_true", help="Create and go live with a run (needs --charter-file)")
     life.add_argument("--charter-file", type=Path, help="JSON: goal, scope, key_tasks, signals")
-    life.add_argument("--approve", action="store_true", help="Record Policy E approval of the rung brief (after the user agreed)")
+    life.add_argument("--approve", action="store_true", help="Record Policy E approval; needs the user to have typed `RFL APPROVE <run-id>`")
     life.add_argument("--resume", metavar="RUN_ID", help="Make a paused or legacy run live in this session")
     life.add_argument("--issue-ticket", choices=LIFECYCLE_PHASES, metavar="PHASE", help="review|verify_1|verify_2: print the exact spawn parameters")
-    life.add_argument("--cancel-ticket", action="store_true", help="Count a ticket whose subagent never launched as a failed attempt")
+    life.add_argument("--cancel-ticket", action="store_true", help="Return a ticket to its pre-spawn state (never counts toward a skip; rate limited)")
     life.add_argument("--complete-triage", action="store_true", help="After --write-policy-c: move on from triage")
     life.add_argument("--record-apply", action="store_true", help="After applying ACCEPTed fixes: checks that in-scope files changed")
     life.add_argument("--run-signals", action="store_true", help="Run the charter's verification signals and record the result")

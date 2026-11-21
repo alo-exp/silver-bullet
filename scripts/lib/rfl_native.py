@@ -74,6 +74,13 @@ MAX_SCOPE = 200
 MAX_SIGNALS = 20
 SEVERITIES = ("HIGH", "MED", "LOW", "NIT")
 ABORT_TTL_SECONDS = 30 * 60
+SESSION_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+STALE_POINTER_SECONDS = 24 * 3600
+USER_RUNGS_TTL_SECONDS = 6 * 3600
+MAX_CANCELS = 3
+SPAWN_STALE_SECONDS = 1800
+TOKEN_KINDS = ("abort", "approve")
+USER_RUNGS_RE = re.compile(r"\brungs\s*:\s*((?:[+-]?[a-z]{3,8}:[a-z]{3,6}[\s,]*){1,12})", re.I)
 RESULT_RE = re.compile(r'<rfl-result\s+ticket="([A-Za-z0-9._-]{1,120})"\s*>(.*?)</rfl-result>', re.S)
 
 
@@ -92,6 +99,17 @@ def home_root() -> Path:
 
 def state_dir() -> Path:
     return Path(os.environ.get("SB_RUNTIME_STATE_DIR") or home_root() / ".silver-bullet")
+
+
+def detect_host() -> str:
+    runtime = os.environ.get("SILVER_BULLET_RUNTIME", "").strip().lower()
+    if runtime in {"claude", "codex"}:
+        return runtime
+    if any(os.environ.get(k) for k in ("CODEX_CI", "CODEX_THREAD_ID", "CODEX_INTERNAL_ORIGINATOR_OVERRIDE")):
+        return "codex"
+    if "/.codex/" in os.environ.get("CLAUDE_PLUGIN_ROOT", ""):
+        return "codex"
+    return "claude"
 
 
 def now_iso() -> str:
@@ -213,8 +231,20 @@ def apply_rung_spec(base: list[tuple[str, str]], spec: Any) -> list[tuple[str, s
     return rungs
 
 
-def configured_rungs(project_root: Path, cli_spec: str = "") -> list[dict[str, Any]]:
-    rungs = [parse_rung(t) for t in DEFAULT_RUNGS]
+def normalize_spec(spec: Any) -> str:
+    tokens = [str(t) for t in spec] if isinstance(spec, list) else [t for t in re.split(r"[\s,]+", re.sub(r"^\s*rungs\s*:\s*", "", str(spec))) if t]
+    return " ".join(t.lower() for t in tokens)
+
+
+def configured_rungs(project_root: Path, cli_spec: str = "", *, enforce: bool = True) -> list[dict[str, Any]]:
+    """Default ladder, then the project config (additions only), then what the USER typed (``rungs: ...``).
+
+    The agent-supplied ``--rungs`` is accepted only when it equals the user's recorded override; a repo
+    config can add rungs but never drop below the default ladder (R4-15: the ladder cannot be shortened by
+    the governed agent or by repository text)."""
+    default = [parse_rung(t) for t in DEFAULT_RUNGS]
+    rungs = list(default)
+    user = user_rungs(project_root)
     config = Path(project_root) / ".silver-bullet.json"
     try:
         cfg = rfl_json.read_bounded(config)
@@ -224,9 +254,20 @@ def configured_rungs(project_root: Path, cli_spec: str = "") -> list[dict[str, A
     spec = block.get("rungs") if isinstance(block, dict) else None
     if isinstance(spec, dict):
         spec = spec.get("claude")
-    for source in (spec, cli_spec):
-        if source:
-            rungs = apply_rung_spec(rungs, source)
+    if spec:
+        rungs = apply_rung_spec(rungs, spec)
+        if enforce and not all(r in rungs for r in default) and not user:
+            raise RflError(
+                "the project config drops rungs from the default ladder; only the user can do that: ask them to state "
+                "it in their own message (e.g. `rungs: -haiku:xhigh`)")
+    if cli_spec:
+        if enforce and normalize_spec(cli_spec) != normalize_spec(user or ""):
+            raise RflError(
+                "--rungs must be what the user asked for: ask the user to write the override in their own message "
+                "(`rungs: +opus:xhigh -haiku:xhigh`); the agent cannot change the ladder")
+        rungs = apply_rung_spec(rungs, cli_spec)
+    elif user:
+        rungs = apply_rung_spec(rungs, user)
     return [
         {"index": i, "model": m, "effort": e, "dir": f"rung-{i:02d}-{m}-{e}"}
         for i, (m, e) in enumerate(rungs, start=1)
@@ -319,32 +360,187 @@ def run_path(project_root: Path, run_id: str) -> Path:
     return Path(project_root) / ".planning" / f"rfl-{run_id}"
 
 
-def live_path() -> Path:
-    return state_dir() / "rfl-live.json"
+def _h(text: str, n: int = 16) -> str:
+    return sha256_text(text)[:n]
+
+
+def current_session(project_root: Path) -> str:
+    """The host session this process belongs to: the hook's payload, a host env var, or the last session the
+    SessionStart hook saw in this project (a CLI run from Bash has no payload)."""
+    for key in ("SB_RFL_SESSION_ID", "CLAUDE_SESSION_ID", "CLAUDE_CODE_SESSION_ID"):
+        value = os.environ.get(key, "")
+        if SESSION_RE.match(value):
+            return value
+    try:
+        data = rfl_json.read_bounded(state_dir() / "rfl-sessions" / f"{_h(str(Path(project_root).resolve()))}.json", max_bytes=2048, max_depth=3)
+    except rfl_json.BadJson:
+        return ""
+    sid = data.get("session_id")
+    return sid if isinstance(sid, str) and SESSION_RE.match(sid) else ""
+
+
+def record_session(project_root: Path, session_id: str) -> None:
+    if SESSION_RE.match(session_id or ""):
+        write_atomic(state_dir() / "rfl-sessions" / f"{_h(str(Path(project_root).resolve()))}.json", json.dumps({"session_id": session_id}) + "\n")
+
+
+def pointer_path(project_root: Path, session_id: str) -> Path:
+    return state_dir() / "rfl-live" / f"{_h(str(Path(project_root).resolve()))}-{session_id or 'none'}.json"
 
 
 def set_live(project_root: Path, run_id: str) -> None:
-    write_atomic(live_path(), json.dumps({"project_root": str(Path(project_root).resolve()), "run_id": run_id}) + "\n")
+    root, sid = Path(project_root).resolve(), current_session(project_root)
+    write_atomic(pointer_path(root, sid), json.dumps({"project_root": str(root), "run_id": run_id, "session_id": sid}) + "\n")
 
 
-def clear_live() -> None:
+def clear_live(project_root: Path, run_id: str = "") -> None:
+    """Drop this session's pointer for the project; with ``run_id`` also every pointer to that run."""
+    root = Path(project_root).resolve()
+    paths = sorted((state_dir() / "rfl-live").glob(f"{_h(str(root))}-*.json")) if run_id else [pointer_path(root, current_session(root))]
+    for path in paths:
+        try:
+            if not run_id or rfl_json.read_bounded(path, max_bytes=4096, max_depth=4).get("run_id") == run_id:
+                path.unlink()
+        except (OSError, rfl_json.BadJson):
+            pass
+
+
+def prune_pointers(project_root: Path, session_id: str) -> None:
+    """SessionStart startup/clear: remove this session's own pointer and pointers nobody has touched for a day."""
     try:
-        live_path().unlink()
+        pointer_path(project_root, session_id).unlink()
     except OSError:
         pass
+    cutoff = time.time() - STALE_POINTER_SECONDS
+    for path in (state_dir() / "rfl-live").glob("*.json"):
+        try:
+            if path.stat().st_mtime < cutoff:
+                path.unlink()
+        except OSError:
+            pass
 
 
-def live_run_id(project_root: Path) -> str | None:
+def live_run_id(project_root: Path, session_id: str | None = None) -> str | None:
+    """The run this session started or resumed in this project (its sealed record exists), else None."""
+    root = Path(project_root).resolve()
+    sid = current_session(root) if session_id is None else session_id
+    for candidate in ([sid] if sid else []) + [""]:
+        try:
+            pointer = rfl_json.read_bounded(pointer_path(root, candidate), max_bytes=4096, max_depth=4)
+        except rfl_json.BadJson:
+            continue
+        run_id = pointer.get("run_id")
+        if pointer.get("project_root") == str(root) and isinstance(run_id, str) and RUN_ID_RE.match(run_id) and record_path(root, run_id).is_file():
+            return run_id
+    return None
+
+
+# -- the sealed run record: the authority for liveness, Stop, approval and abort (kept in the runtime state dir,
+#    outside the repository, so moving or deleting .planning/rfl-<id> cannot release the gate)
+def record_path(project_root: Path, run_id: str) -> Path:
+    return state_dir() / "rfl-runs" / f"{_h(str(Path(project_root).resolve()), 12)}-{run_id}.json"
+
+
+def load_record(project_root: Path, run_id: str) -> dict[str, Any]:
+    return read_signed(record_path(project_root, run_id), project_root, f"run record {run_id}")
+
+
+def save_record(project_root: Path, record: dict[str, Any]) -> None:
+    write_json(record_path(project_root, record["run_id"]), record, project_root)
+
+
+def _sync_record(project_root: Path, status: dict[str, Any]) -> None:
+    if not record_path(project_root, status["run_id"]).is_file():
+        return
+    record = load_record(project_root, status["run_id"])
+    if record["status"] != status["status"]:
+        record["status"] = status["status"]
+        save_record(project_root, record)
+
+
+def _run_root(run_dir: Path) -> Path:
+    return Path(run_dir).resolve().parent.parent
+
+
+def _run_id_of(run_dir: Path) -> str:
+    return Path(run_dir).name[len("rfl-"):]
+
+
+# -- tokens written only by the UserPromptSubmit hook from a message the user typed
+def token_path(kind: str, run_id: str) -> Path:
+    return state_dir() / f"rfl-{kind}-{run_id}.json"
+
+
+def abort_token_path(run_id: str) -> Path:
+    return token_path("abort", run_id)
+
+
+def write_user_token(project_root: Path, kind: str, run_id: str, *, session_id: str = "", prompt_sha256: str = "") -> Path:
+    expires = quota_window.isoformat_z(quota_window.utcnow() + timedelta(seconds=ABORT_TTL_SECONDS))
+    path = token_path(kind, run_id)
+    write_json(path, {"kind": kind, "run_id": run_id, "expires_at": expires, "source": "UserPromptSubmit",
+                      "session_id": session_id, "prompt_sha256": prompt_sha256}, project_root)
+    return path
+
+
+def write_abort_token(project_root: Path, run_id: str) -> Path:
+    return write_user_token(project_root, "abort", run_id, prompt_sha256="direct-call")
+
+
+def consume_user_token(project_root: Path, kind: str, run_id: str) -> dict[str, Any]:
+    ask = f"ask the user to type exactly `RFL {kind.upper()} {run_id}` in their own message"
+    path = token_path(kind, run_id)
+    if not path.is_file():
+        raise RflError(f"this needs the user's own message: {ask}")
+    token = read_signed(path, project_root, f"{kind} token")
+    expires = quota_window.parse_iso_datetime(str(token.get("expires_at")))
+    if token.get("kind") != kind or token.get("run_id") != run_id or token.get("source") != "UserPromptSubmit" or expires is None or expires < quota_window.utcnow():
+        raise RflError(f"the {kind} token for {run_id} is expired or does not match; {ask}")
+    path.unlink()
+    return token
+
+
+def _user_rungs_path(project_root: Path) -> Path:
+    return state_dir() / "rfl-user-rungs" / f"{_h(str(Path(project_root).resolve()))}-{current_session(project_root) or 'none'}.json"
+
+
+def record_user_rungs(project_root: Path, spec: str, *, prompt_sha256: str = "") -> str:
+    """Remember a ``rungs: ...`` override the user typed (UserPromptSubmit hook); the grammar is validated."""
+    apply_rung_spec([parse_rung(t) for t in DEFAULT_RUNGS], spec)
+    write_json(_user_rungs_path(project_root), {"spec": normalize_spec(spec), "at": now_iso(), "prompt_sha256": prompt_sha256}, project_root)
+    return normalize_spec(spec)
+
+
+def user_rungs(project_root: Path) -> str:
     try:
-        pointer = rfl_json.read_bounded(live_path(), max_bytes=4096, max_depth=4)
-    except rfl_json.BadJson:
-        return None
-    run_id = pointer.get("run_id")
-    if pointer.get("project_root") != str(Path(project_root).resolve()) or not isinstance(run_id, str):
-        return None
-    if not RUN_ID_RE.match(run_id) or not (Path(project_root) / ".planning" / f"rfl-{run_id}").is_dir():
-        return None
-    return run_id
+        data = read_signed(_user_rungs_path(project_root), Path(project_root).resolve(), "user rung override")
+    except RflError:
+        return ""
+    at = quota_window.parse_iso_datetime(str(data.get("at")))
+    if at is None or (quota_window.utcnow() - at).total_seconds() > USER_RUNGS_TTL_SECONDS:
+        return ""
+    return str(data.get("spec") or "")
+
+
+def agent_dirs(project_root: Path) -> list[Path]:
+    home = Path(os.environ.get("HOME", "~")).expanduser()
+    return [Path(project_root) / ".claude" / "agents", home_root() / "agents", home / ".claude" / "agents"]
+
+
+def shadow_agent_files(project_root: Path, role: str) -> list[str]:
+    """Project or user agent definitions that would win over the plugin's ``role`` agent for the plain name."""
+    found = []
+    for directory in agent_dirs(project_root):
+        if not directory.is_dir():
+            continue
+        for path in sorted(directory.glob("*.md"))[:200]:
+            try:
+                head = path.read_text(encoding="utf-8", errors="replace")[:2048]
+            except OSError:
+                head = ""
+            if path.stem == role or re.search(rf"(?m)^name:\s*{re.escape(role)}\s*$", head):
+                found.append(str(path))
+    return found
 
 
 def load_status(project_root: Path, run_dir: Path) -> dict[str, Any]:
@@ -367,6 +563,7 @@ def save_status(project_root: Path, run_dir: Path, status: dict[str, Any]) -> di
     status["consecutive_clean_rung"] = rung["dir"]
     status["consecutive_clean_reviews"] = len(status["streak"])
     write_json(Path(run_dir) / STATUS_FILE, status, project_root)
+    _sync_record(project_root, status)
     return status
 
 
@@ -385,12 +582,12 @@ def new_status(project_root: Path, run_id: str, rungs: list[dict[str, Any]]) -> 
         "schema": SCHEMA, "run_id": run_id, "host": "claude", "project_root": str(Path(project_root).resolve()),
         "created_at": now_iso(), "rungs": rungs, "rung_index": 1, "phase": "review", "open_ticket": None,
         "attempts": {}, "streak": [], "cycle": None, "apply_baseline": None, "skipped": [],
-        "pending_retry": None, "retrying": False, "status": "active", "resume_after": None, "done": [], "retried": [],
+        "pending_retry": None, "retrying": False, "status": "active", "resume_after": None, "done": [], "retried": [], "cancels": {},
     }
 
 
 def require_live(project_root: Path, run_dir: Path) -> None:
-    if live_run_id(project_root) != Path(run_dir).name[len("rfl-"):]:
+    if live_run_id(project_root) != _run_id_of(run_dir):
         raise RflError(
             "this run is not live in this session; start it with --start or continue it with --resume <run-id>"
         )
@@ -420,7 +617,7 @@ def cleanup_legacy_timers(*, dry_run: bool = False) -> list[str]:
 
 def start_run(project_root: Path, charter_file: Path | None, *, run_id: str = "", rungs_spec: str = "") -> dict[str, Any]:
     root = Path(project_root).resolve()
-    if os.environ.get("SILVER_BULLET_RUNTIME", "claude") == "codex":
+    if detect_host() == "codex":
         raise RflError(CODEX_MESSAGE)
     if charter_file is None:
         raise RflError("--start requires --charter-file (JSON: goal, scope, key_tasks, signals)")
@@ -433,73 +630,77 @@ def start_run(project_root: Path, charter_file: Path | None, *, run_id: str = ""
         raise RflError(f"run {live} is already live in this session; finish it, --abort it, or --resume another")
     run_id = run_id or "r" + time.strftime("%Y%m%d%H%M%S", time.gmtime()) + secrets.token_hex(2)
     run_dir = run_path(root, run_id)
-    if run_dir.exists():
+    if run_dir.exists() or record_path(root, run_id).exists():
         raise RflError(f"{run_dir.name} already exists")
     rungs = configured_rungs(root, rungs_spec)
     project_key(root, create=True)
     run_dir.mkdir(parents=True)
     write_atomic(run_dir / CHARTER_FILE, json.dumps(charter, indent=2) + "\n")
     write_atomic(run_dir / APPROVAL_FILE, f"approved: no\ncharter_sha256: {charter_hash(charter)}\n")
+    _new_record(root, run_id, charter)
     save_status(root, run_dir, new_status(root, run_id, rungs))
     set_live(root, run_id)
     return {"ok": True, "run_id": run_id, "run_dir": str(run_dir), "rungs": rungs,
-            "legacy_timers_removed": cleanup_legacy_timers(), "next": "show the rung brief to the user, then --approve"}
+            "legacy_timers_removed": cleanup_legacy_timers(),
+            "next": f"show the rung brief to the user; they approve by typing `RFL APPROVE {run_id}`, then run --approve"}
+
+
+def _new_record(root: Path, run_id: str, charter: dict[str, Any]) -> None:
+    save_record(root, {"run_id": run_id, "project_root": str(root), "session_id": current_session(root), "status": "active",
+                       "charter_sha256": charter_hash(charter), "approved_sha256": None, "started_at": now_iso()})
 
 
 def load_charter(run_dir: Path) -> dict[str, Any]:
+    """The charter, verified against the hash sealed in the run record at --start."""
     try:
-        return normalize_charter(rfl_json.read_bounded(Path(run_dir) / CHARTER_FILE))
+        charter = normalize_charter(rfl_json.read_bounded(Path(run_dir) / CHARTER_FILE))
     except rfl_json.BadJson as exc:
-        raise RflError(f"{CHARTER_FILE}: {exc}") from exc
+        raise Tamper(f"{CHARTER_FILE}: {exc}") from exc
+    if load_record(_run_root(run_dir), _run_id_of(run_dir))["charter_sha256"] != charter_hash(charter):
+        raise Tamper(f"{CHARTER_FILE} was modified after --start; start a new run (or ask the user to end this one with `RFL ABORT {_run_id_of(run_dir)}`)")
+    return charter
 
 
 def approve(project_root: Path, run_dir: Path) -> dict[str, Any]:
-    require_live(project_root, run_dir)
-    status = load_status(project_root, run_dir)
+    root = Path(project_root).resolve()
+    require_live(root, run_dir)
+    status = load_status(root, run_dir)
     _active(status)
+    run_id = status["run_id"]
     digest = charter_hash(load_charter(run_dir))
+    consume_user_token(root, "approve", run_id)
+    record = load_record(root, run_id)
+    record["approved_sha256"] = digest
+    save_record(root, record)
     write_atomic(Path(run_dir) / APPROVAL_FILE, f"approved: yes\ncharter_sha256: {digest}\napproved_at: {now_iso()}\n")
     return {"ok": True, "approved": True, "charter_sha256": digest}
 
 
 def _approved(run_dir: Path) -> bool:
-    try:
-        text = (Path(run_dir) / APPROVAL_FILE).read_text(encoding="utf-8")
-    except (OSError, ValueError):
-        return False
-    return "approved: yes" in text.splitlines() and f"charter_sha256: {charter_hash(load_charter(run_dir))}" in text.splitlines()
-
-
-def abort_token_path(run_id: str) -> Path:
-    return state_dir() / f"rfl-abort-{run_id}.json"
-
-
-def write_abort_token(project_root: Path, run_id: str) -> Path:
-    """Called by the UserPromptSubmit hook only, from a message the user typed."""
-    path = abort_token_path(run_id)
-    expires = quota_window.isoformat_z(quota_window.utcnow() + timedelta(seconds=ABORT_TTL_SECONDS))
-    write_json(path, {"run_id": run_id, "expires_at": expires}, project_root)
-    return path
+    digest = charter_hash(load_charter(run_dir))
+    return load_record(_run_root(run_dir), _run_id_of(run_dir)).get("approved_sha256") == digest
 
 
 def abort_run(project_root: Path, run_id: str) -> dict[str, Any]:
+    """End a run. The sealed record is the authority, so this works even when the status file no longer verifies."""
     root = Path(project_root).resolve()
     run_dir = run_path(root, run_id)
-    status = load_status(root, run_dir)
-    token_file = abort_token_path(run_id)
-    if not token_file.is_file():
-        raise RflError(f"aborting needs the user's own message: ask them to type exactly `RFL ABORT {run_id}`")
-    token = read_signed(token_file, root, "abort token")
-    expires = quota_window.parse_iso_datetime(str(token.get("expires_at")))
-    if token.get("run_id") != run_id or expires is None or expires < quota_window.utcnow():
-        raise RflError(f"the abort token for {run_id} is expired or does not match; ask the user to type `RFL ABORT {run_id}` again")
-    token_file.unlink()
-    status["status"] = "aborted"
-    status["open_ticket"] = None
-    save_status(root, run_dir, status)
-    write_atomic(run_dir / "ABORTED.md", f"# Aborted\n\nrun: {run_id}\naborted_at: {now_iso()}\nauthorised_by: user message `RFL ABORT {run_id}`\n")
-    if live_run_id(root) == run_id:
-        clear_live()
+    record = load_record(root, run_id)
+    token = consume_user_token(root, "abort", run_id)
+    record["status"] = "aborted"
+    save_record(root, record)
+    try:
+        status = load_status(root, run_dir)
+        status["status"], status["open_ticket"] = "aborted", None
+        save_status(root, run_dir, status)
+    except RflError:
+        pass
+    if run_dir.is_dir():
+        write_atomic(run_dir / "ABORTED.md", (
+            f"# Aborted\n\nrun: {run_id}\naborted_at: {now_iso()}\n"
+            f"authorised_by: token written by the UserPromptSubmit hook (session {token.get('session_id') or 'unknown'}, "
+            f"prompt_sha256 {token.get('prompt_sha256') or 'unknown'}) for the message `RFL ABORT {run_id}`\n"))
+    clear_live(root, run_id)
     return {"ok": True, "status": "aborted", "run_id": run_id}
 
 
@@ -584,7 +785,13 @@ def issue_ticket(project_root: Path, run_dir: Path, phase: str) -> dict[str, Any
     if status["phase"] != phase:
         raise RflError(f"the next step on rung {_rung(status)['index']} is {status['phase']}, not {phase}")
     if not _approved(run_dir):
-        raise RflError("Policy E: the rung brief is not approved for this charter; show it to the user, then --approve")
+        raise RflError(
+            f"Policy E: the rung brief is not approved for this charter; show it to the user, ask them to type "
+            f"`RFL APPROVE {status['run_id']}`, then run --approve")
+    shadow = shadow_agent_files(root, ROLES[phase])
+    if shadow:
+        raise RflError(f"a project or user agent file would shadow the plugin's {ROLES[phase]} for the plain name "
+                       f"({shadow[0]}); remove it so the encoder-issued reviewer is the one that runs")
     key = _attempt_key(status, phase)
     attempt = status["attempts"].get(key, 0) + 1
     if attempt > MAX_ATTEMPTS:
@@ -645,13 +852,29 @@ def _fail_attempt(root: Path, run_dir: Path, status: dict[str, Any], ticket: dic
 
 
 def cancel_ticket(project_root: Path, run_dir: Path) -> dict[str, Any]:
+    """Return a ticket to its pre-spawn state. A cancel is never a failed launch: it cannot skip a rung, only the
+    hook's own observation of a spawn that produced no verdict can (R4-15). It is rate limited and recorded."""
     root = Path(project_root).resolve()
     require_live(root, run_dir)
     status = load_status(root, run_dir)
     if not status["open_ticket"]:
         raise RflError("no open ticket")
     ticket = read_ticket(root, run_dir, status["open_ticket"])
-    return {"ok": True, **_fail_attempt(root, run_dir, status, ticket, "cannot_launch", "ticket cancelled before a capture")}
+    issued = quota_window.parse_iso_datetime(ticket["issued_at"])
+    stale = issued is not None and (quota_window.utcnow() - issued).total_seconds() > SPAWN_STALE_SECONDS
+    if ticket["spawned"] and not stale:
+        raise RflError(f"ticket {ticket['ticket']} already launched its subagent; wait for its result (a launch that never answers can be cancelled after {SPAWN_STALE_SECONDS // 60} minutes)")
+    key = _attempt_key(status, ticket["phase"])
+    count = status["cancels"].get(key, 0)
+    if count >= MAX_CANCELS:
+        raise RflError(f"{count} cancels on this phase already; a cancel never skips a rung, so ask the user what to do (they can end the run with `RFL ABORT {status['run_id']}`)")
+    status["cancels"][key] = count + 1
+    ticket["open"], ticket["outcome"] = False, "cancelled"
+    ticket["cancelled_at"] = now_iso()
+    save_ticket(root, run_dir, ticket)
+    status["open_ticket"] = None
+    save_status(root, run_dir, status)
+    return {"ok": True, "outcome": "cancelled", "cancels": count + 1}
 
 
 def _next_rung(root: Path, run_dir: Path, status: dict[str, Any], *, skipped: bool) -> None:
@@ -677,8 +900,7 @@ def _next_rung(root: Path, run_dir: Path, status: dict[str, Any], *, skipped: bo
     if nxt is None:
         status["status"], status["phase"] = "completed", "advance"
         write_atomic(Path(run_dir) / "LADDER-COMPLETE.md", _complete_md(status))
-        if live_run_id(root) == status["run_id"]:
-            clear_live()
+        clear_live(root, status["run_id"])
         return
     status["rung_index"], status["phase"] = nxt, "review"
     for key in [k for k in status["attempts"] if k.startswith(f"{nxt}:")]:
@@ -852,8 +1074,9 @@ def complete_triage(project_root: Path, run_dir: Path) -> dict[str, Any]:
     cycle = status["cycle"]
     triage = rfl_policy_c.triage_rows(checked["payload"])
     accepts = len(rfl_policy_c.accept_rows(rung_dir))
-    if cycle["findings"] and len(triage) < len(cycle["findings"]):
-        raise RflError("POLICY-C triage must decide every captured finding")
+    missing = sorted(set(cycle["findings"]) - {str(r.get("id")) for r in triage})
+    if missing:
+        raise RflError("POLICY-C triage must decide every captured finding id; missing: " + ", ".join(missing))
     cycle["accepts"] = accepts
     if accepts:
         status["phase"], status["apply_baseline"] = "apply", cycle["digest"]
@@ -942,9 +1165,12 @@ def advance(project_root: Path, run_dir: Path) -> dict[str, Any]:
     return {"ok": True, "status": status["status"], "rung": status["rung_index"], "next": status["phase"]}
 
 
+LEGACY_STATUSES = frozenset({"active", "paused_quota", "completed", "aborted", "paused"})
+
+
 def resume_run(project_root: Path, run_id: str, charter_file: Path | None = None) -> dict[str, Any]:
     root = Path(project_root).resolve()
-    if os.environ.get("SILVER_BULLET_RUNTIME", "claude") == "codex":
+    if detect_host() == "codex":
         raise RflError(CODEX_MESSAGE)
     run_dir = run_path(root, run_id)
     if not run_dir.is_dir():
@@ -952,12 +1178,24 @@ def resume_run(project_root: Path, run_id: str, charter_file: Path | None = None
     live = live_run_id(root)
     if live and live != run_id:
         raise RflError(f"run {live} is live; finish or abort it first")
-    legacy = False
+    fail = (f"; the run failed re-validation: it was changed outside the encoder or not started on this installation. "
+            f"Start a new run, or ask the user to end this one by typing `RFL ABORT {run_id}`")
     try:
-        status = load_status(root, run_dir)
-    except Tamper:
+        raw = rfl_json.read_bounded(run_dir / STATUS_FILE)
+    except rfl_json.BadJson as exc:
+        raise Tamper(f"{STATUS_FILE}: {exc}{fail}") from exc
+    legacy = False
+    if raw.get("schema") == SCHEMA or "mac" in raw:  # anything that carries a signature field must verify
+        try:
+            status = load_status(root, run_dir)
+            load_record(root, run_id)
+        except Tamper as exc:
+            raise Tamper(f"{exc}{fail}") from exc
+    elif "schema" not in raw and raw.get("status") in LEGACY_STATUSES:
         status = _migrate_legacy(root, run_dir, run_id, charter_file)
         legacy = True
+    else:
+        raise Tamper(f"{STATUS_FILE} is not a run of this ladder{fail}")
     if status["status"] in ("completed", "aborted"):
         raise RflError(f"run {run_id} is {status['status']}")
     note = ""
@@ -976,25 +1214,22 @@ def resume_run(project_root: Path, run_id: str, charter_file: Path | None = None
 
 
 def _migrate_legacy(root: Path, run_dir: Path, run_id: str, charter_file: Path | None) -> dict[str, Any]:
-    if not (run_dir / CHARTER_FILE).is_file():
+    """A pre-v2 run (no schema, no signature): keep its directories as history and restart at rung 1.
+    Nothing in the old file (rung, streak, approval) is trusted."""
+    source = run_dir / CHARTER_FILE
+    if not source.is_file():
         if charter_file is None:
             raise RflError("this legacy run has no CHARTER.json; pass --charter-file (goal, scope, key_tasks, signals)")
-        try:
-            write_atomic(run_dir / CHARTER_FILE, json.dumps(normalize_charter(rfl_json.read_bounded(charter_file)), indent=2) + "\n")
-        except rfl_json.BadJson as exc:
-            raise RflError(f"charter: {exc}") from exc
+        source = charter_file
     try:
-        old = rfl_json.read_bounded(run_dir / STATUS_FILE)
-    except rfl_json.BadJson:
-        old = {}
+        charter = normalize_charter(rfl_json.read_bounded(source))
+    except rfl_json.BadJson as exc:
+        raise RflError(f"charter: {exc}") from exc
     project_key(root, create=True)
-    rungs = configured_rungs(root)
-    match = re.match(r"^rung-(\d+)", str(old.get("current_rung") or ""))
-    status = new_status(root, run_id, rungs)
-    status["rung_index"] = min(max(int(match.group(1)) if match else 1, 1), len(rungs))
-    charter = load_charter(run_dir)
+    write_atomic(run_dir / CHARTER_FILE, json.dumps(charter, indent=2) + "\n")
     write_atomic(run_dir / APPROVAL_FILE, f"approved: no\ncharter_sha256: {charter_hash(charter)}\n")
-    return status
+    _new_record(root, run_id, charter)
+    return new_status(root, run_id, configured_rungs(root))
 
 
 def status_report(project_root: Path, run_dir: Path) -> dict[str, Any]:
@@ -1002,4 +1237,5 @@ def status_report(project_root: Path, run_dir: Path) -> dict[str, Any]:
     status = load_status(root, run_dir)
     return {"ok": True, "run_id": status["run_id"], "status": status["status"], "rung": _rung(status), "phase": status["phase"],
             "open_ticket": status["open_ticket"], "streak": len(status["streak"]), "skipped": status["skipped"],
-            "resume_after": status["resume_after"], "live": live_run_id(root) == status["run_id"]}
+            "resume_after": status["resume_after"], "live": live_run_id(root) == status["run_id"],
+            "approved": _approved(run_dir)}

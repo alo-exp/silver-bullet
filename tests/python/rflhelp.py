@@ -18,7 +18,7 @@ pc = load_module("scripts/lib/rfl_policy_c.py", name="rfl_policy_c")
 qw = load_module("scripts/lib/quota_window.py", name="quota_window")
 
 ENV_KEYS = ("SB_RFL_NOW", "SILVER_BULLET_RUNTIME", "SB_RUNTIME_HOME_ROOT", "SB_RUNTIME_STATE_DIR", "SB_RFL_QUOTA_HOST",
-            "PI_PROVIDER", "SB_RFL_MODEL", "PI_MODEL")
+            "PI_PROVIDER", "SB_RFL_MODEL", "PI_MODEL", "SB_RFL_SESSION_ID", "CLAUDE_SESSION_ID", "CLAUDE_CODE_SESSION_ID", "CODEX_THREAD_ID", "CODEX_CI")
 CLEAN_POLICY = {
     "schema": "rfl.policy_c.v1",
     "rung_identity": {"family": "sonnet", "effort": "high", "display": "Sonnet High"},
@@ -68,11 +68,19 @@ class RflCase(unittest.TestCase):
         return path
 
     def start(self, rungs="sonnet:high", run_id="demo", approve=True, **over):
+        if rungs:
+            native.record_user_rungs(self.root, rungs)  # what the UserPromptSubmit hook does for `rungs: ...`
         out = native.start_run(self.root, self.write_charter(**over), run_id=run_id, rungs_spec=rungs)
         self.run_dir = Path(out["run_dir"])
         if approve:
-            native.approve(self.root, self.run_dir)
+            self.approve()
         return out
+
+    def approve(self):
+        """The user types `RFL APPROVE <id>` (hook token), then the encoder records it."""
+        run_id = self.run_dir.name[len("rfl-"):]
+        native.write_user_token(self.root, "approve", run_id, prompt_sha256="test")
+        return native.approve(self.root, self.run_dir)
 
     def status(self):
         return native.load_status(self.root, self.run_dir)
@@ -116,3 +124,8 @@ class RflCase(unittest.TestCase):
         issued = self.ticket("verify_2")
         self.reply(issued["ticket"], {"verdict": "VERIFY_PASS", "checks": [], "gaps": []})
         native.run_signals(self.root, self.run_dir)
+
+    def failed_launch(self, phase="review"):
+        """A launch the HOOK observed failing: the ticket is issued and the Agent response carries no verdict."""
+        self.ticket(phase)
+        return native.capture_response(self.root, self.run_dir, "Agent", "no verdict here")

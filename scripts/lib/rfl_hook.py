@@ -21,8 +21,9 @@ import rfl_native as native
 import rfl_policy_c
 
 AGENT_TOOLS = frozenset({"Task", "Subagent", "Agent"})
-EDIT_TOOLS = frozenset({"Edit", "Write", "MultiEdit", "apply_patch"})
-ABORT_RE = re.compile(r"^\s*RFL ABORT ([A-Za-z0-9._-]{1,64})\s*$")
+EDIT_TOOLS = frozenset({"Edit", "Write", "MultiEdit", "apply_patch", "NotebookEdit"})
+USER_CMD_RE = re.compile(r"^\s*RFL (ABORT|APPROVE) ([A-Za-z0-9._-]{1,64})\s*$")
+AGENT_FILE_RE = re.compile(r"^sb-rfl-[A-Za-z0-9_-]+\.md$")
 PATCH_FILE_RE = re.compile(r"^\*\*\* (?:Add|Update|Delete) File: (.+)$|^\*\*\* Move to: (.+)$", re.M)
 PROTECTED_NAMES = ("LADDER-STATUS.json", "QUOTA-CLASSIFY.json")
 NOTICE_STATUSES = frozenset({"active", "paused_quota"})
@@ -74,8 +75,10 @@ def _notice_line(run_dir: Path) -> str | None:
 
 
 def session_start(payload: dict[str, Any], root: Path) -> dict[str, Any]:
+    sid = payload.get("session_id") if isinstance(payload.get("session_id"), str) else ""
+    native.record_session(root, sid)
     if payload.get("source") in ("startup", "clear"):
-        native.clear_live()
+        native.prune_pointers(root, sid)
         (native.state_dir() / "review-fix-ladder-state.json").unlink(missing_ok=True)
     lines = []
     for status_file in sorted((root / ".planning").glob("rfl-*/" + native.STATUS_FILE)):
@@ -90,18 +93,33 @@ def session_start(payload: dict[str, Any], root: Path) -> dict[str, Any]:
 # ------------------------------------------------------------------------------ UserPromptSubmit
 def prompt_submit(payload: dict[str, Any], root: Path) -> dict[str, Any]:
     prompt = payload.get("prompt")
-    match = ABORT_RE.match(prompt) if isinstance(prompt, str) else None
-    if not match or _subagent(payload)[0]:
+    if not isinstance(prompt, str) or _subagent(payload)[0]:
         return NOOP
-    run_id = match.group(1)
-    try:
-        native.load_status(root, native.run_path(root, run_id))
-    except native.RflError as exc:
-        return {"output": None, "audit": {"decision": "ignore", "reason": f"RFL ABORT {run_id} refused: {exc}"}}
-    native.write_abort_token(root, run_id)
-    result = _context("UserPromptSubmit", f"RFL ABORT {run_id} accepted for 30 minutes. Run: review-fix-ladder.py --abort {run_id}")
-    result["audit"] = {"decision": "allow", "reason": f"RFL ABORT {run_id} token written from a user message"}
-    return result
+    sid = payload.get("session_id") if isinstance(payload.get("session_id"), str) else ""
+    digest = native.sha256_text(prompt)
+    match = USER_CMD_RE.match(prompt)
+    if match:
+        kind, run_id = match.group(1).lower(), match.group(2)
+        try:
+            record = native.load_record(root, run_id)
+        except native.RflError as exc:
+            return {"output": None, "audit": {"decision": "ignore", "reason": f"RFL {kind.upper()} {run_id} refused: {exc}"}}
+        if record.get("project_root") != str(root):
+            return {"output": None, "audit": {"decision": "ignore", "reason": f"RFL {kind.upper()} {run_id} refused: the run belongs to another project"}}
+        native.write_user_token(root, kind, run_id, session_id=sid, prompt_sha256=digest)
+        text = (f"RFL ABORT {run_id} accepted for 30 minutes. Run: review-fix-ladder.py --abort {run_id}" if kind == "abort"
+                else f"RFL APPROVE {run_id}: approval accepted for 30 minutes. Run: review-fix-ladder.py --approve --run-dir .planning/rfl-{run_id}")
+        result = _context("UserPromptSubmit", text)
+        result["audit"] = {"decision": "allow", "reason": f"RFL {kind.upper()} {run_id} token written from a user message (prompt_sha256 {digest})"}
+        return result
+    found = native.USER_RUNGS_RE.search(prompt)
+    if found:
+        try:
+            spec = native.record_user_rungs(root, found.group(1), prompt_sha256=digest)
+        except native.RflError:
+            return NOOP
+        return {"output": None, "audit": {"decision": "allow", "reason": f"user rung override recorded: {spec}"}}
+    return NOOP
 
 
 # ------------------------------------------------------------------------------ PreToolUse / PostToolUse
@@ -114,8 +132,11 @@ def check_spawn(root: Path, run_dir: Path, status: dict[str, Any], payload: dict
     kind = str(spec.get("subagent_type") or spec.get("subagent") or "")
     if ticket["spawned"]:
         return f"RFL ticket {ticket['ticket']} already launched its subagent; wait for its result (one subagent at a time)"
-    if kind != ticket["role"] and not kind.endswith(":" + ticket["role"]):
-        return f"RFL ticket {ticket['ticket']} requires subagent_type {ticket['role']} (got {kind or 'none'})"
+    if kind not in (ticket["role"], f"silver-bullet:{ticket['role']}"):
+        return f"RFL ticket {ticket['ticket']} requires subagent_type {ticket['role']} (got {kind or 'none'}); only the plugin's own agent is accepted"
+    shadow = native.shadow_agent_files(root, ticket["role"])
+    if shadow and kind == ticket["role"]:
+        return f"a project or user agent file ({shadow[0]}) would shadow the plugin's {ticket['role']} for the plain name; remove it"
     if str(spec.get("model") or "").lower() != ticket["model"] or str(spec.get("effort") or "").lower() != ticket["effort"]:
         return f"RFL ticket {ticket['ticket']} requires model {ticket['model']} with effort {ticket['effort']}"
     if spec.get("run_in_background"):
@@ -149,6 +170,10 @@ def check_edit(root: Path, run_dir: Path, payload: dict[str, Any]) -> str | None
             rels.append(Path(os.path.realpath(target)).relative_to(root.resolve()))
         except ValueError:
             continue
+    for raw in payload_paths(spec):
+        target = Path(os.path.realpath(raw if Path(raw).is_absolute() else cwd / raw))
+        if AGENT_FILE_RE.match(target.name) and target.parent.name == "agents" and target.parent.parent.name == ".claude":
+            return f"{target.name} is a review-fix-ladder agent definition: a same-name project or user agent would replace the plugin's read-only reviewer, so no one may write it while a run is live"
     _, agent_type = _subagent(payload)
     if agent_type.split(":")[-1] in native.ROLES.values() and rels:
         return "RFL reviewers and verifiers are read-only: they must not edit files"
@@ -192,17 +217,34 @@ def post_tool(payload: dict[str, Any], root: Path, run_dir: Path) -> dict[str, A
     return {"output": None, "audit": {"decision": "allow", "reason": f"RFL capture: {outcome}"}}
 
 
-def stop(root: Path, run_dir: Path) -> dict[str, Any]:
-    status = native.load_status(root, run_dir)
-    if status["status"] != "active":
+def _stop_problem(root: Path, run_id: str) -> str | None:
+    """Why this session may not stop (None = it may). The sealed record, not .planning, says a run is active."""
+    run_dir = native.run_path(root, run_id)
+    try:
+        record = native.load_record(root, run_id)
+        if record["status"] != "active":
+            return None
+        status = native.load_status(root, run_dir)
+    except native.RflError as exc:
+        return str(exc)
+    if status["status"] != "active" or record.get("approved_sha256") is None:
+        return None  # finished, or waiting for the user's Policy E approval
+    errors = rfl_policy_c.assert_rfl_advance(run_dir, next_action="stop")["errors"]
+    if status["open_ticket"]:
+        errors = [f"ticket {status['open_ticket']} is still open"] + errors
+    return "; ".join(errors) or None
+
+
+def stop(payload: dict[str, Any], root: Path, run_id: str) -> dict[str, Any]:
+    problem = _stop_problem(root, run_id)
+    if problem is None:
         return NOOP
-    rung = status["rungs"][status["rung_index"] - 1]
-    checked = rfl_policy_c.assert_rfl_advance(run_dir, next_action="stop")
-    detail = " " + "; ".join(checked["errors"]) + "." if checked["errors"] else ""
-    return _deny("Stop", (
-        f"Review-fix ladder run {status['run_id']} is active (rung {rung['index']} {rung['model']}:{rung['effort']}, "
-        f"next step {status['phase']}).{detail} Continue the ladder; only the user can end it early by typing "
-        f"`RFL ABORT {status['run_id']}`."))
+    text = (f"Review-fix ladder run {run_id}: {problem}. Continue the ladder; only the user can end it early by typing "
+            f"`RFL ABORT {run_id}`.")
+    if payload.get("stop_hook_active") is True:
+        text = "Review-fix ladder gate released after one block (stop_hook_active): " + text
+        return {"output": {"systemMessage": text}, "audit": {"decision": "allow", "reason": text}}
+    return _deny("Stop", text)
 
 
 def handle(payload: dict[str, Any], root: Path) -> dict[str, Any]:
@@ -220,16 +262,20 @@ def handle(payload: dict[str, Any], root: Path) -> dict[str, Any]:
     if event == "PostToolUse":
         return post_tool(payload, root, run_dir)
     if event == "Stop":
-        return stop(root, run_dir)
+        return stop(payload, root, run_id)
     return NOOP
 
 
 def run_hook(stdin_text: str, project_root: Path) -> dict[str, Any]:
     root = Path(project_root).resolve()
     event = ""
+    os.environ.pop("SB_RFL_SESSION_ID", None)
     try:
         payload = rfl_json.loads_bounded(stdin_text, max_bytes=MAX_PAYLOAD, max_depth=200)
         event = str(payload.get("hook_event_name") or payload.get("hookEventName") or "")
+        sid = payload.get("session_id")
+        if isinstance(sid, str) and native.SESSION_RE.match(sid):
+            os.environ["SB_RFL_SESSION_ID"] = sid
         return handle(payload, root)
     except Exception as exc:  # noqa: BLE001 - fail closed while a run is live, open otherwise
         try:
@@ -238,5 +284,5 @@ def run_hook(stdin_text: str, project_root: Path) -> dict[str, Any]:
             live = True
         if live and event in ("PreToolUse", "Stop"):
             return _deny(event, f"Review-fix ladder guard could not check this event ({type(exc).__name__}: {exc}); "
-                                "run review-fix-ladder.py --status, or --resume <run-id> to re-validate")
+                                "run review-fix-ladder.py --status, or ask the user to end the run by typing `RFL ABORT <run-id>`")
         return NOOP

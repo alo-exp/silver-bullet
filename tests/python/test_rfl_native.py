@@ -137,19 +137,24 @@ class RungsTest(RflCase):
 
     def test_config_sources(self):
         cfg = self.root / ".silver-bullet.json"
-        cfg.write_text(json.dumps({"review_fix_ladder": {"rungs": "-haiku:xhigh"}}))
-        self.assertEqual(native.configured_rungs(self.root)[0]["model"], "sonnet")
-        cfg.write_text(json.dumps({"review_fix_ladder": {"rungs": ["opus:high"]}}))
-        self.assertEqual([r["dir"] for r in native.configured_rungs(self.root)], ["rung-01-opus-high"])
-        cfg.write_text(json.dumps({"review_fix_ladder": {"rungs": {"claude": "sonnet:high"}}}))
-        self.assertEqual(len(native.configured_rungs(self.root)), 1)
-        cfg.write_text(json.dumps({"review_fix_ladder": {"rungs": "-haiku:xhigh"}}))
-        out = native.configured_rungs(self.root, "+opus:xhigh")
-        self.assertEqual(out[-1]["effort"], "xhigh")
+        cfg.write_text(json.dumps({"review_fix_ladder": {"rungs": "+opus:xhigh"}}))  # additions are fine
+        self.assertEqual(native.configured_rungs(self.root)[-1]["effort"], "xhigh")
+        for dropping in ("-haiku:xhigh", ["opus:high"], {"claude": "sonnet:high"}):
+            cfg.write_text(json.dumps({"review_fix_ladder": {"rungs": dropping}}))
+            with self.assertRaisesRegex(native.RflError, "only the user"):
+                native.configured_rungs(self.root)  # a repo config can never shorten the ladder
+            self.assertGreater(len(native.configured_rungs(self.root, enforce=False)), 0)
         cfg.write_text(json.dumps({"review_fix_ladder": "nope"}))
         self.assertEqual(len(native.configured_rungs(self.root)), 6)
         cfg.write_text("not json")
         self.assertEqual(len(native.configured_rungs(self.root)), 6)
+        native.record_user_rungs(self.root, "-haiku:xhigh")  # the user said so in their own message
+        cfg.write_text(json.dumps({"review_fix_ladder": {"rungs": "-haiku:xhigh"}}))
+        self.assertEqual(native.configured_rungs(self.root)[0]["model"], "sonnet")
+        out = native.configured_rungs(self.root, "-haiku:xhigh")
+        self.assertEqual(len(out), 5)
+        with self.assertRaisesRegex(native.RflError, "must be what the user asked"):
+            native.configured_rungs(self.root, "+opus:xhigh")
 
 
 class CharterTest(RflCase):
@@ -224,7 +229,7 @@ class StartAndApproveTest(RflCase):
         status = self.status()
         self.assertEqual((status["schema"], status["phase"], status["status"]), (native.SCHEMA, "review", "active"))
         self.assertEqual(status["current_rung"], "rung-01-sonnet-high")
-        native.approve(self.root, self.run_dir)
+        self.approve()
         self.assertTrue(native._approved(self.run_dir))
 
     def test_approval_is_regated_when_the_charter_changes(self):
@@ -232,9 +237,11 @@ class StartAndApproveTest(RflCase):
         charter = json.loads((self.run_dir / native.CHARTER_FILE).read_text())
         charter["key_tasks"] = ["different"]
         (self.run_dir / native.CHARTER_FILE).write_text(json.dumps(charter))
-        self.assertFalse(native._approved(self.run_dir))
+        with self.assertRaises(native.Tamper):  # the charter hash is sealed in the run record at --start
+            native._approved(self.run_dir)
         (self.run_dir / native.APPROVAL_FILE).unlink()
-        self.assertFalse(native._approved(self.run_dir))
+        with self.assertRaises(native.Tamper):
+            native._approved(self.run_dir)
 
     def test_generated_run_id_and_second_start_refused(self):
         out = native.start_run(self.root, self.write_charter())
@@ -250,7 +257,7 @@ class StartAndApproveTest(RflCase):
         with self.assertRaisesRegex(native.RflError, "charter"):
             native.start_run(self.root, bad)
         self.start(run_id="x")
-        native.clear_live()
+        native.clear_live(self.root)
         with self.assertRaisesRegex(native.RflError, "already exists"):
             native.start_run(self.root, self.write_charter(), run_id="x")
 
@@ -264,7 +271,7 @@ class StartAndApproveTest(RflCase):
 
     def test_approve_requires_a_live_active_run(self):
         self.start(approve=False)
-        native.clear_live()
+        native.clear_live(self.root)
         with self.assertRaisesRegex(native.RflError, "not live"):
             native.approve(self.root, self.run_dir)
 
@@ -272,16 +279,69 @@ class StartAndApproveTest(RflCase):
         self.start()
         self.assertEqual(native.live_run_id(self.root), "demo")
         self.assertIsNone(native.live_run_id(self.tmp))  # another project
-        native.live_path().write_text("not json")
+        pointer = native.pointer_path(self.root, "")
+        for bad in ("not json", json.dumps({"project_root": str(self.root), "run_id": 5}),
+                    json.dumps({"project_root": str(self.root), "run_id": "../x"}),
+                    json.dumps({"project_root": str(self.root), "run_id": "ghost"}),
+                    json.dumps({"project_root": "/elsewhere", "run_id": "demo"})):
+            pointer.write_text(bad)
+            self.assertIsNone(native.live_run_id(self.root), bad)
+        native.clear_live(self.root)
+        native.clear_live(self.root)  # idempotent
+
+    def test_pointers_are_per_session_and_stale_ones_are_pruned(self):
+        os.environ["SB_RFL_SESSION_ID"] = "s1"
+        self.start()
+        self.assertEqual(native.live_run_id(self.root), "demo")
+        self.assertIsNone(native.live_run_id(self.root, "s2"))
+        self.assertEqual(native.live_run_id(self.root, "s1"), "demo")
+        native.prune_pointers(self.root, "s2")
+        self.assertEqual(native.live_run_id(self.root, "s1"), "demo")  # another session's startup leaves it alone
+        old = native.pointer_path(self.root, "s1")
+        os.utime(old, (1, 1))
+        native.prune_pointers(self.root, "s9")
+        self.assertIsNone(native.live_run_id(self.root, "s1"))  # stale (a day untouched)
+        native.prune_pointers(self.root, "s9")  # nothing left: still fine
+        native.record_session(self.root, "bad session!")  # unsafe ids are never recorded
+        native.record_session(self.root, "s5")
+        del os.environ["SB_RFL_SESSION_ID"]
+        self.assertEqual(native.current_session(self.root), "s5")
+        (native.state_dir() / "rfl-sessions" / f"{native._h(str(self.root))}.json").write_text(json.dumps({"session_id": 7}))
+        self.assertEqual(native.current_session(self.root), "")
+
+    def test_clear_live_with_a_run_id_drops_every_session_pointer_to_it(self):
+        os.environ["SB_RFL_SESSION_ID"] = "s1"
+        self.start()
+        other = native.pointer_path(self.root, "s2")
+        other.write_text(native.pointer_path(self.root, "s1").read_text())
+        unrelated = native.pointer_path(self.root, "s3")
+        unrelated.write_text(json.dumps({"project_root": str(self.root), "run_id": "elsewhere"}))
+        corrupt = native.pointer_path(self.root, "s4")
+        corrupt.write_text("not json")
+        native.clear_live(self.root, "demo")
+        self.assertFalse(native.pointer_path(self.root, "s1").exists() or other.exists())
+        self.assertTrue(unrelated.exists() and corrupt.exists())
+
+    def test_user_rungs_expire_and_must_be_valid(self):
+        native.record_user_rungs(self.root, "rungs: -haiku:xhigh")
+        self.assertEqual(native.user_rungs(self.root), "-haiku:xhigh")
+        with self.assertRaises(native.RflError):
+            native.record_user_rungs(self.root, "gpt:high")
+        os.environ["SB_RFL_NOW"] = "2099-01-01T00:00:00Z"
+        self.assertEqual(native.user_rungs(self.root), "")
+
+    def test_a_run_record_that_is_forged_or_missing_never_verifies(self):
+        self.start()
+        path = native.record_path(self.root, "demo")
+        data = json.loads(path.read_text())
+        data["approved_sha256"] = "x"
+        path.write_text(json.dumps(data))
+        with self.assertRaises(native.Tamper):
+            native.load_record(self.root, "demo")
+        path.unlink()
+        with self.assertRaises(native.Tamper):
+            native.load_record(self.root, "demo")
         self.assertIsNone(native.live_run_id(self.root))
-        native.live_path().write_text(json.dumps({"project_root": str(self.root), "run_id": 5}))
-        self.assertIsNone(native.live_run_id(self.root))
-        native.live_path().write_text(json.dumps({"project_root": str(self.root), "run_id": "../x"}))
-        self.assertIsNone(native.live_run_id(self.root))
-        native.live_path().write_text(json.dumps({"project_root": str(self.root), "run_id": "ghost"}))
-        self.assertIsNone(native.live_run_id(self.root))
-        native.clear_live()
-        native.clear_live()  # idempotent
 
     def test_status_load_errors(self):
         self.start()
@@ -330,7 +390,7 @@ class TicketTest(RflCase):
         self.start(approve=False)
         with self.assertRaisesRegex(native.RflError, "Policy E"):
             self.ticket("review")
-        native.approve(self.root, self.run_dir)
+        self.approve()
         with self.assertRaisesRegex(native.RflError, "one of"):
             native.issue_ticket(self.root, self.run_dir, "triage")
         with self.assertRaisesRegex(native.RflError, "next step on rung 1 is review, not verify_1"):
@@ -338,7 +398,7 @@ class TicketTest(RflCase):
         self.ticket("review")
         with self.assertRaisesRegex(native.RflError, "still open"):
             self.ticket("review")
-        native.clear_live()
+        native.clear_live(self.root)
         with self.assertRaisesRegex(native.RflError, "not live"):
             self.ticket("review")
 
@@ -385,18 +445,17 @@ class TicketTest(RflCase):
             with self.assertRaises(native.Tamper, msg=bad):
                 native.read_ticket(self.root, self.run_dir, bad)
 
-    def test_cancel_ticket_counts_an_attempt_then_skips(self):
+    def test_hook_observed_failed_launches_skip_a_rung_and_record_the_captured_text(self):
         self.start(rungs="sonnet:high sonnet:xhigh")
-        self.ticket("review")
-        out = native.cancel_ticket(self.root, self.run_dir)
-        self.assertEqual((out["outcome"], out["attempts"], out["skipped"]), ("cannot_launch", 1, False))
-        self.ticket("review")
-        out = native.cancel_ticket(self.root, self.run_dir)
+        out = self.failed_launch()
+        self.assertEqual((out["outcome"], out["attempts"], out["skipped"]), ("no_verdict", 1, False))
+        out = self.failed_launch()
         self.assertTrue(out["skipped"])
         status = self.status()
         self.assertEqual((status["rung_index"], status["skipped"], status["phase"]), (2, [1], "review"))
         skipped = (self.run_dir / "rung-01-sonnet-high" / "SKIPPED.md").read_text()
-        self.assertIn("cannot_launch", skipped)
+        self.assertIn("no_verdict", skipped)
+        self.assertIn("no verdict here", skipped)
         with self.assertRaisesRegex(native.RflError, "no open ticket"):
             native.cancel_ticket(self.root, self.run_dir)
 
@@ -566,8 +625,8 @@ class CycleTest(RflCase):
         with self.assertRaisesRegex(native.RflError, "valid POLICY-C"):
             native.complete_triage(self.root, self.run_dir)
         self.write_policy({**CLEAN_POLICY, "verdict": "NOT CLEAN", "issues": {"HIGH": [{"id": "F1", "title": "t"}], "MED": "none", "LOW": "none", "NIT": "none"},
-                           "triage": [{"id": "X", "decision": "REJECT-as-wrong", "reason": "r"}]})
-        native.complete_triage(self.root, self.run_dir)  # one row decides the one finding
+                           "triage": [{"id": "F1", "decision": "REJECT-as-wrong", "reason": "r"}]})
+        native.complete_triage(self.root, self.run_dir)  # the row decides the one finding
         self.assertEqual(self.status()["phase"], "verify_1")
 
     def test_triage_with_fewer_rows_than_findings_is_refused(self):
@@ -669,8 +728,7 @@ class CycleTest(RflCase):
     def test_skipped_rungs_are_retried_once_after_the_ladder(self):
         self.start(rungs="sonnet:high sonnet:xhigh")
         for _ in range(2):
-            self.ticket("review")
-            native.cancel_ticket(self.root, self.run_dir)
+            self.failed_launch()
         self.assertEqual(self.status()["skipped"], [1])
         self.finish_rung()
         out = native.advance(self.root, self.run_dir)
@@ -686,13 +744,11 @@ class CycleTest(RflCase):
     def test_a_rung_skipped_again_after_retry_stays_skipped_and_the_ladder_ends(self):
         self.start(rungs="sonnet:high sonnet:xhigh")
         for _ in range(2):
-            self.ticket("review")
-            native.cancel_ticket(self.root, self.run_dir)
+            self.failed_launch()
         self.finish_rung()
         native.advance(self.root, self.run_dir)
         for _ in range(2):
-            self.ticket("review")
-            native.cancel_ticket(self.root, self.run_dir)
+            self.failed_launch()
         status = self.status()
         self.assertEqual((status["status"], status["skipped"]), ("completed", [1]))
         self.assertIn("Skipped rungs: 1", (self.run_dir / "LADDER-COMPLETE.md").read_text())
@@ -701,8 +757,7 @@ class CycleTest(RflCase):
         self.start(rungs="sonnet:high sonnet:xhigh opus:low")
         for rung in (1, 2):
             for _ in range(2):
-                self.ticket("review")
-                native.cancel_ticket(self.root, self.run_dir)
+                self.failed_launch()
         self.finish_rung()
         native.advance(self.root, self.run_dir)
         self.assertEqual(self.status()["rung_index"], 1)
@@ -714,7 +769,7 @@ class CycleTest(RflCase):
         self.start()
         for _ in range(4):  # two attempts, then the post-ladder retry's two attempts
             self.ticket("review")
-            native.clear_live()
+            native.clear_live(self.root)
             native.capture_response(self.root, self.run_dir, "Agent", "nothing")
             native.set_live(self.root, "demo")
         self.assertEqual(self.status()["status"], "completed")
@@ -760,9 +815,10 @@ class AbortTest(RflCase):
 
     def test_abort_when_another_run_is_live_keeps_the_pointer(self):
         self.start()
-        other = native.run_path(self.root, "second")
-        other.mkdir()
-        native.save_status(self.root, other, native.new_status(self.root, "second", native.configured_rungs(self.root)))
+        native.clear_live(self.root)
+        self.run_dir = native.run_path(self.root, "second")
+        native.start_run(self.root, self.write_charter(), run_id="second")
+        native.set_live(self.root, "demo")  # the first run is the live one in this session again
         native.write_abort_token(self.root, "second")
         native.abort_run(self.root, "second")
         self.assertEqual(native.live_run_id(self.root), "demo")
@@ -773,7 +829,7 @@ class ResumeTest(RflCase):
         self.start()
         self.ticket("review")
         native.capture_response(self.root, self.run_dir, "Agent", "5-hour usage limit reached")
-        native.clear_live()
+        native.clear_live(self.root)
         out = native.resume_run(self.root, "demo")
         self.assertEqual(out["note"], "resumed after a quota pause")
         self.assertEqual(self.status()["status"], "active")
@@ -783,7 +839,7 @@ class ResumeTest(RflCase):
         self.start()
         self.clean_cycle()
         self.ticket("review")
-        native.clear_live()
+        native.clear_live(self.root)
         (self.root / "src" / "a.py").write_text("x = 5\n")
         native.resume_run(self.root, "demo")
         status = self.status()
@@ -803,7 +859,7 @@ class ResumeTest(RflCase):
         with self.assertRaisesRegex(native.RflError, "completed"):
             native.resume_run(self.root, "demo")
 
-    def test_legacy_run_is_migrated_with_a_zero_streak(self):
+    def test_legacy_run_is_migrated_restarting_at_rung_one(self):
         legacy = native.run_path(self.root, "old")
         (legacy / "rung-03-cursor-glm-high").mkdir(parents=True)
         (legacy / native.STATUS_FILE).write_text(json.dumps({"status": "active", "current_rung": "rung-03-cursor-glm-high", "consecutive_clean_reviews": 1}))
@@ -813,19 +869,25 @@ class ResumeTest(RflCase):
         self.assertTrue(out["legacy_migrated"])
         self.run_dir = legacy
         status = self.status()
-        self.assertEqual((status["rung_index"], status["streak"], status["phase"]), (3, [], "review"))
+        self.assertEqual((status["rung_index"], status["streak"], status["phase"]), (1, [], "review"))  # the old rung is never trusted
         self.assertTrue((legacy / "rung-03-cursor-glm-high").is_dir())  # history kept
         self.assertFalse(native._approved(legacy))  # Policy E is asked again
 
-    def test_legacy_variants(self):
+    def test_legacy_variants_and_unrecognised_files(self):
         bare = native.run_path(self.root, "bare")
         bare.mkdir(parents=True)
         (bare / native.STATUS_FILE).write_text("[" * 100000)
+        with self.assertRaisesRegex(native.Tamper, "failed re-validation"):
+            native.resume_run(self.root, "bare")  # unreadable is never migrated
+        (bare / native.STATUS_FILE).write_text(json.dumps({"hello": "world"}))
+        with self.assertRaisesRegex(native.Tamper, "not a run of this ladder"):
+            native.resume_run(self.root, "bare")
+        (bare / native.STATUS_FILE).write_text(json.dumps({"status": "active"}))
         (bare / native.CHARTER_FILE).write_text(json.dumps(self.CHARTER))
         native.resume_run(self.root, "bare")
         self.run_dir = bare
         self.assertEqual(self.status()["rung_index"], 1)
-        native.clear_live()
+        native.clear_live(self.root)
         clamped = native.run_path(self.root, "clamp")
         clamped.mkdir()
         (clamped / native.STATUS_FILE).write_text(json.dumps({"status": "active", "current_rung": "rung-99-x"}))
@@ -835,7 +897,7 @@ class ResumeTest(RflCase):
             native.resume_run(self.root, "clamp", bad)
         native.resume_run(self.root, "clamp", self.write_charter())
         self.run_dir = clamped
-        self.assertEqual(self.status()["rung_index"], 6)
+        self.assertEqual(self.status()["rung_index"], 1)
 
     def test_status_report(self):
         self.start()
