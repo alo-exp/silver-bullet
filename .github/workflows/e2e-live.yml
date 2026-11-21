@@ -38,7 +38,7 @@ jobs:
           persist-credentials: false
 
       - name: Install jq
-        run: sudo apt-get install -y jq git
+        run: sudo apt-get update -qq && sudo apt-get install -y jq git
 
       - name: Preflight (requested runtimes and their host CLIs)
         env:
