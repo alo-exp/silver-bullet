@@ -61,6 +61,7 @@ Called by skills and hooks while Silver Bullet runs in a project.
 | `generate-sentinel-skills-manifest.sh` | Scaffold the SENTINEL per-skill audit manifest |
 | `apply-site-chrome.py` | Rewrite every site page's nav and footer from `site/_chrome/` (edits files in place; no options) |
 | `regenerate-site-certification-status.sh` | Regenerate the certification JSON mirrored on the site |
+| `site-live-evidence.sh` | Fetch the site profile's `live_url`, match `--marker` texts and record live-publish evidence for the current HEAD (the sanctioned writer; the state directory is protected) |
 
 ## Validate and audit
 

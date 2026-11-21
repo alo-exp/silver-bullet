@@ -142,7 +142,7 @@ tg2_farm_stub session-ledger.sh 'sb_session_ledger_append_request() { return 1; 
 TG2_REPO="$TG2_FARM" run 'run `sb:feature`'
 assert_noop "failing ledger append does not break the hook"
 assert_eq "route is still recorded when the ledger append fails" "silver-feature" "$(requested "$REQ")"
-reset; tg2_farm no-ledger "$HOOK" session-ledger.sh prompt-classifier.sh ups-coalesce.sh jq-gate.sh
+reset; tg2_farm no-ledger "$HOOK" session-ledger.sh prompt-classifier.sh ups-coalesce.sh jq-gate.sh skill-discovery.sh
 TG2_REPO="$TG2_FARM" run 'run `sb:feature`'
 assert_noop "hook works without the optional libraries"
 assert_eq "route is recorded without the optional libraries" "silver-feature" "$(requested "$REQ")"

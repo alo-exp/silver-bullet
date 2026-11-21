@@ -13,6 +13,8 @@ version: 0.1.0
 
 # /sb:agent-opencode — OpenCode CLI Subagent Delegation
 
+**Plugin root**: `SB_ROOT` is the Silver Bullet plugin root, the installed plugin unless a fixture overrides it, the directory above `skills/` (`${SB_ROOT}/skills/silver-agent-opencode/SKILL.md`). Run Silver Bullet scripts and read its templates through `${SB_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **OpenCode CLI** executes in the target project working directory via **`opencode run`** (primary non-interactive path).
 
 **Contrast with Sidekick:** Sidekick is session-persistent (quality gates, cross-session advisor). This skill activates **per task** and tears down when the task completes or escalates.
@@ -49,7 +51,7 @@ Parent **must not** implement the delegated task in parallel in the same files. 
 
 1. Parent receives a delegatable task (user request or orchestrator handoff).
 2. Parent invokes **`/sb:agent-opencode`** with a structured brief (below).
-3. Parent runs `bash scripts/agent-opencode/invoke.sh` (preflight + env + delegate) **once per delegation wave**.
+3. Parent runs `bash "${SB_ROOT}/scripts/agent-opencode/invoke.sh"` (preflight + env + delegate) **once per delegation wave**.
 4. On completion or escalation, parent records evidence and clears delegation state.
 
 No session-persistent marker is written. Each invocation is independent.
@@ -78,7 +80,7 @@ Use the canonical delegation atomic flow instead of direct wrapper supervision:
 
 1. Complete **FS-DELEGATE-BRIEF** (brief + `ownership_scope` path prefixes).
 2. Call **`sb_orchestrator_seed_delegation_directive`** (`host=opencode`, `task_id`, `brief_path`, ownership JSON).
-3. Spawn native worker **`.silver-bullet/orchestrator-workers/AGENT-DELEGATE.md`** (Task subagent).
+3. Spawn native worker from the plugin template **`${SB_ROOT}/templates/orchestrator-workers/AGENT-DELEGATE.md`** (Task subagent; never the project copy).
 4. Worker launches `agent-opencode-delegate.sh`; external agent loads **`silver-agent-worker`** contract.
 5. Host runs **FS-DELEGATE-MENTOR** — verify evidence vs brief before user report.
 
@@ -182,7 +184,7 @@ Optional: `AGENT_OPENCODE_MONITOR_INTERVAL` (default 30) — parent `monitor.sh`
 
 ```bash
 export SB_ROOT=/path/to/silver-bullet/repo
-bash scripts/agent-opencode/preflight.sh --sb-root "$SB_ROOT"
+bash "${SB_ROOT}/scripts/agent-opencode/preflight.sh" --sb-root "$SB_ROOT"
 ```
 
 **Launch (recommended path — `opencode run` primary):**
@@ -190,7 +192,7 @@ bash scripts/agent-opencode/preflight.sh --sb-root "$SB_ROOT"
 ```bash
 export OPENCODE_WORK_DIR=/path/to/target/project
 
-bash scripts/agent-opencode/invoke.sh \
+bash "${SB_ROOT}/scripts/agent-opencode/invoke.sh" \
   --work-dir "$OPENCODE_WORK_DIR" \
   --brief-file .planning/agent-opencode/<task-id>/brief.md \
   --log .planning/agent-opencode/<task-id>/opencode-run.log
@@ -199,7 +201,7 @@ bash scripts/agent-opencode/invoke.sh \
 Inline prompt (small tasks):
 
 ```bash
-bash scripts/agent-opencode/invoke.sh \
+bash "${SB_ROOT}/scripts/agent-opencode/invoke.sh" \
   --work-dir "$OPENCODE_WORK_DIR" \
   --prompt "Add GET /api/health returning {status: ok}. Run tests. Commit on branch feature/..." \
   --log .planning/agent-opencode/smoke/opencode-run.log
@@ -208,7 +210,7 @@ bash scripts/agent-opencode/invoke.sh \
 **Parent monitor (channel timeline)** — run in a second terminal while OpenCode works:
 
 ```bash
-bash scripts/agent-opencode/monitor.sh --log .planning/agent-opencode/<task-id>/opencode-run.log
+bash "${SB_ROOT}/scripts/agent-opencode/monitor.sh" --log .planning/agent-opencode/<task-id>/opencode-run.log
 ```
 
 Monitor emits checkpoint bullets: prompt submitted, byte growth, log-floor status, stall/auth/quota signals. Do **not** claim PASS on 0-byte or sub-floor logs.
@@ -216,7 +218,7 @@ Monitor emits checkpoint bullets: prompt submitted, byte growth, log-floor statu
 **Interactive TUI fallback** when `opencode run` is insufficient (PTY supervision, banner blocks):
 
 ```bash
-bash scripts/agent-opencode/invoke.sh --use-interactive --work-dir "$OPENCODE_WORK_DIR" --brief-file ...
+bash "${SB_ROOT}/scripts/agent-opencode/invoke.sh" --use-interactive --work-dir "$OPENCODE_WORK_DIR" --brief-file ...
 ```
 
 Parent should prefer **`opencode run`** for automation; use `--use-interactive` only after a `stuck`/`harness` timeout or when operator supervision requires the OpenCode TUI.

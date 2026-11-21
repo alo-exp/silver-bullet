@@ -32,7 +32,7 @@ SILVER BULLET ► VALIDATE
 When the user requests skipping any step:
 1. Explain why the step exists (one sentence)
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
+3. If user chooses A permanently: record it in the project's `silver-bullet.md` §9b and commit that file (in the Silver Bullet source repo, mirror it into `templates/silver-bullet.md.base` §9b as well).
 
 **Non-skippable gates:** Step 1 (Read SPEC.md), Step 3 (Gap Analysis), Step 5 (User Decision Gate). These cannot be skipped under any circumstances — they are the core validation contract.
 

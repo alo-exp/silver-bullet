@@ -11,11 +11,9 @@ Applies 7 quality dimensions adapted for infrastructure-as-code, CI/CD pipelines
 and DevOps workflows. Every dimension must pass before the current IaC change
 proceeds to `sb:plan`. A ❌ is a hard stop — redesign before continuing.
 
-**Plugin root**: Determine `PLUGIN_ROOT` from this file's path. This file lives at
-`${PLUGIN_ROOT}/skills/devops-quality-gates/SKILL.md`, so the plugin root is two
-directories up.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `agents/claude/` (`${PLUGIN_ROOT}/agents/claude/devops-quality-gates/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory.
 
-**Dimension skills root**: Set `DIMENSION_SKILLS_ROOT="${PLUGIN_ROOT}/skills"` by default. If this skill is running from a native skill mirror such as `$HOME/.claude/skills/devops-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/skills/modularity/SKILL.md` does not exist, use the hidden packaged Codex source root instead:
+**Dimension skills root**: Set `DIMENSION_SKILLS_ROOT="${PLUGIN_ROOT}/agents/claude"` by default. If this skill is running from a native skill mirror such as `$HOME/.claude/skills/devops-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/agents/claude/modularity/SKILL.md` does not exist, use the hidden packaged Codex source root instead:
 
 ```bash
 DIMENSION_SKILLS_ROOT="$HOME/.claude/plugins/cache/alo-labs/silver-bullet/current/skill-source"

@@ -22,8 +22,10 @@ before publication.
 
 ## Output
 
-Write or update the ship section in `.planning/STATE.md`, current phase
-SUMMARY/VERIFICATION, or a PR description draft.
+Write or update the ship section in `.planning/phases/<phase>/SHIP.md`, or in a PR
+description draft. Do not write `.planning/STATE.md` or the legacy phase
+`*-SUMMARY.md` / `*-VERIFICATION.md` files from this skill: planning-file-guard
+denies direct edits to them; only `/sb:phase` and `/sb:undo` may change STATE.md and ROADMAP.md, through the roadmap override.
 
 ## Process
 
@@ -55,7 +57,7 @@ SUMMARY/VERIFICATION, or a PR description draft.
    - docs and artifact updates;
    - deferred items.
 6. Check CI or provide exact missing CI status.
-7. Update planning state only after gates and ship action are consistent.
+7. Record the ship result only after gates and ship action are consistent: write it to `.planning/phases/<phase>/SHIP.md` (the one planning target the guard allows here). Never write `.planning/STATE.md` or `ROADMAP.md` from this skill; `/sb:phase` is the only skill that may change them, through its roadmap override.
 
 ## Exit Gate
 

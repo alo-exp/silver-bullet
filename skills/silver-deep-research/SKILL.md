@@ -8,6 +8,10 @@ version: 1.0.0
 
 # /sb:deep-research — Deep Research Workflow
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `skills/` (`${PLUGIN_ROOT}/skills/silver-deep-research/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
+**Skill directory**: `SKILL_DIR` is the directory that holds this `SKILL.md` (its `scripts/` and `templates/` live there). Run those scripts as `${SKILL_DIR}/scripts/<name>`, never relative to the project working directory.
+
 SB research workflow and **AF-DECIDE** flow-step implementation for decisions that
 need evidence before planning or execution. This skill absorbs the upstream
 `deep-research` methodology into Silver Bullet as `FS-SILVER_DEEP_RESEARCH`.
@@ -260,22 +264,22 @@ competitive-intelligence-report.md
 Run validation before exit:
 
 ```bash
-python3 skills/silver-deep-research/scripts/validate_report.py --report "$SB_RESEARCH_OUT_DIR/research_report.md"
-python3 skills/silver-deep-research/scripts/verify_citations.py --report "$SB_RESEARCH_OUT_DIR/research_report.md"
-python3 skills/silver-deep-research/scripts/verify_claim_support.py verify --dir "$SB_RESEARCH_OUT_DIR" --report "$SB_RESEARCH_OUT_DIR/research_report.md" --strict
-python3 skills/silver-deep-research/scripts/phase_gate.py --dir "$SB_RESEARCH_OUT_DIR"
+python3 "${SKILL_DIR}/scripts/validate_report.py" --report "$SB_RESEARCH_OUT_DIR/research_report.md"
+python3 "${SKILL_DIR}/scripts/verify_citations.py" --report "$SB_RESEARCH_OUT_DIR/research_report.md"
+python3 "${SKILL_DIR}/scripts/verify_claim_support.py" verify --dir "$SB_RESEARCH_OUT_DIR" --report "$SB_RESEARCH_OUT_DIR/research_report.md" --strict
+python3 "${SKILL_DIR}/scripts/phase_gate.py" --dir "$SB_RESEARCH_OUT_DIR"
 ```
 
 For solution types, also run:
 
 ```bash
-python3 skills/silver-deep-research/scripts/generate_report_spa.py --dir "$SB_RESEARCH_OUT_DIR"
-python3 skills/silver-deep-research/scripts/validate_spa_report.py --report "$SB_RESEARCH_OUT_DIR/report.html"
+python3 "${SKILL_DIR}/scripts/generate_report_spa.py" --dir "$SB_RESEARCH_OUT_DIR"
+python3 "${SKILL_DIR}/scripts/validate_spa_report.py" --report "$SB_RESEARCH_OUT_DIR/report.html"
 RT="$(jq -r '.research_type // empty' "$SB_RESEARCH_OUT_DIR/run_manifest.json")"
 if [ "$RT" = "solution-landscape" ]; then
-  python3 skills/silver-deep-research/scripts/validate_landscape.py --dir "$SB_RESEARCH_OUT_DIR"
+  python3 "${SKILL_DIR}/scripts/validate_landscape.py" --dir "$SB_RESEARCH_OUT_DIR"
 elif [ "$RT" = "solution-compare" ]; then
-  python3 skills/silver-deep-research/scripts/validate_compare.py --dir "$SB_RESEARCH_OUT_DIR"
+  python3 "${SKILL_DIR}/scripts/validate_compare.py" --dir "$SB_RESEARCH_OUT_DIR"
 fi
 ```
 
