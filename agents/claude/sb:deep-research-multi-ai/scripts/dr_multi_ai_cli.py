@@ -3,9 +3,18 @@
 
 from __future__ import annotations
 
+import os
+import sys
+
+if __name__ == "__main__" and not sys.flags.isolated:
+    # PYTHONPATH, PYTHONSTARTUP and the user site are invisible to the hooks that let this CLI run, so a script
+    # start re-runs itself in isolated mode (-I) before it imports anything but the interpreter's own modules.
+    os.execv(sys.executable, [sys.executable, "-I", "-B", *sys.argv])  # -I ignores PYTHONDONTWRITEBYTECODE: -B keeps the plugin directory free of bytecode
+
+sys.dont_write_bytecode = True  # also when started another way (imported, or already isolated)
+
 import argparse
 import json
-import os
 import re
 import shutil
 from datetime import datetime, timezone
@@ -21,6 +30,8 @@ def _bootstrap() -> None:
     global _BOOTSTRAPPED
     if _BOOTSTRAPPED:
         return
+    if str(DRM_SCRIPTS) not in sys.path:  # isolated mode (-I) does not put the script's directory on the path
+        sys.path.insert(0, str(DRM_SCRIPTS))
     from skill_paths import ensure_dir_on_path, ensure_scripts_on_path
 
     ensure_scripts_on_path("silver-multi-ai-task", marker="multi_ai_core.py")
@@ -201,6 +212,29 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _output_root_not_allowed(output_root: Path) -> int | None:
+    """Exit status 2 (after printing why) when a run may not write below `output_root`, else None.
+
+    The hooks cannot see what this script writes, so it keeps their boundaries itself.
+    """
+    _bootstrap()
+    from multi_ai_core import output_root_refusal  # noqa: E402
+
+    refusal = output_root_refusal(output_root)
+    if refusal is None:
+        return None
+    print(json.dumps({"ok": False, "error_code": "OUTPUT_ROOT_NOT_ALLOWED", "message": refusal}, indent=2))
+    return 2
+
+
+def _resolved_output_root(raw: str | Path) -> Path:
+    """The output root as one physical path (`~` expanded): checked and written as the same value."""
+    _bootstrap()
+    from multi_ai_core import resolve_output_root  # noqa: E402
+
+    return resolve_output_root(raw)
+
+
 def _package_solution_outputs(args: argparse.Namespace) -> int:
     if not needs_solution_packaging(args.research_type):
         print(json.dumps({"ok": False, "error_code": "SOLUTION_PACKAGING_TYPE_MISMATCH", "message": "--package-only requires solution-landscape or solution-compare"}, indent=2))
@@ -209,11 +243,16 @@ def _package_solution_outputs(args: argparse.Namespace) -> int:
         print(json.dumps({"ok": False, "error_code": "OUTPUT_ROOT_REQUIRED", "message": "--package-only requires --output-root"}, indent=2))
         return 2
 
+    package_root = _resolved_output_root(args.output_root)
+    refused = _output_root_not_allowed(package_root)
+    if refused is not None:
+        return refused
+
     try:
         _bootstrap()
         from package_solution_outputs import package_solution_outputs  # noqa: E402
 
-        result = package_solution_outputs(Path(args.output_root), skip_compare=args.skip_compare, skip_xlsx=args.skip_xlsx, skip_spa=args.skip_spa)
+        result = package_solution_outputs(package_root, skip_compare=args.skip_compare, skip_xlsx=args.skip_xlsx, skip_spa=args.skip_spa)
     except Exception as exc:  # noqa: BLE001
         print(json.dumps({"ok": False, "error_code": "SOLUTION_PACKAGING_FAILED", "message": str(exc)}, indent=2))
         return 1
@@ -258,8 +297,22 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"ok": False, "error_code": gate["error_code"], "message": gate.get("message", "")}, indent=2))
         return 2
 
+    if args.output_root or not args.dry_run:
+        output_root = _resolved_output_root(args.output_root if args.output_root else default_output_root(args.query))
+        # --force on a path it cannot move aside reports that itself (FORCE_REFUSED) in a live run; a
+        # dry run has no such step, so it always reports an output root that is not allowed.
+        force_will_refuse = args.force and not args.dry_run and output_root.exists() and force_refusal(output_root)
+        refused = None if force_will_refuse else _output_root_not_allowed(output_root)
+        if refused is not None:
+            return refused
+
     if args.dry_run:
         report = dry_run_report(selection)
+        if report.get("ok"):
+            # Looks for each backend CLI the plan needs; nothing is started or written.
+            from live_dispatch import backend_availability  # noqa: E402
+
+            report["backend_availability"] = backend_availability(report["resolved_pool"])
         report["parallel_phases"] = parallel
         if not parallel and args.mode not in {"quick"}:
             report["ok"] = False
@@ -276,7 +329,6 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(report, indent=2))
         return 0 if report.get("ok") else 1
 
-    output_root = Path(args.output_root) if args.output_root else default_output_root(args.query)
     moved_aside: Path | None = None
     if output_root.exists() and (args.force or _is_previous_run(output_root)):
         refusal = force_refusal(output_root) if args.force else (
@@ -290,8 +342,6 @@ def main(argv: list[str] | None = None) -> int:
         carried = carry_over_user_inputs(moved_aside, output_root, args.query)
         skipped = [name for name in ("need_profile.json", "scope.md")
                    if (moved_aside / name).is_file() and name not in carried]
-    os.environ.setdefault("SB_HOST", "cursor")
-
     from dr_live_runner import run_dr_live  # noqa: E402
 
     try:

@@ -49,7 +49,11 @@ class RecursionTests(HermeticCase):
             Path(cmd[cmd.index("--cohort-output") + 1]).write_text(DEEP)
             return proc(0, stdout)
 
-        with mock.patch.object(ld, "AGENT_OPENCODE_DELEGATE", delegate), mock.patch.object(ld, "_run_cli", side_effect=fake):
+        opencode = self.tmp / "opencode"
+        opencode.write_text("#!/bin/sh\n")
+        opencode.chmod(0o755)
+        with mock.patch.object(ld, "AGENT_OPENCODE_DELEGATE", delegate), mock.patch.object(ld, "OPENCODE_BIN", str(opencode)), \
+                mock.patch.object(ld, "_run_cli", side_effect=fake):
             results = ld.run_ocg_pool_cohort(
                 ocg_items=[{"logical_model_id": "ocg-minimax-m3"}], phase_id="p", query="q", run_id="r",
                 work_item_id="w", output_dir=self.tmp / "ph", context="", pool="lite")

@@ -11,6 +11,7 @@ import os
 import runpy
 import subprocess
 import sys
+import types
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -71,7 +72,7 @@ class MultiAiCliTests(HermeticCase):
         self.assertEqual(rc, 2)
         self.assertEqual(json.loads(out)["error_code"], "OUTPUT_ROOT_REQUIRED")
 
-    @mock.patch.dict(os.environ, {"SB_HOST": "cursor"})
+    @mock.patch.dict(os.environ, {"SB_HOST": "claude"})
     def test_dry_run_prints_report(self) -> None:
         rc, out, _ = run_main(multi_ai_cli.main, ["--dry-run", "--include-only", "composer-2.5"])
         self.assertEqual(rc, 0)
@@ -79,22 +80,50 @@ class MultiAiCliTests(HermeticCase):
         self.assertTrue(report["ok"] and report["dry_run"])
         self.assertEqual(report["resolved_count"], 1)
 
-    @mock.patch.dict(os.environ, {"SB_HOST": "cursor"})
+    @mock.patch.dict(os.environ, {"SB_HOST": "claude"})
     def test_dry_run_failure_exit_code(self) -> None:
         rc, out, _ = run_main(multi_ai_cli.main, ["--dry-run", "--max-agents", "1"])
         self.assertEqual(rc, 1)
         self.assertEqual(json.loads(out)["error_code"], "MAX_AGENTS_EXCEEDED")
 
-    def test_unsupported_host_blocks_dry_run_like_live_dispatch(self) -> None:
-        with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}):
-            rc, out, _ = run_main(multi_ai_cli.main, ["--dry-run"])
-        self.assertEqual(rc, 2)
-        payload = json.loads(out)
-        self.assertEqual(payload["error_code"], "SB_MULTI_AI_UNSUPPORTED_HOST")
-        self.assertNotIn("dry_run", payload)
+    def test_dry_run_plans_on_claude_and_codex_without_starting_or_writing_anything(self) -> None:
+        for env, host in (({"CLAUDECODE": "1"}, "claude-code"), ({"CODEX_THREAD_ID": "t"}, "codex")):
+            before = sorted(self.tmp.rglob("*"))
+            with mock.patch.dict(os.environ, env), \
+                    mock.patch.object(live_dispatch, "_run_cli", side_effect=AssertionError("a dry run must not start a worker")), \
+                    mock.patch.object(subprocess, "Popen", side_effect=AssertionError("a dry run must not start a process")), \
+                    mock.patch.object(multi_ai_cli, "run_multi_ai_live", side_effect=AssertionError("no live dispatch")):
+                rc, out, _ = run_main(multi_ai_cli.main, ["--dry-run", "--output-root", str(self.tmp / "never-created")])
+            self.assertEqual(rc, 0, out)
+            report = json.loads(out)
+            self.assertEqual((report["ok"], report["host"], report["dry_run"], report["resolved_count"]), (True, host, True, 11))
+            self.assertEqual(sorted(report["backend_availability"]), ["claude", "codex", "cursor", "ocg"])
+            self.assertEqual(sorted(self.tmp.rglob("*")), before)
+            self.assertFalse((self.tmp / "never-created").exists())
+
+    def test_dry_run_reports_a_missing_backend_cli_without_failing_the_plan(self) -> None:
+        with mock.patch.dict(os.environ, {"SB_HOST": "claude"}), mock.patch.object(live_dispatch, "CURSOR_BIN", "no-such-cursor"):
+            rc, out, _ = run_main(multi_ai_cli.main, ["--dry-run", "--include-only", "composer-2.5"])
+        report = json.loads(out)
+        self.assertEqual(rc, 0)
+        self.assertEqual(report["backend_availability"]["cursor"]["available"], False)
+        self.assertIn("SB_CURSOR_BIN", report["backend_availability"]["cursor"]["hint"])
+
+    def test_dry_run_fails_on_unsupported_hosts_like_live_dispatch(self) -> None:
+        for env in ({"SB_HOST": "cursor"}, {"CURSOR_TRACE_ID": "t"}, {}):
+            with mock.patch.dict(os.environ, env):
+                rc, out, _ = run_main(multi_ai_cli.main, ["--dry-run"])
+            self.assertEqual(rc, 2, env)
+            payload = json.loads(out)
+            self.assertEqual(payload["error_code"], "SB_MULTI_AI_UNSUPPORTED_HOST")
+            self.assertIn("Claude Code or Codex", payload["message"])
+            self.assertNotIn("dry_run", payload)
+        with mock.patch.dict(os.environ, {"SB_HOST": "cursor"}):
+            _, out, _ = run_main(multi_ai_cli.main, ["--dry-run"])
+        self.assertIn("Cursor is no longer a supported host", json.loads(out)["message"])
 
     def test_unsupported_host_blocks_live_dispatch(self) -> None:
-        with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}), mock.patch.object(multi_ai_cli, "run_multi_ai_live") as live:
+        with mock.patch.dict(os.environ, {"SB_HOST": "cursor"}), mock.patch.object(multi_ai_cli, "run_multi_ai_live") as live:
             rc, out, _ = run_main(multi_ai_cli.main, ["--output-root", str(self.tmp / "o")])
         live.assert_not_called()
         self.assertEqual(rc, 2)
@@ -103,8 +132,50 @@ class MultiAiCliTests(HermeticCase):
         self.assertFalse(payload["ok"])
         self.assertFalse((self.tmp / "o").exists())
 
+    def test_output_root_in_a_protected_place_is_refused_before_anything_runs(self) -> None:
+        protected = self.home / ".claude" / ".silver-bullet" / "run"
+        for extra in (["--dry-run"], []):
+            with mock.patch.dict(os.environ, {"SB_HOST": "claude"}), \
+                    mock.patch.object(multi_ai_cli, "run_multi_ai_live") as live:
+                rc, out, _ = run_main(multi_ai_cli.main, ["--output-root", str(protected), *extra])
+            live.assert_not_called()
+            payload = json.loads(out)
+            self.assertEqual((rc, payload["ok"], payload["error_code"]), (2, False, "OUTPUT_ROOT_NOT_ALLOWED"))
+            self.assertIn("runtime state", payload["message"])
+            self.assertFalse(protected.exists())
+        # A dry run without an output root has nothing to refuse.
+        with mock.patch.dict(os.environ, {"SB_HOST": "claude"}):
+            rc, _, _ = run_main(multi_ai_cli.main, ["--dry-run"])
+        self.assertEqual(rc, 0)
+
+    def test_a_tilde_root_is_checked_and_written_as_the_same_expanded_path(self) -> None:
+        cwd = self.subdir("cwd")
+        old = os.getcwd()
+        os.chdir(cwd)
+        self.addCleanup(os.chdir, old)
+        state = self.home / ".claude" / ".silver-bullet"
+        state.mkdir(parents=True)
+        (state / "agent-delegation-active.json").write_text(json.dumps(
+            {"active": True, "host": "codex", "task_id": "T1", "ownership_scope": [str(self.home / "owned")]}))
+        with mock.patch.dict(os.environ, {"SB_HOST": "claude"}), \
+                mock.patch.object(multi_ai_cli, "run_multi_ai_live", return_value={"ok": True}) as live:
+            rc, out, _ = run_main(multi_ai_cli.main, ["--output-root=~/elsewhere/run"])
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(live.call_args.kwargs["output_root"], Path(os.path.realpath(self.home / "elsewhere" / "run")))
+            self.assertFalse((cwd / "~").exists())
+            rc, out, _ = run_main(multi_ai_cli.main, ["--output-root", "~/owned/run"])
+        self.assertEqual((rc, json.loads(out)["error_code"]), (2, "OUTPUT_ROOT_NOT_ALLOWED"))
+
+    def test_live_dispatch_runs_on_claude_and_codex(self) -> None:
+        for env in ({"CLAUDECODE": "1"}, {"CODEX_SANDBOX": "seatbelt"}):
+            with mock.patch.dict(os.environ, env), \
+                    mock.patch.object(multi_ai_cli, "run_multi_ai_live", return_value={"ok": True}) as live:
+                rc, out, _ = run_main(multi_ai_cli.main, ["--output-root", str(self.tmp / "o")])
+            live.assert_called_once()
+            self.assertEqual((rc, json.loads(out)), (0, {"ok": True}))
+
     def test_stub_mode_blocks_live_dispatch_on_supported_host(self) -> None:
-        with mock.patch.dict(os.environ, {"SB_HOST": "cursor", "SB_MULTI_AI_STUB": "1"}), \
+        with mock.patch.dict(os.environ, {"SB_HOST": "codex", "SB_MULTI_AI_STUB": "1"}), \
                 mock.patch.object(multi_ai_cli, "run_multi_ai_live") as live:
             rc, out, _ = run_main(multi_ai_cli.main, ["--output-root", str(self.tmp / "o")])
         live.assert_not_called()
@@ -118,7 +189,7 @@ class MultiAiCliTests(HermeticCase):
             "--exclude", "x", "--cursor-subscription", "subscribed", "--timeout-sec", "33",
             "--max-agents", "4", "--concurrency", "2",
         ]
-        with mock.patch.dict(os.environ, {"SB_HOST": "cursor"}):
+        with mock.patch.dict(os.environ, {"SB_HOST": "claude"}):
             with mock.patch.object(multi_ai_cli, "run_multi_ai_live", return_value={"ok": True, "run_id": "r"}) as live:
                 rc, out, _ = run_main(multi_ai_cli.main, argv)
             kwargs = live.call_args.kwargs
@@ -135,13 +206,59 @@ class MultiAiCliTests(HermeticCase):
                 rc, _, _ = run_main(multi_ai_cli.main, argv)
             self.assertEqual(rc, 1)
 
-    @mock.patch.dict(os.environ, {"SB_HOST": "cursor"})
+    @mock.patch.dict(os.environ, {"SB_HOST": "claude"})
     def test_script_entry_point_exit_status(self) -> None:
-        with mock.patch.object(sys, "argv", ["multi_ai_cli.py", "--dry-run", "--include-only", "grok-4.5"]):
+        with mock.patch.object(sys, "argv", ["multi_ai_cli.py", "--dry-run", "--include-only", "grok-4.5"]), \
+                mock.patch.object(os, "execv") as execv:
             with contextlib.redirect_stdout(io.StringIO()) as out, self.assertRaises(SystemExit) as ctx:
                 runpy.run_path(str(SCRIPTS / "multi_ai_cli.py"), run_name="__main__")
         self.assertEqual(ctx.exception.code, 0)
         self.assertTrue(json.loads(out.getvalue())["ok"])
+        # Started as a script outside isolated mode, it re-runs itself with -I before importing anything else.
+        execv.assert_called_once_with(sys.executable, [sys.executable, "-I", "-B", str(SCRIPTS / "multi_ai_cli.py"), "--dry-run", "--include-only", "grok-4.5"])
+
+    @mock.patch.dict(os.environ, {"SB_HOST": "claude"})
+    def test_isolated_start_does_not_re_exec(self) -> None:
+        with mock.patch.object(sys, "argv", ["multi_ai_cli.py", "--dry-run", "--include-only", "grok-4.5"]), \
+                mock.patch.object(sys, "flags", types.SimpleNamespace(isolated=1)), mock.patch.object(os, "execv") as execv:
+            with contextlib.redirect_stdout(io.StringIO()), self.assertRaises(SystemExit):
+                runpy.run_path(str(SCRIPTS / "multi_ai_cli.py"), run_name="__main__")
+        execv.assert_not_called()
+
+    def test_a_cli_start_never_writes_bytecode_into_the_plugin_directory(self) -> None:
+        """-I ignores PYTHONDONTWRITEBYTECODE, so the re-exec carries -B: no __pycache__ appears, whatever the environment says."""
+        import shutil
+
+        skills = SCRIPTS.parents[1]
+        copy = self.tmp / "plugin" / "skills"
+        for name in ("silver-multi-ai-task", "silver-deep-research-multi-ai"):
+            shutil.copytree(skills / name, copy / name, ignore=shutil.ignore_patterns("tests", "__pycache__", "fixtures"))
+        clis = [(copy / "silver-multi-ai-task/scripts/multi_ai_cli.py", ["--dry-run", "--include-only", "composer-2.5"]),
+                (copy / "silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py", ["probe", "--dry-run"])]
+        for flag in ("1", None):
+            env = {k: v for k, v in os.environ.items() if not k.startswith(("PYTHON", "COVERAGE", "CLAUDE", "CODEX", "CURSOR", "SB_"))}
+            env.update({"SB_HOST": "claude", "HOME": str(self.home)})
+            if flag:
+                env["PYTHONDONTWRITEBYTECODE"] = flag
+            for cli, args in clis:
+                proc = subprocess.run([sys.executable, str(cli), *args], capture_output=True, text=True, env=env, cwd=str(self.tmp), check=False)
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(sorted(str(p) for p in copy.rglob("__pycache__")), [])
+
+    def test_hostile_python_environment_never_gets_to_run_for_a_real_start(self) -> None:
+        """PYTHONPATH/PYTHONSTARTUP are not visible to the hooks: the CLI re-runs isolated, so a shadowing module never loads."""
+        evil = self.subdir("evil")
+        marker = self.tmp / "pwned"
+        for name in ("secrets", "decimal", "uuid"):
+            (evil / f"{name}.py").write_text(f"open({str(marker)!r}, 'w').write('x')\nraise ImportError('shadowed')\n")
+        (evil / "startup.py").write_text(f"open({str(marker)!r}, 'w').write('x')\n")
+        env = {k: v for k, v in os.environ.items() if not k.startswith(("PYTHON", "COVERAGE", "CLAUDE", "CODEX", "CURSOR", "SB_"))}
+        env.update({"PYTHONPATH": str(evil), "SB_HOST": "claude", "HOME": str(self.home)})
+        proc = subprocess.run([sys.executable, str(SCRIPTS / "multi_ai_cli.py"), "--dry-run", "--include-only", "composer-2.5"],
+                              capture_output=True, text=True, env=env, cwd=str(self.tmp), check=False)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertTrue(json.loads(proc.stdout)["ok"])
+        self.assertFalse(marker.exists())
 
 
 class CapabilitySpikeTests(HermeticCase):
@@ -354,6 +471,12 @@ class OcgPoolCohortTests(HermeticCase):
             result = oc.run_profile(logical_model_id=logical, prompt="P", work_dir=self.work, timeout_sec=4, progress_path=progress)
         self.stderr = err.getvalue()
         return result
+
+    def test_default_opencode_binary_is_the_one_live_dispatch_resolves(self) -> None:
+        self.assertEqual(importlib.reload(oc).OPENCODE_BIN, live_dispatch.resolve_opencode_bin())
+        with mock.patch.dict(os.environ, {"SB_OPENCODE_BIN": "/from/delegate/opencode"}):
+            self.assertEqual(importlib.reload(oc).OPENCODE_BIN, "/from/delegate/opencode")
+        importlib.reload(oc)
 
     def test_log_writes_stderr_and_optional_file(self) -> None:
         err = io.StringIO()

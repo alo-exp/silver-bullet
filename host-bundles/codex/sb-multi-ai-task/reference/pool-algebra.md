@@ -5,7 +5,7 @@
 | Dimension | Values | Mutex |
 |-----------|--------|-------|
 | OCG pool | `none`, `lite`, `regular` | one value per run (`--ocg-pool` takes a single choice) |
-| Cursor pool | `none`, `default` | — |
+| Cursor pool (the cursor-agent backend; Cursor is a backend, not a host) | `none`, `default` | — |
 
 ## Resolution order
 

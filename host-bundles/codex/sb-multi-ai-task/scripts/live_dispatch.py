@@ -54,8 +54,28 @@ from multi_ai_core import (
     resolve_pool,
 )
 
-CURSOR_BIN = os.environ.get("SB_CURSOR_BIN", shutil.which("cursor") or "cursor")
-OPENCODE_BIN = os.environ.get("SB_OPENCODE_BIN", os.path.expanduser("~/.opencode/bin/opencode"))
+
+
+def resolve_cursor_bin() -> str:
+    """The Cursor backend CLI: SB_CURSOR_BIN, else ``cursor-agent`` or ``cursor`` on PATH.
+
+    Cursor is a backend CLI here, never a host: it is started as an external process like any other.
+    """
+    explicit = os.environ.get("SB_CURSOR_BIN", "").strip()
+    return explicit or shutil.which("cursor-agent") or shutil.which("cursor") or "cursor-agent"
+
+
+def resolve_opencode_bin() -> str:
+    """The OpenCode CLI: SB_OPENCODE_BIN, else ``~/.opencode/bin/opencode``, else ``opencode`` on PATH."""
+    explicit = os.environ.get("SB_OPENCODE_BIN", "").strip()
+    if explicit:
+        return explicit
+    default = os.path.expanduser("~/.opencode/bin/opencode")
+    return default if os.access(default, os.X_OK) else shutil.which("opencode") or default
+
+
+CURSOR_BIN = resolve_cursor_bin()
+OPENCODE_BIN = resolve_opencode_bin()
 SKILL_DIR = Path(__file__).resolve().parents[1]
 # Silver Bullet root: the repository checkout, or plugins/silver-bullet in the packaged layout.
 REPO_ROOT = SKILL_DIR.parents[1]
@@ -479,6 +499,50 @@ def _write_json_atomic(path: Path, payload: Any) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Backend CLIs: each is an external process on the user's machine
+# ---------------------------------------------------------------------------
+
+# How to fix a missing backend CLI; a missing CLI fails only that backend's workers.
+BACKEND_HINTS: dict[str, str] = {
+    "cursor": "install the Cursor CLI (cursor-agent) or set SB_CURSOR_BIN",
+    "codex": "install the Codex CLI or set CODEX_BIN",
+    "claude": "install the Claude Code CLI or set CLAUDE_BIN",
+    "ocg": "install OpenCode (opencode) or set SB_OPENCODE_BIN",
+}
+
+
+def _cli_missing(backend: str) -> str:
+    return f"{'opencode' if backend == 'ocg' else backend} CLI not found ({BACKEND_HINTS[backend]})"
+
+
+def _claude_bin() -> str:
+    return os.environ.get("CLAUDE_BIN") or shutil.which("claude") or "claude"
+
+
+def backend_availability(resolved_pool: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Which backend CLIs the pool needs exist on this machine. Looks only; starts nothing."""
+    def found(path: str) -> str | None:
+        return shutil.which(path)
+
+    delegate_ready = AGENT_OPENCODE_DELEGATE.is_file()
+    report: dict[str, dict[str, Any]] = {}
+    for backend in sorted({item.get("backend", "cursor") for item in resolved_pool}):
+        if backend == "codex":
+            cli = found(_resolve_codex_bin())
+        elif backend == "claude":
+            cli = found(_claude_bin())
+        elif backend == "ocg":
+            cli = found(OPENCODE_BIN) if delegate_ready else None
+        else:
+            backend, cli = "cursor", found(CURSOR_BIN)
+        hint = None if cli else BACKEND_HINTS[backend]
+        if backend == "ocg" and not delegate_ready:
+            hint = "missing scripts/agent-opencode-delegate.sh in the Silver Bullet install"
+        report[backend] = {"available": bool(cli), "cli": cli, "hint": hint}
+    return report
+
+
+# ---------------------------------------------------------------------------
 # Workers
 # ---------------------------------------------------------------------------
 
@@ -487,7 +551,10 @@ def _cursor_cmd(model: str, prompt: str) -> list[str]:
     # No --force/--yolo: shell commands and file writes are never auto-approved. --trust only lets
     # headless print mode start in the fresh, empty sandbox, which holds no rules, MCP servers or
     # hooks to trust. "--" ends option parsing, so a prompt can never be read as a CLI flag.
-    return [CURSOR_BIN, "agent", "--print", "--output-format", "text", "--model", model, "--trust", "--", prompt]
+    # The standalone ``cursor-agent`` / ``agent`` binaries are the agent already; the editor's
+    # ``cursor`` launcher takes it as a subcommand.
+    prefix = [CURSOR_BIN] if Path(CURSOR_BIN).name in {"cursor-agent", "agent"} else [CURSOR_BIN, "agent"]
+    return [*prefix, "--print", "--output-format", "text", "--model", model, "--trust", "--", prompt]
 
 
 def run_cursor_worker(*, logical_model_id: str, prompt: str, output_dir: Path, timeout_sec: int = 600) -> WorkerResult:
@@ -525,7 +592,7 @@ def run_cursor_worker(*, logical_model_id: str, prompt: str, output_dir: Path, t
     except subprocess.TimeoutExpired as exc:
         return WorkerResult(logical_model_id, "cursor", attempt_id, "partial", None, _partial_text(exc), "timeout")
     except FileNotFoundError:
-        return _failed(logical_model_id, "cursor", attempt_id, "cursor CLI not found")
+        return _failed(logical_model_id, "cursor", attempt_id, _cli_missing("cursor"))
     except OSError as exc:
         return _failed(logical_model_id, "cursor", attempt_id, f"cursor launch failed: {exc}")
     out_file.write_text(raw, encoding="utf-8")
@@ -578,7 +645,7 @@ def _run_direct_worker(
     except subprocess.TimeoutExpired as exc:
         return WorkerResult(logical_model_id, backend, attempt_id, "partial", None, _partial_text(exc), "timeout")
     except FileNotFoundError:
-        return _failed(logical_model_id, backend, attempt_id, f"{backend} CLI not found")
+        return _failed(logical_model_id, backend, attempt_id, _cli_missing(backend))
     except OSError as exc:
         return _failed(logical_model_id, backend, attempt_id, f"{backend} launch failed: {exc}")
     raw = _merged_output(proc)
@@ -619,7 +686,7 @@ def run_claude_worker(*, logical_model_id: str, prompt: str, output_dir: Path, t
     return _run_direct_worker(
         backend="claude",
         build_cmd=lambda sandbox: [
-            os.environ.get("CLAUDE_BIN") or shutil.which("claude") or "claude", "--print",
+            _claude_bin(), "--print",
             "--model", model, "--effort", effort, "--permission-mode", CLAUDE_WORKER_PERMISSION_MODE,
         ],
         effective=f"{model}-{effort}",
@@ -704,6 +771,9 @@ def run_ocg_pool_cohort(
             for lid in logical_ids
         ]
 
+    if not shutil.which(OPENCODE_BIN):
+        return [_failed(lid, "ocg", attempt_id, _cli_missing("ocg")) for lid in logical_ids]
+
     cmd = [
         "bash",
         str(AGENT_OPENCODE_DELEGATE),
@@ -724,11 +794,12 @@ def run_ocg_pool_cohort(
     ]
 
     try:
-        proc = _run_cli(cmd, timeout=cohort_timeout, cwd=str(phase_dir))
+        # The cohort runner resolves OpenCode on its own: hand it the binary checked above.
+        proc = _run_cli(cmd, timeout=cohort_timeout, cwd=str(phase_dir), env={**os.environ, "SB_OPENCODE_BIN": OPENCODE_BIN})
     except subprocess.TimeoutExpired:
         return [WorkerResult(lid, "ocg", attempt_id, "partial", None, "", "ocg cohort timeout") for lid in logical_ids]
     except FileNotFoundError:
-        return [_failed(lid, "ocg", attempt_id, "agent-opencode delegate not found") for lid in logical_ids]
+        return [_failed(lid, "ocg", attempt_id, "agent-opencode delegate not found (bash is required to run it)") for lid in logical_ids]
     except OSError as exc:
         return [_failed(lid, "ocg", attempt_id, f"agent-opencode launch failed: {exc}") for lid in logical_ids]
 
@@ -743,6 +814,9 @@ def run_ocg_pool_cohort(
         cohort_payload = _parse_ocg_cohort_output(raw)
     if cohort_payload is None:
         err = f"ocg cohort parse failed (exit {proc.returncode})"
+        detail = next((line.strip()[:200] for line in raw.splitlines() if line.strip().startswith("ERROR:")), "")
+        if detail:
+            err = f"{err}: {detail}"
         return [_failed(lid, "ocg", attempt_id, err, raw) for lid in logical_ids]
 
     by_id = {c.get("logical_model_id"): c for c in cohort_payload.get("contributions", [])}
@@ -1020,6 +1094,7 @@ def run_multi_ai_live(*, output_root: Path, selection: PoolSelection, budget: Bu
         if wr.envelope:
             envelopes.append(wr.envelope)
 
+    availability = backend_availability(resolved)
     index = build_result_index(run_id, ledger, resolved, work_item_id)
     entries_by_id = {entry["logical_model_id"]: entry for entry in index["entries"]}
     for wr in worker_results:
@@ -1059,6 +1134,8 @@ def run_multi_ai_live(*, output_root: Path, selection: PoolSelection, budget: Bu
         "authoritative_count": authoritative,
         "manifest_path": str(manifest_path),
         "envelopes_path": str(envelopes_path),
+        "backend_availability": availability,
+        "missing_backends": sorted(name for name, info in availability.items() if not info["available"]),
         "worker_results": [{"logical_model_id": w.logical_model_id, "backend": w.backend, "status": w.status, "error": w.error} for w in worker_results],
         "live_dispatch": True,
     }
