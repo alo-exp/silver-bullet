@@ -449,7 +449,11 @@ enterprise_e2e_matrix_evidence_begin() {
   if enterprise_e2e_matrix_tree_dirty; then
     MATRIX_START_DIRTY=true
   fi
-  sb_evidence_snapshot "$(enterprise_e2e_matrix_gate_state_dir)" "$SB_ROOT"
+  # An unresolvable or uncreatable state dir means there is no evidence to protect: run unguarded.
+  local gate
+  gate="$(enterprise_e2e_matrix_gate_state_dir 2>/dev/null)" || gate=""
+  [[ -n "$gate" ]] && mkdir -p "$gate" 2>/dev/null || return 0
+  sb_evidence_snapshot "$gate" "$SB_ROOT"
   sb_evidence_restore inline-e2e-matrix
 }
 
@@ -486,8 +490,10 @@ enterprise_e2e_matrix_write_release_marker() {
     echo "NOTE: inline-e2e-matrix not written: HEAD moved during the run (${MATRIX_START_HEAD:0:12} -> ${head:0:12})."
     return 0
   fi
-  dir="$(enterprise_e2e_matrix_gate_state_dir)"
-  mkdir -p "$dir"
+  if ! dir="$(enterprise_e2e_matrix_gate_state_dir 2>/dev/null)" || ! mkdir -p "$dir" 2>/dev/null; then
+    echo "NOTE: inline-e2e-matrix not written: the release gate's state directory cannot be resolved or created."
+    return 0
+  fi
   file="${dir}/inline-e2e-matrix"
   rm -f -- "$file"
   ( umask 077; printf 'matrix=inline-full-surface\ncommit=%s\nwritten_at=%s\nsource=claude-supervised-matrix\n' \
