@@ -55,6 +55,8 @@ _sb_se_merge() {
   local -a srcs=()
   for f in "$sd"/files-written.*; do
     [[ -f "$f" && ! -L "$f" ]] || continue
+    # another rotation's in-flight temp file (files-written.<epoch>.XXXXXX from _sb_se_write) is not a trace
+    [[ "${f##*/}" =~ ^files-written\.[A-Za-z0-9]+$ ]] || continue
     srcs+=("$f")
   done
   [[ ${#srcs[@]} -gt 0 ]] || return 0
