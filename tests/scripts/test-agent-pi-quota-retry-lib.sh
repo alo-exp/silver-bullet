@@ -76,7 +76,9 @@ assert_contains "hang-only returns 0" "$TL_OUT" "rc=0"
 assert_eq "hang-only does not call the resolver" "" "$CALLS"
 run_sched X=1 -- 1 ""
 assert_eq "empty text does not call the resolver" "" "$CALLS"
+mkdir -p "$TL_TMP/bare/scripts/lib"
 run_sched _AGENT_HOST_EXEC_DIR="$TL_TMP/bare/scripts/lib" -- 1 "HTTP 429"
+assert_eq "missing resolver: nothing called" "" "$CALLS"
 assert_contains "missing resolver returns 0" "$TL_OUT" "rc=0"
 
 run_sched FAKE_CLASSIFY_FAIL=1 -- 1 "HTTP 429" claude claude/opus

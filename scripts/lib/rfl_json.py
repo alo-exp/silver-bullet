@@ -59,9 +59,9 @@ def read_bounded(path: Path, *, max_bytes: int = MAX_BYTES, max_depth: int = MAX
         raise BadJson(f"{target.name} is missing or not a regular file")
     try:
         size = target.stat().st_size
-        if size > max_bytes:
-            raise BadJson(f"{target.name} larger than {max_bytes} bytes")
-        text = target.read_text(encoding="utf-8")
+        text = target.read_text(encoding="utf-8") if size <= max_bytes else ""
     except (OSError, ValueError) as exc:
         raise BadJson(f"{target.name} unreadable ({type(exc).__name__})") from exc
+    if size > max_bytes:
+        raise BadJson(f"{target.name} larger than {max_bytes} bytes")
     return loads_bounded(text, max_bytes=max_bytes, max_depth=max_depth)
