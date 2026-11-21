@@ -3,9 +3,16 @@
 
 from __future__ import annotations
 
+import os
+import sys
+
+if __name__ == "__main__" and not sys.flags.isolated:
+    # PYTHONPATH, PYTHONSTARTUP and the user site are invisible to the hooks that let this CLI run, so a script
+    # start re-runs itself in isolated mode (-I) before it imports anything but the interpreter's own modules.
+    os.execv(sys.executable, [sys.executable, "-I", *sys.argv])
+
 import argparse
 import json
-import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent

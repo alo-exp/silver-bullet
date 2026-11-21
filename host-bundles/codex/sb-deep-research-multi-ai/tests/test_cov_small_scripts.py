@@ -1273,10 +1273,34 @@ class DrMultiAiCliTests(unittest.TestCase):
             self.assertNotIn("pkg", calls)
 
     def test_script_entrypoint(self) -> None:
-        with mock.patch.object(sys, "argv", ["dr_multi_ai_cli.py"]):
+        with mock.patch.object(sys, "argv", ["dr_multi_ai_cli.py"]), mock.patch.object(os, "execv") as execv:
             with self.assertRaises(SystemExit) as cm:
                 _run(runpy.run_path, str(SCRIPTS / "dr_multi_ai_cli.py"), run_name="__main__")
         self.assertEqual(cm.exception.code, 2)
+        execv.assert_called_once_with(sys.executable, [sys.executable, "-I", str(SCRIPTS / "dr_multi_ai_cli.py")])
+
+    def test_isolated_start_does_not_re_exec(self) -> None:
+        with mock.patch.object(sys, "argv", ["dr_multi_ai_cli.py"]), mock.patch.object(os, "execv") as execv, \
+                mock.patch.object(sys, "flags", types.SimpleNamespace(isolated=1)):
+            with self.assertRaises(SystemExit):
+                _run(runpy.run_path, str(SCRIPTS / "dr_multi_ai_cli.py"), run_name="__main__")
+        execv.assert_not_called()
+
+    def test_hostile_python_environment_never_gets_to_run_for_a_real_start(self) -> None:
+        import subprocess
+
+        with tempfile.TemporaryDirectory() as tmp:
+            evil, marker = Path(tmp) / "evil", Path(tmp) / "pwned"
+            evil.mkdir()
+            for name in ("json", "argparse", "pathlib", "shutil", "consolidate", "multi_ai_core"):
+                (evil / f"{name}.py").write_text(f"open({str(marker)!r}, 'w').write('x')\nraise ImportError('shadowed')\n")
+            env = {k: v for k, v in os.environ.items() if not k.startswith(("PYTHON", "CLAUDE", "CODEX", "CURSOR", "SB_"))}
+            env.update({"PYTHONPATH": str(evil), "SB_HOST": "claude", "HOME": tmp})
+            proc = subprocess.run([sys.executable, str(SCRIPTS / "dr_multi_ai_cli.py"), "probe", "--dry-run"],
+                                  capture_output=True, text=True, env=env, cwd=tmp, check=False)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertTrue(json.loads(proc.stdout)["ok"])
+            self.assertFalse(marker.exists())
 
 
 if __name__ == "__main__":

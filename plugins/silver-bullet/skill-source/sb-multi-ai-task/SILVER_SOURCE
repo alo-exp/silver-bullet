@@ -64,11 +64,16 @@ the backends the user chose. It installs, wires and enables nothing (`consent.js
   (`Agent` on Claude Code, `spawn_agent` on Codex) with the `MULTI-AI-TASK` worker template; the worker
   runs the CLI. The Claude and Codex workers this skill starts carry `SB_ORCHESTRATOR_WORKER=1` (and
   `SB_ORCHESTRATOR_PARENT=0`), so a nested session is never mistaken for a parent.
-- **Planning floor.** `dev-cycle-check` does not treat exactly `python3 <plugin>/skills/silver-multi-ai-task/scripts/multi_ai_cli.py ...`
+- **Planning floor.** `dev-cycle-check` does not treat exactly `python3 /abs/path/<plugin>/skills/silver-multi-ai-task/scripts/multi_ai_cli.py ...`
   (or the deep-research `dr_multi_ai_cli.py`) as an opaque writer, so the run works in a fresh session before the planning
-  skills are recorded, and at any flow step. Nothing else gets this: `python3 -c`, a copy or symlink of the script, a
-  `PATH=`/`env` prefix, a chain, a pipe or a redirect are judged as before, and an output root under source is still
-  held by the floor.
+  skills are recorded and at any flow step. The exemption is narrow: an absolute script path that resolves into the
+  plugin (not a symlink), no option before the script, no `env`/`NAME=`/`PATH=` prefix, chain, pipe or redirect, and a
+  plain literal `--output-root` (once, spelled in full, no `$`, backtick, glob, `~`, quote or `..`). The floor then judges
+  that output root as a recursive write target like any other: a root in source (`src`, `.`, `s"rc"/x`) is held until
+  planning is done, and a dynamic root gets no exemption at all. Deep research without `--output-root` writes below
+  `research/` of the working directory. A task prompt that names `src/app.py` is not a write and is not scanned.
+  Exported `PYTHONPATH`/`PYTHONSTARTUP` are invisible to the hooks, so a script start re-runs the CLI with `python3 -I`
+  before it imports anything but the interpreter's own modules.
 - **Output root.** The hooks cannot see what a Python CLI writes, so the CLI keeps their boundaries
   itself. Use a project directory such as `.planning/multi-ai/<run-id>/` or `research/<run>/`. The CLI
   refuses (`OUTPUT_ROOT_NOT_ALLOWED`, exit 2, before any worker starts, in a dry run too) an output root
