@@ -42,7 +42,7 @@
         "url": "https://github.com/alo-exp/sidekick.git",
         "ref": "main"
       },
-      "description": "Sidekick — AI coding-agent delegation workflows for Codex. Kay and Codex are the supported sidekicks on Claude Code, Codex, and Cursor hosts.",
+      "description": "Sidekick — AI coding-agent delegation workflows for Codex. Kay and Codex are the supported sidekicks on Claude Code and Codex hosts.",
       "version": "0.8.4",
       "author": {
         "name": "Ālo Labs",
