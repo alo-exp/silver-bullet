@@ -3,12 +3,14 @@ name: "sb:multi-ai-task"
 title: "Multi AI Task"
 description: >
   Reusable SB multi-model orchestration primitive (multi-ai-task-v2 spine). Parallel workers,
-  pool algebra, manifests, dispatch ledger, agent and concurrency caps, and result index. Cursor host only in v1.
+  pool algebra, manifests, dispatch ledger, agent and concurrency caps, and result index. Runs only on a Cursor-hosted session in v1: on Claude Code and Codex, `--dry-run` and live runs both fail closed with `SB_MULTI_AI_UNSUPPORTED_HOST`.
 argument-hint: "--task-prompt <text> --output-root <dir> [--ocg-pool none|lite|regular] [--cursor-pool none|default] [--dry-run]"
 version: 1.0.0
 ---
 
 # /sb:multi-ai-task — Multi-Model Task Primitive
+
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-multi-ai-task/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 **Catalog:** workflow `WF-SILVER-MULTI-AI-TASK` · atomic flow `AF-MULTI-AI-TASK` ·
 flow step `FS-SILVER_MULTI_AI_TASK` · spine `multi-ai-task-v2`.
@@ -24,6 +26,12 @@ workflows compose this skill; it does **not** own DR phase state or consolidatio
 | Claude Code | packaged-fail-closed (`SB_MULTI_AI_UNSUPPORTED_HOST`) |
 | Codex | packaged-fail-closed (`SB_MULTI_AI_UNSUPPORTED_HOST`) |
 
+**Availability:** this primitive needs the Cursor agent CLI backend, which only a Cursor-hosted
+session provides. Silver Bullet itself supports Claude Code and Codex, so on either host the
+skill is listed but cannot run. A dry run is a plan for a run, so `--dry-run` fails the same way
+a live run does (exit 2, `SB_MULTI_AI_UNSUPPORTED_HOST`, nothing written). Do not offer this skill
+to the user on an unsupported host.
+
 Fail-closed hosts must error **before** preferences, caches, provisioning, writes, or dispatch.
 
 ## CLI contract
@@ -31,7 +39,7 @@ Fail-closed hosts must error **before** preferences, caches, provisioning, write
 Plan a run first with `--dry-run` (no workers start, nothing is written):
 
 ```bash
-python3 skills/silver-multi-ai-task/scripts/multi_ai_cli.py \
+python3 "${PLUGIN_ROOT}/skills/silver-multi-ai-task/scripts/multi_ai_cli.py" \
   --output-root .planning/multi-ai/<run-id>/ \
   --task-prompt "<task brief>" \
   --ocg-pool lite \

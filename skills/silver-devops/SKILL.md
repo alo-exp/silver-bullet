@@ -8,11 +8,13 @@ version: 0.2.0
 
 # /sb:devops — DevOps Composition Spec
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-devops/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 SB **queue builder** for infra/CI/CD/IaC. Parent orchestrator spawns workers — does not
 implement changes inline.
 
 **Canonical contracts:** `docs/composable-flows-contracts.md` + runtime tokens
-(BLAST-RADIUS, DEVOPS-SKILL-ROUTER). **Workers:** `templates/orchestrator-workers/*.md`.
+(BLAST-RADIUS, DEVOPS-SKILL-ROUTER). **Workers:** `${PLUGIN_ROOT}/templates/orchestrator-workers/*.md`.
 
 **Design notes:**
 - Blast-radius replaces product brainstorm for infra scope.
@@ -59,7 +61,7 @@ Restore to `full-dev-cycle` after ship.
 
 ## Routing and pre-flight
 
-1. Load preferences from `silver-bullet.md` §10.
+1. Load preferences from `silver-bullet.md` §9.
 2. Banner with change description and mode.
 3. Autonomous default — log `SB ► devops composed {N} paths — orchestrator active`.
 

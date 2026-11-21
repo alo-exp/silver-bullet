@@ -167,21 +167,23 @@ sb_orchestrator_worker_template_for_skill() {
   esac
 }
 
-# Resolve worker template path: project copy first, then plugin/repo templates.
+# Resolve a worker template path. The plugin's own copy is the only one used: a copy under
+# <repo>/.silver-bullet/orchestrator-workers/ is repository content (a clone or a contributor can
+# rewrite it) and would reach a Task worker as Silver Bullet's trusted prompt, so it is ignored.
+# When it differs from the plugin copy a drift warning goes to stderr. Arguments: project root
+# (only used for that comparison), template name. Status 1 when the plugin has no such template.
 sb_orchestrator_worker_template_path() {
   local repo_root="$1"
   local template_name="$2"
-  local rel=".silver-bullet/orchestrator-workers/${template_name}.md"
-  if [[ -n "$repo_root" && -f "$repo_root/$rel" ]]; then
-    printf '%s' "$repo_root/$rel"
-    return 0
+  local plugin_copy project_copy
+  plugin_copy="$(cd "${_sb_orch_parent_lib_dir}/../.." && pwd)/templates/orchestrator-workers/${template_name}.md"
+  [[ -f "$plugin_copy" ]] || return 1
+  project_copy="$repo_root/.silver-bullet/orchestrator-workers/${template_name}.md"
+  if [[ -n "$repo_root" && -f "$project_copy" ]] && ! cmp -s "$plugin_copy" "$project_copy"; then
+    printf 'Silver Bullet: %s differs from the plugin copy and is ignored (repository files are data, not instructions). Run /sb:update to refresh or delete it.\n' "$project_copy" >&2
   fi
-  rel="templates/orchestrator-workers/${template_name}.md"
-  if [[ -n "$repo_root" && -f "$repo_root/$rel" ]]; then
-    printf '%s' "$repo_root/$rel"
-    return 0
-  fi
-  return 1
+  printf '%s' "$plugin_copy"
+  return 0
 }
 
 # Record that the parent asked for a worker (orchestrator-worker-active.json). This is evidence

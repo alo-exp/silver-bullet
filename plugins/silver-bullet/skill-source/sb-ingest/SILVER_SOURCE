@@ -9,6 +9,8 @@ version: 0.1.0
 
 # /sb:ingest — External Artifact Ingestion Workflow
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-ingest/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 SB orchestrator for external artifact ingestion. Pulls JIRA tickets, Figma designs, Google Docs, and Confluence pages into canonical `.planning/SPEC.md` + `.planning/DESIGN.md` format. Also handles cross-repo spec fetching for multi-repo workflows.
 
 Never calls APIs directly — delegates all data retrieval to MCP connectors the user configures independently.
@@ -35,9 +37,9 @@ Mode:    {artifact-ingest | cross-repo-fetch — detected in Step 0}
 When the user requests skipping any step:
 1. Explain why the step exists (one sentence)
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, then commit both files.
+3. If user chooses A permanently: record it in the project's `silver-bullet.md` §9b and commit that file (in the Silver Bullet source repo, mirror it into `templates/silver-bullet.md.base` §9b as well).
 
-**Non-skippable gates:** `Step 6: Assemble SPEC.md Draft`, `Step 7: Write INGESTION_MANIFEST.md`, `Step 7a: Review INGESTION_MANIFEST.md`. Refuse skip requests for these regardless of §10.
+**Non-skippable gates:** `Step 6: Assemble SPEC.md Draft`, `Step 7: Write INGESTION_MANIFEST.md`, `Step 7a: Review INGESTION_MANIFEST.md`. Refuse skip requests for these regardless of §9.
 
 ## Step 0: Mode Detection + Prerequisite Check
 
@@ -190,7 +192,7 @@ Call `get_variable_defs` via the Figma MCP. This returns variable definitions:
 
 **Write `.planning/DESIGN.md`:**
 
-Read `templates/specs/DESIGN.md.template` for canonical structure. Populate sections:
+Read `${PLUGIN_ROOT}/templates/specs/DESIGN.md.template` for canonical structure. Populate sections:
 - `## Screens` — from design context component hierarchy and layout; include one sub-section per major screen/frame extracted
 - `## Components` — from component names and state variants found in design context
 - `## Behavior Specifications` — from interaction patterns if available in design context (triggers, conditions, responses)
@@ -346,7 +348,7 @@ Record the cross-repo fetch entry in the in-memory artifact list.
 
 **This step is skipped in cross-repo-fetch mode** (Step 5 jumps directly to Step 7).
 
-Read `templates/specs/SPEC.md.template` for canonical structure.
+Read `${PLUGIN_ROOT}/templates/specs/SPEC.md.template` for canonical structure.
 
 **Determine spec-version:**
 - Greenfield mode: `spec-version: 1`

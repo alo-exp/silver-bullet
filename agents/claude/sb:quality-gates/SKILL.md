@@ -127,7 +127,7 @@ Unresolved `BLOCK` findings are hard-stop quality-gate failures. Deferred
 Validate normalized finding rows when the helper is available:
 
 ```bash
-bash scripts/validate-evidence-findings.sh
+bash "${PLUGIN_ROOT}/scripts/validate-evidence-findings.sh"
 ```
 
 ---

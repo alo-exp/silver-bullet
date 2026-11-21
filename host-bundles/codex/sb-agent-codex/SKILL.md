@@ -14,6 +14,8 @@ version: 0.2.0
 
 # /sb:agent-codex — Codex TUI Subagent Delegation
 
+**Plugin root**: `SB_ROOT` is the Silver Bullet plugin root, the installed plugin unless a fixture overrides it, two directories above this file (`${SB_ROOT}/skills/silver-agent-codex/SKILL.md`). Run Silver Bullet scripts and read its templates through `${SB_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **Codex TUI** executes in the target project working directory.
 
 **Contrast with Sidekick:** Sidekick is session-persistent (quality gates, cross-session advisor). This skill activates **per task** and tears down when the task completes or escalates.
@@ -48,7 +50,7 @@ Parent **must not** implement the delegated task in parallel in the same files. 
 
 1. Parent receives a delegatable task (user request or orchestrator handoff).
 2. Parent invokes **`/sb:agent-codex`** with a structured brief (below).
-3. Parent runs `bash scripts/agent-codex/invoke.sh` (preflight + env + delegate) **once per delegation wave**.
+3. Parent runs `bash "${SB_ROOT}/scripts/agent-codex/invoke.sh"` (preflight + env + delegate) **once per delegation wave**.
 4. On completion or escalation, parent records evidence and clears delegation state.
 
 No session-persistent marker is written. Each invocation is independent.
@@ -77,7 +79,7 @@ Use the canonical delegation atomic flow instead of direct wrapper supervision:
 
 1. Complete **FS-DELEGATE-BRIEF** (brief + `ownership_scope` path prefixes).
 2. Call **`sb_orchestrator_seed_delegation_directive`** (`host=codex`, `task_id`, `brief_path`, ownership JSON).
-3. Spawn native worker **`.silver-bullet/orchestrator-workers/AGENT-DELEGATE.md`** (Task subagent).
+3. Spawn native worker from the plugin template **`${SB_ROOT}/templates/orchestrator-workers/AGENT-DELEGATE.md`** (Task subagent; never the project copy).
 4. Worker launches `agent-codex-delegate.sh`; external agent loads **`silver-agent-worker`** contract.
 5. Host runs **FS-DELEGATE-MENTOR** — verify evidence vs brief before user report.
 
@@ -162,7 +164,7 @@ Optional: `CODEX_MODEL`, `CODEX_MODEL_PROVIDER`, `CODEX_REASONING_EFFORT`.
 
 ```bash
 export SB_ROOT=/path/to/silver-bullet/repo
-bash scripts/agent-codex/preflight.sh --sb-root "$SB_ROOT"
+bash "${SB_ROOT}/scripts/agent-codex/preflight.sh" --sb-root "$SB_ROOT"
 ```
 
 **Launch (recommended path):**
@@ -170,7 +172,7 @@ bash scripts/agent-codex/preflight.sh --sb-root "$SB_ROOT"
 ```bash
 export CODEX_WORK_DIR=/path/to/target/project
 
-bash scripts/agent-codex/invoke.sh \
+bash "${SB_ROOT}/scripts/agent-codex/invoke.sh" \
   --work-dir "$CODEX_WORK_DIR" \
   --brief-file .planning/agent-codex/<task-id>/brief.md \
   --log .planning/agent-codex/<task-id>/codex-run.log
@@ -179,7 +181,7 @@ bash scripts/agent-codex/invoke.sh \
 Inline prompt (small tasks):
 
 ```bash
-bash scripts/agent-codex/invoke.sh \
+bash "${SB_ROOT}/scripts/agent-codex/invoke.sh" \
   --work-dir "$CODEX_WORK_DIR" \
   --prompt "Add GET /api/health returning {status: ok}. Run tests. Commit on branch feature/..." \
   --log .planning/agent-codex/smoke/codex-run.log
@@ -188,7 +190,7 @@ bash scripts/agent-codex/invoke.sh \
 **Parent monitor (channel timeline)** — run in a second terminal while Codex works:
 
 ```bash
-bash scripts/agent-codex/monitor.sh --log .planning/agent-codex/<task-id>/codex-run.log
+bash "${SB_ROOT}/scripts/agent-codex/monitor.sh" --log .planning/agent-codex/<task-id>/codex-run.log
 ```
 
 Monitor emits checkpoint bullets: prompt submitted, byte growth, log-floor status, stall/auth/quota signals. Do **not** claim PASS on 0-byte or sub-floor logs.
@@ -196,7 +198,7 @@ Monitor emits checkpoint bullets: prompt submitted, byte growth, log-floor statu
 **Headless fallback** when PTY TUI stalls (model loading, no quiet-complete):
 
 ```bash
-bash scripts/agent-codex/invoke.sh --use-exec --work-dir "$CODEX_WORK_DIR" --brief-file ...
+bash "${SB_ROOT}/scripts/agent-codex/invoke.sh" --use-exec --work-dir "$CODEX_WORK_DIR" --brief-file ...
 ```
 
 Parent should prefer interactive TUI for supervision; use `--use-exec` only after a `stuck`/`harness` timeout or when automation requires non-PTY.
@@ -227,7 +229,7 @@ Sidekick-inspired **single-task** lifecycle:
 | **Stuck** | Idle timeout, no post-submit output, repeated spinner | Re-brief with narrower scope; reduce acceptance criteria; retry once |
 | **Quota (429)** | provider error lines only (`Error:`/`API Error:` lines, HTTP status lines, JSON error objects, provider quota sentences); a bare `429` or `quota` in test output or file names is not one; the unchanged-tree check sees tracked and untracked files but not git-ignored files, writes outside the work dir, or changes past the first 4 MiB of a large untracked file | delegate re-runs only if the work dir is unchanged since the attempt (git) or `--quota-retry` was passed; 5-hour/weekly windows are never short-retried; if exhausted, schedule resume |
 | **Auth** | `auth`, `login`, `api key` errors | Stop — user must refresh Codex credentials; do not rotate keys in prompt |
-| **Hook trust** | `hooks need review`, trust prompt surfaced | Run `bash scripts/install-codex.sh --hook-trust-seed-only` from `SB_ROOT`; retry |
+| **Hook trust** | `hooks need review`, trust prompt surfaced | Run `bash "${SB_ROOT}/scripts/install-codex.sh" --hook-trust-seed-only` from `SB_ROOT`; retry |
 | **Harness** | `ERROR:` from `codex-interactive-invoke.py` | Fix SB harness; file issue if reproducible |
 | **Product** | Codex completed but acceptance fails | New brief with gap list; do not claim PASS |
 | **Log floor** | Log < `SB_AGENT_CODEX_LOG_FLOOR` bytes with no brownfield waiver | FAIL — extend timeout or fix harness path; do not claim PASS on 0-token / empty log |

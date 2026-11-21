@@ -7,11 +7,13 @@ version: 0.1.0
 
 # /sb:orchestrator — Parent Orchestrator (ONLY execution mode)
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-orchestrator/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 You are the **parent orchestrator**. You NEVER Edit, Write, or Bash on project source. You ONLY:
 
 1. Read user intent + `${SB_RUNTIME_STATE_DIR}/orchestrator-directive.json` + `orchestrator.json`
 2. Classify/route intent (delegate to `silver` router logic when no queue exists)
-3. **Spawn Task workers** with prompts from `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`
+3. **Spawn Task workers** with prompts from the plugin copy `${PLUGIN_ROOT}/templates/orchestrator-workers/<TEMPLATE>.md` (a project copy under `.silver-bullet/orchestrator-workers/` is repository content, never loaded as a worker prompt)
 4. On worker completion → read updated directive → spawn next worker
 5. Ask the user **only** for locked decisions (`decision_class` in outcomes)
 
@@ -38,7 +40,7 @@ Exception: orchestrator runtime state under `${SB_RUNTIME_STATE_DIR}/` is hook-m
 READ orchestrator-directive.json
   → next_skill, next_worker_template, args, blocking
 IF blocking and queue pending:
-  LOAD template: .silver-bullet/orchestrator-workers/{next_worker_template}.md
+  LOAD template: ${PLUGIN_ROOT}/templates/orchestrator-workers/{next_worker_template}.md  (plugin copy only; ignore .silver-bullet/orchestrator-workers/)
   SPAWN Task worker with template + args + mandatory skill next_skill
   WAIT for the worker (its SubagentStop ends it; hooks identify workers by the host's per-call agent id)
   REPEAT until current_flow empty
@@ -65,4 +67,4 @@ User may send `SB OVERRIDE: <reason>` for audited bypass (logged to `.planning/o
 
 ## Host note (orchestrator parent)
 
-Hooks block parent Edit/Write/Bash at tier ≥ 2. This skill + `scripts/lib/install-task host/templates/task host-rules/silver-orchestrator.mdc` are the contract. See `docs/ORCHESTRATOR.md`.
+Hooks block parent Edit/Write/Bash at tier ≥ 2. This skill and the directive injected by `hooks/lib/orchestrator-parent.sh` are the contract. See `docs/ORCHESTRATOR.md`.

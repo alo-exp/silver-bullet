@@ -13,6 +13,8 @@ version: 0.1.0
 
 # /sb:agent-claude — Claude TUI Subagent Delegation
 
+**Plugin root**: `SB_ROOT` is the Silver Bullet plugin root, the installed plugin unless a fixture overrides it, two directories above this file (`${SB_ROOT}/skills/silver-agent-claude/SKILL.md`). Run Silver Bullet scripts and read its templates through `${SB_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **Claude TUI** executes in the target project working directory.
 
 **Contrast with Sidekick:** Sidekick is session-persistent (quality gates, cross-session advisor). This skill activates **per task** and tears down when the task completes or escalates.
@@ -49,7 +51,7 @@ Parent **must not** implement the delegated task in parallel in the same files. 
 
 1. Parent receives a delegatable task (user request or orchestrator handoff).
 2. Parent invokes **`/sb:agent-claude`** with a structured brief (below).
-3. Parent runs `bash scripts/agent-claude/invoke.sh` (preflight + env + delegate) **once per delegation wave**.
+3. Parent runs `bash "${SB_ROOT}/scripts/agent-claude/invoke.sh"` (preflight + env + delegate) **once per delegation wave**.
 4. On completion or escalation, parent records evidence and clears delegation state.
 
 No session-persistent marker is written. Each invocation is independent.
@@ -78,7 +80,7 @@ Use the canonical delegation atomic flow instead of direct wrapper supervision:
 
 1. Complete **FS-DELEGATE-BRIEF** (brief + `ownership_scope` path prefixes).
 2. Call **`sb_orchestrator_seed_delegation_directive`** (`host=claude`, `task_id`, `brief_path`, ownership JSON).
-3. Spawn native worker **`.silver-bullet/orchestrator-workers/AGENT-DELEGATE.md`** (Task subagent).
+3. Spawn native worker from the plugin template **`${SB_ROOT}/templates/orchestrator-workers/AGENT-DELEGATE.md`** (Task subagent; never the project copy).
 4. Worker launches `agent-claude-delegate.sh`; external agent loads **`silver-agent-worker`** contract.
 5. Host runs **FS-DELEGATE-MENTOR** — verify evidence vs brief before user report.
 
@@ -167,7 +169,7 @@ Optional: `CLAUDE_MODEL` (default `sonnet`), `CLAUDE_EFFORT` (default `low`).
 
 ```bash
 export SB_ROOT=/path/to/silver-bullet/repo
-bash scripts/agent-claude/preflight.sh --sb-root "$SB_ROOT"
+bash "${SB_ROOT}/scripts/agent-claude/preflight.sh" --sb-root "$SB_ROOT"
 ```
 
 **Launch (recommended path):**
@@ -175,7 +177,7 @@ bash scripts/agent-claude/preflight.sh --sb-root "$SB_ROOT"
 ```bash
 export CLAUDE_WORK_DIR=/path/to/target/project
 
-bash scripts/agent-claude/invoke.sh \
+bash "${SB_ROOT}/scripts/agent-claude/invoke.sh" \
   --work-dir "$CLAUDE_WORK_DIR" \
   --brief-file .planning/agent-claude/<task-id>/brief.md \
   --log .planning/agent-claude/<task-id>/claude-run.log
@@ -184,7 +186,7 @@ bash scripts/agent-claude/invoke.sh \
 Inline prompt (small tasks):
 
 ```bash
-bash scripts/agent-claude/invoke.sh \
+bash "${SB_ROOT}/scripts/agent-claude/invoke.sh" \
   --work-dir "$CLAUDE_WORK_DIR" \
   --prompt "Add GET /api/health returning {status: ok}. Run tests. Commit on branch feature/..." \
   --log .planning/agent-claude/smoke/claude-run.log
@@ -193,7 +195,7 @@ bash scripts/agent-claude/invoke.sh \
 **Parent monitor (channel timeline)** — run in a second terminal while Claude works:
 
 ```bash
-bash scripts/agent-claude/monitor.sh --log .planning/agent-claude/<task-id>/claude-run.log
+bash "${SB_ROOT}/scripts/agent-claude/monitor.sh" --log .planning/agent-claude/<task-id>/claude-run.log
 ```
 
 Monitor emits checkpoint bullets: prompt submitted, byte growth, log-floor status, stall/auth/quota signals. Do **not** claim PASS on 0-byte or sub-floor logs.
@@ -201,7 +203,7 @@ Monitor emits checkpoint bullets: prompt submitted, byte growth, log-floor statu
 **Print fallback** when expect/PTY unavailable:
 
 ```bash
-bash scripts/agent-claude/invoke.sh --use-print --work-dir "$CLAUDE_WORK_DIR" --brief-file ...
+bash "${SB_ROOT}/scripts/agent-claude/invoke.sh" --use-print --work-dir "$CLAUDE_WORK_DIR" --brief-file ...
 ```
 
 Parent should prefer interactive TUI for supervision; use `--use-print` only after a `stuck`/`harness` timeout or when automation requires non-PTY.

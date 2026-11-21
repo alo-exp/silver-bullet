@@ -9,12 +9,14 @@ version: 0.2.0
 
 # /sb:feature — Feature Composition Spec
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-feature/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 SB **queue builder** for feature development. The parent orchestrator seeds
 `orchestrator.json` and spawns Task workers per atomic flow — it does not execute
 flows inline. Never implements features directly.
 
 **Canonical contracts:** `docs/composable-flows-contracts.md` (FLOW 1–18 steps, produces,
-exit conditions). **Worker templates:** `templates/orchestrator-workers/*.md`.
+exit conditions). **Worker templates:** `${PLUGIN_ROOT}/templates/orchestrator-workers/*.md`.
 **Supervision loop:** `references/supervision-loop.md`.
 
 ## Standard composition chain
@@ -68,7 +70,7 @@ missing lifecycle skills with shell-only work.
 
 ## Routing and pre-flight
 
-1. Read **User Workflow Preferences** from `silver-bullet.md` §10 before composing.
+1. Read **User Workflow Preferences** from `silver-bullet.md` §9 before composing.
 2. Display: `SB ► feature: {$ARGUMENTS} [autonomous]`
 3. Do not ask for composition approval — `flow-advance.sh` starts the workflow tracker.
 4. Log: `SB ► composed {N} flows ({skipped} skipped) — orchestrator active`
@@ -99,7 +101,7 @@ ship did not tick the checkbox (see `references/supervision-loop.md`).
 ## Step-skip protocol
 
 On skip request: explain (one sentence) → offer A/B/C → record permanent skips in
-`silver-bullet.md` §10b + `templates/silver-bullet.md.base` §9b.
+`silver-bullet.md` §9b (the project's own file; in the Silver Bullet source repo, mirror it into `templates/silver-bullet.md.base` §9b).
 
 **Non-skippable:** `security`, `sb:quality-gates` pre-ship, `sb:verify`.
 

@@ -21,8 +21,10 @@ before publication.
 
 ## Output
 
-Write or update the ship section in `.planning/STATE.md`, current phase
-SUMMARY/VERIFICATION, or a PR description draft.
+Write or update the ship section in `.planning/phases/<phase>/SHIP.md`, or in a PR
+description draft. Do not write `.planning/STATE.md` or the legacy phase
+`*-SUMMARY.md` / `*-VERIFICATION.md` files from this skill: planning-file-guard
+denies direct edits to them, and `sb:execute`, `sb:release` and `sb:verify` own them.
 
 ## Process
 
