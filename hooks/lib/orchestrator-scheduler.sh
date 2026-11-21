@@ -31,7 +31,7 @@ sb_scheduler_catalog_file() {
     printf '%s' "${SB_APO_CATALOG_FILE}"
     return 0
   fi
-  if [[ -n "$repo_root" && -f "$repo_root/docs/apo-catalog.json" ]]; then
+  if [[ -n "$repo_root" && -f "$repo_root/docs/apo-catalog.json" && "$(cd "$repo_root" 2>/dev/null && pwd -P)" == "$(cd "${_sb_scheduler_lib_dir}/../.." 2>/dev/null && pwd -P)" ]]; then  # a project's own catalog is repo data: only the plugin tree supplies it (R4-10)
     printf '%s/docs/apo-catalog.json' "$repo_root"
     return 0
   fi

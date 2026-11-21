@@ -379,7 +379,7 @@ Report:
 
 ## Native Subagent Notes (Claude Code)
 
-- Roles ship with the plugin in `subagents/claude/`: `sb-rfl-reviewer` and `sb-rfl-verifier`, tools `Read, Grep, Glob` only. A plugin agent may appear namespaced (`silver-bullet:sb-rfl-reviewer`); the hook accepts both forms.
+- Roles ship with the plugin as `agents/sb-rfl-reviewer.md` and `agents/sb-rfl-verifier.md` (default agent discovery; `plugin.json` declares no `agents` field, the Claude schema rejects it), tools `Read, Grep, Glob` only. A plugin agent is namespaced (`silver-bullet:sb-rfl-reviewer`); the hook accepts both forms. If your host does not list them, the spawn fails as `cannot_launch` and the encoder counts the attempt.
 - The spawn parameters come from `--issue-ticket`: `subagent_type`, `model` (an alias: `haiku|sonnet|opus`), `effort` (`low|medium|high|xhigh|max`), `description`, `prompt`. Do not add `run_in_background` or `isolation`.
 - Resume after a quota pause, a new session or an upgrade from the old ladder: `python3 <plugin>/scripts/review-fix-ladder.py --resume <run-id>`. A legacy run (no `rfl.ladder.v2` schema) keeps its rung directories as history, starts the current rung at streak 0 and asks Policy E again; pass `--charter-file` if it has no `CHARTER.json`.
 

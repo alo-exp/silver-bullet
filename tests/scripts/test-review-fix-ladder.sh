@@ -78,11 +78,26 @@ assert_jq_true "Codex: the ladder is disabled with a clear message and documente
 rc=0; SILVER_BULLET_RUNTIME=codex python3 "$RESOLVER" --start --charter-file "$WORKDIR/none.json" --project-root "$WORKDIR" >/dev/null 2>"$WORKDIR/err" || rc=$?
 if [[ "$rc" -eq 3 ]] && grep -q "not yet verified on Codex" "$WORKDIR/err"; then pass "Codex --start stops with the clear message"; else fail "Codex --start stops with the clear message (rc $rc)"; fi
 
+for role in reviewer verifier; do
+  agent="$REPO_ROOT/agents/sb-rfl-$role.md"
+  if [[ -f "$agent" ]] && grep -qx "name: sb-rfl-$role" "$agent" && grep -qx 'tools: Read, Grep, Glob' "$agent" \
+    && ! grep -E '^tools:.*(Bash|Edit|Write|Agent|MultiEdit)' "$agent" | grep -q .; then
+    pass "agents/sb-rfl-$role.md is read-only (Read, Grep, Glob; no shell, edit or spawn tools)"
+  else
+    fail "agents/sb-rfl-$role.md is read-only"
+  fi
+done
+if jq -e 'has("agents") | not' "$REPO_ROOT/.claude-plugin/plugin.json" >/dev/null; then
+  pass "plugin.json declares no agents field (default agent discovery; the Claude schema rejects it)"
+else
+  fail "plugin.json declares no agents field"
+fi
+
 for gone in --decide-launch --default-host-route --mark-quota-fallback --codex-home; do
   rc=0; python3 "$RESOLVER" "$gone" x >/dev/null 2>&1 || rc=$?
   if [[ "$rc" -eq 2 ]]; then pass "$gone (Cursor / subscription-first / Codex cache) is gone"; else fail "$gone is gone (rc $rc)"; fi
 done
-if grep -rniE 'cursor|subscription-first|grok|composer' "$REPO_ROOT/scripts/_review_fix_ladder_impl.py" "$REPO_ROOT/scripts/lib/rfl_native.py" "$REPO_ROOT/scripts/lib/rfl_hook.py" "$REPO_ROOT/scripts/lib/rfl_policy_c.py" "$REPO_ROOT/scripts/lib/rfl_launcher_policy.py" "$REPO_ROOT/scripts/lib/quota_window.py" "$REPO_ROOT/hooks/review-fix-ladder-guard.sh" "$REPO_ROOT/skills/silver-review-fix-ladder/SKILL.md" "$REPO_ROOT/subagents/claude" | grep -q .; then
+if grep -rniE 'cursor|subscription-first|grok|composer' "$REPO_ROOT/scripts/_review_fix_ladder_impl.py" "$REPO_ROOT/scripts/lib/rfl_native.py" "$REPO_ROOT/scripts/lib/rfl_hook.py" "$REPO_ROOT/scripts/lib/rfl_policy_c.py" "$REPO_ROOT/scripts/lib/rfl_launcher_policy.py" "$REPO_ROOT/scripts/lib/quota_window.py" "$REPO_ROOT/hooks/review-fix-ladder-guard.sh" "$REPO_ROOT/skills/silver-review-fix-ladder/SKILL.md" "$REPO_ROOT/agents/sb-rfl-reviewer.md" "$REPO_ROOT/agents/sb-rfl-verifier.md" | grep -q .; then
   fail "no Cursor / subscription-first / Grok wording in the RFL skill, impl or state libs"
 else
   pass "no Cursor / subscription-first / Grok wording in the RFL skill, impl or state libs"

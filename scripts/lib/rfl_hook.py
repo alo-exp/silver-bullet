@@ -146,7 +146,7 @@ def check_edit(root: Path, run_dir: Path, payload: dict[str, Any]) -> str | None
     for raw in payload_paths(spec):
         target = Path(raw) if Path(raw).is_absolute() else cwd / raw
         try:
-            rels.append(Path(os.path.normpath(target)).relative_to(root.resolve()))
+            rels.append(Path(os.path.realpath(target)).relative_to(root.resolve()))
         except ValueError:
             continue
     _, agent_type = _subagent(payload)

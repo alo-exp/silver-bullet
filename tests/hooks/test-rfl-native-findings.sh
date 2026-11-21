@@ -55,6 +55,16 @@ for ev in SessionStart:startup UserPromptSubmit:; do
 done
 assert_not_contains "R4-10: repo text (ASK file / job fields) is never injected" "$out" "HOSTILE"
 
+# --- R4-10 (catalog half): a project's docs/apo-catalog.json is repo data, never the scheduler catalog -----
+# shellcheck source=../../hooks/lib/orchestrator-scheduler.sh
+source "$REPO/hooks/lib/orchestrator-scheduler.sh"
+mkdir -p "$P/docs"
+printf '{"HOSTILE": true}\n' >"$P/docs/apo-catalog.json"
+got="$(unset SB_APO_CATALOG_FILE; sb_scheduler_catalog_file "$P")"
+assert_eq "R4-10: a project catalog is ignored; the plugin's own catalog is used" "$(cd "$REPO/hooks/lib/../../docs" && pwd -P)/apo-catalog.json" "$(cd "$(dirname "$got")" && pwd -P)/apo-catalog.json"
+got="$(unset SB_APO_CATALOG_FILE; sb_scheduler_catalog_file "$REPO")"
+assert_eq "R4-10: the plugin repo's own catalog is still used when the project is the plugin repo" "$REPO/docs/apo-catalog.json" "$got"
+
 # --- R4-25: no timers ------------------------------------------------------------------------------
 rc=0; python3 "$CLI" --schedule-quota-retry --run-dir "$P/.planning/rfl-x" --rung-id r --model m >/dev/null 2>&1 || rc=$?
 assert_eq "R4-25: --schedule-quota-retry no longer exists (argparse rejects it)" 2 "$rc"
