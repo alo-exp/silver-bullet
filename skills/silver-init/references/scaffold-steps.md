@@ -129,13 +129,13 @@ Set `orchestrator_mode` to `"parent"` in `.silver-bullet.json` (only supported m
 
 ### 3.2.6 Ignore phase-lock runtime state
 
-`.planning/.phase-locks.json*` (the lock file and its `.lock` sidecar) is per-checkout runtime state: a committed copy would carry another machine's locks onto every clone. Add the line once to the project `.gitignore` (the exact line and idempotence `scripts/sb-migrate-project.sh` uses; never write through a symlink):
+`.planning/.phase-locks.json*` (the lock file and its `.lock` sidecar) is per-checkout runtime state: a committed copy would carry another machine's locks onto every clone. Add the line once to the project `.gitignore` (the exact line and idempotence `scripts/sb-migrate-project.sh` uses: a whole-line match, CR trimmed, so a commented or negated line does not count; never write through a symlink):
 
 ```bash
 LOCKS_IGNORE='.planning/.phase-locks.json*'
 if [ -L .gitignore ]; then
   echo "Skipped .gitignore: it is a symlink. Add $LOCKS_IGNORE to it yourself."
-elif ! grep -qF "$LOCKS_IGNORE" .gitignore 2>/dev/null; then
+elif ! tr -d '\r' <.gitignore 2>/dev/null | grep -qxF "$LOCKS_IGNORE"; then
   {
     [ -s .gitignore ] && echo ""
     echo "# Phase-lock runtime state — local, never committed (Silver Bullet)"

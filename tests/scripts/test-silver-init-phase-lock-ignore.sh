@@ -39,6 +39,18 @@ P3="$TL_TMP/p3"; mkdir -p "$P3"; printf '%s\n' "$LINE" >"$P3/.gitignore"; cp "$P
 run_in "$P3" >/dev/null
 assert_eq "already-ignored file untouched" "" "$(diff "$P3/before" "$P3/.gitignore" || true)"
 
+# A commented or negated line is not the ignore (whole-line match); a CRLF whole line is.
+for decoy in '# .planning/.phase-locks.json*' '!.planning/.phase-locks.json*'; do
+  P5="$TL_TMP/p5"; rm -rf "$P5"; mkdir -p "$P5"; printf '%s\n' "$decoy" >"$P5/.gitignore"
+  run_in "$P5" >/dev/null
+  assert_eq "'$decoy' does not count: the line is added" "1" "$(grep -cxF "$LINE" "$P5/.gitignore")"
+  run_in "$P5" >/dev/null
+  assert_eq "'$decoy': and not added twice" "1" "$(grep -cxF "$LINE" "$P5/.gitignore")"
+done
+P6="$TL_TMP/p6"; mkdir -p "$P6"; printf '%s\r\n' "$LINE" >"$P6/.gitignore"; cp "$P6/.gitignore" "$P6/before"
+run_in "$P6" >/dev/null
+assert_eq "a CRLF whole-line entry counts as present" "" "$(cmp "$P6/before" "$P6/.gitignore" || true)"
+
 # Symlink: never written through.
 P4="$TL_TMP/p4"; mkdir -p "$P4"; : >"$TL_TMP/target"; ln -s "$TL_TMP/target" "$P4/.gitignore"
 OUT="$(run_in "$P4")"
