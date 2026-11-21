@@ -76,9 +76,10 @@ nope() { printf '  ✗ %s — %s\n' "$1" "$2"; FAIL=$((FAIL+1)); }
 # ── Test 1: SB_PHASE_LOCK_INHERITED bypass ───────────────────────────────────
 echo "--- T1: SB_PHASE_LOCK_INHERITED=true → silent exit 0, no manifest ---"
 setup
-out=$(SB_PHASE_LOCK_INHERITED=true \
-  printf '{"tool_name":"Edit","tool_input":{"file_path":".planning/phases/099-test/x.md"},"session_id":"test-'"${TEST_RUN_ID}"'"}' \
-  | SB_PHASE_LOCK_INHERITED=true bash "$HOOK" 2>&1)
+# stdin comes from a here-string, not a pipe: a hook that exits before reading its input (the INHERITED bypass
+# does) would otherwise make the writer die of SIGPIPE and, with pipefail, report 141 on a loaded machine.
+t1_json='{"tool_name":"Edit","tool_input":{"file_path":".planning/phases/099-test/x.md"},"session_id":"test-'"${TEST_RUN_ID}"'"}'
+out=$(SB_PHASE_LOCK_INHERITED=true bash "$HOOK" 2>&1 <<<"$t1_json")
 rc=$?
 [[ "$rc" == "0" ]] && ok "T1: exit 0 with INHERITED" || nope "T1: exit 0" "rc=$rc"
 [[ -z "$out" ]] && ok "T1: silent (no stdout/stderr)" || nope "T1: silent" "got: $out"
@@ -87,10 +88,16 @@ rc=$?
   || nope "T1: manifest" "exists at ${SB_TEST_DIR}/claimed-phases-test-${TEST_RUN_ID}.txt"
 teardown
 
+# T1b: a payload larger than the pipe buffer that the bypass never reads must still exit 0
+big_json="$(printf '{"tool_name":"Edit","pad":"%s"}' "$(head -c 200000 /dev/zero | tr '\0' 'a')")"
+SB_PHASE_LOCK_INHERITED=true bash "$HOOK" >/dev/null 2>&1 <<<"$big_json"
+rc=$?
+[[ "$rc" == "0" ]] && ok "T1b: exit 0 with a 200 KB payload the bypass never reads" || nope "T1b: large payload" "rc=$rc"
+
 # ── Test 2: non-phase path is a no-op ────────────────────────────────────────
 echo "--- T2: non-phase path → silent exit 0 ---"
 setup
-printf '{"tool_name":"Edit","tool_input":{"file_path":"/etc/passwd"}}' | bash "$HOOK" >/dev/null 2>&1
+bash "$HOOK" >/dev/null 2>&1 <<<'{"tool_name":"Edit","tool_input":{"file_path":"/etc/passwd"}}'
 rc=$?
 [[ "$rc" == "0" ]] && ok "T2: exit 0 on non-phase path" || nope "T2: exit 0" "rc=$rc"
 [[ ! -f "${SB_TEST_DIR}/claimed-phases-test-${TEST_RUN_ID}.txt" ]] \
@@ -102,7 +109,7 @@ teardown
 echo "--- T3: claim under .planning/phases/099-test/ → manifest + lock ---"
 setup
 json=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":".planning/phases/099-test/x.md"},"session_id":"test-%s"}' "$TEST_RUN_ID")
-printf '%s' "$json" | bash "$HOOK" >/dev/null 2>&1
+bash "$HOOK" >/dev/null 2>&1 <<<"$json"
 rc=$?
 [[ "$rc" == "0" ]] && ok "T3: exit 0" || nope "T3: exit 0" "rc=$rc"
 manifest="${SB_TEST_DIR}/claimed-phases-test-${TEST_RUN_ID}.txt"
@@ -117,7 +124,7 @@ fi
 
 # ── Test 4: idempotent re-claim (no duplicate manifest line) ────────────────
 echo "--- T4: re-claim same phase same session → no duplicate manifest line ---"
-printf '%s' "$json" | bash "$HOOK" >/dev/null 2>&1
+bash "$HOOK" >/dev/null 2>&1 <<<"$json"
 rc=$?
 [[ "$rc" == "0" ]] && ok "T4: exit 0 on re-claim" || nope "T4: exit 0" "rc=$rc"
 count=$(grep -c '^099$' "$manifest")
@@ -133,7 +140,7 @@ bash "$HELPER_SRC" claim 099 opencode "simulated-other-runtime" >/dev/null 2>&1
 
 json=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":".planning/phases/099-test/y.md"},"session_id":"test2-%s"}' "$TEST_RUN_ID")
 set +e
-stderr_capture=$(printf '%s' "$json" | bash "$HOOK" 2>&1 1>"$TMPDIR_TEST/claim-stdout")
+stderr_capture=$(bash "$HOOK" 2>&1 1>"$TMPDIR_TEST/claim-stdout" <<<"$json")
 rc=$?
 stdout_capture=$(cat "$TMPDIR_TEST/claim-stdout" 2>/dev/null)
 rm -f "$TMPDIR_TEST/claim-stdout"
@@ -169,8 +176,7 @@ if [[ -z "$jq_path" || "$jq_path" =~ ^/usr/bin/jq$|^/bin/jq$ ]]; then
   echo "  ~ skipped (jq is in /usr/bin or /bin — cannot strip from PATH)"
 else
   rc=$( ( PATH=/usr/bin:/bin; export PATH; \
-          printf '{"tool_name":"Edit","tool_input":{"file_path":".planning/phases/099-test/x.md"}}' \
-          | bash "$HOOK" >/dev/null 2>&1; echo $? ) )
+          bash "$HOOK" >/dev/null 2>&1 <<<'{"tool_name":"Edit","tool_input":{"file_path":".planning/phases/099-test/x.md"}}'; echo $? ) )
   [[ "$rc" == "0" ]] && ok "T6: exit 0 with jq stripped from PATH" \
     || nope "T6: jq fail-open" "rc=$rc"
 fi
@@ -181,7 +187,7 @@ echo "--- T7: weird session_id 'weird/path:name' → sanitized to 'weird_path_na
 setup
 raw='weird/path:name'
 json=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":".planning/phases/099-test/x.md"},"session_id":"%s"}' "$raw")
-printf '%s' "$json" | bash "$HOOK" >/dev/null 2>&1
+bash "$HOOK" >/dev/null 2>&1 <<<"$json"
 rc=$?
 [[ "$rc" == "0" ]] && ok "T7: exit 0 on sanitized session id" || nope "T7: exit 0" "rc=$rc"
 sanitized_manifest="${SB_TEST_DIR}/claimed-phases-weird_path_name.txt"
