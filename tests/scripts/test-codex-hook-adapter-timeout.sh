@@ -124,6 +124,14 @@ if [[ "$out" == "plain text" ]]; then
 else
   fail "non-JSON output should pass through, got: $out"
 fi
+# --timeout without a value or a command is a usage error (exit 2).
+rc=0
+printf '{}' | "$ADAPTER" PreToolUse --timeout >/dev/null 2>&1 || rc=$?
+if [[ "$rc" -eq 2 ]]; then
+  pass "--timeout without value/command: usage error (exit 2)"
+else
+  fail "--timeout without value/command should exit 2, got $rc"
+fi
 rm -rf "$nopy" "$deny_stub" "$block_stub" "$text_stub"
 
 rm -f "$slow_stub"
