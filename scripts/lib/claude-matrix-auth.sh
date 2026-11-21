@@ -78,9 +78,9 @@ _claude_matrix_file_mode() {
 # settings file and the next prepare puts it back first (R14-04).
 _claude_matrix_auth_on_signal() {
   local sig="$1" me
-  # BASHPID (the current subshell) where Bash has it; macOS Bash 3.2 does not, and `$$` would
-  # name the parent shell when this runs inside a command substitution.
-  me="${BASHPID:-$(sh -c 'echo $PPID')}"
+  # BASHPID (the current subshell) where Bash has it; macOS Bash 3.2 falls back to `$$`, the
+  # outermost shell, which is interrupted anyway.
+  me="${BASHPID:-$$}"
   claude_matrix_auth_restore
   trap - INT TERM
   kill -s "$sig" "$me"

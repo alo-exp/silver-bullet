@@ -182,6 +182,14 @@ am 0 h "A_HEALTHY_AFTER=1" "AM_PS=otheruser nginx -g daemon off"
 assert_contains "agentmemory: foreign listener reported" "$TL_OUT" "is not this user's agentmemory (pid $LISTENER) — not touching it"
 if kill -0 "$LISTENER" 2>/dev/null; then tl_pass "agentmemory: a foreign listener survives"; else tl_fail "agentmemory: a foreign listener survives"; fi
 kill -TERM "$LISTENER" 2>/dev/null || true
+# a listener whose ps entry vanished is not this user's agentmemory either
+sleep 300 & LISTENER=$!
+tl_stub lsof "echo $LISTENER"
+tl_stub ps 'exit 1'
+am 0 h "A_HEALTHY_AFTER=1"
+assert_contains "agentmemory: unidentifiable listener left alone" "$TL_OUT" "is not this user's agentmemory (pid $LISTENER) — not touching it"
+kill -TERM "$LISTENER" 2>/dev/null || true
+tl_stub ps 'printf "%s\n" "${AM_PS:-$(id -un) agentmemory serve}"'
 # a non-numeric lsof answer is ignored
 tl_stub lsof 'echo not-a-pid'
 am 0 h "A_HEALTHY_AFTER=1"

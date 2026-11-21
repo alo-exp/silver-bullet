@@ -36,7 +36,7 @@ hung_setup() { # batch alive, log idle 6000s (hung), row 5 running with a fresh-
   echo "1234 agent" >"$P/pgrep.codex-interactive"
   # the batch runner (7000) has these descendants; 7005 is a grandchild; 1234 (the pgrep -f pattern
   # hit) is NOT in its tree, so it must never be signalled (R14-10)
-  printf '7001\n7002\n7003\n7004\n' >"$P/pgrep.-P 7000"
+  printf '7001\n7002\n7003\n7004\n7006\n' >"$P/pgrep.-P 7000"  # 7006 vanished: ps has no entry
   echo "7005" >"$P/pgrep.-P 7004"
   echo "expect scripts/claude-interactive-invoke.expect" >"$P/ps.7001.command"
   echo "/usr/local/bin/claude --model sonnet" >"$P/ps.7002.command"
@@ -61,6 +61,7 @@ assert_not_contains "no process is ever signalled by pattern" "$calls" "pkill"
 assert_not_contains "claude host leaves the codex wrapper alone" "$calls" "kill -TERM 7003"
 assert_not_contains "an unrelated child is never TERMed" "$calls" "kill -TERM 7004"
 assert_not_contains "an unrelated child is never KILLed" "$calls" "kill -KILL 7004"
+assert_not_contains "a child that vanished (no ps entry) is never signalled" "$calls" "kill -TERM 7006"
 assert_not_contains "a look-alike outside the batch tree is never signalled" "$calls" "kill -TERM 1234"
 assert_eq "TERM precedes KILL" "TERM" "$(grep -m1 -E '^kill -(TERM|KILL) ' "$F4_CALLS" | awk '{print $2}' | sed 's/^-//')"
 assert_contains "live batch is not restarted" "$(cat "$STATE")" "LAST_GROWTH_EPOCH=$NOW"
@@ -73,12 +74,13 @@ assert_contains "codex: TERM wrapper by exact pid" "$calls" "kill -TERM 7003"
 assert_contains "codex: KILL survivor by exact pid" "$calls" "kill -KILL 7003"
 assert_not_contains "codex host leaves claude alone" "$calls" "kill -TERM 7001"
 
-# a batch pid file that is missing or not numeric signals nothing
+# a batch runner with no descendants signals nothing (and the restart handling still runs)
 hung_setup
-echo "not-a-pid" >"$BPID"
+rm -f "$P/pgrep.-P 7000"
 f4_mon_run
-assert_not_contains "non-numeric batch pid: no agent signalled" "$(cat "$F4_CALLS")" "kill -TERM 700"
-assert_not_contains "non-numeric batch pid: no pkill" "$(cat "$F4_CALLS")" "pkill"
+assert_not_contains "no descendants: no agent is TERMed" "$(cat "$F4_CALLS")" "kill -TERM 700"
+assert_not_contains "no descendants: no pkill" "$(cat "$F4_CALLS")" "pkill"
+assert_not_contains "no descendants: no grace sleep before KILL" "$(cat "$F4_CALLS")" "sleep 3"
 
 # hung while a live-test driver runs: no restart, clock reset
 hung_setup

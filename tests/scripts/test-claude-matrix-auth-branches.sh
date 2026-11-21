@@ -106,7 +106,8 @@ before_sum="$(cksum <"$SETTINGS")"
 CLAUDE_BIN="$TL_TMP/claude-conflict" claude_matrix_auth_prepare
 assert_eq "mode: stripped copy keeps the 0600 mode" 600 "$(stat -c %a "$SETTINGS")"
 assert_eq "mode: stripped settings really lack the keys" '{"env":{"CUSTOM":"keep"},"theme":"dark"}' "$(jq -c . "$SETTINGS")"
-assert_eq "mode: no temp file left beside the settings" 0 "$(ls "$HOME/.claude" | grep -c 'matrix-auth\.' || true)"
+leftovers=("$HOME/.claude"/settings.json.matrix-auth.*)
+assert_eq "mode: no temp file left beside the settings" 0 "$([[ -e "${leftovers[0]}" ]] && echo "${#leftovers[@]}" || echo 0)"
 claude_matrix_auth_restore
 assert_eq "mode: restore keeps the 0600 mode" 600 "$(stat -c %a "$SETTINGS")"
 assert_eq "mode: restore is byte-identical" "$before_sum" "$(cksum <"$SETTINGS")"
