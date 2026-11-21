@@ -147,6 +147,7 @@ is_protected() {
 # The owner allowance is for the owning skill's file tools: not MCP tools, and not an apply_patch that deletes
 # or moves a file.
 owner_tool_ok=0
+payload_agent_id="$(printf '%s' "$input" | jq -r 'def v: if type != "string" then "!" elif . == "" then "!" elif test("\\A[A-Za-z0-9_-]{1,64}\\z") then . else "!" end; if type != "object" then "" else (if has("agent_id") then .agent_id elif has("agentId") then .agentId else null end) | if . == null then "" else v end end')"
 case "$tool_name" in
   Edit | Write | MultiEdit) owner_tool_ok=1 ;;
   apply_patch) [[ "$input" == *'*** Delete File:'* || "$input" == *'*** Move to:'* ]] || owner_tool_ok=1 ;;
@@ -195,7 +196,7 @@ while IFS=$'\t' read -r via target; do
   fi
 
   # ── Owner allowance: sb:spec / sb:ingest write .planning/REQUIREMENTS.md while it was invoked last ──
-  if sb_pf_owner_may_write "$planning_rel" "$via" "$target" "$owner_tool_ok"; then
+  if sb_pf_owner_may_write "$planning_rel" "$via" "$target" "$owner_tool_ok" "$payload_agent_id"; then
     note "ℹ️  planning-file-guard: ${basename_path} written by its owning skill (the skill invoked last)."
     continue
   fi

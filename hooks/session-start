@@ -303,7 +303,7 @@ sb_session_clear_session_files() {
 # Reset everything that was earned on another branch or worktree.
 sb_session_reset_scoped_state() {
   sb_safe_write "$state_file"
-  rm -f -- "$state_file" "${state_file}.seal" "${state_file}.hwm" "${state_file}.last" "${state_file}.lasthwm" "${SB_STATE_DIR}/unlock-hint" 2>/dev/null || true
+  rm -f -- "$state_file" "${state_file}.seal" "${state_file}.hwm" "${state_file}.last" "${state_file}.lasthwm" "${state_file}".last.* "${state_file}".lasthwm.* "${SB_STATE_DIR}/unlock-hint" 2>/dev/null || true
   rm -f -- "${SB_STATE_DIR}/orchestrator.json" \
         "${SB_STATE_DIR}/orchestrator-directive.json" \
         "${SB_STATE_DIR}/orchestrator-worker-active.json" \

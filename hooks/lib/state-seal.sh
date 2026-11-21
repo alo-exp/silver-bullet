@@ -25,11 +25,11 @@
 #   sb_state_seal_trusted STATE    print the content the gates may trust
 #   sb_state_seal_file STATE       the seal path
 #   sb_state_seal_lock STATE / sb_state_seal_unlock   serialise a recorder's enforce, append and re-seal
-#   sb_state_last_write STATE SKILL   record (and key-seal) the skill invoked last, re-invocations included
-#   sb_state_last_read STATE          print that skill when its keyed record verifies; nothing otherwise
+#   sb_state_last_write STATE SKILL [AGENT]   record (and key-seal) the skill invoked last, re-invocations included
+#   sb_state_last_read STATE [AGENT]          print that skill when its keyed record verifies; nothing otherwise
 #
 # The state lists a skill only the first time it is recorded, so it cannot say which skill ran last.
-# <state>.last holds "v1, skill, counter, branch checksum, HMAC"; <state>.lasthwm holds the highest
+# <state>.last holds "v2, skill, counter, branch checksum, HMAC" (the agent id is inside the digest); <state>.lasthwm holds the highest
 # counter issued, so an older copy put back is refused, and a record from another branch does not
 # verify. Only a keyed seal counts (no key, no openssl/python3: nothing is trusted). Old installs have
 # no .last: nothing is trusted either. The record is in the state directory the state-tamper guard
@@ -237,17 +237,35 @@ sb_state_seal_unlock() {
   SB_STATE_SEAL_LOCK_HELD=""
 }
 
-_sb_state_last_file() { printf '%s.last' "$1"; }
-_sb_state_last_hwm_file() { printf '%s.lasthwm' "$1"; }
+# A subagent (a worker) has a record of its own: <state>.last.<agent_id> with <state>.lasthwm.<agent_id>, the
+# same scheme as the main one with the agent id inside the digest, so a record is useless for any other agent
+# or for the main session. The id comes from the hook payload and becomes part of a file name, so only
+# ^[A-Za-z0-9_-]{1,64}$ is accepted; anything else gets no record. At most SB_LAST_AGENT_RECORDS (32) agent
+# records are kept (the oldest are pruned). A main-session record never grants a subagent anything and
+# the reverse.
+_sb_state_last_agent_ok() { [[ -z "$1" || "$1" =~ ^[A-Za-z0-9_-]{1,64}$ ]]; }
+_sb_state_last_file() { printf '%s.last%s' "$1" "${2:+.$2}"; }
+_sb_state_last_hwm_file() { printf '%s.lasthwm%s' "$1" "${2:+.$2}"; }
 
-_sb_state_last_message() { # SKILL COUNTER BRANCHSUM
-  printf 'sb-last-v1\n%s\n%s\n%s\n' "$1" "$2" "$3"
+_sb_state_last_message() { # SKILL COUNTER BRANCHSUM AGENT
+  printf 'sb-last-v2\n%s\n%s\n%s\n%s\n' "$1" "$2" "$3" "$4"
 }
 
-sb_state_last_write() {
-  local state="$1" skill="$2" last hwm c prev bsum digest tmp
-  last="$(_sb_state_last_file "$state")"
-  hwm="$(_sb_state_last_hwm_file "$state")"
+_sb_state_last_prune() { # STATE
+  local f id keep="${SB_LAST_AGENT_RECORDS:-32}"
+  # shellcheck disable=SC2012
+  ls -t "$1".last.* 2>/dev/null | tail -n +"$((keep + 1))" | while IFS= read -r f; do
+    id="${f##*.last.}"
+    [[ "$id" =~ ^[A-Za-z0-9_-]{1,64}$ ]] || continue
+    rm -f -- "$f" "$(_sb_state_last_hwm_file "$1" "$id")"
+  done
+}
+
+sb_state_last_write() { # STATE SKILL [AGENT_ID]
+  local state="$1" skill="$2" agent="${3:-}" last hwm c prev bsum digest tmp
+  _sb_state_last_agent_ok "$agent" || return 0
+  last="$(_sb_state_last_file "$state" "$agent")"
+  hwm="$(_sb_state_last_hwm_file "$state" "$agent")"
   [[ ! -L "$last" && ! -L "$hwm" ]] || return 0
   # The key is made by the first seal or session start; a record never creates it (that would make a
   # legacy unsealed state look tampered).
@@ -259,28 +277,30 @@ sb_state_last_write() {
   [[ "$prev" -le "$c" ]] || c="$prev"
   c=$((c + 1))
   bsum="$(_sb_state_seal_branch_sum "$state")"
-  digest="$(_sb_state_last_message "$skill" "$c" "$bsum" | _sb_state_seal_digest hmac "$state")" || return 0
+  digest="$(_sb_state_last_message "$skill" "$c" "$bsum" "$agent" | _sb_state_seal_digest hmac "$state")" || return 0
   tmp="${last}.$$"
-  if printf 'v1\n%s\n%s\n%s\n%s\n' "$skill" "$c" "$bsum" "$digest" 2>/dev/null >"$tmp"; then mv -f -- "$tmp" "$last"; fi
+  if printf 'v2\n%s\n%s\n%s\n%s\n' "$skill" "$c" "$bsum" "$digest" 2>/dev/null >"$tmp"; then mv -f -- "$tmp" "$last"; fi
   rm -f -- "$tmp"
   tmp="${hwm}.$$"
   if printf '%s\n' "$c" 2>/dev/null >"$tmp"; then mv -f -- "$tmp" "$hwm"; fi
   rm -f -- "$tmp"
+  if [[ -n "$agent" ]]; then _sb_state_last_prune "$state"; fi
   return 0
 }
 
-sb_state_last_read() {
-  local state="$1" last hwm version skill c bsum digest high now
-  last="$(_sb_state_last_file "$state")"
-  hwm="$(_sb_state_last_hwm_file "$state")"
+sb_state_last_read() { # STATE [AGENT_ID]
+  local state="$1" agent="${2:-}" last hwm version skill c bsum digest high now
+  _sb_state_last_agent_ok "$agent" || return 0
+  last="$(_sb_state_last_file "$state" "$agent")"
+  hwm="$(_sb_state_last_hwm_file "$state" "$agent")"
   # A missing counter file is no counter: deleting it must not re-enable an older valid record.
   [[ -f "$last" && ! -L "$last" && -f "$hwm" && ! -L "$hwm" ]] || return 0
   { read -r version; read -r skill; read -r c; read -r bsum; read -r digest; } <"$last" 2>/dev/null || true
-  [[ "$version" == v1 && -n "$skill" && "$c" =~ ^[0-9]+$ ]] || return 0
+  [[ "$version" == v2 && -n "$skill" && "$c" =~ ^[0-9]+$ ]] || return 0
   high="$(_sb_state_seal_number "$hwm")"
   [[ "$c" -ge "$high" ]] || return 0
   now="$(_sb_state_seal_branch_sum "$state")"
   [[ "$bsum" == "$now" ]] || return 0
-  [[ "$digest" == "$(_sb_state_last_message "$skill" "$c" "$bsum" | _sb_state_seal_digest hmac "$state")" ]] || return 0
+  [[ "$digest" == "$(_sb_state_last_message "$skill" "$c" "$bsum" "$agent" | _sb_state_seal_digest hmac "$state")" ]] || return 0
   printf '%s' "$skill"
 }
