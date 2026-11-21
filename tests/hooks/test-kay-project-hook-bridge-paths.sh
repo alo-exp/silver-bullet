@@ -96,12 +96,11 @@ run_bridge file.after_write '{"changes":[{"path":""},{"new_path":"/n/p"}]}'
 assert_eq "file path from new_path" "/n/p" "$(jq -r .tool_input.file_path "$TL_TMP_DUMP")"
 run_bridge file.after_write '{}'
 assert_eq "no changes: empty path" "" "$(jq -r .tool_input.file_path "$TL_TMP_DUMP")"
-# session events have no tool name, so no tool-scoped hook runs
-write_hooks "$(jq -cn --argjson h "$(cmd_of dump)" '{hooks:{SessionStart:[{matcher:".*",hooks:[$h]}],Stop:[{matcher:".*",hooks:[$h]}]}}')"
+# session.end has no tool name and Kay has no Stop gating: no hook runs on it
+write_hooks "$(jq -cn --argjson h "$(cmd_of dump)" '{hooks:{Stop:[{matcher:".*",hooks:[$h]}]}}')"
 rm -f "$TL_TMP_DUMP"
-run_bridge session.start '{}'
 run_bridge session.end '{}'
-assert_file_absent "session events run no tool-matched hooks" "$TL_TMP_DUMP"
+assert_file_absent "session.end runs no hook" "$TL_TMP_DUMP"
 assert_eq "session events are allowed" "0" "$TL_STATUS"
 write_hooks "$(jq -cn --argjson h "$(cmd_of dump)" '{hooks:{PreToolUse:[{matcher:"Bash|exec_command",hooks:[$h]}],PostToolUse:[{matcher:"Bash|exec_command",hooks:[$h]}]}}')"
 
@@ -197,17 +196,57 @@ run_bridge file.after_write '{}' mf2
 run_bridge file.before_write '{"changes":[{"path":"/x/a.md"},{"path":"/x/b.md"},{"path":"/x/a.md"}]}' mf3
 assert_eq "all-clean multi-file write allowed" "0" "$TL_STATUS"
 
-# R7-05 (documented limit): Kay has no SessionStart/Stop/UserPromptSubmit
-# events. session.start/session.end run no hooks, so the Stop planning floor and
-# session-start reset do not exist on Kay (docs/RUNTIME-COMPATIBILITY.md,
-# "Kay limits"). This pins the limit so a change to it is deliberate.
-write_hooks "$(jq -cn --argjson h "$(cmd_of dump)" --argjson b "$(cmd_of blockjson)" '{hooks:{SessionStart:[{matcher:".*",hooks:[$h]}],Stop:[{matcher:".*",hooks:[$b,$h]}]}}')"
+# R7-03 (r1): every path-like key of a change is gated, so the DESTINATION of a
+# rename or move cannot hide a protected file behind a harmless source path.
+for key in path filePath file_path new_path newPath move_path movePath old_path from_path to_path destination dest target_path targetPath; do
+  run_bridge file.before_write "$(jq -cn --arg k "$key" '{changes:[{path:"/x/ok.md",($k):"/x/PROTECTED.md"}]}')" "key-$key"
+  assert_eq "ok.md -> PROTECTED.md via [$key] is denied" "2" "$TL_STATUS"
+  run_bridge file.after_write '{}' "key-$key"
+done
+run_bridge file.before_write '{"changes":[{"path":"/x/a.md","new_path":"/x/b.md"},{"filePath":"/x/c.md","destination":"/x/d.md"}]}' keys-clean
+assert_eq "a rename between clean paths is allowed" "0" "$TL_STATUS"
+run_bridge file.before_write '{"changes":[{"path":7,"new_path":""},{"path":"/x/PROTECTED.md"}]}' keys-weird
+assert_eq "non-string and empty path values are ignored, later change still gated" "2" "$TL_STATUS"
+run_bridge file.after_write '{}' keys-weird
+
+# the matched hook list is cached per (event, tool): a 20-path write costs the
+# same number of matching lookups as a 1-path write.
+REAL_PY="$(command -v python3)"
+MATCH_LOG="$TL_TMP/match-calls.log"
+tl_stub python3 "case \"\$2\" in */hooks.json) echo m >>\"$MATCH_LOG\";; esac; exec $REAL_PY \"\$@\""
+mk_script allowall 'cat >/dev/null'
+write_hooks "$(jq -cn --argjson h "$(cmd_of allowall)" '{hooks:{PreToolUse:[{matcher:"Write|Edit|MultiEdit|apply_patch",hooks:[$h]}]}}')"
+: >"$MATCH_LOG"
+run_bridge file.before_write '{"changes":[{"path":"/x/1"}]}' cnt1
+one_path_calls="$(wc -l <"$MATCH_LOG" | tr -d ' ')"
+: >"$MATCH_LOG"
+many="$(jq -cn '{changes:[range(0;20) | {path:("/x/f\(.)")}]}')"
+run_bridge file.before_write "$many" cnt20
+twenty_path_calls="$(wc -l <"$MATCH_LOG" | tr -d ' ')"
+assert_eq "matching lookups do not scale with path count" "$one_path_calls" "$twenty_path_calls"
+assert_eq "four tool aliases looked up once each" "4" "$twenty_path_calls"
+rm -f "${TL_BIN:?}/python3"
+
+# a banner before a pretty-printed multi-line deny is still a deny
+mk_script prettydeny 'cat >/dev/null; echo "banner"; echo "{\"decision\":\"block\",\"reason\":\"pretty reason\"}" | jq .'
+write_hooks "$(jq -cn --argjson h "$(cmd_of prettydeny)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+run_bridge tool.before '{"command":"echo hi"}' r-pretty
+assert_eq "banner + pretty multi-line JSON deny is honoured" "2" "$TL_STATUS"
+assert_contains "pretty deny reason" "$TL_ERR" "pretty reason"
+
+# R7-05 (documented limit): Kay has no Stop/UserPromptSubmit gating
+# (docs/RUNTIME-COMPATIBILITY.md, "Kay limits"). session.end runs no hooks, so a
+# Stop block is not enforced. session.start runs the SessionStart hooks for their
+# side effects only (branch-state reset): their output and decision are ignored.
+write_hooks "$(jq -cn --argjson h "$(cmd_of dump)" --argjson b "$(cmd_of blockjson)" '{hooks:{SessionStart:[{matcher:"startup|clear|compact",hooks:[$b,$h]}],Stop:[{matcher:".*",hooks:[$b,$h]}]}}')"
 rm -f "$TL_TMP_DUMP"
 run_bridge session.start '{}' lim1
-assert_eq "documented limit: session.start runs no SessionStart hook" "0" "$TL_STATUS"
+assert_eq "session.start never blocks, even when a SessionStart hook says block" "0" "$TL_STATUS"
+assert_eq "session.start runs the SessionStart hooks (source startup)" "startup" "$(jq -r .source "$TL_TMP_DUMP")"
+rm -f "$TL_TMP_DUMP"
 run_bridge session.end '{}' lim2
 assert_eq "documented limit: a Stop block is not enforced on session.end" "0" "$TL_STATUS"
-assert_file_absent "documented limit: no session hook output was produced" "$TL_TMP_DUMP"
+assert_file_absent "documented limit: no Stop hook runs on session.end" "$TL_TMP_DUMP"
 write_hooks "$(jq -cn --argjson h "$(cmd_of denyjson)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
 
 # the first reason wins

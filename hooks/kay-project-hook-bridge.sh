@@ -190,21 +190,23 @@ except Exception:
 if not isinstance(payload, dict):
     payload = {}
 
+PATH_KEYS = (
+    "path", "filePath", "file_path", "new_path", "newPath", "move_path", "movePath",
+    "old_path", "oldPath", "from_path", "fromPath", "to_path", "toPath",
+    "destination", "dest", "target_path", "targetPath", "source_path", "sourcePath",
+)
 changes = payload.get("changes") or []
 seen = []
 if isinstance(changes, list):
     for change in changes:
         if not isinstance(change, dict):
             continue
-        path = (
-            change.get("path")
-            or change.get("filePath")
-            or change.get("new_path")
-            or change.get("newPath")
-            or ""
-        )
-        if path and path not in seen:
-            seen.append(path)
+        # Every path-like field is gated: a rename or move names a source and a
+        # destination, and the destination can be a protected file.
+        for key in PATH_KEYS:
+            path = change.get(key)
+            if isinstance(path, str) and path and path not in seen:
+                seen.append(path)
 for path in seen:
     print(path)
 PY
@@ -299,7 +301,7 @@ PY
   esac
 }
 
-matching_hook_specs() {
+compute_matching_hook_specs() {
   local event_name="$1"
   local tool_name="$2"
 
@@ -343,6 +345,19 @@ print(json.dumps(matched))
 PY
 }
 
+# Sets MATCHED_JSON for (event, tool). The match does not depend on the path, so
+# it is computed once per distinct pair and cached in a variable (not a
+# subshell: the cache must survive in this shell). Cost no longer scales with the
+# number of paths in a multi-file write.
+load_matching_hook_specs() {
+  local key
+  key="_sb_match_cache_$(printf '%s_%s' "$1" "$2" | tr -c 'A-Za-z0-9' '_')"
+  if [[ -z "${!key+x}" ]]; then
+    printf -v "$key" '%s' "$(compute_matching_hook_specs "$1" "$2")"
+  fi
+  MATCHED_JSON="${!key}"
+}
+
 parse_hook_block_reason() {
   local hook_stdout="$1"
   local filter out
@@ -363,9 +378,21 @@ parse_hook_block_reason() {
     printf '%s\n' "$out"
     return 0
   fi
-  # Not one JSON document: use the last non-empty line (a noisy stream must not
-  # turn a deny into an allow).
-  printf '%s\n' "$hook_stdout" | grep -v '^[[:space:]]*$' | tail -n 1 | jq -r "$filter" 2>/dev/null || true
+  # Not one JSON document (a banner before the verdict): take the last complete
+  # JSON value, i.e. the shortest suffix of the stream that parses. This also
+  # handles a pretty-printed multi-line object. Only the last 200 lines are tried.
+  local total line_no stop
+  total="$(printf '%s\n' "$hook_stdout" | wc -l | tr -d ' ')"
+  stop=$((total > 200 ? total - 199 : 1))
+  line_no="$total"
+  while [[ "$line_no" -ge "$stop" ]]; do
+    if out="$(printf '%s\n' "$hook_stdout" | tail -n "+${line_no}" | jq -r "$filter" 2>/dev/null)"; then
+      printf '%s\n' "$out"
+      return 0
+    fi
+    line_no=$((line_no - 1))
+  done
+  return 0
 }
 
 run_matching_hooks() {
@@ -376,7 +403,8 @@ run_matching_hooks() {
   # seen_commands is declared by run_all_matching_hooks: a command runs once per
   # event even when several tool-name aliases match it.
 
-  matched_json="$(matching_hook_specs "$event_name" "$tool_name")"
+  load_matching_hook_specs "$event_name" "$tool_name"
+  matched_json="$MATCHED_JSON"
   [[ -n "$matched_json" ]] || matched_json='[]'
   bridge_debug "matched_hooks tool=${tool_name} hooks=${matched_json}"
 
@@ -693,7 +721,7 @@ apply_denial_filesystem_block() {
   local reason="$3"
   local targets_file command_str
 
-  : > "$state_path"
+  touch "$state_path"
   targets_file="$(mktemp "${TMPDIR:-/tmp}/sb-kay-hook-targets.XXXXXX")"
   collect_shell_write_targets "$payload_json" | sort -u >"$targets_file"
   bridge_debug "targets=$(tr '\n' '|' <"$targets_file" 2>/dev/null || true)"
@@ -718,7 +746,7 @@ apply_file_write_block() {
 
   [[ -n "$paths" ]] || return 0
 
-  : > "$state_path"
+  touch "$state_path"
   targets_file="$(mktemp "${TMPDIR:-/tmp}/sb-kay-hook-targets.XXXXXX")"
   printf '%s\n' "$paths" >"$targets_file"
   apply_permission_block "$state_path" "$targets_file" exact || true
@@ -775,6 +803,7 @@ restore_state_file() {
   done < "$state_path"
 
   if ((${#state_lines[@]})); then
+    local idx
     for line in "${state_lines[@]}"; do
       IFS=$'\t' read -r kind path mode <<<"$line"
       [[ -n "$kind" ]] || continue
@@ -785,8 +814,11 @@ restore_state_file() {
       esac
     done
 
-    for line in "${state_lines[@]}"; do
-      IFS=$'\t' read -r kind path mode <<<"$line"
+    # State files are append-only (a repeated call id never drops earlier
+    # records). Replay newest first: a later record of the same path holds an
+    # already-locked mode, the earliest holds the original.
+    for ((idx = ${#state_lines[@]} - 1; idx >= 0; idx--)); do
+      IFS=$'\t' read -r kind path mode <<<"${state_lines[idx]}"
       [[ -n "$kind" ]] || continue
       case "$kind" in
         PATH)
@@ -822,6 +854,12 @@ restore_block_state() {
 # crash, a host that skips the after event, a missing call id) must not leave
 # the project read-only. Restore every stale state file, newest first (a later
 # state can record the already-locked mode of a path an earlier one restores).
+run_session_start_hooks() {
+  local -a seen_commands=()
+  BRIDGE_BLOCK_REASON=""
+  run_matching_hooks SessionStart startup '{"hook_event_name":"SessionStart","source":"startup"}'
+}
+
 restore_all_stale_blocks() {
   local stale
   while IFS= read -r stale; do
@@ -840,12 +878,16 @@ main() {
   tool_name="$(synthetic_tool_name_for_native "$native_event")"
   [[ -n "$hook_event_name" ]] || exit 0
 
-  # Kay has no SessionStart/Stop gating: session events only repair stale
-  # denial state. No SessionStart/Stop/UserPromptSubmit hook runs on Kay (see
-  # docs/RUNTIME-COMPATIBILITY.md, "Kay limits").
+  # Kay has no Stop/UserPromptSubmit gating (see docs/RUNTIME-COMPATIBILITY.md,
+  # "Kay limits"). Session events repair stale denial state; session.start also
+  # runs the SessionStart hooks for their side effects (the branch-scoped state
+  # reset) and ignores their output and decision.
   case "$native_event" in
     session.start|session.end)
       restore_all_stale_blocks
+      if [[ "$native_event" == "session.start" ]]; then
+        run_session_start_hooks
+      fi
       exit 0
       ;;
   esac
