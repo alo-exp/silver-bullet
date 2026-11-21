@@ -231,4 +231,18 @@ if [[ -r /proc/self/status ]]; then
   assert_eq "stale state with unrestorable path removed" "" "$(ls "$BR/blocks")"
 fi
 
+# a denied write to a not-yet-existing file in a shared directory (sticky or
+# world-writable, e.g. /tmp) or in HOME never locks that directory
+mkdir -p "$WORK/shared" "$WORK/sticky"
+chmod 777 "$WORK/shared"; chmod 1777 "$WORK/sticky"
+write_hooks "$(jq -cn --argjson h "$(cmd_of deny2)" '{hooks:{PreToolUse:[{matcher:"Write|Bash",hooks:[$h]}]}}')"
+run_bridge file.before_write "$(jq -cn --arg p "$WORK/shared/new.txt" '{changes:[{path:$p}]}')" shr1
+run_bridge file.before_write "$(jq -cn --arg p "$WORK/sticky/new.txt" '{changes:[{path:$p}]}')" shr2
+run_bridge tool.before "$(jq -cn --arg c "touch $WORK/sticky/other.txt" '{command:$c}')" shr3
+run_bridge file.before_write "$(jq -cn --arg p "$BHOME/new-in-home.txt" '{changes:[{path:$p}]}')" shr4
+assert_eq "world-writable parent not locked" "777" "$(stat -c %a "$WORK/shared")"
+assert_eq "sticky parent not locked" "1777" "$(stat -c %a "$WORK/sticky")"
+assert_eq "HOME not locked" "755" "$(stat -c %a "$BHOME")"
+run_bridge session.start '{}' shr-end
+
 tl_results
