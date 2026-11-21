@@ -704,7 +704,7 @@ SHADOW_NOTE = ("the scan is deliberately over-broad: any agent file whose text m
 
 
 def _agent_scan_dirs(project_root: Path) -> list[Path]:
-    """Agent folders to scan: the usual ones plus the ``.claude/agents`` of every ancestor of the project (the host's
+    """Agent folders to scan: the usual ones plus the per-project agents folder of every ancestor (the host's
     lookup upward from the working directory is undocumented, so the scan goes up to the filesystem root)."""
     root = Path(project_root).resolve()
     dirs = agent_dirs(root) + [a / ".claude" / "agents" for a in (root, *root.parents)]

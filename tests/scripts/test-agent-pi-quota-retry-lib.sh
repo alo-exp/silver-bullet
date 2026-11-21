@@ -106,7 +106,7 @@ assert_contains "no reset parsed: defaults to the 5h window" "$TL_ERR" "resets i
 run_sched FAKE_CLASSIFY_JSON='{"quota_class":"daily","should_schedule":true,"reset_seconds":60}' SB_RFL_QUOTA_HOST=sbhost SB_RFL_MODEL=sbmodel -- 1 "daily limit"
 assert_contains "non-5h class announced with its name" "$TL_ERR" "[agent-pi] quota daily; window resets in 60s"
 assert_contains "SB_RFL_QUOTA_HOST and SB_RFL_MODEL are honored" "$CALLS" "--quota-host sbhost --model sbmodel"
-if find "$TL_TMP" -name 'quota-retry-schedule.json' -o -name 'agent-pi' -path '*/.planning/*' | grep -q .; then
+if [[ -n "$(find "$TL_TMP" -name 'quota-retry-schedule.json' -o -name 'agent-pi' -path '*/.planning/*')" ]]; then
   tl_fail "no schedule or planning state is ever written"
 else tl_pass "no schedule or planning state is ever written"; fi
 

@@ -111,7 +111,7 @@ if grep -qE '\[agent-pi\] quota 5h; window resets in [0-9]+s' "$inv_out"; then
 else
   fail "invoke.sh reports the 5h window"; cat "$inv_out"
 fi
-if find "$WORKDIR" -name 'quota-retry-schedule.json' | grep -q .; then
+if [[ -n "$(find "$WORKDIR" -name 'quota-retry-schedule.json')" ]]; then
   fail "invoke.sh must not persist a schedule"
 else
   pass "invoke.sh persists nothing"

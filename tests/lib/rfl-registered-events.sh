@@ -15,7 +15,9 @@ rfl_registered_commands() {
 
 rfl_assert_registered() {
   local event="$1" tool="$2" script="$3"
-  if rfl_registered_commands "$event" "$tool" | grep -qx "$script"; then
+  local cmds
+  cmds="$(rfl_registered_commands "$event" "$tool")"
+  if grep -qx "$script" <<<"$cmds"; then
     tl_pass "registered: $event/$tool -> $script"
   else
     tl_fail "registered: $event/$tool -> $script (hooks.json does not route it)"
