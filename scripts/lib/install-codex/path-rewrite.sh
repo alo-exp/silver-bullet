@@ -183,12 +183,15 @@ def rewrite_hook_manifest(file_path, source_text=None):
                     continue
                 if adapter_path in command:
                     continue
-                # Pass the hook's own hooks.json budget so the adapter never stops a
-                # hook before the manifest allows (R7-01).
+                # Pass a budget derived from the hook's own hooks.json timeout (R7-01).
                 budget = hook.get("timeout")
                 timeout_arg = ""
                 if isinstance(budget, (int, float)) and not isinstance(budget, bool) and budget > 0:
-                    timeout_arg = f" --timeout {max(1, int(budget))}"
+                    # Codex enforces the manifest timeout on the adapter process
+                    # itself, so the adapter's budget sits below it: it must be able
+                    # to emit its fail-closed deny/block before Codex's timer fires.
+                    whole = int(budget)
+                    timeout_arg = f" --timeout {max(1, whole - max(2, whole // 10))}"
                 hook["command"] = f'"{adapter_path}" "{event_name}"{timeout_arg} {command}'
                 changed = True
 

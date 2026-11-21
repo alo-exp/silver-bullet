@@ -43,7 +43,13 @@ trap cleanup EXIT
 
 cat >"$input_file"
 
-SB_HOOK_SUBPROC_TIMEOUT="${SB_CODEX_HOOK_SUBPROC_TIMEOUT:-$manifest_timeout}"
+# The override must be a positive number; anything else is ignored (GNU timeout
+# would exit 125 before running the hook, or "0" would disable the cap).
+SB_HOOK_SUBPROC_TIMEOUT="$manifest_timeout"
+case "${SB_CODEX_HOOK_SUBPROC_TIMEOUT:-}" in
+  '' | *[!0-9.]* | *.*.* | . | 0 | 0.0 | 0.00) ;;
+  *) SB_HOOK_SUBPROC_TIMEOUT="$SB_CODEX_HOOK_SUBPROC_TIMEOUT" ;;
+esac
 trap - ERR
 set +e
 sb_run_hooked_command "$SB_HOOK_SUBPROC_TIMEOUT" "$input_file" "$stdout_file" "$stderr_file" "$@"
@@ -55,7 +61,9 @@ if [[ "$rc" -eq 124 ]]; then
   # deny, that is a deny (fail closed) so a slow gate cannot become an allow;
   # other events only get a notice. SB_CODEX_HOOK_ON_TIMEOUT=allow opts out.
   timeout_msg="Silver Bullet hook timed out after ${SB_HOOK_SUBPROC_TIMEOUT}s and was blocked (fail closed). Retry, or raise the hook timeout in hooks.json."
-  case "$event_name:${SB_CODEX_HOOK_ON_TIMEOUT:-deny}" in
+  on_timeout="deny"
+  [[ "${SB_CODEX_HOOK_ON_TIMEOUT:-}" != "allow" ]] || on_timeout="allow"
+  case "$event_name:$on_timeout" in
     PreToolUse:deny)
       jq -cn --arg r "$timeout_msg" \
         '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}' >"$stdout_file"
