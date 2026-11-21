@@ -23,10 +23,23 @@ strip_frontmatter() {
   awk 'BEGIN{f=0} /^---$/{f++; next} f>=2 {print}'
 }
 
+# The one rewrite a host render applies to a composer body: the plugin-root definition and the
+# ${PLUGIN_ROOT}/skills/... references follow the host's install layout (render-agent-bundle.py).
+# The canonical body is compared after that same substitution, so every other difference is still drift.
+apply_host_root() {
+  python3 -I -c '
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("rab", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+sys.stdout.write(mod.rewrite_plugin_root_paths(sys.stdin.read(), sys.argv[2]))
+' "$RENDER" "$1"
+}
+
 assert_body_parity() {
-  local label="$1" canonical="$2" bundle="$3"
+  local label="$1" canonical="$2" bundle="$3" agent="$4"
   local c_body b_body
-  c_body="$(strip_frontmatter <"$canonical")"
+  c_body="$(strip_frontmatter <"$canonical" | apply_host_root "$agent")"
   b_body="$(strip_frontmatter <"$bundle")"
   if [[ "$c_body" == "$b_body" ]]; then
     echo "PASS: $label body parity"
@@ -89,7 +102,7 @@ for agent in "${AGENTS[@]}"; do
       FAIL=$((FAIL + 1))
     fi
 
-    assert_body_parity "${skill} canonical vs ${agent}" "$canonical" "$bundle"
+    assert_body_parity "${skill} canonical vs ${agent}" "$canonical" "$bundle" "$agent"
     assert_name_alias "${skill} name line (${agent})" "$canonical" "$bundle"
   done
 done

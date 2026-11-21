@@ -135,7 +135,7 @@ assert_grep "silver-update RTK retry" \
 
 assert_grep "silver-init stack optimize step" \
   "$REPO_ROOT/skills/silver-init/SKILL.md" \
-  "sb-optimize-stack.sh --apply"
+  '${PLUGIN_ROOT}/scripts/sb-optimize-stack.sh" --apply'
 
 assert_grep "silver-update stack optimize step" \
   "$REPO_ROOT/skills/silver-update/SKILL.md" \
