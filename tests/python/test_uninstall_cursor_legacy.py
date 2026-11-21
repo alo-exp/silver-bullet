@@ -186,7 +186,7 @@ class RulesToolstackPluginsTest(Base):
         self.rule("no-fast-mode")
         self.rule("silver-orchestrator")
         self.rule("leanctx", description="my own leanctx rule")
-        self.write("rules/graphify.mdc", "---\ndescription: graphify knowledge graph context\n---\n")
+        self.write("rules/graphify.mdc", "---\ndescription: my own graphify notes\n---\n")
         (self.home / "rules" / "agentmemory.mdc").symlink_to(self.home / "rules" / "graphify.mdc")
         (self.home / "rules" / "recommended-tools.mdc").write_bytes(b"\xff\xfe")
         code, _, err = self.clean()
@@ -196,6 +196,7 @@ class RulesToolstackPluginsTest(Base):
             ["agentmemory.mdc", "graphify.mdc", "leanctx.mdc", "recommended-tools.mdc"],
         )
         self.assertIn("leanctx.mdc: named like a Silver Bullet rule", err)
+        self.assertIn("graphify.mdc: named like a Silver Bullet rule", err)
         self.assertEqual(self.backups(), [self.backups()[0].split("/")[0] + "/rules/no-fast-mode.mdc",
                                           self.backups()[1].split("/")[0] + "/rules/silver-orchestrator.mdc"])
 
@@ -458,6 +459,126 @@ class RunTest(Base):
         os.environ["CURSOR_HOME"] = str(self.home / "from-env")
         self.addCleanup(os.environ.pop, "CURSOR_HOME", None)
         self.assertIn("from-env", run([])[1])
+
+
+FIXTURE = json.loads((Path(__file__).resolve().parents[1] / "fixtures" / "cursor-legacy-toolstack-deploy.json").read_text())
+
+
+class BaseInstallerDeployListTest(Base):
+    """r3: everything the base installers deployed is Silver Bullet's, by exact name, and nothing else is."""
+
+    NOTE = "not a Silver Bullet toolstack file"
+
+    def seed_toolstack(self):
+        self.write("hooks/toolstack/lib/common.sh", f"{m.TOOLSTACK_HEADER}\n")
+        for rel in FIXTURE["toolstack_files"]:
+            if rel != "lib/common.sh":
+                self.write(f"hooks/toolstack/{rel}", f"# deployed {rel}\n")
+
+    def test_every_file_the_base_installers_deployed_is_moved(self):
+        self.seed_toolstack()
+        for name, description in FIXTURE["global_rules"].items():
+            self.write(f"rules/{name}.mdc", f"---\ndescription: {description}\nalwaysApply: true\n---\nx\n")
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        self.assertNotIn(self.NOTE, err)
+        self.assertFalse((self.home / "hooks/toolstack").exists())
+        self.assertEqual(list((self.home / "rules").iterdir()), [])
+        moved = {b.split("/", 1)[1] for b in self.backups()}
+        for rel in FIXTURE["toolstack_files"]:
+            self.assertIn("hooks/toolstack/" + rel, moved)
+        for name in FIXTURE["global_rules"]:
+            self.assertIn(f"rules/{name}.mdc", moved)
+
+    def test_look_alike_files_of_the_user_stay(self):
+        self.seed_toolstack()
+        mine = ["lib/recommended-tools/my-probe.sh", "lib/five_tool_runtime/mine.py", "probe-rtk.sh", "installer.sh",
+                "lib/receipts.sh", "lib/other/runtime.py"]
+        for rel in mine:
+            self.write(f"hooks/toolstack/{rel}", "# mine\n")
+        outside = self.write("elsewhere/x.sh", "x")
+        (self.home / "hooks/toolstack/lib/recommended-tools/link.sh").symlink_to(outside)
+        (self.home / "hooks/toolstack/lib/five_tool_runtime/dirlink").symlink_to(outside.parent)
+        (self.home / "hooks/toolstack/lib/recommended-tools/receipts.sh").unlink()
+        (self.home / "hooks/toolstack/lib/recommended-tools/receipts.sh").symlink_to(outside.parent)
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        left = sorted(p.relative_to(self.home / "hooks/toolstack").as_posix()
+                      for p in (self.home / "hooks/toolstack").rglob("*") if p.is_file() or p.is_symlink())
+        self.assertEqual(left, sorted(mine + ["lib/recommended-tools/link.sh", "lib/five_tool_runtime/dirlink",
+                                              "lib/recommended-tools/receipts.sh"]))
+        for rel in mine:
+            self.assertIn(f"{rel}: {self.NOTE}", err)
+        self.assertEqual(self.read_text("hooks/toolstack/lib/five_tool_runtime/mine.py"), "# mine\n")
+
+    def read_text(self, rel):
+        return (self.home / rel).read_text()
+
+    def test_dry_run_reports_what_it_would_move_and_only_leaves_the_user_files_as_kept(self):
+        self.seed_toolstack()
+        self.write("hooks/toolstack/mygate.sh", "mine")
+        before = sorted(p for p in self.home.rglob("*"))
+        code, out, err = self.clean("--dry-run")
+        self.assertEqual(code, 0)
+        self.assertEqual(sorted(p for p in self.home.rglob("*")), before)
+        self.assertIn("mygate.sh: " + self.NOTE, err)
+        self.assertEqual(err.count(self.NOTE), 1)
+        for rel in FIXTURE["toolstack_files"]:
+            self.assertIn(f"hooks/toolstack/{rel} ->", out)
+
+
+class BackupBucketTest(Base):
+    def seed(self):
+        self.write("rules/leanctx.mdc", f"---\ndescription: {m.RULES['leanctx']}\n---\n")
+        self.write_json("hooks.json", {"hooks": {"stop": [{"command": SB_BRIDGE}]}})
+
+    def test_a_symlinked_backup_folder_aborts_before_anything_moves(self):
+        self.seed()
+        outside = Path(self._tmp.name).resolve() / "outside"
+        outside.mkdir()
+        (self.home / ".silver-bullet-legacy-backup").symlink_to(outside)
+        before = (self.home / "hooks.json").read_bytes()
+        for extra in ((), ("--dry-run",)):
+            code, out, err = self.clean(*extra)
+            self.assertEqual(code, 1)
+            self.assertIn("is a symlink", err)
+            self.assertIn("nothing was changed", err)
+            self.assertNotIn("moved", out)
+        self.assertEqual(list(outside.iterdir()), [])
+        self.assertTrue((self.home / "rules/leanctx.mdc").is_file())
+        self.assertEqual((self.home / "hooks.json").read_bytes(), before)
+        self.assertFalse(Path(str(self.home / "hooks.json") + ".sb-backup").exists())
+
+    def test_a_symlinked_stamp_folder_aborts_too(self):
+        self.seed()
+        outside = Path(self._tmp.name).resolve() / "outside"
+        outside.mkdir()
+        stamp = "20260101T000000000000Z"
+        (self.home / ".silver-bullet-legacy-backup").mkdir()
+        (self.home / ".silver-bullet-legacy-backup" / stamp).symlink_to(outside)
+
+        class FixedClock(m.datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return cls(2026, 1, 1, 0, 0, 0, tzinfo=tz)
+
+        original = m.datetime
+        m.datetime = FixedClock
+        self.addCleanup(setattr, m, "datetime", original)
+        code, _, err = self.clean()
+        self.assertEqual(code, 1)
+        self.assertIn("is a symlink", err)
+        self.assertEqual(list(outside.iterdir()), [])
+        self.assertTrue((self.home / "rules/leanctx.mdc").is_file())
+
+    def test_an_ordinary_backup_folder_is_used_and_two_quick_runs_do_not_share_a_stamp(self):
+        self.seed()
+        (self.home / ".silver-bullet-legacy-backup").mkdir()
+        self.assertEqual(self.clean()[0], 0)
+        self.write("rules/leanctx.mdc", f"---\ndescription: {m.RULES['leanctx']}\n---\n")
+        self.assertEqual(self.clean()[0], 0)
+        stamps = {b.split("/")[0] for b in self.backups() if b.endswith("rules/leanctx.mdc")}
+        self.assertEqual(len(stamps), 2)
 
 
 if __name__ == "__main__":

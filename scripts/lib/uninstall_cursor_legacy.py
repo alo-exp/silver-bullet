@@ -20,7 +20,7 @@ like Silver Bullet's is reported and left in place.
   plugins/              Silver Bullet's cache, local and marketplace copies, and its entry in
                         installed_plugins.json
 
-Whole files and directories are moved to <cursor-home>/.silver-bullet-legacy-backup/<UTC stamp>/
+Whole files and directories are moved to <cursor-home>/.silver-bullet-legacy-backup/<UTC stamp>/ (a symlinked backup folder aborts the run before anything moves)
 (never deleted). JSON files keep a <file>.sb-backup copy. A second run finds nothing to do.
 """
 
@@ -84,7 +84,9 @@ PLUGIN_DIRS = (
     "cache/alo-labs-cursor/silver-bullet",
     "marketplaces/github.com/alo-exp/silver-bullet",
 )
-# Files the global toolstack installers deployed into ~/.cursor/hooks/toolstack (exact names).
+# Files the global toolstack installers deployed into ~/.cursor/hooks/toolstack (exact names): the
+# install-global-toolstack.sh / install-body.sh copies, and what rt_deploy_toolstack_scripts and
+# rt_deploy_reconciler_snapshots (scripts/lib/recommended-tools/installer.sh) added on every run.
 TOOLSTACK_FILES = TOOLSTACK_GATES | frozenset(
     {
         "five_tool_instances.py",
@@ -93,14 +95,45 @@ TOOLSTACK_FILES = TOOLSTACK_GATES | frozenset(
         "fix-shell-compression-hook.py",
         "install-pi.py",
         "opencode.py",
+        "opencode-rtk-plugin.ts",
+        "pi-five-tool-stack.ts",
         "parity-verify.sh",
         "verify.sh",
         "install.sh",
         "install-body.sh",
         "global-recommended-tools.mdc",
+        "reconcile-recommended-tools.sh",
+        "sb_host_config.py",
         "__pycache__",
     }
 )
+# The snapshots deployed under hooks/toolstack/lib/<directory>, by exact file name. Both directories
+# belong to Silver Bullet's installers (they sit beside the marked lib/common.sh); a file of the user's
+# in either one stays.
+TOOLSTACK_LIB_DIRS = {
+    "recommended-tools": frozenset(
+        {
+            "common.sh",
+            "graphify-worktree.sh",
+            "heartbeat.sh",
+            "installer.sh",
+            "paths.sh",
+            "probe-agentmemory.sh",
+            "probe-alumnium.sh",
+            "probe-context-mode.sh",
+            "probe-cross-tool.sh",
+            "probe-graphify.sh",
+            "probe-leanctx.sh",
+            "probe-rtk.sh",
+            "probe-search_cli.sh",
+            "receipts.sh",
+            "repair-graphify.sh",
+            "session-verify.sh",
+            "vendor-doctor.sh",
+        }
+    ),
+    "five_tool_runtime": frozenset({"__init__.py", "cli.py", "projections.py", "runtime.py", "__pycache__"}),
+}
 PLUGIN_ROOT_PLACEHOLDERS = ("${CURSOR_PLUGIN_ROOT}", "$CURSOR_PLUGIN_ROOT")
 
 AGENT_MARKER = "<!-- sb-managed: cursor-sb-agents -->"
@@ -110,6 +143,8 @@ AGENT_SUFFIXES = (".md", ".json", ".yaml", ".yml")
 
 RULES = {
     "agentmemory": "agentmemory session capture and Graphify synergy",
+    "context-mode": "context-mode routing rules for context window protection",
+    "graphify": "graphify knowledge graph context",
     "leanctx": "LeanCTX routing rules for SB five-tool parallel stack",
     "no-fast-mode": "Never launch parent or Task/subagent work in Fast mode",
     "recommended-tools": (
@@ -139,8 +174,9 @@ class Cleanup:
     def __init__(self, cursor_home: Path, dry_run: bool) -> None:
         self.home = cursor_home
         self.dry_run = dry_run
-        self.bucket = cursor_home / ".silver-bullet-legacy-backup" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        self.bucket = cursor_home / ".silver-bullet-legacy-backup" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         self.changes = 0
+        self.moved: set[Path] = set()
         self.hook_names = sb_hook_names(HOOKS_DIR) | LEGACY_HOOK_NAMES
         self.shipped = {
             line.strip()
@@ -169,6 +205,7 @@ class Cleanup:
         if not self.reachable(path):
             return
         self.changes += 1
+        self.moved.add(path)
         self.say("moved", "move", f"{path} -> {self.bucket}")
         if self.dry_run:
             return
@@ -338,20 +375,34 @@ class Cleanup:
             if state.is_dir() and not state.is_symlink():
                 self.move_away(state)
 
+    @staticmethod
+    def owned(item: Path, names) -> bool:
+        return item.name in names and not (item.is_symlink() and item.is_dir())
+
+    def move_toolstack_lib(self, lib: Path) -> None:
+        for item in sorted(lib.iterdir()):
+            if item.name == "common.sh":
+                if item.is_file() and not item.is_symlink():
+                    self.move_away(item)
+            elif item.name in TOOLSTACK_LIB_DIRS and item.is_dir() and not item.is_symlink():
+                for entry in sorted(item.iterdir()):
+                    if self.owned(entry, TOOLSTACK_LIB_DIRS[item.name]):
+                        self.move_away(entry)
+
     def move_toolstack_files(self, deployed: Path) -> None:
         """Move only the files the installers deployed; user scripts stay with their hooks.json entries."""
         for item in sorted(deployed.iterdir()):
             if item.name == "lib":
-                common = item / "common.sh"
-                if common.is_file() and not common.is_symlink():
-                    self.move_away(common)
-            elif item.name in TOOLSTACK_FILES and not (item.is_symlink() and item.is_dir()):
+                self.move_toolstack_lib(item)
+            elif self.owned(item, TOOLSTACK_FILES):
                 self.move_away(item)
-        for folder in (deployed / "lib", deployed):
-            if not self.dry_run and folder.is_dir() and not folder.is_symlink() and not any(folder.iterdir()):
-                folder.rmdir()
+        if not self.dry_run:
+            lib = deployed / "lib"
+            for folder in [lib / name for name in TOOLSTACK_LIB_DIRS] + [lib, deployed]:
+                if folder.is_dir() and not folder.is_symlink() and not any(folder.iterdir()):
+                    folder.rmdir()
         for item in sorted(deployed.rglob("*")) if deployed.is_dir() else ():
-            if item.is_file() or item.is_symlink():
+            if (item.is_file() or item.is_symlink()) and not any(p in self.moved for p in (item, *item.parents)):
                 self.note(f"{item}: not a Silver Bullet toolstack file, left in place")
 
     # ------------------------------------------------------------------ plugins
@@ -387,7 +438,21 @@ class Cleanup:
             if path.is_symlink() or path.is_file():
                 self.move_away(path)
 
+    def backup_folder_is_safe(self) -> bool:
+        """The backup bucket and its parent must be real folders: a symlink would carry every moved item outside."""
+        for folder in (self.bucket.parent, self.bucket):
+            if folder.is_symlink():
+                print(
+                    f"ERROR: {folder} is a symlink; refusing to move anything into it. "
+                    "Remove or rename it and run the cleanup again; nothing was changed.",
+                    file=sys.stderr,
+                )
+                return False
+        return True
+
     def run(self) -> int:
+        if not self.backup_folder_is_safe():
+            return 1
         failed = False
         for step in (
             self.clean_hooks,
