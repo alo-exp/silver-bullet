@@ -524,7 +524,7 @@ sb_orchestrator_parent_context_block() {
   for f in "$root"/.silver-bullet/orchestrator-workers/*.md; do
     [[ -f "$f" ]] || continue
     name="$(basename "$f" .md)"
-    warn="$(sb_orchestrator_worker_template_path "$root" "$name" 2>&1 >/dev/null || true)"
+    warn="$(sb_orchestrator_worker_template_path "$root" "$name" 2>&1 >/dev/null)" || warn=""
     [[ -z "$warn" ]] || printf '  %s\n' "$warn"
   done
 }
