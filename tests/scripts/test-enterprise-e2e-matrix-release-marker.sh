@@ -64,4 +64,11 @@ run env SB_E2E_MATRIX_FORCE_ALL=1 bash "$MATRIX"
 mv "$TL_TMP/git.bak" "$R/.git"
 assert_file_absent "no git commit: no marker" "$MARKER"
 assert_contains "no-commit reason is stated" "$TL_OUT" "has no commit to bind it to"
+# the runner survives a ps that cannot describe its own pid (identity record skipped, tolerated)
+reset; rm -f "$MARKER"
+all_rows_agent
+tl_stub ps 'exit 1'
+run env SB_E2E_MATRIX_FORCE_ALL=1 bash "$MATRIX" 2
+/bin/rm -f "$TL_BIN/ps"
+assert_eq "an unreadable ps does not abort the matrix runner" 0 "$TL_STATUS"
 tl_results

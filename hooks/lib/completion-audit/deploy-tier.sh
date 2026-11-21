@@ -1,15 +1,6 @@
 #!/usr/bin/env bash
 # completion-audit: TIER 2 final delivery gate
 
-# ca_release_commit_sha ROOT: the commit `gh release create` will release, resolved the way gh does:
-# an existing tag wins (--target is ignored for it), else --target (the remote branch, then a local ref),
-# else the remote default branch, else HEAD. The tag and target are read by release_scope.py (SB_SA_JSON
-# .release: `gh release create TAG --target X`, `gh api .../releases -f tag_name=TAG -f target_commitish=X` in
-# every flag spelling, or the MCP create_release payload); it also says when they cannot be read with certainty
-# (several releases in one command, another tool or repository, a repeated or computed value): the reason is left
-# on stdout. Called as the condition of an `if`, so a failing helper makes the gate deny instead of tripping
-# the ERR trap. Prints the sha; status 1 when the release cannot be read (the reason is printed instead of a sha)
-# or --target names nothing that resolves (nothing is printed) (R13-08, R1-19).
 # ca_marker_commit_ok FILE ROOT RELEASE_SHA: the live-matrix marker FILE was earned at the commit being
 # released. Its `commit=` line must be a full sha (missing or malformed fails closed) and must equal
 # RELEASE_SHA, or be an ancestor of it with every path changed since limited to the changelog
@@ -28,6 +19,15 @@ ca_marker_commit_ok() {
   return 0
 }
 
+# ca_release_commit_sha ROOT: the commit `gh release create` will release, resolved the way gh does:
+# an existing tag wins (--target is ignored for it), else --target (the remote branch, then a local ref),
+# else the remote default branch, else HEAD. The tag and target are read by release_scope.py (SB_SA_JSON
+# .release: `gh release create TAG --target X`, `gh api .../releases -f tag_name=TAG -f target_commitish=X` in
+# every flag spelling, or the MCP create_release payload); it also says when they cannot be read with certainty
+# (several releases in one command, another tool or repository, a repeated or computed value): the reason is left
+# on stdout. Called as the condition of an `if`, so a failing helper makes the gate deny instead of tripping
+# the ERR trap. Prints the sha; status 1 when the release cannot be read (the reason is printed instead of a sha)
+# or --target names nothing that resolves (nothing is printed) (R13-08, R1-19).
 ca_release_commit_sha() {
   local root="$1" parsed ok="" reason="" tag="" target="" sha="" ref
   parsed="$(printf '%s' "${SB_SA_JSON:-}" | jq -rR 'try (fromjson | (.release // {}) | [(.ok // false | tostring), (.reason // ""), (.tag // ""), (.target // "")] | join("\u001f")) catch ""' 2>/dev/null)"
