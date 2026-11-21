@@ -91,7 +91,7 @@ RCDIR="$SB_RUNTIME_STATE_DIR/rc-validation"
 rc_markers() { # rc_markers STATUS COMMIT
   mkdir -p "$RCDIR"
   local h m
-  for h in cursor codex claude; do for m in fresh upgrade; do
+  for h in codex claude; do for m in fresh upgrade; do
     printf 'host=%s\nmode=%s\nstatus=%s\ncommit=%s\n' "$h" "$m" "$1" "$2" >"$RCDIR/$h-$m"
   done; done
 }
