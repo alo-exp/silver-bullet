@@ -8,7 +8,6 @@
 # Policy (Option C):
 #   • Agent Shell: full RTK when the user consented to RTK (hooks/lib/user-consent.sh) in
 #     this SB project (upstream PreToolUse rewrite; SB hooks see original command before RTK).
-#   • SB hook bridge (cursor-hook-bridge.sh): no RTK_DISABLED when user opted in.
 #   • Harness / install scripts: export SB_RTK_COMPAT_MODE=verbatim before source
 #     to force RTK_DISABLED=1 for deterministic output parsing.
 #   • When RTK not opted in (or config unknown): RTK_DISABLED=1 (safe default).

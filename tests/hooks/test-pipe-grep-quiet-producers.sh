@@ -42,11 +42,6 @@ EMPTY_REPO="$TL_TMP/norepo"; mkdir -p "$EMPTY_REPO"
 yes_t "stack-optimizer: graphify hooks detected despite long status" lib_fn hooks/lib/stack-optimizer.sh sb_stack_graphify_hooks_installed "$EMPTY_REPO"
 yes_t "graphify-am-global: graphify hooks detected despite long status" lib_fn hooks/lib/graphify-am-global.sh ga_graphify_hooks_installed
 
-# --- global-toolstack/common.sh:456 (agentmemory status | grep) ---
-tl_stub curl 'exit 1'
-tl_stub agentmemory "$(big 'Health: healthy')"
-yes_t "toolstack: agentmemory healthy despite long status" lib_fn scripts/lib/global-toolstack/common.sh ts_agentmemory_server_healthy
-
 # --- uat-gate.sh:74/81 (grep | grep -qv on a large UAT file) ---
 uat_case() { # <result> <rows>
   local proj="$TL_TMP/uat-$1"; mkdir -p "$proj/.planning"

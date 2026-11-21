@@ -10,13 +10,11 @@
 /.vscode/          @shafqatevo
 /.claude/          @shafqatevo
 /.codex/           @shafqatevo
-/.cursor/          @shafqatevo
 /.opencode/        @shafqatevo
 /.pi/              @shafqatevo
 /.hermes/          @shafqatevo
 /.agents/          @shafqatevo
 /.claude-plugin/   @shafqatevo
-/.cursor-plugin/   @shafqatevo
 /agents/           @shafqatevo
 /host-bundles/     @shafqatevo
 /hooks/            @shafqatevo

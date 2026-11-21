@@ -65,12 +65,12 @@ yes_t "mcp call: garbage args fall back to {} (server and tool come from the nam
 assert_eq "mcp args fallback" "{}" "$mcp_args"
 tool_name="Bash"
 no_t "mcp call: a shell tool is not an MCP call" sb_opt_in_mcp_call
-input='{"tool_name":"CallMcpTool","tool_input":{"server":"s","toolName":"t","arguments":{"q":1}}}'; tool_name="CallMcpTool"
-yes_t "mcp call: Cursor shape" sb_opt_in_mcp_call
+input='{"tool_name":"MCP","tool_input":{"server":"s","toolName":"t","arguments":{"q":1}}}'; tool_name="MCP"
+yes_t "mcp call: MCP shape" sb_opt_in_mcp_call
 assert_eq "mcp call: server" "s" "$mcp_server"
 assert_eq "mcp call: arguments" '{"q":1}' "$mcp_args"
-input='not json'; tool_name="CallMcpTool"
-no_t "mcp call: an unparsable Cursor payload is not an MCP call" sb_opt_in_mcp_call
+input='not json'; tool_name="MCP"
+no_t "mcp call: an unparsable payload is not an MCP call" sb_opt_in_mcp_call
 assert_eq "mcp call: unparsable payload has no server" "" "$mcp_server"
 assert_eq "mcp call: unparsable payload has empty args" "{}" "$mcp_args"
 input='{"tool_input":{"cmd":["git","commit","-m","a b"]}}'
@@ -369,12 +369,10 @@ assert_eq "graphify platform words: pre hermes" "graphify install --project --pl
 assert_eq "graphify platform words: pre codex" "graphify install --project --platform codex" "$(_sb_stack_graphify_platform_words pre codex)"
 assert_eq "graphify platform words: pre goose" "graphify install --project --platform pi" "$(_sb_stack_graphify_platform_words pre goose)"
 assert_contains "graphify platform words: pre pi" "$(_sb_stack_graphify_platform_words pre pi)" "install-pi.py"
-assert_eq "graphify platform words: post cursor" "graphify cursor install" "$(_sb_stack_graphify_platform_words post cursor)"
 assert_eq "graphify platform words: post codex" "graphify codex install --project" "$(_sb_stack_graphify_platform_words post codex)"
 assert_eq "agentmemory connect: goose" "agentmemory connect pi" "$(_sb_stack_agentmemory_connect_words goose)"
 assert_eq "agentmemory connect: pi" "agentmemory connect pi" "$(_sb_stack_agentmemory_connect_words pi)"
 assert_eq "agentmemory connect: hermes" "agentmemory connect hermes" "$(_sb_stack_agentmemory_connect_words hermes)"
-assert_eq "agentmemory connect: cursor has none" "" "$(_sb_stack_agentmemory_connect_words cursor)"
 printf '{"recommended_tools":{"graphify":{"enabled_by_user":true}}}' >"$TL_TMP/g-on.json"
 mkdir -p "$TL_TMP/prepo"
 tl_stub mktemp 'exit 1'; hash -r

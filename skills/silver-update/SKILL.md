@@ -327,8 +327,8 @@ jq -r '.recommended_tools.leanctx.enforcement_suspended // false' .silver-bullet
 **If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry via reconciler (no re-ask):
 
 ```bash
-bash scripts/reconcile-recommended-tools.sh   --project-root "$(pwd)" --host "${SILVER_BULLET_RUNTIME:-cursor}"   --mode apply --scope all --entry-point update --format text
-bash scripts/optimize-five-tool-stack.sh --host "${SILVER_BULLET_RUNTIME:-cursor}" --project-root "$(pwd)"
+bash scripts/reconcile-recommended-tools.sh   --project-root "$(pwd)" --host "${SILVER_BULLET_RUNTIME:-claude}"   --mode apply --scope all --entry-point update --format text
+bash scripts/optimize-five-tool-stack.sh --host "${SILVER_BULLET_RUNTIME:-claude}" --project-root "$(pwd)"
 ```
 
 On success, clear suspension (same jq pattern as Graphify). On failure, keep suspension.
@@ -337,17 +337,16 @@ On success, clear suspension (same jq pattern as Graphify). On failure, keep sus
 
 ### Step 8g: Host snapshot reconciliation (after plugin update)
 
-Refresh deployed global scripts, rules, hooks, and MCP merge from the updated plugin checkout:
+Re-run the host installer from the updated plugin checkout (`bash scripts/install-claude.sh` or `bash scripts/install-codex.sh`), then reconcile the recommended tools:
 
 ```bash
-bash scripts/install-cursor.sh --merge-hooks-only
-bash scripts/install-global-toolstack.sh --project-root "$(pwd)"
+bash scripts/reconcile-recommended-tools.sh --project-root "$(pwd)" --host "${SILVER_BULLET_RUNTIME:-claude}" --mode apply --scope all --entry-point update --format text
 ```
 
 Then verify (read-only):
 
 ```bash
-bash scripts/reconcile-recommended-tools.sh   --project-root "$(pwd)" --host "${SILVER_BULLET_RUNTIME:-cursor}"   --mode verify --scope all --format text
+bash scripts/reconcile-recommended-tools.sh   --project-root "$(pwd)" --host "${SILVER_BULLET_RUNTIME:-claude}"   --mode verify --scope all --format text
 ```
 
 Report `reload_required` honestly — plugin update does not prove MCP liveness in the current session.

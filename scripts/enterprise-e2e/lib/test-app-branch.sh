@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Test-app git branch isolation for multi-host enterprise E2E (Claude / Codex / Cursor).
+# Test-app git branch isolation for multi-host enterprise E2E (Claude / Codex).
 # Policy: .planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md
 set -euo pipefail
 
@@ -21,10 +21,6 @@ enterprise_e2e_test_app_round_from_ledger() {
     return 0
   fi
   if [[ "$base" =~ ^ROUND-CODEX-([0-9]+) ]]; then
-    printf '%s\n' "${BASH_REMATCH[1]}"
-    return 0
-  fi
-  if [[ "$base" =~ ^ROUND-CURSOR-([0-9]+) ]]; then
     printf '%s\n' "${BASH_REMATCH[1]}"
     return 0
   fi

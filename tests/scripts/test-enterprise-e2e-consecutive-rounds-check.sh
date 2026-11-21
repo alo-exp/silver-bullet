@@ -89,7 +89,7 @@ assert_eq "help exit" "0" "$TL_STATUS"
 assert_contains "help text" "$TL_OUT" "Verify two consecutive strict-clean rounds"
 
 # host tracks resolve default gate files
-for pair in "claude|ROUND-5-GATES.md|ROUND-6-GATES.md" "codex|ROUND-CODEX-1-GATES.md|ROUND-CODEX-2-GATES.md" "cursor|ROUND-CURSOR-1-GATES.md|ROUND-CURSOR-2-GATES.md"; do
+for pair in "claude|ROUND-5-GATES.md|ROUND-6-GATES.md" "codex|ROUND-CODEX-1-GATES.md|ROUND-CODEX-2-GATES.md"; do
   IFS='|' read -r host r1 r2 <<<"$pair"
   gate "$G/$r1" "Round strict-clean" "PASS"
   gate "$G/$r2" "Round strict-clean" "PASS"
@@ -116,8 +116,8 @@ assert_eq "explicit pair ignores the unknown runtime" "0" "$TL_STATUS"
 # no args: host from SB_E2E_LIVE_RUNTIME, else SILVER_BULLET_RUNTIME, else claude
 tl_run env SB_E2E_LIVE_RUNTIME=codex bash "$STAGED"
 assert_contains "runtime env selects codex gates" "$TL_OUT" "ROUND-CODEX-1-GATES.md → pass"
-tl_run env SILVER_BULLET_RUNTIME=cursor bash "$STAGED"
-assert_contains "SILVER_BULLET_RUNTIME selects cursor gates" "$TL_OUT" "ROUND-CURSOR-2-GATES.md → pass"
+tl_run env SILVER_BULLET_RUNTIME=codex bash "$STAGED"
+assert_contains "SILVER_BULLET_RUNTIME selects codex gates" "$TL_OUT" "ROUND-CODEX-2-GATES.md → pass"
 tl_run env -u SILVER_BULLET_RUNTIME -u SB_E2E_LIVE_RUNTIME bash "$STAGED"
 assert_contains "default host is claude" "$TL_OUT" "ROUND-5-GATES.md → pass"
 # one round given: the other comes from the host default

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/optimize-five-tool-stack.sh orchestration, run from a staged copy whose
 # sibling helper scripts (leanctx installer, RTK+CM optimizer, synergy optimizer,
-# cursor rules installer, MCP patcher) are logging stubs. Nothing is installed,
+# MCP patcher) are logging stubs. Nothing is installed,
 # no host config is touched: every write lands in the sandboxed HOME / temp dirs.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
@@ -18,7 +18,7 @@ cp "$TL_REPO_ROOT/scripts/optimize-five-tool-stack.sh" "$OPT"
 cp "$TL_REPO_ROOT/scripts/lib/sb_host_config.py" "$STAGE/scripts/lib/"
 ln -s "$TL_REPO_ROOT/hooks/lib" "$STAGE/hooks/lib"
 cp "$TL_REPO_ROOT/templates/silver-bullet.config.json.default" "$STAGE/templates/"
-for s in install-leanctx-sb optimize-rtk-context-mode sb-optimize-stack install-recommended-tools-cursor; do
+for s in install-leanctx-sb optimize-rtk-context-mode sb-optimize-stack; do
   cat >"$STAGE/scripts/$s.sh" <<EOF
 #!/usr/bin/env bash
 printf '%s %s\n' "$s" "\$*" >>"\$LOG"
@@ -54,7 +54,7 @@ assert_contains "unknown arg message" "$TL_ERR" "Unknown arg: --wat"
 run_opt --project-root "$PROJ"
 assert_eq "missing host exits 2" "2" "$TL_STATUS"
 assert_contains "missing host message" "$TL_ERR" "ERROR: --host is required"
-run_opt --host cursor
+run_opt --host claude
 assert_eq "missing project root exits 2" "2" "$TL_STATUS"
 assert_contains "missing project root message" "$TL_ERR" "ERROR: --project-root is required"
 run_opt --host emacs --project-root "$PROJ"
@@ -114,7 +114,6 @@ assert_eq "profile stamped: route table" "rtk" "$(jq -r '.optimization_profiles.
 assert_eq "profile stamping keeps the opt-in" "true" "$(jq -r '.recommended_tools.leanctx.enabled_by_user' "$PROJ/.silver-bullet.json")"
 assert_contains "active profile reported" "$TL_OUT" "Profile: five_tool_routed (primary_fts=context_mode, parallel_routed)"
 assert_contains "completion banner" "$TL_OUT" "=== Five-tool optimization complete ==="
-assert_not_contains "no cursor rules for claude" "$(calls)" "install-recommended-tools-cursor"
 
 # a pre-existing custom five_tool_routed profile is preserved, not overwritten
 write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}},"optimization_profiles":{"five_tool_routed":{"custom":1}}}'
@@ -122,13 +121,11 @@ run_opt --host claude --project-root "$PROJ"
 assert_eq "existing profile body preserved" "1" "$(jq -r '.optimization_profiles.five_tool_routed.custom' "$PROJ/.silver-bullet.json")"
 assert_eq "existing profile has no injected routes" "null" "$(jq -r '.optimization_profiles.five_tool_routed.routes' "$PROJ/.silver-bullet.json")"
 
-# ---- cursor: rules installer (real run vs dry-run --global), skip flags
+# ---- skip flags
 write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
-run_opt --host cursor --project-root "$PROJ" --skip-synergy
-assert_contains "cursor: rules are installed into the project" "$(calls)" "install-recommended-tools-cursor --project-root ${PROJ}"
-assert_not_contains "cursor real run: never --global (machine-wide rules need per-tool consent)" "$(calls)" "--global"
-assert_contains "cursor skip-synergy: graphify and agentmemory patches off" "$(calls)" "RT_PATCH_AGENTMEMORY=0 RT_PATCH_CONTEXT_MODE=1 RT_PATCH_GRAPHIFY=0 RT_PATCH_LEANCTX=1"
-assert_not_contains "cursor skip-synergy: synergy optimizer not run" "$(calls)" "sb-optimize-stack"
+run_opt --host claude --project-root "$PROJ" --skip-synergy
+assert_contains "claude skip-synergy: graphify and agentmemory patches off" "$(calls)" "RT_PATCH_AGENTMEMORY=0 RT_PATCH_CONTEXT_MODE=1 RT_PATCH_GRAPHIFY=0 RT_PATCH_LEANCTX=1"
+assert_not_contains "claude skip-synergy: synergy optimizer not run" "$(calls)" "sb-optimize-stack"
 assert_contains "skip-synergy announced" "$TL_OUT" "SKIP: sb-optimize-stack.sh (Graphify + agentmemory)"
 
 run_opt --host codex --project-root "$PROJ" --skip-rtcm
@@ -153,11 +150,7 @@ sb_test_consent_grant context_mode wire
 run_opt --host claude --project-root "$PROJ"
 assert_contains "Context Mode consent brings its optimizer" "$(calls)" "optimize-rtk-context-mode --host claude"
 assert_contains "and its patch switch" "$(calls)" "RT_PATCH_CONTEXT_MODE=1"
-# a failing cursor rules installer is reported, not fatal
 sb_test_consent_grant_all
-tl_run env STUB_RC_install_recommended_tools_cursor=3 bash "$OPT" --host cursor --project-root "$PROJ" --skip-rtcm --skip-synergy
-assert_eq "a failing rules installer does not abort" "0" "$TL_STATUS"
-assert_contains "it is reported" "$TL_ERR" "WARN: install-recommended-tools-cursor.sh failed"
 
 # ---- one install run: every helper shares one SB_INSTALL_RUN_START, so the first backup survives (R6-26)
 write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
@@ -173,24 +166,19 @@ assert_eq "an outer run start is kept" "1234" "$(sort -u "$LOG.start")"
 
 # ---- dry run
 write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
-run_opt --host cursor --project-root "$PROJ" --dry-run
+run_opt --host claude --project-root "$PROJ" --dry-run
 assert_eq "dry-run exits 0" "0" "$TL_STATUS"
 assert_eq "dry-run runs no helper" "" "$(calls)"
-assert_contains "dry-run leanctx" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/install-leanctx-sb.sh --host cursor --project-root ${PROJ} --dry-run"
-assert_contains "dry-run rtcm" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/optimize-rtk-context-mode.sh --host cursor --project-root ${PROJ} --skip-cm-doctor --dry-run"
-assert_contains "dry-run cursor rules name the project and skip --global" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/install-recommended-tools-cursor.sh --project-root ${PROJ}"
-assert_not_contains "dry-run cursor rules never --global" "$TL_OUT" "install-recommended-tools-cursor.sh --project-root ${PROJ} --global"
-assert_contains "dry-run patch" "$TL_OUT" "DRY-RUN: env RT_HOST=cursor TOOLSTACK_REPO_ROOT=${STAGE} RT_PATCH_GRAPHIFY=1"
-assert_contains "dry-run synergy" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/sb-optimize-stack.sh --apply --project-root ${PROJ} --dry-run --host cursor"
+assert_contains "dry-run leanctx" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/install-leanctx-sb.sh --host claude --project-root ${PROJ} --dry-run"
+assert_contains "dry-run rtcm" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/optimize-rtk-context-mode.sh --host claude --project-root ${PROJ} --skip-cm-doctor --dry-run"
+assert_contains "dry-run patch" "$TL_OUT" "DRY-RUN: env RT_HOST=claude TOOLSTACK_REPO_ROOT=${STAGE} RT_PATCH_GRAPHIFY=1"
+assert_contains "dry-run synergy" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/sb-optimize-stack.sh --apply --project-root ${PROJ} --dry-run --host claude"
 assert_contains "dry-run metadata" "$TL_OUT" "DRY-RUN: stamp optimization_profiles.five_tool_routed metadata"
 assert_eq "dry-run does not modify the config" "null" "$(jq -r '.recommended_tools.leanctx.optimization_profile' "$PROJ/.silver-bullet.json")"
 assert_contains "dry-run reports the default profile as active" "$TL_OUT" "Profile: five_tool_routed"
 
 # ---- all hosts, --force, and a config that is not opted in
 run_opt --host all --project-root "$PROJ" --skip-rtcm --skip-synergy
-# Cursor support is being removed: --host all no longer reaches the Cursor writes (explicit --host cursor still works).
-assert_not_contains "all: no cursor leanctx run" "$(calls)" "install-leanctx-sb --host cursor"
-assert_not_contains "all: no cursor rules installer" "$(calls)" "install-recommended-tools-cursor"
 for h in claude codex opencode pi; do
   assert_contains "all: leanctx for $h" "$(calls)" "install-leanctx-sb --host $h --project-root ${PROJ}"
 done
@@ -226,14 +214,13 @@ mkdir -p "$TL_TMP/fn/scripts" "$TL_TMP/fn/hooks"
 ln -sfn "$TL_REPO_ROOT/hooks/lib" "$TL_TMP/fn/hooks/lib"
 awk '/^while \[\[ \$# -gt 0 \]\]/ { exit } { print }' "$TL_REPO_ROOT/scripts/optimize-five-tool-stack.sh" >"$FN"
 detect() {
-  tl_run env -u CURSOR_PLUGIN_ROOT -u CODEX_HOME -u PI_CODING_AGENT_DIR -u RT_HOST "$@" bash -c 'source "$1"; detect_host' _ "$FN"
+  tl_run env -u CODEX_HOME -u PI_CODING_AGENT_DIR -u RT_HOST "$@" bash -c 'source "$1"; detect_host' _ "$FN"
 }
-rm -rf "$HOME/.cursor" "$HOME/.codex" "$HOME/.claude" "$HOME/.pi" "$HOME/.config"
-detect; assert_eq "detect: nothing found is reported as none, not a Cursor fallback" "none" "$TL_OUT"
+rm -rf "$HOME/.codex" "$HOME/.claude" "$HOME/.pi" "$HOME/.config"
+detect; assert_eq "detect: nothing found is reported as none" "none" "$TL_OUT"
 detect RT_HOST=pi; assert_eq "detect: RT_HOST wins" "pi" "$TL_OUT"
-mkdir -p "$HOME/.cursor"; detect; assert_eq "detect: ~/.cursor" "cursor" "$TL_OUT"
+mkdir -p "$HOME/.cursor"; detect; assert_eq "detect: a leftover ~/.cursor is not a host" "none" "$TL_OUT"
 rmdir "$HOME/.cursor"
-detect CURSOR_PLUGIN_ROOT=/x; assert_eq "detect: CURSOR_PLUGIN_ROOT" "cursor" "$TL_OUT"
 detect CODEX_HOME=/c; assert_eq "detect: CODEX_HOME" "codex" "$TL_OUT"
 mkdir -p "$HOME/.codex"; detect; assert_eq "detect: ~/.codex" "codex" "$TL_OUT"
 rmdir "$HOME/.codex"
@@ -261,7 +248,7 @@ assert_contains "not consented: not opted in" "$TL_OUT" "opted=1"
 sb_test_consent_grant_all
 
 # --host auto with no detected host writes nothing and says so (even with --force)
-rm -rf "$HOME/.cursor" "$HOME/.codex" "$HOME/.claude" "$HOME/.pi" "$HOME/.config"
+rm -rf "$HOME/.codex" "$HOME/.claude" "$HOME/.pi" "$HOME/.config"
 run_opt --host auto --project-root "$PROJ" --force
 assert_eq "auto with no host: exits 0" "0" "$TL_STATUS"
 assert_eq "auto with no host: no helper ran" "" "$(calls)"
@@ -279,7 +266,7 @@ assert_contains "auto host drives the helpers" "$(calls)" "install-leanctx-sb --
 # orchestrator reports them and still finishes its remaining steps
 write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
 : >"$LOG"
-tl_run env STUB_RC_sb_optimize_stack=1 bash "$OPT" --host cursor --project-root "$PROJ" --skip-rtcm
+tl_run env STUB_RC_sb_optimize_stack=1 bash "$OPT" --host claude --project-root "$PROJ" --skip-rtcm
 assert_eq "synergy gaps do not abort the orchestrator" "0" "$TL_STATUS"
 assert_contains "synergy gaps are reported" "$TL_ERR" "WARN: sb-optimize-stack.sh --apply reported critical gaps (exit 1)"
 assert_contains "synergy gaps point at the verify report" "$TL_ERR" "sb-optimize-stack.sh --verify"

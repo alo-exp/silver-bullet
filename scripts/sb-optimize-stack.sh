@@ -28,7 +28,7 @@ Options:
   --verify    Scorecard only; exit 1 on critical gaps when opted in
   --report    Markdown summary to stdout
   --dry-run   Print actions without mutating host/project files
-  --host HOST Override runtime host (claude|codex|cursor|opencode|pi|goose|hermes)
+  --host HOST Override runtime host (claude|codex|opencode|pi|goose|hermes)
   --project-root DIR  Project to optimize (default: git top level of the current directory)
   -h, --help  Show help
 

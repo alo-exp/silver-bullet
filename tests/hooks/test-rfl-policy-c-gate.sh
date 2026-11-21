@@ -36,7 +36,7 @@ RUNG="$RUN/rung-01-cursor-glm-5.2-high"
 
 run_hook() {
   local json="$3" # $1 (event) and $2 (tool) label the call site only
-  (cd "$WORKDIR" && printf '%s' "$json" | env SB_RFL_POLICY_C_GATE=1 SILVER_BULLET_RUNTIME=cursor bash "$HOOK" 2>/dev/null)
+  (cd "$WORKDIR" && printf '%s' "$json" | env SB_RFL_POLICY_C_GATE=1 SILVER_BULLET_RUNTIME=claude bash "$HOOK" 2>/dev/null)
 }
 
 # inactive: no LADDER-STATUS
@@ -91,7 +91,7 @@ fi
 # stop-check: missing Policy C (fresh rung)
 rm -f "$RUNG/POLICY-C.json" "$RUNG/POLICY-C.md"
 printf '# findings\n' >"$RUNG/review.md"
-stop_out="$(cd "$WORKDIR" && printf '%s' '{"hook_event_name":"Stop"}' | env SB_ORCHESTRATOR_WORKER= SILVER_BULLET_RUNTIME=cursor bash "$STOP" 2>/dev/null || true)"
+stop_out="$(cd "$WORKDIR" && printf '%s' '{"hook_event_name":"Stop"}' | env SB_ORCHESTRATOR_WORKER= SILVER_BULLET_RUNTIME=claude bash "$STOP" 2>/dev/null || true)"
 if is_denied "$stop_out"; then
   pass "stop-check denies session end when POLICY-C missing"
 else
@@ -105,7 +105,7 @@ EOF
 )" >/dev/null
 printf '# SKIPPED none\n' >"$RUNG/SKIPPED.md"
 # stop-check may still block on required skills; Policy C should not deny
-stop_out="$(cd "$WORKDIR" && printf '%s' '{"hook_event_name":"Stop"}' | env SB_ORCHESTRATOR_WORKER= SILVER_BULLET_RUNTIME=cursor bash "$STOP" 2>/dev/null || true)"
+stop_out="$(cd "$WORKDIR" && printf '%s' '{"hook_event_name":"Stop"}' | env SB_ORCHESTRATOR_WORKER= SILVER_BULLET_RUNTIME=claude bash "$STOP" 2>/dev/null || true)"
 if grep -q 'Policy C' <<<"$stop_out"; then
   fail "stop-check does not Policy-C-deny when valid"
   printf '%s\n' "$stop_out"

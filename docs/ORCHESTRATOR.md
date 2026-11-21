@@ -151,10 +151,6 @@ Writers of `orchestrator.json` and the directive go through `hooks/lib/orchestra
 
 A parent Stop that is blocked while nothing in `orchestrator.json` changes would trap the session. `sb_orchestrator_stop_block_released` counts blocks by the file's checksum and releases the Stop after `SB_ORCHESTRATOR_STOP_BLOCK_LIMIT` (default 5) blocks with no change; any queue or scheduler update restarts the count. The release skips only the two orchestrator blocks: the planning floor, the stall block and every later check still run on every Stop, and a `stop_release` event is logged. `SB OVERRIDE: <reason>` (honoured on the user's prompt by `outcomes-check`, which logs it to `.planning/orchestrator-override-log.jsonl`) clears the pending directive; a PreToolUse payload's `prompt` field is ignored.
 
-### Cursor / tier 0–1
-
-Guidance only — `templates/cursor-rules/silver-orchestrator.mdc` + directive injection. Tier 2+ required for mechanical parent blocks.
-
 ## Host modes — Plan & Debug (E2E-013)
 
 Silver Bullet hooks do **not** read host mode from stdin today. Operators and agents should treat modes as follows:
@@ -162,7 +158,7 @@ Silver Bullet hooks do **not** read host mode from stdin today. Operators and ag
 | Host mode | Parent may | SB enforcement |
 |-----------|------------|----------------|
 | **Agent (default)** | Spawn Task workers; read-only Bash in parent | Full PreToolUse/Stop stack |
-| **Plan** (`SwitchMode` → plan) | Read/Grep/Glob + Task PLAN worker; **no** direct Edit/Write in parent | `orchestrator-directive-guard` still blocks parent writes; route planning via workers |
+| **Plan** (host plan mode) | Read/Grep/Glob + Task PLAN worker; **no** direct Edit/Write in parent | `orchestrator-directive-guard` still blocks parent writes; route planning via workers |
 | **Debug** | Route to `sb:debug` / `sb:forensics` queue — not freestyle Bash | Stop/PreToolUse still fire; an `SB OVERRIDE:` message clears the pending directive and flow queue (audited) but not parent-mode tool limits |
 | **Ask** | Read-only tools | Aligns with parent read-only subset |
 
@@ -187,10 +183,10 @@ Existing projects:
 bash scripts/sb-migrate-orchestrator-parent.sh [project-root]
 ```
 
-Sets `orchestrator_mode: parent`, copies worker templates and Cursor rule.
+Sets `orchestrator_mode: parent`, copies worker templates.
 
 ## Related docs
 
-- `docs/RUNTIME-COMPATIBILITY.md` — capability tiers; Cursor tier 2 requires Task/subagent support
+- `docs/RUNTIME-COMPATIBILITY.md` — capability tiers
 - `docs/composable-flows-contracts.md` — atomic flow catalog
 - `skills/silver-orchestrator/SKILL.md` — parent skill contract

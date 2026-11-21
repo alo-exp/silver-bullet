@@ -244,13 +244,6 @@ tl_run bash -c 'printf() { if [[ "${1:-}" == "%s\n" && "${2:-}" == "feature/test
 assert_contains "reset path: unwritable branch file is reported" "$TL_ERR" "branch file write failed"
 assert_not_contains "reset path: unwritable branch file: no redirect diagnostics" "$TL_ERR" "Permission denied"
 
-# ---- capability helpers that fail for a cursor host ---------------------------------------------
-ec_stage_hooks "$TL_TMP/curfail" capability-tier.sh
-printf '%s\n' 'sb_capability_tier_banner() { printf "B"; }' 'sb_capability_runtime_name() { printf cursor; }' 'sb_capability_tier_number() { return 1; }' >"$TL_TMP/curfail/hooks/lib/capability-tier.sh"
-fresh
-run_ss "$TL_TMP/curfail/hooks/session-start"
-assert_contains "cursor with an unknown tier gets the manifest note" "$(ctx)" "Task host: merge host hooks manifest"
-
 # ---- recommended-tools scripts: verify script failing to load, consent helper failing ------------
 fresh
 RT="$EC_PROJ/scripts/lib/recommended-tools"

@@ -2,7 +2,6 @@
 """Merge LeanCTX MCP server into host configs with lctx_ prefix (conflict #1).
 
 Targets:
-  - ~/.cursor/mcp.json
   - ~/.codex/config.toml
   - ~/.config/opencode/opencode.json
   - ~/.claude.json (Claude MCP settings)
@@ -92,11 +91,6 @@ def save_json(path: pathlib.Path, data: dict, dry_run: bool) -> None:
     sbc.write_json(path, data)
 
 
-def context_mode_present_cursor(mcp_path: pathlib.Path) -> bool:
-    servers = server_map(load_json(mcp_path), "mcpServers")
-    return "context-mode" in servers
-
-
 def context_mode_present_claude(claude_json: pathlib.Path) -> bool:
     servers = server_map(load_json(claude_json), "mcpServers")
     return "context-mode" in servers or "user-context-mode" in servers
@@ -152,7 +146,7 @@ def leanctx_server_env(cm_active: bool) -> dict[str, str]:
     return env
 
 
-def leanctx_cursor_server(cm_active: bool, manifest: dict) -> dict:
+def leanctx_mcp_server(cm_active: bool, manifest: dict) -> dict:
     desired = mcp_server_spec(manifest, "leanctx")
     desired["env"] = leanctx_server_env(cm_active)
     if cm_active:
@@ -176,57 +170,12 @@ def remove_upstream_lean_ctx_duplicate(servers: dict) -> bool:
     Upstream ``lean-ctx init`` may register ``mcpServers.lean-ctx`` while SB
     install uses the canonical ``leanctx`` key (with ``lctx_`` prefix and
     five-tool env). Both keys spawn separate lean-ctx MCP subprocesses (~2× per
-    Cursor worker) — keep ``leanctx`` only.
+    host session) — keep ``leanctx`` only.
     """
     if "lean-ctx" not in servers:
         return False
     del servers["lean-ctx"]
     return True
-
-
-def merge_cursor_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dict:
-    cm_active = context_mode_present_cursor(target)
-    data = load_json(target, {"mcpServers": {}})
-    servers = json_member(data, "mcpServers", dict, target)
-    changed = False
-    legacy_env = legacy_lean_ctx_env(servers)
-    if remove_upstream_lean_ctx_duplicate(servers):
-        changed = True
-    if not isinstance(servers.get("leanctx"), dict):
-        servers["leanctx"] = leanctx_cursor_server(cm_active, manifest)
-        changed = True
-    else:
-        existing = servers["leanctx"]
-        desired = leanctx_cursor_server(cm_active, manifest)
-        for key in ("command", "args"):
-            if existing.get(key) != desired[key]:
-                existing[key] = desired[key]
-                changed = True
-        desired_env = leanctx_server_env(cm_active)
-        merged_env = dict(json_member(existing, "env", dict, target))
-        for key, val in desired_env.items():
-            if merged_env.get(key) != val:
-                merged_env[key] = val
-                changed = True
-        if changed:
-            existing["env"] = merged_env
-            servers["leanctx"] = existing
-        if cm_active:
-            disabled = list(json_member(existing, "disabledTools", list, target))
-            for tool in CM_OVERLAP_TOOLS:
-                if tool not in disabled:
-                    disabled.append(tool)
-                    changed = True
-            existing["disabledTools"] = disabled
-            servers["leanctx"] = existing
-    leanctx_env = servers["leanctx"].setdefault("env", {})
-    for key, val in legacy_env.items():
-        if key not in leanctx_env:
-            leanctx_env[key] = val
-            changed = True
-    if changed:
-        save_json(target, data, dry_run)
-    return {"host": "cursor", "mcp_merged": changed, "cm_active": cm_active}
 
 
 def merge_claude_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dict:
@@ -237,7 +186,7 @@ def merge_claude_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dic
     legacy_env = legacy_lean_ctx_env(servers)
     if remove_upstream_lean_ctx_duplicate(servers):
         changed = True
-    desired = leanctx_cursor_server(cm_active, manifest)
+    desired = leanctx_mcp_server(cm_active, manifest)
     for key, val in legacy_env.items():
         desired["env"].setdefault(key, val)
     if servers.get("leanctx") != desired:
@@ -322,50 +271,9 @@ def merge_codex_toml(target: pathlib.Path, dry_run: bool, manifest: dict) -> dic
     return {"host": "codex", "mcp_merged": True, "cm_active": cm_active}
 
 
-def strip_unprefixed_leanctx_collision(mcp_path: pathlib.Path, dry_run: bool) -> bool:
-    """Remove raw ctx_* tool registrations from leanctx server if CM is active."""
-    if not mcp_path.is_file():
-        return False
-    data = load_json(mcp_path)
-    servers = json_member(data, "mcpServers", dict, mcp_path)
-    lean = servers.get("leanctx")
-    if not isinstance(lean, dict):
-        return False
-    disabled = json_member(lean, "disabledTools", list, mcp_path)
-    cm_overlap = [
-        "ctx_execute",
-        "ctx_execute_file",
-        "ctx_batch_execute",
-        "ctx_search",
-        "ctx_index",
-        "ctx_fetch_and_index",
-        "ctx_stats",
-        "ctx_purge",
-        "ctx_doctor",
-        "ctx_upgrade",
-    ]
-    changed = False
-    for tool in cm_overlap:
-        if tool not in disabled:
-            disabled.append(tool)
-            changed = True
-    if changed:
-        lean["disabledTools"] = disabled
-        servers["leanctx"] = lean
-        data["mcpServers"] = servers
-        save_json(mcp_path, data, dry_run)
-    return changed
-
-
 def optimize_host(host: str, dry_run: bool, manifest: dict | None = None) -> dict:
     manifest = manifest or ensure_global_instances(dry_run=dry_run)
     home = pathlib.Path.home()
-    if host == "cursor":
-        mcp_path = home / ".cursor" / "mcp.json"
-        result = merge_cursor_mcp(mcp_path, dry_run, manifest)
-        if result.get("cm_active"):
-            strip_unprefixed_leanctx_collision(mcp_path, dry_run)
-        return result
     if host == "claude":
         return merge_claude_mcp(home / ".claude.json", dry_run, manifest)
     if host == "codex":
@@ -380,13 +288,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Merge LeanCTX MCP into host configs")
     parser.add_argument(
         "--host",
-        choices=["cursor", "codex", "claude", "opencode", "all"],
-        default="cursor",
+        choices=["codex", "claude", "opencode", "all"],
+        default="claude",
     )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    hosts = ["cursor", "codex", "claude", "opencode"] if args.host == "all" else [args.host]
+    hosts = ["codex", "claude", "opencode"] if args.host == "all" else [args.host]
     manifest = ensure_global_instances(dry_run=args.dry_run)
     results = [optimize_host(h, args.dry_run, manifest) for h in hosts]
     print(json.dumps({"status": "ok", "results": results}, indent=2))

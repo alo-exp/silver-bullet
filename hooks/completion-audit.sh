@@ -75,7 +75,7 @@ else
 fi
 mcp_payload=""
 case "$tool_name" in
-  mcp__* | CallMcpTool | MCP)
+  mcp__* | MCP)
     # MCP tools (the GitHub server's create/merge/push tools) are judged by the analyser from the payload
     mcp_payload="$input"
     cmd="$tool_name"

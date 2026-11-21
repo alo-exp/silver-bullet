@@ -63,7 +63,7 @@ fi
 # helper, not by text matching: aliases, global options, wrappers, gh api writes and MCP spellings all count.
 _ci_gate_tool=false
 case "$tool_name" in
-  mcp__* | CallMcpTool | MCP) _ci_gate_tool=true ;;
+  mcp__* | MCP) _ci_gate_tool=true ;;
   # an empty name (the extraction failed) cannot exclude the call: the analysis below decides, and its
   # plain-verb fallback applies when the helper cannot read the payload either
   Bash | Shell | shell | exec_command | "") _ci_gate_tool=true ;;
@@ -92,7 +92,7 @@ else
   # the helper could not read the payload (python3 or the library is missing): fall back to the plain
   # verbs so unrelated commands are not held, while the common spellings stay covered
   case "$tool_name" in
-    mcp__* | CallMcpTool | MCP)
+    mcp__* | MCP)
       # no command text to read: only delivery-style MCP tools are held
       case "${tool_name##*__}" in
         create_pull_request* | merge_pull_request | create_release | enable_pr_auto_merge | actions_run_trigger | \

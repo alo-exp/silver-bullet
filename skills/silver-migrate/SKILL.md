@@ -202,15 +202,11 @@ Report capability tier and any WARN/FAIL lines. Point the user to `docs/RUNTIME-
 
 Remove Silver Bullet's duplicate hook copies from the active host settings file (same contract as `/sb:init` update mode §3.7.5; it never adds hooks on a registered plugin). Resolve `INSTALL_PATH` from `${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json` only; with no registry entry, skip the step.
 
-Per-host merge scripts live under `scripts/lib/install-<runtime>/` — see `docs/RUNTIME-COMPATIBILITY.md` (`merge-hooks.py`, `merge-cursor-hooks.py`).
+Per-host merge scripts live under `scripts/lib/install-<runtime>/` — see `docs/RUNTIME-COMPATIBILITY.md` (`merge-hooks.py`).
 
 ```bash
 INSTALL_PATH="${INSTALL_PATH:-${PLUGIN_ROOT}}"
-if [[ -f "${PLUGIN_ROOT}/scripts/lib/install-cursor/merge-cursor-hooks.py" ]]; then
-  python3 "${PLUGIN_ROOT}/scripts/lib/install-cursor/merge-cursor-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
-else
-  python3 "${PLUGIN_ROOT}/scripts/lib/install-primary host/merge-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
-fi
+python3 "${PLUGIN_ROOT}/scripts/lib/install-primary host/merge-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
 ```
 
 Confirm merged entries in the host hooks manifest. If merge fails, advise the host-specific install path from `docs/RUNTIME-COMPATIBILITY.md` (`install-<runtime>.sh`).

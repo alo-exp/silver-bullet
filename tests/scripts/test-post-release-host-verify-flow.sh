@@ -25,7 +25,7 @@ sb_post_release_uninstall_host() {
 }
 EOS
 # Each stub records the tree it runs from and the code that tree carries.
-for h in cursor codex claude; do
+for h in codex claude; do
   cat >"$REL/scripts/install-$h.sh" <<EOS
 #!/usr/bin/env bash
 root="\$(cd "\$(dirname "\$0")/.." && pwd)"
@@ -51,7 +51,7 @@ echo '{"version":"1.0.0"}' >"$REL/package.json"
 echo released >"$REL/code.txt"
 
 vrun() { local -a envs=(); while [[ $# -gt 0 && "$1" == *=* ]]; do envs+=("$1"); shift; done
-         : >"$LOG"; rm -rf "$HOME/.cursor" "$HOME/.codex" "$HOME/.claude"
+         : >"$LOG"; rm -rf "$HOME/.claude" "$HOME/.codex" "$HOME/.claude"
          tl_run env -u SB_POST_RELEASE_VERSION TMPDIR="$TL_TMP/tmpdir" "${envs[@]}" bash "$V" "$@"; }
 marker() { cat "$HOME/.$1/.silver-bullet/post-release-verify/$1"; }
 mfield() { marker "$1" | sed -n "s/^$2=//p"; }
@@ -81,21 +81,18 @@ git -C "$REL" tag v1.0.0
 # --- happy path, version from git describe ---------------------------------------------------------------
 vrun
 assert_eq "all hosts pass" 0 "$TL_STATUS"
-assert_contains "version from git describe" "$TL_OUT" "Post-release host verify: 3 passed, 0 failed (version v1.0.0)"
-assert_contains "cursor result line" "$TL_OUT" "host=cursor uninstall=PASS install=PASS diag=PASS rc=PASS result=PASS"
+assert_contains "version from git describe" "$TL_OUT" "Post-release host verify: 2 passed, 0 failed (version v1.0.0)"
 assert_contains "claude result line" "$TL_OUT" "host=claude uninstall=PASS install=PASS diag=PASS rc=PASS result=PASS"
 assert_contains "section header" "$TL_OUT" "[post-release-verify] === codex (v1.0.0) ==="
 calls="$(cat "$LOG")"
-assert_match "cursor installs from a checkout of the tag" "$TAG_TREE_RE" "$(install_src cursor)"
-assert_contains "cursor installs without extra args" "$calls" "install cursor args=[] from=$(install_src cursor) code=released rtk=1"
+assert_match "claude installs from a checkout of the tag" "$TAG_TREE_RE" "$(install_src claude)"
 assert_contains "codex purges legacy skills" "$calls" "install codex args=[--purge-legacy-skills]"
 assert_contains "claude purges legacy plugins" "$calls" "install claude args=[--purge-legacy-plugins]"
-assert_contains "diagnostics run per host with runtime pinned" "$calls" "diag rt=claude smoke=1"
-assert_contains "diag cursor" "$calls" "diag rt=cursor smoke=1"
+assert_contains "diag claude" "$calls" "diag rt=claude smoke=1"
 assert_contains "diag codex" "$calls" "diag rt=codex smoke=1"
 assert_contains "diagnostics run from the tag checkout" "$calls" "diag rt=codex smoke=1 from=$(install_src codex)"
 assert_contains "rc fresh cell per host, from the tag checkout" "$calls" "rc --host codex --mode fresh from=$(install_src codex)"
-for h in cursor codex claude; do
+for h in codex claude; do
   assert_eq "$h marker status" pass "$(mfield "$h" status)"
   assert_eq "$h marker version" v1.0.0 "$(mfield "$h" version)"
   assert_eq "$h marker detail" fresh-smoke "$(mfield "$h" detail)"
@@ -110,8 +107,8 @@ vrun --version v1.0.0 --host claude --public-release
 assert_contains "host filter totals" "$TL_OUT" "1 passed, 0 failed"
 assert_contains "public-release forwarded (claude)" "$(cat "$LOG")" "install claude args=[--purge-legacy-plugins --public-release]"
 assert_not_contains "host filter skips others" "$(cat "$LOG")" "install codex"
-vrun --host cursor --public-release
-assert_contains "public-release forwarded (cursor, only arg)" "$(cat "$LOG")" "install cursor args=[--public-release]"
+vrun --host codex --public-release
+assert_contains "public-release forwarded (codex)" "$(cat "$LOG")" "install codex args=[--purge-legacy-skills --public-release]"
 vrun SB_POST_RELEASE_VERSION=v1.0.0 --host codex
 assert_contains "version from env" "$TL_OUT" "(version v1.0.0)"
 vrun --host codex --skip-smoke
@@ -121,13 +118,13 @@ assert_eq "skip-smoke marker detail" skip-rc "$(mfield codex detail)"
 assert_not_contains "skip-smoke runs no rc matrix" "$(cat "$LOG")" "rc --host"
 
 # --- failures --------------------------------------------------------------------------------------------------------------------------
-vrun UNINSTALL_FAIL=cursor
+vrun UNINSTALL_FAIL=claude
 assert_eq "uninstall failure -> 1" 1 "$TL_STATUS"
-assert_contains "uninstall failure line" "$TL_OUT" "host=cursor uninstall=FAIL install=FAIL diag=SKIP rc=SKIP result=FAIL"
-assert_eq "uninstall failure marker" fail "$(mfield cursor status)"
-assert_eq "uninstall failure detail" uninstall "$(mfield cursor detail)"
-assert_not_contains "no install after uninstall failure" "$(grep '^install cursor' "$LOG" || true)" "install cursor"
-assert_contains "totals with failure" "$TL_OUT" "2 passed, 1 failed"
+assert_contains "uninstall failure line" "$TL_OUT" "host=claude uninstall=FAIL install=FAIL diag=SKIP rc=SKIP result=FAIL"
+assert_eq "uninstall failure marker" fail "$(mfield claude status)"
+assert_eq "uninstall failure detail" uninstall "$(mfield claude detail)"
+assert_not_contains "no install after uninstall failure" "$(grep '^install claude' "$LOG" || true)" "install claude"
+assert_contains "totals with failure" "$TL_OUT" "1 passed, 1 failed"
 vrun DIAG_FAIL=codex --host codex
 assert_eq "diag failure -> 1" 1 "$TL_STATUS"
 assert_contains "diag failure line" "$TL_OUT" "host=codex uninstall=PASS install=FAIL diag=FAIL rc=SKIP result=FAIL"
@@ -142,12 +139,12 @@ assert_eq "rc failure marker" fail "$(mfield claude status)"
 assert_eq "rc failure detail" rc-fresh "$(mfield claude detail)"
 
 # The tag that is verified lacks an installer: reported, then handled like a failing installer.
-git -C "$REL" rm -q scripts/install-cursor.sh
-git -C "$REL" commit -qm "drop the cursor installer"
+git -C "$REL" rm -q scripts/install-claude.sh
+git -C "$REL" commit -qm "drop the claude installer"
 git -C "$REL" tag v1.0.1
-vrun --version v1.0.1 --host cursor
+vrun --version v1.0.1 --host claude
 assert_contains "missing install script reported" "$TL_ERR" "ERROR: missing "
-assert_contains "missing install script named" "$TL_ERR" "/silver-bullet/scripts/install-cursor.sh"
+assert_contains "missing install script named" "$TL_ERR" "/silver-bullet/scripts/install-claude.sh"
 assert_contains "missing install script tolerated like a failing installer" "$TL_OUT" "WARN: install script exited 1"
 git -C "$REL" revert --no-edit HEAD >/dev/null
 
@@ -172,15 +169,15 @@ assert_eq "bare untagged version refused" 1 "$TL_STATUS"
 
 # HEAD is the tag but the working tree carries an uncommitted edit: the tag is installed.
 git -C "$REL" tag v1.1.0
-vrun --version 1.1.0 --host cursor
+vrun --version 1.1.0 --host claude
 assert_eq "tag at HEAD verified" 0 "$TL_STATUS"
-assert_match "tag at HEAD: installed from a checkout of the tag" "$TAG_TREE_RE" "$(install_src cursor)"
+assert_match "tag at HEAD: installed from a checkout of the tag" "$TAG_TREE_RE" "$(install_src claude)"
 assert_contains "tag at HEAD: committed tag content, not the uncommitted edit" "$(cat "$LOG")" "code=unreleased change"
 assert_not_contains "uncommitted edit never installed" "$(cat "$LOG")" "uncommitted edit"
-assert_eq "bare version recorded as the tag" v1.1.0 "$(mfield cursor version)"
+assert_eq "bare version recorded as the tag" v1.1.0 "$(mfield claude version)"
 assert_eq "working tree left as it was" "uncommitted edit" "$(<"$REL/code.txt")"
 
-vrun --version v9.9.9 --host cursor
+vrun --version v9.9.9 --host claude
 assert_eq "unknown tag refused" 1 "$TL_STATUS"
 assert_contains "unknown tag explained" "$TL_ERR" "release tag v9.9.9 not found"
 assert_eq "unknown tag installs nothing" "" "$(grep '^install' "$LOG" || true)"
@@ -197,7 +194,7 @@ rm -f "$TL_BIN/git"; hash -r
 
 # runtime-paths library absent from the checkout: still runs
 mv "$REL/hooks/lib/runtime-paths.sh" "$TL_TMP/rp.hold"
-vrun --version v1.1.0 --host cursor --skip-smoke
+vrun --version v1.1.0 --host claude --skip-smoke
 assert_eq "works without runtime-paths.sh" 0 "$TL_STATUS"
 mv "$TL_TMP/rp.hold" "$REL/hooks/lib/runtime-paths.sh"
 

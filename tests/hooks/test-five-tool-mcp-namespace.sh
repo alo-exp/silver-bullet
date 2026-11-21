@@ -18,10 +18,10 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 TEST_HOME="$(mktemp -d)"
 export HOME="$TEST_HOME"
-mkdir -p "${TEST_HOME}/.cursor"
+mkdir -p "${TEST_HOME}"
 
 # Baseline: Context Mode registered first (conflict #1 scenario).
-cat >"${TEST_HOME}/.cursor/mcp.json" <<'EOF'
+cat >"${TEST_HOME}/.claude.json" <<'EOF'
 {
   "mcpServers": {
     "context-mode": {
@@ -31,10 +31,10 @@ cat >"${TEST_HOME}/.cursor/mcp.json" <<'EOF'
 }
 EOF
 
-merge_out="$(python3 "$MERGE_PY" --host cursor 2>/dev/null || true)"
+merge_out="$(python3 "$MERGE_PY" --host claude 2>/dev/null || true)"
 printf '%s' "$merge_out" | jq -e '.status == "ok"' >/dev/null 2>&1 && pass "merge script exits ok" || fail "merge script exits ok"
 
-MCP="${TEST_HOME}/.cursor/mcp.json"
+MCP="${TEST_HOME}/.claude.json"
 jq -e '.mcpServers.leanctx' "$MCP" >/dev/null 2>&1 && pass "leanctx server merged" || fail "leanctx server merged"
 jq -e '.mcpServers.leanctx.env.LEANCTX_MCP_TOOL_PREFIX == "lctx_"' "$MCP" >/dev/null 2>&1 \
   && pass "lctx_ prefix env set" || fail "lctx_ prefix env set"

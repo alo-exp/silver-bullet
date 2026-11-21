@@ -16,7 +16,7 @@
 Run this before any Silver Bullet release to validate the full workflow works end-to-end on a real project.
 
 **Duration:** ~30-60 minutes (one full-dev-cycle run)
-**Requires:** A host runtime with Silver Bullet installed (Claude Code, Codex, or Cursor)
+**Requires:** A host runtime with Silver Bullet installed (Claude Code or Codex)
 
 ---
 

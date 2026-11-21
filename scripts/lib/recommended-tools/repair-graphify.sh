@@ -80,7 +80,7 @@ rt_repair_graphify_mcp_config() {
 }
 
 rt_repair_graphify_platform() {
-  local host="${RT_HOST:-cursor}" cfg cmd
+  local host="${RT_HOST:-claude}" cfg cmd
   cfg="$(rt_project_config)" || return 1
   # Commands come from Silver Bullet's built-in table and run without a shell; the project file
   # is never consulted for them (hooks/lib/recommended-tools.sh).

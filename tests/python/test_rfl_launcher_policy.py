@@ -25,8 +25,8 @@ class ModelAndHostTest(unittest.TestCase):
             "GPT-5.5": "gpt", "chatgpt-4o": "gpt", "sb-gpt-x": "gpt",
             "opus-5": "claude", "claude-sonnet": "claude", "sb-opus-5": "claude",
             "sb-claude-x": "claude",
-            "gemini-3": "gemini", "cursor-grok-4.6": "grok", "grok-4.5": "grok",
-            "composer-2.5": "composer", "my-composer": "composer",
+            "gemini-3": "gemini", "grok-4.5": "other",
+            "composer-2.5": "other",
             "llama": "other",
         }
         for model, family in cases.items():
@@ -35,7 +35,8 @@ class ModelAndHostTest(unittest.TestCase):
     def test_normalize_user_agent(self):
         self.assertIsNone(lp.normalize_user_agent(None))
         self.assertIsNone(lp.normalize_user_agent("   "))
-        self.assertEqual(lp.normalize_user_agent(" /SB:Agent-Cursor "), "cursor")
+        self.assertEqual(lp.normalize_user_agent(" /SB:Agent-Codex "), "codex")
+        self.assertEqual(lp.normalize_user_agent("Cursor"), "cursor")  # no alias: a plain named agent
         self.assertEqual(lp.normalize_user_agent("Gemini"), "gemini-cli")
         self.assertEqual(lp.normalize_user_agent("MyAgent"), "myagent")
 
@@ -52,10 +53,10 @@ class ModelAndHostTest(unittest.TestCase):
         self.assertEqual(self.route("gpt-5", user_agent="  ")["host"], "codex")
 
     def test_family_defaults(self):
-        for model, host in (("grok-4.6", "cursor"), ("composer-2.5", "cursor"),
-                            ("gpt-5", "codex"), ("opus-5", "claude")):
+        for model, host, source in (("grok-4.6", "pi", "other_default"), ("composer-2.5", "pi", "other_default"),
+                                    ("gpt-5", "codex", "default"), ("opus-5", "claude", "default")):
             r = self.route(model)
-            self.assertEqual((r["host"], r["source"], r["user_override"]), (host, "default", False))
+            self.assertEqual((r["host"], r["source"], r["user_override"]), (host, source, False))
             self.assertTrue(r["preserves_host_mode"])
         r = self.route("gpt-5")
         self.assertEqual((r["family"], r["model"], r["route"], r["invoke"]),
@@ -63,8 +64,8 @@ class ModelAndHostTest(unittest.TestCase):
 
     def test_gemini_cascade(self):
         for avail, host in ((None, "gemini-cli"), (["pi", "opencode"], "pi"),
-                            (["opencode", "cursor"], "opencode"), (["cursor"], "cursor"),
-                            (["codex"], "cursor"), ([], "cursor")):
+                            (["opencode", "codex"], "opencode"), (["codex"], "opencode"),
+                            ([], "opencode")):
             r = self.route("gemini-3", available_hosts=avail)
             self.assertEqual((r["host"], r["source"]), (host, "gemini_cascade"), avail)
 
@@ -73,7 +74,7 @@ class ModelAndHostTest(unittest.TestCase):
         self.assertEqual((r["host"], r["source"]), ("pi", "other_default"))
         r = self.route("llama", available_hosts=iter(["codex", "opencode"]))
         self.assertEqual((r["host"], r["source"]), ("opencode", "other_default"))
-        r = self.route("llama", available_hosts=["codex", "cursor"])
+        r = self.route("llama", available_hosts=["codex", "claude"])
         self.assertEqual((r["host"], r["source"]), ("codex", "other_fallback"))
         r = self.route("llama", available_hosts=[])
         self.assertEqual((r["host"], r["source"]), ("opencode", "other_fallback"))
@@ -128,9 +129,6 @@ class LaunchActionTest(unittest.TestCase):
             **base, "attempts": 2, "action": "skip", "skipped": True, "retry": False,
             "retry_kind": None, "post_ladder_retry_pending": True,
             "post_ladder_retry_done": False})
-        sub = self.act(attempts=2, host="pi")
-        self.assertEqual((sub["post_ladder_retry_pending"], sub["post_ladder_retry_done"],
-                          sub["retry_kind"]), (False, False, None))
         self.assertEqual(self.act(phase="post_ladder", attempts=2), {
             **base, "attempts": 2, "phase": "post_ladder", "action": "remain_skipped",
             "skipped": True, "retry": False, "retry_kind": None,
@@ -140,24 +138,19 @@ class LaunchActionTest(unittest.TestCase):
                           ok["post_ladder_retry_pending"], ok["post_ladder_retry_done"]),
                          (False, False, None, False, False))
 
-    def test_second_failure_substitutes_on_opencode_and_pi(self):
+    def test_second_failure_skips_on_every_host(self):
         for host in ("opencode", "pi", "Agent-Pi", "/sb:agent-opencode"):
             out = self.act(attempts=2, host=host)
-            self.assertEqual(out["action"], "substitute_grok", host)
-            self.assertEqual((out["substitute_host"], out["substitute_model"],
-                              out["substitute_route"], out["substitute_skill"]),
-                             ("cursor", "cursor-grok-4.6-high", "/sb:agent-cursor",
-                              "silver-agent-cursor"))
-            self.assertEqual(out["failed_host"], lp.normalize_user_agent(host))
-            self.assertFalse(out["skipped"] or out["retry"])
+            self.assertEqual((out["action"], out["skipped"], out["retry"]), ("skip", True, False), host)
+            self.assertNotIn("substitute_model", out)
 
     def test_second_failure_skips_elsewhere(self):
-        for host in (None, "cursor", "claude", ""):
+        for host in (None, "claude", ""):
             out = self.act(attempts=2, host=host)
             self.assertEqual((out["action"], out["skipped"], out["post_ladder_retry_pending"]),
                              ("skip", True, True), host)
         out = self.act(attempts=7, host="pi")
-        self.assertEqual(out["action"], "substitute_grok")
+        self.assertEqual(out["action"], "skip")
 
     def test_post_ladder_failure_remains_skipped(self):
         out = self.act(phase="post_ladder", attempts=5, host="pi")
@@ -196,9 +189,8 @@ class SkipArtifactTest(unittest.TestCase):
     def test_substitute_payload_and_explicit_event(self):
         out = self.artifact(host="pi", event="custom", next_rung=None)
         self.assertEqual(out["event"], "custom")
-        self.assertEqual(out["action"], "substitute_grok")
-        self.assertTrue(out["skipped_md"].startswith("# SUBSTITUTE GROK — rung 3\n"))
-        self.assertIn("- substitute_model: `cursor-grok-4.6-high`\n", out["skipped_md"])
+        self.assertEqual(out["action"], "skip")
+        self.assertTrue(out["skipped_md"].startswith("# SKIPPED — rung 3\n"))
         self.assertIn("- next_rung: n/a\n", out["skipped_md"])
 
     def test_invalid_outcome_raises(self):
@@ -302,7 +294,7 @@ class HelpersTest(unittest.TestCase):
         self.assertIsNone(lp._parse_available_hosts(None))
         self.assertIsNone(lp._parse_available_hosts(""))
         self.assertIsNone(lp._parse_available_hosts("  "))
-        self.assertEqual(lp._parse_available_hosts("pi, cursor,,"), ("pi", "cursor"))
+        self.assertEqual(lp._parse_available_hosts("pi, codex,,"), ("pi", "codex"))
         self.assertEqual(lp._parse_available_hosts(","), ())
 
     def test_load_json_arg(self):
@@ -356,12 +348,12 @@ class CliTest(unittest.TestCase):
     def test_default_host_route(self):
         code, out, _ = self.cli("--default-host-route", "--model", "grok-4.6")
         self.assertEqual(code, 0)
-        self.assertEqual(json.loads(out)["host"], "cursor")
+        self.assertEqual(json.loads(out)["host"], "pi")
         code, out, _ = self.cli("--default-host-route", "--model", "llama",
-                                "--available-hosts", "codex,cursor", "--user-agent", "gemini")
+                                "--available-hosts", "codex,claude", "--user-agent", "gemini")
         self.assertEqual(json.loads(out)["host"], "gemini-cli")
         code, out, _ = self.cli("--default-host-route", "--model", "llama",
-                                "--available-hosts", "codex,cursor")
+                                "--available-hosts", "codex,claude")
         self.assertEqual(json.loads(out)["host"], "codex")
         code, _, err = self.cli("--default-host-route")
         self.assertEqual((code, "requires --model" in err), (2, True))
@@ -371,10 +363,7 @@ class CliTest(unittest.TestCase):
         self.assertEqual((code, json.loads(out)["action"]), (0, "retry_immediate"))
         code, out, _ = self.cli("--launch-policy", "--outcome", "cannot_launch",
                                 "--attempts", "2", "--host", "pi")
-        self.assertEqual(json.loads(out)["action"], "substitute_grok")
-        code, out, _ = self.cli("--launch-policy", "--outcome", "cannot_launch",
-                                "--attempts", "2", "--user-agent", "opencode")
-        self.assertEqual(json.loads(out)["failed_host"], "opencode")
+        self.assertEqual(json.loads(out)["action"], "skip")
         code, out, _ = self.cli("--launch-policy", "--outcome", "timeout", "--attempts", "3",
                                 "--policy-phase", "post_ladder")
         self.assertEqual(json.loads(out)["action"], "remain_skipped")
@@ -386,10 +375,9 @@ class CliTest(unittest.TestCase):
             base = [flag, "--outcome", "timeout", "--attempts", "2"]
             if flag == "--skip-artifact":
                 base += ["--rung-id", "r1"]
-            for argv, action in ((["--host", "pi"], "substitute_grok"),
-                                 (["--user-agent", "pi"], "substitute_grok"),
-                                 (["--host", "cursor", "--user-agent", "pi"], "skip"),
-                                 (["--host", "pi", "--user-agent", "cursor"], "substitute_grok")):
+            for argv, action in ((["--host", "pi"], "skip"),
+                                 (["--user-agent", "pi"], "skip"),
+                                 (["--host", "claude", "--user-agent", "pi"], "skip")):
                 code, out, _ = self.cli(*base, *argv)
                 self.assertEqual(json.loads(out)["action"], action, (flag, argv))
 

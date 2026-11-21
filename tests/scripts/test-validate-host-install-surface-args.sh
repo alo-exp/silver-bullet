@@ -38,7 +38,7 @@ stub_validators
 run_validate --help
 assert_eq "--help exits 0" 0 "$TL_STATUS"
 assert_contains "--help prints the usage header" "$TL_OUT" "Cross-host installation surface audit"
-assert_contains "--help prints the usage lines" "$TL_OUT" "scripts/validate-host-install-surface.sh --cache-root PATH --host claude|codex|cursor"
+assert_contains "--help prints the usage lines" "$TL_OUT" "scripts/validate-host-install-surface.sh --cache-root PATH --host claude|codex"
 run_validate -h
 assert_eq "-h exits 0" 0 "$TL_STATUS"
 run_validate --bogus
@@ -111,7 +111,7 @@ assert_eq "invalid host validates nothing" "" "$(<"$LOG")"
 
 run_validate --cache-root "$TL_TMP/cache"
 assert_eq "--cache-root without --host exits 2" 2 "$TL_STATUS"
-assert_contains "--cache-root needs a host" "$TL_ERR" "--cache-root requires --host claude|codex|cursor"
+assert_contains "--cache-root needs a host" "$TL_ERR" "--cache-root requires --host claude|codex"
 assert_eq "cache mode never runs the repo validators" "" "$(<"$LOG")"
 
 mkdir -p "$TL_TMP/cache/agents/claude/sb"

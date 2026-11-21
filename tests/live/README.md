@@ -67,15 +67,7 @@ SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1 SB_LIVE
 SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1 SB_LIVE_RUNTIME=claude \
   bash tests/live/test-live-review-fix-ladder-full-ladder.sh
 
-# Cursor — in Cursor IDE Composer (auto-detects CURSOR_AGENT=1; no cursor-agent login needed)
-SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1 SB_LIVE_RUNTIME=cursor \
-  bash tests/live/test-live-review-fix-ladder-full-ladder.sh
-
-# Cursor headless via cursor-agent CLI (requires `cursor-agent login` or CURSOR_API_KEY)
-SB_LIVE_CURSOR_IN_SESSION=0 SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1 SB_LIVE_RUNTIME=cursor \
-  bash tests/live/test-live-review-fix-ladder-full-ladder.sh
-
-# All hosts sequentially (Cursor falls back to resolver-only slug validation when not logged in and not in IDE)
+# All hosts sequentially
 SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1 SB_LIVE_RUNTIME=all \
   bash tests/live/test-live-review-fix-ladder-full-ladder.sh
 ```
@@ -85,15 +77,7 @@ Useful tuning flags:
 - `SB_LIVE_REVIEW_FIX_LADDER_CLEAN_PASSES=2` — require two consecutive clean passes per rung
 - `SB_LIVE_REVIEW_FIX_LADDER_LITE_PROMPT=0` — use full skill/invoke-skill prompt (slower on Codex)
 - `SB_LIVE_CODEX_USE_EXEC=0` — force interactive Codex path instead of `codex exec`
-- `CODEX_INTERACTIVE_TIMEOUT=180` / `CLAUDE_INTERACTIVE_TIMEOUT=180` / `CURSOR_AGENT_TIMEOUT=180` — per-turn timeout
-- `SB_LIVE_CURSOR_IN_SESSION=1` — force IDE in-session file protocol (auto when `CURSOR_AGENT=1`)
-- `SB_LIVE_CURSOR_IN_SESSION=0` — force headless `cursor-agent` CLI path
-- `SB_LIVE_CURSOR_SESSION_DIR=<path>` — override request/response directory (default: `<workspace>/.cursor-live-session`)
-
-When running the full Cursor ladder inside Cursor IDE Composer, the harness writes
-`request-*.json` prompts under the session directory and waits for matching
-`response-*.json` files. The active agent (or `tests/live/lib/cursor-in-session-driver.sh`
-for smoke validation) writes responses via `tests/live/lib/cursor-in-session-respond.sh`.
+- `CODEX_INTERACTIVE_TIMEOUT=180` / `CLAUDE_INTERACTIVE_TIMEOUT=180` — per-turn timeout
 
 ## Test Scenarios
 
@@ -105,7 +89,7 @@ for smoke validation) writes responses via `tests/live/lib/cursor-in-session-res
 | test-live-doc-scheme.sh | Doc scheme | Doc scaffolding, monthly knowledge/learnings updates, filename conventions |
 | test-silver-init-migration.sh | Init docs bootstrap | `sb:init` Step 3.5.5 delegation to `sb:ensure-docs`, brownfield preserve-vs-switch, archive move/recovery paths |
 | test-live-review-fix-ladder-smoke.sh | Review fix ladder | Resolver + invoke-skill + charter fixture (automated); optional one-turn live agent with `SB_LIVE_REVIEW_FIX_LADDER_LIVE=1` |
-| test-live-review-fix-ladder-full-ladder.sh | Review fix ladder full ladder | Every resolver rung per host with `SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1`; Cursor in-session mode in IDE Composer; resolver-only fallback when headless and not authenticated |
+| test-live-review-fix-ladder-full-ladder.sh | Review fix ladder full ladder | Every resolver rung per host with `SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1`|
 
 ## Isolation
 

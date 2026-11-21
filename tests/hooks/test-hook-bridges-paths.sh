@@ -1,36 +1,26 @@
 #!/usr/bin/env bash
-# cursor-hook-bridge.sh, codex-hook-adapter.sh, industry-tooling-hint.sh and debug-dump.sh edge paths.
+# codex-hook-adapter.sh, industry-tooling-hint.sh and debug-dump.sh edge paths.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 source "$TL_REPO_ROOT/tests/lib/e-core-helpers.sh"
 export SILVER_BULLET_TEST_HOOK_ENFORCED=1
-CURSOR="$TL_REPO_ROOT/hooks/cursor-hook-bridge.sh"
 CODEX="$TL_REPO_ROOT/hooks/codex-hook-adapter.sh"
 HINT="$TL_REPO_ROOT/hooks/industry-tooling-hint.sh"
 DUMP="$TL_REPO_ROOT/hooks/debug-dump.sh"
 SD="${SB_RUNTIME_STATE_DIR:?}"
 
 # ---- bridge argument validation ---------------------------------------------
-tl_run_stdin '{}' bash "$CURSOR"
-assert_eq "cursor bridge without arguments: exit 2" "2" "$TL_STATUS"
-tl_run_stdin '{}' bash "$CURSOR" preToolUse
-assert_eq "cursor bridge without a command: exit 2" "2" "$TL_STATUS"
 tl_run_stdin '{}' bash "$CODEX"
 assert_eq "codex adapter without arguments: exit 2" "2" "$TL_STATUS"
 tl_run_stdin '{}' bash "$CODEX" PreToolUse
 assert_eq "codex adapter without a command: exit 2" "2" "$TL_STATUS"
 
 ec_stage_hooks "$TL_TMP/nolib" -
-tl_run_stdin '{}' bash "$TL_TMP/nolib/hooks/cursor-hook-bridge.sh" preToolUse true
-assert_eq "cursor bridge without its helper libraries: the missing runner is reported (127)" "127" "$TL_STATUS"
 tl_run_stdin '{}' bash "$TL_TMP/nolib/hooks/codex-hook-adapter.sh" PreToolUse true
 assert_eq "codex adapter without its helper libraries: the missing runner is reported (127)" "127" "$TL_STATUS"
 
 # ---- subprocess timeouts ----------------------------------------------------
-SB_CURSOR_HOOK_SUBPROC_TIMEOUT=0.3 tl_run_stdin '{"tool_name":"Shell","tool_input":{"command":"x"}}' bash "$CURSOR" preToolUse sleep 5
-assert_eq "cursor bridge: a timed-out hook is not a failure" "0" "$TL_STATUS"
-assert_contains "cursor bridge: timeout message" "$TL_OUT" "Silver Bullet hook subprocess timed out."
 SB_CODEX_HOOK_SUBPROC_TIMEOUT=0.3 tl_run_stdin '{}' bash "$CODEX" PreToolUse sleep 5
 assert_eq "codex adapter: a timed-out hook is not a failure" "0" "$TL_STATUS"
 assert_contains "codex adapter: timeout message" "$TL_OUT" "Silver Bullet hook subprocess timed out."

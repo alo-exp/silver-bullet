@@ -25,10 +25,9 @@ Called by skills and hooks while Silver Bullet runs in a project.
 
 | Script | Purpose |
 |--------|---------|
-| `install-claude.sh`, `install-codex.sh`, `install-cursor.sh` | Install or refresh Silver Bullet for one host (from this checkout, or `--public-release` from the marketplace) |
-| `install-cursor-sb-agents.sh` | Install SB-managed Cursor subagents (`sb-*`) for review and verify ladders |
-| `install-global-toolstack.sh` | Install host-global Cursor toolstack hooks, rules and MCP config |
-| `install-recommended-tools-cursor.sh`, `install-recommended-tools-global.sh` | Always-on rules / instruction artifacts for the recommended tools |
+| `install-claude.sh`, `install-codex.sh` | Install or refresh Silver Bullet for one host (from this checkout, or `--public-release` from the marketplace) |
+| `uninstall-cursor-legacy.sh` | One-time cleanup of what an older Silver Bullet left in the Cursor config directory (Cursor is no longer a supported host); `--dry-run` previews, nothing is installed |
+| `install-recommended-tools-global.sh` | Always-on rules / instruction artifacts for the recommended tools |
 | `reconcile-recommended-tools.sh` | Canonical five-tool reconciliation engine (Graphify, agentmemory, Context Mode, LeanCTX, RTK) |
 | `sb-consent.sh` | Record and query your per-user consent (install, wire, enforce) for the opt-in tool stack; the store lives outside every repository (see [docs/CONSENT.md](../docs/CONSENT.md)) |
 | `install-leanctx-sb.sh` | Host-aware LeanCTX install in library mode |
@@ -49,19 +48,15 @@ Called by skills and hooks while Silver Bullet runs in a project.
 | `sb-prerequisite-repair.sh` | Report-only prerequisite repair (prints the jq install command, refreshes the plugin cache alias), called from `session-start` |
 | `phase-lock.sh` | Phase-ownership lock helper; the phase-lock hooks run this plugin copy, never a script from the project |
 | `sb-migrate-config.sh`, `sb-migrate-initiated.sh`, `sb-migrate-orchestrator-parent.sh`, `sb-migrate-project.sh` | Merge `.silver-bullet.json` forward and migrate legacy projects |
-| `diagnose-cursor-picker-duplicates.sh`, `enumerate-cursor-slash-picker.sh` | Inspect what Cursor's slash picker would register |
 
 ## Sync, render and generate
 
 | Script | Purpose |
 |--------|---------|
-| `sync-codex-package.sh` | Render `skills/` into `agents/claude/`, `host-bundles/{codex,cursor}/` and `plugins/silver-bullet/{skill-source,cursor-skill-source}/`, refresh the package symlinks and template mirror |
+| `sync-codex-package.sh` | Render `skills/` into `agents/claude/`, `host-bundles/codex/` and `plugins/silver-bullet/skill-source/`, refresh the package symlinks and template mirror |
 | `render-agent-bundle.py` | The per-host skill renderer used by the sync scripts |
-| `sync-cursor-package.sh` | Refresh the Cursor package surface (`cursor-hooks.json`, commands, manifest) |
 | `sync-templates.sh`, `codex-sanitize-package.sh` | Mirror `templates/` byte-for-byte into `plugins/silver-bullet/templates/`; `codex-sanitize-package.sh` rewrites a Codex install copy (never the checkout) |
 | `sync-runtime-mirrors.sh` | Verify and repair the `scripts` and `hooks` symlinks of the plugin package (`--check` for drift) |
-| `generate-plugin-commands.sh` | Generate `plugins/silver-bullet/commands/` stubs from composer skill frontmatter |
-| `generate-cursor-hooks.py` | Generate `hooks/cursor-hooks.json` from `hooks/hooks.json` |
 | `generate-hook-reference.py` | Generate `docs/HOOKS.md` from `hooks/hooks.json` (`--check` for freshness) |
 | `generate-apo-artifacts.py`, `generate-apo-catalog.py` | Generate the catalog views from `docs/apo-catalog.json`, and catalog data |
 | `generate-sentinel-skills-manifest.sh` | Scaffold the SENTINEL per-skill audit manifest |
@@ -90,11 +85,11 @@ Called by skills and hooks while Silver Bullet runs in a project.
 
 | Script | Purpose |
 |--------|---------|
-| `pre-release-gate.sh` | Local pre-release gate: site freshness, five-tool Cursor check, full suite, RC matrix |
-| `pre-release-cursor-cli-smoke.sh`, `run-pre-release-host-smoke.sh`, `run-tri-host-install-smoke.sh` | Isolated per-host install and routing smoke tests |
-| `run-rc-validation-matrix.sh` | RC validation matrix (cursor, codex, claude × fresh/upgrade) |
-| `run-release-live-matrix.sh`, `release-live-matrix-cursor-smoke.sh` | Release live matrix and its Cursor smoke cell |
-| `sync-release-marketplace-versions.sh`, `sync-marketplace-version.sh`, `sync-codex-marketplace-version.sh`, `sync-cursor-marketplace-version.sh` | Align marketplace manifests with the release version |
+| `pre-release-gate.sh` | Local pre-release gate: site freshness, full suite, RC matrix |
+| `run-pre-release-host-smoke.sh`, `run-tri-host-install-smoke.sh` | Isolated per-host install and routing smoke tests |
+| `run-rc-validation-matrix.sh` | RC validation matrix (codex, claude × fresh/upgrade) |
+| `run-release-live-matrix.sh` | Release live matrix |
+| `sync-release-marketplace-versions.sh`, `sync-marketplace-version.sh`, `sync-codex-marketplace-version.sh` | Align marketplace manifests with the release version |
 | `verify-release-commit-ci.sh`, `verify-release-announcement-ci.sh` | Wait for CI on the release commit before tagging / announcing |
 | `post-release-host-verify.sh`, `post-release-refresh.sh` | Post-release uninstall, reinstall and smoke on each host |
 
@@ -106,7 +101,7 @@ See [docs/RELEASE.md](../docs/RELEASE.md) for the order.
 |--------|---------|
 | `run-sb-live-tests-claude.sh`, `run-sb-live-tests-codex.sh`, `run-sb-live-tests-kay.sh` | Run the live and E2E-live suites pinned to one runtime |
 | `claude-interactive-invoke.expect`, `codex-interactive-invoke.expect`, `codex-interactive-invoke.py` | Drive interactive host TUIs for live tests |
-| `agent-claude-autonomous-test.sh`, `minimal-intent-autonomous-e2e.sh`, `sb-tri-criteria-e2e.sh`, `dogfood-orchestrator-parent-surface.sh` | Autonomous and orchestrator end-to-end drivers |
+| `agent-claude-autonomous-test.sh`, `sb-tri-criteria-e2e.sh`, `dogfood-orchestrator-parent-surface.sh` | Autonomous and orchestrator end-to-end drivers |
 | `run-visual-qa-pipeline.sh` | Visual QA pipeline for the site |
 
 ## Enterprise E2E
@@ -125,7 +120,7 @@ Runbook: [docs/ENTERPRISE-E2E-LIVE-TEST.md](../docs/ENTERPRISE-E2E-LIVE-TEST.md)
 
 | Script | Purpose |
 |--------|---------|
-| `agent-claude-delegate.sh`, `agent-codex-delegate.sh`, `agent-cursor-delegate.sh`, `agent-opencode-delegate.sh`, `agent-pi-delegate.sh` | On-demand delegation wrappers behind `/sb:agent-<host>` |
+| `agent-claude-delegate.sh`, `agent-codex-delegate.sh`, `agent-opencode-delegate.sh`, `agent-pi-delegate.sh` | On-demand delegation wrappers behind `/sb:agent-<host>` |
 | `agent-delegation-cleanup.sh` | Clear stale delegation state after a crash or cancel |
 
 ## Subdirectories
@@ -135,4 +130,4 @@ Runbook: [docs/ENTERPRISE-E2E-LIVE-TEST.md](../docs/ENTERPRISE-E2E-LIVE-TEST.md)
 | `agent-claude/`, `agent-codex/`, `agent-opencode/`, `agent-pi/` | Per-host delegation pieces: `preflight.sh`, `invoke.sh`, `monitor.sh`, `env.sh`, `lib.sh` |
 | `agent-mode/` | Agent-mode control script and a mock interactive host for tests |
 | `enterprise-e2e/` | The enterprise E2E harness (matrix, live test, preflight, smoke, checkpoints, config) |
-| `lib/` | Sourced helpers: per-host installer libraries (`install-claude/`, `install-codex/`, `install-cursor/`), recommended-tools and global-toolstack libraries, the five-tool runtime (`five_tool_runtime/`), Cursor subagent tooling, host install guides, enterprise E2E and delegation helpers, review-fix-ladder Python modules |
+| `lib/` | Sourced helpers: per-host installer libraries (`install-claude/`, `install-codex/`), recommended-tools and global-toolstack libraries, the five-tool runtime (`five_tool_runtime/`), host install guides, enterprise E2E and delegation helpers, review-fix-ladder Python modules |

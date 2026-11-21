@@ -1,5 +1,5 @@
 """Unit tests for scripts/lib/global-toolstack/patch-mcp.py: JSON host merges
-(Cursor/Claude mcp.json), Graphify handshake, AgentMemory/LeanCTX/Context Mode
+(Claude .claude.json), Graphify handshake, AgentMemory/LeanCTX/Context Mode
 normalisation and the OpenCode projection."""
 
 import contextlib
@@ -376,7 +376,7 @@ class OpencodeMergeTest(McpCase):
 
     def test_context_mode_plugin_added_and_mcp_entry_removed(self):
         path = self.home / ".config" / "opencode" / "opencode.json"
-        path.parent.mkdir(parents=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"mcp": {"context-mode": {"type": "local"}, "user-context-mode": {}, "other": {"type": "local"}}}))
         (changed, _), _ = self.merge(patch_context_mode=True, patch_leanctx=True)
         self.assertTrue(changed)
@@ -387,7 +387,7 @@ class OpencodeMergeTest(McpCase):
 
     def test_existing_plugin_is_canonicalised_without_consent(self):
         path = self.home / ".config" / "opencode" / "opencode.json"
-        path.parent.mkdir(parents=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"plugin": ["context-mode@1", "context-mode@2", "x"], "mcp": {}}))
         (changed, _), _ = self.merge(patch_agentmemory=False)
         self.assertTrue(changed)
@@ -395,7 +395,7 @@ class OpencodeMergeTest(McpCase):
 
     def test_non_list_plugin_value_untouched_without_consent(self):
         path = self.home / ".config" / "opencode" / "opencode.json"
-        path.parent.mkdir(parents=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"plugin": "junk", "mcp": {}}))
         (changed, _), _ = self.merge()
         self.assertFalse(changed)
@@ -403,7 +403,7 @@ class OpencodeMergeTest(McpCase):
 
     def test_consent_keeps_existing_plugin_list(self):
         path = self.home / ".config" / "opencode" / "opencode.json"
-        path.parent.mkdir(parents=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"plugin": ["other"], "mcp": {}}))
         (changed, _), _ = self.merge(patch_context_mode=True)
         self.assertTrue(changed)
@@ -421,7 +421,7 @@ class OpencodeMergeTest(McpCase):
 
     def test_non_list_plugin_value_replaced_with_consent(self):
         path = self.home / ".config" / "opencode" / "opencode.json"
-        path.parent.mkdir(parents=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"plugin": "junk", "mcp": {}}))
         (changed, _), _ = self.merge(patch_context_mode=True)
         self.assertTrue(changed)
@@ -429,7 +429,7 @@ class OpencodeMergeTest(McpCase):
 
     def test_non_dict_mcp_is_reset(self):
         path = self.home / ".config" / "opencode" / "opencode.json"
-        path.parent.mkdir(parents=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"mcp": ["junk"]}))
         (changed, _), _ = self.merge(patch_agentmemory=True)
         self.assertTrue(changed)
@@ -443,14 +443,14 @@ class OpencodeMergeTest(McpCase):
 
     def test_legacy_context_mode_server_counts_as_active_for_leanctx_env(self):
         path = self.home / ".config" / "opencode" / "opencode.json"
-        path.parent.mkdir(parents=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"mcp": {"user-context-mode": {"type": "local"}}}))
         self.merge(patch_leanctx=True)
         self.assertEqual(self.read(path)["mcp"]["leanctx"]["environment"], pm.LEANCTX_ENV_CM_ACTIVE)
 
     def test_graphify_existing_entry_is_repaired(self):
         path = self.home / ".config" / "opencode" / "opencode.json"
-        path.parent.mkdir(parents=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"mcp": {"graphify": {"type": "local", "command": ["old"], "enabled": True}}}))
         (changed, _), _ = self.merge(patch_graphify=True)
         self.assertTrue(changed)
@@ -479,7 +479,7 @@ class OpencodeMergeTest(McpCase):
 
     def test_legacy_leanctx_aliases_collapse(self):
         path = self.home / ".config" / "opencode" / "opencode.json"
-        path.parent.mkdir(parents=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"mcp": {"lean-ctx": {"type": "local", "command": ["x"], "enabled": True}, "user-leanctx": {}}}))
         self.merge(patch_leanctx=True)
         mcp = self.read(path)["mcp"]
@@ -516,20 +516,20 @@ class PiAdapterTest(McpCase):
 
 class MainJsonHostsTest(McpCase):
     def mcp_path(self, host):
-        return self.home / (".claude.json" if host == "claude" else ".cursor/mcp.json")
+        return self.home / ".claude.json"
 
     def test_no_flags(self):
         code, out, _ = self.run_main()
         self.assertEqual((code, out), (0, "OK: mcp.json unchanged (no patch flags)"))
         pm.ensure_global_instances.assert_not_called()
 
-    def test_cursor_full_merge(self):
+    def test_default_host_full_merge(self):
         self.flags(graphify=True, leanctx=True, agentmemory=True, context_mode=True)
         with mock.patch.object(pm, "graphify_mcp_handshake", return_value=(True, None)):
             code, out, _ = self.run_main()
         self.assertEqual(code, 0)
         self.assertEqual(out, "OK: mcp.json merged atomically (graphify_added=True, leanctx_changed=True, agentmemory_added=True)")
-        servers = json.loads(self.mcp_path("cursor").read_text())["mcpServers"]
+        servers = json.loads(self.mcp_path("claude").read_text())["mcpServers"]
         self.assertEqual(set(servers), {"graphify", "leanctx", "agentmemory", "context-mode"})
         self.assertEqual(servers["leanctx"]["env"], pm.LEANCTX_ENV_CM_ACTIVE)
         with mock.patch.object(pm, "graphify_mcp_handshake", return_value=(True, None)):
@@ -538,8 +538,8 @@ class MainJsonHostsTest(McpCase):
 
     def test_unparseable_mcp_json_is_refused_not_replaced(self):
         # R6-26: a host config with comments/trailing commas is the user's; nothing is written over it
-        path = self.mcp_path("cursor")
-        path.parent.mkdir(parents=True)
+        path = self.mcp_path("claude")
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('{ "mcpServers": {}, // mine\n}')
         self.flags(agentmemory=True)
         code, out, err = self.run_main()
@@ -549,11 +549,11 @@ class MainJsonHostsTest(McpCase):
 
     def test_symlinked_mcp_json_stays_a_symlink_with_a_backup(self):
         real = self.home / "dotfiles" / "mcp.json"
-        real.parent.mkdir(parents=True)
+        real.parent.mkdir(parents=True, exist_ok=True)
         real.write_text(json.dumps({"mcpServers": {"mine": {"command": "x"}}}))
         real.chmod(0o640)
-        link = self.mcp_path("cursor")
-        link.parent.mkdir(parents=True)
+        link = self.mcp_path("claude")
+        link.parent.mkdir(parents=True, exist_ok=True)
         link.symlink_to(real)
         self.flags(agentmemory=True)
         self.run_main()
@@ -564,9 +564,9 @@ class MainJsonHostsTest(McpCase):
             list(json.loads(real.with_name("mcp.json.sb-backup").read_text())["mcpServers"]), ["mine"]
         )
 
-    def test_cursor_preserves_unrelated_servers(self):
-        path = self.mcp_path("cursor")
-        path.parent.mkdir(parents=True)
+    def test_default_host_preserves_unrelated_servers(self):
+        path = self.mcp_path("claude")
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"mcpServers": {"mine": {"command": "x"}}, "other": 1}))
         self.flags(agentmemory=True)
         self.run_main()
@@ -581,11 +581,11 @@ class MainJsonHostsTest(McpCase):
             code, out, err = self.run_main()
         self.assertEqual(out, "OK: mcp.json unchanged (idempotent)")
         self.assertIn("graphify merge skipped", err)
-        self.assertFalse(self.mcp_path("cursor").exists())
+        self.assertFalse(self.mcp_path("claude").exists())
 
     def test_context_mode_aliases_normalised_even_without_context_mode_flag(self):
-        path = self.mcp_path("cursor")
-        path.parent.mkdir(parents=True)
+        path = self.mcp_path("claude")
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"mcpServers": {"user-context-mode": {"command": "old", "args": []}}}))
         self.flags(agentmemory=True)
         self.run_main()
@@ -601,7 +601,7 @@ class MainJsonHostsTest(McpCase):
         disable.assert_called_once_with()
         self.assertEqual(code, 0)
         self.assertIn("context-mode", json.loads(self.mcp_path("claude").read_text())["mcpServers"])
-        self.assertFalse(self.mcp_path("cursor").exists())
+        self.assertTrue(self.mcp_path("claude").exists())
 
     def test_claude_host_without_context_mode_does_not_touch_plugin(self):
         os.environ["RT_HOST"] = "claude"
@@ -618,6 +618,14 @@ class MainJsonHostsTest(McpCase):
         self.assertEqual(code, 2)
         self.assertEqual(out, "")
         self.assertEqual(err, "ERROR: claude CLI is unavailable")
+        self.assertFalse(self.mcp_path("claude").exists())
+
+    def test_unsupported_host_is_refused_without_writing(self):
+        os.environ["RT_HOST"] = "goose"
+        self.flags(agentmemory=True)
+        code, out, err = self.run_main()
+        self.assertEqual((code, out), (2, ""))
+        self.assertIn("unsupported host for MCP patching: goose", err)
         self.assertFalse(self.mcp_path("claude").exists())
 
     def test_opencode_host(self):

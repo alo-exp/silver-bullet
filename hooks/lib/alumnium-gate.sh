@@ -41,7 +41,6 @@ sb_alumnium_platform_artifact_path() {
   fi
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
-    cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
     codex) printf '%s/config.toml' "${CODEX_HOME:-${HOME}/.codex}" ;;
     *) printf '%s/.claude.json' "${HOME}" ;;
   esac
@@ -62,7 +61,7 @@ sb_alumnium_edit_path_is_exempt() {
   normalized="$(sb_opt_in_normalize_path "$1" "$(dirname "${2:-$PWD/x}")")"
   case "$normalized" in
     */.silver-bullet.json | */SETUP_REPORT.md | */silver-bullet.md | */CLAUDE.md | */AGENTS.md \
-      | */.silver-bullet/* | */.cursor/mcp.json | */.claude.json)
+      | */.silver-bullet/* | */.claude.json)
       return 0
       ;;
   esac

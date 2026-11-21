@@ -91,7 +91,7 @@ RCDIR="$SB_RUNTIME_STATE_DIR/rc-validation"
 rc_markers() { # rc_markers STATUS COMMIT
   mkdir -p "$RCDIR"
   local h m
-  for h in cursor codex claude; do for m in fresh upgrade; do
+  for h in codex claude; do for m in fresh upgrade; do
     printf 'host=%s\nmode=%s\nstatus=%s\ncommit=%s\n' "$h" "$m" "$1" "$2" >"$RCDIR/$h-$m"
   done; done
 }
@@ -146,8 +146,8 @@ run_ca PreToolUse "$REL"; assert_eq "full claude+codex matrix accepted" "allow" 
 set_matrix codex-only codex-only inline-full-surface
 run_ca PreToolUse "$REL"; assert_eq "codex-only matrix accepted" "allow" "$(decision)"
 set_matrix cursor-smoke codex-only inline-full-surface
-run_ca PreToolUse "$REL"; assert_eq "cursor smoke + codex e2e accepted" "allow" "$(decision)"
-set_matrix cursor-smoke claude-only inline-full-surface
+run_ca PreToolUse "$REL"; assert_eq "the retired cursor-smoke release marker is rejected" "deny" "$(decision)"
+set_matrix codex-only claude-only inline-full-surface
 run_ca PreToolUse "$REL"; assert_eq "inconsistent matrix pair rejected" "deny" "$(decision)"
 set_matrix claude-only claude-only inline-partial
 run_ca PreToolUse "$REL"; assert_eq "inline matrix must be the full surface" "deny" "$(decision)"

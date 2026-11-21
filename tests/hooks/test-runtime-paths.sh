@@ -21,13 +21,13 @@ assert_eq "state dir" "$H/.claude/.silver-bullet" "$(rp -- 'printf %s "$SB_RUNTI
 assert_eq "plugin cache root" "$H/.claude/plugins/cache" "$(rp -- 'printf %s "$SB_RUNTIME_PLUGIN_CACHE_ROOT"')"
 assert_eq "Codex env marker" "codex" "$(rp CODEX_THREAD_ID=1 -- 'printf %s "$SB_RUNTIME_NAME"')"
 assert_eq "Codex plugin root" "codex" "$(rp CLAUDE_PLUGIN_ROOT=/x/.codex/y -- 'printf %s "$SB_RUNTIME_NAME"')"
-assert_eq "Cursor env marker" "cursor" "$(rp CURSOR_PLUGIN_ROOT=/x -- 'printf %s "$SB_RUNTIME_NAME"')"
-assert_eq "Cursor plugin root" "cursor" "$(rp CLAUDE_PLUGIN_ROOT=/x/.cursor/y -- 'printf %s "$SB_RUNTIME_NAME"')"
+assert_eq "Cursor env marker no longer selects a runtime" "claude" "$(rp CURSOR_PLUGIN_ROOT=/x -- 'printf %s "$SB_RUNTIME_NAME"')"
+assert_eq "a .cursor plugin root no longer selects a runtime" "claude" "$(rp CLAUDE_PLUGIN_ROOT=/x/.cursor/y -- 'printf %s "$SB_RUNTIME_NAME"')"
 assert_eq "Pi env marker" "pi" "$(rp PI_CODING_AGENT_DIR=/p -- 'printf %s "$SB_RUNTIME_NAME"')"
 assert_eq "Pi home root from env" "/p" "$(rp PI_CODING_AGENT_DIR=/p -- 'printf %s "$SB_RUNTIME_HOME_ROOT"')"
 assert_eq "Opencode env marker" "opencode" "$(rp OPENCODE=1 -- 'printf %s "$SB_RUNTIME_NAME"')"
 assert_eq "Opencode pid marker" "opencode" "$(rp OPENCODE_PID=7 -- 'printf %s "$SB_RUNTIME_NAME"')"
-assert_eq "explicit runtime wins" "cursor" "$(rp SILVER_BULLET_RUNTIME=cursor CODEX_CI=1 -- 'printf %s "$SB_RUNTIME_NAME"')"
+assert_eq "explicit runtime wins" "claude" "$(rp SILVER_BULLET_RUNTIME=claude CODEX_CI=1 -- 'printf %s "$SB_RUNTIME_NAME"')"
 assert_eq "unknown runtime coerced to claude" "claude" "$(rp SILVER_BULLET_RUNTIME=emacs -- 'printf %s "$SB_RUNTIME_NAME"')"
 assert_eq "opencode home root" "$H/.config/opencode" "$(rp SILVER_BULLET_RUNTIME=opencode -- 'printf %s "$SB_RUNTIME_HOME_ROOT"')"
 assert_eq "pi default home root" "$H/.pi/agent" "$(rp SILVER_BULLET_RUNTIME=pi -- 'printf %s "$SB_RUNTIME_HOME_ROOT"')"
@@ -41,24 +41,17 @@ assert_eq "codex home helper" "$H/.codex" "$(rp -- 'sb_runtime_codex_home')"
 assert_eq "CODEX_HOME overrides the helper" "/ch" "$(rp CODEX_HOME=/ch -- 'sb_runtime_codex_home')"
 
 # explicit runtime selection scopes the state dir under that runtime's home (pre-existing checks)
-for runtime in claude codex cursor; do
+for runtime in claude codex; do
   assert_eq "explicit $runtime" "${runtime}|${H}/.${runtime}/.silver-bullet" "$(rp SILVER_BULLET_RUNTIME="$runtime" -- 'printf "%s|%s" "$SILVER_BULLET_RUNTIME" "$SB_RUNTIME_STATE_DIR"')"
 done
 assert_eq "explicit codex state dir" "$H/.codex/.silver-bullet" "$(rp SILVER_BULLET_RUNTIME=codex -- 'printf %s "$SB_RUNTIME_STATE_DIR"')"
-assert_eq "explicit cursor state dir" "$H/.cursor/.silver-bullet" "$(rp SILVER_BULLET_RUNTIME=cursor -- 'printf %s "$SB_RUNTIME_STATE_DIR"')"
-# runtime inferred from a plugin-cache install path (no runtime markers in the environment)
-CACHE_LIB="$H/.cursor/plugins/cache/alo-labs/silver-bullet/0.0.0/hooks/lib"
-mkdir -p "$CACHE_LIB"
-cp "$LIB" "$CACHE_LIB/runtime-paths.sh"
-assert_eq "infers cursor from path" "cursor|${H}/.cursor/.silver-bullet" "$(env -i PATH="$PATH" HOME="$H" BASH_ENV="${BASH_ENV:-}" SB_COV_DIR="${SB_COV_DIR:-}" bash -c 'source "$1"; printf "%s|%s" "$SILVER_BULLET_RUNTIME" "$SB_RUNTIME_STATE_DIR"' _ "$CACHE_LIB/runtime-paths.sh")"
-
+assert_eq "a retired cursor runtime is coerced to claude" "claude|$H/.claude/.silver-bullet" "$(rp SILVER_BULLET_RUNTIME=cursor -- 'printf "%s|%s" "$SILVER_BULLET_RUNTIME" "$SB_RUNTIME_STATE_DIR"')"
 # a copy under a .codex tree selects codex on its own
 mkdir -p "$TL_TMP/x/.codex/hooks/lib"
 cp "$LIB" "$TL_TMP/x/.codex/hooks/lib/runtime-paths.sh"
 assert_eq "script path under .codex" "codex" "$(env -i PATH="$PATH" HOME="$H" BASH_ENV="${BASH_ENV:-}" SB_COV_DIR="${SB_COV_DIR:-}" bash -c 'source "$1"; printf %s "$SB_RUNTIME_NAME"' _ "$TL_TMP/x/.codex/hooks/lib/runtime-paths.sh")"
-mkdir -p "$TL_TMP/x/.cursor/hooks/lib" "$TL_TMP/x/.pi/hooks/lib" "$TL_TMP/x/.config/opencode/hooks/lib"
-for d in .cursor .pi .config/opencode; do cp "$LIB" "$TL_TMP/x/$d/hooks/lib/runtime-paths.sh"; done
-assert_eq "script path under .cursor" "cursor" "$(env -i PATH="$PATH" HOME="$H" BASH_ENV="${BASH_ENV:-}" SB_COV_DIR="${SB_COV_DIR:-}" bash -c 'source "$1"; printf %s "$SB_RUNTIME_NAME"' _ "$TL_TMP/x/.cursor/hooks/lib/runtime-paths.sh")"
+mkdir -p "$TL_TMP/x/.pi/hooks/lib" "$TL_TMP/x/.config/opencode/hooks/lib"
+for d in .pi .config/opencode; do cp "$LIB" "$TL_TMP/x/$d/hooks/lib/runtime-paths.sh"; done
 assert_eq "script path under .pi" "pi" "$(env -i PATH="$PATH" HOME="$H" BASH_ENV="${BASH_ENV:-}" SB_COV_DIR="${SB_COV_DIR:-}" bash -c 'source "$1"; printf %s "$SB_RUNTIME_NAME"' _ "$TL_TMP/x/.pi/hooks/lib/runtime-paths.sh")"
 assert_eq "script path under .config/opencode" "opencode" "$(env -i PATH="$PATH" HOME="$H" BASH_ENV="${BASH_ENV:-}" SB_COV_DIR="${SB_COV_DIR:-}" bash -c 'source "$1"; printf %s "$SB_RUNTIME_NAME"' _ "$TL_TMP/x/.config/opencode/hooks/lib/runtime-paths.sh")"
 
@@ -144,7 +137,7 @@ assert_eq "bare-name source still loads path-canonical.sh" "$SR/state" "$(cd "$T
 dirs="$(rp SILVER_BULLET_RUNTIME=claude KAY_HOME=/kay PI_CODING_AGENT_DIR=/pi SB_RUNTIME_EXTRA_STATE_ROOTS="/e1/.silver-bullet:/e2::$H/.claude/.silver-bullet" -- 'sb_runtime_skill_receipt_dirs')"
 assert_contains "state dir first" "$(sed -n 1p <<<"$dirs")" "$H/.claude/.silver-bullet/skill-invocations"
 assert_contains "codex dir listed" "$dirs" "$H/.codex/.silver-bullet/skill-invocations"
-assert_contains "kay home dirs listed" "$dirs" "/kay/.cursor/.silver-bullet/skill-invocations"
+assert_contains "kay home dirs listed" "$dirs" "/kay/.claude/.silver-bullet/skill-invocations"
 assert_contains "opencode dir listed" "$dirs" "$H/.config/opencode/.silver-bullet/skill-invocations"
 assert_contains "pi dir from env" "$dirs" "/pi/.silver-bullet/skill-invocations"
 assert_contains "extra root already ending in .silver-bullet" "$dirs" $'\n/e1/.silver-bullet/skill-invocations'

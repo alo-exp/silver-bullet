@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PreToolUse — active delegation guard: block Claude/Codex parent edits; advise Cursor parent.
+# PreToolUse — active delegation guard: block parent edits.
 set -euo pipefail
 trap 'exit 0' ERR
 
@@ -10,9 +10,6 @@ for _lib in runtime-paths.sh sb-project-gate.sh agent-delegation-state.sh hook-a
   # shellcheck disable=SC1090
   [[ -f "$_lib_dir/$_lib" ]] && source "$_lib_dir/$_lib"
 done
-# shellcheck source=hooks/agent-delegation-progress-surface.sh
-[[ -f "$(dirname "${BASH_SOURCE[0]}")/agent-delegation-progress-surface.sh" ]] && \
-  source "$(dirname "${BASH_SOURCE[0]}")/agent-delegation-progress-surface.sh"
 
 _sb_adg_have_jq=false
 command -v jq >/dev/null 2>&1 && _sb_adg_have_jq=true
@@ -138,29 +135,15 @@ while IFS= read -r target_path; do
 done <<<"$target_paths"
 [[ "$in_scope" == true ]] || exit 0
 
-tier="$(sb_agent_delegation_parent_host_tier)"
-progress="$(sb_agent_delegation_progress_surface 2>/dev/null || true)"
 reason="Active external-agent delegation — parent must supervise, not edit scoped ownership paths. See AF-AGENT-DELEGATE."
 
-if [[ "$tier" == "block" ]]; then
-  if command -v jq >/dev/null 2>&1; then
-    json_reason=$(printf '%s' "$reason" | jq -Rs '.')
-    if declare -f sb_hook_audit_record >/dev/null 2>&1; then
-      sb_hook_audit_record "agent-delegation-guard" "PreToolUse" "deny" "$reason" ""
-    fi
-    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
-    exit 0
-  fi
-  printf '%s\n' "$reason" >&2
-  exit 2
-fi
-
-# Cursor: advise via additional_context
 if command -v jq >/dev/null 2>&1; then
-  ctx=$(printf '%s\n%s' "$reason" "$progress" | jq -Rs '.')
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
   if declare -f sb_hook_audit_record >/dev/null 2>&1; then
-    sb_hook_audit_record "agent-delegation-guard" "PreToolUse" "advise" "$reason" ""
+    sb_hook_audit_record "agent-delegation-guard" "PreToolUse" "deny" "$reason" ""
   fi
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":%s}}' "$ctx"
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
+  exit 0
 fi
-exit 0
+printf '%s\n' "$reason" >&2
+exit 2

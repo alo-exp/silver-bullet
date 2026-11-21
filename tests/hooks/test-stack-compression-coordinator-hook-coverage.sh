@@ -31,7 +31,7 @@ mutex_count() { [[ -f "$MUTEX" ]] && jq -r '.violations | length' "$MUTEX" || ec
 owner_of() { [[ -f "$COORD" ]] && jq -r --arg r "$1" '.surfaces[$r].owner // ""' "$COORD" || true; }
 mcp_input() { # tool [server] [arguments-json]
   jq -cn --arg t "$1" --arg s "${2:-}" --argjson a "${3:-null}" \
-    '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:({toolName:$t} + (if $s != "" then {server:$s} else {} end) + (if $a != null then {arguments:$a} else {} end))}'
+    '{hook_event_name:"PreToolUse", tool_name:"MCP", tool_input:({toolName:$t} + (if $s != "" then {server:$s} else {} end) + (if $a != null then {arguments:$a} else {} end))}'
 }
 tool_input() { jq -cn --arg t "$1" --arg f "${2:-}" '{hook_event_name:"PreToolUse", tool_name:$t, tool_input:{file_path:$f}}'; }
 
@@ -62,7 +62,7 @@ assert_silent_ok "dirty mutex: Edit is never blocked (R5-13)"
 tg2_run "$HOOK" "$(tg2_edit_input "$TG2_PROJ/src/app.js" Write)"
 assert_silent_ok "dirty mutex: Write is never blocked (R5-13)"
 assert_eq "failed recovery keeps the violation" "1" "$(mutex_count)"
-tg2_run "$HOOK" "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{}}')"
+tg2_run "$HOOK" "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"MCP", tool_input:{}}')"
 assert_silent_ok "dirty mutex: an MCP call without a tool name is not a compression call"
 
 reset; dirty_mutex

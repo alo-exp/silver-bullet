@@ -423,56 +423,6 @@ enterprise_e2e_matrix_log_bytes() {
   printf '%s\n' "${bytes:-0}"
 }
 
-# E2E-093: cursor-agent --print may return a short summary; wait then append composite transcript.
-enterprise_e2e_matrix_finalize_attempt_log() {
-  local row_log="$1" row_num="$2" work_dir="$3" evidence_path="${4:-}" graphify_ref="${5:-}"
-  local min_bytes=2048 wait_secs="${SB_E2E_CURSOR_LOG_GROWTH_WAIT:-30}" elapsed=0 bytes=0
-  [[ -n "$row_log" && -f "$row_log" ]] || return 0
-  [[ "$(enterprise_e2e_matrix_host 2>/dev/null || true)" == "cursor" ]] || return 0
-
-  while [[ "$elapsed" -lt "$wait_secs" ]]; do
-    bytes="$(wc -c <"$row_log" 2>/dev/null | tr -d ' ' || echo 0)"
-    [[ "${bytes:-0}" -ge "$min_bytes" ]] && return 0
-    sleep 2
-    elapsed=$((elapsed + 2))
-  done
-
-  bytes="$(wc -c <"$row_log" 2>/dev/null | tr -d ' ' || echo 0)"
-  [[ "${bytes:-0}" -ge "$min_bytes" ]] && return 0
-
-  # Composite gate: planning artifacts + evidence digest when stream-json summary is short.
-  if [[ -f "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh" ]]; then
-    # shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh
-    source "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh"
-    if ! enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence_path" "$row_num" >/dev/null 2>&1; then
-      return 0
-    fi
-  elif [[ -n "$evidence_path" && ! -f "${work_dir}/${evidence_path}" ]]; then
-    return 0
-  fi
-
-  {
-    printf '%s\n' '--- HARNESS composite transcript (E2E-093 cursor log floor) ---'
-    [[ -n "$graphify_ref" ]] && printf '%s\n' "graphify: ${graphify_ref}"
-    [[ -n "$evidence_path" && -f "${work_dir}/${evidence_path}" ]] && {
-      printf 'evidence: %s (%s bytes)\n' "$evidence_path" "$(wc -c <"${work_dir}/${evidence_path}" 2>/dev/null | tr -d ' ')"
-      printf 'evidence excerpt:\n'
-      head -80 "${work_dir}/${evidence_path}" 2>/dev/null | sed 's/^/  /'
-    }
-    if [[ -d "${work_dir}/.planning" ]]; then
-      printf 'planning artifacts:\n'
-      find "${work_dir}/.planning" -type f \( -name 'PLAN*.md' -o -name 'QUALITY-GATES*.md' -o -name 'VALIDATION*.md' -o -name 'VERIFICATION*.md' -o -path '*/workflows/*.md' \) \
-        ! -path '*/.archive/*' 2>/dev/null | head -40 | sed 's/^/  /'
-    fi
-    if git -C "$work_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-      printf 'product delta:\n'
-      git -C "$work_dir" diff --stat HEAD 2>/dev/null | sed 's/^/  /' || true
-      git -C "$work_dir" status --short 2>/dev/null | sed 's/^/  /' || true
-    fi
-    printf '%s\n' '--- end composite transcript ---'
-  } >>"$row_log"
-}
-
 enterprise_e2e_ledger_file() {
   printf '%s\n' "${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-LEDGER.md}"
 }
@@ -546,12 +496,12 @@ enterprise_e2e_incomplete_rows() {
   fi
 }
 
-# Install version key: SB_CURSOR_PLUGIN_VERSION @ git HEAD short SHA at last install-cursor.sh.
-# Stored in ${SB_ROOT}/.e2e-cursor-install-version.txt; row passes recorded in pass-at-version registry.
+# Install version key: SB_PLUGIN_VERSION @ git HEAD short SHA at the last host install.
+# Stored in ${SB_ROOT}/.e2e-install-version.txt; row passes recorded in pass-at-version registry.
 enterprise_e2e_install_version_file() {
   local root="${SB_ROOT:-}"
   [[ -n "$root" ]] || root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-  printf '%s\n' "${root}/.e2e-cursor-install-version.txt"
+  printf '%s\n' "${root}/.e2e-install-version.txt"
 }
 
 enterprise_e2e_pass_at_version_registry() {
@@ -578,8 +528,8 @@ enterprise_e2e_sb_install_version_key() {
       printf '%s\n' "$SB_INSTALL_VERSION_KEY"
       return 0
     fi
-    if [[ -n "${SB_CURSOR_PLUGIN_VERSION:-}" && -n "${SB_INSTALL_SHA:-}" ]]; then
-      printf '%s@%s\n' "$SB_CURSOR_PLUGIN_VERSION" "$SB_INSTALL_SHA"
+    if [[ -n "${SB_PLUGIN_VERSION:-}" && -n "${SB_INSTALL_SHA:-}" ]]; then
+      printf '%s@%s\n' "$SB_PLUGIN_VERSION" "$SB_INSTALL_SHA"
       return 0
     fi
   fi
@@ -597,7 +547,7 @@ enterprise_e2e_write_sb_install_version() {
   file="$(enterprise_e2e_install_version_file)"
   mkdir -p "$(dirname "$file")" 2>/dev/null || true
   cat >"$file" <<EOF
-SB_CURSOR_PLUGIN_VERSION=${plugin}
+SB_PLUGIN_VERSION=${plugin}
 SB_INSTALL_SHA=${sha}
 SB_INSTALL_VERSION_KEY=${key}
 EOF
@@ -650,7 +600,7 @@ enterprise_e2e_row_passed_at_install_version() {
   fi
   _enterprise_e2e_ensure_ledger_reconcile_sourced
   local root="${SB_ROOT:-}" plugin="${ver%%@*}"
-  for ledger in "${root}"/.planning/enterprise-e2e/ROUND-CURSOR-*-LEDGER.md; do
+  for ledger in "${root}"/.planning/enterprise-e2e/ROUND-*-LEDGER.md; do
     [[ -f "$ledger" ]] || continue
     enterprise_e2e_ledger_row_is_pass "$row" "$ledger" || continue
     local ledger_sha

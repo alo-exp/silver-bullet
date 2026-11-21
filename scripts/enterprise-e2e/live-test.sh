@@ -34,7 +34,7 @@ REQUESTED_ROWS=()
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--host claude|codex|cursor] [--preflight-only] [--resume] [--skip-code-intel-preflight] [row_numbers...]
+Usage: $(basename "$0") [--host claude|codex] [--preflight-only] [--resume] [--skip-code-intel-preflight] [row_numbers...]
 
 Enterprise E2E live test — interactive agent TUI against enterprise-grade-test-app.
 
@@ -58,7 +58,7 @@ Environment:
   SB_E2E_TEST_APP_BRANCH_ENFORCE  0 to skip branch preflight (default: 1)
   SB_E2E_LEDGER_FILE           Ledger path (default: host-specific ROUND-*-LEDGER.md)
   SB_E2E_MATRIX_LOG            Matrix batch log (default: host-isolated)
-  SB_E2E_LIVE_RUNTIME          claude | codex | cursor (see --host)
+  SB_E2E_LIVE_RUNTIME          claude | codex (see --host)
   SB_E2E_VALIDATION_OVERLAY    Pre-matrix validation gate (default: 1 on live runs; 0 to skip)
   SB_E2E_VALIDATION_PRE_GATE   Force validation overlay dry-run before matrix (=1)
 
@@ -166,15 +166,6 @@ if ((_hook_delivery_rc)); then
   exit 1
 fi
 (cd "$FIXTURE_DIR" && git status --short && npm test)
-
-# Session-start from test app (cursor-hook-bridge / branch scope — cursor runtime only).
-if [[ -f "${SB_ROOT}/tests/e2e-live/lib/session-start-preflight.sh" ]]; then
-  (
-    export SILVER_BULLET_RUNTIME=cursor
-    # shellcheck source=tests/e2e-live/lib/session-start-preflight.sh
-    source "${SB_ROOT}/tests/e2e-live/lib/session-start-preflight.sh" || true
-  )
-fi
 
 enterprise_e2e_run_install_host "$SB_ROOT"
 enterprise_e2e_preflight_host "$SB_ROOT"
@@ -309,5 +300,5 @@ cat <<'GATES'
   [ ] bash tests/run-all-tests.sh → 0 failures
   [ ] graphify update . in SB repo post-fixes
   [ ] 2 consecutive clean rounds before release tag
-  [ ] After SB hook fixes: re-run host install (install-claude.sh | install-codex.sh | install-cursor.sh) then re-run failed rows only
+  [ ] After SB hook fixes: re-run host install (install-claude.sh | install-codex.sh) then re-run failed rows only
 GATES

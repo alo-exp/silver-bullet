@@ -88,7 +88,7 @@ class MergeDelegateCatalogTest(unittest.TestCase):
             self.assertEqual(step["reusable_by_flows"], ["AF-AGENT-DELEGATE"])
         self.assertEqual(
             delegate_flow["owning_skills"],
-            ["silver-agent-codex", "silver-agent-cursor", "silver-agent-claude"],
+            ["silver-agent-codex", "silver-agent-claude"],
         )
 
     def test_merge_creates_missing_v_loop_with_both_refs(self):

@@ -146,7 +146,7 @@ def write_json(path, data, *, backup: bool = True) -> bool:
 _INTERPRETERS = frozenset({"bash", "sh", "zsh", "node", "python", "python3", "env"})
 _CACHE_ROOT_RE = re.compile(r"/plugins/cache/[^/]+/silver-bullet/[^/]+$")
 _MIRROR_ROOT_RE = re.compile(r"/silver-bullet/(?:\d+\.\d+\.\d+[^/]*|current)$")
-_NAMED_ROOT_RE = re.compile(r"(?:/silver-bullet(?:/[^/]+)?|^\$\{(?:CLAUDE|CURSOR)_PLUGIN_ROOT\})$")
+_NAMED_ROOT_RE = re.compile(r"(?:/silver-bullet(?:/[^/]+)?|^\$\{CLAUDE_PLUGIN_ROOT\})$")
 _ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 
 

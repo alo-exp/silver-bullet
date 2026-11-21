@@ -26,7 +26,6 @@ assert_trap_present() {
 }
 
 assert_trap_present "kay bridge ERR trap" "${REPO_ROOT}/hooks/kay-project-hook-bridge.sh"
-assert_trap_present "cursor bridge ERR trap" "${REPO_ROOT}/hooks/cursor-hook-bridge.sh"
 assert_trap_present "codex adapter ERR trap" "${REPO_ROOT}/hooks/codex-hook-adapter.sh"
 
 echo ""

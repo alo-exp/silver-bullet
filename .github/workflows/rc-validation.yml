@@ -4,11 +4,11 @@ name: RC Validation (optional)
 # on the runner, so it never satisfies the release gate's operator-local RC matrix.
 #
 # What it runs: scripts/run-rc-validation-matrix.sh in CI mode, i.e. the structural install
-# smoke (install + diagnostics) for cursor, codex and claude, fresh and upgrade. No host CLI
-# (cursor-agent, codex, claude) is installed and no credentials are passed, so no live cell
+# smoke (install + diagnostics) for codex and claude, fresh and upgrade. No host CLI
+# (codex, claude) is installed and no credentials are passed, so no live cell
 # runs: each cell ends as "skip" after its structural smoke, the job fails when a structural
 # smoke fails, and the job summary lists every cell. require_live=true demands live cells, so
-# it fails here (the cursor cells report "unavailable") until this workflow installs and
+# it fails here (the cells report "unavailable") until this workflow installs and
 # authenticates a host CLI.
 
 on:

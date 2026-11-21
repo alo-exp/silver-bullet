@@ -27,18 +27,6 @@
       },
       "doctor_platform": "codex"
     },
-    "cursor": {
-      "status": "supported",
-      "rtk": {
-        "command": "rtk init -g --agent cursor",
-        "artifacts": ["~/.cursor/hooks.json", "~/.cursor/cli-config.json"]
-      },
-      "context_mode": {
-        "command": "npm install -g context-mode",
-        "artifacts": ["~/.cursor/mcp.json", "~/.cursor/hooks.json", "~/.cursor/rules/context-mode.mdc"]
-      },
-      "doctor_platform": "cursor"
-    },
     "opencode": {
       "status": "supported",
       "rtk": {

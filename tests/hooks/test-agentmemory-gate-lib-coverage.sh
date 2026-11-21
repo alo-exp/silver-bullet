@@ -156,7 +156,6 @@ yes_t "healthy via cli when curl missing" env PATH="$(tl_path_without curl)" AM_
 export SB_AGENTMEMORY_MCP_ARTIFACT=/ovr
 assert_eq "artifact override" "/ovr" "$(sb_agentmemory_platform_artifact_path "$PR" claude)"
 unset SB_AGENTMEMORY_MCP_ARTIFACT
-assert_eq "artifact cursor" "$HOME/.cursor/mcp.json" "$(sb_agentmemory_platform_artifact_path "$PR" cursor)"
 assert_eq "artifact codex" "$HOME/.codex/config.toml" "$(sb_agentmemory_platform_artifact_path "$PR" codex)"
 assert_eq "artifact opencode" "$HOME/.config/opencode/opencode.json" "$(sb_agentmemory_platform_artifact_path "$PR" opencode)"
 assert_eq "artifact goose" "$HOME/.config/goose/config.yaml" "$(sb_agentmemory_platform_artifact_path "$PR" goose)"

@@ -30,7 +30,7 @@ usage() {
 Verify two consecutive strict-clean rounds from ROUND-*-GATES.md gate tables.
 
 Options:
-  --host claude|codex|cursor   Default gate file pair for host track
+  --host claude|codex          Default gate file pair for host track
   --json                       Machine-readable result on stdout
   -h, --help
 
@@ -51,10 +51,6 @@ enterprise_e2e_consecutive_rounds_resolve_host_defaults() {
     codex)
       printf '%s\n' "${ROUND1:-${root}/.planning/enterprise-e2e/ROUND-CODEX-1-GATES.md}"
       printf '%s\n' "${ROUND2:-${root}/.planning/enterprise-e2e/ROUND-CODEX-2-GATES.md}"
-      ;;
-    cursor)
-      printf '%s\n' "${ROUND1:-${root}/.planning/enterprise-e2e/ROUND-CURSOR-1-GATES.md}"
-      printf '%s\n' "${ROUND2:-${root}/.planning/enterprise-e2e/ROUND-CURSOR-2-GATES.md}"
       ;;
     *)
       echo "enterprise-e2e-consecutive-rounds-check: unknown host track: $host" >&2

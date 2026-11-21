@@ -37,16 +37,13 @@ trap 'rm -rf "$TMP"' EXIT
 echo "=== graphify platform install contract tests ==="
 
 # Template schema: pre_index / post_index per host
-for host in claude codex cursor opencode goose hermes; do
+for host in claude codex opencode goose hermes; do
   if jq -e --arg h "$host" '.recommended_tools.graphify.platform_install_commands[$h]' "$TEMPLATE" >/dev/null 2>&1; then
     pass "template has platform_install_commands.${host}"
   else
     fail "template has platform_install_commands.${host}"
   fi
 done
-
-cursor_post="$(jq -r '.recommended_tools.graphify.platform_install_commands.cursor.post_index[0]' "$TEMPLATE")"
-[[ "$cursor_post" == "graphify cursor install" ]] && pass "cursor post_index is graphify cursor install" || fail "cursor post_index"
 
 claude_pre="$(jq -r '.recommended_tools.graphify.platform_install_commands.claude.pre_index[0]' "$TEMPLATE")"
 [[ "$claude_pre" == "graphify install --project" ]] && pass "claude pre_index skill install" || fail "claude pre_index"
@@ -75,8 +72,8 @@ write_cfg "{\"config_version\":\"0.46.0\"}"
 pre="$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_pre_index_commands "$TMP/.silver-bullet.json" graphify)"
 [[ "$pre" == "graphify install --project" ]] && pass "claude pre_index fallback" || fail "claude pre_index fallback"
 
-post="$(SILVER_BULLET_RUNTIME=cursor sb_recommended_tool_platform_post_index_commands "$TMP/.silver-bullet.json" graphify)"
-[[ "$post" == "graphify cursor install" ]] && pass "cursor post_index fallback" || fail "cursor post_index fallback"
+post="$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_post_index_commands "$TMP/.silver-bullet.json" graphify)"
+[[ "$post" == "graphify claude install --project" ]] && pass "claude post_index fallback" || fail "claude post_index fallback"
 
 codex_post="$(SILVER_BULLET_RUNTIME=codex sb_recommended_tool_platform_post_index_commands "$TMP/.silver-bullet.json" graphify)"
 [[ "$codex_post" == "graphify codex install --project" ]] && pass "codex post_index fallback" || fail "codex post_index fallback"
@@ -89,12 +86,12 @@ legacy_post="$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_post_in
 [[ "$legacy_post" == "graphify claude install --project" ]] && pass "legacy flat array post_index" || fail "legacy flat array post_index"
 
 # Platform artifact paths
-[[ "$(SILVER_BULLET_RUNTIME=cursor sb_graphify_platform_artifact_path "$TMP")" == "${TMP}/.cursor/rules/graphify.mdc" ]] && pass "cursor artifact path" || fail "cursor artifact path"
+[[ "$(SILVER_BULLET_RUNTIME=claude sb_graphify_platform_artifact_path "$TMP")" == "${TMP}/.claude/settings.json" ]] && pass "claude artifact path" || fail "claude artifact path"
 [[ "$(SILVER_BULLET_RUNTIME=codex sb_graphify_platform_artifact_path "$TMP")" == "${TMP}/.codex/hooks.json" ]] && pass "codex artifact path" || fail "codex artifact path"
 
-mkdir -p "$TMP/.cursor/rules"
-printf 'graphify query-first\n' >"$TMP/.cursor/rules/graphify.mdc"
-sb_graphify_platform_artifact_present "$TMP" cursor && pass "cursor artifact detect" || fail "cursor artifact detect"
+mkdir -p "$TMP/.claude"
+printf 'graphify query-first\n' >"$TMP/.claude/settings.json"
+sb_graphify_platform_artifact_present "$TMP" claude && pass "claude artifact detect" || fail "claude artifact detect"
 
 # Skill markdown contracts (Phase 1.1 content lives in reference doc after skill split)
 INIT_RT_REF="$REPO_ROOT/skills/silver-init/references/recommended-tools-opt-in.md"
@@ -102,9 +99,9 @@ assert_grep "silver-init pre_index step" "$INIT_RT_REF" "Step 3b — Skill regis
 assert_grep "silver-init post_index step" "$INIT_RT_REF" "Step 3d — Platform always-on"
 assert_grep "silver-init hook install optional" "$INIT_RT_REF" "graphify hook install"
 assert_grep "silver-update pre_index retry" "$REPO_ROOT/skills/silver-update/SKILL.md" "Pre-index skill"
-assert_grep "docs GRAPHIFY platform table" "$REPO_ROOT/docs/GRAPHIFY.md" "graphify cursor install"
+assert_grep "docs GRAPHIFY platform table" "$REPO_ROOT/docs/GRAPHIFY.md" "graphify claude install --project"
 assert_grep "silver-bullet platform order" "$REPO_ROOT/silver-bullet.md" "Pre-index skill"
-assert_grep "core-rules platform order" "$REPO_ROOT/hooks/core-rules.md" "graphify cursor install"
+assert_grep "core-rules platform order" "$REPO_ROOT/hooks/core-rules.md" "graphify claude install --project"
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

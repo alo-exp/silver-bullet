@@ -63,7 +63,7 @@ class DetectHostTest(TmpCase):
 
     def test_explicit_runtime(self):
         self.check("codex", SILVER_BULLET_RUNTIME=" Codex ")
-        self.check("cursor", SILVER_BULLET_RUNTIME="cursor")
+        self.check("claude", SILVER_BULLET_RUNTIME="cursor")
         self.check("claude", SILVER_BULLET_RUNTIME="claude", CODEX_CI="1")
 
     def test_unknown_runtime_falls_through(self):
@@ -74,12 +74,9 @@ class DetectHostTest(TmpCase):
         for key in ("CODEX_CI", "CODEX_THREAD_ID", "CODEX_INTERNAL_ORIGINATOR_OVERRIDE"):
             self.check("codex", **{key: "1"})
 
-    def test_cursor_marker(self):
-        self.check("cursor", CURSOR_PLUGIN_ROOT="/x")
-
     def test_plugin_root_paths(self):
         self.check("codex", CLAUDE_PLUGIN_ROOT="/h/.codex/plugins/sb")
-        self.check("cursor", CLAUDE_PLUGIN_ROOT="/h/.cursor/plugins/sb")
+        self.check("claude", CLAUDE_PLUGIN_ROOT="/h/.cursor/plugins/sb")
         self.check("claude", CLAUDE_PLUGIN_ROOT="/h/.claude/plugins/sb")
 
     def test_default(self):
@@ -200,195 +197,6 @@ class StateFileTest(TmpCase):
             self.assertIsNone(r.load_json_file(p))
 
 
-class ConfigTest(TmpCase):
-    def test_defaults(self):
-        cfg = r.load_cursor_sb_agents_config(self.proj)
-        self.assertEqual(cfg, r.CURSOR_SB_AGENTS_DEFAULTS)
-
-    def test_returned_config_does_not_alias_module_defaults(self):
-        cfg = r.load_cursor_sb_agents_config(self.proj)
-        cfg["selected_models"].append("mutated")
-        cfg["effort_levels"].clear()
-        again = r.load_cursor_sb_agents_config(self.proj)
-        self.assertEqual(again["selected_models"], list(r.DEFAULT_CURSOR_MODELS))
-        self.assertEqual(again["effort_levels"], list(r.DEFAULT_CURSOR_EFFORTS))
-        self.assertEqual(r.CURSOR_SB_AGENTS_DEFAULTS["selected_models"], list(r.DEFAULT_CURSOR_MODELS))
-
-    def test_defaults_use_cwd(self):
-        old = os.getcwd()
-        os.chdir(self.proj)
-        try:
-            self.write_json(self.proj / ".silver-bullet.json", {"cursor_sb_agents": {"agent_name_prefix": "cwd"}})
-            self.assertEqual(r.load_cursor_sb_agents_config()["agent_name_prefix"], "cwd")
-        finally:
-            os.chdir(old)
-
-    def test_project_config_wins_and_skips_global(self):
-        self.write_json(self.proj / ".silver-bullet.json",
-                        {"cursor_sb_agents": {"selected_models": ["a"], "agent_name_prefix": "p"}})
-        self.write_json(self.home / ".config/silver-bullet/cursor-sb-agents.json", {"agent_name_prefix": "g"})
-        cfg = r.load_cursor_sb_agents_config(self.proj)
-        self.assertEqual((cfg["agent_name_prefix"], cfg["selected_models"]), ("p", ["a"]))
-
-    def test_project_key_present_but_not_dict_blocks_global(self):
-        self.write_json(self.proj / ".silver-bullet.json", {"cursor_sb_agents": "oops"})
-        self.write_json(self.home / ".config/silver-bullet/cursor-sb-agents.json", {"agent_name_prefix": "g"})
-        self.assertEqual(r.load_cursor_sb_agents_config(self.proj)["agent_name_prefix"], "sb")
-
-    def test_global_config_used_when_project_lacks_key(self):
-        self.write_json(self.home / ".config/silver-bullet/cursor-sb-agents.json", {"agent_name_prefix": "g"})
-        self.assertEqual(r.load_cursor_sb_agents_config(self.proj)["agent_name_prefix"], "g")
-        self.write_json(self.proj / ".silver-bullet.json", {"other": 1})
-        self.assertEqual(r.load_cursor_sb_agents_config(self.proj)["agent_name_prefix"], "g")
-
-    def test_empty_lists_are_reset_to_defaults(self):
-        self.write_json(self.proj / ".silver-bullet.json",
-                        {"cursor_sb_agents": {"selected_models": [], "effort_levels": "high"}})
-        cfg = r.load_cursor_sb_agents_config(self.proj)
-        self.assertEqual(cfg["selected_models"], list(r.DEFAULT_CURSOR_MODELS))
-        self.assertEqual(cfg["effort_levels"], list(r.DEFAULT_CURSOR_EFFORTS))
-
-    def test_catalog_ids(self):
-        self.assertEqual(r.load_catalog_ids(self.proj), set(r.KNOWN_COMPOSITE_SLUGS))
-        self.write_json(self.proj / ".silver-bullet/cursor-models-catalog.json",
-                        {"models": [{"id": "m1"}, {"id": ""}, {"nope": 1}, "str", {"id": 7}]})
-        self.write_json(self.home / ".config/silver-bullet/cursor-models-catalog.json", {"models": "bad"})
-        ids = r.load_catalog_ids(self.proj)
-        self.assertEqual(ids - r.KNOWN_COMPOSITE_SLUGS, {"m1", "7"})
-        self.write_json(self.home / ".config/silver-bullet/cursor-models-catalog.json", {"models": [{"id": "g1"}]})
-        self.assertIn("g1", r.load_catalog_ids(self.proj))
-
-    def test_catalog_ids_default_root_is_cwd(self):
-        old = os.getcwd()
-        os.chdir(self.proj)
-        try:
-            self.write_json(self.proj / ".silver-bullet/cursor-models-catalog.json", {"models": [{"id": "cw"}]})
-            self.assertIn("cw", r.load_catalog_ids())
-        finally:
-            os.chdir(old)
-
-
-class ModelParamTest(unittest.TestCase):
-    def test_resolution(self):
-        self.assertEqual(r.resolve_model_param("composer-2.5", "high"), "composer-2.5")
-        self.assertEqual(r.resolve_model_param("composer-2.5-fast", "high"), "composer-2.5")
-        self.assertEqual(r.resolve_model_param("grok-4.5", "high"), "grok-4.5-high")
-        self.assertEqual(r.resolve_model_param("grok-4.5", "low"), "grok-4.5-low")
-        self.assertEqual(r.resolve_model_param("grok-4.5-beta", "medium"), "grok-4.5-medium")
-        self.assertEqual(r.resolve_model_param("grok-4.5-fast", "high"), "grok-4.5-fast")
-        self.assertEqual(r.resolve_model_param("gpt-5.5", "high"), "gpt-5.5-high")  # known composite
-        self.assertEqual(r.resolve_model_param("gpt-5.5", "low"), "gpt-5.5")
-        self.assertEqual(r.resolve_model_param("x", "high", {"x-high"}), "x-high")
-        self.assertEqual(r.resolve_model_param("x", "high", {"x[effort=high]"}), "x[effort=high]")
-        self.assertEqual(r.resolve_model_param("x", "high", set()), "x")  # empty catalog -> known slugs
-        self.assertEqual(r.resolve_model_param("x", "high", None), "x")
-
-    def test_enrich_rung(self):
-        rung = r.enrich_cursor_sb_rung("gpt-5.5", "high", prefix="p")
-        self.assertEqual(rung["subagent_name"], "p-gpt-5-5-high")
-        self.assertEqual(rung["model_param"], "gpt-5.5-high")
-        self.assertEqual(rung["delegation"], "custom-subagent")
-        self.assertTrue(rung["subscription_first"])
-        self.assertIsNone(rung["task_slug"])
-
-    def test_cursor_rungs(self):
-        rungs = r.cursor_sb_agents_rungs({"selected_models": ["composer-2.5", 7], "effort_levels": ["low"],
-                                          "agent_name_prefix": ""})
-        self.assertEqual([x["subagent_name"] for x in rungs], ["sb-composer-2-5-low", "sb-7-low"])
-        defaults = r.cursor_sb_agents_rungs({})
-        self.assertEqual(len(defaults), len(r.DEFAULT_CURSOR_MODELS) * len(r.DEFAULT_CURSOR_EFFORTS))
-
-
-class AgentChecksTest(TmpCase):
-    def agent_dirs(self):
-        (self.home / ".cursor/agents").mkdir(parents=True)
-        (self.proj / ".cursor/agents").mkdir(parents=True)
-
-    def test_search_dirs_and_file_exists(self):
-        self.assertEqual(r.agent_search_dirs(self.proj), [])
-        self.assertFalse(r.agent_file_exists("sb-x", self.proj))
-        self.agent_dirs()
-        self.assertEqual(r.agent_search_dirs(self.proj), [self.home / ".cursor/agents", self.proj / ".cursor/agents"])
-        (self.proj / ".cursor/agents/sb-x.md").write_text("x")
-        self.assertTrue(r.agent_file_exists("sb-x", self.proj))
-        self.assertFalse(r.agent_file_exists("sb-y", self.proj))
-
-    def make_probe(self, body, exit_code=0):
-        probe = self.proj / "scripts/lib/cursor-sb-agents/probe-global-agents.sh"
-        probe.parent.mkdir(parents=True, exist_ok=True)
-        probe.write_text(f"#!/usr/bin/env bash\n{body}\nexit {exit_code}\n")
-        return probe
-
-    def test_probe_absent(self):
-        self.assertIsNone(r.probe_agents_via_script(self.proj, {}))
-
-    def test_probe_success_receives_config(self):
-        self.make_probe('printf \'{"ok": true, "found_names": ["a"], "cfg": %s, "args": "%s"}\' "$SB_CURSOR_SB_AGENTS_CONFIG" "$*"')
-        out = r.probe_agents_via_script(self.proj, {"k": 1})
-        self.assertEqual(out["cfg"], {"k": 1})
-        self.assertEqual(out["args"], "--json --skip-status")
-
-    def test_probe_exit_one_is_accepted_other_codes_rejected(self):
-        self.make_probe("echo '{\"ok\": false}'", exit_code=1)
-        self.assertEqual(r.probe_agents_via_script(self.proj, {}), {"ok": False})
-        self.make_probe("echo '{\"ok\": false}'", exit_code=2)
-        self.assertIsNone(r.probe_agents_via_script(self.proj, {}))
-
-    def test_probe_bad_output(self):
-        self.make_probe("echo not-json")
-        self.assertIsNone(r.probe_agents_via_script(self.proj, {}))
-        self.make_probe("echo '[1]'")
-        self.assertIsNone(r.probe_agents_via_script(self.proj, {}))
-
-    def test_probe_oserror_and_timeout(self):
-        self.make_probe("echo '{}'")
-        with mock.patch.object(r.subprocess, "run", side_effect=OSError("nobash")):
-            self.assertIsNone(r.probe_agents_via_script(self.proj, {}))
-        with mock.patch.object(r.subprocess, "run",
-                               side_effect=subprocess.TimeoutExpired(cmd="x", timeout=10)):
-            self.assertIsNone(r.probe_agents_via_script(self.proj, {}))
-
-    def test_check_agents_inline(self):
-        self.agent_dirs()
-        cfg = {"selected_models": ["composer-2.5"], "effort_levels": ["low", "high"]}
-        with mock.patch.dict(os.environ, {"SB_CURSOR_SB_AGENTS_SKIP_PROBE": "1"}):
-            res = r.check_agents(cfg, self.proj)
-            self.assertEqual(res["source"], "inline")
-            self.assertFalse(res["ok"])
-            self.assertEqual(res["missing"], ["sb-composer-2-5-low", "sb-composer-2-5-high"])
-            self.assertEqual(res["expected_count"], 2)
-            for n in res["expected_names"]:
-                (self.proj / ".cursor/agents" / f"{n}.md").write_text("x")
-            res = r.check_agents(cfg, self.proj)
-            self.assertTrue(res["ok"])
-            self.assertEqual(res["missing"], [])
-
-    def test_check_agents_probe_without_skip_falls_back_when_probe_missing(self):
-        res = r.check_agents({"selected_models": ["composer-2.5"], "effort_levels": ["low"]}, self.proj)
-        self.assertEqual(res["source"], "inline")
-
-    def test_check_agents_via_probe(self):
-        cfg = {"selected_models": ["composer-2.5"], "effort_levels": ["low", "high"]}
-        self.make_probe('echo \'{"ok": true, "found_names": ["sb-composer-2-5-low", "sb-composer-2-5-high"]}\'')
-        res = r.check_agents(cfg, self.proj)
-        self.assertEqual((res["source"], res["ok"], res["missing"]), ("probe-global-agents.sh", True, []))
-        self.make_probe('echo \'{"ok": true, "found_names": ["sb-composer-2-5-low"]}\'')
-        res = r.check_agents(cfg, self.proj)
-        self.assertFalse(res["ok"])
-        self.assertEqual(res["missing"], ["sb-composer-2-5-high"])
-        self.make_probe('echo \'{"found_names": ["sb-composer-2-5-low", "sb-composer-2-5-high"]}\'')
-        self.assertFalse(r.check_agents(cfg, self.proj)["ok"])  # probe did not say ok
-        self.make_probe("echo '{}'")
-        self.assertFalse(r.check_agents(cfg, self.proj)["ok"])  # no found_names at all
-
-    def test_enforcement_required(self):
-        self.assertTrue(r.agents_enforcement_required({}))
-        self.assertFalse(r.agents_enforcement_required({"enforcement_suspended": True}))
-        self.assertFalse(r.agents_enforcement_required({"enabled_by_user": False}))
-        self.assertFalse(r.agents_enforcement_required({"enabled": False}))
-        self.assertTrue(r.agents_enforcement_required({"enabled": True, "enabled_by_user": None}))
-
-
 class LaddersTest(TmpCase):
     def models_cache(self, models):
         return self.write_json(self.tmp / "codex/models_cache.json", {"models": models})
@@ -439,38 +247,8 @@ class LaddersTest(TmpCase):
                          ["top"] * 4 + ["low-prio"] * 2)
         self.assertEqual([x["reasoning"] for x in rungs[-2:]], ["medium", "xhigh"])
 
-    def test_resolve_cursor_ladder_flags_missing_agents(self):
-        with mock.patch.dict(os.environ, {"SB_CURSOR_SB_AGENTS_SKIP_PROBE": "1"}):
-            p = r.resolve_cursor_ladder(self.proj)
-        self.assertEqual((p["host"], p["source"]), ("cursor", "cursor_sb_agents"))
-        self.assertEqual(p["total_rungs"], len(p["rungs"]))
-        self.assertTrue(p["agents_missing"])
-        self.assertEqual(p["d21_hint"], "bash scripts/install-cursor-sb-agents.sh --fix")
-
-    def test_resolve_cursor_ladder_when_suspended_or_complete(self):
-        self.write_json(self.proj / ".silver-bullet.json", {"cursor_sb_agents": {"enforcement_suspended": True}})
-        with mock.patch.dict(os.environ, {"SB_CURSOR_SB_AGENTS_SKIP_PROBE": "1"}):
-            p = r.resolve_cursor_ladder(self.proj)
-        self.assertNotIn("agents_missing", p)
-        self.write_json(self.proj / ".silver-bullet.json", {"cursor_sb_agents": {
-            "selected_models": ["composer-2.5"], "effort_levels": ["low"]}})
-        (self.proj / ".cursor/agents").mkdir(parents=True)
-        (self.proj / ".cursor/agents/sb-composer-2-5-low.md").write_text("x")
-        with mock.patch.dict(os.environ, {"SB_CURSOR_SB_AGENTS_SKIP_PROBE": "1"}):
-            self.assertNotIn("agents_missing", r.resolve_cursor_ladder(self.proj))
-
-    def test_resolve_cursor_ladder_default_root(self):
-        old = os.getcwd()
-        os.chdir(self.proj)
-        try:
-            with mock.patch.dict(os.environ, {"SB_CURSOR_SB_AGENTS_SKIP_PROBE": "1"}):
-                self.assertEqual(r.resolve_cursor_ladder()["host"], "cursor")
-        finally:
-            os.chdir(old)
-
     def test_resolve_ladder_hosts(self):
-        with mock.patch.dict(os.environ, {"SB_CURSOR_SB_AGENTS_SKIP_PROBE": "1"}):
-            self.assertEqual(r.resolve_ladder("CURSOR", project_root=self.proj)["host"], "cursor")
+        self.assertEqual(r.resolve_ladder("CURSOR", project_root=self.proj)["host"], "claude")
         claude = r.resolve_ladder("claude")
         self.assertEqual((claude["host"], claude["source"], claude["total_rungs"]), ("claude", "fallback", 9))
         self.assertEqual(r.resolve_ladder("anything-else")["host"], "claude")
@@ -683,17 +461,6 @@ class MainTest(TmpCase):
         self.assertEqual(lines[:4], ["host: claude", "source: fallback", "total_rungs: 9", "rungs:"])
         self.assertEqual(lines[4], "  1. claude-sonnet-4-6 / medium")
 
-    def test_text_output_cursor_shows_subscription_hint_only_when_first(self):
-        with mock.patch.dict(os.environ, {"SB_CURSOR_SB_AGENTS_SKIP_PROBE": "1"}):
-            self.write_json(self.proj / ".silver-bullet.json", {"cursor_sb_agents": {
-                "selected_models": ["composer-2.5", "gpt-5.5"], "effort_levels": ["low"]}})
-            rc, out, _ = self.run_main("--host", "cursor", "--project-root", self.proj)
-        lines = out.splitlines()
-        self.assertIn("  1. composer-2.5 / low (delegation: custom-subagent, subagent: sb-composer-2-5-low, "
-                      "model_param: composer-2.5)", lines)
-        self.assertIn("  2. gpt-5.5 / low (delegation: custom-subagent, subagent: sb-gpt-5-5-low, "
-                      "model_param: gpt-5.5, subscription_first: codex)", lines)
-
     def test_text_output_uses_len_when_total_missing(self):
         payload = {"host": "claude", "source": "x", "rungs": [{"model": "m", "reasoning": "r"}]}
         with mock.patch.object(r, "resolve_ladder", return_value=payload):
@@ -701,23 +468,6 @@ class MainTest(TmpCase):
         self.assertIn("total_rungs: 1", out)
 
     # ---- check-agents
-    def test_check_agents_skips_non_cursor(self):
-        rc, out, _ = self.run_main("--check-agents", "--host", "codex", "--codex-home", self.tmp / "x")
-        self.assertEqual((rc, json.loads(out)), (0, {"ok": True, "skipped": True, "reason": "not cursor host"}))
-
-    def test_check_agents_cursor_exit_codes(self):
-        with mock.patch.dict(os.environ, {"SB_CURSOR_SB_AGENTS_SKIP_PROBE": "1"}):
-            rc, out, _ = self.run_main("--check-agents", "--host", "cursor", "--project-root", self.proj)
-            self.assertEqual(rc, 1)
-            self.assertFalse(json.loads(out)["ok"])
-            self.write_json(self.proj / ".silver-bullet.json", {"cursor_sb_agents": {
-                "selected_models": ["composer-2.5"], "effort_levels": ["low"]}})
-            (self.proj / ".cursor/agents").mkdir(parents=True)
-            (self.proj / ".cursor/agents/sb-composer-2-5-low.md").write_text("x")
-            rc, out, _ = self.run_main("--check-agents", "--host", "cursor", "--project-root", self.proj)
-            self.assertEqual((rc, json.loads(out)["ok"]), (0, True))
-
-    # ---- rung/phase
     def test_rung_phase(self):
         rc, out, _ = self.run_main("--host", "claude", "--rung", 2, "--phase", "verify_1")
         data = json.loads(out)

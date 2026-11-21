@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Execute scripts/run-pre-release-host-smoke.sh from a staged tree. Installers, diagnostics,
-# validators, the invoke-skill adapter and the Cursor smokes are stubs; no host CLI runs.
+# validators and the invoke-skill adapter are stubs; no host CLI runs.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
@@ -26,32 +26,28 @@ smoke() { # [env...] -- args
 # ---- all hosts, everything passes ----
 smoke X=1 --
 assert_eq "all hosts pass exits 0" 0 "$TL_STATUS"
-assert_contains "summary counts" "$TL_OUT" "Pre-release host smoke: 12 passed, 0 failed, 0 skipped (12 checks)"
+assert_contains "summary counts" "$TL_OUT" "Pre-release host smoke: 9 passed, 0 failed, 0 skipped (9 checks)"
 for c in "structural: validate-host-agnostic-core.sh" "structural: validate-host-install-surface.sh" \
   "structural: validate-host-skill-surface.sh" "codex: invoke-skill routes sb:verify" "codex: install-codex.sh" \
-  "codex: sb-diagnostics.sh" "cursor: release-live-matrix-cursor-smoke.sh" "cursor: pre-release-cursor-cli-smoke.sh" \
+  "codex: sb-diagnostics.sh" \
   "claude: invoke-skill routes sb:verify" "claude: install-claude.sh" "claude: sb-diagnostics.sh"; do
   assert_contains "reports PASS $c" "$TL_OUT" "PASS: $c"
 done
 assert_contains "adapter invoked for the codex bundle" "$LOG" "adapter invoke-skill sb:verify roots=$T/host-bundles/codex plugin=$T/plugins/silver-bullet"
 assert_contains "adapter invoked for the claude bundle" "$LOG" "adapter invoke-skill sb:verify roots=$T/agents/claude"
-assert_contains "adapter invoked for the cursor bundle" "$LOG" "adapter invoke-skill sb:verify roots=$T/host-bundles/cursor"
 assert_contains "validators receive repo root" "$LOG" "validate-host-skill-surface args=--repo-root $T"
-assert_contains "cursor fake home printed" "$TL_OUT" "isolated fake-home: "
-assert_contains "cursor workspace printed" "$TL_OUT" "workspace: "
-assert_contains "cursor smoke uses current env" "$LOG" "cursor-cli-smoke env="
 assert_contains "marker announced" "$TL_OUT" "Wrote isolated marker "
 assert_contains "marker copied to the final runtime state dir" "$TL_OUT" "Copied marker to "
 MARK="$TL_TMP/keep/codex/.silver-bullet/pre-release-host-smoke"
 assert_file_exists "isolated marker kept" "$MARK"
-assert_contains "marker lists hosts" "$(cat "$MARK")" "hosts=codex,cursor,claude"
-assert_contains "marker lists isolation" "$(cat "$MARK")" "cursor_isolation=fake-home,CURSOR_CONFIG_DIR,--plugin-dir,--workspace"
+assert_contains "marker lists hosts" "$(cat "$MARK")" "hosts=codex,claude"
+assert_not_contains "marker has no Cursor isolation line" "$(cat "$MARK")" "cursor"
 # R8-29: the evidence outlives the removed smoke root, at the state dir resolved before isolation
 assert_file_exists "marker persisted to the operator's runtime state dir" "$SB_RUNTIME_STATE_DIR/pre-release-host-smoke"
 assert_eq "persisted marker is the isolated marker" "$(cat "$MARK")" "$(cat "$SB_RUNTIME_STATE_DIR/pre-release-host-smoke")"
 assert_file_absent "smoke root removed on exit" "$(sed -n 's/^SB_PRE_RELEASE_SMOKE_ROOT=//p' <<<"$TL_OUT")"
 # R8-12: every invoke-skill receipt is written under isolation, never to the operator's HOME/state
-for host in codex cursor claude; do
+for host in codex claude; do
   assert_match "$host route check ran in the isolated HOME" "adapter-env home=[^ ]*/sb-pre-release-smoke\\.[A-Za-z0-9]+/$host(/fake-home)? " "$LOG"
 done
 assert_not_contains "no route check ran with the operator HOME" "$LOG" "adapter-env home=$HOME "
@@ -62,11 +58,9 @@ smoke X=1 -- --host codex
 assert_eq "codex only exits 0" 0 "$TL_STATUS"
 assert_contains "codex only: summary" "$TL_OUT" "6 passed, 0 failed, 0 skipped"
 assert_contains "codex only: marker persisted" "$TL_OUT" "Copied marker to $SB_RUNTIME_STATE_DIR/pre-release-host-smoke"
-assert_not_contains "codex only: no cursor smoke" "$TL_OUT" "Cursor host smoke"
 smoke X=1 -- cursor
-assert_eq "positional cursor exits 0" 0 "$TL_STATUS"
-assert_contains "cursor only runs the cursor section" "$TL_OUT" "=== Cursor host smoke (isolated) ==="
-assert_not_contains "cursor only: no codex section" "$TL_OUT" "Codex host smoke"
+assert_eq "the retired cursor host is rejected" 2 "$TL_STATUS"
+assert_contains "cursor is no longer a smoke host" "$TL_ERR" "Unknown host: cursor"
 smoke X=1 -- claude
 assert_eq "claude only exits 0" 0 "$TL_STATUS"
 assert_contains "claude only section" "$TL_OUT" "=== Claude host smoke (isolated) ==="
@@ -74,7 +68,7 @@ assert_contains "claude only section" "$TL_OUT" "=== Claude host smoke (isolated
 # ---- unknown host ----
 smoke X=1 -- bogus
 assert_eq "unknown host exits 2" 2 "$TL_STATUS"
-assert_contains "unknown host message" "$TL_ERR" "Unknown host: bogus (use all|codex|cursor|claude)"
+assert_contains "unknown host message" "$TL_ERR" "Unknown host: bogus (use all|codex|claude)"
 
 # ---- claude CLI absent: skipped, still passes ----
 smoke PATH="$(tl_path_without claude)" -- claude
@@ -104,11 +98,6 @@ smoke STUB_FAIL_INSTALL=1 -- claude
 assert_contains "claude install failure reported" "$TL_OUT" "FAIL: claude: install-claude.sh"
 smoke STUB_FAIL_DIAG=1 -- claude
 assert_contains "claude diagnostics failure reported" "$TL_OUT" "FAIL: claude: sb-diagnostics.sh"
-smoke STUB_FAIL_CURSOR_MATRIX=1 -- cursor
-assert_contains "cursor matrix smoke failure reported" "$TL_OUT" "FAIL: cursor: release-live-matrix-cursor-smoke.sh"
-smoke STUB_FAIL_CURSOR_CLI=1 -- cursor
-assert_contains "cursor cli smoke failure reported" "$TL_OUT" "FAIL: cursor: pre-release-cursor-cli-smoke.sh"
-assert_eq "cursor cli failure exits 1" 1 "$TL_STATUS"
 
 # adapter that does not route the skill: FAIL with a snippet
 smoke STUB_ADAPTER_MODE=bad -- codex

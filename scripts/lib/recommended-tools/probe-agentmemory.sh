@@ -5,11 +5,11 @@
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 rt_probe_agentmemory_mcp_configured() {
-  local host="${RT_HOST:-cursor}"
+  local host="${RT_HOST:-claude}"
   rt_host_mcp_server_configured "$host" agentmemory \
     || {
       case "$host" in
-        cursor|claude)
+        claude)
           local path
           path="$(rt_host_mcp_config_path "$host")"
           [[ -f "$path" ]] || return 1
@@ -33,7 +33,7 @@ rt_repair_agentmemory_mcp_config() {
     export RT_PATCH_AGENTMEMORY=0
   fi
   export RT_PATCH_GRAPHIFY=0 RT_PATCH_LEANCTX=0
-  TOOLSTACK_REPO_ROOT="$RT_REPO_ROOT" RT_HOST="${RT_HOST:-cursor}" python3 "$patch_py"
+  TOOLSTACK_REPO_ROOT="$RT_REPO_ROOT" RT_HOST="${RT_HOST:-claude}" python3 "$patch_py"
   local rc=$?
   unset RT_PATCH_AGENTMEMORY RT_PATCH_GRAPHIFY RT_PATCH_LEANCTX
   return "$rc"
@@ -46,7 +46,7 @@ rt_probe_agentmemory() {
   local fu=0 fd=0 fp=0 fs=0 ff=0 frr=0 frp=0 fr=0
 
   consent="$(rt_consent_for "$tool_id")"
-  if ! rt_host_supported "${RT_HOST:-cursor}"; then fu=1
+  if ! rt_host_supported "${RT_HOST:-claude}"; then fu=1
   else
     case "$consent" in
       disabled) fd=1 ;;

@@ -332,7 +332,7 @@ teardown
 echo "--- record-recommended-mcp ---"
 setup_with_agentmemory
 EXPECTED_AM_STATE="$AM_STATE"
-out=$(run_hook "$MCP_RECORD_HOOK" PostToolUse "$(jq -n '{hook_event_name:"PostToolUse",tool_name:"CallMcpTool",tool_input:{server:"user-agentmemory",toolName:"memory_recall"}}')")
+out=$(run_hook "$MCP_RECORD_HOOK" PostToolUse "$(jq -n '{hook_event_name:"PostToolUse",tool_name:"MCP",tool_input:{server:"user-agentmemory",toolName:"memory_recall"}}')")
 if [[ -f "$EXPECTED_AM_STATE" ]] && grep -qE '^[0-9]+$' "$EXPECTED_AM_STATE"; then
   echo "  ok: records agentmemory MCP usage"
   PASS=$((PASS + 1))

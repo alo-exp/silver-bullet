@@ -3,7 +3,7 @@
 # fresh render-agent-bundle.py run. Every file is compared in both directions,
 # so a stale reference, a missing file and an extra (stale) skill directory all
 # fail. scripts/validate-plugin-mirror.sh covers the rest of the package
-# (command stubs, templates, Cursor hooks, links).
+# (templates, hooks, links).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -44,18 +44,17 @@ check_tree() {
   done < <({ list_files "$committed"; list_files "$fresh"; } | sort -u)
 }
 
-for agent in claude codex cursor; do
+for agent in claude codex; do
   python3 "$RENDER" render --agent "$agent" --source-root "${REPO_ROOT}/skills" --dest-root "${TMP_BASE}/${agent}" >/dev/null
   check_tree "$(sb_agent_bundle_rel "$agent")" "$(sb_agent_bundle_root "$REPO_ROOT" "$agent")" "${TMP_BASE}/${agent}"
 done
 
-for pair in codex:skill-source cursor:cursor-skill-source; do
+pair=codex:skill-source
   agent="${pair%%:*}"
   tree="${pair#*:}"
   python3 "$RENDER" render --agent "$agent" --layout source --source-root "${REPO_ROOT}/skills" \
     --dest-root "${TMP_BASE}/${tree}" >/dev/null
   check_tree "plugins/silver-bullet/${tree}" "${REPO_ROOT}/plugins/silver-bullet/${tree}" "${TMP_BASE}/${tree}"
-done
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

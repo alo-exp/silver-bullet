@@ -142,7 +142,7 @@ sb_opt_in_edit_targets_exempt() {
 
 # sb_opt_in_mcp_call: status 0 for an MCP tool call, setting mcp_server, mcp_tool and
 # mcp_args. Hosts that name MCP tools mcp__<server>__<tool> are handled by the first case; others send
-# CallMcpTool/MCP with the server and tool in tool_input.
+# MCP with the server and tool in tool_input.
 sb_opt_in_mcp_call() {
   local rest
   mcp_server=""
@@ -155,7 +155,7 @@ sb_opt_in_mcp_call() {
       mcp_server="${rest%__*}"
       mcp_args="$(printf '%s' "${input:-}" | jq -c '.tool_input // {}' 2>/dev/null || printf '{}')"
       ;;
-    CallMcpTool | MCP)
+    MCP)
       mcp_server="$(printf '%s' "${input:-}" | jq -r '.tool_input.server // .tool_input.mcpServer // "" | strings' 2>/dev/null || true)"
       mcp_tool="$(printf '%s' "${input:-}" | jq -r '.tool_input.toolName // .tool_input.name // "" | strings' 2>/dev/null || true)"
       # shellcheck disable=SC2034  # read by the sourcing hook

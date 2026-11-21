@@ -19,7 +19,7 @@ mkdir -p "$PL/scripts" "$T/docs/testing" "$T/hooks/lib"
 : >"$T/hooks/lib/orchestrator-event-log.sh"
 echo '{"criteria":[{"id":"OUT-MULTIWF-01"}]}' >"$T/docs/testing/outcome-criteria-registry.json"
 echo '{"fixture":{"work_dir_default":"'"$WORK"'"}}' >"$PL/MATRIX.json"
-echo design >"$PL/DESIGN.md"; echo criteria >"$PL/CURSOR-MULTIWF-CRITERIA.md"
+echo design >"$PL/DESIGN.md"
 mk_track() { # <TC-0N> <dir-name>
   local id="$1" dir="$PL/$2"
   mkdir -p "$dir/fixtures"
@@ -94,16 +94,15 @@ chmod -x "$T/tests/scripts/test-sb-tri-criteria-e2e.sh"
 run X=1 -- preflight
 assert_eq "non-executable struct test" 1 "$TL_STATUS"; assert_contains "missing struct test message" "$TL_ERR" "ERROR: missing $T/tests/scripts/test-sb-tri-criteria-e2e.sh"
 chmod +x "$T/tests/scripts/test-sb-tri-criteria-e2e.sh"
-mv "$PL/MATRIX.json" "$PL/MATRIX.bak"; mv "$PL/DESIGN.md" "$PL/DESIGN.bak"; mv "$PL/CURSOR-MULTIWF-CRITERIA.md" "$PL/CRIT.bak"
+mv "$PL/MATRIX.json" "$PL/MATRIX.bak"; mv "$PL/DESIGN.md" "$PL/DESIGN.bak"
 mv "$PL/TC-01-multiwf-chain/CRITERIA.md" "$PL/crit1.bak"; mv "$T/hooks/lib/orchestrator-state.sh" "$TL_TMP/st.bak"
 run X=1 -- preflight
 assert_eq "missing files fail preflight" 1 "$TL_STATUS"
 assert_contains "missing umbrella matrix" "$TL_ERR" "ERROR: missing $PL/MATRIX.json"
 assert_contains "missing design" "$TL_ERR" "ERROR: missing DESIGN.md"
-assert_contains "missing criteria warning" "$TL_ERR" "WARN: missing CURSOR-MULTIWF-CRITERIA.md"
 assert_contains "missing track file" "$TL_ERR" "ERROR: missing $PL/TC-01-multiwf-chain/CRITERIA.md"
 assert_contains "missing hook warning" "$TL_ERR" "WARN: missing hooks/lib/orchestrator-state.sh"
-mv "$PL/MATRIX.bak" "$PL/MATRIX.json"; mv "$PL/DESIGN.bak" "$PL/DESIGN.md"; mv "$PL/CRIT.bak" "$PL/CURSOR-MULTIWF-CRITERIA.md"
+mv "$PL/MATRIX.bak" "$PL/MATRIX.json"; mv "$PL/DESIGN.bak" "$PL/DESIGN.md"
 mv "$PL/crit1.bak" "$PL/TC-01-multiwf-chain/CRITERIA.md"; mv "$TL_TMP/st.bak" "$T/hooks/lib/orchestrator-state.sh"
 echo '{"criteria":[]}' >"$T/docs/testing/outcome-criteria-registry.json"
 run X=1 -- preflight
@@ -140,7 +139,7 @@ assert_contains "dry run message" "$TL_OUT" "DRY-RUN: run dir prepared; live ses
 RUN1="$(sed -n 's/^run_id=//p' <<<"$TL_OUT")"
 assert_match "run id" '^[0-9]{8}T[0-9]{6}Z-TC-01$' "$RUN1"
 assert_eq "vision and prefs copied" "# vision TC-01|{\"p\":\"TC-01\"}" "$(cat "$RUNS/$RUN1/INTENT-SEED.txt")|$(cat "$RUNS/$RUN1/prefs.json")"
-assert_eq "ledger defaults to cursor parent" "TC-01|TC-01|prepared|cursor|parent|false" \
+assert_eq "ledger defaults to claude delegation" "TC-01|TC-01|prepared|claude|delegation|false" \
   "$(jq -r '[.track_id,.row_id,.status,.host,.orchestrator_mode,(.live_session_run|tostring)]|join("|")' "$RUNS/$RUN1/ledger.json")"
 assert_contains "design path printed" "$TL_OUT" "design=$PL/DESIGN.md"
 for h in claude codex; do
@@ -151,15 +150,15 @@ for h in claude codex; do
 done
 run SB_TRI_CRITERIA_HOST=weird -- start --track TC-01 --dry-run
 id="$(sed -n 's/^run_id=//p' <<<"$TL_OUT")"
-assert_eq "unknown host normalized to cursor" "cursor|parent" "$(jq -r '[.host,.orchestrator_mode]|join("|")' "$RUNS/$id/ledger.json")"
+assert_eq "unknown host normalized to claude" "claude|delegation" "$(jq -r '[.host,.orchestrator_mode]|join("|")' "$RUNS/$id/ledger.json")"
 run SB_TRI_CRITERIA_WORK_DIR="$TL_TMP" -- start --track TC-02
 assert_eq "live start" 0 "$TL_STATUS"
 assert_contains "work dir env honored" "$TL_OUT" "work_dir=$TL_TMP"
-assert_contains "checklist host hint" "$TL_OUT" "1. Host: Cursor parent orchestrator in: $TL_TMP"
+assert_contains "checklist host hint" "$TL_OUT" "1. Host: Claude parent orchestrator in: $TL_TMP"
 assert_contains "checklist score hint" "$TL_OUT" "--track TC-02"
 run SB_MINIMAL_INTENT_WORK_DIR="$TL_TMP" -- start --track TC-03
 assert_contains "minimal-intent work dir fallback" "$TL_OUT" "work_dir=$TL_TMP"
-assert_contains "TC-03 on cursor keeps the cursor hint" "$TL_OUT" "Cursor parent orchestrator"
+assert_contains "TC-03 on claude keeps the claude hint" "$TL_OUT" "Claude parent orchestrator"
 run SB_TRI_CRITERIA_HOST=agent-claude -- start --track TC-03
 assert_contains "TC-03 agent-claude hint" "$TL_OUT" "agent-claude delegation (see TC-03 RUNBOOK)"
 
@@ -218,7 +217,7 @@ echo other >"$TL_TMP/o.log"
 : >"$STUB_LOG"
 tl_run env -u SB_RUNTIME_STATE_DIR SB_E2E_RUNS_DIR="$RUNS" STUB_LOG="$STUB_LOG" bash "$S" score --run "$RUN2" --track TC-01 --log "$TL_TMP/o.log"
 assert_contains "custom log" "$TL_OUT" "log=$TL_TMP/o.log"
-assert_contains "state dir default under HOME/.cursor" "$(cat "$STUB_LOG")" " $HOME/.cursor/.silver-bullet "
+assert_contains "state dir default under HOME/.claude" "$(cat "$STUB_LOG")" " $HOME/.claude/.silver-bullet "
 
 # ---------------- live ----------------
 run X=1 -- live
@@ -226,15 +225,15 @@ assert_eq "live needs --track" 2 "$TL_STATUS"; assert_contains "live --track mes
 run X=1 -- live --bogus
 assert_eq "live unknown arg" 2 "$TL_STATUS"; assert_contains "live unknown arg message" "$TL_ERR" "Unknown live arg: --bogus"
 run X=1 -- live --track TC-01 --host mainframe
-assert_eq "live bad host" 2 "$TL_STATUS"; assert_contains "bad host message" "$TL_ERR" "--host must be cursor, claude, or codex (got: mainframe)"
+assert_eq "live bad host" 2 "$TL_STATUS"; assert_contains "bad host message" "$TL_ERR" "--host must be claude or codex (got: mainframe)"
 last_run() { local d r=""; for d in "$RUNS"/*-"$1"; do r="${d##*/}"; done; printf '%s' "$r"; }
 run X=1 -- live --track TC-01 --work-dir "$WORK"
-assert_eq "cursor live passes" 0 "$TL_STATUS"
-assert_contains "live banner" "$TL_OUT" "host=cursor work_dir=$WORK greenfield=0"
+assert_eq "default-host live passes" 0 "$TL_STATUS"
+assert_contains "live banner" "$TL_OUT" "host=claude work_dir=$WORK greenfield=0"
 assert_contains "live note" "$TL_OUT" "NOTE: bootstrap-orchestrator*.sh NOT used; product gate required"
 LR="$(last_run TC-01)"
-assert_contains "cursor script invoked as <track> <run-dir>" "$(cat "$STUB_LOG")" "live-verify-track TC-01 $RUNS/$LR work=$WORK host=cursor greenfield=0 preserve=1 state=unset"
-assert_contains "scored with the cursor state dir" "$(cat "$STUB_LOG")" " $HOME/.cursor/.silver-bullet/tri-criteria-live-$LR "
+assert_contains "default host script invoked as <host> <track> <run-dir>" "$(cat "$STUB_LOG")" "live-verify-track-host claude TC-01 $RUNS/$LR work=$WORK host=claude greenfield=0 preserve=1 state=unset"
+assert_contains "scored with the claude state dir" "$(cat "$STUB_LOG")" " $HOME/.claude/.silver-bullet/tri-criteria-live-$LR "
 assert_eq "live ledger records the fixture branch and sha" "feature/test|ok" \
   "$(jq -r '[.fixture_branch,(.fixture_sha|if length==12 then "ok" else . end)]|join("|")' "$RUNS/$LR/ledger.json")"
 assert_eq "live ledger ends scored" "scored" "$(jq -r .status "$RUNS/$LR/ledger.json")"
@@ -277,10 +276,10 @@ assert_eq "live with unknown row" 1 "$TL_STATUS"
 run X=1 -- cold --track TC-02 --work-dir "$WORK"
 assert_eq "cold with unknown row" 1 "$TL_STATUS"
 cp "$TL_TMP/m2.bak" "$PL/TC-02-dynamic-compose/MATRIX.json"
-mv "$PL/scripts/live-verify-track.sh" "$PL/scripts/live.bak"
+mv "$PL/scripts/live-verify-track-host.sh" "$PL/scripts/live.bak"
 run X=1 -- live --track TC-01 --work-dir "$WORK"
-assert_eq "missing live script" 1 "$TL_STATUS"; assert_contains "missing live script message" "$TL_ERR" "ERROR: missing $PL/scripts/live-verify-track.sh"
-mv "$PL/scripts/live.bak" "$PL/scripts/live-verify-track.sh"
+assert_eq "missing live script" 1 "$TL_STATUS"; assert_contains "missing live script message" "$TL_ERR" "ERROR: missing $PL/scripts/live-verify-track-host.sh"
+mv "$PL/scripts/live.bak" "$PL/scripts/live-verify-track-host.sh"
 run X=1 -- live --track TC-99 --work-dir "$WORK"
 assert_eq "live unknown track" 1 "$TL_STATUS"
 

@@ -101,7 +101,6 @@ check_cls release plugins/foo/CHANGELOG.md
 check_cls site site/index.html
 check_cls config .silver-bullet.json
 check_cls config hooks/hooks.json
-check_cls config .cursor/hooks.json
 check_cls other .mcp.json
 check_cls config mcp.json
 check_cls config templates/silver-bullet.config.json.default

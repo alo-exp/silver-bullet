@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Supervisor: restarts matrix monitor if it dies; logs state changes every 10 min.
-# Run in persistent Cursor background shell alongside the monitor.
+# Run in persistent background shell alongside the monitor.
 set -uo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

@@ -622,7 +622,7 @@ class McpAnalysisTests(Base):
         self.assertEqual(result["push_scope"]["verdict"], "strict")  # real git, tmp is not a repository
         result = shell_analysis.analyze_payload(text, self.tmp, False, ENV)
         self.assertNotIn("push_scope", result)
-        text = self.payload("CallMcpTool", {"server": "github", "toolName": "push_files",
+        text = self.payload("MCP", {"server": "github", "toolName": "push_files",
                                             "arguments": {"owner": "acme", "repo": "app", "branch": "x"}})
         result = shell_analysis.analyze_payload(text, self.tmp, True, ENV)
         self.assertIn("push_scope", result)
