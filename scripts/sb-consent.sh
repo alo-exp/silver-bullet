@@ -38,7 +38,7 @@ project; the directory holding .silver-bullet.json is recorded). install and wir
 grant and revoke record them for the machine; decline --project records enforce only.
 --all-projects records every listed capability for the machine (all projects).
 
-Exit status: 0 success (check: granted), 1 check: not granted, 2 error, 64 usage error.
+Exit status: 0 success (check: granted), 1 check: not granted, 2 error (also: the store stays locked, nothing recorded), 64 usage error.
 USAGE
 }
 

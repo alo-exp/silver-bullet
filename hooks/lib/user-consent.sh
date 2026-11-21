@@ -42,7 +42,9 @@
 #       SCOPE "machine" or a project directory (enforce only). Writes atomically (temp file
 #       in the same directory, then rename), keeps the file's mode, backs the previous
 #       version up to consent.json.bak, and changes nothing when the decision is already
-#       recorded. Status 2 and a message on stderr for a usage error or an unwritable store.
+#       recorded. Status 2 and a message on stderr for a usage error, an unwritable store or a
+#       lock that stays held by another writer for the whole wait: nothing is recorded then, and
+#       a caller must not treat it as success.
 #   sb_consent_status_lines [PROJECT_DIR]      "<tool> <capability> <decision>" per line
 # CLI for scripts and users: scripts/sb-consent.sh (see its --help).
 
@@ -166,62 +168,116 @@ _sb_consent_clean_source() {
   printf '%s' "${source:-cli}"
 }
 
-# sb_consent_set serializes writers with a lock directory next to the store (mkdir is atomic
-# and portable) and re-reads the store inside the lock, so concurrent grants, declines and
-# revokes cannot lose one another's update. A lock whose owner process is gone, or that has
-# no owner record after the wait, is taken over under a second lock directory
-# (<lock>.takeover), inside which the owner is checked again, so two waiters never remove a
-# lock a third has just taken. SB_CONSENT_LOCK_TRIES (default 100, 0.1 s apart; a value that
-# is not an integer from 1 to 1000 means the default) bounds the wait.
-_sb_consent_lock_reclaim() { # LOCK ANYWAY: remove LOCK when its owner is gone (or ANYWAY=1 and it has none)
-  local lock="$1" anyway="$2" pid rc=1
-  # A takeover directory left by a killed process (older than a minute) is removed first.
-  if [[ -n "$(find "${lock}.takeover" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then
-    rmdir "${lock}.takeover" 2>/dev/null
-  fi
-  mkdir "${lock}.takeover" 2>/dev/null || return 1
-  pid="$(cat "${lock}/pid" 2>/dev/null || true)"
-  if [[ "$pid" =~ ^[0-9]+$ ]]; then
-    kill -0 "$pid" 2>/dev/null || { rm -rf -- "$lock"; rc=0; }
-  elif [[ "$anyway" == 1 ]]; then
-    rm -rf -- "$lock"; rc=0
-  fi
-  rmdir "${lock}.takeover" 2>/dev/null
-  return "$rc"
+# sb_consent_set serializes writers with a lock directory next to the store and re-reads the
+# store inside the lock, so concurrent grants, declines and revokes cannot lose one another's
+# update. A writer that cannot take the lock within its wait fails with status 2 and a message;
+# it never reports success without recording (a lost revoke would leave a revoked consent live).
+#
+# The lock is "<store dir>/.consent.lock". A writer holds it when it created the directory,
+# wrote a claim file "claim.<pid>.<nonce>" into it, and then found that claim to be the only
+# entry. Only the owner ever removes its own claim (a unique name) and, after it, the
+# directory. A waiter reclaims only what is provably abandoned, and only by removing a claim
+# BY NAME: a claim whose process is gone, a claim older than ten minutes (a reused pid), or a
+# claim file without a pid or an empty directory older than a minute. Nothing ever removes a
+# lock directory recursively, so a waiter can never remove a lock another writer has just taken
+# (the lost-update race of the earlier mkdir/pid-file/.takeover design). rmdir only removes an
+# empty directory; a writer whose fresh directory was removed under it, or replaced by another
+# writer's, sees its claim missing or not alone, withdraws it and retries.
+# Only entries named claim.<pid>.<nonce> (and the legacy "pid") are ever removed, only when they are
+# regular files, and a lock path that is a symlink, not a directory or not owned by the caller is
+# refused untouched. Old-version sb-consent processes (the earlier mkdir/pid/.takeover lock) are
+# outside this guarantee: one still running can remove a lock of this protocol.
+# SB_CONSENT_LOCK_TRIES (default 200, 0.1 s apart; a value that is not an integer from 1 to
+# 1000 means the default) bounds the wait.
+_sb_consent_lock_sane() { # LOCK: status 0 unless LOCK exists as something other than our own plain directory
+  local lock="$1"
+  [[ ! -e "$lock" && ! -L "$lock" ]] && return 0
+  [[ -d "$lock" && ! -L "$lock" && -O "$lock" ]]
 }
 
-_sb_consent_write_owner() { # LOCK: record this process as the lock's owner
-  printf '%s' "$$" >"${1}/pid" 2>/dev/null
+_sb_consent_claim_name() { # NAME: status 0 for a claim file name this protocol writes (or the legacy "pid")
+  [[ "$1" =~ ^claim\.[0-9]+\.[0-9]+$ || "$1" == pid ]]
+}
+
+_sb_consent_claim_stale() { # CLAIM: status 0 when the process that wrote CLAIM is gone or it is far too old
+  local claim="$1" pid=""
+  read -r pid _ <"$claim" 2>/dev/null || true
+  if [[ "$pid" =~ ^[0-9]+$ ]]; then
+    # kill -0 also fails for a live process of another user (EPERM): only a pid ps does not list is dead
+    if ! kill -0 "$pid" 2>/dev/null && ! ps -p "$pid" >/dev/null 2>&1; then return 0; fi
+    # Alive: stale only when far older than any write (a reused pid). A future mtime is never old.
+    [[ -n "$(find "$claim" -maxdepth 0 -mmin +10 2>/dev/null)" ]]
+  else
+    [[ -n "$(find "$claim" -maxdepth 0 -mmin +1 2>/dev/null)" ]]
+  fi
+}
+
+_sb_consent_lock_reclaim() { # LOCK: drop abandoned claims; status 0 when LOCK was left gone
+  local lock="$1" entry seen=0 live=0
+  _sb_consent_lock_sane "$lock" || return 1
+  for entry in "$lock"/*; do
+    [[ -e "$entry" || -L "$entry" ]] || continue
+    seen=1
+    # Only regular files named like a claim are ever removed; anything else keeps the lock held.
+    if [[ -f "$entry" && ! -L "$entry" ]] && _sb_consent_claim_name "${entry##*/}" \
+      && _sb_consent_claim_stale "$entry"; then
+      rm -f -- "$entry"
+    else
+      live=1
+    fi
+  done
+  ((live == 0)) || return 1
+  if ((seen == 0)) && [[ -z "$(find "$lock" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then
+    return 1 # no claims yet: a writer is between mkdir and writing its claim, or the lock is gone
+  fi
+  rmdir "$lock" 2>/dev/null
+}
+
+_sb_consent_lock_try() { # LOCK: one attempt; status 0 holding it (the claim is in _SB_CONSENT_CLAIM)
+  local lock="$1" claim entry names="" _sb_cl_pid
+  mkdir "$lock" 2>/dev/null || return 1
+  # BASHPID is this (sub)shell; $$ is the top-level shell and the only choice before Bash 4
+  _sb_cl_pid="$$"; [[ "${BASHPID:-}" =~ ^[0-9]+$ ]] && _sb_cl_pid="$BASHPID"
+  claim="${lock}/claim.${_sb_cl_pid}.${RANDOM}${RANDOM}"
+  if printf '%s' "$_sb_cl_pid" >"$claim" 2>/dev/null; then
+    for entry in "$lock"/*; do
+      [[ -e "$entry" ]] && names="${names}${entry##*/} "
+    done
+    if [[ "$names" == "${claim##*/} " ]]; then
+      _SB_CONSENT_CLAIM="$claim"
+      return 0
+    fi
+  fi
+  rm -f -- "$claim"
+  rmdir "$lock" 2>/dev/null
+  return 1
 }
 
 sb_consent_set() {
-  local lock dir tries="${SB_CONSENT_LOCK_TRIES:-100}" rc=0 ownerless=0
-  [[ "$tries" =~ ^[1-9][0-9]{0,2}$|^1000$ ]] || tries=100
+  local lock dir tries="${SB_CONSENT_LOCK_TRIES:-200}" rc=0 spins=0
+  [[ "$tries" =~ ^[1-9][0-9]{0,2}$|^1000$ ]] || tries=200
   dir="$(dirname "$(sb_consent_store_path)")"
   if ! (umask 077 && mkdir -p "$dir") 2>/dev/null; then
     _sb_consent_set_locked "$@"
     return $?
   fi
   lock="${dir}/.consent.lock"
-  until mkdir "$lock" 2>/dev/null; do
-    _sb_consent_lock_reclaim "$lock" "$ownerless" && continue
+  if ! _sb_consent_lock_sane "$lock"; then
+    _sb_consent_err "${lock} is not a plain directory of yours (a symlink or another file?), so nothing was recorded; remove it"
+    return 2
+  fi
+  until _sb_consent_lock_try "$lock"; do
+    if _sb_consent_lock_reclaim "$lock" && ((spins++ < 1000)); then continue; fi
     tries=$((tries - 1))
     if ((tries <= 0)); then
-      if ((ownerless == 0)) && [[ ! -s "${lock}/pid" ]]; then
-        ownerless=1
-        tries=1
-        continue
-      fi
-      _sb_consent_err "another sb-consent is writing ${dir}; try again (remove ${lock} and ${lock}.takeover if no sb-consent is running)"
+      _sb_consent_err "another sb-consent is writing ${dir}, so nothing was recorded; try again (remove ${lock} if no sb-consent is running)"
       return 2
     fi
     sleep 0.1
   done
-  # The directory is the lock; the owner record is best effort. Without it the lock stays
-  # reclaimable after the wait (see above), so an unwritable pid file never fails the write.
-  _sb_consent_write_owner "$lock" || true
   _sb_consent_set_locked "$@" || rc=$?
-  rm -rf -- "$lock"
+  rm -f -- "$_SB_CONSENT_CLAIM"
+  rmdir "$lock" 2>/dev/null || true
   return "$rc"
 }
 
