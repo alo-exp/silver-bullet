@@ -260,6 +260,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.dry_run:
         report = dry_run_report(selection)
+        if report.get("ok"):
+            # Looks for each backend CLI the plan needs; nothing is started or written.
+            from live_dispatch import backend_availability  # noqa: E402
+
+            report["backend_availability"] = backend_availability(report["resolved_pool"])
         report["parallel_phases"] = parallel
         if not parallel and args.mode not in {"quick"}:
             report["ok"] = False
@@ -290,8 +295,6 @@ def main(argv: list[str] | None = None) -> int:
         carried = carry_over_user_inputs(moved_aside, output_root, args.query)
         skipped = [name for name in ("need_profile.json", "scope.md")
                    if (moved_aside / name).is_file() and name not in carried]
-    os.environ.setdefault("SB_HOST", "cursor")
-
     from dr_live_runner import run_dr_live  # noqa: E402
 
     try:
