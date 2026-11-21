@@ -42,10 +42,11 @@ if declare -f sb_trivial_bypass >/dev/null 2>&1; then
 fi
 
 if sb_live_publish_evidence_valid; then
+  sb_site_stop_loop_reset live-publish-evidence-gate
   exit 0
 fi
 
-if sb_site_stop_loop_release live-publish-evidence-gate "$input"; then exit 0; fi
+if sb_site_stop_loop_release live-publish-evidence-gate "$input" "$(jq -r '.edit_seq // 0' "$(sb_site_session_file)")|$(git -C "$SB_SITE_ROOT" rev-parse HEAD 2>/dev/null)"; then exit 0; fi
 reason="Live publish evidence required before Stop: this site session pushed or claimed a publish.
 
 After the push has deployed, verify the live page with the plugin's verifier (it fetches ${SB_SITE_LIVE_URL}, matches your markers and records the result for the current HEAD itself; the state directory is protected, so do not write the evidence file by hand):

@@ -51,7 +51,7 @@ emit_block() {
     [[ "${SB_KAY_HOOK_BRIDGE_INVOKED:-}" == "1" ]] && { printf '%s\n' "$reason" >&2; exit 2; }
   else
     # A Stop gate that already told the agent once must not trap the session (R9-03).
-    if sb_site_stop_loop_release site-regression-gate "$input"; then exit 0; fi
+    if sb_site_stop_loop_release site-regression-gate "$input" "$block_fp" "$block_unclearable"; then exit 0; fi
     printf '{"decision":"block","reason":%s}' "$json_reason"
   fi
   exit 0
@@ -84,6 +84,7 @@ if declare -f sb_trivial_bypass >/dev/null 2>&1; then
 fi
 
 if sb_site_session_regression_current; then
+  sb_site_stop_loop_reset site-regression-gate
   exit 0
 fi
 
@@ -95,8 +96,13 @@ rc=0
 # form keeps the assignment in a condition context so the status is captured.
 log_file="$(sb_site_session_run_regression_tests "$repo_root" 2>/dev/null)" || rc=$?
 if [[ $rc -eq 0 ]]; then
+  sb_site_stop_loop_reset site-regression-gate
   exit 0
 fi
+# What makes two blocks "the same condition" (the edit counter and the outcome), and whether the agent can clear it.
+block_fp="$(jq -r '.edit_seq // 0' "$(sb_site_session_file)")|rc=$rc"
+block_unclearable=""
+if [[ $rc -eq 90 || $rc -eq 91 ]]; then block_unclearable="gate setup problem (rc=$rc)"; fi
 
 if [[ $rc -eq 90 ]]; then
   reason="Site session regression gate — cannot run: a regression script named in site_profile.regression_scripts is missing under ${repo_root}.

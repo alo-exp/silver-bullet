@@ -37,7 +37,9 @@ sb_site_profile_load || { echo "site-live-evidence: not a project with site_prof
 [[ -n "$SB_SITE_LIVE_URL" ]] || { echo "site-live-evidence: site_profile.live_url is not set" >&2; exit 2; }
 head_sha="$(git -C "$SB_SITE_ROOT" rev-parse HEAD 2>/dev/null)" || { echo "site-live-evidence: no git HEAD in $SB_SITE_ROOT" >&2; exit 2; }
 
-body="$(curl -fsSL --max-time 30 "$SB_SITE_LIVE_URL" 2>/dev/null)" || body=""
+# The system curl by absolute path, with a fixed PATH: a curl (or a PATH) the agent controls must not decide LIVE.
+curl_bin="$(command -p -v curl)"
+body="$(PATH=/usr/bin:/bin "$curl_bin" -fsSL --max-time 30 "$SB_SITE_LIVE_URL" 2>/dev/null)" || body=""
 matched=()
 for m in "${markers[@]}"; do
   if grep -qF -- "$m" <<<"$body"; then matched+=("$m"); fi

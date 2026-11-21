@@ -162,30 +162,56 @@ sb_doc_scheme__changed_since() {
   [[ -n "$(git -C "$repo" log --since="$since" --pretty=format: --name-only -- "$spec" 2>/dev/null)" ]]
 }
 
-# sb_doc_scheme__head_tracks REPO: git has a doc-scheme file at HEAD, so the repo opted into the scheme even when
-# the files are gone from the work tree (deleting them must not switch the gate off, R9-09).
+# sb_doc_scheme__baseline REPO: the trusted revision the scheme is compared with: the merge-base of HEAD with the
+# default branch (origin/HEAD, then origin/main|master, then main|master), so a commit made on this branch cannot
+# redefine it (one intermediate commit would otherwise switch the delivery gate off); HEAD when there is no default
+# branch to compare with.
+sb_doc_scheme__baseline() {
+  local repo="$1" ref mb
+  for ref in "$(git -C "$repo" symbolic-ref -q refs/remotes/origin/HEAD 2>/dev/null)" \
+    refs/remotes/origin/main refs/remotes/origin/master refs/heads/main refs/heads/master; do
+    [[ -n "$ref" ]] || continue
+    if mb="$(git -C "$repo" merge-base HEAD "$ref" 2>/dev/null)"; then
+      printf '%s' "$mb"
+      return 0
+    fi
+  done
+  printf 'HEAD'
+}
+
+# sb_doc_scheme__head_tracks REPO: git has a doc-scheme file at the trusted baseline, so the repo opted into the
+# scheme even when the files are gone from the work tree or deleted in a commit (R9-09).
 sb_doc_scheme__head_tracks() {
-  local repo="$1" f
+  local repo="$1" f base
+  base="$(sb_doc_scheme__baseline "$repo")"
   for f in docs/doc-scheme.md docs/doc-scheme.json; do
-    git -C "$repo" cat-file -e "HEAD:$f" >/dev/null 2>&1 && return 0
+    git -C "$repo" cat-file -e "$base:$f" >/dev/null 2>&1 && return 0
   done
   return 1
 }
 
-# sb_doc_scheme__weakened REPO CONTRACT: what the work-tree contract gives up against the one committed at HEAD
-# (enforcement switched off, enforced levels narrowed, a mandatory doc dropped); nothing when it is not weaker or
-# there is no committed contract to compare with. Committing the change makes it the new baseline: a weakening
-# then takes a deliberate commit that stays in the history.
+# sb_doc_scheme__weakened REPO CONTRACT: what the work-tree contract gives up against the one at the trusted baseline
+# (sb_doc_scheme__baseline: enforcement switched off, enforced levels narrowed, a mandatory doc dropped, a governed
+# doc dropped, renamed or repointed, the checklist or policy path repointed); nothing when it is not weaker or there
+# is no baseline contract to compare with. Committing on this branch does not change the baseline; only what the
+# default branch holds does.
 sb_doc_scheme__weakened() {
   local repo="$1" contract="$2" head_json
-  head_json="$(git -C "$repo" show HEAD:docs/doc-scheme.json 2>/dev/null)" || return 0
+  head_json="$(git -C "$repo" show "$(sb_doc_scheme__baseline "$repo"):docs/doc-scheme.json" 2>/dev/null)" || return 0
   jq -e . <<<"$head_json" >/dev/null 2>&1 || return 0
   jq -rn --argjson h "$head_json" --slurpfile w "$contract" '
     def en: (.enforcement.enabled | if . == null then true else . end);
     def lv: ((.enforcement.granularity_levels // [2,3]) | if length == 0 then [2,3] else . end);
     def mand: ((.mandatory_updated_docs // []) + ((.required_docs // []) | map(select(.mandatory_updated == true) | .key))) | unique;
+    def keys: ((.required_docs // []) | map(.key) | unique);
+    def paths: ((.required_docs // []) | map({(.key): (.path // .key)}) | add // {});
+    def sync($k; $d): (.sync[$k] // $d);
     $w[0] as $w
-    | [ (if ($h | en) == true and ($w | en) != true then "enforcement switched off" else empty end),
+    | [ (if (($h | keys) - ($w | keys)) | length > 0 then "a governed doc was dropped or renamed" else empty end),
+        (if ([($h | paths) | to_entries[] | select(($w | paths)[.key] != null and ($w | paths)[.key] != .value)] | length) > 0 then "a governed doc was repointed" else empty end),
+        (if ($h | sync("task_checklist_path"; "docs/task-doc-checklist.json")) != ($w | sync("task_checklist_path"; "docs/task-doc-checklist.json")) then "the checklist was repointed" else empty end),
+        (if ($h | sync("doc_scheme_md_path"; "docs/doc-scheme.md")) != ($w | sync("doc_scheme_md_path"; "docs/doc-scheme.md")) then "the policy file was repointed" else empty end),
+        (if ($h | en) == true and ($w | en) != true then "enforcement switched off" else empty end),
         (if (($h | lv) - ($w | lv)) | length > 0 then "enforced granularity levels narrowed" else empty end),
         (if (($h | mand) - ($w | mand)) | length > 0 then "a mandatory doc was dropped" else empty end) ]
     | join("; ")' 2>/dev/null || true
@@ -304,14 +330,14 @@ EOF
 
   weakened="$(sb_doc_scheme__weakened "$repo_root" "$contract_file")"
   if [[ -n "$weakened" ]]; then
-    gate_issues+="  - docs/doc-scheme.json weakens the contract committed at HEAD (${weakened})"$'\n'
+    gate_issues+="  - docs/doc-scheme.json weakens the contract on the default branch (${weakened})"$'\n'
     sb_doc_scheme__write_gap_report "$mode" "$repo_root" "$state_dir" "$task_id" "$task_granularity_raw" "docs/task-doc-checklist.json" "docs/doc-scheme.json" "$gate_issues"
     message=$(cat <<EOF
 🛑 DOC-SCHEME GATE — ${mode_label} blocked.
 
-\`docs/doc-scheme.json\` weakens the contract committed at HEAD: ${weakened}.
+\`docs/doc-scheme.json\` weakens the contract on the default branch: ${weakened}.
 
-Restore it (\`git checkout -- docs/doc-scheme.json\`), or commit the change deliberately so it becomes the new baseline.
+Restore it from the default branch (\`git checkout <default-branch> -- docs/doc-scheme.json docs/doc-scheme.md\`); a commit on this branch does not change what it is compared with.
 
 Latest gap report:
 \`${SB_DOC_SCHEME_GAP_REPORT_PATH}\`

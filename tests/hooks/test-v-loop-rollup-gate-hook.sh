@@ -11,7 +11,7 @@ ST="$SB_RUNTIME_STATE_DIR"
 SITE="$ST/site-session.json"
 VLOOPS="$ST/site-vloops.json"
 P="$TL_TMP/proj"
-dg_project "$P" '{"sb_initiated":true,"site_profile":{"enabled":true,"dir":"site","live_url":"https://site.example/"}}'
+dg_project "$P" '{"sb_initiated":true,"site_profile":{"enabled":true,"stop_block_limit":1000,"dir":"site","live_url":"https://site.example/"}}'
 rm -rf "$P/.git"
 git -C "$P" init -q -b main
 git -C "$P" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
@@ -19,16 +19,16 @@ P_REAL="$(cd "$P" && pwd -P)"
 HEAD_SHA="$(git -C "$P" rev-parse HEAD)"
 mkdir -p "$P/sub" "$TL_TMP/outside"
 shot="$TL_TMP/shot.png"
-printf 'png' >"$shot"
+printf '\x89PNG\r\n\x1a\n\0\0\0\rIHDR' >"$shot"
 stop_json() { jq -cn --arg e "${1:-Stop}" '{hook_event_name:$e}'; }
 blocked() { jq -r '.decision // "none"' <<<"$TL_OUT" 2>/dev/null || echo bad; }
 session() { # [json to merge]
   local extra="${1:-}"
   [[ -n "$extra" ]] || extra='{}'
-  jq -n --arg sc "$P_REAL|main" --argjson x "$extra" '{active:true,scope:$sc,edit_seq:1,regression_passed_seq:0,touch_reason:"edit:site/index.html"} + $x' >"$SITE"
+  jq -n --arg sc "$P_REAL" --argjson x "$extra" '{active:true,scope:$sc,edit_seq:1,regression_passed_seq:0,touch_reason:"edit:site/index.html",nonce:"n1"} + $x' >"$SITE"
 }
 reset() { rm -f "$SITE" "$VLOOPS" "$ST/live-publish-evidence.json" "$ST/site-visual-evidence.json" "$ST/agent-delegation-active.json" "$ST/trivial" "$ST/orchestrator-worker-active.json"; }
-evidence() { jq -n --arg r "$P_REAL" --arg p "$shot" --argjson e 1 '{captured_at:"t",project:$r,edit_seq:$e,paths:[$p]}' >"$ST/site-visual-evidence.json"; }
+evidence() { jq -n --arg r "$P_REAL" --arg p "$shot" --argjson e 1 '{captured_at:"t",project:$r,nonce:"n1",edit_seq:$e,paths:[$p]}' >"$ST/site-visual-evidence.json"; }
 live() { jq -n --arg sha "$HEAD_SHA" --arg r "$P_REAL" --argjson e "$(date +%s)" '{status:"LIVE",commit_sha:$sha,project:$r,urls:["u"],markers_matched:["m"],verified_at:"t",verified_epoch:$e}' >"$ST/live-publish-evidence.json"; }
 step() { jq -r --arg id "$1" '.steps[]|select(.id==$id)|.status' "$VLOOPS"; }
 
@@ -64,7 +64,7 @@ session '{"edit_seq":0}'
 dg_run "$P" "$H" "$(stop_json)"
 assert_eq "active session without site edits: silent" "0|" "$TL_STATUS|$TL_OUT"
 session
-jq '.scope="/other|main"' "$SITE" >"$ST/s.t" && mv "$ST/s.t" "$SITE"
+jq '.scope="/other"' "$SITE" >"$ST/s.t" && mv "$ST/s.t" "$SITE"
 dg_run "$P" "$H" "$(stop_json)"
 assert_eq "a session left by another project: silent (R9-08)" "0|" "$TL_STATUS|$TL_OUT"
 session
@@ -93,9 +93,7 @@ assert_eq "invalid JSON defaults to Stop" block "$(blocked)"
 dg_run "$P/sub" "$H" "$(stop_json)"
 assert_eq "gate resolves the project from a subdirectory" block "$(blocked)"
 dg_run "$P" "$H" '{"hook_event_name":"Stop","stop_hook_active":true}'
-assert_eq "a Stop already continuing because of a Stop hook is released (R9-03)" "0|" "$TL_STATUS|$TL_OUT"
-assert_contains "the release is audited" "$(cat "$ST/stop-loop-release.log")" "v-loop-rollup-gate"
-rm -f "$ST/stop-loop-release.log"
+assert_eq "stop_hook_active alone does not release a pending V-loop" block "$(blocked)"
 
 echo "=== rollup is derived from the evidence, never remembered ==="
 session '{"regression_passed_seq":1}'

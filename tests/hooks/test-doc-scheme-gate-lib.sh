@@ -219,13 +219,13 @@ rm -f "$R/docs/doc-scheme.json"; run_enforce
 assert_contains "enforce: deleting the contract of a governed repo is a gap" "$(cat "$EMITTED")" "Missing required contract file"
 reset_docs
 jq '.enforcement.enabled=false' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; run_enforce
-assert_contains "enforce: switching enforcement off against HEAD is a gap (R9-09)" "$(cat "$EMITTED")" "weakens the contract committed at HEAD"
+assert_contains "enforce: switching enforcement off against HEAD is a gap (R9-09)" "$(cat "$EMITTED")" "weakens the contract on the default branch"
 reset_docs
 jq 'del(.enforcement.enabled)' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; run_enforce
 assert_file_absent "enforce: a missing enabled key means enabled, as at HEAD" "$EMITTED"
 reset_docs
 jq '.enforcement.granularity_levels=[3]' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; run_enforce
-assert_contains "enforce: narrowing the enforced levels against HEAD is a gap (R9-09)" "$(cat "$EMITTED")" "weakens the contract committed at HEAD"
+assert_contains "enforce: narrowing the enforced levels against HEAD is a gap (R9-09)" "$(cat "$EMITTED")" "weakens the contract on the default branch"
 reset_docs
 jq '.enforcement.granularity_levels=[2,3,4]' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; run_enforce
 assert_file_absent "enforce: widening the enforced levels is fine" "$EMITTED"
@@ -234,7 +234,7 @@ jq 'del(.enforcement.granularity_levels)' "$R/docs/doc-scheme.json" >"$R/c.t" &&
 assert_file_absent "enforce: dropping the levels falls back to the defaults, which HEAD also had" "$EMITTED"
 reset_docs
 jq '.mandatory_updated_docs=[]' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; run_enforce
-assert_contains "enforce: dropping a mandatory doc against HEAD is a gap (R9-09)" "$(cat "$EMITTED")" "weakens the contract committed at HEAD"
+assert_contains "enforce: dropping a mandatory doc against HEAD is a gap (R9-09)" "$(cat "$EMITTED")" "weakens the contract on the default branch"
 reset_docs
 jq '.required_docs += [{"key":"docs/NEW.md","mandatory_updated":false,"required_sections":[]}]' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"
 jq '.docs["docs/NEW.md"]="not-needed:x"' "$R/docs/task-doc-checklist.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/task-doc-checklist.json"; touch -d "@$NEW" "$R/docs/task-doc-checklist.json"; run_enforce
@@ -255,6 +255,39 @@ git -C "$R" -c user.email=a@b -c user.name=n commit -q -m "restore HEAD contract
 git -C "$R" rm -q --cached docs/doc-scheme.md docs/doc-scheme.json; git -C "$R" -c user.email=a@b -c user.name=n commit -q -m untrack
 rm -f "$EMITTED" "$R/docs/doc-scheme.md" "$R/docs/doc-scheme.json"; run_enforce
 assert_file_absent "enforce: a repo whose scheme git does not track is not governed once the files are gone" "$EMITTED"
+
+# R9-09 (review r1): the baseline is the default branch, so a commit on this branch cannot redefine the contract
+gitq() { git -C "$R" -c user.email=a@b -c user.name=n "$@"; }
+dirty_log() { echo more >>"$R/docs/CHANGELOG.md"; touch -d "@$NEW" "$R/docs/CHANGELOG.md" "$R/docs/task-doc-checklist.json"; }
+fresh_branch_repo() { # a repo whose default branch (origin/main) holds the scheme, with a work branch on top
+  setup_repo; git -C "$R" init -q -b main; git -C "$R" add -A; gitq commit -q -m base
+  git -C "$R" update-ref refs/remotes/origin/main HEAD
+  git -C "$R" checkout -q -b work
+}
+fresh_branch_repo
+assert_eq "baseline: the merge-base with origin/main" "$(git -C "$R" rev-parse origin/main)" "$(sb_doc_scheme__baseline "$R")"
+git -C "$R" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main
+assert_eq "baseline: origin/HEAD is preferred" "$(git -C "$R" rev-parse origin/main)" "$(sb_doc_scheme__baseline "$R")"
+git -C "$R" rm -q --cached docs/CHANGELOG.md; gitq commit -q -m "work commit"
+assert_eq "baseline: a commit on the work branch does not move it" "$(git -C "$R" rev-parse origin/main)" "$(sb_doc_scheme__baseline "$R")"
+git -C "$R" rm -q docs/doc-scheme.md docs/doc-scheme.json; gitq commit -q -m "delete the scheme"
+dirty_log; rm -f "$EMITTED"; run_enforce delivery
+assert_contains "enforce: a committed deletion of the scheme is still a gap on delivery (R9-09)" "$(cat "$EMITTED")" "Missing required policy file: docs/doc-scheme.md"
+fresh_branch_repo
+jq '.enforcement.enabled=false' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; git -C "$R" add -A; gitq commit -q -m "weaken"
+dirty_log; rm -f "$EMITTED"; run_enforce delivery
+assert_contains "enforce: a committed weakening is a gap on delivery (R9-09)" "$(cat "$EMITTED")" "weakens the contract on the default branch"
+for edit in '.required_docs[0].key="docs/OTHER.md"|a governed doc was dropped or renamed' '.required_docs[0].path="docs/ARCH.md"|a governed doc was repointed' '.sync.task_checklist_path="docs/other-checklist.json"|the checklist was repointed' '.sync.doc_scheme_md_path="docs/other.md"|the policy file was repointed'; do
+  fresh_branch_repo
+  jq "${edit%%|*}" "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; git -C "$R" add -A; gitq commit -q -m "edit"
+  dirty_log; rm -f "$EMITTED"; run_enforce delivery
+  assert_contains "enforce: ${edit#*|} (committed) is weakening" "$(cat "$EMITTED")" "${edit#*|}"
+done
+# without origin: the local main is the baseline; with no default branch at all it is HEAD
+fresh_branch_repo; git -C "$R" update-ref -d refs/remotes/origin/main
+assert_eq "baseline: the local main when there is no origin" "$(git -C "$R" rev-parse main)" "$(sb_doc_scheme__baseline "$R")"
+git -C "$R" branch -q -m main trunk
+assert_eq "baseline: no default branch at all falls back to HEAD" HEAD "$(sb_doc_scheme__baseline "$R")"
 
 # R1-17: a touch is not an update when git can say otherwise
 setup_repo

@@ -37,6 +37,8 @@ SB_SITE_LIVE_URL=""
 SB_SITE_PROFILE_PORT=""
 SB_SITE_PREVIEW_SCRIPT=""
 SB_SITE_LIVE_MAX_AGE=86400
+SB_SITE_STOP_LIMIT=3
+SB_SITE_TRUSTED_HELPERS=""
 
 # A profile path: relative, no "..", no absolute or home-relative spelling.
 _sb_site_relpath_ok() {
@@ -54,7 +56,7 @@ _sb_site_cfg() { sb_iv_jq -r "$1" 2>/dev/null || true; }
 sb_site_profile_load() {
   local line port
   SB_SITE_ROOT="" SB_SITE_DIR="site" SB_SITE_REGRESSION_SCRIPTS="" SB_SITE_LIVE_URL=""
-  SB_SITE_PREVIEW_SCRIPT="" SB_SITE_LIVE_MAX_AGE=86400 SB_SITE_PROFILE_PORT=""
+  SB_SITE_PREVIEW_SCRIPT="" SB_SITE_LIVE_MAX_AGE=86400 SB_SITE_PROFILE_PORT="" SB_SITE_STOP_LIMIT=3 SB_SITE_TRUSTED_HELPERS=""
   sb_integrity_gate "$PWD" || return 1
   sb_iv_jq -e '.site_profile.enabled == true' >/dev/null 2>&1 || return 1
   SB_SITE_ROOT="$(cd "$SB_IV_ROOT" && pwd -P)"
@@ -72,6 +74,12 @@ sb_site_profile_load() {
   if [[ "$port" =~ ^[0-9]+$ ]]; then SB_SITE_PROFILE_PORT="$port"; fi
   line="$(_sb_site_cfg '.site_profile.live_evidence_max_age_seconds // empty | numbers')"
   if [[ "$line" =~ ^[0-9]+$ ]] && ((line > 0)); then SB_SITE_LIVE_MAX_AGE="$line"; fi
+  while IFS= read -r line; do
+    _sb_site_relpath_ok "$line" || continue
+    SB_SITE_TRUSTED_HELPERS="${SB_SITE_TRUSTED_HELPERS}${line}"$'\n'
+  done < <(_sb_site_cfg '.site_profile.trusted_helpers // [] | .[]? | strings')
+  line="$(_sb_site_cfg '.site_profile.stop_block_limit // empty | numbers')"
+  if [[ "$line" =~ ^[0-9]+$ ]] && ((line > 0)); then SB_SITE_STOP_LIMIT="$line"; fi
   return 0
 }
 
@@ -105,19 +113,21 @@ sb_site_text_is_agent_delegation_intent() {
   grep -qiE 'silver-agent-(codex|claude|opencode|pi)|AF-AGENT-DELEGATE|agent.delegat' <<<"$text"
 }
 
-# The session belongs to one project and branch: state left by another project or branch is not this one's.
+# The session belongs to one project root (a worktree has its own): state left by another project is not this one's.
+# The branch is not part of the scope: `git checkout -b x` carries the uncommitted site edits along, so a branch
+# switch must not drop the session (it is stamped for information only).
 sb_site_session_scope() {
-  local branch=""
-  if [[ -n "$SB_SITE_ROOT" ]]; then
-    branch="$(git -C "$SB_SITE_ROOT" symbolic-ref -q --short HEAD 2>/dev/null || true)"
-  fi
-  printf '%s|%s' "$SB_SITE_ROOT" "$branch"
+  printf '%s' "$SB_SITE_ROOT"
+}
+
+sb_site_session_branch() {
+  git -C "$SB_SITE_ROOT" symbolic-ref -q --short HEAD 2>/dev/null || true
 }
 
 _sb_site_json_update() { # FILE jq-args...
   local outfile="$1"
   shift
-  jq "$@" "$outfile" >"${outfile}.tmp" 2>/dev/null && mv "${outfile}.tmp" "$outfile"
+  if jq "$@" "$outfile" >"${outfile}.tmp" 2>/dev/null; then mv "${outfile}.tmp" "$outfile"; fi
 }
 
 # sb_site_session_touch REASON: a site edit. It starts the session (or restarts one left by another project or
@@ -125,17 +135,18 @@ _sb_site_json_update() { # FILE jq-args...
 # so a one-second timestamp can never decide it (R9-13).
 sb_site_session_touch() {
   local reason="${1:-edit}"
-  local outfile now scope
+  local outfile now scope epoch
   outfile="$(sb_site_session_file)"
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+  epoch="$(date +%s)"
   scope="$(sb_site_session_scope)"
   mkdir -p "$(dirname "$outfile")" 2>/dev/null || true
   if sb_site_session_active; then
-    _sb_site_json_update "$outfile" --arg at "$now" --arg r "$reason" \
-      '.last_touch_at = $at | .touch_reason = $r | .edit_seq = ((.edit_seq // 0) + 1)'
+    _sb_site_json_update "$outfile" --arg at "$now" --arg r "$reason" --arg b "$(sb_site_session_branch)" --argjson ep "$epoch" \
+      '.last_touch_at = $at | .touch_reason = $r | .branch = $b | .last_edit_epoch = $ep | .edit_seq = ((.edit_seq // 0) + 1)'
   else
-    jq -n --arg at "$now" --arg r "$reason" --arg scope "$scope" \
-      '{active:true, scope:$scope, started_at:$at, last_touch_at:$at, touch_reason:$r, edit_seq:1, regression_passed_at:null, regression_passed_seq:0, push_intent:false, live_claim_pending:false}' \
+    jq -n --arg at "$now" --arg r "$reason" --arg scope "$scope" --arg b "$(sb_site_session_branch)" --argjson ep "$epoch" --arg nonce "$epoch-$$-$RANDOM" \
+      '{active:true, scope:$scope, branch:$b, nonce:$nonce, last_edit_epoch:$ep, started_at:$at, last_touch_at:$at, touch_reason:$r, edit_seq:1, regression_passed_at:null, regression_passed_seq:0, push_intent:false, live_claim_pending:false}' \
       >"$outfile" 2>/dev/null || true
   fi
 }
@@ -177,15 +188,58 @@ sb_site_session_gates_apply() {
   sb_site_session_has_site_work
 }
 
-# sb_site_stop_loop_release GATE INPUT: the host reports stop_hook_active once it is already continuing because
-# of a Stop hook. A gate that was told once must not trap the session: it releases and leaves an audit line,
-# as stop-check.sh does (R9-03).
-sb_site_stop_loop_release() {
-  local gate="$1" input="${2:-}"
-  [[ "$(printf '%s' "$input" | jq -r '.stop_hook_active // false' 2>/dev/null || echo false)" == "true" ]] || return 1
-  printf '%s\t%s released on stop_hook_active\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$gate" \
+# ---- Stop loop breaker (R9-03) ---------------------------------------------------------------------
+# A Stop gate must not trap a session it cannot help, and must not become a one-time warning either. The host sets
+# stop_hook_active on EVERY Stop that follows a Stop-hook block, so that flag alone proves nothing about whether the
+# agent can clear the condition. A gate therefore releases only
+#   - a condition the agent cannot clear (a gate setup failure) once the host reports stop_hook_active, or
+#   - a condition that has blocked SB_SITE_STOP_LIMIT consecutive times with an identical fingerprint (nothing the
+#     agent did changed it; default 3, site_profile.stop_block_limit),
+# and logs every release to stop-loop-release.log. A changed fingerprint, or a gate that passes
+# (sb_site_stop_loop_reset), starts the count again.
+_sb_site_stop_loop_file() { printf '%s/site-stop-loop.json' "${SB_RUNTIME_STATE_DIR:-/tmp}"; }
+
+_sb_site_stop_loop_log() { # GATE WHY
+  printf '%s\t%s released: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1" "$2" \
     >>"${SB_RUNTIME_STATE_DIR:-/tmp}/stop-loop-release.log" 2>/dev/null || true
-  return 0
+}
+
+# sb_site_stop_loop_release GATE INPUT FINGERPRINT [UNCLEARABLE]: status 0 = release (do not block this Stop).
+sb_site_stop_loop_release() {
+  local gate="$1" input="${2:-}" fp="${3:-}" unclearable="${4:-}" f prior
+  f="$(_sb_site_stop_loop_file)"
+  if [[ -n "$unclearable" && "$(printf '%s' "$input" | jq -r '.stop_hook_active // false' 2>/dev/null)" == "true" ]]; then
+    _sb_site_stop_loop_log "$gate" "$unclearable (stop_hook_active)"
+    return 0
+  fi
+  prior=0
+  if [[ -f "$f" && ! -L "$f" ]]; then
+    prior="$(jq -r --arg g "$gate" --arg fp "$fp" '(.[$g] // {}) | if .fp == $fp then .count else 0 end' "$f" 2>/dev/null)"
+  fi
+  [[ "$prior" =~ ^[0-9]+$ ]] || prior=0
+  if ((prior >= SB_SITE_STOP_LIMIT)); then
+    _sb_site_stop_loop_log "$gate" "unchanged after $prior consecutive blocks ($fp)"
+    sb_site_stop_loop_reset "$gate"
+    return 0
+  fi
+  _sb_site_stop_loop_store "$gate" "$fp" "$((prior + 1))"
+  return 1
+}
+
+_sb_site_stop_loop_store() { # GATE FP COUNT
+  local f
+  f="$(_sb_site_stop_loop_file)"
+  [[ -f "$f" && ! -L "$f" ]] || printf '{}' >"$f"
+  jq -e . "$f" >/dev/null 2>&1 || printf '{}' >"$f"
+  _sb_site_json_update "$f" --arg g "$1" --arg fp "$2" --argjson c "$3" '.[$g] = {fp:$fp, count:$c}'
+}
+
+# The gate passes: its consecutive-block count starts again.
+sb_site_stop_loop_reset() {
+  local f
+  f="$(_sb_site_stop_loop_file)"
+  [[ -f "$f" && ! -L "$f" ]] || return 0
+  _sb_site_json_update "$f" --arg g "$1" 'del(.[$g])'
 }
 
 sb_site_session_subagent_input_is_site_related() {
@@ -220,6 +274,7 @@ sb_site_session_mark_regression_pass() {
 # `exit 0` takes a commit that stays in the history (R9-07). Prints the names of the scripts it does not trust.
 sb_site_regression_untrusted() {
   local root="$1" script bad=""
+  # The scripts and the helpers the profile lists (what the scripts run: a pass is only as good as those files).
   while IFS= read -r script; do
     [[ -n "$script" ]] || continue
     if [[ -L "$root/$script" ]] \
@@ -227,7 +282,7 @@ sb_site_regression_untrusted() {
       || ! git -C "$root" diff --quiet HEAD -- "$script" >/dev/null 2>&1; then
       bad="${bad}${script} "
     fi
-  done <<<"$SB_SITE_REGRESSION_SCRIPTS"
+  done <<<"${SB_SITE_REGRESSION_SCRIPTS}${SB_SITE_TRUSTED_HELPERS}"
   printf '%s' "${bad% }"
 }
 
@@ -294,7 +349,7 @@ sb_live_publish_evidence_valid() {
     and .commit_sha == $head
     and .project == $root
     and ((.urls // []) | length > 0)
-    and (.status == "NOT_LIVE" or ((.markers_matched // []) | length > 0))
+    and ((.markers_matched // []) | length > 0)
     and (.verified_epoch | type == "number")
     and ($now - .verified_epoch) <= $max
     and ($now - .verified_epoch) >= -300
@@ -414,17 +469,18 @@ sb_site_session_sync_vloops_from_state() {
 # edits counted up to now; a later edit needs a new screenshot.
 sb_site_session_mark_visual_evidence() {
   local path="${1:-}"
-  local outfile now seq paths
+  local outfile now seq paths nonce
   outfile="$(sb_site_session_visual_evidence_file)"
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   seq="$(jq -r '.edit_seq // 0' "$(sb_site_session_file)" 2>/dev/null || echo 0)"
+  nonce="$(jq -r '.nonce // ""' "$(sb_site_session_file)" 2>/dev/null)"
   paths="[]"
-  if [[ -f "$outfile" ]] && jq -e --argjson seq "$seq" --arg root "$SB_SITE_ROOT" '.edit_seq == $seq and .project == $root' "$outfile" >/dev/null 2>&1; then
+  if [[ -f "$outfile" ]] && jq -e --argjson seq "$seq" --arg root "$SB_SITE_ROOT" --arg nonce "$nonce" '.edit_seq == $seq and .project == $root and .nonce == $nonce' "$outfile" >/dev/null 2>&1; then
     paths="$(jq -c '.paths // []' "$outfile")"
   fi
   mkdir -p "$(dirname "$outfile")" 2>/dev/null || true
-  jq -n --arg at "$now" --arg p "$path" --arg root "$SB_SITE_ROOT" --argjson seq "$seq" --argjson old "$paths" \
-    '{captured_at:$at, project:$root, edit_seq:$seq, paths:(($old + [$p]) | unique), viewport:"1280", themes:["light","dark"]}' \
+  jq -n --arg at "$now" --arg p "$path" --arg root "$SB_SITE_ROOT" --arg nonce "$nonce" --argjson seq "$seq" --argjson old "$paths" \
+    '{captured_at:$at, project:$root, nonce:$nonce, edit_seq:$seq, paths:(($old + [$p]) | unique), viewport:"1280", themes:["light","dark"]}' \
     >"$outfile" 2>/dev/null || true
   sb_site_session_vloop_mark "visual" "$path"
 }
@@ -435,7 +491,7 @@ sb_site_session_visual_evidence_valid() {
   outfile="$(sb_site_session_visual_evidence_file)"
   [[ -f "$outfile" && ! -L "$outfile" ]] || return 1
   jq -e --arg root "$SB_SITE_ROOT" --slurpfile sess "$(sb_site_session_file)" \
-    '.project == $root and (.edit_seq // -1) >= ($sess[0].edit_seq // 0) and (.captured_at // "" | length > 0)' \
+    '.project == $root and (.nonce // "x") == ($sess[0].nonce // "y") and (.edit_seq // -1) >= ($sess[0].edit_seq // 0) and (.captured_at // "" | length > 0)' \
     "$outfile" >/dev/null 2>&1 || return 1
   while IFS= read -r p; do
     [[ -n "$p" && -f "$p" && ! -L "$p" ]] && return 0
@@ -492,4 +548,50 @@ sb_site_shell_push_kind() {
   case " ${SB_SA_ACTIONS:-} " in *" push "*) ;; *) return 1 ;; esac
   verdict="$(printf '%s' "${SB_SA_JSON:-}" | jq -rR 'try (fromjson | .push_scope.verdict // "strict") catch "strict"' 2>/dev/null)"
   if [[ "$verdict" == feature ]]; then printf 'feature'; else printf 'final'; fi
+}
+
+# sb_site_is_image_file FILE: a regular, non-symlink file whose first bytes are a PNG, JPEG or WebP header.
+sb_site_is_image_file() {
+  local f="${1:-}" head
+  [[ -f "$f" && ! -L "$f" ]] || return 1
+  head="$(od -An -tx1 -N12 "$f" 2>/dev/null | tr -d ' \n')"
+  case "$head" in
+    89504e47* | ffd8ff* | 52494646????????57454250) return 0 ;;
+  esac
+  return 1
+}
+
+# The modification time of FILE in epoch seconds (python3 is a hard prerequisite; stat flags differ per platform).
+sb_site_file_mtime() {
+  python3 -c 'import os,sys; print(int(os.stat(sys.argv[1]).st_mtime))' "$1"
+}
+
+# sb_site_screenshot_dir_ok FILE: the file lies under the project or a temporary directory (the browser tool's
+# output directory is one of them), never an arbitrary path.
+sb_site_screenshot_dir_ok() {
+  local f="${1:-}" d
+  for d in "$SB_SITE_ROOT" "${TMPDIR:-/tmp}" /tmp /private/tmp /var/folders /private/var/folders; do
+    [[ -n "$d" ]] && sb_path_is_within "$f" "$d" && return 0
+  done
+  return 1
+}
+
+# ---- shell writes the analysis cannot name (git apply, find -exec, a script that writes the site) -------------
+# The CONTENT of the files under the site directory (tracked or not, ignoring ignored files) is fingerprinted, so a
+# commit of unchanged content is not an edit; a change since the previous look is a site edit. The first look only records the baseline. Scripts that write the site BEFORE the
+# first look in a session are not seen: that limit is documented in silver-bullet.md section 8.2.
+sb_site_tree_digest() {
+  git -C "$SB_SITE_ROOT" ls-files -z --cached --others --exclude-standard -- "$SB_SITE_DIR" 2>/dev/null \
+    | (cd "$SB_SITE_ROOT" && xargs -0 git hash-object -- 2>/dev/null) | git hash-object --stdin 2>/dev/null
+}
+
+# Status 0 when the digest changed since the last call for this project (and records the new one).
+sb_site_tree_changed() {
+  local f cur prev
+  f="${SB_RUNTIME_STATE_DIR:-/tmp}/site-tree-digest"
+  cur="$SB_SITE_ROOT $(sb_site_tree_digest)"
+  prev=""
+  if [[ -f "$f" && ! -L "$f" ]]; then prev="$(cat "$f")"; fi
+  printf '%s' "$cur" >"$f"
+  [[ -n "$prev" && "${prev%% *}" == "$SB_SITE_ROOT" && "$prev" != "$cur" ]]
 }

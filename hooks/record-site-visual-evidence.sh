@@ -50,11 +50,15 @@ candidates="$(printf '%s' "$input" | jq -r '
     (.tool_input | objects | .filename?),
     ([.tool_response | .. | strings | scan("[^\\s()\"`<>]+\\.(?:png|jpe?g|webp)")] | reverse | .[]) ]
   | .[] | strings | select(length > 0)')"
+# Only a real image, under the project or a temporary directory, written after the latest site edit counts: the
+# file is what the browser tool just produced, not any readable path (R9-03).
+edit_epoch="$(jq -r '.last_edit_epoch // 0' "$(sb_site_session_file)")"
 path=""
 while IFS= read -r candidate; do
   [[ -n "$candidate" ]] || continue
   for resolved in "$candidate" "$SB_SITE_ROOT/$candidate" "$PWD/$candidate"; do
-    if [[ "$resolved" == /* && -f "$resolved" && ! -L "$resolved" ]]; then
+    if [[ "$resolved" == /* ]] && sb_site_is_image_file "$resolved" && sb_site_screenshot_dir_ok "$resolved" \
+      && (($(sb_site_file_mtime "$resolved") >= edit_epoch)); then
       path="$resolved"
       break 2
     fi

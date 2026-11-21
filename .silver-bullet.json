@@ -586,6 +586,10 @@
     ],
     "live_url": "https://sb.alolabs.dev/",
     "preview_port": 8765,
-    "preview_script": "site/serve.sh"
+    "preview_script": "site/serve.sh",
+    "trusted_helpers": [
+      "scripts/check-apo-invariants.py",
+      "tests/scripts/check-site-help-consistency.py"
+    ]
   }
 }
