@@ -18,7 +18,8 @@
 # Set SB_TEST_HOST_TOOLS=1 to keep them visible, or SB_TEST_HIDE_TOOLS="a b c" to choose
 # the hidden set.
 #
-# Results: a file's counts come from its last "Results: N passed, M failed" line (a legacy
+# Results: a file's counts come from its last "Results: N passed, M failed" line (also with a ", K skipped"
+# style suffix, or in the "Results: PASS=N FAIL=M" form; a legacy
 # "<label>: N passed, M failed" summary line is accepted when there is none). A file that
 # exits 0 without any such line fails, unless it printed SKIP lines. A file that ran nothing
 # (a summary of 0 passed, 0 failed, or only SKIP lines) is reported as skipped, never as a
@@ -293,9 +294,9 @@ print_result() {
   # A file's counts come from its last "Results: N passed, M failed" line; only without one is a
   # legacy "<label>: N passed, M failed" summary line accepted. Any other line that merely mentions
   # a count (a nested tool's output, an echoed fixture) is ignored.
-  line="$(printf '%s\n' "$output" | grep -E '^Results: [0-9]+ passed, [0-9]+ failed[[:space:]]*$' | tail -n 1 || true)"
+  line="$(printf '%s\n' "$output" | grep -E '^Results: ([0-9]+ passed, [0-9]+ failed|PASS=[0-9]+ FAIL=[0-9]+)([, ].*)?$' | tail -n 1 || true)"
   [[ -n "$line" ]] || line="$(printf '%s\n' "$output" | grep -E '^[=[:space:]]*([A-Za-z][A-Za-z0-9 _-]*:[[:space:]]*)?[0-9]+ passed, [0-9]+ failed[[:space:]=]*$' | tail -n 1 || true)"
-  if [[ "$line" =~ ([0-9]+)\ passed,\ ([0-9]+)\ failed ]]; then
+  if [[ "$line" =~ ([0-9]+)\ passed,\ ([0-9]+)\ failed || "$line" =~ PASS=([0-9]+)\ FAIL=([0-9]+) ]]; then
     p="${BASH_REMATCH[1]}" f="${BASH_REMATCH[2]}" have_results=1
   fi
   suite_pass=$((suite_pass + p))
