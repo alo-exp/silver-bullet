@@ -193,14 +193,41 @@ for f in enterprise-human-deploy-approved ci-red-override; do
   assert_file_absent "startup clears $f" "$SD/$f"
 done
 
-# ---- the sealed doc-scheme baseline lives for one session (H6 r2): startup clears it, compact keeps it
-fresh
+# ---- the doc-scheme baseline is sealed at session start, before the agent can move a ref (H6 r2) -------------
+seal_files() { ls "$SD"/doc-scheme-baseline-* 2>/dev/null | wc -l | tr -d ' '; }
+seal_val() { cat "$SD"/doc-scheme-baseline-* 2>/dev/null | tr -d '[:space:]'; }
+fresh; rm -f "$SD"/doc-scheme-baseline-*
 printf 'feature/test\n%s\n' "$EC_PROJ" >"$BRANCH"
-printf 'abc' >"$SD/doc-scheme-baseline-123"
-run_ss '{"source":"compact"}'
-assert_file_exists "compact keeps the sealed doc-scheme baseline" "$SD/doc-scheme-baseline-123"
 run_ss '{"source":"startup"}'
-assert_file_absent "startup clears the sealed doc-scheme baseline" "$SD/doc-scheme-baseline-123"
+assert_eq "startup writes the seal: the merge-base with the default branch, else HEAD" "$(git -C "$EC_PROJ" rev-parse HEAD)" "$(seal_val)"
+printf 'abc' >"$(ls "$SD"/doc-scheme-baseline-* | head -1)"
+run_ss '{"source":"compact"}'
+assert_eq "compact leaves the seal alone" "abc" "$(seal_val)"
+run_ss '{"source":"resume"}'
+assert_eq "resume keeps an existing seal" "abc" "$(seal_val)"
+SB_ORCHESTRATOR_WORKER=1 run_ss '{"source":"startup"}'
+assert_eq "a worker start keeps the seal (a subagent spawn must not re-seal)" "abc" "$(seal_val)"
+run_ss '{"source":"startup"}'
+assert_eq "a genuine startup replaces it" "$(git -C "$EC_PROJ" rev-parse HEAD)" "$(seal_val)"
+rm -f "$SD"/doc-scheme-baseline-*
+run_ss '{"source":"resume"}'
+assert_eq "resume seals a project that has no seal yet" 1 "$(seal_files)"
+rm -f "$SD"/doc-scheme-baseline-*
+SB_ORCHESTRATOR_WORKER=1 run_ss '{"source":"startup"}'
+assert_eq "a worker start seals when there is none" 1 "$(seal_files)"
+# a project that is not a git repository cannot be sealed: session start still succeeds
+NOGIT="$TL_TMP/nogit"; mkdir -p "$NOGIT"; printf '{"config_version":"0.40.0","sb_initiated":true}\n' >"$NOGIT/.silver-bullet.json"
+rm -f "$SD"/doc-scheme-baseline-*
+tl_run_stdin '{"source":"startup"}' bash -c 'cd "$1" && exec bash "$2"' _ "$NOGIT" "$HOOK"
+assert_eq "session-start in a non-git project exits 0" 0 "$TL_STATUS"
+assert_eq "...and writes no seal" 0 "$(seal_files)"
+tl_run_stdin '{"source":"resume"}' bash -c 'cd "$1" && exec bash "$2"' _ "$NOGIT" "$HOOK"
+assert_eq "resume in a non-git project exits 0" 0 "$TL_STATUS"
+rm -f "$SD"/doc-scheme-baseline-*
+# the state-tamper guard refuses the agent's writes to the seal once it exists
+source "$TL_REPO_ROOT/hooks/lib/planning-floor.sh"
+run_ss '{"source":"startup"}'
+assert_eq "the seal file is a protected name for the state-tamper guard" 0 "$(sb_pf_protected_name "$(basename "$(ls "$SD"/doc-scheme-baseline-* | head -1)")" "$SD" && echo 0 || echo 1)"
 
 # ---- compact is benign (R3-25) ------------------------------------------------------------------
 fresh
