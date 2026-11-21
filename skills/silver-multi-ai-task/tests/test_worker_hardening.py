@@ -17,6 +17,7 @@ import json
 import os
 import signal
 import stat
+import sys
 import subprocess
 import time
 from datetime import datetime, timedelta, timezone
@@ -370,7 +371,7 @@ class OcgRequestPathTests(PopenCase):
         delegate = self.tmp / "delegate.sh"
         delegate.write_text("#!/bin/sh\n")
         FakePopen.script = [(1, "", "")]
-        with mock.patch.object(ld, "AGENT_OPENCODE_DELEGATE", delegate):
+        with mock.patch.object(ld, "AGENT_OPENCODE_DELEGATE", delegate), mock.patch.object(ld, "OPENCODE_BIN", sys.executable):
             ld.run_ocg_pool_cohort(
                 ocg_items=[{"logical_model_id": "ocg-kimi-k2.6", "backend": "ocg"}], phase_id="DR-RETRIEVE", query="q",
                 run_id="run-1", work_item_id="work-1", output_dir=self.out, context="", pool="lite",

@@ -11,7 +11,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from live_dispatch import run_multi_ai_live, stub_mode  # noqa: E402
+from live_dispatch import backend_availability, run_multi_ai_live, stub_mode  # noqa: E402
 from multi_ai_core import (  # noqa: E402
     DEFAULT_CONCURRENCY,
     DEFAULT_MAX_AGENTS,
@@ -56,7 +56,8 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"ok": False, "error_code": "OUTPUT_ROOT_REQUIRED", "message": "--output-root required for live dispatch"}, indent=2))
         return 2
 
-    # A dry run is a plan for a run, so it fails the same way a live run does on a host that cannot run it.
+    # A dry run is a plan for a run, so it fails the same way a live run does on a host that cannot
+    # run it (Cursor and unknown hosts); Claude Code and Codex are the supported hosts.
     gate = host_gate()
     if not gate["ok"]:
         payload = {"ok": False, "error_code": gate["error_code"], "message": gate["message"]}
@@ -72,6 +73,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     if args.dry_run:
         report = dry_run_report(selection, max_agents=args.max_agents)
+        if report.get("ok"):
+            # Looks for each backend CLI the plan needs; nothing is started or written.
+            report["backend_availability"] = backend_availability(report["resolved_pool"])
         print(json.dumps(report, indent=2))
         return 0 if report.get("ok") else 1
 
