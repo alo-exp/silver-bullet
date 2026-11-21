@@ -451,6 +451,8 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `silver-ui-review` | `AF-UI-QUALITY` |
 | `silver-validate` | `AF-VALIDATE` |
 | `silver-verify` | `AF-VERIFY` |
+| `tdd` | `AF-EXECUTE` |
+| `verify-tests` | `AF-VERIFY` |
 
 ## Flow Step V-Loops
 
