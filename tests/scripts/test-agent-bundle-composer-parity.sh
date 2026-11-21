@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# P1-1: Thinned composer SKILL.md must match rendered agent bundles (claude/codex/cursor).
+# P1-1: Thinned composer SKILL.md must match rendered agent bundles (claude/codex).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -10,7 +10,7 @@ PASS=0
 FAIL=0
 
 COMPOSERS=(feature ui devops bugfix deep-research release)
-AGENTS=(claude codex cursor)
+AGENTS=(claude codex)
 
 TMP_BASE="$(mktemp -d)"
 trap 'rm -rf "$TMP_BASE"' EXIT
@@ -62,15 +62,8 @@ for agent in "${AGENTS[@]}"; do
     skill="silver-${comp}"
     canonical="${REPO_ROOT}/skills/${skill}/SKILL.md"
     bundle_dir="sb-${comp}"
-    if [[ "$agent" == "claude" || "$agent" == "cursor" ]]; then
+    if [[ "$agent" == "claude" ]]; then
       bundle_dir="sb:${comp}"
-    fi
-    # Cursor host-bundles omit command-stub-covered composers (slash commands own the route).
-    # Cursor command stubs use plain Markdown filenames (sb-feature.md).
-    if [[ "$agent" == "cursor" && -f "${REPO_ROOT}/plugins/silver-bullet/commands/sb-${comp}.md" ]]; then
-      echo "PASS: ${skill} omitted from cursor bundle (command stub owns route)"
-      PASS=$((PASS + 1))
-      continue
     fi
     rendered="${dest}/${bundle_dir}/SKILL.md"
     bundle="$(sb_agent_bundle_root "$REPO_ROOT" "$agent")/${bundle_dir}/SKILL.md"

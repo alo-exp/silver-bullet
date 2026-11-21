@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # optimize-rtk-context-mode.sh — research-backed RTK + Context Mode global host optimization.
-# Idempotently wires hooks, MCP, cli-config allow-list, and global rules per host.
+# Idempotently wires hooks, MCP, and global rules per host.
 # Works without .silver-bullet.json or /sb:init, but never without the user's consent: it wires
 # only the tools the user granted "wire" for (docs/CONSENT.md), installs Context Mode only with
 # "install", and never touches a tool that was not granted.
@@ -18,15 +18,12 @@ RTK_GATE_LIB="${REPO_ROOT}/hooks/lib/rtk-gate.sh"
 
 HOST=""
 DRY_RUN=0
-SKIP_CLI_CONFIG=0
 SKIP_RTK_INIT=0
 SKIP_CM_DOCTOR=0
-CLI_ALLOWLIST="read-only"
 PROJECT_ROOT=""
 # Per-tool consent (filled in after the arguments are parsed).
 WIRE_RTK=0
 WIRE_CM=0
-WIRE_LEANCTX=0
 
 usage() {
   cat <<'EOF'
@@ -35,19 +32,16 @@ Usage: bash scripts/optimize-rtk-context-mode.sh [options]
 Ensures optimized RTK + Context Mode wiring for AI coding hosts (global config only).
 
 Options:
-  --host <claude|codex|cursor|opencode|pi|hermes|goose|all>
+  --host <claude|codex|opencode|pi|hermes|goose|all>
                                         Target host (required)
   --project-root <path>                 Canonical SB project root (required)
   --dry-run                             Print actions without writing files
-  --skip-cli-config                     Skip ~/.cursor/cli-config.json merge
-  --cli-allowlist <none|read-only|full> Cursor CLI shell allow-list to merge (default: read-only;
-                                        full pre-approves interpreters, rm, curl, docker, ...)
   --skip-rtk-init                       Skip rtk init wiring
   --skip-cm-doctor                      Skip context-mode doctor
   -h, --help                            Show this help
 
 Hosts:
-  claude, codex, cursor, opencode, pi — shared/global integration
+  claude, codex, opencode, pi      — shared/global integration
   hermes                           — partial (RTK plugin + CM MCP; no CM doctor platform)
   goose                            — unsupported (documented skip; no fake wiring)
 
@@ -67,10 +61,6 @@ source "$LIB"
 [[ -f "$RTK_GATE_LIB" ]] && source "$RTK_GATE_LIB"
 
 detect_host() {
-  if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]] || [[ -d "${HOME}/.cursor" ]]; then
-    printf '%s' "cursor"
-    return 0
-  fi
   if [[ -n "${CODEX_HOME:-}" ]] || [[ -d "${HOME}/.codex" ]]; then
     printf '%s' "codex"
     return 0
@@ -87,11 +77,7 @@ detect_host() {
     printf '%s' "pi"
     return 0
   fi
-  if [[ -d "${HOME}/.claude" ]]; then
-    printf '%s' "claude"
-    return 0
-  fi
-  printf '%s' "cursor"
+  printf '%s' "claude"
 }
 
 log() { printf '%s\n' "$*"; }
@@ -167,53 +153,9 @@ run_merge_py() {
   local merge_host="${1:-}"
   local merge_args=(python3 "$MERGE_PY" --host "$merge_host" --repo-root "$REPO_ROOT")
   [[ "$DRY_RUN" -eq 1 ]] && merge_args+=(--dry-run)
-  # The Cursor shell allow-list is RTK's coupling: merged only for a user who consented to RTK.
-  { [[ "$SKIP_CLI_CONFIG" -eq 1 ]] || [[ "$WIRE_RTK" -eq 0 ]]; } && merge_args+=(--skip-cli-config)
-  merge_args+=(--cli-allowlist "$CLI_ALLOWLIST")
   [[ "$WIRE_RTK" -eq 1 && "$WIRE_CM" -eq 0 ]] && merge_args+=(--rtk-only)
   [[ "$WIRE_RTK" -eq 0 && "$WIRE_CM" -eq 1 ]] && merge_args+=(--context-mode-only)
   run_cmd "${merge_args[@]}"
-}
-
-canonicalize_cursor_toolstack_hooks() {
-  local patch_py="${REPO_ROOT}/scripts/lib/global-toolstack/patch-hooks.py"
-  [[ -f "$patch_py" ]] || return 0
-  # `rtk init --agent cursor` can preserve an older LeanCTX rewrite hook.  Run
-  # the shared hook reconciler after vendor initialization so the manifest-
-  # backed RTK hook is the only shell rewrite owner.
-  run_cmd env \
-    RT_PATCH_RTK="$WIRE_RTK" \
-    RT_PATCH_CONTEXT_MODE="$WIRE_CM" \
-    RT_PATCH_LEANCTX="$WIRE_LEANCTX" \
-    python3 "$patch_py"
-}
-
-optimize_rtk_cursor() {
-  [[ "$WIRE_RTK" -eq 1 ]] || { consent_hint "rtk init (cursor)" rtk wire; return 0; }
-  if [[ "$SKIP_RTK_INIT" -eq 1 ]]; then
-    log "SKIP: rtk init (cursor)"
-    return 0
-  fi
-  if ! rtk_binary_ok; then
-    log "WARN: rtk-ai/rtk not on PATH or wrong binary — skip rtk init"
-    return 0
-  fi
-  run_cmd "$(sb_rtk_cli_path)" init -g --agent cursor
-  if [[ "$DRY_RUN" -eq 0 ]]; then
-    if grep -q 'rtk hook cursor\|"rtk"' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
-      log "OK: RTK Cursor hook present"
-    else
-      log "WARN: RTK hook not found after rtk init — check ~/.cursor/hooks.json"
-    fi
-  fi
-}
-
-# `rtk hook cursor` rewrites only allow-listed commands, and an older LeanCTX hook may linger: with
-# Context Mode also consented optimize_context_mode_cursor does both, otherwise do them here.
-optimize_rtk_cursor_coupling() {
-  [[ "$WIRE_RTK" -eq 1 && "$WIRE_CM" -eq 0 ]] || return 0
-  run_merge_py cursor
-  canonicalize_cursor_toolstack_hooks
 }
 
 optimize_rtk_claude() {
@@ -294,17 +236,6 @@ optimize_context_mode_claude() {
   run_merge_py claude
 }
 
-optimize_context_mode_cursor() {
-  [[ "$WIRE_CM" -eq 1 ]] || { consent_hint "Context Mode wiring (cursor)" context_mode wire; return 0; }
-  ensure_context_mode_cli
-  run_merge_py cursor
-  canonicalize_cursor_toolstack_hooks
-  if [[ -z "${TOOLSTACK_INSTALL_IN_PROGRESS:-}" && -z "${SB_RT_APPLY_ACTIVE:-}" ]]; then
-    run_cmd bash "${SCRIPT_DIR}/install-recommended-tools-global.sh" --host cursor --global 2>/dev/null || \
-      bash "${SCRIPT_DIR}/install-recommended-tools-cursor.sh" --global 2>/dev/null || true
-  fi
-}
-
 optimize_context_mode_codex() {
   [[ "$WIRE_CM" -eq 1 ]] || { consent_hint "Context Mode wiring (codex)" context_mode wire; return 0; }
   ensure_context_mode_cli
@@ -338,11 +269,6 @@ optimize_host() {
   log ""
   log "--- host: ${h} (status: $(rtcm_host_status "$h")) ---"
   case "$h" in
-    cursor)
-      optimize_rtk_cursor
-      optimize_rtk_cursor_coupling
-      optimize_context_mode_cursor
-      ;;
     claude)
       optimize_rtk_claude
       optimize_context_mode_claude
@@ -407,14 +333,8 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --dry-run) DRY_RUN=1; export RTCM_DRY_RUN=1; shift ;;
-    --skip-cli-config) SKIP_CLI_CONFIG=1; shift ;;
     --skip-rtk-init) SKIP_RTK_INIT=1; shift ;;
     --skip-cm-doctor) SKIP_CM_DOCTOR=1; shift ;;
-    --cli-allowlist)
-      if [[ $# -lt 2 ]]; then echo "ERROR: --cli-allowlist requires a value" >&2; usage >&2; exit 2; fi
-      case "$2" in none|read-only|full) CLI_ALLOWLIST="$2" ;; *) echo "ERROR: --cli-allowlist takes none, read-only or full" >&2; exit 2 ;; esac
-      shift 2
-      ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -437,7 +357,6 @@ export RT_PROJECT_ROOT="$PROJECT_ROOT"
 
 tool_consented rtk wire && WIRE_RTK=1
 tool_consented context_mode wire && WIRE_CM=1
-tool_consented leanctx wire && WIRE_LEANCTX=1
 if [[ "$WIRE_RTK" -eq 0 && "$WIRE_CM" -eq 0 ]]; then
   consent_hint "RTK and Context Mode optimization" "rtk|context_mode" wire
   exit 0

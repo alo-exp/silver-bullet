@@ -103,21 +103,7 @@ SB uses one user-global agentmemory installation for every supported host. The h
 |------|-----------|--------------------------|----------|
 | Claude Code | *(none)* | `agentmemory connect claude-code` | `~/.claude.json` |
 | Codex | `codex plugin marketplace add rohitg00/agentmemory`; `codex plugin add agentmemory@agentmemory` | `agentmemory connect codex --with-hooks` | `~/.codex/config.toml` |
-| Cursor | *(none)* | SB reconciles the global `agentmemory mcp` entry; Cursor Settings may be used to reload it | `~/.cursor/mcp.json` |
 | OpenCode / Goose / Hermes | *(varies)* | See `platform_install_commands` in template | host config |
-
-**Cursor:** The reconciler atomically converges `~/.cursor/mcp.json` when agentmemory is consented. It preserves unrelated servers and uses the global executable from `~/.silver-bullet/five-tool-stack/instances.json`.
-
-**Manual Cursor MCP block** (preserve existing servers):
-
-```bash
-jq --arg agentmemory "$(jq -r '.tools.agentmemory.command' ~/.silver-bullet/five-tool-stack/instances.json)" \
-  '.mcpServers.agentmemory = {
-    "command": $agentmemory,
-    "args": ["mcp"],
-    "env": { "AGENTMEMORY_URL": "http://localhost:3111" }
-  }' ~/.cursor/mcp.json
-```
 
 ### Step 5 — Git-backed auto-save (optional bridge)
 

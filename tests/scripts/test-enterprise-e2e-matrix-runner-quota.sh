@@ -36,25 +36,25 @@ agent <<'EOS'
 echo noop
 EOS
 run env SB_E2E_ROW8_TIMEOUT=111 SB_E2E_WORKFLOW_QUIET_TIMEOUT=22 bash "$MATRIX" 8
-assert_contains "row 8 agent timeout" "$CALLS" "agent-env#1 quiet=22 timeout=111 cursor_timeout=111"
+assert_contains "row 8 agent timeout" "$CALLS" "agent-env#1 quiet=22 timeout=111"
 reset
 agent <<'EOS'
 echo noop
 EOS
 run env SB_E2E_ROW11_TIMEOUT=222 bash "$MATRIX" 11
-assert_contains "row 11 agent timeout" "$CALLS" "timeout=222 cursor_timeout=222"
+assert_contains "row 11 agent timeout" "$CALLS" "timeout=222"
 reset
 agent <<'EOS'
 echo noop
 EOS
 run env SB_E2E_ROW1_QUIET_TIMEOUT=33 bash "$MATRIX" 1
-assert_contains "row 1 quiet timeout and routing flag" "$CALLS" "quiet=33 timeout=900 cursor_timeout=900 evidence=.planning/workflows/router-session.md routing=1"
+assert_contains "row 1 quiet timeout and routing flag" "$CALLS" "quiet=33 timeout=900 evidence=.planning/workflows/router-session.md routing=1"
 reset
 agent <<'EOS'
 echo noop
 EOS
 run env SB_E2E_ROW3_QUIET_TIMEOUT=44 SILVER_BULLET_RUNTIME=codex SB_E2E_LIVE_RUNTIME=codex bash "$MATRIX" 3
-assert_contains "codex row 3 quiet timeout and trust env" "$CALLS" "agent-env#1 quiet=44 timeout=900 cursor_timeout=900 evidence=.planning/workflows/feature-currency.md routing=0 codex_trust=1 bypass=1"
+assert_contains "codex row 3 quiet timeout and trust env" "$CALLS" "agent-env#1 quiet=44 timeout=900 evidence=.planning/workflows/feature-currency.md routing=0 codex_trust=1 bypass=1"
 assert_contains "codex adapter seeded hook trust before the row" "$CALLS" "scripts/install-codex.sh --hook-trust-seed-only"
 
 tl_results

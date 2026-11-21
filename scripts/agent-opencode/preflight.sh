@@ -59,7 +59,7 @@ else
   printf 'SKIP (dry-run): model pin\n'
 fi
 
-# No install-surface validation: validate-host-install-surface.sh knows claude|codex|cursor only,
+# No install-surface validation: validate-host-install-surface.sh knows claude|codex only,
 # so an opencode probe could never run (it exited 2 and printed a "not configured" warning).
 
 _agent_opencode_source_common

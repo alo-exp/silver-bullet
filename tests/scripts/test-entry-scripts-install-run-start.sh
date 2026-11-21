@@ -6,8 +6,8 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 
-for name in optimize-five-tool-stack optimize-rtk-context-mode install-leanctx-sb install-global-toolstack \
-  reconcile-recommended-tools sb-optimize-stack install-recommended-tools-cursor install-recommended-tools-global; do
+for name in optimize-five-tool-stack optimize-rtk-context-mode install-leanctx-sb \
+  reconcile-recommended-tools sb-optimize-stack install-recommended-tools-global; do
   script="$TL_REPO_ROOT/scripts/${name}.sh"
   export_line="$(grep -n '^export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"$' "$script" | head -1 | cut -d: -f1 || true)"
   assert_eq "$name exports SB_INSTALL_RUN_START (keeping an outer value)" "yes" "$([[ -n "$export_line" ]] && echo yes || echo no)"

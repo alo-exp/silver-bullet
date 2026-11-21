@@ -79,7 +79,7 @@ assert_no_session "session: unrelated prompt is ignored"
 reset; tg2_run "$SESSION_HOOK" "$(prompt_input 'use silver-agent-codex to update the homepage')"
 assert_no_session "session: delegation prompt is not site intent"
 reset; tg2_run "$SESSION_HOOK" "$(post_input Edit '{"file_path":"site/index.html"}')"
-tg2_run "$SESSION_HOOK" "$(prompt_input 'delegate with silver-agent-cursor to fix the homepage')"
+tg2_run "$SESSION_HOOK" "$(prompt_input 'delegate with silver-agent-claude to fix the homepage')"
 assert_file_absent "session: delegation prompt clears stale session" "$SS"
 
 # other events and invalid input

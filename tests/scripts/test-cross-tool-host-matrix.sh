@@ -10,7 +10,7 @@ FAIL=0
 pass() { echo "PASS: $1"; PASS=$((PASS + 1)); }
 fail() { echo "FAIL: $1"; FAIL=$((FAIL + 1)); }
 
-for host in claude codex cursor opencode pi; do
+for host in claude codex opencode pi; do
   home="$(mktemp -d)"
   project="$(mktemp -d)"
   cleanup() { rm -rf "$home" "$project"; }
@@ -38,11 +38,6 @@ for host in claude codex cursor opencode pi; do
       mkdir -p "$home/.codex"
       printf '# RTK awareness layer\n' >"$home/.codex/AGENTS.md"
       printf '[mcp_servers.graphify]\ncommand = "graphify-mcp"\n\n[mcp_servers.agentmemory]\ncommand = "npx"\n\n[mcp_servers.context-mode]\ncommand = "context-mode"\n\n[mcp_servers.leanctx]\ncommand = "lean-ctx"\n' >"$home/.codex/config.toml"
-      ;;
-    cursor)
-      mkdir -p "$home/.cursor"
-      printf '{"hooks":{"preToolUse":[{"command":"rtk hook cursor"}]}}\n' >"$home/.cursor/hooks.json"
-      printf '{"mcpServers":{"graphify":{},"agentmemory":{},"context-mode":{},"leanctx":{}}}\n' >"$home/.cursor/mcp.json"
       ;;
     opencode)
       printf '{"mcp":{"graphify":{},"agentmemory":{},"context-mode":{},"leanctx":{}},"plugin":["./plugins/rtk.ts"]}\n' >"$home/.config/opencode/opencode.json"

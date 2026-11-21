@@ -14,7 +14,6 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 INSTALL_LEANCTX="${SCRIPT_DIR}/install-leanctx-sb.sh"
 OPTIMIZE_RTCM="${SCRIPT_DIR}/optimize-rtk-context-mode.sh"
 OPTIMIZE_SYNERGY="${SCRIPT_DIR}/sb-optimize-stack.sh"
-INSTALL_CURSOR_RULES="${SCRIPT_DIR}/install-recommended-tools-cursor.sh"
 PATCH_MCP="${SCRIPT_DIR}/lib/global-toolstack/patch-mcp.py"
 LIB="${REPO_ROOT}/hooks/lib/rtk-cm-global.sh"
 CONSENT_LIB="${REPO_ROOT}/hooks/lib/user-consent.sh"
@@ -41,7 +40,7 @@ When leanctx.enabled_by_user is true, callers MUST use this script instead of
 optimize-rtk-context-mode.sh alone (conflict #9).
 
 Options:
-  --host <cursor|claude|codex|opencode|pi|all> Target host (required; all = every host except cursor)
+  --host <claude|codex|opencode|pi|all> Target host (required)
   --project-root <path>                       Canonical SB project root (required)
   --dry-run                                        Print actions without writes
   --skip-rtcm                                      Skip RTK+CM optimize helper
@@ -77,10 +76,6 @@ run_cmd() {
 detect_host() {
   if [[ -n "${RT_HOST:-}" ]]; then
     printf '%s' "$RT_HOST"
-    return 0
-  fi
-  if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]] || [[ -d "${HOME}/.cursor" ]]; then
-    printf '%s' "cursor"
     return 0
   fi
   if [[ -n "${CODEX_HOME:-}" ]] || [[ -d "${HOME}/.codex" ]]; then
@@ -185,13 +180,6 @@ optimize_host() {
     log "SKIP: optimize-rtk-context-mode.sh (skipped, or neither RTK nor Context Mode is consented)"
   fi
 
-  if [[ "$h" == "cursor" ]]; then
-    # Project rules only: machine-wide (~/.cursor/rules) rules are the user's call, made per tool
-    # through install-recommended-tools-cursor.sh --global, which honours each tool's wire consent.
-    local rules_args=(bash "$INSTALL_CURSOR_RULES" --project-root "$PROJECT_ROOT")
-    run_cmd "${rules_args[@]}" || warn "install-recommended-tools-cursor.sh failed (exit $?); continuing"
-  fi
-
   if [[ "$SKIP_SYNERGY" -eq 0 || "$SKIP_RTCM" -eq 0 ]]; then
     local patch_args=(python3 "$PATCH_MCP")
     local patch_env=(RT_HOST="$h" TOOLSTACK_REPO_ROOT="$REPO_ROOT")
@@ -236,7 +224,7 @@ PROJECT_ROOT="$(cd "$PROJECT_ROOT" && pwd -P)"
 
 [[ "$HOST" == "auto" ]] && HOST="$(detect_host)"
 if [[ "$HOST" == "none" ]]; then
-  log "No host detected (no Claude, Codex, OpenCode, Pi or Cursor config found): nothing written. Pass --host <name> to choose one."
+  log "No host detected (no Claude, Codex, OpenCode or Pi config found): nothing written. Pass --host <name> to choose one."
   exit 0
 fi
 
@@ -253,13 +241,11 @@ apply_profile_metadata
 
 case "$HOST" in
   all)
-    # Cursor is not part of "all": its installer writes ~/.cursor without a consent check, and
-    # Cursor support is being removed. Name it explicitly with --host cursor.
     for h in claude codex opencode pi; do
       optimize_host "$h"
     done
     ;;
-  cursor|claude|codex|opencode|pi)
+  claude|codex|opencode|pi)
     optimize_host "$HOST"
     ;;
   *)

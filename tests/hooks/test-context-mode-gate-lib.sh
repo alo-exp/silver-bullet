@@ -40,10 +40,10 @@ EOF
 sb_context_mode_instruction_fragment_present "$TMP" && pass "fragment detected" || fail "fragment detected"
 
 TEST_HOME="$(mktemp -d)"
-mkdir -p "$TEST_HOME/.cursor"
-printf '{"mcpServers":{"context-mode":{"command":"context-mode"}}}\n' >"$TEST_HOME/.cursor/mcp.json"
-export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor SB_CONTEXT_MODE_MCP_ARTIFACT="$TEST_HOME/.cursor/mcp.json"
-sb_context_mode_platform_artifact_present "$TMP" cursor && pass "cursor mcp present" || fail "cursor mcp present"
+mkdir -p "$TEST_HOME/.codex"
+printf '[mcp_servers.context-mode]\ncommand = "context-mode"\n' >"$TEST_HOME/.codex/config.toml"
+export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=codex SB_CONTEXT_MODE_MCP_ARTIFACT="$TEST_HOME/.codex/config.toml"
+sb_context_mode_platform_artifact_present "$TMP" codex && pass "codex mcp present" || fail "codex mcp present"
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

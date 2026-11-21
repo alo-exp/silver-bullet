@@ -350,20 +350,6 @@
     "evidence_note": "Greenfield SENTINEL pass for AF-AGENT-DELEGATE Codex parent skill (v0.50.3)."
   },
   {
-    "skill": "silver-agent-cursor",
-    "path": "skills/silver-agent-cursor/SKILL.md",
-    "sentinel_version": "2.3.0",
-    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-agent-cursor.md",
-    "status": "clean",
-    "verdict": "Deploy with monitoring",
-    "audited_at": "2026-07-05",
-    "release_tag": "v0.45.0",
-    "findings_open": 0,
-    "agent_bundles_parity": "verified",
-    "content_sha256": "0fd9d6d25d002117d64513cd0441ba85577fca3f89ba99a737b1a6d82ee2e4b4",
-    "evidence_note": "Greenfield SENTINEL pass for AF-AGENT-DELEGATE Cursor parent skill (v0.50.3)."
-  },
-  {
     "skill": "silver-agent-opencode",
     "path": "skills/silver-agent-opencode/SKILL.md",
     "sentinel_version": "2.3.0",

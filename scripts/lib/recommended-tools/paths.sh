@@ -58,13 +58,13 @@ rt_reload_receipt_root() {
 
 rt_reload_receipt_host_dir() {
   local host
-  host="$(rt_sanitize_path_segment "${1:-cursor}" "cursor")"
+  host="$(rt_sanitize_path_segment "${1:-claude}" "claude")"
   printf '%s/%s' "$(rt_reload_receipt_root)" "$host"
 }
 
 rt_reload_receipt_scope_dir() {
   local host project_id worktree_id scope sanitized_wid
-  host="$(rt_sanitize_path_segment "${1:-cursor}" "cursor")"
+  host="$(rt_sanitize_path_segment "${1:-claude}" "claude")"
   project_id="$(rt_sanitize_path_segment "${2:-}" "")"
   worktree_id="$(rt_sanitize_path_segment "${3:-}" "")"
   scope="${4:-project}"
@@ -84,7 +84,7 @@ rt_reload_receipt_scope_dir() {
 
 rt_reload_receipt_path() {
   local host project_id worktree_id receipt_id scope
-  host="$(rt_sanitize_path_segment "${1:-cursor}" "cursor")"
+  host="$(rt_sanitize_path_segment "${1:-claude}" "claude")"
   project_id="$(rt_sanitize_path_segment "${2:-}" "")"
   worktree_id="$(rt_sanitize_path_segment "${3:-}" "")"
   receipt_id="$(rt_sanitize_path_segment "${4:-}" "")"
@@ -94,7 +94,7 @@ rt_reload_receipt_path() {
 
 rt_reload_receipt_lock_dir() {
   local host project_id worktree_id scope
-  host="$(rt_sanitize_path_segment "${1:-cursor}" "cursor")"
+  host="$(rt_sanitize_path_segment "${1:-claude}" "claude")"
   project_id="$(rt_sanitize_path_segment "${2:-}" "")"
   worktree_id="$(rt_sanitize_path_segment "${3:-}" "")"
   scope="${4:-project}"

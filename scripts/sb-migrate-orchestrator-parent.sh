@@ -40,10 +40,4 @@ if [[ -d "$PLUGIN_ROOT/templates/orchestrator-workers" ]]; then
   echo "Copied worker templates to .silver-bullet/orchestrator-workers/"
 fi
 
-# Refresh the Cursor rule only in a project that already uses Cursor; never create .cursor/.
-if [[ -d "$proj_root/.cursor/rules" && -f "$PLUGIN_ROOT/scripts/lib/install-cursor/templates/cursor-rules/silver-orchestrator.mdc" ]]; then
-  cp "$PLUGIN_ROOT/scripts/lib/install-cursor/templates/cursor-rules/silver-orchestrator.mdc" "$proj_root/.cursor/rules/silver-orchestrator.mdc"
-  echo "Refreshed .cursor/rules/silver-orchestrator.mdc"
-fi
-
 echo "Migration complete for $proj_root"

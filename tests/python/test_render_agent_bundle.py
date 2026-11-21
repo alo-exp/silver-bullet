@@ -37,7 +37,6 @@ class TextRewriteTest(unittest.TestCase):
     def test_host_agnostic_terms(self):
         t = "alo-labs-secondary host / .secondary host / secondary host / primary host"
         self.assertEqual(r.resolve_codex_host_agnostic_terms(t), "alo-labs-codex / .codex / Codex / primary host")
-        self.assertEqual(r.resolve_cursor_host_agnostic_terms(t), "alo-labs / .cursor / Cursor / primary host")
         self.assertEqual(r.resolve_claude_host_agnostic_terms(t), "alo-labs / .claude / Codex / Claude Code")
 
     def test_rewrite_names(self):
@@ -129,36 +128,13 @@ class TextRewriteTest(unittest.TestCase):
             '---\nname: sb\ntitle: "Router"\n---\ntitle: body\n',
         )
 
-    def test_mask_unmask_protected(self):
-        text = "a templates/cursor-rules/x and .cursor/rules/y"
-        masked, masks = r._mask_protected_runtime_subs(text)
-        self.assertNotIn("templates/cursor-rules/", masked)
-        self.assertNotIn(".cursor/rules/", masked)
-        self.assertEqual(len(masks), 2)  # the longer "scripts/lib/..." prefix is absent
-        self.assertEqual(r._unmask_protected_runtime_subs(masked, masks), text)
-        self.assertEqual(r._mask_protected_runtime_subs("nothing"), ("nothing", []))
-
     def test_runtime_placeholders(self):
         pairs = dict(r.runtime_placeholders("codex"))
         self.assertEqual(pairs["${SB_RUNTIME_HOME_ROOT}"], "$HOME/.codex")
         self.assertEqual(pairs["${SB_RUNTIME_STATE_DIR}"], "$HOME/.codex/.silver-bullet")
         self.assertEqual(pairs["${SB_RUNTIME_PLUGIN_CACHE_ROOT}"], "$HOME/.codex/plugins/cache")
         self.assertEqual(pairs["$HOME/.claude/"], "$HOME/.codex/")
-        self.assertEqual(pairs["${HOME}/.cursor"], "${HOME}/.codex")
         self.assertEqual(pairs[os.path.join("~", ".claude") + "/"], "$HOME/.codex/")
-
-    def test_sanitize_cursor_text_preserves_cross_host_rows(self):
-        text = (
-            "Claude Code uses ${CLAUDE_PLUGIN_ROOT} and Claude settings via AskUserQuestion\n"
-            "| **Claude Code** | row |\n"
-            "when Claude Code TUI is the intended executor while Claude Code executes\n"
-            "run `/compact` and secondary host\n"
-        )
-        out = r.sanitize_cursor_text(text)
-        self.assertIn("Cursor uses ${CURSOR_PLUGIN_ROOT} and Cursor hooks.json via direct user interaction", out)
-        self.assertIn("| **Claude Code** | row |", out)
-        self.assertIn("when Claude Code TUI is the intended executor while Claude Code executes", out)
-        self.assertIn("run context compaction and Cursor", out)
 
     def test_sanitize_codex_text(self):
         out = r.sanitize_codex_text("Use the Skill tool and /compact; Agent tool; secondary host; PostToolUse/Skill")
@@ -178,8 +154,6 @@ class TextRewriteTest(unittest.TestCase):
         self.assertIn('title: "Feature"', codex)
         self.assertIn("name: \"sb:feature\"", codex)
         self.assertIn("$HOME/.codex/x", codex)
-        cursor = r.sanitize_text(src, "cursor")
-        self.assertIn("$HOME/.cursor/x", cursor)
         other = r.sanitize_text(src, "other")
         self.assertIn("name: silver-feature", other)
         self.assertIn("$HOME/.other", other)
@@ -335,9 +309,9 @@ class RewriteFileTest(TmpCase):
 
     def test_rewrites_and_reports_change(self):
         p = self.write("a.md", "$HOME/.claude/x")
-        self.assertTrue(self.rewrite(p, "cursor"))
-        self.assertEqual(p.read_text(), "$HOME/.cursor/x")
-        self.assertFalse(self.rewrite(p, "cursor"))  # idempotent
+        self.assertTrue(self.rewrite(p, "codex"))
+        self.assertEqual(p.read_text(), "$HOME/.codex/x")
+        self.assertFalse(self.rewrite(p, "codex"))  # idempotent
 
     def test_crlf_is_preserved_byte_for_byte(self):
         # R8-04(c): rewritten and untouched files both keep CRLF.
@@ -354,10 +328,8 @@ class RewriteFileTest(TmpCase):
         js = self.write("s/x.json", '{"name": "Claude Code", "p": "~/.claude/x"}\n')
         md = self.write("s/x.md", "Claude Code\n")
         for path in (py, js):
-            self.assertFalse(self.rewrite(path, "cursor", docs_only=True))
+            self.assertFalse(self.rewrite(path, "codex", docs_only=True))
         self.assertEqual(py.read_text(), 'NAME = "Claude Code"  # run /compact\n')
-        self.assertTrue(self.rewrite(md, "cursor", docs_only=True))
-        self.assertEqual(md.read_text(), "Cursor\n")
         # The install-time package sanitizer (docs_only=False) still rewrites code.
         self.assertTrue(self.rewrite(js, "codex"))
         self.assertIn("$HOME/.codex/x", js.read_text())
@@ -390,14 +362,14 @@ class RewriteFileTest(TmpCase):
             return real(self_, *a, **k)
 
         with mock.patch.object(pathlib.Path, "read_bytes", flaky), mock.patch.object(r.time, "sleep"):
-            self.assertTrue(self.rewrite(p, "cursor"))
-        self.assertEqual(p.read_text(), "$HOME/.cursor/x")
+            self.assertTrue(self.rewrite(p, "codex"))
+        self.assertEqual(p.read_text(), "$HOME/.codex/x")
 
     def test_write_oserror_retries_then_gives_up_leaving_file(self):
         p = self.write("a.md", "$HOME/.claude/x")
         with mock.patch.object(pathlib.Path, "write_bytes", side_effect=OSError("ro")) as wr, \
              mock.patch.object(r.time, "sleep") as sl:
-            self.assertFalse(self.rewrite(p, "cursor"))
+            self.assertFalse(self.rewrite(p, "codex"))
         self.assertEqual((wr.call_count, sl.call_count), (3, 2))
         self.assertEqual(p.read_text(), "$HOME/.claude/x")
 
@@ -413,8 +385,8 @@ class RewriteFileTest(TmpCase):
             return real(self_, *a, **k)
 
         with mock.patch.object(pathlib.Path, "write_bytes", flaky), mock.patch.object(r.time, "sleep"):
-            self.assertTrue(self.rewrite(p, "cursor"))
-        self.assertEqual(p.read_text(), "$HOME/.cursor/x")
+            self.assertTrue(self.rewrite(p, "codex"))
+        self.assertEqual(p.read_text(), "$HOME/.codex/x")
 
 
 class SanitizeRootTest(TmpCase):
@@ -473,7 +445,6 @@ class RenameRoutesTest(TmpCase):
     def test_renames_per_host(self):
         for host, expected in (
             ("claude", ["README.md", "other", "sb", "sb:bugfix", "sb:feature"]),
-            ("cursor", ["README.md", "other", "sb", "sb:bugfix", "sb:feature"]),
             ("codex", ["README.md", "other", "sb", "sb-bugfix", "sb-feature"]),
         ):
             root = self.tmp / host
@@ -487,7 +458,7 @@ class RenameRoutesTest(TmpCase):
             self.assertTrue((root / "silver-link").is_symlink())
 
     def test_source_layout_uses_hyphen_dirs_for_every_host(self):
-        for host in ("claude", "codex", "cursor"):
+        for host in ("claude", "codex"):
             root = self.tmp / f"src-{host}"
             for d in ("silver", "silver-feature"):
                 (root / d).mkdir(parents=True)
@@ -501,60 +472,6 @@ class RenameRoutesTest(TmpCase):
         with self.assertRaisesRegex(r.RenderError, "codex skill rename collision: silver-x -> sb-x"):
             r.rename_route_skill_directories(root, host="codex")
         self.assertTrue((root / "silver-x").is_dir())
-
-
-class FrontmatterTest(TmpCase):
-    def test_read_frontmatter(self):
-        p = self.write("a.md", "---\nname: \"sb:x\"\nbad line\ndesc: 'q'\n  indented: no\nk-1: v: w\n---\nafter: no\n")
-        self.assertEqual(r.read_skill_frontmatter(p), {"name": "sb:x", "desc": "q", "k-1": "v: w"})
-        self.assertEqual(r.read_skill_frontmatter(self.write("b.md", "no fm\n")), {})
-        self.assertEqual(r.read_skill_frontmatter(self.write("c.md", "")), {})
-        self.assertEqual(r.read_skill_frontmatter(self.write("d.md", "---\nk: v\n")), {"k": "v"})
-
-    def test_read_frontmatter_undecodable_falls_back(self):
-        p = self.write("e.md", b"---\nname: caf\xe9\n---\n", binary=True)
-        self.assertEqual(r.read_skill_frontmatter(p), {"name": "caf�"})
-
-
-class CommandStubTest(TmpCase):
-    def make_commands(self):
-        c = self.tmp / "plugins" / "silver-bullet" / "commands"
-        c.mkdir(parents=True)
-        (c / "feature.md").write_text("---\nname: sb-feature\n---\n")
-        (c / "plain.md").write_text("no frontmatter\n")
-        (c / "router.md").write_text("---\nname: sb\n---\n")
-        (c / "colon.md").write_text("---\nname: sb:colon\n---\n")
-        (c / "ignored.txt").write_text("x")
-        return c
-
-    def test_dotfile_stub_uses_its_stem(self):
-        c = self.tmp / "commands"
-        c.mkdir()
-        (c / ".md").write_text("")
-        self.assertEqual(r.command_stub_routes(c), {".md"})
-
-    def test_routes(self):
-        self.assertEqual(r.command_stub_routes(self.tmp / "none"), set())
-        self.assertEqual(r.command_stub_routes(self.make_commands()), {"sb:feature", "plain", "sb", "sb:colon"})
-
-    def skill_root(self):
-        root = self.tmp / "skills"
-        for d, name in (("a", "sb:feature"), ("b", "sb:other"), ("c", "plain")):
-            self.write(f"skills/{d}/SKILL.md", f"---\nname: {name}\n---\nbody\n")
-        self.write("skills/loose.md", "x")
-        return root
-
-    def test_exclude_removes_matching_skill_dirs(self):
-        root = self.skill_root()
-        r.exclude_command_stub_skills_from_cursor_subagent_surface(root, self.make_commands())
-        self.assertFalse((root / "a").exists())
-        self.assertFalse((root / "c").exists())
-        self.assertTrue((root / "b" / "SKILL.md").is_file())
-
-    def test_exclude_without_routes_is_noop(self):
-        root = self.skill_root()
-        r.exclude_command_stub_skills_from_cursor_subagent_surface(root, self.tmp / "no-commands")
-        self.assertTrue((root / "a").is_dir())
 
 
 class RenderBundleTest(TmpCase):
@@ -605,9 +522,9 @@ class RenderBundleTest(TmpCase):
     def test_render_copies_code_and_data_verbatim(self):
         src = self.make_source()
         self.write("repo/skills/silver-feature/scripts/x.py", 'HOST = "Claude Code"  # ~/.claude\n')
-        dest = self.tmp / "out" / "cursor"
-        r.render_bundle(src, dest, "cursor")
-        self.assertEqual((dest / "sb:feature" / "scripts" / "x.py").read_text(), 'HOST = "Claude Code"  # ~/.claude\n')
+        dest = self.tmp / "out" / "codex"
+        r.render_bundle(src, dest, "codex")
+        self.assertEqual((dest / "sb-feature" / "scripts" / "x.py").read_text(), 'HOST = "Claude Code"  # ~/.claude\n')
 
     def test_emptied_agents_dir_is_removed_but_a_populated_one_is_kept(self):
         src = self.make_source()
@@ -617,21 +534,6 @@ class RenderBundleTest(TmpCase):
         r.render_bundle(src, dest, "claude")
         self.assertFalse((dest / "sb:feature" / "agents").exists())
         self.assertEqual(sorted(p.name for p in (dest / "helper" / "agents").iterdir()), ["other.md"])
-
-    def test_source_layout_renders_hidden_sources_and_keeps_command_routes(self):
-        src = self.make_source()
-        cmds = self.tmp / "repo" / "plugins" / "silver-bullet" / "commands"
-        cmds.mkdir(parents=True)
-        (cmds / "sb-feature.md").write_text("---\nname: sb-feature\n---\n")
-        for agent in ("codex", "cursor"):
-            dest = self.tmp / "out" / f"{agent}-source"
-            r.render_bundle(src, dest, agent, layout="source")
-            self.assertEqual(sorted(p.name for p in dest.iterdir()), ["helper", "sb", "sb-feature"])
-            self.assertEqual(list(dest.rglob("SKILL.md")), [])
-            text = (dest / "sb-feature" / "SILVER_SOURCE").read_text()
-            self.assertIn(f"$HOME/.{agent}/x", text)
-        self.assertTrue((self.tmp / "out" / "codex-source" / "sb-feature" / "agents" / "openai.yaml").is_file())
-        self.assertFalse((self.tmp / "out" / "cursor-source" / "sb-feature" / "agents").exists())
 
     def test_renders_codex(self):
         src = self.make_source()
@@ -658,21 +560,6 @@ class RenderBundleTest(TmpCase):
         self.assertFalse((dest / "sb:feature" / "agents" / "openai.yaml").exists())
         self.assertIn("$HOME/.claude/x", (dest / "sb:feature" / "SKILL.md").read_text())
 
-    def test_render_cursor_drops_command_covered_skills(self):
-        src = self.make_source()
-        cmds = self.tmp / "repo" / "plugins" / "silver-bullet" / "commands"
-        cmds.mkdir(parents=True)
-        (cmds / "feature.md").write_text("---\nname: sb-feature\n---\n")
-        dest = self.tmp / "out" / "cursor"
-        r.render_bundle(src, dest, "cursor")
-        self.assertEqual(sorted(p.name for p in dest.iterdir()), ["helper", "sb"])
-
-    def test_render_cursor_without_commands_keeps_everything(self):
-        src = self.make_source()
-        dest = self.tmp / "out" / "cursor"
-        r.render_bundle(src, dest, "cursor")
-        self.assertEqual(sorted(p.name for p in dest.iterdir()), ["helper", "sb", "sb:feature"])
-
     def test_symlinks_in_the_source_are_copied_as_regular_files(self):
         src = self.make_source()
         (src / "silver-feature" / "linked.md").symlink_to(src / "silver-feature" / "notes.md")
@@ -694,9 +581,9 @@ class RenderBundleTest(TmpCase):
         r.render_bundle(src, deep, "codex")  # parent already exists
         self.assertTrue((deep / "sb-feature" / "SKILL.md").is_file())
 
-    def test_openai_yaml_is_removed_for_cursor_and_claude_but_kept_for_codex(self):
+    def test_openai_yaml_is_removed_for_claude_but_kept_for_codex(self):
         src = self.make_source()
-        for agent, expect in (("cursor", False), ("claude", False), ("codex", True)):
+        for agent, expect in (("claude", False), ("codex", True)):
             with self.subTest(agent=agent):
                 dest = self.tmp / "out" / agent
                 r.render_bundle(src, dest, agent)
@@ -754,7 +641,7 @@ class MainTest(TmpCase):
 
     def test_render_source_layout_mode(self):
         self.write("src/silver-x/SKILL.md", "---\nname: silver-x\n---\n")
-        rc, _ = self.run_main("render", "--agent", "cursor", "--layout", "source",
+        rc, _ = self.run_main("render", "--agent", "codex", "--layout", "source",
                               "--source-root", str(self.tmp / "src"), "--dest-root", str(self.tmp / "dest"))
         self.assertEqual(rc, 0)
         self.assertTrue((self.tmp / "dest" / "sb-x" / "SILVER_SOURCE").is_file())
@@ -780,9 +667,9 @@ class MainTest(TmpCase):
 
     def test_sanitize_mode(self):
         f = self.write("root/a.md", "$HOME/.claude/x")
-        rc, _ = self.run_main("sanitize", "--agent", "cursor", "--root", str(self.tmp / "root"))
+        rc, _ = self.run_main("sanitize", "--agent", "codex", "--root", str(self.tmp / "root"))
         self.assertEqual(rc, 0)
-        self.assertEqual(f.read_text(), "$HOME/.cursor/x")
+        self.assertEqual(f.read_text(), "$HOME/.codex/x")
 
     def test_sanitize_requires_root(self):
         rc, err = self.run_main("sanitize", "--agent", "codex")
@@ -796,11 +683,11 @@ class MainTest(TmpCase):
             self.assertIn("the following arguments are required: --agent", err)
 
     def test_every_documented_agent_is_accepted_and_choices_are_listed(self):
-        for agent in ("claude", "codex", "cursor"):
+        for agent in ("claude", "codex"):
             rc, _ = self.run_main("sanitize", "--agent", agent, "--root", str(self.tmp / "none"))
             self.assertEqual(rc, 0, agent)
         rc, err = self.run_main("sanitize", "--agent", "vim", "--root", "x")
-        self.assertIn("choose from claude, codex, cursor", err.replace("'", ""))
+        self.assertIn("choose from claude, codex", err.replace("'", ""))
 
     def test_bad_agent_rejected(self):
         rc, err = self.run_main("sanitize", "--agent", "vim", "--root", "x")

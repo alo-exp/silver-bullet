@@ -11,7 +11,6 @@ agent_plugins_legacy_repo_url() {
   case "$host" in
     claude) printf '%s\n' "${MARKETPLACE_REPO_URL:-}" ;;
     codex) printf '%s\n' "${CODEX_MARKETPLACE_REPO_URL:-}" ;;
-    cursor) printf '%s\n' "${CURSOR_MARKETPLACE_REPO_URL:-}" ;;
     *) printf '%s\n' "" ;;
   esac
 }

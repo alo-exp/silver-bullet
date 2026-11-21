@@ -290,11 +290,11 @@ assert_eq "worker may not Edit" 1 "$rc"
 echo "=== spawn label ==="
 assert_eq "codex label" "spawn_agent (multi_agent_v1.spawn_agent)" "$(SILVER_BULLET_RUNTIME=codex sb_orchestrator_spawn_tool_label)"
 assert_eq "claude label" "Agent (Claude subagent)" "$(SILVER_BULLET_RUNTIME=claude sb_orchestrator_spawn_tool_label)"
-assert_eq "cursor label" "Task worker" "$(SILVER_BULLET_RUNTIME=cursor sb_orchestrator_spawn_tool_label)"
-assert_eq "unset runtime defaults to Task worker" "Task worker" "$(unset SILVER_BULLET_RUNTIME; sb_orchestrator_spawn_tool_label)"
+assert_eq "unset runtime defaults to the Claude label" "Agent (Claude subagent)" "$(unset SILVER_BULLET_RUNTIME; sb_orchestrator_spawn_tool_label)"
+assert_eq "other runtimes fall back to Task worker" "Task worker" "$(SILVER_BULLET_RUNTIME=opencode sb_orchestrator_spawn_tool_label)"
 
 echo "=== parent tool allowance ==="
-for t in Task Subagent Agent spawn_agent multi_agent_v1.spawn_agent Read Grep Glob SemanticSearch WebSearch WebFetch AskQuestion SwitchMode UpdateCurrentStep CallMcpTool FetchMcpResource Skill; do
+for t in Task Subagent Agent spawn_agent multi_agent_v1.spawn_agent Read Grep Glob WebSearch WebFetch Skill; do
   sb_orchestrator_parent_tool_allowed "$t" && rc=0 || rc=$?
   assert_eq "parent may use $t" 0 "$rc"
 done
@@ -345,7 +345,7 @@ d() { sb_orchestrator_parent_delegate_bash_allowed "$1" && echo yes || echo no; 
 assert_eq "empty command" no "$(d "")"
 assert_eq "unrelated command" no "$(d "ls scripts")"
 assert_eq "delegate script without fallback" no "$(d "bash scripts/agent-codex-delegate.sh --task t")"
-for s in "scripts/agent-codex-delegate.sh" "./scripts/agent-cursor-delegate.sh x" "/repo/scripts/agent-claude-delegate.sh" "scripts/agent-opencode-delegate.sh" "scripts/agent-pi-delegate.sh" "scripts/agent-codex/invoke.sh x" "scripts/agent-claude/invoke.sh" "scripts/agent-opencode/invoke.sh" "scripts/agent-pi/invoke.sh"; do
+for s in "scripts/agent-codex-delegate.sh" "./scripts/agent-pi-delegate.sh x" "/repo/scripts/agent-claude-delegate.sh" "scripts/agent-opencode-delegate.sh" "scripts/agent-pi-delegate.sh" "scripts/agent-codex/invoke.sh x" "scripts/agent-claude/invoke.sh" "scripts/agent-opencode/invoke.sh" "scripts/agent-pi/invoke.sh"; do
   assert_eq "fallback allows $s" yes "$(SB_AGENT_DELEGATE_DIRECT_FALLBACK=1 d "bash $s")"
 done
 assert_eq "spoofed substring is not a delegate" no "$(SB_AGENT_DELEGATE_DIRECT_FALLBACK=1 d "echo myscripts/agent-codex-delegate.shx")"
@@ -453,7 +453,7 @@ assert_eq "a script that is not a delegate refused under the fallback" no "$(SB_
 
 echo "=== parent skill allowance ==="
 s() { sb_orchestrator_parent_skill_allowed "$1" && echo yes || echo no; }
-for k in silver silver-orchestrator silver-agent-codex silver-agent-cursor silver-agent-claude silver-agent-opencode silver-agent-pi; do
+for k in silver silver-orchestrator silver-agent-codex silver-agent-claude silver-agent-opencode silver-agent-pi; do
   assert_eq "$k allowed" yes "$(s "$k")"
 done
 assert_eq "flow atom refused" no "$(s silver-plan)"

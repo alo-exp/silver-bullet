@@ -9,8 +9,7 @@ tl_init
 CORE="$TL_REPO_ROOT/scripts/enterprise-e2e/lib/core.sh"
 CLEAN=(-u SB_E2E_MATRIX_LOG -u SB_E2E_MATRIX_BATCH_PID_FILE -u SB_E2E_LIVE_RUNTIME -u SB_E2E_MATRIX_DRIVER_LOG
   -u SB_E2E_MATRIX_LOG_FALLBACK -u SB_E2E_LEDGER_FILE -u SB_E2E_INSTALL_VERSION_KEY -u SB_E2E_MATRIX_FORCE
-  -u SB_E2E_FORCE_ROW -u SB_E2E_MATRIX_FORCE_ALL -u SB_E2E_LIVE_TEST_LOCK_FILE -u SB_E2E_ROW_PASS_REGISTRY
-  -u SB_E2E_CURSOR_LOG_GROWTH_WAIT)
+  -u SB_E2E_FORCE_ROW -u SB_E2E_MATRIX_FORCE_ALL -u SB_E2E_LIVE_TEST_LOCK_FILE -u SB_E2E_ROW_PASS_REGISTRY)
 CFG="$TL_TMP/hosts.json"
 echo '{"default_host": "claude", "hosts": {}}' >"$CFG"
 CALL_ENV=("E2E_X=1")
@@ -29,9 +28,9 @@ CALL_ENV=("SB_ROOT=$SBR" "SB_E2E_MATRIX_LOG=/explicit.log"); RT=codex call enter
 assert_eq "explicit matrix log wins" "/explicit.log" "$TL_OUT"
 CALL_ENV=("SB_ROOT=$SBR"); RT=claude call enterprise_e2e_matrix_batch_pid_file
 assert_eq "claude batch pid file" "$SBR/.e2e-matrix-batch.pid" "$TL_OUT"
-RT=cursor call enterprise_e2e_matrix_batch_pid_file
-assert_eq "cursor batch pid file is host-named" "$SBR/.e2e-matrix-cursor-batch.pid" "$TL_OUT"
-CALL_ENV=("SB_ROOT=$SBR" "SB_E2E_MATRIX_BATCH_PID_FILE=/p.pid"); RT=cursor call enterprise_e2e_matrix_batch_pid_file
+RT=codex call enterprise_e2e_matrix_batch_pid_file
+assert_eq "codex batch pid file is host-named" "$SBR/.e2e-matrix-codex-batch.pid" "$TL_OUT"
+CALL_ENV=("SB_ROOT=$SBR" "SB_E2E_MATRIX_BATCH_PID_FILE=/p.pid"); RT=codex call enterprise_e2e_matrix_batch_pid_file
 assert_eq "explicit batch pid file wins" "/p.pid" "$TL_OUT"
 
 # --- batch pid / running ----------------------------------------------------
@@ -123,89 +122,6 @@ CALL_ENV=("SB_E2E_MATRIX_BATCH_PID_FILE=$PIDF" "SB_ROOT=$TL_TMP/no-rows" "SB_E2E
 printf 'zz' >"$TL_TMP/no-rows/default.log"
 call enterprise_e2e_matrix_log_bytes
 assert_eq "bytes: path defaults to the matrix log" "2" "$TL_OUT"
-
-# --- finalize_attempt_log (E2E-093 cursor floor) ----------------------------
-FIN="$TL_TMP/fin"
-mkdir -p "$FIN/sb/scripts/lib" "$FIN/work/.planning/workflows" "$FIN/work/.planning/.archive"
-e2e_git_app "$FIN/work"
-echo "evidence body line" >"$FIN/work/ev.md"
-echo plan >"$FIN/work/.planning/PLAN-1.md"
-echo wf >"$FIN/work/.planning/workflows/full.md"
-echo old >"$FIN/work/.planning/.archive/PLAN-OLD.md"
-echo "dirty" >>"$FIN/work/seed.txt"
-fin() {  # fin HOST ENV... -- <function args>
-  local host="$1"
-  shift
-  RT="$host"
-  CALL_ENV=("SB_ROOT=$FIN/sb" "SB_E2E_CURSOR_LOG_GROWTH_WAIT=0" "$@")
-}
-fin_run() { call enterprise_e2e_matrix_finalize_attempt_log "$@"; }
-printf 'short\n' >"$FIN/row.log"
-fin cursor; fin_run "$FIN/none.log" 3 "$FIN/work"
-assert_eq "finalize: missing log is a no-op" 0 "$TL_STATUS"
-fin_run "" 3 "$FIN/work"
-assert_eq "finalize: empty log arg is a no-op" 0 "$TL_STATUS"
-fin claude; fin_run "$FIN/row.log" 3 "$FIN/work" ev.md
-assert_eq "finalize: non-cursor host leaves the log" "short" "$(cat "$FIN/row.log")"
-fin cursor; head -c 3000 /dev/zero | tr '\0' x >"$FIN/big.log"
-fin_run "$FIN/big.log" 3 "$FIN/work" ev.md
-assert_eq "finalize: log already large enough is untouched" "3000" "$(wc -c <"$FIN/big.log" | tr -d ' ')"
-# No assessment lib: missing evidence file means no composite.
-fin cursor; fin_run "$FIN/row.log" 3 "$FIN/work" missing-evidence.md
-assert_eq "finalize: missing evidence file, no composite" "short" "$(cat "$FIN/row.log")"
-# Assessment lib present and rejecting.
-cat >"$FIN/sb/scripts/lib/enterprise-e2e-outcome-assessment.sh" <<'S'
-enterprise_e2e_outcome_evidence_resolved() { [[ "${FAKE_EVIDENCE_OK:-0}" == "1" ]]; }
-S
-fin cursor "FAKE_EVIDENCE_OK=0"; fin_run "$FIN/row.log" 3 "$FIN/work" ev.md
-assert_eq "finalize: unresolved evidence, no composite" "short" "$(cat "$FIN/row.log")"
-# Accepting lib: composite appended with every section.
-fin cursor "FAKE_EVIDENCE_OK=1"; fin_run "$FIN/row.log" 3 "$FIN/work" ev.md "graphify:q-ref"
-assert_eq "finalize: composite appended ok" 0 "$TL_STATUS"
-LOG="$(cat "$FIN/row.log")"
-assert_contains "composite header" "$LOG" "--- HARNESS composite transcript (E2E-093 cursor log floor) ---"
-assert_contains "composite graphify ref" "$LOG" "graphify: graphify:q-ref"
-assert_contains "composite evidence size" "$LOG" "evidence: ev.md (19 bytes)"
-assert_contains "composite evidence excerpt" "$LOG" "  evidence body line"
-assert_contains "composite lists plan artifacts" "$LOG" "$FIN/work/.planning/PLAN-1.md"
-assert_contains "composite lists workflow artifacts" "$LOG" "$FIN/work/.planning/workflows/full.md"
-assert_not_contains "composite skips archived artifacts" "$LOG" "PLAN-OLD.md"
-assert_contains "composite product delta" "$LOG" "product delta:"
-assert_contains "composite diff stat" "$LOG" "seed.txt"
-assert_contains "composite footer" "$LOG" "--- end composite transcript ---"
-# Minimal composite: no graphify ref, no evidence path, no planning dir, not a repo.
-mkdir -p "$FIN/bare"
-printf 'tiny\n' >"$FIN/row2.log"
-fin cursor "FAKE_EVIDENCE_OK=1"; fin_run "$FIN/row2.log" 3 "$FIN/bare"
-LOG2="$(cat "$FIN/row2.log")"
-assert_contains "minimal composite still has header" "$LOG2" "HARNESS composite transcript"
-assert_not_contains "minimal composite: no graphify line" "$LOG2" "graphify:"
-assert_not_contains "minimal composite: no evidence line" "$LOG2" "evidence:"
-assert_not_contains "minimal composite: no planning section" "$LOG2" "planning artifacts:"
-assert_not_contains "minimal composite: no product delta" "$LOG2" "product delta:"
-# No assessment lib, evidence present -> composite appended.
-rm -f "$FIN/sb/scripts/lib/enterprise-e2e-outcome-assessment.sh"
-printf 'tiny\n' >"$FIN/row3.log"
-fin cursor; fin_run "$FIN/row3.log" 3 "$FIN/work" ev.md
-assert_contains "no assessment lib: evidence file present still composes" "$(cat "$FIN/row3.log")" "evidence: ev.md"
-# Waiting for log growth (sleep stubbed).
-tl_stub sleep 'n=0; [ -f "$SLEEP_COUNT" ] && n=$(cat "$SLEEP_COUNT"); n=$((n+1)); echo $n >"$SLEEP_COUNT"; [ "$n" -ge "${GROW_AT:-1}" ] && head -c 3000 /dev/zero | tr "\0" y >>"$GROW_LOG"; exit 0'
-printf 'tiny\n' >"$FIN/row4.log"; rm -f "$FIN/sleep.count"
-fin cursor "SB_E2E_CURSOR_LOG_GROWTH_WAIT=30" "SLEEP_COUNT=$FIN/sleep.count" "GROW_LOG=$FIN/row4.log" "GROW_AT=1"
-fin_run "$FIN/row4.log" 3 "$FIN/work" ev.md
-assert_not_contains "growth during the wait: no composite" "$(cat "$FIN/row4.log")" "HARNESS composite"
-assert_eq "growth during the wait: one sleep was enough" "1" "$(cat "$FIN/sleep.count")"
-printf 'tiny\n' >"$FIN/row5.log"; rm -f "$FIN/sleep.count"
-fin cursor "SB_E2E_CURSOR_LOG_GROWTH_WAIT=4" "SLEEP_COUNT=$FIN/sleep.count" "GROW_LOG=$FIN/row5.log" "GROW_AT=2"
-fin_run "$FIN/row5.log" 3 "$FIN/work" ev.md
-assert_not_contains "growth in the final sleep: no composite" "$(cat "$FIN/row5.log")" "HARNESS composite"
-assert_eq "growth in the final sleep: two sleeps" "2" "$(cat "$FIN/sleep.count")"
-printf 'tiny\n' >"$FIN/row6.log"; rm -f "$FIN/sleep.count"
-fin cursor "SB_E2E_CURSOR_LOG_GROWTH_WAIT=4" "SLEEP_COUNT=$FIN/sleep.count" "GROW_LOG=$FIN/row6.log" "GROW_AT=99"
-fin_run "$FIN/row6.log" 3 "$FIN/work" ev.md
-assert_contains "no growth: composite appended after the wait" "$(cat "$FIN/row6.log")" "HARNESS composite"
-assert_eq "no growth: waited the full window" "2" "$(cat "$FIN/sleep.count")"
-RT=claude
 
 # --- ledger helpers ---------------------------------------------------------
 CALL_ENV=("SB_ROOT=$SBR"); call enterprise_e2e_ledger_file
@@ -312,7 +228,7 @@ git -C "$IV" config user.email e@t; git -C "$IV" config user.name E; git -C "$IV
 git -C "$IV" add package.json; git -C "$IV" commit -q -m init
 IV_SHA="$(git -C "$IV" rev-parse --short HEAD)"
 CALL_ENV=("SB_ROOT=$IV"); call enterprise_e2e_install_version_file
-assert_eq "install version file" "$IV/.e2e-cursor-install-version.txt" "$TL_OUT"
+assert_eq "install version file" "$IV/.e2e-install-version.txt" "$TL_OUT"
 call enterprise_e2e_pass_at_version_registry
 assert_eq "pass-at-version registry" "$IV/.e2e-matrix-pass-at-version.tsv" "$TL_OUT"
 call enterprise_e2e_sb_install_version_key
@@ -324,30 +240,30 @@ assert_eq "key without package.json or git" "0.0.0@unknown" "$TL_OUT"
 CALL_ENV=("SB_ROOT=$IV" "SB_E2E_PASS_AT_VERSION_REGISTRY=$IV/elsewhere.tsv"); call enterprise_e2e_pass_at_version_registry
 assert_eq "registry override" "$IV/elsewhere.tsv" "$TL_OUT"
 CALL_ENV=("E2E_X=1"); call enterprise_e2e_install_version_file
-assert_contains "install version file without SB_ROOT derives from the repo" "$TL_OUT" "$TL_REPO_ROOT/.e2e-cursor-install-version.txt"
+assert_contains "install version file without SB_ROOT derives from the repo" "$TL_OUT" "$TL_REPO_ROOT/.e2e-install-version.txt"
 call enterprise_e2e_pass_at_version_registry
 assert_contains "registry without SB_ROOT derives from the repo" "$TL_OUT" "$TL_REPO_ROOT/.e2e-matrix-pass-at-version.tsv"
 
 CALL_ENV=("SB_ROOT=$IV"); call enterprise_e2e_write_sb_install_version "$IV"
 assert_eq "write version returns the key" "9.8.7@$IV_SHA" "$TL_OUT"
-assert_eq "version file content" $'SB_CURSOR_PLUGIN_VERSION=9.8.7\nSB_INSTALL_SHA='"$IV_SHA"$'\nSB_INSTALL_VERSION_KEY=9.8.7@'"$IV_SHA" "$(cat "$IV/.e2e-cursor-install-version.txt")"
+assert_eq "version file content" $'SB_PLUGIN_VERSION=9.8.7\nSB_INSTALL_SHA='"$IV_SHA"$'\nSB_INSTALL_VERSION_KEY=9.8.7@'"$IV_SHA" "$(cat "$IV/.e2e-install-version.txt")"
 call enterprise_e2e_sb_install_version_key
 assert_eq "key read back from the version file (full key)" "9.8.7@$IV_SHA" "$TL_OUT"
-printf 'SB_CURSOR_PLUGIN_VERSION=1.2.3\nSB_INSTALL_SHA=abc\n' >"$IV/.e2e-cursor-install-version.txt"
+printf 'SB_PLUGIN_VERSION=1.2.3\nSB_INSTALL_SHA=abc\n' >"$IV/.e2e-install-version.txt"
 call enterprise_e2e_sb_install_version_key
 assert_eq "key from plugin version + sha when no full key" "1.2.3@abc" "$TL_OUT"
-printf 'SB_CURSOR_PLUGIN_VERSION=1.2.3\n' >"$IV/.e2e-cursor-install-version.txt"
+printf 'SB_PLUGIN_VERSION=1.2.3\n' >"$IV/.e2e-install-version.txt"
 call enterprise_e2e_sb_install_version_key
 assert_eq "partial version file falls back to derived key" "9.8.7@$IV_SHA" "$TL_OUT"
-rm -f "$IV/.e2e-cursor-install-version.txt"
+rm -f "$IV/.e2e-install-version.txt"
 call enterprise_e2e_write_sb_install_version "$TL_TMP/no-such-root"
 assert_eq "write version needs an existing root" 1 "$TL_STATUS"
 call enterprise_e2e_write_sb_install_version "$IV" 4.5.6 deadbee
 assert_eq "write version honours explicit plugin and sha" "4.5.6@deadbee" "$TL_OUT"
-rm -f "$IV/.e2e-cursor-install-version.txt"
+rm -f "$IV/.e2e-install-version.txt"
 call enterprise_e2e_write_sb_install_version
 assert_eq "write version defaults the root from SB_ROOT" "9.8.7@$IV_SHA" "$TL_OUT"
-rm -f "$IV/.e2e-cursor-install-version.txt"
+rm -f "$IV/.e2e-install-version.txt"
 
 # force flags
 CALL_ENV=("E2E_X=1"); call enterprise_e2e_matrix_force_active
@@ -378,7 +294,7 @@ call enterprise_e2e_row_passed_at_install_version 4
 assert_eq "passed-at: recorded row" 0 "$TL_STATUS"
 call enterprise_e2e_row_passed_at_install_version 4 "9.9.9@zzz"
 assert_eq "passed-at: other version not recorded" 1 "$TL_STATUS"
-# Ledger-derived pass: a cursor ledger whose SB SHA matches the version key.
+# Ledger-derived pass: a ledger whose SB SHA matches the version key.
 mkdir -p "$IV2/.planning/enterprise-e2e"
 {
   echo "| Field | Value |"
@@ -387,16 +303,16 @@ mkdir -p "$IV2/.planning/enterprise-e2e"
   echo "|---|---|---|---|---|"
   echo "| 8 | wf | Pass | q | m |"
   echo "**Pass count: 1**"
-} >"$IV2/.planning/enterprise-e2e/ROUND-CURSOR-9-LEDGER.md"
+} >"$IV2/.planning/enterprise-e2e/ROUND-CODEX-9-LEDGER.md"
 CALL_ENV=("SB_ROOT=$IV2")
-call enterprise_e2e_ledger_sb_sha "$IV2/.planning/enterprise-e2e/ROUND-CURSOR-9-LEDGER.md"
+call enterprise_e2e_ledger_sb_sha "$IV2/.planning/enterprise-e2e/ROUND-CODEX-9-LEDGER.md"
 assert_eq "ledger sb sha parsed and cleaned" "feed123" "$TL_OUT"
 call enterprise_e2e_ledger_sb_sha "$TL_TMP/none.md"
 assert_eq "ledger sb sha: missing file" 1 "$TL_STATUS"
 call enterprise_e2e_ledger_sb_sha "$LED"
 assert_eq "ledger sb sha: absent row" 1 "$TL_STATUS"
 call enterprise_e2e_row_passed_at_install_version 8 "3.0.0@feed123"
-assert_eq "passed-at: derived from a matching Cursor ledger" 0 "$TL_STATUS"
+assert_eq "passed-at: derived from a matching ledger" 0 "$TL_STATUS"
 assert_eq "passed-at: derived pass is recorded for the row" "1" "$(grep -c '^8'$'\t' "$IV2/.e2e-matrix-pass-at-version.tsv")"
 call enterprise_e2e_row_passed_at_install_version 8 "3.0.0@other"
 assert_eq "passed-at: ledger sha mismatch" 1 "$TL_STATUS"
@@ -408,7 +324,7 @@ assert_eq "passed-at: row not Pass in ledger" 1 "$TL_STATUS"
   echo "|---|---|---|---|---|"
   echo "| 12 | wf | Pass | q | m |"
   echo "**Pass count: 1**"
-} >"$IV2/.planning/enterprise-e2e/ROUND-CURSOR-10-LEDGER.md"
+} >"$IV2/.planning/enterprise-e2e/ROUND-CODEX-10-LEDGER.md"
 call enterprise_e2e_row_passed_at_install_version 12 "3.0.0@feed123"
 assert_eq "passed-at: ledger without SB sha is skipped" 1 "$TL_STATUS"
 # default version taken from the key function
@@ -458,8 +374,8 @@ CALL_ENV=("SB_ROOT=$SBR" "SB_E2E_LIVE_TEST_LOCK_FILE=/x.lock"); RT=codex call en
 assert_eq "lock file override" "/x.lock" "$TL_OUT"
 CALL_ENV=("SB_ROOT=$SBR"); RT=claude call enterprise_e2e_live_test_lock_file
 assert_eq "claude lock file" "$SBR/.e2e-live-test.lock" "$TL_OUT"
-RT=cursor call enterprise_e2e_live_test_lock_file
-assert_eq "cursor lock file is host-named" "$SBR/.e2e-live-test-cursor.lock" "$TL_OUT"
+RT=codex call enterprise_e2e_live_test_lock_file
+assert_eq "codex lock file is host-named" "$SBR/.e2e-live-test-codex.lock" "$TL_OUT"
 RT=claude
 LOCK="$TL_TMP/live.lock"
 CALL_ENV=("SB_E2E_LIVE_TEST_LOCK_FILE=$LOCK")

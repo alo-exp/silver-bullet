@@ -17,7 +17,7 @@
   ]
  },
  "counts": {
-  "X": 119,
+  "X": 114,
   "A": 22
  },
  "rows": [
@@ -566,14 +566,6 @@
    "reason": "user-run or skill-run script, not a hook gate"
   },
   {
-   "file": "scripts/install-recommended-tools-cursor.sh",
-   "line": 129,
-   "kind": "config",
-   "snippet": "if [[ -f \"${PROJECT_ROOT}/.silver-bullet.json\" ]]; then",
-   "record": "X",
-   "reason": "user-run or skill-run script, not a hook gate"
-  },
-  {
    "file": "scripts/monitor-enterprise-e2e-matrix.sh",
    "line": 170,
    "kind": "state",
@@ -612,14 +604,6 @@
    "snippet": "if [[ -n \"${REPO_ROOT}\" ]] && [[ -f \"${REPO_ROOT}/.silver-bullet.json\" ]]; then",
    "record": "X",
    "reason": "phase-lock coordination (run by phase-lock-claim.sh): the ttl and runtime tags are validated and only compared; not an enforcement decision"
-  },
-  {
-   "file": "scripts/pre-release-gate.sh",
-   "line": 52,
-   "kind": "config",
-   "snippet": "if jq -e '.recommended_tools.leanctx.enabled_by_user == true' \"${REPO_ROOT}/.silver-bullet.json\" >/dev/null 2>&1; then",
-   "record": "X",
-   "reason": "user-run or skill-run script, not a hook gate"
   },
   {
    "file": "scripts/sb-bootstrap.sh",
@@ -663,22 +647,6 @@
   },
   {
    "file": "scripts/sb-doctor.sh",
-   "line": 547,
-   "kind": "config",
-   "snippet": "if [[ -f \"${PROJ_ROOT}/.silver-bullet.json\" ]]; then",
-   "record": "X",
-   "reason": "user-run or skill-run script, not a hook gate"
-  },
-  {
-   "file": "scripts/sb-doctor.sh",
-   "line": 548,
-   "kind": "config",
-   "snippet": "csba_fix_scope=\"$(jq -r '.cursor_sb_agents.agents_install_scope // \"global\"' \"${PROJ_ROOT}/.silver-bullet.json\")\"",
-   "record": "X",
-   "reason": "user-run or skill-run script, not a hook gate"
-  },
-  {
-   "file": "scripts/sb-doctor.sh",
    "line": 673,
    "kind": "md",
    "snippet": "if [[ -f \"$sb_config\" && -f \"${PROJ_ROOT}/silver-bullet.md\" ]]; then",
@@ -714,14 +682,6 @@
    "line": 706,
    "kind": "md",
    "snippet": "grep -q \"^## ${d7_sec}\\\\. \" \"${PROJ_ROOT}/silver-bullet.md\" 2>/dev/null || d7_missing=\"${d7_missing:+${d7_missing}, }§${d7_sec}\"",
-   "record": "X",
-   "reason": "user-run or skill-run script, not a hook gate"
-  },
-  {
-   "file": "scripts/sb-doctor.sh",
-   "line": 945,
-   "kind": "config",
-   "snippet": "csba_scope=\"$(jq -r '.cursor_sb_agents.agents_install_scope // \"global\"' \"$sb_config\" 2>/dev/null || echo global)\"",
    "record": "X",
    "reason": "user-run or skill-run script, not a hook gate"
   },

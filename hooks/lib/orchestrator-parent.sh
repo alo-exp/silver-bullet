@@ -156,7 +156,7 @@ sb_orchestrator_worker_template_for_skill() {
     silver-validate) printf 'VALIDATE' ;;
     silver-fast) printf 'FAST' ;;
     silver|silver-orchestrator) printf 'ROUTER' ;;
-    silver-agent-codex|silver-agent-cursor|silver-agent-claude|silver-agent-opencode|silver-agent-pi) printf 'AGENT-DELEGATE' ;;
+    silver-agent-codex|silver-agent-claude|silver-agent-opencode|silver-agent-pi) printf 'AGENT-DELEGATE' ;;
     *)
       if [[ "$skill" == silver-* ]]; then
         printf '%s' "$(printf '%s' "${skill#silver-}" | tr '[:lower:]' '[:upper:]')"
@@ -274,7 +274,7 @@ sb_orchestrator_worker_allows_bash() {
 
 # Host-native delegation tool label for parent context and guard messages.
 sb_orchestrator_spawn_tool_label() {
-  case "${SILVER_BULLET_RUNTIME:-cursor}" in
+  case "${SILVER_BULLET_RUNTIME:-claude}" in
     codex) printf '%s' 'spawn_agent (multi_agent_v1.spawn_agent)' ;;
     claude) printf '%s' 'Agent (Claude subagent)' ;;
     *) printf '%s' 'Task worker' ;;
@@ -285,7 +285,7 @@ sb_orchestrator_spawn_tool_label() {
 sb_orchestrator_parent_tool_allowed() {
   local tool_name="$1"
   case "$tool_name" in
-    Task|Subagent|Agent|spawn_agent|multi_agent_v1.spawn_agent|Read|Grep|Glob|SemanticSearch|WebSearch|WebFetch|AskQuestion|SwitchMode|UpdateCurrentStep|CallMcpTool|FetchMcpResource)
+    Task|Subagent|Agent|spawn_agent|multi_agent_v1.spawn_agent|Read|Grep|Glob|WebSearch|WebFetch)
       return 0
       ;;
     Skill)
@@ -418,9 +418,9 @@ sb_orchestrator_parent_delegate_bash_allowed() {
   _sb_orch_parent_prefix_free || return 1
   jq -e '
     .[0] as $p
-    | any(["scripts/agent-codex-delegate.sh", "scripts/agent-cursor-delegate.sh", "scripts/agent-claude-delegate.sh",
+    | any(["scripts/agent-codex-delegate.sh", "scripts/agent-claude-delegate.sh",
            "scripts/agent-opencode-delegate.sh", "scripts/agent-pi-delegate.sh", "scripts/agent-codex/invoke.sh",
-           "scripts/agent-cursor/invoke.sh", "scripts/agent-claude/invoke.sh", "scripts/agent-opencode/invoke.sh",
+           "scripts/agent-claude/invoke.sh", "scripts/agent-opencode/invoke.sh",
            "scripts/agent-pi/invoke.sh"][];
           . as $s | $p == $s or ($p | endswith("/" + $s)))
     ' <<<"$argv" >/dev/null 2>&1
@@ -496,7 +496,7 @@ sb_orchestrator_parent_skill_allowed() {
     esac
   fi
   case "$canonical" in
-    silver|silver-orchestrator|silver-agent-codex|silver-agent-cursor|silver-agent-claude|silver-agent-opencode|silver-agent-pi) return 0 ;;
+    silver|silver-orchestrator|silver-agent-codex|silver-agent-claude|silver-agent-opencode|silver-agent-pi) return 0 ;;
     *) return 1 ;;
   esac
 }

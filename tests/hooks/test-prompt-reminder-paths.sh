@@ -112,7 +112,7 @@ unset -f sb_project_is_initiated
 # ---- bare prompts per host ---------------------------------------------------
 reset
 SILVER_BULLET_RUNTIME=claude run_pr "please fix the failing login test"
-assert_contains "claude host: Skill tool routing" "$(ctx)" 'invoke the Skill tool with skill "sb" (Claude/Cursor)'
+assert_contains "claude host: Skill tool routing" "$(ctx)" 'invoke the Skill tool with skill "sb" (Claude)'
 reset
 SILVER_BULLET_RUNTIME=codex SB_ORCHESTRATOR_PARENT=1 run_pr "please fix the failing login test"
 assert_contains "codex parent (forced): prefers the Skill tool" "$(ctx)" "(parent mode)"

@@ -54,7 +54,7 @@ check_rtk() {
   fi
 
   local host artifact
-  host="$(sb_runtime_host 2>/dev/null || echo cursor)"
+  host="$(sb_runtime_host 2>/dev/null || echo claude)"
   artifact="$(sb_rtk_platform_hook_artifact_path "$REPO_ROOT" "$host" 2>/dev/null || true)"
   if sb_rtk_platform_hook_present "$REPO_ROOT" "$host" 2>/dev/null; then
     ok "host hook wired (${host}: ${artifact})"
@@ -79,7 +79,7 @@ check_context_mode() {
   fi
 
   local host artifact
-  host="$(sb_runtime_host 2>/dev/null || echo cursor)"
+  host="$(sb_runtime_host 2>/dev/null || echo claude)"
   artifact="$(sb_context_mode_platform_artifact_path "$REPO_ROOT" "$host" 2>/dev/null || true)"
   if sb_context_mode_platform_artifact_present "$REPO_ROOT" "$host" 2>/dev/null; then
     ok "platform artifact (${host}: ${artifact})"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# receipts.sh rt_apply_host_hooks_batch (cursor / opencode / pi hook patchers) and
+# receipts.sh rt_apply_host_hooks_batch (opencode / pi hook patchers) and
 # rt_apply_host_mcp_batch (MCP patcher). Patchers are logging stubs in a
 # staged repo; host config files live in the sandboxed HOME.
 set -euo pipefail
@@ -13,9 +13,9 @@ hr_stage_repo
 # shellcheck source=/dev/null
 source "$HR_RTLIB/probe-cross-tool.sh"
 rt_init_paths
-export RT_HOST=cursor RT_SKIP_VENDOR_DOCTOR=1 SILVER_BULLET_SESSION_ID=sess-x
+export RT_HOST=claude RT_SKIP_VENDOR_DOCTOR=1 SILVER_BULLET_SESSION_ID=sess-x
 hr_bin sleep 'exit 0'
-mkdir -p "$HOME/.cursor"
+mkdir -p "$HOME/.claude"
 ALL_ENABLED=(graphify=enabled agentmemory=enabled rtk=enabled context_mode=enabled leanctx=enabled)
 
 apply_env() { export RT_MODE=apply RT_ENTRY_POINT=init RT_SCOPE=all; }
@@ -23,36 +23,12 @@ apply_env
 j() { jq -c .; }
 log() { cat "$HR_LOG"; }
 # a patcher that "changes" the file it manages: appends to it from the stub
-CHANGE_HOOKS='echo x >> "$HOME/.cursor/hooks.json"'
-CHANGE_MCP='echo x >> "$HOME/.cursor/mcp.json"'
-echo '{}' >"$HOME/.cursor/hooks.json"; echo '{}' >"$HOME/.cursor/mcp.json"
+CHANGE_MCP='echo x >> "$HOME/.claude.json"'
+echo '{}' >"$HOME/.claude.json"
 
 # ============================================================== hooks batch
 hr_consent "${ALL_ENABLED[@]}"
 : >"$HR_LOG"
-out="$(HR_PY_OUT_patch_hooks="patched" HR_PY_HOOK_patch_hooks="$CHANGE_HOOKS" rt_apply_host_hooks_batch | j)"
-assert_eq "hooks (cursor): changed" '{"actions":["patch_hooks"],"failures":[],"changed":true}' "$out"
-assert_contains "hooks: every consented tool patched" "$(log)" "RT_PATCH_AGENTMEMORY=1 RT_PATCH_CONTEXT_MODE=1 RT_PATCH_GRAPHIFY=1 RT_PATCH_LEANCTX=1 RT_PATCH_RTK=1"
-assert_eq "hooks: patch env cleaned up" "" "${RT_PATCH_RTK:-}${RT_PATCH_GRAPHIFY:-}${RT_PATCH_LEANCTX:-}"
-out="$(HR_PY_OUT_patch_hooks="hooks.json unchanged" HR_PY_HOOK_patch_hooks="$CHANGE_HOOKS" rt_apply_host_hooks_batch | j)"
-assert_eq "hooks: patcher reports unchanged" '{"actions":[],"failures":[],"changed":false}' "$out"
-out="$(HR_PY_OUT_patch_hooks="patched" rt_apply_host_hooks_batch | j)"
-assert_eq "hooks: output but identical file hash" '{"actions":[],"failures":[],"changed":false}' "$out"
-out="$(HR_PY_RC_patch_hooks=1 rt_apply_host_hooks_batch | j)"
-assert_eq "hooks: patcher failure" '{"actions":[],"failures":["patch_hooks_failed"],"changed":false}' "$out"
-out="$(rt_apply_host_hooks_batch | j)"
-assert_eq "hooks: silent patcher counts as no change" '{"actions":[],"failures":[],"changed":false}' "$out"
-hr_consent rtk=enabled
-: >"$HR_LOG"; rt_apply_host_hooks_batch >/dev/null
-assert_contains "hooks: only consented tools are enabled" "$(log)" "RT_PATCH_AGENTMEMORY=0 RT_PATCH_CONTEXT_MODE=0 RT_PATCH_GRAPHIFY=0 RT_PATCH_LEANCTX=0 RT_PATCH_RTK=1"
-hr_consent graphify=disabled
-: >"$HR_LOG"
-assert_eq "hooks: nothing consented -> no patch run" '{"actions":[],"failures":[],"changed":false}' "$(rt_apply_host_hooks_batch | j)"
-assert_eq "hooks: patcher not invoked" "" "$(log)"
-hr_consent "${ALL_ENABLED[@]}"
-mv "$HR_STAGE/scripts/lib/global-toolstack/patch-hooks.py" "$HR_STAGE/scripts/lib/global-toolstack/patch-hooks.off"
-assert_eq "hooks: patch-hooks.py missing" '{"actions":[],"failures":[],"changed":false}' "$(rt_apply_host_hooks_batch | j)"
-mv "$HR_STAGE/scripts/lib/global-toolstack/patch-hooks.off" "$HR_STAGE/scripts/lib/global-toolstack/patch-hooks.py"
 RT_HOST=claude; assert_eq "hooks (claude): not patched" '{"actions":[],"failures":[],"changed":false}' "$(rt_apply_host_hooks_batch | j)"
 RT_HOST=opencode
 : >"$HR_LOG"
@@ -79,7 +55,7 @@ hr_consent rtk=enabled
 mv "$HR_STAGE/scripts/lib/global-toolstack/install-pi.py" "$HR_STAGE/scripts/lib/global-toolstack/install-pi.off"
 assert_eq "hooks (pi): installer missing" '{"actions":[],"failures":[],"changed":false}' "$(rt_apply_host_hooks_batch | j)"
 mv "$HR_STAGE/scripts/lib/global-toolstack/install-pi.off" "$HR_STAGE/scripts/lib/global-toolstack/install-pi.py"
-RT_HOST=cursor
+RT_HOST=claude
 
 
 # ================================================================= mcp batch
@@ -87,7 +63,7 @@ hr_consent "${ALL_ENABLED[@]}"
 : >"$HR_LOG"
 assert_eq "mcp: changed" '{"actions":["patch_mcp"],"failures":[],"changed":true}' "$(HR_PY_OUT_patch_mcp=patched HR_PY_HOOK_patch_mcp="$CHANGE_MCP" rt_apply_host_mcp_batch | j)"
 assert_contains "mcp: all consented servers patched" "$(log)" "RT_PATCH_AGENTMEMORY=1 RT_PATCH_CONTEXT_MODE=1 RT_PATCH_GRAPHIFY=1 RT_PATCH_LEANCTX=1"
-assert_contains "mcp: host passed to the patcher" "$(log)" "RT_HOST=cursor"
+assert_contains "mcp: host passed to the patcher" "$(log)" "RT_HOST=claude"
 assert_eq "mcp: unchanged output" '{"actions":[],"failures":[],"changed":false}' "$(HR_PY_OUT_patch_mcp="mcp.json unchanged" HR_PY_HOOK_patch_mcp="$CHANGE_MCP" rt_apply_host_mcp_batch | j)"
 assert_eq "mcp: failure" '{"actions":[],"failures":["patch_mcp_failed"],"changed":false}' "$(HR_PY_RC_patch_mcp=2 rt_apply_host_mcp_batch | j)"
 assert_eq "mcp: silent patcher" '{"actions":[],"failures":[],"changed":false}' "$(rt_apply_host_mcp_batch | j)"
@@ -100,7 +76,7 @@ assert_eq "mcp: context-mode alone triggers the patcher" '{"actions":["patch_mcp
 RT_HOST=claude; hr_consent graphify=enabled
 : >"$HR_LOG"
 assert_eq "mcp (claude): hash of the claude config is watched" '{"actions":["patch_mcp"],"failures":[],"changed":true}' "$(HR_PY_OUT_patch_mcp=patched HR_PY_HOOK_patch_mcp='echo x >> "$HOME/.claude.json"' rt_apply_host_mcp_batch | j)"
-RT_HOST=cursor
+RT_HOST=claude
 mv "$HR_STAGE/scripts/lib/global-toolstack/patch-mcp.py" "$HR_STAGE/scripts/lib/global-toolstack/patch-mcp.off"
 assert_eq "mcp: patch-mcp.py missing" '{"actions":[],"failures":[],"changed":false}' "$(rt_apply_host_mcp_batch | j)"
 mv "$HR_STAGE/scripts/lib/global-toolstack/patch-mcp.off" "$HR_STAGE/scripts/lib/global-toolstack/patch-mcp.py"
@@ -109,16 +85,15 @@ mv "$HR_STAGE/scripts/lib/global-toolstack/patch-mcp.off" "$HR_STAGE/scripts/lib
 hr_consent "${ALL_ENABLED[@]}"
 sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" install
 : >"$HR_LOG"
-for h in cursor opencode pi; do
+for h in opencode pi; do
   RT_HOST=$h
   assert_eq "install-only grant: $h hooks batch writes no host config" '{"actions":[],"failures":[],"changed":false}' "$(rt_apply_host_hooks_batch | j)"
 done
-RT_HOST=cursor
+RT_HOST=claude
 assert_eq "install-only grant: mcp batch writes no host config" '{"actions":[],"failures":[],"changed":false}' "$(rt_apply_host_mcp_batch | j)"
 assert_eq "install-only grant: no patcher or merger ran" "" "$(log)"
 assert_eq "install-only grant: the batch as a whole changes nothing" '{"actions":[],"failures":[],"restart_required":false,"changed":false,"affected_servers":[]}' "$(rt_apply_host_convergence_batches false 2>/dev/null | j)"
 sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" wire
-assert_eq "wire-only grant: hooks batch patches" '{"actions":["patch_hooks"],"failures":[],"changed":true}' "$(HR_PY_OUT_patch_hooks=patched HR_PY_HOOK_patch_hooks="$CHANGE_HOOKS" rt_apply_host_hooks_batch | j)"
 assert_eq "wire-only grant: mcp batch patches" '{"actions":["patch_mcp"],"failures":[],"changed":true}' "$(HR_PY_OUT_patch_mcp=patched HR_PY_HOOK_patch_mcp="$CHANGE_MCP" rt_apply_host_mcp_batch | j)"
 
 

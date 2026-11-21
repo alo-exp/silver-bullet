@@ -55,7 +55,7 @@ enterprise_e2e_telemetry_append() {
   row_result="${SB_E2E_TELEMETRY_ROW_RESULT:-}"
   row_log="${SB_E2E_TELEMETRY_ROW_LOG:-}"
   ledger_file="${SB_E2E_LEDGER_FILE:-}"
-  model="${CLAUDE_MODEL:-${CURSOR_MODEL:-unknown}}"
+  model="${CLAUDE_MODEL:-unknown}"
   overlay_mode="${SB_E2E_VALIDATION_OVERLAY_DRY_RUN:-}"
   overlay_pass="${VALIDATION_OVERLAY_PASS:-}"
   overlay_fail="${VALIDATION_OVERLAY_FAIL:-}"

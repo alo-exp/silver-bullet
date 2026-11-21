@@ -30,8 +30,6 @@ rc_delegate_five_tool_scenarios() { echo "fivetool \$1" >>"$LOG"; [[ "\${FIVETOO
 EOS
 cat >"$T/tests/scripts/lib/five-tool-prerelease.sh" <<EOS
 five_tool_leanctx_opted_in() { [[ "\${LEANCTX:-0}" == 1 ]]; }
-five_tool_cursor_cli_path() { [[ "\${CURSOR_LIVE:-0}" == 1 ]] && echo /fake/cursor-agent; }
-five_tool_cursor_agent_authenticated() { [[ "\${CURSOR_AUTH:-0}" == 1 ]]; }
 five_tool_claude_cli_path() { [[ "\${CLAUDE_LIVE:-0}" == 1 ]] && echo /fake/claude; }
 five_tool_claude_cli_authenticated() { [[ "\${CLAUDE_AUTH:-0}" == 1 ]]; }
 EOS
@@ -48,15 +46,15 @@ assert_eq "skip exits 0" 0 "$TL_STATUS"; assert_contains "skip message" "$TL_OUT
 assert_eq "skip runs nothing" "" "$(cat "$LOG")"
 assert_contains "R13-20: the bypass is announced" "$TL_ERR" "AUDIT: release gate bypass SB_SKIP_RC_MATRIX=1"
 assert_contains "R13-20: the bypass is logged" "$(cat "$SB_RUNTIME_STATE_DIR/release-bypass-log.jsonl")" '"switch":"SB_SKIP_RC_MATRIX"'
-assert_eq "R13-20: a skip writes no markers, so the release gate still blocks" "MISSING" "$(marker cursor-fresh)"
+assert_eq "R13-20: a skip writes no markers, so the release gate still blocks" "MISSING" "$(marker claude-fresh)"
 mrun --bogus
 assert_eq "unknown argument -> 2" 2 "$TL_STATUS"
 
 # --- dry run ------------------------------------------------------------------------------------------
 mrun --dry-run
 assert_eq "dry-run ok" 0 "$TL_STATUS"
-assert_contains "dry-run totals" "$TL_OUT" "RC matrix: 0 passed, 0 failed, 6 skipped"
-for h in cursor codex claude; do for m in fresh upgrade; do
+assert_contains "dry-run totals" "$TL_OUT" "RC matrix: 0 passed, 0 failed, 4 skipped"
+for h in codex claude; do for m in fresh upgrade; do
   assert_eq "dry-run marker $h-$m is a dry-run, not a pass (R13-09)" dry-run "$(status_of "$h-$m")"
   assert_eq "dry-run artifact $h-$m" dry-run "$(artifact_of "$h-$m")"
 done; done
@@ -67,9 +65,9 @@ mrun --dry-run --host codex
 assert_contains "host filter totals" "$TL_OUT" "RC matrix: 0 passed, 0 failed, 2 skipped"
 assert_eq "host filter: only codex markers" "codex-fresh codex-upgrade" "$(ls "$MK" | tr '\n' ' ' | sed 's/ $//')"
 mrun --dry-run --mode upgrade
-assert_contains "mode filter totals" "$TL_OUT" "RC matrix: 0 passed, 0 failed, 3 skipped"
-assert_eq "mode filter: only upgrade markers" "claude-upgrade codex-upgrade cursor-upgrade" "$(ls "$MK" | tr '\n' ' ' | sed 's/ $//')"
-mrun --dry-run --host cursor --mode fresh
+assert_contains "mode filter totals" "$TL_OUT" "RC matrix: 0 passed, 0 failed, 2 skipped"
+assert_eq "mode filter: only upgrade markers" "claude-upgrade codex-upgrade" "$(ls "$MK" | tr '\n' ' ' | sed 's/ $//')"
+mrun --dry-run --host claude --mode fresh
 assert_contains "host+mode filter" "$TL_OUT" "RC matrix: 0 passed, 0 failed, 1 skipped"
 mrun --dry-run --host nosuch
 assert_contains "no cell selected" "$TL_OUT" "RC matrix: 0 passed, 0 failed, 0 skipped"
@@ -91,11 +89,9 @@ mrun --host claude --mode fresh --require-live
 assert_eq "--require-live without cli -> 1" 1 "$TL_STATUS"
 assert_eq "require-live marker" unavailable "$(artifact_of claude-fresh)"
 assert_eq "require-live runs no cell" "" "$(cat "$LOG")"
-mrun SB_RC_MATRIX_REQUIRE_LIVE=1 --host cursor --mode fresh
-assert_eq "require-live via env" unavailable "$(artifact_of cursor-fresh)"
-# cursor: CLI present but unauthenticated is not live; authenticated is
-mrun CURSOR_LIVE=1 CURSOR_AUTH=0 --host cursor --mode fresh
-assert_eq "cursor unauthenticated -> not live" no-live-cli "$(artifact_of cursor-fresh)"
+mrun SB_RC_MATRIX_REQUIRE_LIVE=1 --host claude --mode fresh
+assert_eq "require-live via env" unavailable "$(artifact_of claude-fresh)"
+# a CLI that is present but unauthenticated is not live
 mrun CLAUDE_LIVE=1 CLAUDE_AUTH=0 --host claude --mode fresh
 assert_eq "claude unauthenticated -> not live" no-live-cli "$(artifact_of claude-fresh)"
 
@@ -108,8 +104,6 @@ assert_eq "GITHUB_ACTIONS implies ci mode" ci-no-first-party-keys "$(artifact_of
 mrun GITHUB_ACTIONS=true CELL_FAIL=codex --host codex --mode fresh
 assert_eq "ci mode: cell failure" install "$(artifact_of codex-fresh)"
 assert_eq "ci mode: failure exit" 1 "$TL_STATUS"
-mrun GITHUB_ACTIONS=true --host cursor --mode fresh
-assert_eq "ci mode does not skip cursor" no-live-cli "$(artifact_of cursor-fresh)"
 
 # --- live host (stubbed CLIs) ---------------------------------------------------------------------------------------------------------
 tl_stub codex 'exit 0'
@@ -133,20 +127,9 @@ assert_eq "live delegate failure -> fail marker" fail "$(status_of codex-fresh)"
 assert_match "live delegate failure artifact is the log" 'rc\.log$' "$(artifact_of codex-fresh)"
 mrun CLAUDE_LIVE=1 CLAUDE_AUTH=1 --host claude --mode upgrade
 assert_eq "live claude pass" pass "$(status_of claude-upgrade)"
-mrun CURSOR_LIVE=1 CURSOR_AUTH=1 --host cursor --mode fresh
-assert_eq "live cursor (no leanctx) uses delegate smoke" pass "$(status_of cursor-fresh)"
-assert_contains "cursor delegate" "$(cat "$LOG")" "delegate cursor"
-mrun CURSOR_LIVE=1 CURSOR_AUTH=1 LEANCTX=1 --host cursor --mode fresh
-assert_eq "live cursor with leanctx" pass "$(status_of cursor-fresh)"
-assert_contains "five-tool scenarios used" "$(cat "$LOG")" "fivetool $T"
-assert_not_contains "delegate smoke not used with leanctx" "$(cat "$LOG")" "delegate cursor"
-mrun CURSOR_LIVE=1 CURSOR_AUTH=1 LEANCTX=1 FIVETOOL_FAIL=1 --host cursor --mode fresh
-assert_eq "five-tool failure marker" fail "$(status_of cursor-fresh)"
-assert_eq "five-tool failure exit" 1 "$TL_STATUS"
-
 # runtime-paths present in the repo root is sourced
 mkdir -p "$T/hooks/lib"; cp "$R/hooks/lib/runtime-paths.sh" "$T/hooks/lib/"
-mrun SB_RUNTIME_PRESERVE_STATE_DIR=1 --dry-run --host cursor --mode fresh
+mrun SB_RUNTIME_PRESERVE_STATE_DIR=1 --dry-run --host codex --mode fresh
 assert_eq "runtime-paths sourced: still ok" 0 "$TL_STATUS"
 
 tl_results

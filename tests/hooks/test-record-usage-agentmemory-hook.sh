@@ -107,7 +107,7 @@ assert_not_recorded "agentmemory: an interrupted command is not success" "$AM_ST
 reset; tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_input:{command:"agentmemory search x"}, tool_response:"oops"}')"
 assert_not_recorded "agentmemory: a non-object response is not success" "$AM_STATE"
 # MCP retrievals are recorded by record-recommended-mcp.sh, not by this Bash recorder
-reset; tg2_run "$AMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
+reset; tg2_run "$AMH" "$(tg2_mcp_input agentmemory memory_recall MCP)"
 assert_not_recorded "agentmemory: the Bash recorder ignores MCP calls" "$AM_STATE"
 # Unwritable state path (a directory) -> record fails, hook stays silent and exits 0.
 reset; mkdir -p "$SB_RUNTIME_STATE_DIR/am-dir-usage"

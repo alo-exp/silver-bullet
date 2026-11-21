@@ -2,7 +2,7 @@
 # install-leanctx-sb.sh — Silver Bullet host-aware LeanCTX install (library mode).
 #
 # SB owns all host config writes. This script NEVER runs `lean-ctx init --agent *`
-# (which clobbers AGENTS.md, .cursorrules, and agent skill dirs — conflict #8).
+# (which clobbers AGENTS.md and agent skill dirs — conflict #8).
 #
 # Upstream CLI flag verification (2026-07-07):
 #   --library-mode  : NOT present in lean-ctx README/compatibility docs — use fallback chain.
@@ -11,7 +11,7 @@
 #
 # Fallback install path (safest when --library-mode absent):
 #   1. Ensure lean-ctx binary on PATH (checksum-verified installer or the pinned cargo install).
-#   2. Skip lean-ctx init entirely; wire MCP via scripts/lib/global-toolstack/patch-mcp.py.
+#   2. Skip lean-ctx init entirely; wire MCP via scripts/lib/merge-leanctx-mcp-config.py.
 #   3. Apply SB five-tool profile env via merge script (lctx_ prefix, CM overlap off).
 set -euo pipefail
 
@@ -19,7 +19,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # One backup per run: sb_host_config keeps the user's file as it was before the run's first change.
 export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-PATCH_MCP_PY="${SCRIPT_DIR}/lib/global-toolstack/patch-mcp.py"
 VERIFY_PY="${SCRIPT_DIR}/lib/verify-leanctx-wire-proxy-ordering.py"
 # Shared manifest helpers keep every host on the same user-global LeanCTX
 # executable when its command is not already present on PATH.
@@ -55,7 +54,7 @@ Host-aware LeanCTX install for Silver Bullet five-tool routed stack.
 Uses library-mode when upstream supports it; otherwise SB merge-only wiring.
 
 Options:
-  --host <cursor|claude|codex|opencode|pi> Target host (required)
+  --host <claude|codex|opencode|pi>       Target host (required)
   --project-root <path>                   Canonical SB project root (required)
   --dry-run                                     Print actions without writes
   --skip-install                                Skip binary install step
@@ -67,7 +66,7 @@ Options:
   -h, --help                                    Show help
 
 Needs your consent for LeanCTX (bash scripts/sb-consent.sh grant leanctx --all-projects
---capabilities wire,install). Never writes AGENTS.md, .cursorrules, or host skill directories.
+--capabilities wire,install). Never writes AGENTS.md or host skill directories.
 EOF
 }
 
@@ -93,10 +92,6 @@ run_cmd() {
 }
 
 detect_host() {
-  if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]] || [[ -d "${HOME}/.cursor" ]]; then
-    printf '%s' "cursor"
-    return 0
-  fi
   if [[ -n "${CODEX_HOME:-}" ]] || [[ -d "${HOME}/.codex" ]]; then
     printf '%s' "codex"
     return 0
@@ -109,23 +104,12 @@ detect_host() {
     printf '%s' "pi"
     return 0
   fi
-  if [[ -d "${HOME}/.claude" ]]; then
-    printf '%s' "claude"
-    return 0
-  fi
-  printf '%s' "cursor"
+  printf '%s' "claude"
 }
 
 init_guard_paths() {
   GUARD_PATHS=()
   case "$HOST" in
-    cursor)
-      GUARD_PATHS+=(
-        "${HOME}/.cursor/AGENTS.md"
-        "${PROJECT_ROOT}/.cursorrules"
-        "${PROJECT_ROOT}/AGENTS.md"
-      )
-      ;;
     codex)
       GUARD_PATHS+=("${HOME}/.codex/AGENTS.md" "${PROJECT_ROOT}/AGENTS.md")
       ;;
@@ -210,10 +194,6 @@ leanctx_supports_library_mode() {
 
 context_mode_configured() {
   case "$HOST" in
-    cursor)
-      local mcp="${HOME}/.cursor/mcp.json"
-      [[ -f "$mcp" ]] && grep -q '"context-mode"' "$mcp" 2>/dev/null
-      ;;
     claude)
       local claude_plugin_root="${HOME}/.claude/plugins"
       [[ -d "${claude_plugin_root}/context-mode" ]] \
@@ -331,17 +311,6 @@ merge_mcp_config() {
   fi
   local merge_py="${SCRIPT_DIR}/lib/merge-leanctx-mcp-config.py"
   case "$HOST" in
-    cursor)
-      if [[ ! -f "$PATCH_MCP_PY" ]]; then
-        warn "patch-mcp helper missing: $PATCH_MCP_PY"
-        return 1
-      fi
-      if [[ "$DRY_RUN" -eq 1 ]]; then
-        log "DRY-RUN: RT_PATCH_LEANCTX=1 RT_PATCH_GRAPHIFY=0 python3 $PATCH_MCP_PY"
-        return 0
-      fi
-      RT_PATCH_LEANCTX=1 RT_PATCH_GRAPHIFY=0 run_cmd python3 "$PATCH_MCP_PY"
-      ;;
     claude|codex|opencode)
       if [[ ! -f "$merge_py" ]]; then
         warn "merge-leanctx-mcp-config helper missing: $merge_py"
@@ -370,7 +339,7 @@ merge_mcp_config() {
       fi
       ;;
     *)
-      log "SKIP: MCP merge (host=${HOST}; no merge target implemented — supported: cursor, claude, codex, opencode, pi)"
+      log "SKIP: MCP merge (host=${HOST}; no merge target implemented — supported: claude, codex, opencode, pi)"
       return 0
       ;;
   esac
@@ -544,4 +513,4 @@ fi
 
 log "=== LeanCTX SB install complete ==="
 log "Routing: sb_wire/sb_read/sb_pathjail/sb_injection → LeanCTX; sb_shell→RTK; sb_slice/sb_grep/sb_webfetch→CM; sb_graph→Graphify; sb_remember→agentmemory"
-log "See .cursor/rules/leanctx.mdc and docs/LEANCTX.md (when present)"
+log "See docs/LEANCTX.md (when present)"

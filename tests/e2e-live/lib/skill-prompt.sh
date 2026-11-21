@@ -14,7 +14,6 @@ matrix_route_prompt() {
 }
 
 # Rows 2-20: Claude TUI registers /sb from agents/claude/sb (skills manifest).
-# Cursor command-only commands/sb.md is not copied into the Claude plugin cache.
 # The expect harness must wait for the ❯ prompt before submitting slash routes.
 matrix_product_commit_clause() {
   [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] || return 0

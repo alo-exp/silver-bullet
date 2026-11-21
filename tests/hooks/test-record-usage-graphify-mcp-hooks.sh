@@ -101,71 +101,71 @@ assert_recorded "graphify: jq fallbacks record without tool-input.sh" "$GF_STATE
 
 # ------------------------------------------------------ recommended MCP usage
 RMH=hooks/record-recommended-mcp.sh
-reset; tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
+reset; tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall MCP)"
 assert_recorded "recommended-mcp: agentmemory server + retrieval tool records" "$AM_STATE"
 assert_eq "recommended-mcp: confirmation" "✅ agentmemory usage recorded" "$(msg)"
 for t in memory_smart_search memory_search memory_file_history smart_search recall search; do
   reset; tg2_run "$RMH" "$(tg2_mcp_input agentmemory "$t" MCP)"
   assert_recorded "recommended-mcp: agentmemory retrieval tool $t records" "$AM_STATE"
 done
-reset; tg2_run "$RMH" "$(tg2_mcp_input user-agentmemory memory_recall CallMcpTool)"
+reset; tg2_run "$RMH" "$(tg2_mcp_input user-agentmemory memory_recall MCP)"
 assert_recorded "recommended-mcp: a namespaced agentmemory server records" "$AM_STATE"
 reset; tg2_run "$RMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"mcp__agentmemory__memory_smart_search", tool_input:{query:"x"}}')"
 assert_recorded "recommended-mcp: Claude Code names (mcp__server__tool) record" "$AM_STATE"
 # R5-10: capture is not retrieval, and another server's search tool is not agentmemory
 for c in "agentmemory list_files" "agentmemory memory_save" "agentmemory save_memory" "some-server save_memory" "some-server store_note" \
   "some-server search" "some-server recall" "my-agentmemory-fork memory_recall" "agentmemory-evil memory_recall"; do
-  reset; tg2_run "$RMH" "$(tg2_mcp_input "${c% *}" "${c#* }" CallMcpTool)"
+  reset; tg2_run "$RMH" "$(tg2_mcp_input "${c% *}" "${c#* }" MCP)"
   assert_not_recorded "recommended-mcp: does not record $c" "$AM_STATE"
 done
-reset; tg2_run "$RMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"CallMcpTool", tool_input:{server:"agentmemory", toolName:"memory_recall"}, tool_response:{isError:true}}')"
+reset; tg2_run "$RMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"MCP", tool_input:{server:"agentmemory", toolName:"memory_recall"}, tool_response:{isError:true}}')"
 assert_not_recorded "recommended-mcp: an error result is not recorded" "$AM_STATE"
 # Graphify MCP retrievals
-reset; tg2_run "$RMH" "$(tg2_mcp_input graphify query_graph CallMcpTool)"
+reset; tg2_run "$RMH" "$(tg2_mcp_input graphify query_graph MCP)"
 assert_recorded "recommended-mcp: graphify query_graph records" "$GF_STATE"
 assert_eq "recommended-mcp: graphify confirmation" "✅ Graphify query recorded" "$(msg)"
 for t in get_node get_neighbors shortest_path; do
   reset; tg2_run "$RMH" "$(tg2_mcp_input graphify "$t" MCP)"
   assert_recorded "recommended-mcp: graphify $t records" "$GF_STATE"
 done
-reset; tg2_run "$RMH" "$(tg2_mcp_input graphify graph_stats CallMcpTool)"
+reset; tg2_run "$RMH" "$(tg2_mcp_input graphify graph_stats MCP)"
 assert_not_recorded "recommended-mcp: a graphify tool that is not retrieval does not record" "$GF_STATE"
-reset; tg2_run "$RMH" "$(tg2_mcp_input some-server query_graph CallMcpTool)"
+reset; tg2_run "$RMH" "$(tg2_mcp_input some-server query_graph MCP)"
 assert_not_recorded "recommended-mcp: query_graph on another server does not record" "$GF_STATE"
 reset; jq '.recommended_tools.graphify.enabled_by_user=false' <<<"$all_cfg" >"$TG2_CFG"
-tg2_run "$RMH" "$(tg2_mcp_input graphify query_graph CallMcpTool)"
+tg2_run "$RMH" "$(tg2_mcp_input graphify query_graph MCP)"
 assert_not_recorded "recommended-mcp: opted-out graphify is a no-op" "$GF_STATE"
-reset; tg2_run "$RMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"CallMcpTool", tool_input:{server:"agentmemory"}}')"
+reset; tg2_run "$RMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"MCP", tool_input:{server:"agentmemory"}}')"
 assert_not_recorded "recommended-mcp: missing tool name is a no-op" "$AM_STATE"
-reset; tg2_run "$RMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"CallMcpTool", tool_input:{toolName:"search"}}')"
+reset; tg2_run "$RMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"MCP", tool_input:{toolName:"search"}}')"
 assert_not_recorded "recommended-mcp: missing server is a no-op" "$AM_STATE"
 reset; tg2_run "$RMH" "$(tg2_bash_input 'agentmemory search x' Bash PostToolUse)"
 assert_not_recorded "recommended-mcp: non-MCP tool is a no-op" "$AM_STATE"
 reset; tg2_run "$RMH" ""
 assert_not_recorded "recommended-mcp: empty stdin is a no-op" "$AM_STATE"
-reset; TG2_PATH="$(tl_path_without jq)" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
+reset; TG2_PATH="$(tl_path_without jq)" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall MCP)"
 assert_not_recorded "recommended-mcp: missing jq is a no-op" "$AM_STATE"
-reset; TG2_CWD="$TL_TMP/outside" TG2_PROJECT_ROOT="" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
+reset; TG2_CWD="$TL_TMP/outside" TG2_PROJECT_ROOT="" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall MCP)"
 assert_not_recorded "recommended-mcp: outside SB project is a no-op" "$AM_STATE"
 reset; mkdir -p "$TL_TMP/gitonly2/sub"; git -C "$TL_TMP/gitonly2" init -q 2>/dev/null
-TG2_CWD="$TL_TMP/gitonly2/sub" TG2_PROJECT_ROOT="" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
+TG2_CWD="$TL_TMP/gitonly2/sub" TG2_PROJECT_ROOT="" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall MCP)"
 assert_not_recorded "recommended-mcp: walk stops at .git boundary" "$AM_STATE"
-reset; TG2_CWD="$TG2_PROJ/src" TG2_PROJECT_ROOT="" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
+reset; TG2_CWD="$TG2_PROJ/src" TG2_PROJECT_ROOT="" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall MCP)"
 assert_recorded "recommended-mcp: walk finds config in parent dir" "$AM_STATE"
 reset; jq '.recommended_tools.agentmemory.enabled_by_user=false' <<<"$all_cfg" >"$TG2_CFG"
-tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
+tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall MCP)"
 assert_not_recorded "recommended-mcp: opted-out agentmemory is a no-op" "$AM_STATE"
-reset; tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)" XDG_CONFIG_HOME="$TL_TMP/no-consent"
+reset; tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall MCP)" XDG_CONFIG_HOME="$TL_TMP/no-consent"
 assert_not_recorded "recommended-mcp: no user consent is a no-op" "$AM_STATE"
 reset; tg2_farm rm-nolib "$RMH" -
-TG2_REPO="$TG2_FARM" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
+TG2_REPO="$TG2_FARM" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall MCP)"
 assert_not_recorded "recommended-mcp: missing lib dir fails open" "$AM_STATE"
 reset; tg2_farm rm-notoolinput "$RMH" tool-input.sh
-TG2_REPO="$TG2_FARM" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
+TG2_REPO="$TG2_FARM" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall MCP)"
 assert_recorded "recommended-mcp: jq fallback tool-name parse records" "$AM_STATE"
 reset; mkdir -p "$SB_RUNTIME_STATE_DIR/am-dir-usage"
 jq --arg p "$SB_RUNTIME_STATE_DIR/am-dir-usage" '.recommended_tools.agentmemory.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
-tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
+tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall MCP)"
 assert_silent_ok "recommended-mcp: failed state write is silent"
 rmdir "$SB_RUNTIME_STATE_DIR/am-dir-usage"
 
@@ -193,7 +193,7 @@ assert_not_recorded "recommended-mcp: unparsable payload records nothing" "$AM_S
 reset; TG2_STDIN_UNREADABLE=1 tg2_run "$RMH" ""
 assert_not_recorded "recommended-mcp: unreadable stdin is a no-op" "$AM_STATE"
 reset; tg2_farm inactive-rm "$RMH" project-active.sh; tg2_farm_stub project-active.sh "$stub_inactive"
-TG2_REPO="$TG2_FARM" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
+TG2_REPO="$TG2_FARM" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall MCP)"
 assert_not_recorded "recommended-mcp: not-initiated project is a no-op" "$AM_STATE"
 
 tl_results

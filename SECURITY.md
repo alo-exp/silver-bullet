@@ -36,7 +36,7 @@ Silver Bullet's hooks execute shell commands as part of their enforcement logic.
 The following are out of scope:
 
 - Vulnerabilities in optional third-party extension plugins; report those to their maintainers
-- Host-platform vulnerabilities in Claude Code, Codex, or Cursor; report those to the relevant platform vendor
+- Host-platform vulnerabilities in Claude Code or Codex; report those to the relevant platform vendor
 - Issues requiring physical access to the machine
 
 ## Acknowledgments

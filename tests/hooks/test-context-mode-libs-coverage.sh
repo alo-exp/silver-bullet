@@ -96,7 +96,6 @@ assert_eq "node version re-read when the binary is newer than the cache" "24.1.0
 export SB_CONTEXT_MODE_MCP_ARTIFACT=/override/art
 assert_eq "artifact override" "/override/art" "$(sb_context_mode_platform_artifact_path "$PR" claude)"
 unset SB_CONTEXT_MODE_MCP_ARTIFACT
-assert_eq "artifact cursor" "$HOME/.cursor/mcp.json" "$(sb_context_mode_platform_artifact_path "$PR" cursor)"
 assert_eq "artifact codex" "/ch/config.toml" "$(CODEX_HOME=/ch sb_context_mode_platform_artifact_path "$PR" codex)"
 assert_eq "artifact opencode" "$HOME/.config/opencode/opencode.json" "$(sb_context_mode_platform_artifact_path "$PR" opencode)"
 assert_eq "artifact pi env" "/pd/extensions/silver-bullet-five-tool-stack/config.json" "$(PI_CODING_AGENT_DIR=/pd sb_context_mode_platform_artifact_path "$PR" pi)"
@@ -128,16 +127,14 @@ export SB_CONTEXT_MODE_MCP_ARTIFACT="$TL_TMP/art"
 printf 'x' >"$TL_TMP/art"
 no_t "present claude: an explicit artifact override is checked as a file (no marker)" present claude
 rm -f "$TL_TMP/art"
-for h in cursor codex; do
+h=codex
   no_t "present $h missing file" present "$h"
   printf 'nothing' >"$TL_TMP/art"
   no_t "present $h without marker" present "$h"
   printf 'x context-mode y' >"$TL_TMP/art"
   yes_t "present $h" present "$h"
   rm -f "$TL_TMP/art"
-done
 ln -s "$TL_TMP/other-target" "$TL_TMP/art"; printf 'context-mode' >"$TL_TMP/other-target"
-no_t "present cursor refuses symlink" present cursor
 rm -f "$TL_TMP/art"
 no_t "present opencode missing file" present opencode
 printf '{"plugin":["context-mode"]}' >"$TL_TMP/art"; yes_t "present opencode plugin exact" present opencode
@@ -174,7 +171,7 @@ yes_t "fragment AGENTS.md" sb_context_mode_instruction_fragment_present "$FR"
 
 # ---------- exemptions ----------
 no_t "edit exempt empty" sb_context_mode_edit_path_is_exempt ""
-for p in /p/.silver-bullet.json /p/SETUP_REPORT.md /p/.silver-bullet/x /h/.cursor/mcp.json /h/.cursor/hooks.json /p/templates/context-mode-hint.md.base; do
+for p in /p/.silver-bullet.json /p/SETUP_REPORT.md /p/.silver-bullet/x /p/templates/context-mode-hint.md.base; do
   yes_t "edit exempt $p" sb_context_mode_edit_path_is_exempt "$p"
 done
 no_t "edit not exempt" sb_context_mode_edit_path_is_exempt /p/src/a.py

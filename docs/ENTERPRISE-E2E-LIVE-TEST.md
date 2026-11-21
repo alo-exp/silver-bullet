@@ -7,7 +7,7 @@
 
 Optional live validation of Silver Bullet against the `enterprise-grade-test-app` fixture via **interactive Claude TUI**. Not run in default CI or `bash tests/run-all-tests.sh` unless explicitly opted in.
 
-**See also:** `docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md` (staged Tier A/B/C gates — **share with Codex, Cursor, Claude agents**); `docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md` (effectiveness scoring and iteration criteria).
+**See also:** `docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md` (staged Tier A/B/C gates — **share with Codex and Claude agents**); `docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md` (effectiveness scoring and iteration criteria).
 
 ---
 
@@ -82,23 +82,10 @@ and use the fixed model mapping below:
 |------|------------------|----------------|
 | Codex | `/sb:agent-codex` | **GPT-5.6 Luna Low** |
 | Claude | `/sb:agent-claude` | **Haiku 4.5** |
-| Cursor | `/sb:agent-cursor` | **Composer 2.5** |
 
 This Claude runbook therefore uses `/sb:agent-claude` with **Haiku 4.5** for live
 Claude rows. Raw host CLI invocations or silent model substitutions do not count as live
-wrapper evidence. For the current release cycle, defer Cursor live five-tool scenarios
-until the separate Cursor five-tool repair session reports completion and its changes are
-available in the fixture under test.
-
----
-
-## Orchestrator / Cursor operator notes
-
-### Subagent model policy
-
-- Parent orchestrator and enterprise E2E workers: use **Composer 2.5** (`composer-2.5`) for all Task/subagent delegations.
-- **Do not** use Composer 2.5 Fast (`composer-2.5-fast`) for subagent work.
-- Ladder nominal model slugs in `review-fix-ladder.py` are separate (Claude TUI matrix); this policy applies to **Cursor Task subagents only**.
+wrapper evidence.
 
 ---
 
@@ -155,7 +142,7 @@ Record test-app `git rev-parse HEAD` in the round ledger header.
 
 ### Session-start from test app
 
-Branch-scoped session-start runs from **test app CWD** via cursor-hook-bridge / `SILVER_BULLET_SESSION_SOURCE=startup`. Confirm `~/.claude/.silver-bullet/branch` matches the active fixture branch before matrix rows.
+Branch-scoped session-start runs from **test app CWD** via `SILVER_BULLET_SESSION_SOURCE=startup`. Confirm `~/.claude/.silver-bullet/branch` matches the active fixture branch before matrix rows.
 
 ### Recommended tools (opt in on both repos)
 
@@ -248,7 +235,7 @@ Minimum **2 consecutive clean rounds**:
 3. **`bash tests/run-all-tests.sh`** → 0 failures
 4. **`graphify update .`** in SB repo post-fixes
 5. No open MUST-FIX issues
-Harness (optional): `SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS=1 bash scripts/lib/enterprise-e2e-consecutive-rounds-check.sh --host <claude|codex|cursor>` enforces **2/2** strict-clean PASS from the host gate file pair.
+Harness (optional): `SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS=1 bash scripts/lib/enterprise-e2e-consecutive-rounds-check.sh --host <claude|codex>` enforces **2/2** strict-clean PASS from the host gate file pair.
 
 ---
 

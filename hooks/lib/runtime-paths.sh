@@ -3,15 +3,12 @@
 #
 # Codex sessions should use the Codex runtime home root for SB state and
 # plugin caches. Claude sessions should use the Claude runtime home root.
-# Cursor sessions should use the Cursor runtime home root (~/.cursor).
 # Tests can force any host by exporting SILVER_BULLET_RUNTIME.
 
 if [[ -z "${SILVER_BULLET_RUNTIME:-}" ]]; then
   _sb_runtime_source="${BASH_SOURCE[0]:-$0}"
   if [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_INTERNAL_ORIGINATOR_OVERRIDE:-}" || "$_sb_runtime_source" == *"/.codex/"* || ( -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.codex/"* ) ]]; then
     SILVER_BULLET_RUNTIME="codex"
-  elif [[ -n "${CURSOR_PLUGIN_ROOT:-}" || "$_sb_runtime_source" == *"/.cursor/"* || ( -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.cursor/"* ) ]]; then
-    SILVER_BULLET_RUNTIME="cursor"
   elif [[ -n "${PI_CODING_AGENT_DIR:-}" || "$_sb_runtime_source" == *"/.pi/"* ]]; then
     SILVER_BULLET_RUNTIME="pi"
   elif [[ -n "${OPENCODE:-}" || -n "${OPENCODE_PID:-}" || "$_sb_runtime_source" == *"/.config/opencode/"* ]]; then
@@ -22,7 +19,7 @@ if [[ -z "${SILVER_BULLET_RUNTIME:-}" ]]; then
 fi
 
 case "$SILVER_BULLET_RUNTIME" in
-  claude|codex|cursor|opencode|pi|goose|hermes) ;;
+  claude|codex|opencode|pi|goose|hermes) ;;
   *) SILVER_BULLET_RUNTIME="claude" ;;
 esac
 
@@ -146,7 +143,7 @@ sb_runtime_skill_receipt_dirs() {
 
   for base_home in "$HOME" "${KAY_HOME:-}"; do
     [[ -n "$base_home" ]] || continue
-    for runtime in codex claude cursor; do
+    for runtime in codex claude; do
       _sb_append_receipt_dir "${base_home}/.${runtime}/.silver-bullet"
     done
     _sb_append_receipt_dir "${base_home}/.config/opencode/.silver-bullet"

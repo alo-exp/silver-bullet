@@ -141,7 +141,6 @@ sb_agentmemory_platform_artifact_path() {
   fi
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
-    cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
     codex) printf '%s/.codex/config.toml' "${HOME}" ;;
     opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
     goose) printf '%s/.config/goose/config.yaml' "${HOME}" ;;

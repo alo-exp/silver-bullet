@@ -66,7 +66,6 @@ TOOL_DEFINITIONS: Dict[str, Dict[str, Any]] = {
 HOST_PROJECTIONS: Dict[str, Dict[str, Any]] = {
     "claude": {"kind": "mcp", "config": "user", "native_context_mode": False},
     "codex": {"kind": "mcp", "config": "user", "native_context_mode": False},
-    "cursor": {"kind": "mcp-and-hooks", "config": "user", "native_context_mode": False},
     "opencode": {"kind": "mcp-or-plugin", "config": "user", "native_context_mode": True},
     "pi": {"kind": "extension", "config": "agent", "native_context_mode": True},
 }
@@ -79,7 +78,7 @@ COORDINATION_RULES: Dict[str, Any] = {
 }
 
 _EXTRA_LAUNCHER_SUFFIXES = (".exe", ".cmd", ".ps1", ".bat", ".mjs", "")
-_HOST_SCOPED_PARTS = {".claude", ".codex", ".cursor", ".pi"}
+_HOST_SCOPED_PARTS = {".claude", ".codex", ".pi"}
 _HOST_SCOPED_MARKERS = ("/.config/opencode/", "/.config/opencode")
 
 

@@ -19,7 +19,7 @@ PREFLIGHT_ARGS=()
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--harness-only] [--host claude|codex|cursor]
+Usage: $(basename "$0") [--harness-only] [--host claude|codex]
 
 Smoke rows: ${SMOKE_ROWS[*]}
 

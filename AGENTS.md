@@ -11,7 +11,7 @@ Guidance for coding agents and contributors working in this repository. `CLAUDE.
 ## Repo Shape
 
 - Stack: Bash for hooks/scripts, Python for generators, validators and payload helpers, Markdown for skills/templates/docs, JSON for config and manifests.
-- Main surfaces: `hooks/`, `skills/`, `scripts/`, `templates/`, `tests/`, `docs/`, `site/`, `plugins/`, `.claude-plugin/`, `.cursor-plugin/`, `.agents/plugins/`. [CONTRIBUTING.md](CONTRIBUTING.md#repository-layout) describes every top-level directory.
+- Main surfaces: `hooks/`, `skills/`, `scripts/`, `templates/`, `tests/`, `docs/`, `site/`, `plugins/`, `.claude-plugin/`, `.agents/plugins/`. [CONTRIBUTING.md](CONTRIBUTING.md#repository-layout) describes every top-level directory.
 - Never modify the installed plugin cache under `${SB_RUNTIME_HOME_ROOT}/plugins/cache/`; all behavior changes belong in this source repo.
 
 ## Useful Commands
@@ -38,23 +38,18 @@ jq . .silver-bullet.json >/dev/null
 # ShellCheck as CI runs it (make lint fails on any finding)
 bash scripts/lint-shell.sh --all
 bash scripts/check-repo-invariants.sh   # manifests, versions, hook references, skill lists, mirrors
-
-# Cursor recommended-tool rules (graphify + agentmemory + umbrella)
-bash scripts/install-recommended-tools-cursor.sh
 ```
 
 ## Derived Surfaces (edit source only)
 
 | Source | Generated / mirrored | Sync command |
 |--------|---------------------|--------------|
-| `skills/` | `agents/claude/`, `host-bundles/codex/`, `host-bundles/cursor/`, `plugins/silver-bullet/{skill-source,cursor-skill-source}/` | `bash scripts/sync-codex-package.sh` |
+| `skills/` | `agents/claude/`, `host-bundles/codex/`, `plugins/silver-bullet/skill-source/` | `bash scripts/sync-codex-package.sh` |
 | `templates/` | `plugins/silver-bullet/templates/` | `bash scripts/sync-templates.sh` (also run by `sync-codex-package.sh`) |
-| Composer `SKILL.md` frontmatter | `plugins/silver-bullet/commands/` (18 stubs) | `bash scripts/generate-plugin-commands.sh` |
-| `hooks/hooks.json` | `hooks/cursor-hooks.json`, `plugins/silver-bullet/cursor-hooks.json` | `python3 scripts/generate-cursor-hooks.py` |
 | `hooks/hooks.json` + `docs/hooks-purpose.json` | `docs/HOOKS.md` | `python3 scripts/generate-hook-reference.py` |
 | `docs/apo-catalog.json` | `docs/composable-flows-contracts.md`, `docs/workflow-composition-matrix.md`, `docs/generated/` | `python3 scripts/generate-apo-artifacts.py` |
 
-**Commands vs skills:** 98 skills live under `skills/`. The command stubs cover the composer routes listed in `scripts/generate-plugin-commands.sh` plus retained hand-written routes such as `sb-doctor.md`; every other skill is Skill-tool-only (invoke it through the host skill picker, or `silver-bullet invoke-skill` on Codex). Tests enforce `silver-bullet.md` ↔ `templates/silver-bullet.md.base` parity (`tests/scripts/test-silver-bullet-template-parity.sh`), render freshness (`tests/scripts/test-render-agent-bundle-freshness.sh`), the plugin mirror (`bash scripts/validate-plugin-mirror.sh`) and the stated skill and stub counts (`tests/docs/test-doc-facts.sh`).
+**Skills:** 97 skills live under `skills/`; invoke them through the host skill picker, or `silver-bullet invoke-skill` on Codex. Tests enforce `silver-bullet.md` ↔ `templates/silver-bullet.md.base` parity (`tests/scripts/test-silver-bullet-template-parity.sh`), render freshness (`tests/scripts/test-render-agent-bundle-freshness.sh`), the plugin mirror (`bash scripts/validate-plugin-mirror.sh`) and the stated skill and stub counts (`tests/docs/test-doc-facts.sh`).
 
 ## Working Rules
 
@@ -66,7 +61,7 @@ bash scripts/install-recommended-tools-cursor.sh
 
 ## Release Policy
 
-[docs/RELEASE.md](docs/RELEASE.md) is the single description of the release process. In short: CI must be green before any tag or `gh release create`; `bash scripts/pre-release-gate.sh` runs the local gate (site freshness, five-tool Cursor check, full suite, RC matrix); and the release commit must be green on GitHub Actions (`bash scripts/verify-release-commit-ci.sh`) before tagging. Site/help-only publishes are exempt.
+[docs/RELEASE.md](docs/RELEASE.md) is the single description of the release process. In short: CI must be green before any tag or `gh release create`; `bash scripts/pre-release-gate.sh` runs the local gate (site freshness, full suite, RC matrix); and the release commit must be green on GitHub Actions (`bash scripts/verify-release-commit-ci.sh`) before tagging. Site/help-only publishes are exempt.
 
 ## Transferable Notes
 

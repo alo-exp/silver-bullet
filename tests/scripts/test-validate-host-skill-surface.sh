@@ -47,59 +47,32 @@ body
 EOF
 }
 
-write_command() {
-  local root="$1" file="$2" name="$3"
-  mkdir -p "$root"
-  cat >"$root/$file" <<EOF
----
-name: "${name}"
-title: "Test"
----
-body
-EOF
-}
-
 fixture_root="$tmpdir/good"
 write_skill "$fixture_root/agents/claude" "sb" "sb"
 write_skill "$fixture_root/agents/claude" "sb:feature" "sb:feature"
 write_skill "$fixture_root/agents/claude" "modularity" "modularity" "false"
 write_skill "$fixture_root/host-bundles/codex" "sb" "sb"
 write_skill "$fixture_root/host-bundles/codex" "sb:feature" "sb:feature" "false"
-write_skill "$fixture_root/host-bundles/cursor" "sb" "sb"
-write_skill "$fixture_root/host-bundles/cursor" "sb:plan" "sb:plan"
-  write_command "$fixture_root/plugins/silver-bullet/commands" "sb-feature.md" "sb-feature"
 
 bad_prefix_root="$tmpdir/bad-prefix"
-write_skill "$bad_prefix_root/host-bundles/cursor" "silver-feature" "silver-feature"
-
-bad_command_stem_root="$tmpdir/bad-command-stem"
-write_command "$bad_command_stem_root/plugins/silver-bullet/commands" "init.md" "sb:init"
-write_skill "$bad_command_stem_root/host-bundles/cursor" "sb:plan" "sb:plan"
+write_skill "$bad_prefix_root/agents/claude" "silver-feature" "silver-feature"
 
 dup_root="$tmpdir/bad-dup"
-write_skill "$dup_root/host-bundles/cursor" "silver-feature" "silver-feature"
-  write_command "$dup_root/plugins/silver-bullet/commands" "sb-feature.md" "sb-feature"
+write_skill "$dup_root/agents/claude" "sb:feature" "sb:feature"
+write_skill "$dup_root/agents/claude" "sb:feature-two" "sb:feature"
 
 hyphen_root="$tmpdir/bad-hyphen"
 write_skill "$hyphen_root/agents/claude" "silver-feature" "sb:feature"
-
-overlap_root="$tmpdir/bad-overlap"
-write_skill "$overlap_root/host-bundles/cursor" "sb:feature" "sb:feature"
-  write_command "$overlap_root/plugins/silver-bullet/commands" "sb-feature.md" "sb-feature"
 
 echo "--- validate-host-skill-surface.sh (fixtures) ---"
 assert_pass "clean fixture passes" \
   bash "$SCRIPT" --repo-root "$fixture_root"
 assert_fail "bad prefix fails" \
   bash "$SCRIPT" --repo-root "$bad_prefix_root"
-assert_fail "command filename stem mismatch fails" \
-  bash "$SCRIPT" --repo-root "$bad_command_stem_root"
 assert_fail "duplicate route names fail" \
   bash "$SCRIPT" --repo-root "$dup_root"
 assert_fail "claude hyphen directory fails" \
   bash "$SCRIPT" --repo-root "$hyphen_root"
-assert_fail "cursor command/skill overlap fails" \
-  bash "$SCRIPT" --repo-root "$overlap_root"
 
 # R8-06: N directories exposing the identical route are duplicates, too.
 dup_same_root="$tmpdir/bad-dup-same-name"

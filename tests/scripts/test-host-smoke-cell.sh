@@ -69,35 +69,6 @@ assert_contains "claude installed" "$LOG" "install claude"
 assert_contains "claude diagnostics runtime" "$LOG" "diagnostics runtime=claude"
 rm -f "$TL_BIN/claude"; hash -r
 
-# ---- cursor: hook tests only for ci-smoke, cli smoke only for pre-release ----
-cell X=1 -- --host cursor --mode fresh --scope ci-smoke
-assert_eq "cursor ci-smoke exits 0" 0 "$TL_STATUS"
-assert_contains "ci-smoke bridge test" "$LOG" "test-cursor-hook-bridge"
-assert_contains "ci-smoke bootstrap test" "$LOG" "test-cursor-runtime-bootstrap"
-assert_contains "ci-smoke runtime paths test" "$LOG" "test-runtime-paths"
-assert_not_contains "ci-smoke does not run cursor cli smoke" "$LOG" "cursor-cli-smoke"
-cell STUB_FAIL_test_cursor_hook_bridge=1 -- --host cursor --mode fresh --scope ci-smoke
-assert_eq "hook test failure is fatal" 1 "$TL_STATUS"
-
-cell X=1 -- --host cursor --mode fresh --scope pre-release
-assert_eq "cursor pre-release exits 0" 0 "$TL_STATUS"
-assert_contains "pre-release runs cursor cli smoke with current env" "$LOG" "cursor-cli-smoke env=1"
-assert_not_contains "pre-release skips hook tests" "$LOG" "test-cursor-hook-bridge"
-cell STUB_FAIL_CURSOR_CLI=1 -- --host cursor --mode fresh --scope pre-release
-assert_eq "cursor cli smoke failure is fatal" 1 "$TL_STATUS"
-
-# cursor marker: written only when requested and scope allows
-KEEP="$TL_TMP/keep1"
-cell SMOKE_KEEP="$KEEP" SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER=1 -- --host cursor --mode fresh
-assert_file_exists "cursor marker written" "$KEEP/cursor/.silver-bullet/release-live-matrix"
-assert_eq "cursor marker content" "matrix=cursor-smoke" "$(cat "$KEEP/cursor/.silver-bullet/release-live-matrix")"
-KEEP="$TL_TMP/keep2"
-cell SMOKE_KEEP="$KEEP" SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER=1 -- --host cursor --mode fresh --scope ci-smoke
-assert_file_absent "ci-smoke scope never writes the marker" "$KEEP/cursor/.silver-bullet/release-live-matrix"
-KEEP="$TL_TMP/keep3"
-cell SMOKE_KEEP="$KEEP" -- --host cursor --mode fresh
-assert_file_absent "marker off by default" "$KEEP/cursor/.silver-bullet/release-live-matrix"
-
 # ---- upgrade: previous tag checkout is installed first, then the current tree twice ----
 git -C "$T" init -q -b main
 git -C "$T" config user.email t@example.com; git -C "$T" config user.name T; git -C "$T" config commit.gpgsign false

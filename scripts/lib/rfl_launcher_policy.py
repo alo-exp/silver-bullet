@@ -12,9 +12,7 @@ from typing import Any, Iterable
 
 RFL_SEVERITIES = ("HIGH", "MED", "LOW", "NIT")
 LAUNCH_FAIL_OUTCOMES = frozenset({"cannot_launch", "timeout"})
-DEFAULT_AVAILABLE_HOSTS = ("pi", "opencode", "cursor", "codex", "claude", "gemini-cli")
-GROK_SUBSTITUTE_MODEL = "cursor-grok-4.6-high"
-GROK_SUBSTITUTE_HOSTS = frozenset({"opencode", "pi"})
+DEFAULT_AVAILABLE_HOSTS = ("pi", "opencode", "codex", "claude", "gemini-cli")
 LAUNCHER_MANDATORY_STEPS = (
     "policy_c_artifact",
     "issue_table",
@@ -27,12 +25,6 @@ LAUNCHER_MANDATORY_STEPS = (
 )
 
 AGENT_HOST_CATALOG: dict[str, dict[str, str]] = {
-    "cursor": {
-        "host": "cursor",
-        "skill": "silver-agent-cursor",
-        "route": "/sb:agent-cursor",
-        "invoke": "scripts/agent-cursor-delegate.sh",
-    },
     "codex": {
         "host": "codex",
         "skill": "silver-agent-codex",
@@ -66,10 +58,6 @@ AGENT_HOST_CATALOG: dict[str, dict[str, str]] = {
 }
 
 USER_AGENT_ALIASES: dict[str, str] = {
-    "cursor": "cursor",
-    "agent-cursor": "cursor",
-    "silver-agent-cursor": "cursor",
-    "/sb:agent-cursor": "cursor",
     "codex": "codex",
     "agent-codex": "codex",
     "silver-agent-codex": "codex",
@@ -117,10 +105,6 @@ def model_family(model: str) -> str:
         return "claude"
     if "gemini" in slug:
         return "gemini"
-    if "grok" in slug:
-        return "grok"
-    if slug.startswith("composer-") or "composer" in slug:
-        return "composer"
     return "other"
 
 
@@ -172,17 +156,15 @@ def default_agent_host_route(
     override = normalize_user_agent(user_agent)
     if override:
         return _host_payload(override, source="user_override", model=model, family=family)
-    if family in {"grok", "composer"}:
-        return _host_payload("cursor", source="default", model=model, family=family)
     if family == "gpt":
         return _host_payload("codex", source="default", model=model, family=family)
     if family == "claude":
         return _host_payload("claude", source="default", model=model, family=family)
     if family == "gemini":
-        for host in ("gemini-cli", "pi", "opencode", "cursor"):
+        for host in ("gemini-cli", "pi", "opencode"):
             if host in available:
                 return _host_payload(host, source="gemini_cascade", model=model, family=family)
-        return _host_payload("cursor", source="gemini_cascade", model=model, family=family)
+        return _host_payload("opencode", source="gemini_cascade", model=model, family=family)
     for host in ("pi", "opencode"):
         if host in available:
             return _host_payload(host, source="other_default", model=model, family=family)
@@ -198,10 +180,9 @@ def next_launch_action(
     phase: str = "rung",
     host: str | None = None,
 ) -> dict[str, Any]:
-    """Launch/timeout retry: retry once immediately, then skip; OpenCode/Pi substitute Grok 4.6 High."""
+    """Launch/timeout retry: retry once immediately, then skip."""
     outcome_n = (outcome or "").strip().lower()
     phase_n = (phase or "rung").strip().lower()
-    failed_host = normalize_user_agent(host)
     if attempts < 1:
         raise ValueError("attempts must be >= 1")
     if phase_n not in {"rung", "post_ladder"}:
@@ -232,24 +213,6 @@ def next_launch_action(
                 "retry_kind": "immediate",
                 "post_ladder_retry_pending": False,
                 "post_ladder_retry_done": False,
-            }
-        if failed_host in GROK_SUBSTITUTE_HOSTS:
-            cursor = AGENT_HOST_CATALOG["cursor"]
-            return {
-                "action": "substitute_grok",
-                "outcome": outcome_n,
-                "phase": phase_n,
-                "attempts": attempts,
-                "skipped": False,
-                "retry": False,
-                "retry_kind": None,
-                "post_ladder_retry_pending": False,
-                "post_ladder_retry_done": False,
-                "failed_host": failed_host,
-                "substitute_host": "cursor",
-                "substitute_model": GROK_SUBSTITUTE_MODEL,
-                "substitute_route": cursor["route"],
-                "substitute_skill": cursor["skill"],
             }
         return {
             "action": "skip",
@@ -299,17 +262,6 @@ def skip_retry_artifact(
         **policy,
         "skipped_md": (
             (
-                f"# SUBSTITUTE GROK — rung {rung}\n\n"
-                f"- reason: `{outcome}`\n"
-                f"- event: `{policy['action']}`\n"
-                f"- attempts: {attempts}\n"
-                f"- phase: `{phase}`\n"
-                f"- timestamp: {now}\n"
-                f"- substitute_model: `{policy.get('substitute_model')}`\n"
-                f"- next_rung: {next_rung if next_rung is not None else 'n/a'}\n"
-            )
-            if policy.get("action") == "substitute_grok"
-            else (
                 f"# SKIPPED — rung {rung}\n\n"
                 f"- reason: `{outcome}`\n"
                 f"- event: `{policy['action']}`\n"
@@ -502,22 +454,22 @@ def add_policy_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--user-agent",
         default=None,
-        help="User-named agent/host override (cursor, codex, claude, pi, opencode, gemini-cli, or any named agent)",
+        help="User-named agent/host override (codex, claude, pi, opencode, gemini-cli, or any named agent)",
     )
     parser.add_argument(
         "--available-hosts",
         default=None,
-        help="Comma-separated hosts present in the user env (default: pi,opencode,cursor,codex,claude,gemini-cli)",
+        help="Comma-separated hosts present in the user env (default: pi,opencode,codex,claude,gemini-cli)",
     )
     parser.add_argument(
         "--launch-policy",
         action="store_true",
-        help="Emit next action for a launch/timeout attempt (retry once, then skip or OpenCode/Pi Grok substitute)",
+        help="Emit next action for a launch/timeout attempt (retry once, then skip)",
     )
     parser.add_argument(
         "--host",
         default=None,
-        help="Failed host for --launch-policy (opencode/pi substitute Grok 4.6 High after retry)",
+        help="Failed host for --launch-policy (accepted for the skip artifact; no host substitutes a model)",
     )
     parser.add_argument("--attempts", type=int, default=1, help="Finished launch attempts including the current outcome")
     parser.add_argument(

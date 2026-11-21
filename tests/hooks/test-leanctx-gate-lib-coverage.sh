@@ -53,7 +53,6 @@ unset SB_GLOBAL_TOOLSTACK_MANIFEST
 export SB_LEANCTX_MCP_ARTIFACT=/ovr
 assert_eq "artifact override" "/ovr" "$(sb_leanctx_platform_artifact_path "$PR" claude)"
 unset SB_LEANCTX_MCP_ARTIFACT
-assert_eq "artifact cursor" "$HOME/.cursor/mcp.json" "$(sb_leanctx_platform_artifact_path "$PR" cursor)"
 assert_eq "artifact codex" "/ch/config.toml" "$(CODEX_HOME=/ch sb_leanctx_platform_artifact_path "$PR" codex)"
 assert_eq "artifact opencode" "$HOME/.config/opencode/opencode.json" "$(sb_leanctx_platform_artifact_path "$PR" opencode)"
 assert_eq "artifact pi env" "/pd/extensions/silver-bullet-five-tool-stack/config.json" "$(PI_CODING_AGENT_DIR=/pd sb_leanctx_platform_artifact_path "$PR" pi)"
@@ -136,7 +135,7 @@ BADF="$TL_TMP/badfile"; printf x >"$BADF"
 
 # ---------- exemptions / usage classification ----------
 no_t "edit exempt empty" sb_leanctx_edit_path_is_exempt ""
-for p in /p/.silver-bullet.json /p/SETUP_REPORT.md /p/silver-bullet.md /p/CLAUDE.md /p/AGENTS.md /p/.silver-bullet/x /h/.cursor/mcp.json /h/.cursor/hooks.json /p/docs/LEANCTX.md; do
+for p in /p/.silver-bullet.json /p/SETUP_REPORT.md /p/silver-bullet.md /p/CLAUDE.md /p/AGENTS.md /p/.silver-bullet/x /p/docs/LEANCTX.md; do
   yes_t "edit exempt $p" sb_leanctx_edit_path_is_exempt "$p"
 done
 no_t "edit not exempt" sb_leanctx_edit_path_is_exempt /p/src/a.py "$CFG"

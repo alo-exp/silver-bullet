@@ -263,7 +263,7 @@ sb_recommended_tool_benefits() {
   local tool_id="${2:-}"
   case "$tool_id" in
     graphify)
-      printf '%s' 'Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, Cursor, OpenCode, and Pi agents.'
+      printf '%s' 'Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, OpenCode, and Pi agents.'
       ;;
     agentmemory)
       printf '%s' 'Session capture with git-backed memory export; proactive context injection; pairs with Graphify for save-via-agentmemory, retrieve-via-Graphify synergy.'
@@ -355,21 +355,16 @@ sb_graphify_upstream_platform() {
 sb_runtime_host() {
   if [[ -n "${SILVER_BULLET_RUNTIME:-}" ]]; then
     case "$SILVER_BULLET_RUNTIME" in
-      claude|codex|cursor|opencode|pi|goose|hermes) printf '%s' "$SILVER_BULLET_RUNTIME"; return 0 ;;
+      claude|codex|opencode|pi|goose|hermes) printf '%s' "$SILVER_BULLET_RUNTIME"; return 0 ;;
     esac
   fi
   if [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_INTERNAL_ORIGINATOR_OVERRIDE:-}" ]]; then
     printf 'codex'
     return 0
   fi
-  if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]]; then
-    printf 'cursor'
-    return 0
-  fi
   if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
     case "$CLAUDE_PLUGIN_ROOT" in
       */.codex/*) printf 'codex'; return 0 ;;
-      */.cursor/*) printf 'cursor'; return 0 ;;
     esac
   fi
   if [[ -n "${OPENCODE:-}" || -n "${OPENCODE_PID:-}" ]]; then
@@ -422,20 +417,18 @@ sb_recommended_tool_platform_pre_index_commands() {
       # shellcheck disable=SC2016  # the instruction text keeps $OPENAI_API_KEY for the user's shell
       printf '%s\n' 'claude mcp add alumnium --env OPENAI_API_KEY=$OPENAI_API_KEY -- npx -y alumnium mcp'
       ;;
-    alumnium:cursor) printf '%s\n' 'Merge the alumnium MCP server into ~/.cursor/mcp.json (see docs/ALUMNIUM.md)' ;;
     alumnium:codex) printf '%s\n' 'Merge [mcp_servers.alumnium] into ~/.codex/config.toml (see docs/ALUMNIUM.md)' ;;
     rtk:claude) printf '%s\n' 'rtk init -g' ;;
-    rtk:cursor) printf '%s\n' 'rtk init -g --agent cursor' ;;
     rtk:codex) printf '%s\n' 'rtk init -g --codex' ;;
-    rtk:opencode|context_mode:opencode|context_mode:claude|context_mode:cursor)
-      [[ "$tool_id:$host" == context_mode:claude || "$tool_id:$host" == context_mode:cursor ]] \
+    rtk:opencode|context_mode:opencode|context_mode:claude)
+      [[ "$tool_id:$host" == context_mode:claude ]] \
         && printf '%s\n' 'npm install -g context-mode'
       printf '%s\n' "bash $(sb_rt_plugin_script scripts/optimize-rtk-context-mode.sh) --host ${host} --project-root ${root}"
       ;;
     context_mode:codex)
       printf '%s\n' 'Merge the context-mode blocks into ~/.codex/config.toml and hooks.json (see docs/CONTEXT-MODE.md)'
       ;;
-    leanctx:cursor|leanctx:claude|leanctx:codex|leanctx:opencode|leanctx:pi)
+    leanctx:claude|leanctx:codex|leanctx:opencode|leanctx:pi)
       printf '%s\n' "bash $(sb_rt_plugin_script scripts/install-leanctx-sb.sh) --host ${host} --project-root ${root}"
       ;;
   esac
@@ -445,7 +438,6 @@ sb_recommended_tool_platform_post_index_commands() {
   local tool_id="${2:-}" host="${3:-}"
   host="${host:-$(sb_runtime_host)}"
   case "$tool_id:$host" in
-    graphify:cursor) printf '%s\n' 'graphify cursor install' ;;
     graphify:claude) printf '%s\n' 'graphify claude install --project' ;;
     graphify:codex) printf '%s\n' 'graphify codex install --project' ;;
     agentmemory:claude) printf '%s\n' 'agentmemory connect claude-code' ;;
@@ -455,10 +447,7 @@ sb_recommended_tool_platform_post_index_commands() {
     agentmemory:opencode)
       printf '%s\n' 'Merge the agentmemory MCP server into ~/.config/opencode/opencode.json (manual — see docs/AGENTMEMORY.md)'
       ;;
-    agentmemory:cursor) printf '%s\n' 'Verify the agentmemory MCP server in ~/.cursor/mcp.json (see docs/AGENTMEMORY.md)' ;;
-    rtk:cursor) printf '%s\n' "bash $(sb_rt_plugin_script scripts/optimize-rtk-context-mode.sh) --host cursor" ;;
     context_mode:claude) printf '%s\n' 'Restart Claude Code after shared MCP configuration changes' ;;
-    context_mode:cursor) printf '%s\n' 'Restart Cursor after the MCP/hook merge' ;;
   esac
 }
 
@@ -466,7 +455,6 @@ sb_graphify_platform_artifact_path() {
   local project_root="${1:-$PWD}" host="${2:-}"
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
-    cursor) printf '%s/.cursor/rules/graphify.mdc' "${project_root%/}" ;;
     codex) printf '%s/.codex/hooks.json' "${project_root%/}" ;;
     opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
     pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \

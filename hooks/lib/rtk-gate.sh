@@ -82,7 +82,6 @@ sb_rtk_platform_hook_artifact_path() {
   fi
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
-    cursor) printf '%s/.cursor/hooks.json' "${HOME}" ;;
     codex) printf '%s/AGENTS.md' "${CODEX_HOME:-${HOME}/.codex}" ;;
     opencode) printf '%s/.config/opencode/plugins/rtk.ts' "${HOME}" ;;
     pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
@@ -98,7 +97,6 @@ sb_rtk_platform_hook_present() {
   artifact="$(sb_rtk_platform_hook_artifact_path "$project_root" "$host")"
   [[ -f "$artifact" && ! -L "$artifact" ]] || return 1
   case "$host" in
-    cursor) grep -qE 'rtk hook cursor|"rtk"' "$artifact" 2>/dev/null ;;
     codex) grep -qiE 'rtk|rust token killer' "$artifact" 2>/dev/null ;;
     *) grep -q 'rtk' "$artifact" 2>/dev/null ;;
   esac
@@ -112,7 +110,7 @@ sb_rtk_edit_path_is_exempt() {
   normalized="$(sb_opt_in_normalize_path "$1" "$(dirname "${2:-$PWD/x}")")"
   case "$normalized" in
     */.silver-bullet.json | */SETUP_REPORT.md | */silver-bullet.md | */CLAUDE.md | */AGENTS.md \
-      | */.silver-bullet/* | */.cursor/hooks.json | */.claude/settings.json)
+      | */.silver-bullet/* | */.claude/settings.json)
       return 0
       ;;
   esac

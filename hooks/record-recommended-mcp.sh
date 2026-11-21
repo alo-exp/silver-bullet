@@ -7,7 +7,7 @@ trap 'exit 0' ERR
 # The call must come from the tool's own MCP server (exact or namespaced name) and be one
 # of its read tools: query_graph/get_node/get_neighbors/shortest_path for Graphify,
 # memory_smart_search/memory_recall/memory_search/memory_file_history for agentmemory.
-# Hosts name these mcp__<server>__<tool>, or send CallMcpTool/MCP with server and tool in the payload.
+# Hosts name these mcp__<server>__<tool>, or send MCP with server and tool in the payload.
 
 umask 0077
 

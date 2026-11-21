@@ -33,7 +33,7 @@ iso_body="$(<"$ISOLATION")"
 
 assert_pass "supports --dry-run" assert_contains "$matrix_body" '--dry-run'
 assert_pass "supports SB_SKIP_RC_MATRIX bypass" assert_contains "$matrix_body" 'SB_SKIP_RC_MATRIX'
-assert_pass "covers cursor codex claude" assert_contains "$matrix_body" 'cursor codex claude'
+assert_pass "covers codex claude" assert_contains "$matrix_body" 'codex claude'
 assert_pass "covers fresh and upgrade modes" assert_contains "$matrix_body" 'fresh upgrade'
 assert_pass "uses host-smoke-cell" assert_contains "$matrix_body" 'host-smoke-cell.sh'
 assert_pass "claude host uses auth-aware live check" assert_contains "$matrix_body" 'five_tool_claude_cli_authenticated'

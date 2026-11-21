@@ -10,8 +10,7 @@
 
 - **Claude Code** reads `hooks/hooks.json` from the plugin root; commands use `${CLAUDE_PLUGIN_ROOT}`.
 - **Codex** loads the same manifest from the plugin package. `scripts/install-codex.sh` rewrites the paths and routes each command through `hooks/codex-hook-adapter.sh`.
-- **Cursor** uses `hooks/cursor-hooks.json`, generated from `hooks/hooks.json` by `scripts/generate-cursor-hooks.py`; each command runs through `hooks/cursor-hook-bridge.sh`.
-- Matchers name tools from every host: `Bash` (Claude) and `exec_command` (Codex) are shell calls; `apply_patch` is the Codex edit tool; `CallMcpTool`/`MCP` are MCP calls; `Task|Subagent|Agent` are subagent spawns.
+- Matchers name tools from every host: `Bash` (Claude) and `exec_command` (Codex) are shell calls; `apply_patch` is the Codex edit tool; `MCP` is the generic MCP call; `Task|Subagent|Agent` are subagent spawns.
 - Enforcement hooks first check that the project is activated (`.silver-bullet.json` and `silver-bullet.md` at the project root, see `hooks/lib/sb-project-gate.sh`); outside an SB project they exit 0 (a missing `jq` included).
 - Unexpected errors fail open: almost every hook installs an `ERR` trap that exits 0 (some print a notice or a no-op payload first). Exceptions: `phase-archive.sh` denies the `phases clear` it guards when archiving fails, and `rfl-policy-c-gate.sh` has no `ERR` trap, so an unexpected error surfaces as a non-blocking hook error.
 - A missing `jq` does not fail open everywhere. `session-start` warns that enforcement is disabled and most hooks exit 0. In an SB project (`hooks/lib/jq-gate.sh`), `completion-audit.sh` still blocks the commands its classifier calls delivery (commit, push, PR, merge, release, deploy), and `dev-cycle-check.sh`, `forbidden-skill-check.sh`, `planning-file-guard.sh`, `uat-gate.sh` and `workflow-chain-guard.sh` block what they cannot evaluate, except shell commands that install or probe `jq` (a package-manager install with value-less flags only (no `--config-file=`, `--setopt=`, `-c=` and the like) and at most harmless installer env prefixes such as `DEBIAN_FRONTEND=`; `apt`/`apt-get update` is the only metadata refresh; Codex argv arrays `[bash, -lc, SCRIPT]` are unwrapped) or, when `python3` is available, are read-only, so the agent can always recover; the block message lists the install commands. Outside an SB project nothing is blocked.
@@ -71,7 +70,7 @@ Before a tool runs; a hook can deny the call.
 | 34 | `Read\|Grep` | `stack-compression-coordinator.sh` | 10 |
 | 35 | `Read\|Grep` | `context-mode-read-deny.sh` | 10 |
 | 36 | `WebFetch` | `stack-compression-coordinator.sh` | 10 |
-| 37 | `CallMcpTool\|MCP` | `stack-compression-coordinator.sh` | 10 |
+| 37 | `MCP` | `stack-compression-coordinator.sh` | 10 |
 | 38 | `mcp__.*lean-?ctx.*\|mcp__.*context[-_]mode.*` | `stack-compression-coordinator.sh` | 10 |
 | 39 | `Skill` | `dependency-skill-check.sh` | 10 |
 | 40 | `Bash\|exec_command` | `site-regression-gate.sh` | 120 |
@@ -109,14 +108,14 @@ After a tool runs; a hook can report, record state, or ask the agent to stop.
 | 21 | `Bash\|exec_command` | `record-token-compression-usage.sh` | 10 |
 | 22 | `Bash\|exec_command` | `record-leanctx-usage.sh` | 10 |
 | 23 | `Bash\|exec_command` | `record-site-visual-evidence.sh` | 10 |
-| 24 | `CallMcpTool\|MCP` | `record-leanctx-usage.sh` | 10 |
-| 25 | `CallMcpTool\|MCP` | `record-recommended-mcp.sh` | 10 |
+| 24 | `MCP` | `record-leanctx-usage.sh` | 10 |
+| 25 | `MCP` | `record-recommended-mcp.sh` | 10 |
 | 26 | `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | `record-leanctx-usage.sh` | 10 |
 | 27 | `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | `record-recommended-mcp.sh` | 10 |
 
 ### SubagentStart
 
-When a subagent starts (Cursor).
+When a subagent starts.
 
 | # | Matcher | Script | Timeout |
 |---|---------|--------|---------|
@@ -169,7 +168,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 
 | Script | Registered on | Purpose |
 |--------|---------------|---------|
-| `agent-delegation-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | While an `/sb:agent-*` delegation is active, blocks parent-session edits on Claude and Codex and advises on Cursor. |
+| `agent-delegation-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | While an `/sb:agent-*` delegation is active, blocks parent-session edits. |
 | `agentmemory-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.agentmemory`): requires a recent agentmemory capture/retrieval before substantive work. |
 | `alumnium-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (user consent to Alumnium): checks that the Alumnium MCP server is wired before browser/visual work (browser-test edits and browser-tool commands only). |
 | `ci-status-check.sh` | PreToolUse `Bash\|Skill\|exec_command\|mcp__.*`; PostToolUse `Bash\|exec_command` | Checks the latest GitHub Actions run for the branch. Pre: blocks `git push`, `gh pr create/merge` and `gh release create` while CI failed or was cancelled. Post: warns after `git commit`. CI-fix commits and the `ci-red-override` flag bypass it. |
@@ -200,8 +199,8 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `prompt-reminder.sh` | UserPromptSubmit `.*` | Injects a compact compliance reminder (missing skills, active workflow position, opted-in tool notes) before each prompt. |
 | `record-agentmemory-usage.sh` | PostToolUse `Bash\|exec_command` | Records a successful agentmemory CLI or loopback REST retrieval (run on its own) for the opt-in agentmemory gate. |
 | `record-graphify-query.sh` | PostToolUse `Bash\|exec_command` | Records successful Graphify queries for the opt-in Graphify gate. |
-| `record-leanctx-usage.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `CallMcpTool\|MCP`; PostToolUse `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | Records LeanCTX CLI/MCP usage for the opt-in LeanCTX gate. |
-| `record-recommended-mcp.sh` | PostToolUse `CallMcpTool\|MCP`; PostToolUse `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | Records agentmemory and Graphify MCP retrieval calls (from the tool's own server) for the opt-in gates. |
+| `record-leanctx-usage.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `MCP`; PostToolUse `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | Records LeanCTX CLI/MCP usage for the opt-in LeanCTX gate. |
+| `record-recommended-mcp.sh` | PostToolUse `MCP`; PostToolUse `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | Records agentmemory and Graphify MCP retrieval calls (from the tool's own server) for the opt-in gates. |
 | `record-requested-skill.sh` | UserPromptSubmit `.*` | Records the SB route requested in the user prompt (for example `/sb:feature`) in the state file. |
 | `record-site-session.sh` | PostToolUse `Write\|Edit\|MultiEdit\|apply_patch`; UserPromptSubmit `.*` | Records `site/**` edits and site-intent prompts so the site session gates know a site session is active. |
 | `record-site-visual-evidence.sh` | PostToolUse `Bash\|exec_command` | Records browser screenshot paths as site visual evidence. |
@@ -221,7 +220,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `site-visual-evidence-gate.sh` | Stop `.*` | At Stop, requires 1280px visual evidence for active site sessions. |
 | `spec-floor-check.sh` | PreToolUse `Bash\|Skill\|exec_command` | Spec floor: blocks `sb:plan` (Skill tool or Codex `invoke-skill`) without a minimum viable `SPEC.md`; advisory for `sb:fast`. |
 | `spec-session-record.sh` | SessionStart `startup\|clear\|compact` | Captures spec version and Jira ID from `.planning/SPEC.md` for `pr-traceability.sh`. |
-| `stack-compression-coordinator.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PreToolUse `Read\|Grep`; PreToolUse `WebFetch`; PreToolUse `CallMcpTool\|MCP`; PreToolUse `mcp__.*lean-?ctx.*\|mcp__.*context[-_]mode.*` | Five-tool stack coordinator: routes Read/Grep/shell/WebFetch/MCP surfaces to their owning tool and blocks double compression. |
+| `stack-compression-coordinator.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PreToolUse `Read\|Grep`; PreToolUse `WebFetch`; PreToolUse `MCP`; PreToolUse `mcp__.*lean-?ctx.*\|mcp__.*context[-_]mode.*` | Five-tool stack coordinator: routes Read/Grep/shell/WebFetch/MCP surfaces to their owning tool and blocks double compression. |
 | `stop-check.sh` | Stop `.*`; SubagentStop `.*` | Stop/SubagentStop gate: blocks a task-complete declaration while `required_planning` skills are missing, and enforces doc-scheme finalization when `docs/doc-scheme.md` exists. |
 | `subagent-start.sh` | SubagentStart `.*` | Injects the worker banner and tool requirements into subagent sessions. |
 | `subagent-stop-enforcement.sh` | PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PostToolUse `Task\|Subagent\|Agent`; PostToolUse `Skill\|Bash\|exec_command`; Stop `.*`; UserPromptSubmit `.*` | Tracks Task worker spawns and returns; at Stop, blocks a parent session whose workers ran but `sb:completion-audit` is not recorded. |
@@ -239,13 +238,9 @@ These files are not registered in `hooks/hooks.json`.
 
 | File | Role |
 |------|------|
-| `agent-delegation-progress-surface.sh` | Library, not a hook: sourced by `agent-delegation-guard.sh` to render bounded, redacted delegation progress (8 lines / 2 KB). |
 | `codex-hook-adapter.sh` | Codex adapter: `scripts/install-codex.sh` rewrites installed hook commands to run through it (`codex-hook-adapter.sh <event> <hook>`); it buffers stdin/stdout and applies a subprocess timeout (`SB_CODEX_HOOK_SUBPROC_TIMEOUT`). |
 | `core-rules.md` | Core enforcement rules that `session-start` injects into context. |
 | `core-rules.sha256` | Integrity pin for `core-rules.md`, checked by `hooks/lib/core-rules-integrity.sh` before injection. |
-| `cursor-hook-bridge.sh` | Cursor bridge: `cursor-hook-bridge.sh <cursorEvent> <hook>` translates a Cursor hook payload into the SB hook protocol, runs the hook with a subprocess timeout and maps the result back. |
-| `cursor-hooks.json` | Cursor hook manifest, generated from `hooks.json` by `scripts/generate-cursor-hooks.py` (Cursor event names, `${CURSOR_PLUGIN_ROOT}` paths, every hook wrapped by `cursor-hook-bridge.sh`). Do not edit by hand. |
-| `generate-cursor-hooks.py` | Compatibility shim that runs `scripts/generate-cursor-hooks.py`. |
 | `hooks.json` | The registration manifest itself (Claude Code plugin format; Codex reads the same file from the plugin package). |
 | `kay-project-hook-bridge.sh` | Project-level hook bridge for the Kay (Codex-compatible) runtime; the live-test harness registers it in `~/.kay/config.toml` (`tests/live/lib/kay-codex-isolation.sh`). |
 | `run-hook.cmd` | Windows/Unix polyglot wrapper: `run-hook.cmd <script> [args]` finds Git for Windows bash (or bash on PATH) and runs the hook. |

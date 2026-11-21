@@ -25,9 +25,9 @@ host_json() {
      + (if $g != "" then {canonical_gates: $g} else {} end)
      + (if $a != "" then {product_audit: $a} else {} end)'
 }
-# write_sources CURSOR-JSON CODEX-JSON CLAUDE-JSON
+# write_sources CODEX-JSON CLAUDE-JSON
 write_sources() {
-  jq -n --argjson cu "$1" --argjson cx "$2" --argjson cl "$3" '{version: 1, hosts: {cursor: $cu, codex: $cx, claude: $cl}}' \
+  jq -n --argjson cx "$1" --argjson cl "$2" '{version: 1, hosts: {codex: $cx, claude: $cl}}' \
     >"$STAGE/docs/testing/host-certification-sources.json"
 }
 # proven_ledger FILE: 22 passes with refs plus the marker the strict-clean stub looks for.
@@ -50,18 +50,18 @@ field() {  # field HOST JQ-EXPR  (reads the JSON on TL_OUT's last document)
 }
 
 # Baseline documents (the all-proven fixtures the first half builds) so each file stands alone.
-proven_ledger "$PLAN/cursor-ledger.md"
+proven_ledger "$PLAN/legacy-ledger.md"
 proven_ledger "$PLAN/codex-ledger.md"
 proven_ledger "$PLAN/claude-ledger.md"
 # --- mixed evidence: narratives, registry, audits, gates ---------------------------------------
-# cursor: legacy ledger (no refs columns) with a narrative PASS for the matrix, reconcile and strict-clean.
-cat >"$PLAN/cursor-ledger.md" <<'L'
+# legacy: a ledger (no refs columns) with a narrative PASS for the matrix, reconcile and strict-clean.
+cat >"$PLAN/legacy-ledger.md" <<'L'
 # Legacy ledger
 Full matrix 22/22 live **PASS**
 Ledger reconcile: **COMPLETE** 22/22
 Strict-clean verdict:** **PASS**
 L
-echo "void for the first attempt" >"$PLAN/cursor-gates.md"
+echo "void for the first attempt" >"$PLAN/legacy-gates.md"
 # codex: narrative matrix only, no reconcile statement; audit is a failure -> proof held back.
 cat >"$PLAN/codex-ledger.md" <<'L'
 Matrix 22/22 live **PASS**
@@ -80,27 +80,32 @@ cat >"$REG" <<'J'
   "fp-less": {"host": "claude", "rows": {"1": {"outcome_pass": true, "passed_at": "2026-09-09"}}},
   "fp-none": {"host": "claude", "rows": {}},
   "fp-nullrows": {"host": "claude", "rows": null},
-  "fp-cursor": {"host": "cursor", "rows": {"1": {"outcome_pass": true, "passed_at": "2026-04-04"}}}
+  "fp-codex": {"host": "codex", "rows": {"1": {"outcome_pass": true, "passed_at": "2026-04-04"}}}
 }}
 J
+# The legacy-narrative fixture is host "claude" in the first run, the partial-ledger claude fixture in the second.
 write_sources \
-  "$(host_json .planning/enterprise-e2e/cursor-ledger.md .planning/enterprise-e2e/cursor-gates.md "")" \
   "$(host_json .planning/enterprise-e2e/codex-ledger.md .planning/enterprise-e2e/codex-gates.md .planning/enterprise-e2e/codex-audit.md)" \
-  "$(host_json .planning/enterprise-e2e/claude-ledger.md .planning/enterprise-e2e/claude-gates.md "")"
+  "$(host_json .planning/enterprise-e2e/legacy-ledger.md .planning/enterprise-e2e/legacy-gates.md "")"
 cert --json --write --
 echo "$TL_OUT" >"$ARTIFACT"
-assert_eq "cursor narrative: complete reconcile" "NARRATIVE_COMPLETE" "$(field cursor .ledger_reconcile)"
-assert_eq "cursor narrative: 22/22" "22/22" "$(field cursor .ledger_pass)"
-assert_eq "cursor narrative: strict-clean from the narrative" "true" "$(field cursor .strict_clean_eligible)"
-assert_eq "cursor 'void for' gates" "not_strict_clean" "$(field cursor .gates_verdict)"
-assert_eq "cursor narrative: a void gate keeps it partial" "live_e2e_partial" "$(field cursor .proof_level)"
-assert_eq "cursor gaps" '["strict_clean_narrative_only","ledger_format_legacy"]' "$(field cursor '.evidence_gaps' | jq -c .)"
-assert_eq "cursor registry fingerprint" "fp-cursor" "$(field cursor .registry_best_install_fp)"
+assert_eq "legacy narrative: complete reconcile" "NARRATIVE_COMPLETE" "$(field claude .ledger_reconcile)"
+assert_eq "legacy narrative: 22/22" "22/22" "$(field claude .ledger_pass)"
+assert_eq "legacy narrative: strict-clean from the narrative" "true" "$(field claude .strict_clean_eligible)"
+assert_eq "legacy 'void for' gates" "not_strict_clean" "$(field claude .gates_verdict)"
+assert_eq "legacy narrative: a void gate keeps it partial" "live_e2e_partial" "$(field claude .proof_level)"
+assert_eq "legacy gaps" '["strict_clean_narrative_only","ledger_format_legacy"]' "$(field claude '.evidence_gaps' | jq -c .)"
+assert_eq "codex registry fingerprint" "fp-codex" "$(field codex .registry_best_install_fp)"
 assert_eq "codex narrative matrix only" "NARRATIVE_MATRIX_ONLY" "$(field codex .ledger_reconcile)"
 assert_eq "codex 'smoke' gates are in progress" "in_progress" "$(field codex .gates_verdict)"
 assert_eq "codex failing audit" "fail" "$(field codex .product_audit_status)"
 assert_eq "codex failing audit holds the proof back" "live_e2e_partial" "$(field codex .proof_level)"
 assert_eq "codex gaps" '["ledger_reconcile_NARRATIVE_MATRIX_ONLY","strict_clean_narrative_only","ledger_format_legacy","product_audit_fail"]' "$(field codex '.evidence_gaps' | jq -c .)"
+write_sources \
+  "$(host_json .planning/enterprise-e2e/codex-ledger.md .planning/enterprise-e2e/codex-gates.md .planning/enterprise-e2e/codex-audit.md)" \
+  "$(host_json .planning/enterprise-e2e/claude-ledger.md .planning/enterprise-e2e/claude-gates.md "")"
+cert --json --write --
+echo "$TL_OUT" >"$ARTIFACT"
 assert_eq "claude partial ledger pass count" "5/22" "$(field claude .ledger_pass)"
 assert_eq "claude partial ledger reconcile" "LEDGER_MISMATCH" "$(field claude .ledger_reconcile)"
 assert_eq "claude unclassified gates" "unknown" "$(field claude .gates_verdict)"
@@ -181,18 +186,16 @@ echo "$TL_OUT" >"$ARTIFACT"
 assert_eq "configured but missing audit file" "n/a" "$(field codex .product_audit_status)"
 
 # --- proof classification edge: complete ledger, strict-clean fails ---------------------------------------
-e2e_mk_ledger "$PLAN/cursor-ledger.md" "${SPECS22[@]}"
-write_sources \
-  "$(host_json .planning/enterprise-e2e/cursor-ledger.md "" "")" \
-  "$(host_json "" "" "")" "$(host_json "" "" "")"
+e2e_mk_ledger "$PLAN/legacy-ledger.md" "${SPECS22[@]}"
+write_sources "$(host_json "" "" "")" "$(host_json .planning/enterprise-e2e/legacy-ledger.md "" "")"
 cert --json --
 echo "$TL_OUT" >"$ARTIFACT"
-assert_eq "complete ledger without strict-clean is partial" "live_e2e_partial" "$(field cursor .proof_level)"
-assert_eq "…with the strict-clean gap" '["strict_clean_check_fail"]' "$(field cursor '.evidence_gaps' | jq -c .)"
+assert_eq "complete ledger without strict-clean is partial" "live_e2e_partial" "$(field claude .proof_level)"
+assert_eq "…with the strict-clean gap" '["strict_clean_check_fail"]' "$(field claude '.evidence_gaps' | jq -c .)"
 # complete + strict-clean + product audit failing for codex
 proven_ledger "$PLAN/codex-ledger.md"
 echo "**FAIL**" >"$PLAN/codex-audit.md"
-write_sources "$(host_json "" "" "")" "$(host_json .planning/enterprise-e2e/codex-ledger.md "" .planning/enterprise-e2e/codex-audit.md)" "$(host_json "" "" "")"
+write_sources "$(host_json .planning/enterprise-e2e/codex-ledger.md "" .planning/enterprise-e2e/codex-audit.md)" "$(host_json "" "" "")"
 cert --json --
 echo "$TL_OUT" >"$ARTIFACT"
 assert_eq "a failing product audit demotes an otherwise proven codex" "live_e2e_partial" "$(field codex .proof_level)"

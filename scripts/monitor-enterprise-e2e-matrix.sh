@@ -2,7 +2,7 @@
 # Always-on monitor for enterprise E2E Claude matrix batches.
 # Polls batch health, detects stalls/errors, restarts on failure.
 #
-# Usage (from SB repo root, in a persistent Cursor background shell):
+# Usage (from SB repo root, in a persistent background shell):
 #   bash scripts/monitor-enterprise-e2e-matrix.sh &
 #   echo $! > .e2e-matrix-monitor.pid
 #
@@ -109,9 +109,6 @@ matrix_agent_child_lines() {
   case "$host" in
     codex)
       pgrep -fl 'codex-interactive-invoke\.expect|/codex ' 2>/dev/null | grep -v grep || true
-      ;;
-    cursor)
-      pgrep -fl 'cursor-agent|/agent -p|/agent --print' 2>/dev/null | grep -v grep || true
       ;;
     *)
       pgrep -fl 'claude-interactive-invoke\.expect|/claude --model' 2>/dev/null | grep -v grep || true
@@ -289,10 +286,6 @@ kill_matrix_agent_children() {
     codex)
       pkill "-$sig" -f 'codex-interactive-invoke\.expect' 2>/dev/null || true
       ;;
-    cursor)
-      pkill "-$sig" -f 'cursor-agent' 2>/dev/null || true
-      pkill "-$sig" -f '/agent -p' 2>/dev/null || true
-      ;;
     *)
       pkill "-$sig" -f 'claude-interactive-invoke\.expect' 2>/dev/null || true
       pkill "-$sig" -f '/claude --model' 2>/dev/null || true
@@ -301,10 +294,6 @@ kill_matrix_agent_children() {
   sleep 3
   case "$host" in
     codex) pkill -KILL -f 'codex-interactive-invoke\.expect' 2>/dev/null || true ;;
-    cursor)
-      pkill -KILL -f 'cursor-agent' 2>/dev/null || true
-      pkill -KILL -f '/agent -p' 2>/dev/null || true
-      ;;
     *)
       pkill -KILL -f 'claude-interactive-invoke\.expect' 2>/dev/null || true
       pkill -KILL -f '/claude --model' 2>/dev/null || true

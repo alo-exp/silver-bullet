@@ -48,14 +48,14 @@ Before release, each host must install SB locally and pass a few SB script invoc
 # Operator — all hosts (Claude skipped when CLI absent)
 RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh
 
-# CI structural — Codex + Cursor only
+# CI structural — Codex only
 bash tests/scripts/test-tri-host-install-smoke.sh
 
 # Wired into pre-release overlay
 RTK_DISABLED=1 bash scripts/run-enterprise-e2e-pre-release-overlay.sh --with-tri-host-smoke
 ```
 
-Per host: `install-{claude,codex,cursor}.sh` → `sb-diagnostics.sh` → `claims-audit.sh` + `check-apo-invariants.py site-doc-freshness`.
+Per host: `install-{claude,codex}.sh` → `sb-diagnostics.sh` → `claims-audit.sh` + `check-apo-invariants.py site-doc-freshness`.
 
 Document in operator prompt: run tri-host smoke after pre-release overlay dry-run green and before `gh release create`.
 
@@ -99,7 +99,7 @@ Document in operator prompt: run tri-host smoke after pre-release overlay dry-ru
 1. **Version sync** — `package.json` version vs `site/help/index.html` meta (see [staleness audit](./help-center-staleness-audit-2026-06-29.md)).
 2. **Catalog SOT** — Help index references `docs/apo-catalog.json`; counts match (22 workflows, 27 atomic flows).
 3. **Workflow page coverage** — Map `WF-*` catalog IDs → `site/help/workflows/silver-*.html` slugs; internal workflows (`WF-POST-EXEC-GATES`, `WF-VALIDATE-SUBSTEP`) are documented exceptions.
-4. **Tri-host surface** — Help mentions Claude, Codex, Cursor; repo has `install-*.sh` + `hooks/cursor-hook-bridge.sh`.
+4. **Tri-host surface** — Help mentions Claude and Codex; repo has `install-*.sh`.
 5. **Invariant checks** — `python3 scripts/check-apo-invariants.py site-doc-freshness` and `apo-hierarchy-integrity`.
 6. **Optional live fetch** — Compare deployed `https://sb.alolabs.dev/help/` to local `site/help/` after publish (not required for overlay dry-run).
 
@@ -131,7 +131,7 @@ Document in operator prompt: run tri-host smoke after pre-release overlay dry-ru
 
 | claim_id | User expectation | Verification |
 |----------|------------------|--------------|
-| `hero-tri-host` | Works in Claude, Codex, Cursor | `run-tri-host-install-smoke.sh` |
+| `hero-tri-host` | Works in Claude Code and Codex | `run-tri-host-install-smoke.sh` |
 | `mechanism-catalog-counts` | 27 AF, 22 WF | `apo-catalog-counts` |
 | `mechanism-twelve-hooks` | Hooks physically block progress | `hook-scripts-present` |
 | `help-router-workflow` | Router doc matches `/sb` behavior | help page + E2E row 1 |
@@ -236,7 +236,7 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run \
 | ID | Claim | Gap | Proposed work |
 |----|-------|-----|---------------|
 | V-01 | `first-hour-block-pr` | No timed onboarding SLO script | `tests/onboarding/` timed fixture |
-| V-03 | Tri-host install smoke | Codex/Cursor in CI; Claude operator-local | `run-tri-host-install-smoke.sh` |
+| V-03 | Tri-host install smoke | Codex in CI; Claude operator-local | `run-tri-host-install-smoke.sh` |
 | V-04 | `WF-POST-EXEC-GATES` help | Internal WF — no dedicated page | Optional concept page or cross-link from validate |
 | V-05 | Matrix monitor↔ledger | Measurement drift (Round 3) | P0-1 effectiveness plan — independent of validation |
 
@@ -305,7 +305,7 @@ cd /path/to/silver-bullet/repo
 # 1. Pre-release feature checks (safe during live matrix)
 RTK_DISABLED=1 bash scripts/run-enterprise-e2e-pre-release-overlay.sh --dry-run
 
-# 2. Tri-host install smoke (Codex + Cursor in CI; Claude when CLI present)
+# 2. Tri-host install smoke (Codex in CI; Claude when CLI present)
 RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh
 
 # 3. Outcome validation overlay (structural + claims-audit)

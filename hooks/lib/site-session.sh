@@ -51,7 +51,7 @@ sb_site_prompt_is_site_intent() {
 sb_site_text_is_agent_delegation_intent() {
   local text="${1:-}"
   [[ -n "$text" ]] || return 1
-  grep -qiE 'silver-agent-(codex|cursor|claude|opencode|pi)|AF-AGENT-DELEGATE|agent.delegat' <<<"$text"
+  grep -qiE 'silver-agent-(codex|claude|opencode|pi)|AF-AGENT-DELEGATE|agent.delegat' <<<"$text"
 }
 
 sb_site_prompt_is_agent_delegation_intent() {

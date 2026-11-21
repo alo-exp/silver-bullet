@@ -2,7 +2,7 @@
 
 How to run Silver Bullet workflows in **Codex Cloud** (the container-backed
 cloud task runner) alongside the **desktop agent** (Codex CLI / IDE extension,
-Claude Code, Cursor), what the cloud runtime can and cannot do, and how to
+Claude Code), what the cloud runtime can and cannot do, and how to
 split work between the two.
 
 > Scope note: everything below about Silver Bullet is verified against this
@@ -15,7 +15,7 @@ split work between the two.
 
 ## 1. Cloud vs desktop: what actually differs
 
-| Capability | Desktop agent (Codex CLI / IDE, Claude Code, Cursor) | Codex Cloud |
+| Capability | Desktop agent (Codex CLI / IDE, Claude Code) | Codex Cloud |
 |---|---|---|
 | Plugin install (`codex plugin add`, `/plugin install`) | Yes — `scripts/install-codex.sh`, marketplace `alo-labs-codex` | No plugin/marketplace surface in the task container |
 | Host hook events (PreToolUse / PostToolUse / Stop) | Yes — Silver Bullet **tier 2** | Not delivered; treat as **tier 0–1** |

@@ -169,7 +169,7 @@ for h in graphify-gate agentmemory-gate alumnium-gate context-mode-gate leanctx-
   assert_gate_allows "$h: a shell call without a command"
 done
 rm -f "$STATE/leanctx-usage"
-LCERR="$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"CallMcpTool", tool_input:{server:"lean-ctx", toolName:"lctx_read_ast"}, tool_response:{isError:true}}')"
+LCERR="$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"MCP", tool_input:{server:"lean-ctx", toolName:"lctx_read_ast"}, tool_response:{isError:true}}')"
 gh_run hooks/record-leanctx-usage.sh "$LCERR"
 assert_file_absent "an MCP error result is not recorded as LeanCTX usage" "$STATE/leanctx-usage"
 gh_run hooks/record-leanctx-usage.sh "${LCERR/\"isError\":true/\"isError\":false}"

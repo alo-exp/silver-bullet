@@ -231,7 +231,7 @@ enterprise_e2e_outcome_effective_row_log() {
   [[ -n "$row_log" ]] && printf '%s\n' "$row_log"
 }
 
-# E2E-093: cursor stream-json logs embed readToolCall file bodies — exclude from scoring grep.
+# E2E-093: stream-json logs embed readToolCall file bodies — exclude from scoring grep.
 enterprise_e2e_outcome_log_scoring_text() {
   local row_log="${1:-}"
   [[ -n "$row_log" && -f "$row_log" ]] || return 1
@@ -740,11 +740,11 @@ enterprise_e2e_outcome_score_noop() {
   printf 'partial\n'
 }
 
-# Host runtime dirs for orchestrator artifacts (cursor headless may leave state in sibling host roots).
+# Host runtime dirs for orchestrator artifacts (a headless host may leave state in sibling host roots).
 enterprise_e2e_outcome_runtime_state_dirs() {
   local primary="${1:-}" d host
   [[ -n "$primary" ]] && printf '%s\n' "$primary"
-  for host in cursor codex claude; do
+  for host in codex claude; do
     d="${HOME}/.${host}/.silver-bullet"
     [[ -n "$primary" && "$d" == "$primary" ]] && continue
     [[ -d "$d" ]] && printf '%s\n' "$d"
