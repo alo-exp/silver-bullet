@@ -13,7 +13,7 @@ assert_contains "compat doc: adapter does not translate tool names" "$(cat "$COM
 assert_contains "compat doc: goose and hermes need SILVER_BULLET_RUNTIME" "$(cat "$COMPAT")" "Goose and Hermes are never auto-detected"
 assert_contains "compat doc: CLAUDE_PLUGIN_ROOT only matters for /.codex/" "$(cat "$COMPAT")" "contains \`/.codex/\`"
 assert_contains "compat doc: Kay limits section" "$(cat "$COMPAT")" "### Kay limits"
-assert_contains "compat doc: Kay has no Stop gating" "$(cat "$COMPAT")" "no SessionStart, Stop, SubagentStop or UserPromptSubmit gating"
+assert_contains "compat doc: Kay has no Stop gating" "$(cat "$COMPAT")" "no Stop, SubagentStop or UserPromptSubmit gating"
 
 # The documented detection really behaves that way.
 detect() { env -i HOME="$TL_TMP" PATH="$PATH" "$@" bash -c 'source "$1/hooks/lib/runtime-paths.sh"; printf %s "$SB_RUNTIME_NAME"' _ "$TL_REPO_ROOT"; }

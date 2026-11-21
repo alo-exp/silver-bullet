@@ -238,11 +238,11 @@ These files are not registered in `hooks/hooks.json`.
 
 | File | Role |
 |------|------|
-| `codex-hook-adapter.sh` | Codex adapter: `scripts/install-codex.sh` rewrites installed hook commands to run through it (`codex-hook-adapter.sh <event> --timeout <seconds> <hook>`); it buffers stdin/stdout, applies the hook's own `hooks.json` timeout (override `SB_CODEX_HOOK_SUBPROC_TIMEOUT`), blocks on a PreToolUse/Stop timeout (fail closed) and never drops a hook's deny. |
+| `codex-hook-adapter.sh` | Codex adapter: `scripts/install-codex.sh` rewrites installed hook commands to run through it (`codex-hook-adapter.sh <event> --timeout <seconds> <hook>`); it buffers stdin/stdout, applies a budget just below the hook's own `hooks.json` timeout (override `SB_CODEX_HOOK_SUBPROC_TIMEOUT`), blocks on a PreToolUse/Stop timeout (fail closed) and never drops a hook's deny. |
 | `core-rules.md` | Core enforcement rules that `session-start` injects into context. |
 | `core-rules.sha256` | Integrity pin for `core-rules.md`, checked by `hooks/lib/core-rules-integrity.sh` before injection. |
 | `hooks.json` | The registration manifest itself (Claude Code plugin format; Codex reads the same file from the plugin package). |
-| `kay-project-hook-bridge.sh` | Project-level hook bridge for the Kay (Codex-compatible) runtime; the live-test harness registers it in `~/.kay/config.toml` (`tests/live/lib/kay-codex-isolation.sh`). It runs only the tool hooks; Kay has no SessionStart/Stop gating (see RUNTIME-COMPATIBILITY.md, Kay limits). |
+| `kay-project-hook-bridge.sh` | Project-level hook bridge for the Kay (Codex-compatible) runtime; the live-test harness registers it in `~/.kay/config.toml` (`tests/live/lib/kay-codex-isolation.sh`). It runs the tool hooks (and SessionStart hooks on session.start for the state reset); Kay has no Stop gating (see RUNTIME-COMPATIBILITY.md, Kay limits). |
 | `run-hook.cmd` | Windows/Unix polyglot wrapper: `run-hook.cmd <script> [args]` finds Git for Windows bash (or bash on PATH) and runs the hook. |
 
 ## Shared libraries (hooks/lib/)
