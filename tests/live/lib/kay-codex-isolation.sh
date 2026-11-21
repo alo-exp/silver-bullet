@@ -37,6 +37,7 @@ default_kay_isolation_parent() {
   local run_id="${TEST_RUN_ID:-$$}"
   workspace_root="${SB_LIVE_KAY_WORKSPACE_ROOT:-$(cd "${SB_ROOT}/.." && pwd)}"
   mkdir -p "${workspace_root}/.tmp/kay-isolation-${run_id}"
+  chmod 700 "${workspace_root}/.tmp" "${workspace_root}/.tmp/kay-isolation-${run_id}"
   printf '%s\n' "${workspace_root}/.tmp/kay-isolation-${run_id}"
 }
 

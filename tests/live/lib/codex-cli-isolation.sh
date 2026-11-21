@@ -31,6 +31,8 @@ default_codex_isolation_parent() {
   local workspace_root
   workspace_root="$(cd "${SB_ROOT}/.." && pwd)"
   mkdir -p "${workspace_root}/.tmp"
+  # The copied auth.json lives below this directory: closed to other users (R14-15).
+  chmod 700 "${workspace_root}/.tmp"
   printf '%s\n' "${workspace_root}/.tmp"
 }
 
@@ -522,7 +524,9 @@ PY
   export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-}"
   export SB_LIVE_CODEX_REASONING_EFFORT="${SB_LIVE_CODEX_REASONING_EFFORT:-}"
   export CODEX_REASONING_EFFORT="${CODEX_REASONING_EFFORT:-${SB_LIVE_CODEX_REASONING_EFFORT:-}}"
-  export CODEX_TRANSCRIPT_DIR="${CODEX_TRANSCRIPT_DIR:-${SB_ROOT}/tests/live/agents/codex/transcripts}"
+  # Transcripts hold the prompt and tool output: keep them in the isolated home (removed with it)
+  # unless the operator names a directory, never in the checkout (R14-09).
+  export CODEX_TRANSCRIPT_DIR="${CODEX_TRANSCRIPT_DIR:-${SB_LIVE_CODEX_ISOLATION_DIR}/.sb-transcripts}"
 
   mirror_native_codex_runtime_surface
   seed_native_codex_dependency_cache

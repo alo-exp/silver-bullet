@@ -177,4 +177,40 @@ live_run SB_LIVE_RUNTIMES=kay
 assert_eq "kay preflight failure exits 1" 1 "$TL_STATUS"
 assert_contains "the kay isolated home is torn down on the failing exit" "$(cat "$TL_TMP/kay-teardown.log")" "KAY-TORN-DOWN"
 
+# --- R14-09: Kay transcripts are private, redacted and never default into the checkout -----------
+cat >"$TL_TMP/kay.sh" <<EOS
+source "$TL_REPO_ROOT/tests/live/agents/kay/agent.sh"
+KAY_HOME="$TL_TMP/kayhome"; mkdir -p "\$KAY_HOME"
+SB_ROOT="$TL_REPO_ROOT"
+kay_resolve_session_archive() { return 1; }
+src="$TL_TMP/rollout.jsonl"
+printf '%s\n' '{"type":"thread.started","thread_id":"th-1"}' '{"type":"tool","out":"token ghp_abcdefghijklmnopqrstuvwxyz0123456789ABCD"}' >"\$src"
+printf 'prompt text' >"$TL_TMP/prompt.txt"
+dir="\$(codex_transcript_dir)"
+echo "DIR=\$dir"
+kay_capture_transcript "\$src" "$TL_TMP/prompt.txt" "2020-01-01T00:00:00Z" "$TL_TMP" >/dev/null
+echo "MODE_DIR=\$(stat -c %a "\$dir")"
+echo "MODE_LATEST=\$(stat -c %a "\$dir/latest.jsonl")"
+echo "MODE_SESSION=\$(stat -c %a "\$dir/th-1.jsonl" 2>/dev/null || echo none)"
+grep -c 'ghp_abcdefghijklmnopqrstuvwxyz0123456789ABCD' "\$dir/latest.jsonl" || true
+EOS
+tl_run bash "$TL_TMP/kay.sh"
+assert_contains "kay default transcript dir is inside the isolated home" "$TL_OUT" "DIR=$TL_TMP/kayhome/.sb-transcripts"
+assert_not_contains "kay default transcript dir is not in the checkout" "$TL_OUT" "DIR=$TL_REPO_ROOT"
+assert_contains "kay transcript dir is 0700" "$TL_OUT" "MODE_DIR=700"
+assert_contains "kay latest.jsonl is 0600" "$TL_OUT" "MODE_LATEST=600"
+assert_eq "kay transcript holds no planted token" 0 "$(grep -c '^[1-9]' <<<"$(tail -1 <<<"$TL_OUT")")"
+assert_contains "kay transcript keeps non-secret content" "$(cat "$TL_TMP/kayhome/.sb-transcripts/latest.jsonl")" "prompt text"
+cat >"$TL_TMP/kay2.sh" <<EOS
+source "$TL_REPO_ROOT/tests/live/agents/kay/agent.sh"
+unset KAY_HOME KAY_SB_TEST_HOME SB_LIVE_CODEX_ISOLATION_DIR CODEX_TRANSCRIPT_DIR
+codex_transcript_dir
+CODEX_TRANSCRIPT_DIR=/explicit codex_transcript_dir
+EOS
+tl_run bash "$TL_TMP/kay2.sh"
+assert_eq "kay fallback transcript dir is a private cache dir" "$HOME/.cache/silver-bullet/live-transcripts/kay
+/explicit" "$TL_OUT"
+assert_eq "transcript directories are gitignored" 0 "$(cd "$TL_REPO_ROOT" && git check-ignore -q tests/live/agents/kay/transcripts/latest.jsonl && git check-ignore -q tests/live/agents/codex/transcripts/x.jsonl; echo $?)"
+assert_eq "codex isolation no longer defaults transcripts into the checkout" 0 "$(grep -c 'SB_ROOT}/tests/live/agents/codex/transcripts' "$TL_REPO_ROOT/tests/live/lib/codex-cli-isolation.sh" || true)"
+
 tl_results
