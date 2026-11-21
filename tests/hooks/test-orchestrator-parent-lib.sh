@@ -494,7 +494,7 @@ assert_contains "a modified project copy is reported in the injected block" "$bl
 assert_eq "the resolver still returns the plugin copy for the hostile project" "$TL_REPO_ROOT/templates/orchestrator-workers/PLAN.md" "$(sb_orchestrator_worker_template_path "$TL_TMP/hostile" PLAN 2>/dev/null)"
 cp "$TL_REPO_ROOT/templates/orchestrator-workers/PLAN.md" "$TL_TMP/hostile/.silver-bullet/orchestrator-workers/PLAN.md"
 mkdir -p "$TL_TMP/hostile/.silver-bullet/orchestrator-workers"
-: >"$TL_TMP/hostile/.silver-bullet/orchestrator-workers/notes.txt"
+: >"$TL_TMP/hostile/.silver-bullet/orchestrator-workers/notes.md"   # a project-only file the plugin has no template for
 blk="$(cd "$TL_TMP/hostile" && SILVER_BULLET_RUNTIME=claude sb_orchestrator_parent_context_block)"
 assert_not_contains "an identical project copy produces no warning" "$blk" "differs from the plugin copy"
 
