@@ -15,8 +15,7 @@ from typing import Any
 _LIB_DIR = Path(__file__).resolve().parent / "lib"
 if str(_LIB_DIR) not in sys.path:
     sys.path.insert(0, str(_LIB_DIR))
-import rfl_quota_retry  # noqa: E402
-import rfl_quota_claude5h  # noqa: E402
+import quota_window  # noqa: E402
 
 REASONING_ORDER = ("low", "medium", "high", "xhigh")
 CLAUDE_THINKING_ORDER = ("medium", "high", "xhigh")
@@ -470,31 +469,6 @@ def main() -> int:
         action="store_true",
         help="Classify 5-hour vs weekly vs monthly vs unknown quota and whether to schedule a retry",
     )
-    parser.add_argument(
-        "--schedule-quota-retry",
-        action="store_true",
-        help="Persist an idempotent quota-retry job under --run-dir",
-    )
-    parser.add_argument(
-        "--activate-quota-retry",
-        action="store_true",
-        help="Fire a due quota-retry job: retry the rung if the ladder is active, else ask the user",
-    )
-    parser.add_argument(
-        "--quota-retry-due",
-        action="store_true",
-        help="List due quota-retry jobs for --run-dir",
-    )
-    parser.add_argument(
-        "--quota-retry-wake",
-        action="store_true",
-        help="Activate every due quota-retry job (at/launchd/SessionStart worker)",
-    )
-    parser.add_argument(
-        "--mark-ladder-status",
-        choices=("active", "completed", "aborted"),
-        help="Record durable ladder status in --run-dir/LADDER-STATUS.json",
-    )
     parser.add_argument("--run-dir", type=Path, help="RFL run directory for quota-retry / ladder status")
     parser.add_argument("--run-id", default="", help="Ladder run identity stored on quota-retry jobs")
     parser.add_argument("--rung-id", default="", help="Rung identity for quota-retry schedule/activate")
@@ -505,88 +479,19 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    quota_window_requested = any(
-        (
-            args.classify_quota_window,
-            args.schedule_quota_retry,
-            args.activate_quota_retry,
-            args.quota_retry_due,
-            args.quota_retry_wake,
-            args.mark_ladder_status,
-        )
-    )
-    if quota_window_requested:
+    if args.classify_quota_window:
         output = args.subscription_output
         if args.subscription_output_file is not None:
             output = args.subscription_output_file.read_text(encoding="utf-8")
-        now = rfl_quota_retry.parse_iso_datetime(args.quota_now)
-        if args.classify_quota_window:
-            print(json.dumps(
-                rfl_quota_claude5h.classify_quota_window(
-                    output,
-                    host=args.quota_host,
-                    model=args.model or "",
-                    now=now,
-                ),
-                indent=2,
-            ))
-            return 0
-        if args.quota_retry_wake:
-            if args.run_dir is None and args.project_root is None:
-                parser.error("--quota-retry-wake requires --run-dir or --project-root")
-            result = rfl_quota_retry.wake_due_jobs(
-                project_root=args.project_root,
-                run_dir=args.run_dir,
-                now=now,
-            )
-            for ask in result.get("asks") or []:
-                print(f"[rfl] ASK: {ask}", file=sys.stderr)
-            print(json.dumps(result, indent=2))
-            return 0
-        if args.run_dir is None:
-            parser.error("quota-retry / ladder-status commands require --run-dir")
-        run_id = args.run_id or args.run_dir.name
-        if args.mark_ladder_status:
-            try:
-                marked = rfl_quota_retry.mark_ladder_status(
-                    args.run_dir,
-                    args.mark_ladder_status,
-                    now=now,
-                    current_rung=args.rung_id or None,
-                    current_phase=args.current_phase or None,
-                )
-            except ValueError as exc:
-                print(f"ERROR: {exc}", file=sys.stderr)
-                return 2
-            print(json.dumps(marked, indent=2))
-            return 0
-        if args.quota_retry_due:
-            print(json.dumps(rfl_quota_retry.due_quota_retries(args.run_dir, now=now), indent=2))
-            return 0
-        if not args.rung_id or not args.model:
-            parser.error("quota-retry schedule/activate require --rung-id and --model")
-        if args.schedule_quota_retry:
-            result = rfl_quota_claude5h.schedule_quota_retry(
-                run_dir=args.run_dir,
-                run_id=run_id,
-                rung=args.rung_id,
-                model=args.model,
-                output=output,
-                now=now,
+        print(json.dumps(
+            quota_window.classify_quota_window(
+                output,
                 host=args.quota_host,
-            )
-            print(json.dumps(result, indent=2))
-            return 0
-        result = rfl_quota_retry.activate_quota_retry(
-            run_dir=args.run_dir,
-            run_id=run_id,
-            rung=args.rung_id,
-            model=args.model,
-            now=now,
-        )
-        if result.get("action") == "ask_user" and result.get("ask"):
-            print(f"[rfl] ASK: {result['ask']}", file=sys.stderr)
-        print(json.dumps(result, indent=2))
+                model=args.model or "",
+                now=quota_window.parse_iso_datetime(args.quota_now),
+            ),
+            indent=2,
+        ))
         return 0
 
     if args.classify_quota or args.decide_launch or args.mark_quota_fallback:
