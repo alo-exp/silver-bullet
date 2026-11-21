@@ -38,7 +38,7 @@ SNAP="$TL_TMP/snapshot"
 make_tree "$SNAP"
 register "$SNAP"
 REPO_ROOT="$CHECKOUT" rewrite_codex_bundle_host_paths
-assert_contains "snapshot package rewritten to .codex" "$(cat "$SNAP/plugins/silver-bullet/skill-source/demo/SKILL.md")" "~/.codex/settings.json"
+assert_contains "snapshot package rewritten to .codex" "$(cat "$SNAP/plugins/silver-bullet/skill-source/demo/SKILL.md")" '/.codex/settings.json'
 assert_contains "snapshot host bundle rewritten" "$(cat "$SNAP/host-bundles/codex/demo/SKILL.md")" '$HOME/.codex/x'
 assert_eq "checkout still untouched afterwards" "$TEXT" "$(cat "$CHECKOUT/host-bundles/codex/demo/SKILL.md")"
 
