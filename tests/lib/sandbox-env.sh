@@ -13,7 +13,10 @@
 # sb_test_scrub_host_env: unset every variable that points at, or selects, real host state.
 sb_test_scrub_host_env() {
   local _v
-  for _v in $(compgen -e | grep -E '^(GIT_(DIR|WORK_TREE|COMMON_DIR|NAMESPACE|EXEC_PATH|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|CEILING_DIRECTORIES|PREFIX|GRAFT_FILE|SHALLOW_FILE|IMPLICIT_WORK_TREE|INTERNAL_SUPER_PREFIX|REPLACE_REF_BASE|NO_REPLACE_OBJECTS|CONFIG($|_)|DISCOVERY_ACROSS_FILESYSTEM)|XDG_[A-Z_]+)$' || true); do
+  # Every GIT_* variable goes (repository, index, object store, config including GIT_CONFIG_GLOBAL/SYSTEM/
+  # COUNT/KEY_n/VALUE_n, hooks, ssh, askpass, exec path, templates, traces, ...) except the commit identity
+  # and GIT_TERMINAL_PROMPT, which redirect nothing. XDG_* goes with them.
+  for _v in $(compgen -e | grep -E '^(GIT_|XDG_)' | grep -vE '^GIT_(AUTHOR|COMMITTER)_|^GIT_TERMINAL_PROMPT$' || true); do
     unset "$_v"
   done
   # whatever else this git release lists as repository-local

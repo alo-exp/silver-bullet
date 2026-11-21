@@ -56,6 +56,22 @@ run_scenario 'out=$(run_completion_audit PreToolUse "gh pr create --fill"); asse
 assert_allowed "an output that did not come from a hook run is checked on its output alone" ""'
 assert_contains "a consumed run status is not reused by the next assertion" "$TL_OUT" "PASS: an output that did not come from a hook run"
 
+# the status checked is that of the run whose output is asserted, not of the latest run
+printf 'echo CRASHED-OUTPUT\nexit 3\n' >"$stubs/completion-audit.sh"
+printf 'exit 0\n' >"$stubs/record-skill.sh"
+run_scenario 'HOOKS_DIR='"$stubs"'
+a=$(run_completion_audit PreToolUse "x") || true
+b=$(run_record_skill silver-quality-gates)
+assert_allowed "the earlier crashed run" "$a"
+assert_allowed "the later clean run" "$b"'
+assert_contains "an earlier crashed run is judged by its own status" "$TL_OUT" "FAIL: the earlier crashed run (expected allow, but hook exited 3"
+assert_contains "a later clean run is not blamed on the crash" "$TL_OUT" "PASS: the later clean run"
+run_scenario 'a=$(run_record_skill silver-quality-gates)
+HOOKS_DIR=/nonexistent
+b=$(run_completion_audit PreToolUse "echo hi") || true
+assert_allowed "clean run before a missing hook" "$a"'
+assert_contains "a clean run is not failed by a later missing hook" "$TL_OUT" "PASS: clean run before a missing hook"
+
 # R15-09: sourcing and running a scenario leave nothing in the runtime home
 fresh_home="$TL_TMP/fresh-home"
 mkdir -p "$fresh_home"

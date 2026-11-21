@@ -64,6 +64,45 @@ tl_run env GIT_INDEX_FILE="$TL_TMP/outer-index" GIT_OBJECT_DIRECTORY="$TL_TMP/ob
 assert_contains "GIT_* repository redirects are unset" "$TL_OUT" "INDEX=[||]"
 assert_file_absent "the caller's index is never created" "$TL_TMP/outer-index"
 
+# every GIT_* variable git documents that redirects the repository, index, objects, config, hooks, ssh,
+# askpass, editor, exec path or templates: all are unset, the commit identity and the prompt switch stay
+git_vars=(GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_INDEX_VERSION GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES
+  GIT_COMMON_DIR GIT_NAMESPACE GIT_CEILING_DIRECTORIES GIT_DISCOVERY_ACROSS_FILESYSTEM GIT_CONFIG GIT_CONFIG_GLOBAL
+  GIT_CONFIG_SYSTEM GIT_CONFIG_NOSYSTEM GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GIT_CONFIG_PARAMETERS
+  GIT_EXEC_PATH GIT_TEMPLATE_DIR GIT_SSH GIT_SSH_COMMAND GIT_ASKPASS GIT_EDITOR GIT_SEQUENCE_EDITOR GIT_PAGER
+  GIT_EXTERNAL_DIFF GIT_PROXY_COMMAND GIT_SSL_NO_VERIFY GIT_SSL_CAINFO GIT_TRACE GIT_TRACE2 GIT_REPLACE_REF_BASE
+  GIT_NO_REPLACE_OBJECTS GIT_GRAFT_FILE GIT_SHALLOW_FILE GIT_PREFIX GIT_IMPLICIT_WORK_TREE GIT_ATTR_SOURCE
+  GIT_ATTR_NOSYSTEM GIT_PROTOCOL_FROM_USER GIT_ALLOW_PROTOCOL GIT_CURL_VERBOSE GIT_REDIRECT_STDERR GIT_OPTIONAL_LOCKS
+  GIT_DEFAULT_HASH GIT_MERGE_AUTOEDIT GIT_LITERAL_PATHSPECS GIT_QUARANTINE_PATH GIT_CONFIG_NOGLOBAL)
+leak_cfg="$TL_TMP/leak.gitconfig"
+printf '[probe]\n\tleak = yes\n[commit]\n\tgpgsign = true\n' >"$leak_cfg"
+envprobe="$(mkfake test-gitvars.sh 'echo "LEFT=[$(env | grep -E "^GIT_" | grep -vE "^GIT_(AUTHOR|COMMITTER)_|^GIT_TERMINAL_PROMPT=" | cut -d= -f1 | tr "\n" " ")]"
+echo "LEAK=[$(git config --get probe.leak || true)]"; echo "KEEP=[${GIT_AUTHOR_NAME:-}|${GIT_TERMINAL_PROMPT:-}]"; echo "Results: 1 passed, 0 failed"')"
+envargs=()
+for v in "${git_vars[@]}"; do envargs+=("$v=$leak_cfg"); done
+tl_run env "${envargs[@]}" GIT_CONFIG_GLOBAL="$leak_cfg" GIT_AUTHOR_NAME=kept GIT_TERMINAL_PROMPT=0 bash "$RUNNER" "$envprobe"
+assert_contains "no GIT_* redirect survives the runner (table of ${#git_vars[@]} variables)" "$TL_OUT" "LEFT=[]"
+assert_contains "a leaked GIT_CONFIG_GLOBAL file is not read by git in the test" "$TL_OUT" "LEAK=[]"
+assert_contains "the commit identity and the prompt switch are kept" "$TL_OUT" "KEEP=[kept|0]"
+for v in "${git_vars[@]}"; do
+  tl_run env "$v=$leak_cfg" bash -c 'source "$1/tests/lib/sandbox-env.sh"; sb_test_scrub_host_env; [[ -z "${!2+x}" ]]' _ "$TL_REPO_ROOT" "$v"
+  assert_eq "sb_test_scrub_host_env unsets $v" "0" "$TL_STATUS"
+done
+
+# the runner aborts (70) before the test body when the sandbox check fails: drop KAY_HOME from the scrub list
+# in a copy of the tree and let KAY_HOME point outside the sandbox
+escdir="$TL_TMP/escape-repo"
+mkdir -p "$escdir/tests/lib" "$escdir/hooks/lib"
+cp "$RUNNER" "$escdir/tests/"
+sed 's/unset KAY_HOME /unset /' "$TL_REPO_ROOT/tests/lib/sandbox-env.sh" >"$escdir/tests/lib/sandbox-env.sh"
+cp "$TL_REPO_ROOT/hooks/lib/runtime-paths.sh" "$TL_REPO_ROOT/hooks/lib/path-canonical.sh" "$escdir/hooks/lib/"
+body="$(mkfake test-escape.sh "touch '$TL_TMP/body-ran'; echo 'Results: 1 passed, 0 failed'")"
+tl_run env SILVER_BULLET_RUNTIME=codex KAY_HOME="$TL_TMP/escaped-kay" bash "$escdir/tests/run-all-tests.sh" "$body"
+assert_eq "an escaped runtime root fails the run" "1" "$TL_STATUS"
+assert_contains "the file is reported with exit 70" "$TL_OUT" "SUITE FAILED (exit 70)"
+assert_file_absent "the test body never ran" "$TL_TMP/body-ran"
+assert_contains "the error names the escaped root" "$TL_OUT" "escaped-kay/.codex' is outside the sandbox HOME"
+
 # the same scrub applies to tl_init for a test file run directly
 tl_run env KAY_HOME="$real/kay" PI_CODING_AGENT_DIR="$real/pi" SILVER_BULLET_RUNTIME=codex GIT_INDEX_FILE="$TL_TMP/x" \
   bash -c 'source "$1/tests/lib/testlib.sh"; tl_init; echo "ROOT=$SB_RUNTIME_HOME_ROOT HOME=$HOME IDX=${GIT_INDEX_FILE:-}"' _ "$TL_REPO_ROOT"

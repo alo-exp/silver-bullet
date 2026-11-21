@@ -397,27 +397,36 @@ _integ_session() {
   sb_integrity_forget
 }
 # _run_hook <hook file> <json>: run one hook from the isolated project directory with <json> on stdin.
-# Prints the hook's stdout. Its exit status and stderr are kept in ${TMPDIR_TEST}.hookrun/status and
-# .hookrun/err (files, because callers capture the output in a command substitution), so that
-# assert_allowed can tell "allowed" from "the hook is missing or crashed". A missing hook is status 127.
+# Prints the hook's stdout. Its exit status and stderr are kept in files under ${TMPDIR_TEST}.hookrun/
+# (callers capture the output in a command substitution, so variables would be lost), keyed by a checksum
+# of that stdout: assert_allowed looks up the run whose output it is given, so a later run of another hook
+# cannot stand in for it (two runs with identical output share a key; the later one wins). A missing hook
+# is status 127.
 _run_hook() {
-  local hook="$1" input="$2" st=0
-  local statf="${TMPDIR_TEST}.hookrun/status" errf="${TMPDIR_TEST}.hookrun/err"
-  mkdir -p "${TMPDIR_TEST}.hookrun"
+  local hook="$1" input="$2" st=0 out key meta="${TMPDIR_TEST}.hookrun" errf
+  mkdir -p "$meta"
+  errf="$meta/err.pending"
   if [[ ! -f "${HOOKS_DIR}/${hook}" ]]; then
+    out=""
+    st=127
     printf 'hook not found: %s/%s\n' "$HOOKS_DIR" "$hook" >"$errf"
-    echo 127 >"$statf"
-    return 127
+  else
+    out="$( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/${hook}" 2>"$errf" )" || st=$?
   fi
-  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/${hook}" 2>"$errf" ) || st=$?
-  echo "$st" >"$statf"
+  key="$(printf '%s' "$out" | cksum | cut -d' ' -f1)"
+  echo "$st" >"$meta/status.$key"
+  mv -f "$errf" "$meta/err.$key"
+  [[ -z "$out" ]] || printf '%s\n' "$out"
   return "$st"
 }
 
-# _hook_run_problem: print why the last hook run is not an "allow" (non-zero status, bash's own
-# diagnostics on stderr); print nothing when it was clean or no hook ran since the last assertion.
+# _hook_run_problem <output>: print why the hook run that produced <output> is not an "allow" (non-zero
+# status, bash's own diagnostics on stderr); print nothing when it was clean or no hook run produced it.
 _hook_run_problem() {
-  local statf="${TMPDIR_TEST}.hookrun/status" errf="${TMPDIR_TEST}.hookrun/err" st err
+  local key statf errf st err
+  key="$(printf '%s' "$1" | cksum | cut -d' ' -f1)"
+  statf="${TMPDIR_TEST}.hookrun/status.$key"
+  errf="${TMPDIR_TEST}.hookrun/err.$key"
   [[ -f "$statf" ]] || return 0
   st="$(cat "$statf")"
   err="$(cat "$errf" 2>/dev/null || true)"
@@ -515,7 +524,7 @@ is_blocked() {
 
 assert_blocked() {
   local label="$1" output="$2"
-  rm -f "${TMPDIR_TEST}.hookrun/status" "${TMPDIR_TEST}.hookrun/err"
+  _hook_run_problem "$output" >/dev/null
   if is_blocked "$output"; then
     PASS=$((PASS + 1)); printf 'PASS: %s\n' "$label"
   else
@@ -525,7 +534,7 @@ assert_blocked() {
 
 assert_allowed() {
   local label="$1" output="$2" problem
-  problem="$(_hook_run_problem)"
+  problem="$(_hook_run_problem "$output")"
   if [[ -n "$problem" ]]; then
     FAIL=$((FAIL + 1)); printf 'FAIL: %s (expected allow, but %s)\n' "$label" "$problem"
   elif ! is_blocked "$output"; then

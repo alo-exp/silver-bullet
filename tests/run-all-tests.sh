@@ -173,7 +173,8 @@ run_one() {
     # shellcheck source=../hooks/lib/runtime-paths.sh
     source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
     export SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME
-    sb_test_assert_sandboxed
+    # explicit: inside the `||` list below errexit is off, so a bare call would not stop the test body
+    sb_test_assert_sandboxed || exit 70
     if [[ -n "$COV_MAIN" ]]; then
       export SB_COV_MAIN_DIR="$COV_MAIN"
       export SB_COV_DIR="$sandbox/cov"
