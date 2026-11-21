@@ -53,6 +53,10 @@ bash "${PLUGIN_ROOT}/scripts/sb-consent.sh" grant <tool> --project "$PWD"     # 
 bash "${PLUGIN_ROOT}/scripts/sb-consent.sh" decline <tool> --project "$PWD"   # No
 ```
 Yes also allows installing and wiring the tool on this machine; use `--capabilities enforce`
+Check the exit status of every `sb-consent.sh` call. A non-zero status (for example 2: the
+store stays locked by another `sb-consent`) means **nothing was recorded**: tell the user,
+retry, and do not write `enabled_by_user` or continue as if the answer were stored (a grant that
+failed is no consent; a decline or revoke that failed leaves the old consent in force).
 to allow enforcement only. Writing `enabled_by_user` into the file (below) is only the project's
 recommendation.
 
@@ -295,6 +299,7 @@ Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBen
 
 - **Yes** → `sb-consent.sh grant <tool> --project "$PWD"` (then the recommendation `enabled_by_user: true`)
 - **No** → `sb-consent.sh decline <tool> --project "$PWD"` (then `enabled_by_user: false`)
+- If `sb-consent.sh` exits non-zero, nothing was recorded: tell the user and retry; do not write `enabled_by_user`.
 
 #### Step 3 — Install when opted in or retrying suspended
 
@@ -375,6 +380,7 @@ Question: "Silver Bullet recommends **LeanCTX** for parallel-routed compression 
 
 - **Yes** → `sb-consent.sh grant <tool> --project "$PWD"` (then the recommendation `enabled_by_user: true`)
 - **No** → `sb-consent.sh decline <tool> --project "$PWD"` (then `enabled_by_user: false`)
+- If `sb-consent.sh` exits non-zero, nothing was recorded: tell the user and retry; do not write `enabled_by_user`.
 
 #### Step 3 — Install when opted in or retrying suspended
 
