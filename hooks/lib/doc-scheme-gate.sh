@@ -162,16 +162,43 @@ sb_doc_scheme__changed_since() {
   [[ -n "$(git -C "$repo" log --since="$since" --pretty=format: --name-only -- "$spec" 2>/dev/null)" ]]
 }
 
+# sb_doc_scheme__baseline_record REPO: the file that seals the baseline commit for this repository in the runtime
+# state dir (empty output when there is no usable state dir).
+_sb_doc_scheme__baseline_record() {
+  local repo="$1" dir="${SB_RUNTIME_STATE_DIR:-}" real key
+  [[ -n "$dir" && -d "$dir" ]] || return 0
+  real="$(cd "$repo" 2>/dev/null && pwd -P)" || return 0
+  key="$(printf '%s' "$real" | cksum | cut -d' ' -f1)"
+  printf '%s/doc-scheme-baseline-%s' "$dir" "$key"
+}
+
 # sb_doc_scheme__baseline REPO: the trusted revision the scheme is compared with: the merge-base of HEAD with the
 # default branch (origin/HEAD, then origin/main|master, then main|master), so a commit made on this branch cannot
 # redefine it (one intermediate commit would otherwise switch the delivery gate off); HEAD when there is no default
-# branch to compare with.
+# branch to compare with. The first use seals the commit in the runtime state dir and later calls return the sealed
+# commit while it is still an ancestor of HEAD: `git branch -f main HEAD` or `git update-ref refs/remotes/origin/main
+# HEAD` after a deleting commit would otherwise move the default branch (and the baseline) onto that commit. Session
+# start clears the seal, so a deliberate change of the default branch takes effect in the next session.
 sb_doc_scheme__baseline() {
-  local repo="$1" ref mb
+  local repo="$1" ref mb record sealed tmp
+  record="$(_sb_doc_scheme__baseline_record "$repo")"
+  if [[ -n "$record" && -f "$record" && ! -L "$record" ]]; then
+    sealed="$(head -c 80 "$record" 2>/dev/null | tr -d '[:space:]')"
+    if [[ "$sealed" =~ ^[0-9a-f]{40,64}$ ]] \
+      && git -C "$repo" cat-file -e "${sealed}^{commit}" >/dev/null 2>&1 \
+      && git -C "$repo" merge-base --is-ancestor "$sealed" HEAD >/dev/null 2>&1; then
+      printf '%s' "$sealed"
+      return 0
+    fi
+  fi
   for ref in "$(git -C "$repo" symbolic-ref -q refs/remotes/origin/HEAD 2>/dev/null)" \
     refs/remotes/origin/main refs/remotes/origin/master refs/heads/main refs/heads/master; do
     [[ -n "$ref" ]] || continue
     if mb="$(git -C "$repo" merge-base HEAD "$ref" 2>/dev/null)"; then
+      if [[ -n "$record" && ! -L "$record" ]]; then
+        tmp="${record}.$$"
+        { printf '%s\n' "$mb" >"$tmp" && mv -f -- "$tmp" "$record"; } 2>/dev/null || rm -f -- "$tmp" 2>/dev/null || true
+      fi
       printf '%s' "$mb"
       return 0
     fi

@@ -467,6 +467,11 @@ if [[ "$sb_should_mutate" == true ]]; then
   fi
   # #280: drop prior-session doc-scheme gap reports so obligations cannot leak.
   rm -rf -- "${SB_STATE_DIR}/doc-scheme-gaps" 2>/dev/null || true
+  # The sealed doc-scheme baseline (hooks/lib/doc-scheme-gate.sh) lives for one session; a worker start must not
+  # unseal it (that would let a subagent spawn re-baseline after a moved default branch).
+  if [[ "$_sb_preserve_worker_marker" != true ]]; then
+    rm -f -- "${SB_STATE_DIR}"/doc-scheme-baseline-* 2>/dev/null || true
+  fi
 fi
 
 # Warn visibly if jq is unavailable — enforcement will be disabled
