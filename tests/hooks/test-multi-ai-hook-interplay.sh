@@ -89,19 +89,42 @@ for sysdir in /etc /etc/sb-fu1 /usr/sb-fu1 /usr/local/sb-fu1 /bin/sb-fu1 /sbin/s
   assert_contains "deep-research refuses $sysdir (code)" "$TL_OUT" "OUTPUT_ROOT_NOT_ALLOWED"
 done
 assert_file_absent "nothing was created under /opt" /opt/sb-fu1
-# /var and /opt are fine for a project that lives there (the working directory is below them) and for the temp dir
-VARPROJ="$(mktemp -d /var/tmp/sb-fu1-proj.XXXXXX)"
-tl_run bash -c 'cd "$1" && env SB_HOST=claude python3 "$2" --output-root "$1/out" --dry-run' _ "$VARPROJ" "$MAT"
-assert_eq "multi-ai-task accepts an output root under a project in /var" 0 "$TL_STATUS"
-tl_run bash -c 'cd "$1" && env SB_HOST=claude python3 "$2" probe --output-root "$1/out" --dry-run' _ "$VARPROJ" "$DRM"
-assert_eq "deep-research accepts an output root under a project in /var" 0 "$TL_STATUS"
-tl_run bash -c 'cd "$1" && env SB_HOST=claude python3 "$2" --output-root /var/tmp/not-the-project --dry-run' _ "$VARPROJ" "$MAT"
-assert_eq "...but not a /var directory outside the project" 2 "$TL_STATUS"
-tl_run bash -c 'cd / && env SB_HOST=claude python3 "$1" --output-root /var/sb-fu1 --dry-run' _ "$MAT"
-assert_eq "a working directory of / does not make /var a project" 2 "$TL_STATUS"
-rm -rf "$VARPROJ"
-tl_run env SB_HOST=claude python3 "$MAT" --output-root "$(mktemp -d)/out" --dry-run
-assert_eq "the system temp directory stays usable" 0 "$TL_STATUS"
+# A project that lives under a system tree (Docker WORKDIR /usr/src/app, /var/www/app, /opt/app) keeps its own output
+# roots: allowed when the resolved root is INSIDE the project root (git toplevel, else the .silver-bullet.json
+# walk-up root) wherever the CLI is started in it; outside the project the system trees stay refused. A real /usr or /var
+# cannot be created without root, so the harness switch stands a temp tree in for one.
+SYS="$(mktemp -d)"; mkdir -p "$SYS/usr/src/app/src/deep" "$SYS/usr/bin" "$SYS/var/www/app/src" "$SYS/var/www/other"
+printf '{}\n' >"$SYS/usr/src/app/.silver-bullet.json"; printf '{}\n' >"$SYS/var/www/app/.silver-bullet.json"
+git -C "$SYS/var/www/other" init -q
+run_in() { # DIR TREE args...: python3 args... started in DIR with TREE standing in for a system tree
+  tl_run bash -c 'cd "$1"; tree="$2"; shift 2; SILVER_BULLET_TEST_HOOK_ENFORCED=1 SB_MULTI_AI_TEST_SYSTEM_TREE="$tree" SB_HOST=claude python3 "$@"' _ "$@"
+}
+for cli in "$MAT" "$DRM"; do
+  extra=(); [[ "$cli" == "$DRM" ]] && extra=(probe)
+  run_in "$SYS/usr/src/app" "$SYS/usr" "$cli" "${extra[@]}" --output-root "$SYS/usr/src/app/.planning/multi-ai/run-1" --dry-run
+  assert_eq "$(basename "$cli"): a project at a /usr/src/app-like path keeps its .planning output root" 0 "$TL_STATUS"
+  run_in "$SYS/var/www/app/src" "$SYS/var" "$cli" "${extra[@]}" --output-root "$SYS/var/www/app/.planning/multi-ai/run-1" --dry-run
+  assert_eq "$(basename "$cli"): started from a subdirectory (/var/www/app/src) the project-root output is allowed" 0 "$TL_STATUS"
+  run_in "$SYS/var/www/app/src" "$SYS/var" "$cli" "${extra[@]}" --output-root "$SYS/var/www/other/out" --dry-run
+  assert_eq "$(basename "$cli"): another tree under the same system root is outside the project" 2 "$TL_STATUS"
+  run_in "$SYS/usr/src/app" "$SYS/usr" "$cli" "${extra[@]}" --output-root "$SYS/usr/bin/x" --dry-run
+  assert_eq "$(basename "$cli"): a system path outside the project is refused" 2 "$TL_STATUS"
+  tl_run bash -c 'cd "$1" && shift && SB_HOST=claude python3 "$@"' _ "$SYS/usr/src/app" "$cli" "${extra[@]}" --output-root /etc/sb-fu1 --dry-run
+  assert_eq "$(basename "$cli"): /etc is refused even from inside a project" 2 "$TL_STATUS"
+  tl_run bash -c 'cd "$1" && shift && SB_HOST=claude python3 "$@"' _ "$SYS/usr/src/app" "$cli" "${extra[@]}" --output-root /usr/bin/x --dry-run
+  assert_eq "$(basename "$cli"): the real /usr/bin is refused outside the project" 2 "$TL_STATUS"
+done
+# the harness switch is ignored without the test variable
+tl_run bash -c 'cd "$1/usr/src/app" && SB_MULTI_AI_TEST_SYSTEM_TREE="$1/usr" SB_HOST=claude env -u SILVER_BULLET_TEST_HOOK_ENFORCED python3 "$2" --output-root "$1/usr/bin/x" --dry-run' _ "$SYS" "$MAT"
+assert_eq "the test-only system tree is ignored without the harness switch" 0 "$TL_STATUS"
+# a git toplevel is the project root (no .silver-bullet.json needed), and a missing git falls back to the config walk-up
+tl_run bash -c 'cd "$1/var/www/other" && SILVER_BULLET_TEST_HOOK_ENFORCED=1 SB_MULTI_AI_TEST_SYSTEM_TREE="$1/var" SB_HOST=claude python3 "$2" --output-root "$1/var/www/other/.planning/multi-ai/r" --dry-run' _ "$SYS" "$MAT"
+assert_eq "a git toplevel is the project root" 0 "$TL_STATUS"
+PYBIN="$(command -v python3)"
+tl_run bash -c 'cd "$1/var/www/app/src" && PATH=/nonexistent SILVER_BULLET_TEST_HOOK_ENFORCED=1 SB_MULTI_AI_TEST_SYSTEM_TREE="$1/var" SB_HOST=claude "$3" "$2" --output-root "$1/var/www/app/.planning/multi-ai/r" --dry-run' _ "$SYS" "$MAT" "$PYBIN"
+assert_eq "without git the .silver-bullet.json walk-up root is the project" 0 "$TL_STATUS"
+rm -rf "$SYS"
+# the system temp directory stays usable
 VARTMP="$(mktemp -d /var/tmp/sb-fu1-tmp.XXXXXX)"
 tl_run env SB_HOST=claude TMPDIR="$VARTMP" python3 "$MAT" --output-root "$VARTMP/out" --dry-run
 assert_eq "a temp directory that lives under /var stays usable (macOS)" 0 "$TL_STATUS"
