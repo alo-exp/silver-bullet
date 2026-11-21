@@ -9,6 +9,8 @@ version: 0.2.0
 
 # /sb:spec -- Spec Compiler
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-spec/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 SB orchestrator for compiling canonical `.planning/SPEC.md` and `.planning/REQUIREMENTS.md` from the newest `*-CLARIFY-*.md` brief and any ingest SPEC draft.
 
 **This skill does not run the 9-turn Socratic interview.** Interviewing lives in `/sb:clarify --spec` (`next=spec`). Spec is a compiler: read the brief (+ ingest draft), write artifacts, review them.
@@ -38,9 +40,9 @@ Brief:   {newest *-CLARIFY-*.md or "(none)"}
 When the user requests skipping any step:
 1. Explain why the step exists (one sentence)
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, then commit both files.
+3. If user chooses A permanently: record it in the project's `silver-bullet.md` §9b and commit that file (in the Silver Bullet source repo, mirror it into `templates/silver-bullet.md.base` §9b as well).
 
-**Non-skippable gates:** `Step 0: consume newest clarify brief when present`, `Step 5: Assumption Consolidation`, `Step 7: Write SPEC.md`, `Step 7a: Review SPEC.md`, `Step 8a: Review REQUIREMENTS.md`, `Step 9a: Review DESIGN.md`. Refuse skip requests for these regardless of §10.
+**Non-skippable gates:** `Step 0: consume newest clarify brief when present`, `Step 5: Assumption Consolidation`, `Step 7: Write SPEC.md`, `Step 7a: Review SPEC.md`, `Step 8a: Review REQUIREMENTS.md`, `Step 9a: Review DESIGN.md`. Refuse skip requests for these regardless of §9.
 
 ## Step 0: Mode Detection + Input Discovery
 
@@ -101,7 +103,7 @@ Map brief sections onto the spec scaffold:
 
 Build the formal spec scaffold directly in SB.
 
-Read `templates/specs/SPEC.md.template` if present and use it as the canonical
+Read `${PLUGIN_ROOT}/templates/specs/SPEC.md.template` if present and use it as the canonical
 shape. If the template is missing, continue with this minimum scaffold in working
 notes so Step 7 can write the file:
 
@@ -211,7 +213,7 @@ Add any design-affecting assumptions to the assumption list before Step 7.
 
 **NON-SKIPPABLE GATE.**
 
-1. Read `templates/specs/SPEC.md.template` to get the canonical structure.
+1. Read `${PLUGIN_ROOT}/templates/specs/SPEC.md.template` to get the canonical structure.
 2. **Determine spec-version:**
    - Greenfield mode: `spec-version: 1`
    - Augment mode: read existing `spec-version:` from `.planning/SPEC.md` frontmatter, increment by 1
@@ -248,12 +250,13 @@ Do NOT proceed to Step 8 until /artifact-reviewer reports 2 consecutive clean pa
 
 Derive from **SPEC.md acceptance criteria**, not from the clarify brief.
 
-1. Read `templates/specs/REQUIREMENTS.md.template` to get the canonical structure.
+1. Read `${PLUGIN_ROOT}/templates/specs/REQUIREMENTS.md.template` to get the canonical structure.
 2. Derive `REQ-XX` IDs from the acceptance criteria in `.planning/SPEC.md` `## Acceptance Criteria`. Assign sequential IDs starting at REQ-01.
 3. Derive `NFR-XX` IDs from any non-functional concerns in SPEC.md (performance, security, accessibility, reliability). Assign sequential IDs starting at NFR-01.
 4. Mirror the Out of Scope section from SPEC.md.
 5. Mirror the Open Questions section from SPEC.md.
 6. Write to `.planning/REQUIREMENTS.md` using the active runtime file-writing mechanism.
+7. planning-file-guard protects `.planning/REQUIREMENTS.md` but lets its owner, `sb:spec` (or `sb:ingest`), write it with a file tool while that skill is the **skill invoked last** in this session (every invocation counts, including a re-run). Write it right here, with no other skill invoked since `sb:spec`. If the write is denied, another skill ran after `sb:spec`: do not retry it and do not work around the guard with a shell redirect; re-invoke `sb:spec` (that makes it the skill invoked last again) and write the file, or tell the user.
 
 ### Step 8a: Review REQUIREMENTS.md
 
@@ -267,7 +270,7 @@ Do NOT proceed to Step 9 until /artifact-reviewer reports 2 consecutive clean pa
 
 Only if a design artifact or Figma URL was provided:
 
-1. Read `templates/specs/DESIGN.md.template` to get the canonical structure.
+1. Read `${PLUGIN_ROOT}/templates/specs/DESIGN.md.template` to get the canonical structure.
 2. Populate from design context gathered in Steps 4 and 6.
 3. Write to `.planning/DESIGN.md` using the active runtime file-writing mechanism.
 

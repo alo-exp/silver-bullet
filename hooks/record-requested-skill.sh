@@ -94,6 +94,11 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/session-ledger.sh" ]]; then
   # shellcheck source=lib/session-ledger.sh
   source "$_lib_dir/session-ledger.sh"
 fi
+# The same name mapping record-skill.sh uses, so a requested marker matches the completed one (R10b-01).
+if [[ -n "$_lib_dir" && -f "$_lib_dir/skill-discovery.sh" ]]; then
+  # shellcheck source=lib/skill-discovery.sh
+  source "$_lib_dir/skill-discovery.sh"
+fi
 if [[ -n "$_lib_dir" && -f "$_lib_dir/prompt-classifier.sh" ]]; then
   # shellcheck source=lib/prompt-classifier.sh
   source "$_lib_dir/prompt-classifier.sh"
@@ -136,18 +141,14 @@ if [[ -L "$REQUESTED_FILE" ]]; then
 fi
 touch -- "$REQUESTED_FILE" 2>/dev/null || true
 
-canonicalize() {
-  local raw="$1"
-  # Convert sb:* -> the historical silver-* compliance marker.
-  if [[ "$raw" == sb:* ]]; then
-    printf 'silver-%s' "${raw#sb:}"
-  elif [[ "$raw" == sb ]]; then
-    printf 'silver'
-  fi
-}
-
 for raw in "${skills[@]}"; do
-  skill="$(canonicalize "$raw")"
+  if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
+    skill="$(sb_skill_canonical_name "$raw")"
+  else
+    # Without the shared mapping: the plain historical marker (sb -> silver, sb:x -> silver-x).
+    skill="silver${raw#sb}"
+    skill="${skill/:/-}"
+  fi
   ledger_skills+=("$skill")
 
   # No duplicates.

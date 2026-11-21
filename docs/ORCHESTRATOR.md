@@ -30,7 +30,7 @@ Config: `"orchestrator_mode": "parent"` (only allowed value; default in template
 | `${SB_RUNTIME_STATE_DIR}/orchestrator-stop-blocks.json` | Session | Parent Stop-block counter (see [Stop release](#stop-release)) |
 | `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` | Host runtime, expires | Human sign-off marker when enterprise policy blocks production delivery. It lives in the host-wide runtime state directory (every project of that host shares it), expires after `enterprise_policy.human_approval_ttl_minutes` (default 480), and may name one project with a `project=<repo root>` line. Nothing clears it at session start: delete it after the approved delivery |
 | `.scheduler.batch_dispatch` (in `orchestrator.json`) | Session | Active parallel/sequential batch handoffs + join status |
-| `.silver-bullet/orchestrator-workers/*.md` | Project | Worker prompt templates (stamped by `sb:init`) |
+| `.silver-bullet/orchestrator-workers/*.md` | Project | Reference copy stamped by `sb:init`; **never used as a worker prompt** (a differing copy only produces a drift warning) |
 | `.planning/orchestrator-composition-log.jsonl` | Committed | Autonomous composition audit |
 | `.planning/orchestrator-override-log.jsonl` | Committed | User `SB OVERRIDE:` audit trail (hash-chained; mirrored in the runtime state dir) |
 
@@ -91,7 +91,7 @@ Hosts without multitask/subagent support (`SB_ORCHESTRATOR_PARALLEL_DISPATCH=0` 
 User intent → /sb or silver-orchestrator
   → composer spec seeds orchestrator.json + workflows.sh
   → directive: next_skill + next_worker_template
-  → parent **must spawn Task** with `.silver-bullet/orchestrator-workers/<TEMPLATE>.md` (hooks cannot spawn)
+  → parent **must spawn Task** with the plugin's own `templates/orchestrator-workers/<TEMPLATE>.md`, named by the absolute path in `next_worker_template_path` and in the parent-mode block (hooks cannot spawn)
   → worker invokes next_skill → implements flow
   → flow-advance writes next directive
   → repeat until queue empty

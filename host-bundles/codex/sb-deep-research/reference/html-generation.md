@@ -15,7 +15,7 @@
 ## Generation Steps
 
 ### Step 1: Read McKinsey Template
-Load template from: `./templates/mckinsey_report_template.html`
+Load template from: `${SKILL_DIR}/templates/mckinsey_report_template.html`
 
 ### Step 2: Extract Key Metrics
 Extract 3-4 key quantitative findings for dashboard display at top.
@@ -25,7 +25,7 @@ Extract 3-4 key quantitative findings for dashboard display at top.
 Use Python script:
 ```bash
 cd skills/silver-deep-research
-python scripts/md_to_html.py [markdown_report_path]
+python3 "${SKILL_DIR}/scripts/md_to_html.py" [markdown_report_path]
 ```
 
 **Script outputs two parts:**
@@ -73,7 +73,7 @@ NOTE: This step is optional for speed. Basic [N] citations are sufficient.
 ### Step 6: Verify HTML
 
 ```bash
-python scripts/verify_html.py --html [html_path] --md [md_path]
+python3 "${SKILL_DIR}/scripts/verify_html.py" --html [html_path] --md [md_path]
 ```
 - Pass: Proceed to open
 - Fail: Fix errors and re-run
@@ -96,7 +96,7 @@ open [html_path]
    - `orphans: 3; widows: 3` on paragraphs
    - Use `display: table` not Flexbox/Grid
    - Font sizes in pt (10pt body, 8pt citations)
-3. Generate: `python3 scripts/html_to_pdf.py --html [html_path] --pdf [pdf_path]`
+3. Generate: `python3 "${SKILL_DIR}/scripts/html_to_pdf.py" --html [html_path] --pdf [pdf_path]`
    (never the bare `weasyprint` CLI: its default fetcher reads `file://` URLs and
    embeds `rel="attachment"` targets, and the report quotes untrusted web text; the
    script allows only inline `data:` resources)
