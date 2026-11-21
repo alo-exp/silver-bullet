@@ -153,6 +153,8 @@ orch_stage_libs() {
   dir="$(mktemp -d "$TL_TMP/stage.XXXXXX")/hooks/lib"
   mkdir -p "$dir"
   for name in "$@"; do cp "$TL_REPO_ROOT/hooks/lib/$name" "$dir/$name"; done
+  # The state/directive/parent libs write through the shared atomic-write + lock helpers.
+  cp "$TL_REPO_ROOT/hooks/lib/orchestrator-io.sh" "$dir/orchestrator-io.sh"
   printf '%s' "$dir"
 }
 

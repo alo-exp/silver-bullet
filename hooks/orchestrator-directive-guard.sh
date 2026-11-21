@@ -56,6 +56,8 @@ if declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_ac
 fi
 
 input="$(cat 2>/dev/null || true)"
+# shellcheck disable=SC2034  # read by sb_orchestrator_is_worker_session (subagent identity)
+SB_ORCH_HOOK_INPUT="$input"
 [[ -n "$input" ]] || exit 0
 
 hook_event="$(sb_odg_hook_field "$input" 'hook_event_name' 'PreToolUse')"
@@ -132,8 +134,8 @@ if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrat
         tmpl="$(jq -r '.next_worker_template // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
         args="$(jq -r '.args // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
       fi
-      # Always write the worker marker on delegation spawn (#275). Claude Agent
-      # workers never get SubagentStart; the marker is their only classification signal.
+      # Evidence record of the delegation only. Worker identity is the payload's agent_id,
+      # per call (R4-02): this file must never make the parent itself look like a worker.
       sb_orchestrator_mark_worker_spawn "${expected:-ad-hoc}" "$tmpl" "$args" 2>/dev/null || true
       exit 0
       ;;
@@ -152,6 +154,10 @@ if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrat
     fi
     if declare -f sb_orchestrator_parent_bash_allowed >/dev/null 2>&1 && \
        sb_orchestrator_parent_bash_allowed "$_odg_cmd"; then
+      exit 0
+    fi
+    if [[ -n "${SB_ORCH_PARENT_BASH_DENY_REASON:-}" ]]; then
+      emit_block "$SB_ORCH_PARENT_BASH_DENY_REASON"
       exit 0
     fi
   fi

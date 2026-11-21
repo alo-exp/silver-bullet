@@ -90,7 +90,7 @@ class MergeHooksTest(unittest.TestCase):
         self.assertIn("SessionStart", self.load()["hooks"])
 
     def test_every_registration_of_the_real_manifest_is_kept(self):
-        """R7-29: a hook registered under several matchers keeps all of them (99 of 99)."""
+        """R7-29: a hook registered under several matchers keeps all of them (98 of 98)."""
         manifest = json.loads((REPO_ROOT / "hooks" / "hooks.json").read_text())
         install = self.make_install("real", hooks=manifest["hooks"])
 
@@ -99,7 +99,8 @@ class MergeHooksTest(unittest.TestCase):
                           for event, groups in hooks.items() for group in groups for h in group["hooks"])
 
         expected = triples(manifest["hooks"], str(install))
-        self.assertEqual(len(expected), 99)
+        # Tripwire: update with docs/HOOKS.md (generated) and the CLAUDE.md sentence when a registration is added or removed.
+        self.assertEqual(len(expected), 98)
         for _ in range(2):
             self.run_script(install)
             self.assertEqual(triples(self.load()["hooks"], str(install)), expected)

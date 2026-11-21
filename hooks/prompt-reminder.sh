@@ -76,6 +76,8 @@ prompt=""
 SB_SESSION_KEY=""
 if [[ ! -t 0 ]]; then
   input="$(cat 2>/dev/null || true)"
+  # shellcheck disable=SC2034  # read by sb_orchestrator_is_worker_session (subagent identity)
+  SB_ORCH_HOOK_INPUT="$input"
   if [[ -n "$input" ]]; then
     # One jq call: the session id (line 1, keys the per-session gate files, R2-22) and the prompt.
     _in_out="$(printf '%s' "$input" | jq -r '(.session_id // ""), (.prompt // "")' 2>/dev/null || true)"

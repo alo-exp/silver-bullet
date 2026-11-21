@@ -218,6 +218,8 @@ assert_file_exists "r2: marker only, no recorded parent: override refused (direc
 assert_contains "r2: the refusal names the marker, not a worker session" "$TL_OUT" "worker marker"
 assert_not_contains "r2: ... and does not claim this is a worker session" "$TL_OUT" "this is a worker or delegate session"
 assert_contains "r2: ... and says how to proceed" "$TL_OUT" "orchestrator-worker-active.json"
+assert_contains "r3: the refusal states the real lifetime (TTL)" "$TL_OUT" "2 hour TTL"
+assert_not_contains "r3: ... and does not promise a clear when the worker finishes" "$TL_OUT" "when the worker finishes"
 # the parent's own earlier prompt (before any marker) records the session
 rm -f "$MARK" "$PARENT"; seed
 run "$OC" "$(ups 'what is the status of the queue' "$GOOD")"

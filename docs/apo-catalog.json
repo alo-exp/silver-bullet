@@ -204,11 +204,14 @@
         "silver-context",
         "silver-plan",
         "silver-validate",
+        "tdd",
         "silver-execute",
         "silver-review-request",
         "silver-review",
         "silver-review-triage",
+        "silver-triage",
         "silver-verify",
+        "verify-tests",
         "security",
         "silver-secure",
         "silver-validate",
@@ -430,12 +433,15 @@
         "silver-plan",
         "silver-ui-contract",
         "silver-validate",
+        "tdd",
         "silver-execute",
         "silver-ui-review",
         "silver-review-request",
         "silver-review",
         "silver-review-triage",
+        "silver-triage",
         "silver-verify",
+        "verify-tests",
         "security",
         "silver-secure",
         "silver-validate",
@@ -513,7 +519,9 @@
         "silver-review-request",
         "silver-review",
         "silver-review-triage",
+        "silver-triage",
         "silver-verify",
+        "verify-tests",
         "security",
         "silver-secure",
         "silver-validate",
@@ -536,12 +544,16 @@
       "composition_tree": [
         {
           "kind": "atomic_flow",
-          "ref": "AF-ORIENT",
-          "optional": true
+          "ref": "AF-DEBUG"
         },
         {
           "kind": "atomic_flow",
-          "ref": "AF-DEBUG"
+          "ref": "AF-QUALITY-GATE",
+          "label": "pre-plan"
+        },
+        {
+          "kind": "atomic_flow",
+          "ref": "AF-ORIENT"
         },
         {
           "kind": "atomic_flow",
@@ -567,12 +579,17 @@
       "final_intent_gate": "INTENT-GATE-DEFAULT",
       "enforcement_queue": [
         "silver-debug",
+        "silver-quality-gates",
+        "silver-context",
         "silver-plan",
+        "tdd",
         "silver-execute",
         "silver-review-request",
         "silver-review",
         "silver-review-triage",
+        "silver-triage",
         "silver-verify",
+        "verify-tests",
         "security",
         "silver-secure",
         "silver-validate",
@@ -794,6 +811,10 @@
         },
         {
           "kind": "atomic_flow",
+          "ref": "AF-ORIENT"
+        },
+        {
+          "kind": "atomic_flow",
           "ref": "AF-PLAN"
         },
         {
@@ -820,6 +841,7 @@
       "final_intent_gate": "INTENT-GATE-DEFAULT",
       "enforcement_queue": [
         "FLOW-QUALITY-GATE",
+        "silver-context",
         "silver-plan",
         "silver-validate",
         "silver-execute",
@@ -894,7 +916,9 @@
         "silver-review-request",
         "silver-review",
         "silver-review-triage",
+        "silver-triage",
         "silver-verify",
+        "verify-tests",
         "security",
         "silver-secure",
         "silver-validate",
@@ -1205,11 +1229,14 @@
       "enforcement_queue": [
         "silver-plan",
         "silver-validate",
+        "tdd",
         "silver-execute",
         "silver-review-request",
         "silver-review",
         "silver-review-triage",
+        "silver-triage",
         "silver-verify",
+        "verify-tests",
         "security",
         "silver-secure",
         "silver-validate",
@@ -12890,6 +12917,8 @@
       "silver-review-fix-ladder": "AF-REVIEW-TRIAGE",
       "silver-new-workflow": "AF-PLAN",
       "silver-triage": "AF-REVIEW-TRIAGE",
+      "tdd": "AF-EXECUTE",
+      "verify-tests": "AF-VERIFY",
       "silver-multi-ai-task": "AF-MULTI-AI-TASK",
       "silver-deep-research-multi-ai": "AF-DECIDE"
     }

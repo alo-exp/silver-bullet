@@ -17,7 +17,7 @@
   ]
  },
  "counts": {
-  "X": 117,
+  "X": 119,
   "A": 22
  },
  "rows": [
@@ -39,7 +39,7 @@
   },
   {
    "file": "hooks/flow-advance.sh",
-   "line": 76,
+   "line": 78,
    "kind": "config",
    "snippet": "if [[ -f \"$repo_root/.silver-bullet.json\" ]]; then",
    "record": "X",
@@ -47,7 +47,7 @@
   },
   {
    "file": "hooks/flow-advance.sh",
-   "line": 77,
+   "line": 79,
    "kind": "config",
    "snippet": "updated=\"$(jq '.project.active_workflow = \"full-dev-cycle\"' \"$repo_root/.silver-bullet.json\" 2>/dev/null || true)\"",
    "record": "X",
@@ -255,11 +255,27 @@
   },
   {
    "file": "hooks/lib/orchestrator-parent.sh",
-   "line": 10,
+   "line": 16,
    "kind": "config",
    "snippet": "mode=\"$(jq -r '.orchestrator_mode // \"parent\"' \"$config_file\" 2>/dev/null || echo parent)\"",
    "record": "X",
    "reason": "orchestrator parent mode: an extra directive layer; the planning floor and the delivery gates do not depend on it"
+  },
+  {
+   "file": "hooks/lib/orchestrator-state.sh",
+   "line": 74,
+   "kind": "config",
+   "snippet": "&& [[ \"$(jq -r '.project.active_workflow // \"\"' \"$cfg\" 2>/dev/null || true)\" == \"devops-cycle\" ]]; then",
+   "record": "X",
+   "reason": "flow-queue composition: picks which skill names the advisory queue lists (planning and deploy lists); the planning floor and the delivery gates read the verified record and enforce regardless of the queue"
+  },
+  {
+   "file": "hooks/lib/orchestrator-state.sh",
+   "line": 78,
+   "kind": "config",
+   "snippet": "[[ -n \"$repo_root\" && -f \"$cfg\" ]] && csv=\"$(jq -r --arg k \"$key\" '(.skills[$k] // []) | join(\",\")' \"$cfg\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "flow-queue composition: picks which skill names the advisory queue lists (planning and deploy lists); the planning floor and the delivery gates read the verified record and enforce regardless of the queue"
   },
   {
    "file": "hooks/lib/prerequisite-probe.sh",
@@ -423,7 +439,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 106,
+   "line": 108,
    "kind": "config",
    "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]] && [[ -f \"$search_dir/silver-bullet.md\" ]]; then",
    "record": "A",
@@ -431,7 +447,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 174,
+   "line": 176,
    "kind": "config",
    "snippet": "if [[ -n \"$_rt_hb_script\" && -f \"${sb_project_root}/.silver-bullet.json\" ]]; then",
    "record": "A",
@@ -439,7 +455,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 175,
+   "line": 177,
    "kind": "config",
    "snippet": "_sb_initiated=\"$(jq -r '.sb_initiated // false' \"${sb_project_root}/.silver-bullet.json\" 2>/dev/null || echo false)\"",
    "record": "A",
@@ -447,7 +463,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 404,
+   "line": 406,
    "kind": "config",
    "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]]; then",
    "record": "A",
@@ -455,7 +471,7 @@
   },
   {
    "file": "hooks/session-start",
-   "line": 405,
+   "line": 407,
    "kind": "config",
    "snippet": "cfg_trivial=$(jq -r '.state.trivial_file // \"\"' \"$search_dir/.silver-bullet.json\" 2>/dev/null || true)",
    "record": "A",

@@ -88,6 +88,7 @@ LINE_RULES = [
     ("hooks/flow-advance.sh", re.compile(r'\.silver-bullet\.json'), "writes the one key (.project.active_workflow) in the live file after the RECORDED config said devops-cycle; the record changes by that key only"),
     ("hooks/lib/context-mode-read-deny.sh", re.compile(r'state_file|trivial_file'), "token-saving read gate: exempts the named runtime files from the read-size deny; it decides no planning or delivery gate"),
     ("hooks/lib/context-mode-read-deny.sh", re.compile(r'recommended_tools'), "tool consent key (.recommended_tools): kept by the hooks themselves and excluded from the record"),
+    ("hooks/lib/orchestrator-state.sh", re.compile(r'"\$cfg"'), "flow-queue composition: picks which skill names the advisory queue lists (planning and deploy lists); the planning floor and the delivery gates read the verified record and enforce regardless of the queue"),
     ("hooks/lib/orchestrator-parent.sh", re.compile(r'orchestrator_mode'), "orchestrator parent mode: an extra directive layer; the planning floor and the delivery gates do not depend on it"),
     ("hooks/lib/enterprise-policy.sh", re.compile(r'active_profile|evidence_schema'), "handed the root's config path by the delivery tier only after the drift check proved it equals the record; session and prompt callers print advisory text with it"),
     ("hooks/lib/prerequisite-probe.sh", re.compile(r'silver-bullet'), "installer prerequisite probe: reports a missing contract file, decides no gate"),

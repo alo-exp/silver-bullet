@@ -1,6 +1,12 @@
 # shellcheck shell=bash
 # Orchestrator parent mode — parent session delegates via Task workers only.
 
+_sb_orch_parent_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${_sb_orch_parent_lib_dir}/orchestrator-io.sh" ]]; then
+  # shellcheck source=lib/orchestrator-io.sh
+  source "${_sb_orch_parent_lib_dir}/orchestrator-io.sh"
+fi
+
 # Returns orchestrator_mode from config (default: parent). Only "parent" is valid.
 sb_orchestrator_mode_from_config() {
   local config_file="${1:-}"
@@ -16,43 +22,46 @@ sb_orchestrator_worker_marker_file() {
   printf '%s/orchestrator-worker-active.json' "${SB_RUNTIME_STATE_DIR:-/tmp}"
 }
 
-# Worker subagent session — env var, explicit parent=0, or fresh Task spawn marker file.
+# agent id the host puts in the payload of every hook call made inside a subagent
+# (Claude Code: agent_id/agent_type on PreToolUse, PostToolUse and SubagentStop). The main
+# session's payloads never carry it, so it is the one per-call signal a parent cannot
+# acquire by spawning something (R4-02). Only top-level fields count: tool_input content
+# is written by the model and proves nothing.
+sb_orchestrator_payload_agent_id() {
+  local payload="${1:-}"
+  [[ -n "$payload" ]] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+  printf '%s' "$payload" | jq -r '
+    if type == "object" then ((.agent_id // .agentId // "") | if type == "string" then . else "" end) else "" end
+  ' 2>/dev/null || true
+}
+
+# Worker subagent session: explicit env, or a payload that carries a subagent id.
+#   sb_orchestrator_is_worker_session [HOOK_PAYLOAD_JSON]
+# The payload defaults to $SB_ORCH_HOOK_INPUT. A missing id never means worker, and there is
+# no global "a worker was spawned" marker any more: it could not tell the parent from a
+# worker, from two parallel workers, or from a spawn that never started.
 sb_orchestrator_is_worker_session() {
   [[ "${SB_ORCHESTRATOR_WORKER:-}" == "1" || "${SB_ORCHESTRATOR_WORKER:-}" == "true" ]] && return 0
   [[ "${SB_ORCHESTRATOR_PARENT:-}" == "0" ]] && return 0
-  # Explicit parent env wins over a stale Task spawn marker.
+  # Explicit parent env wins over a payload id.
   [[ "${SB_ORCHESTRATOR_PARENT:-}" == "1" || "${SB_ORCHESTRATOR_PARENT:-}" == "true" ]] && return 1
+  local agent_id
+  agent_id="$(sb_orchestrator_payload_agent_id "${1:-${SB_ORCH_HOOK_INPUT:-}}")"
+  [[ -n "$agent_id" ]]
+}
 
-  local marker_file spawned_at now_epoch spawn_epoch ttl
-  marker_file="$(sb_orchestrator_worker_marker_file)"
-  [[ -f "$marker_file" && ! -L "$marker_file" ]] || return 1
-
-  spawned_at=""
-  if command -v jq >/dev/null 2>&1; then
-    spawned_at="$(jq -r '.spawned_at // ""' "$marker_file" 2>/dev/null || true)"
-  fi
-  if [[ -z "$spawned_at" ]]; then
-    grep -qE '"spawned_at"[[:space:]]*:[[:space:]]*"[^"]+"' "$marker_file" 2>/dev/null || return 1
-    spawned_at="$(grep -oE '"spawned_at"[[:space:]]*:[[:space:]]*"[^"]+"' "$marker_file" 2>/dev/null | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || true)"
-  fi
+# A Task spawn record younger than its TTL (default 2 h) exists. This is evidence about the session,
+# never its identity: only the prompt provenance check (orchestrator-directive.sh) reads it, to refuse an
+# override or a parent registration that cannot be tied to the recorded parent while a worker may be running.
+sb_orchestrator_worker_marker_fresh() {
+  local file ttl
+  file="$(sb_orchestrator_worker_marker_file)"
+  [[ -f "$file" && ! -L "$file" ]] || return 1
   ttl="${SB_ORCHESTRATOR_WORKER_MARKER_TTL_SECONDS:-7200}"
-  if [[ -z "$spawned_at" ]]; then
-    return 1
-  fi
-
-  now_epoch="$(date +%s)"
-  if date -ju -f "%Y-%m-%dT%H:%M:%SZ" "$spawned_at" +%s >/dev/null 2>&1; then
-    spawn_epoch="$(date -ju -f "%Y-%m-%dT%H:%M:%SZ" "$spawned_at" +%s 2>/dev/null || echo 0)"
-  elif date -j -f "%Y-%m-%dT%H:%M:%SZ" "$spawned_at" +%s >/dev/null 2>&1; then
-    spawn_epoch="$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$spawned_at" +%s 2>/dev/null || echo 0)"
-  else
-    spawn_epoch="$(date -d "$spawned_at" +%s 2>/dev/null || echo 0)"
-  fi
-  [[ "$spawn_epoch" -gt 0 ]] || return 1
-  if (( now_epoch - spawn_epoch < ttl )); then
-    return 0
-  fi
-  return 1
+  [[ "$ttl" =~ ^[0-9]+$ ]] || ttl=7200
+  jq -e --argjson now "$(date +%s)" --argjson ttl "$ttl" \
+    '(.spawned_at | strings | (try fromdateiso8601 catch 0)) as $t | $t > 0 and ($now - $t) < $ttl' "$file" >/dev/null 2>&1
 }
 
 # True when current PWD walk finds SB boundary (.silver-bullet.json + silver-bullet.md).
@@ -80,8 +89,24 @@ sb_orchestrator_guard_applies_to_workspace() {
 }
 
 # Parent orchestrator session — config parent mode and not a worker subagent.
+# Parent-mode enforcement needs the host to say who a worker is. Claude Code does (agent_id on every
+# subagent call); Codex does not yet, so there a worker is indistinguishable from the parent and
+# enforcing parent mode would deny a worker's own edits. On such hosts parent mode is INACTIVE (a
+# clean no-op) unless SB_ORCHESTRATOR_PARENT=1 forces it.
+sb_orchestrator_host_identifies_workers() {
+  case "${SILVER_BULLET_RUNTIME:-claude}" in
+    claude) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# shellcheck disable=SC2120  # optional payload argument; hooks usually set SB_ORCH_HOOK_INPUT instead
 sb_orchestrator_is_parent_session() {
-  if sb_orchestrator_is_worker_session; then
+  if sb_orchestrator_is_worker_session "${1:-}"; then
+    return 1
+  fi
+  if ! sb_orchestrator_host_identifies_workers \
+     && [[ "${SB_ORCHESTRATOR_PARENT:-}" != "1" && "${SB_ORCHESTRATOR_PARENT:-}" != "true" ]]; then
     return 1
   fi
   local config_file=""
@@ -124,6 +149,10 @@ sb_orchestrator_worker_template_for_skill() {
     FLOW-DOCUMENT|DOCUMENT|silver-ensure-docs) printf 'DOCUMENT' ;;
     FLOW-RELEASE|RELEASE|silver-release|silver-create-release) printf 'RELEASE' ;;
     silver-blast-radius) printf 'BLAST-RADIUS' ;;
+    # Delivery-floor skills run inside their atom's worker template (the directive names the skill).
+    silver-triage) printf 'REVIEW-TRIAGE' ;;
+    tdd) printf 'EXECUTE' ;;
+    verify-tests) printf 'VERIFY' ;;
     silver-validate) printf 'VALIDATE' ;;
     silver-fast) printf 'FAST' ;;
     silver|silver-orchestrator) printf 'ROUTER' ;;
@@ -155,7 +184,9 @@ sb_orchestrator_worker_template_path() {
   return 1
 }
 
-# Write active worker marker when parent spawns Task for a flow skill.
+# Record that the parent asked for a worker (orchestrator-worker-active.json). This is evidence
+# for the e2e scorers and diagnostics only: it says nothing about WHO is calling a hook, so no
+# gate may use it to classify a session (see sb_orchestrator_is_worker_session).
 sb_orchestrator_mark_worker_spawn() {
   local skill="$1"
   local template="${2:-}"
@@ -163,18 +194,15 @@ sb_orchestrator_mark_worker_spawn() {
   [[ -n "$skill" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
   [[ -n "$template" ]] || template="$(sb_orchestrator_worker_template_for_skill "$skill")"
-  local now file dir json
+  local now json
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-  file="$(sb_orchestrator_worker_marker_file)"
-  dir="$(dirname "$file")"
-  mkdir -p "$dir" 2>/dev/null || true
   json="$(jq -n \
     --arg skill "$skill" \
     --arg template "$template" \
     --arg args "$args" \
     --arg at "$now" \
     '{skill:$skill, template:$template, args:$args, spawned_at:$at}')"
-  printf '%s\n' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
+  sb_orchestrator_atomic_write "$(sb_orchestrator_worker_marker_file)" "$json"
 }
 
 sb_orchestrator_clear_worker_marker() {
@@ -237,7 +265,7 @@ sb_orchestrator_state_applies_to_project() {
 # skill record — parent already routed; workers cannot meaningfully invoke /sb.
 sb_orchestrator_worker_allows_bash() {
   local tool_name="$1"
-  sb_orchestrator_is_worker_session || return 1
+  sb_orchestrator_is_worker_session "${2:-}" || return 1
   case "$tool_name" in
     Bash|exec_command|Shell) return 0 ;;
     *) return 1 ;;
@@ -269,124 +297,183 @@ sb_orchestrator_parent_tool_allowed() {
   esac
 }
 
-# Extract skill name from Codex silver-bullet invoke-skill adapter bash command.
-sb_orchestrator_extract_invoke_skill_adapter() {
-  local command_str="$1"
-  [[ -n "$command_str" ]] || return 1
-  python3 - "$command_str" <<'PY' 2>/dev/null || return 1
-import pathlib
-import re
-import shlex
-import sys
+# ---------------------------------------------------------------------------
+# Parent Bash policy (R4-03). Command shape comes from the shared classifier
+# (hooks/lib/shell-analysis.sh, F2); this file keeps no command-text patterns of its own.
+#   1. strictly read-only (SB_SA_READ_ONLY)              -> allowed
+#   2. exactly ONE real command (wrappers env/sh -c/NAME=value peeled off), no redirect
+#      or other write, whose program is one of the sanctioned parent tools -> allowed
+#   3. everything else                                    -> denied
+# A classifier failure (python3 missing, helper crash) is denied with a message that says
+# how to proceed, never waved through.
+# ---------------------------------------------------------------------------
 
-command = sys.argv[1]
-assignment_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*$")
-shell_names = {"bash", "sh", "zsh"}
-
-
-def parse(raw):
-    try:
-        return shlex.split(raw, posix=True)
-    except Exception:
-        return []
-
-
-def skip_env_and_assignments(tokens):
-    idx = 0
-    if idx < len(tokens) and tokens[idx] == "env":
-        idx += 1
-    while idx < len(tokens) and assignment_re.match(tokens[idx]):
-        idx += 1
-    return idx
-
-
-def inspect_tokens(tokens):
-    idx = skip_env_and_assignments(tokens)
-    if idx >= len(tokens):
-        return None
-
-    cmd = pathlib.Path(tokens[idx]).name
-    args = tokens[idx + 1 :]
-
-    if cmd in shell_names:
-        for arg_index, arg in enumerate(args):
-            if arg.startswith("-") and "c" in arg[1:] and arg_index + 1 < len(args):
-                return inspect_tokens(parse(args[arg_index + 1]))
-        script_index = 0
-        while script_index < len(args) and args[script_index].startswith("-"):
-            script_index += 1
-        if script_index < len(args) and pathlib.Path(args[script_index]).name == "silver-bullet":
-            script_args = args[script_index + 1 :]
-            if len(script_args) >= 2 and script_args[0] == "invoke-skill":
-                return script_args[1]
-        return None
-
-    if cmd == "silver-bullet" and len(args) >= 2 and args[0] == "invoke-skill":
-        return args[1]
-    return None
-
-
-skill = inspect_tokens(parse(command))
-if skill:
-    print(skill)
-PY
+# The classifier lives next to this file.
+_sb_orch_parent_load_analysis() {
+  declare -f sb_shell_analysis_load >/dev/null 2>&1 || {
+    # shellcheck source=shell-analysis.sh
+    source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/shell-analysis.sh" 2>/dev/null || return 1
+  }
+  sb_shell_analysis_load "$1"
 }
 
-# Parsed argv check — basename must be agent-*-delegate.sh (no substring spoof).
-sb_orchestrator_parent_delegate_bash_allowed() {
-  local command_str="$1"
-  [[ -n "$command_str" ]] || return 1
-
-  if ! grep -qE '(^|[[:space:]/])(\./)?scripts/agent-(codex|cursor|claude|opencode|pi)-delegate\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-codex/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-claude/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-opencode/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-pi/invoke\.sh([[:space:]]|$)' <<<"$command_str"; then
-    return 1
-  fi
-
-  # Stage 6: direct parent delegate Bash only via degraded fallback (SB OVERRIDE bypasses at guard layer).
-  [[ "${SB_AGENT_DELEGATE_DIRECT_FALLBACK:-0}" == "1" ]] && return 0
-  return 1
+# Effective argv (JSON array) when the analysed command is one lone command, possibly behind
+# env / NAME=value / "sh -c" / "sh script" wrappers; prints nothing and returns 1 otherwise.
+# Chains, pipes, command substitutions and backgrounded extras add commands and so fail.
+_sb_orch_parent_lone_argv() {
+  printf '%s' "${SB_SA_JSON:-}" | jq -ce '
+    def base: split("/") | last;
+    (.commands // []) as $c
+    | def step($i):
+        ($c[$i].argv // []) as $a
+        | if ($a | length) == 0 then null
+          elif ($a[0] | base) == "env" then
+            ([$a[1:] | to_entries[]
+              | select((.value | startswith("-") | not) and (.value | test("^[A-Za-z_][A-Za-z0-9_]*=") | not))][0].key) as $k
+            | if $k == null then null
+              elif ($c[$i + 1].argv // null) == $a[(1 + $k):] then step($i + 1)
+              else null end
+          elif (["bash", "sh", "zsh", "dash", "ksh"] | index($a[0] | base)) != null then
+            ([$a[1:] | to_entries[] | select(.value | test("^-[A-Za-z]*c[A-Za-z]*$"))][0].key) as $ck
+            | if $ck != null then
+                (if $c[$i + 1] != null then step($i + 1) else null end)
+              else
+                ([$a[1:] | to_entries[] | select(.value | startswith("-") | not)][0].key) as $sk
+                | if $sk == null or $i != ($c | length) - 1 then null else $a[(1 + $sk):] end
+              end
+          elif $i != ($c | length) - 1 then null
+          else $a end;
+      step(0)
+    | select(. != null and length > 0)' 2>/dev/null
 }
 
-# Parent may clear own-scope instruction ledger via sanctioned resolve CLI (#264).
-sb_orchestrator_parent_resolve_ledger_bash_allowed() {
-  local command_str="$1"
-  [[ -n "$command_str" ]] || return 1
-  # Allow scripts/resolve-instruction-ledger.sh (and bash/sh wrappers) for list/done/deferred/help.
-  if ! grep -qE '(^|[[:space:]/"'"'"'])(\./)?scripts/resolve-instruction-ledger\.sh([[:space:]"'"'"']|$)' <<<"$command_str"; then
-    return 1
-  fi
+# No assignment/env prefix may change how a sanctioned command starts or which program it finds
+# (BASH_ENV=, PATH=, LD_PRELOAD= ... make a trusted name run something else). F2 drops plain
+# NAME=value words from argv, so the prefix is read from its rtk_unwrapped field (env, NAME=value, rtk); the same is applied to every sh -c payload (nested).
+_sb_orch_parent_prefix_free() {
+  local payload payloads
+  [[ -z "${SB_SA_RTK_UNWRAPPED:-}" ]] || return 1
+  payloads="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '
+    .commands[]? | .argv as $a
+    | select((["bash", "sh", "zsh", "dash", "ksh"] | index(($a[0] // "") | split("/") | last)) != null)
+    | ([$a[1:] | to_entries[] | select(.value | test("^-[A-Za-z]*c[A-Za-z]*$"))][0].key) as $k
+    | select($k != null) | ($a[$k + 2] // empty) | @base64' 2>/dev/null)"
+  while IFS= read -r payload; do
+    [[ -n "$payload" ]] || continue
+    payload="$(printf '%s' "$payload" | base64 -d 2>/dev/null)"
+    # Each payload is a strictly shorter string than its parent command, so the recursion ends.
+    sb_shell_analysis_load "$payload"
+    [[ "$SB_TI_STATUS" == "ok" ]] && _sb_orch_parent_prefix_free || return 1
+  done <<<"$payloads"
   return 0
 }
 
-# Parent may use Bash for Codex invoke-skill router adapter, sanctioned ledger resolve,
-# or read-only state inspection (incl. graphify query/path/explain via read-only classifier).
-sb_orchestrator_parent_bash_allowed() {
-  local command_str="$1"
-  [[ -n "$command_str" ]] || return 1
+# One rule for the program a sanctioned parent command runs (R-G5 r2): a bare name is looked up on
+# PATH; any path containing a slash must resolve (directory realpath + file name) to this plugin's
+# own scripts/<name>. A script a project or an agent left under the same file name is refused,
+# whether it is run directly, as `bash <script>`, or inside `sh -c`. A script handed to a shell
+# is found relative to the working directory even when bare, so there the slash does not matter.
+_sb_orch_parent_is_plugin_script() { # PATH PLUGIN-SCRIPT-NAME
+  local plugin_root
+  plugin_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+  [[ "$(cd "$(dirname "$1")" 2>/dev/null && pwd -P)/$(basename "$1")" == "$plugin_root/scripts/$2" ]]
+}
 
-  local adapter_skill=""
+# _sb_orch_parent_program_ok ARGV_JSON PLUGIN-SCRIPT-NAME: the lone command's program, and every
+# script a shell in the analysed command line was handed, pass the rule above.
+_sb_orch_parent_program_ok() {
+  local program script
+  program="$(jq -r '.[0]' <<<"$1" 2>/dev/null)"
+  case "$program" in */*) _sb_orch_parent_is_plugin_script "$program" "$2" || return 1 ;; esac
+  while IFS= read -r script; do
+    _sb_orch_parent_is_plugin_script "$script" "$2" || return 1
+  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '
+    .commands[]? | (.argv // []) as $a
+    | select((["bash", "sh", "zsh", "dash", "ksh"] | index(($a[0] // "") | split("/") | last)) != null)
+    | select(any($a[1:][]; test("^-[A-Za-z]*c[A-Za-z]*$")) | not)
+    | ([$a[1:][] | select(startswith("-") | not)][0] // empty)' 2>/dev/null)
+}
+
+# Skill named by a lone "silver-bullet invoke-skill <skill>" call, else nothing (rc 1).
+sb_orchestrator_extract_invoke_skill_adapter() {
+  local command_str="$1" argv
+  [[ -n "$command_str" ]] || return 1
+  _sb_orch_parent_load_analysis "$command_str" || return 1
+  [[ "$SB_TI_STATUS" == "ok" && -z "$SB_SA_WRITE_PATHS" ]] || return 1
+  argv="$(_sb_orch_parent_lone_argv)" || return 1
+  jq -e '(.[0] | split("/") | last) == "silver-bullet" and .[1] == "invoke-skill" and (.[2] // "") != ""' <<<"$argv" >/dev/null 2>&1 || return 1
+  _sb_orch_parent_program_ok "$argv" silver-bullet || return 1
+  jq -r '.[2]' <<<"$argv"
+}
+
+# A delegate script (scripts/agent-<host>-delegate.sh, scripts/agent-<host>/invoke.sh) run as
+# a lone command, only through the degraded-fallback switch.
+sb_orchestrator_parent_delegate_bash_allowed() {
+  local command_str="$1" argv
+  [[ -n "$command_str" ]] || return 1
+  [[ "${SB_AGENT_DELEGATE_DIRECT_FALLBACK:-0}" == "1" ]] || return 1
+  _sb_orch_parent_load_analysis "$command_str" || return 1
+  [[ "$SB_TI_STATUS" == "ok" && -z "$SB_SA_WRITE_PATHS" ]] || return 1
+  argv="$(_sb_orch_parent_lone_argv)" || return 1
+  _sb_orch_parent_prefix_free || return 1
+  jq -e '
+    .[0] as $p
+    | any(["codex", "cursor", "claude", "opencode", "pi"][];
+          . as $h | ($p == "scripts/agent-" + $h + "-delegate.sh" or ($p | endswith("/scripts/agent-" + $h + "-delegate.sh"))
+                     or $p == "scripts/agent-" + $h + "/invoke.sh" or ($p | endswith("/scripts/agent-" + $h + "/invoke.sh"))))
+    ' <<<"$argv" >/dev/null 2>&1
+}
+
+# Parent may clear own-scope instruction ledger via the sanctioned resolve CLI (#264): the
+# script as a lone command with one of its documented sub-commands (or none, which prints help).
+sb_orchestrator_parent_resolve_ledger_bash_allowed() {
+  local command_str="$1" argv
+  [[ -n "$command_str" ]] || return 1
+  _sb_orch_parent_load_analysis "$command_str" || return 1
+  [[ "$SB_TI_STATUS" == "ok" && -z "$SB_SA_WRITE_PATHS" ]] || return 1
+  argv="$(_sb_orch_parent_lone_argv)" || return 1
+  _sb_orch_parent_prefix_free || return 1
+  jq -e '
+    (.[0] | split("/") | last) == "resolve-instruction-ledger.sh"
+    and ((.[1] // "list") | IN("list", "done", "deferred", "help", "--help", "-h"))
+    ' <<<"$argv" >/dev/null 2>&1 || return 1
+  _sb_orch_parent_program_ok "$argv" resolve-instruction-ledger.sh
+}
+
+# Reason of the last sb_orchestrator_parent_bash_allowed denial that is not the plain
+# "forbidden in parent mode" (classifier failure); empty otherwise.
+# shellcheck disable=SC2034  # read by orchestrator-directive-guard.sh
+SB_ORCH_PARENT_BASH_DENY_REASON=""
+
+# sb_orchestrator_parent_bash_allowed COMMAND: see the policy above.
+sb_orchestrator_parent_bash_allowed() {
+  local command_str="$1" adapter_skill
+  SB_ORCH_PARENT_BASH_DENY_REASON=""
+  [[ -n "$command_str" ]] || return 1
+  _sb_orch_parent_load_analysis "$command_str" || {
+    # shellcheck disable=SC2034  # SB_TI_ERROR is read by sb_shell_analysis_helper_message
+    SB_TI_STATUS="helper_unavailable" SB_TI_ERROR="the shell classifier library is missing"
+  }
+  case "$SB_TI_STATUS" in
+    ok) ;;
+    helper_unavailable)
+      # shellcheck disable=SC2034  # result variable read by callers
+      SB_ORCH_PARENT_BASH_DENY_REASON="$(sb_shell_analysis_helper_message 2>/dev/null || printf 'Silver Bullet cannot inspect this Bash call: python3 is a required prerequisite.')"
+      return 1
+      ;;
+    *) return 1 ;;
+  esac
+  [[ "$SB_SA_READ_ONLY" == "true" ]] && return 0
+
   adapter_skill="$(sb_orchestrator_extract_invoke_skill_adapter "$command_str" 2>/dev/null || true)"
   if [[ -n "$adapter_skill" ]]; then
+    # extract just analysed this command: the globals still describe it.
+    _sb_orch_parent_prefix_free || return 1
     sb_orchestrator_parent_skill_allowed "$adapter_skill"
     return $?
   fi
-
-  if sb_orchestrator_parent_delegate_bash_allowed "$command_str"; then
-    return 0
-  fi
-
-  if sb_orchestrator_parent_resolve_ledger_bash_allowed "$command_str"; then
-    return 0
-  fi
-
-  local _tool_input_lib
-  _tool_input_lib="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/tool-input.sh"
-  if [[ -f "$_tool_input_lib" ]]; then
-    # shellcheck source=tool-input.sh
-    source "$_tool_input_lib"
-    sb_shell_command_looks_read_only "$command_str" >/dev/null
-    return $?
-  fi
-  return 1
+  sb_orchestrator_parent_delegate_bash_allowed "$command_str" && return 0
+  sb_orchestrator_parent_resolve_ledger_bash_allowed "$command_str"
 }
 
 # Parent may only invoke router/orchestrator skills directly — flow atoms via Task workers.

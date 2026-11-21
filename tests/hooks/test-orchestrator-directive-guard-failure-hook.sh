@@ -73,11 +73,11 @@ tl_run_hook "$HOOK" "$(tool_json Agent "")"
 orch_unstub jq
 assert_eq "args unreadable: marker still written" silver-plan "$(jq -r .skill "$MARKER")"
 rm -f "$MARKER"
-mkdir -p "$MARKER.tmp"
+mkdir -p "$MARKER"
 tl_run_hook "$HOOK" "$(tool_json Agent "")"
-rmdir "$MARKER.tmp"
 assert_eq "marker cannot be written: spawn still allowed" "0|" "$TL_STATUS|$TL_OUT"
-assert_file_absent "marker cannot be written: none created" "$MARKER"
+assert_eq "marker cannot be written: nothing slipped inside the directory" "0" "$(find "$MARKER" -type f | wc -l | tr -d ' ')"
+rmdir "$MARKER"
 orch_stub_failing jq '.next_worker_template'
 tl_run_hook "$HOOK" "$(tool_json Edit src/a.txt)"
 orch_unstub jq
