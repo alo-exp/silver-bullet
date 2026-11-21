@@ -73,6 +73,7 @@ fi
 # Reshape the hook's output for Codex with jq (a hard Silver Bullet requirement).
 # If the transform cannot run (jq missing, non-JSON output) the hook's own
 # output is passed through unchanged: a deny or block is never dropped (R7-02).
+# shellcheck disable=SC2016  # jq program, $ev is a jq variable
 codex_transform='
   if (type == "object") and ((.hookSpecificOutput | type) == "object") then
     (.hookSpecificOutput.message) as $m
