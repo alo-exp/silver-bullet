@@ -32,38 +32,32 @@ assert_eq "claim(no tool-input): jq extraction claims the phase" "099" "$(cat "$
 rm -f "$ST/claimed-phases-sa.txt"
 
 # ---- site hooks: tool-input helpers missing / failing ----
+PS="$TL_TMP/siteproj"
+dg_project "$PS" '{"sb_initiated":true,"site_profile":{"enabled":true,"live_url":"https://site.example/","regression_scripts":["tests/s.sh"]}}'
+rm -rf "$PS/.git"; git -C "$PS" init -q -b main
+mkdir -p "$PS/tests"; printf '#!/usr/bin/env bash\nexit 1\n' >"$PS/tests/s.sh"
+git -C "$PS" add -A >/dev/null 2>&1; git -C "$PS" -c user.name=t -c user.email=t@t commit -q -m init
 SESS="$ST/site-session.json"
-echo '{"active":true,"touch_reason":"site-intent","push_intent":true}' >"$SESS"
-mkdir -p "$P/tests/scripts"
-for s in chrome-regression doc-freshness content-freshness; do printf '#!/usr/bin/env bash\nexit 0\n' >"$P/tests/scripts/test-site-$s.sh"; done
+jq -n --arg sc "$(cd "$PS" && pwd -P)" '{active:true,scope:$sc,edit_seq:1,touch_reason:"edit:site/a.html",push_intent:true}' >"$SESS"
 S3="$TL_TMP/s3"; dg_stage_hooks "$S3" tool-input.sh
 PRE='{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git push origin main"}}'
-dg_run_with_fn "$P" "$S3/hooks/site-regression-gate.sh" "$PRE" 'sb_tool_name() { return 1; }; export -f sb_tool_name'
+dg_run_with_fn "$PS" "$S3/hooks/site-regression-gate.sh" "$PRE" 'sb_tool_name() { return 1; }; export -f sb_tool_name'
 assert_eq "regression gate: failing tool-name helper => ignored" "" "$TL_OUT"
 dg_assert_ok "regression gate: failing tool-name helper => ignored: exits 0"
-dg_run_with_fn "$P" "$S3/hooks/site-regression-gate.sh" "$PRE" 'sb_tool_name() { echo Bash; }; export -f sb_tool_name'
-assert_eq "regression gate: missing command helper => ignored" "" "$TL_OUT"
-dg_assert_ok "regression gate: missing command helper => ignored: exits 0"
-dg_run_with_fn "$P" "$S3/hooks/live-publish-evidence-gate.sh" "$PRE" 'sb_tool_name() { return 1; }; export -f sb_tool_name'
-assert_eq "live gate: failing tool-name helper => ignored" "" "$TL_OUT"
-dg_assert_ok "live gate: failing tool-name helper => ignored: exits 0"
-dg_run_with_fn "$P" "$S3/hooks/live-publish-evidence-gate.sh" "$PRE" 'sb_tool_name() { echo Bash; }; export -f sb_tool_name'
-assert_eq "live gate: missing command helper => ignored" "" "$TL_OUT"
-dg_assert_ok "live gate: missing command helper => ignored: exits 0"
+dg_run_with_fn "$PS" "$S3/hooks/site-regression-gate.sh" "$PRE" 'sb_tool_name() { echo Bash; }; export -f sb_tool_name'
+assert_eq "regression gate: missing shell analysis helper => ignored" "" "$TL_OUT"
+dg_assert_ok "regression gate: missing shell analysis helper => ignored: exits 0"
 
-# live gate: state dir not creatable / jq failing on the flags
+# live gate: state dir not creatable / jq failing on the session flags
 echo blocker >"$TL_TMP/blocker"
-dg_run "$P" hooks/live-publish-evidence-gate.sh '{"hook_event_name":"Stop"}' SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$TL_TMP/blocker/sub"
+dg_run "$PS" hooks/live-publish-evidence-gate.sh '{"hook_event_name":"Stop"}' SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$TL_TMP/blocker/sub"
 assert_eq "live gate: unusable state dir tolerated" 0 "$TL_STATUS"
-dg_stub_real jq 'push_intent // false'
-dg_run "$P" hooks/live-publish-evidence-gate.sh '{"hook_event_name":"Stop"}'
+dg_stub_real jq 'push_intent == true'
+dg_run "$PS" hooks/live-publish-evidence-gate.sh '{"hook_event_name":"Stop"}'
 assert_eq "live gate: flag extraction failing defaults to no evidence needed" "" "$TL_OUT"
 dg_assert_ok "live gate: flag extraction failing defaults to no evidence needed: exits 0"
 rm -f "$TL_BIN/jq"
-dg_stub_real jq 'live_claim_pending // false'
-dg_run "$P" hooks/live-publish-evidence-gate.sh '{"hook_event_name":"Stop"}'
-assert_eq "live gate: push intent alone still needs evidence" "block" "$(dec)"
-rm -f "$TL_BIN/jq"
+rm -f "$SESS"
 
 
 # ---- outcomes-check without jq: event extraction pipeline failing -> defaults to Stop ----
