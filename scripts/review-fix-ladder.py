@@ -15,6 +15,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+sys.dont_write_bytecode = True  # never write bytecode next to the plugin's scripts (also under `python3 -I`, which ignores PYTHONDONTWRITEBYTECODE)
+
 _HERE = Path(__file__).resolve().parent
 for _path in (_HERE / "lib", _HERE):
     if str(_path) not in sys.path:
