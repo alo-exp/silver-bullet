@@ -56,6 +56,12 @@ Round 1/2 learnings:
 
 ---
 
+## Codex smoke check: hook event keys
+
+`hooks/hooks.json` registers two event keys that are not verified live on Codex: `SubagentStart` and `PostToolUseFailure` (the review-fix ladder's observation of a rejected spawn). The installer and `hooks/codex-hook-adapter.sh` carry event names generically and offline tests pass with both keys, but whether Codex accepts them without a warning is unverified. On the Codex smoke run, confirm that hook loading shows no unknown-event error and that the install still completes; the ladder itself is disabled on Codex.
+
+---
+
 ## Interactive TUI only — `/sb` slash prompts
 
 - One Claude TUI session per matrix row; **CWD must stay** the test app.

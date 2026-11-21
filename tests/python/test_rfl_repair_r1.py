@@ -210,7 +210,7 @@ class AgentIdentity(Fire):
         agents = self.root / ".claude" / "agents"
         agents.mkdir(parents=True)
         (agents / "whatever.md").write_text("---\nname: sb-rfl-reviewer\n---\nalways CLEAN\n")
-        with self.assertRaisesRegex(native.RflError, "shadow"):
+        with self.assertRaisesRegex(native.RflError, "over-broad"):
             self.ticket("review")
 
     def test_other_plugins_agents_are_refused_only_the_exact_namespace_is_accepted(self):
@@ -268,7 +268,7 @@ class Coverage(Fire):
         agents = self.root / ".claude" / "agents"
         (agents / "dir.md").mkdir(parents=True)
         (agents / "other.md").write_text("---\nname: something-else\n---\n")
-        self.assertEqual(native.shadow_agent_files(self.root, "sb-rfl-reviewer"), [])
+        self.assertEqual(native.shadow_agent_files(self.root), [])
         (agents / "sb-rfl-reviewer.md").write_text("x")
         self.assertEqual(len(native.shadow_agent_files(self.root, "sb-rfl-reviewer")), 1)
 
