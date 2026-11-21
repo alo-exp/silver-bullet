@@ -4,11 +4,11 @@
 
 HOOK_TEST_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
-# KAY_HOME, PI_CODING_AGENT_DIR, CODEX_HOME, XDG_*, git redirects ...: nothing may point the runtime paths
+# KAY_HOME, PI_CODING_AGENT_DIR, CODEX_HOME, CLAUDE_CONFIG_DIR, ...: nothing may point the runtime paths
 # below, or a fixture, at the developer's real install
 # shellcheck source=tests/lib/sandbox-env.sh
 source "${HOOK_TEST_REPO_ROOT}/tests/lib/sandbox-env.sh"
-sb_test_scrub_host_env
+sb_test_scrub_runtime_env
 
 if [[ -f "${HOOK_TEST_REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
