@@ -47,18 +47,11 @@ else
 fi
 
 bugfix_q="$(sb_orchestrator_default_queue_for_composer silver-bugfix)"
-if grep -q 'silver-quality-gates,silver-context' <<<"$bugfix_q"; then
-  echo "FAIL: silver-bugfix queue still includes pre-plan quality-gates/context"
-  FAIL=$((FAIL + 1))
-else
-  echo "PASS: silver-bugfix diagnosis-first pre-chain"
-  PASS=$((PASS + 1))
-fi
-if grep -q 'silver-debug,silver-plan,silver-execute' <<<"$bugfix_q"; then
-  echo "PASS: silver-bugfix opens with debug → plan → execute"
+if grep -q '^silver-debug,silver-quality-gates,silver-context,silver-plan,tdd,silver-execute\|^silver-debug,FLOW-QUALITY-GATE,silver-context,silver-plan,tdd,silver-execute' <<<"$bugfix_q"; then
+  echo "PASS: silver-bugfix diagnosis first, then the planning floor (R10-02)"
   PASS=$((PASS + 1))
 else
-  echo "FAIL: silver-bugfix missing debug → plan → execute prefix"
+  echo "FAIL: silver-bugfix must run debug, then quality-gates/context/plan before execute (got: $bugfix_q)"
   FAIL=$((FAIL + 1))
 fi
 
@@ -81,7 +74,7 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-if grep -q 'silver-plan,silver-ui-contract,silver-validate,silver-execute' <<<"$ui_q"; then
+if grep -q 'silver-plan,silver-ui-contract,silver-validate,tdd,silver-execute' <<<"$ui_q"; then
   echo "PASS: silver-ui pre-exec includes plan → ui-contract → validate → execute"
   PASS=$((PASS + 1))
 else
@@ -130,7 +123,7 @@ else
 fi
 
 fast_q="$(sb_orchestrator_default_queue_for_composer silver-fast)"
-if grep -q 'FLOW-QUALITY-GATE,silver-plan,silver-validate,silver-execute,silver-verify' <<<"$fast_q"; then
+if grep -q 'FLOW-QUALITY-GATE,silver-context,silver-plan,silver-validate,silver-execute,silver-verify' <<<"$fast_q"; then
   echo "PASS: silver-fast Tier 2 orchestrator queue"
   PASS=$((PASS + 1))
 else
@@ -232,6 +225,129 @@ else
   FAIL=$((FAIL + 1))
 fi
 rm -f "${SB_RUNTIME_STATE_DIR}/orchestrator.json" 2>/dev/null || true
+
+# R10-02: every composer queue that reaches silver-execute carries the whole planning floor first,
+# so a worker that follows the queue is never stopped by dev-cycle-check / completion-audit.
+FLOOR_SKILLS="silver-quality-gates silver-context silver-plan"
+for composer in silver-feature silver-ui silver-bugfix silver-fast silver-refactor silver-test silver-benchmark silver-content silver-forensics silver-retro silver-release; do
+  q="$(sb_orchestrator_default_queue_for_composer "$composer")"
+  case ",$q," in *,silver-execute,*) ;; *) continue ;; esac
+  before="${q%%,silver-execute*}"
+  skills_before=""
+  IFS=',' read -ra toks <<<"$before"
+  for t in "${toks[@]}"; do skills_before="$skills_before $(sb_orchestrator_flow_to_skill "$t")"; done
+  missing=""
+  for f in $FLOOR_SKILLS; do
+    case " $skills_before " in *" $f "*) ;; *) missing="$missing $f" ;; esac
+  done
+  if [[ -z "$missing" ]]; then
+    echo "PASS: $composer queue carries the planning floor before silver-execute"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: $composer queue lacks${missing} before silver-execute (got: $q)"
+    FAIL=$((FAIL + 1))
+  fi
+done
+for dc in silver-devops silver-canary silver-deploy silver-incident; do
+  dq="$(sb_orchestrator_default_queue_for_composer "$dc")"
+  devops_before="${dq%%,silver-execute*}"
+  for f in silver-blast-radius devops-quality-gates silver-context silver-plan; do
+    case ",$devops_before," in *,"$f",*) echo "PASS: $dc queue carries $f before execute"; PASS=$((PASS + 1)) ;; *) echo "FAIL: $dc lacks $f (got: $dq)"; FAIL=$((FAIL + 1)) ;; esac
+  done
+done
+# The floor is configurable: a project's required_planning is honoured, and an already
+# present token (FLOW-QUALITY-GATE for silver-quality-gates) is not duplicated.
+proj="$(mktemp -d)"
+printf '{"skills":{"required_planning":["silver-quality-gates","silver-context","silver-plan","silver-clarify"]}}' >"$proj/.silver-bullet.json"
+q="$(sb_orchestrator_queue_for_composer silver-bugfix "$proj")"
+if [[ "$q" == "silver-debug,FLOW-QUALITY-GATE,silver-context,silver-clarify,silver-plan,tdd,silver-execute"* || "$q" == "silver-debug,silver-quality-gates,silver-context,silver-clarify,silver-plan,tdd,silver-execute"* ]]; then
+  echo "PASS: project required_planning extends the bugfix floor"; PASS=$((PASS + 1))
+else
+  echo "FAIL: project floor not applied (got: $q)"; FAIL=$((FAIL + 1))
+fi
+q="$(sb_orchestrator_queue_for_composer silver-feature "$proj")"
+if [[ "$q" == FLOW-QUALITY-GATE,* && "${q%%,silver-execute*}" != *"silver-quality-gates"* ]]; then
+  echo "PASS: a token already standing for a floor skill is not duplicated"; PASS=$((PASS + 1))
+else
+  echo "FAIL: duplicate floor skill (got: $q)"; FAIL=$((FAIL + 1))
+fi
+printf '{"skills":{"required_planning":[]}}' >"$proj/.silver-bullet.json"
+q="$(sb_orchestrator_queue_for_composer silver-bugfix "$proj")"
+if [[ "$q" == silver-debug,*silver-quality-gates*silver-plan,tdd,silver-execute* || "$q" == silver-debug,FLOW-QUALITY-GATE*silver-plan,tdd,silver-execute* ]]; then
+  echo "PASS: an empty configured floor falls back to the shipped default"; PASS=$((PASS + 1))
+else
+  echo "FAIL: empty configured floor (got: $q)"; FAIL=$((FAIL + 1))
+fi
+rm -rf "$proj"
+# A project whose active_workflow is devops-cycle gets the devops floor, as the hooks do.
+proj="$(mktemp -d)"
+printf '{"project":{"active_workflow":"devops-cycle"},"skills":{"required_planning_devops":["silver-blast-radius","devops-quality-gates","silver-context","silver-plan"]}}' >"$proj/.silver-bullet.json"
+q="$(sb_orchestrator_queue_for_composer silver-incident "$proj")"
+if [[ "${q%%,silver-execute*}" == *devops-quality-gates* && "${q%%,silver-execute*}" != *silver-quality-gates* ]]; then
+  echo "PASS: devops-cycle project: incident queue carries the devops floor"; PASS=$((PASS + 1))
+else
+  echo "FAIL: devops-cycle floor not applied (got: $q)"; FAIL=$((FAIL + 1))
+fi
+rm -rf "$proj"
+# Without the shipped template the built-in floors apply.
+staged_lib="$(mktemp -d)/hooks/lib"
+mkdir -p "$staged_lib"
+cp "$REPO_ROOT/hooks/lib/orchestrator-state.sh" "$REPO_ROOT/hooks/lib/orchestrator-io.sh" "$REPO_ROOT/hooks/lib/orchestrator-directive.sh" "$staged_lib/"
+got="$(bash -c 'source "$1"; sb_orchestrator_planning_floor_csv silver-bugfix' _ "$staged_lib/orchestrator-state.sh")"
+if [[ "$got" == "silver-quality-gates,silver-context,silver-plan" ]]; then
+  echo "PASS: no template: built-in three-skill floor"; PASS=$((PASS + 1))
+else
+  echo "FAIL: built-in floor (got: $got)"; FAIL=$((FAIL + 1))
+fi
+got="$(bash -c 'source "$1"; sb_orchestrator_planning_floor_csv silver-devops' _ "$staged_lib/orchestrator-state.sh")"
+if [[ "$got" == "silver-blast-radius,devops-quality-gates,silver-context,silver-plan" ]]; then
+  echo "PASS: no template: built-in devops floor"; PASS=$((PASS + 1))
+else
+  echo "FAIL: built-in devops floor (got: $got)"; FAIL=$((FAIL + 1))
+fi
+rm -rf "$(dirname "$(dirname "$staged_lib")")"
+# R10-02 part B: following a delivery queue exactly records every required_deploy skill, so
+# `gh pr create` is not blocked for workflow skills. Config is authoritative.
+TPL="$REPO_ROOT/templates/silver-bullet.config.json.default"
+for dc in silver-feature silver-ui silver-bugfix silver-refactor silver-devops; do
+  key=required_deploy; [[ "$dc" == silver-devops ]] && key=required_deploy_devops
+  dq="$(sb_orchestrator_default_queue_for_composer "$dc")"
+  have=","
+  IFS=',' read -ra dtoks <<<"$dq"
+  for t in "${dtoks[@]}"; do have="$have$t,$(sb_orchestrator_flow_to_skill "$t"),"; done
+  miss=""
+  for need in $(jq -r --arg k "$key" '.skills[$k][]' "$TPL"); do
+    case "$have" in *",$need,"*) ;; *) miss="$miss $need" ;; esac
+  done
+  if [[ -z "$miss" ]]; then echo "PASS: $dc queue records every $key skill"; PASS=$((PASS + 1)); else echo "FAIL: $dc queue lacks$miss from $key"; FAIL=$((FAIL + 1)); fi
+done
+# A project that drops tdd / verify-tests / silver-triage from required_deploy does not get them queued.
+proj="$(mktemp -d)"
+printf '{"skills":{"required_deploy":["silver-quality-gates","silver-plan","silver-execute","silver-review-triage","silver-verify","silver-ship"]}}' >"$proj/.silver-bullet.json"
+q="$(sb_orchestrator_queue_for_composer silver-feature "$proj")"
+if [[ "$q" != *tdd* && "$q" != *verify-tests* && "$q" != *silver-triage* ]]; then echo "PASS: config is authoritative: unlisted delivery skills not queued"; PASS=$((PASS + 1)); else echo "FAIL: unlisted skills queued (got: $q)"; FAIL=$((FAIL + 1)); fi
+rm -rf "$proj"
+# Queues that never reach ship / the review triad are untouched.
+q="$(sb_orchestrator_apply_deploy_floor "silver-plan,silver-execute,silver-verify" "tdd,verify-tests,silver-triage")"
+if [[ "$q" == "silver-plan,silver-execute,silver-verify" ]]; then echo "PASS: no ship: no delivery floor"; PASS=$((PASS + 1)); else echo "FAIL: (got: $q)"; FAIL=$((FAIL + 1)); fi
+q="$(sb_orchestrator_apply_deploy_floor "silver-execute,silver-verify,silver-ship" "tdd,verify-tests,silver-triage")"
+if [[ "$q" == "silver-execute,silver-verify,silver-ship" ]]; then echo "PASS: no review triad: no delivery floor"; PASS=$((PASS + 1)); else echo "FAIL: (got: $q)"; FAIL=$((FAIL + 1)); fi
+q="$(sb_orchestrator_apply_deploy_floor "silver-execute,silver-review-triage,silver-triage,silver-verify,tdd,verify-tests,silver-ship" "tdd,verify-tests,silver-triage")"
+if [[ "$q" == "silver-execute,silver-review-triage,silver-triage,silver-verify,tdd,verify-tests,silver-ship" ]]; then echo "PASS: already queued: not duplicated"; PASS=$((PASS + 1)); else echo "FAIL: (got: $q)"; FAIL=$((FAIL + 1)); fi
+# Queues without an execute step are untouched.
+q="$(sb_orchestrator_default_queue_for_composer silver-deep-research)"
+if [[ "$q" == "silver-clarify,silver-deep-research,silver-ensure-docs,silver-validate" ]]; then
+  echo "PASS: queue without silver-execute gets no floor"; PASS=$((PASS + 1))
+else
+  echo "FAIL: deep-research queue changed (got: $q)"; FAIL=$((FAIL + 1))
+fi
+# A queue with no plan step gets the floor before execute.
+q="$(sb_orchestrator_apply_planning_floor "silver-debug,silver-execute" "silver-quality-gates,silver-plan")"
+if [[ "$q" == "silver-debug,silver-quality-gates,silver-plan,silver-execute" ]]; then
+  echo "PASS: floor goes before execute when there is no plan step"; PASS=$((PASS + 1))
+else
+  echo "FAIL: no-plan queue (got: $q)"; FAIL=$((FAIL + 1))
+fi
 
 echo
 echo "Results: $PASS passed, $FAIL failed"

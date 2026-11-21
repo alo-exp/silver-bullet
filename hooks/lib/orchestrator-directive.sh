@@ -1,6 +1,12 @@
 # shellcheck shell=bash
 # Orchestrator directive — mechanical next-skill contract (P0/P3/P6).
 
+_sb_orch_directive_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${_sb_orch_directive_lib_dir}/orchestrator-io.sh" ]]; then
+  # shellcheck source=lib/orchestrator-io.sh
+  source "${_sb_orch_directive_lib_dir}/orchestrator-io.sh"
+fi
+
 sb_orchestrator_directive_file() {
   printf '%s/orchestrator-directive.json' "${SB_RUNTIME_STATE_DIR:-/tmp}"
 }
@@ -89,6 +95,9 @@ sb_orchestrator_flow_to_skill() {
     security|SECURITY)
       printf 'security'
       ;;
+    tdd|verify-tests)
+      printf '%s' "$flow"
+      ;;
     silver-*)
       printf '%s' "$flow"
       ;;
@@ -159,7 +168,7 @@ sb_orchestrator_directive_write() {
       updated_at: $updated_at
     }' 2>/dev/null || true)"
   [[ -n "$json" ]] || return 1
-  printf '%s\n' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
+  sb_orchestrator_atomic_write "$file" "$json"
 }
 
 # Write directive including scheduler batch_dispatch handoff metadata (parent Task contract).
@@ -204,7 +213,7 @@ sb_orchestrator_directive_write_batch() {
       updated_at: $updated_at
     }' 2>/dev/null || true)"
   [[ -n "$json" ]] || return 1
-  printf '%s\n' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
+  sb_orchestrator_atomic_write "$file" "$json"
 }
 
 sb_orchestrator_directive_clear() {
@@ -408,11 +417,11 @@ sb_orchestrator_prompt_provenance_ok() {
     SB_PROVENANCE_REFUSAL="the payload's transcript_path is not a regular file under ${SB_RUNTIME_HOME_ROOT:-the host runtime root}"
     return 1
   fi
-  if sb_orchestrator_is_worker_session 2>/dev/null; then
+  if sb_orchestrator_worker_marker_fresh; then
     recorded="$(jq -r '.session_id // ""' "$(sb_orchestrator_parent_session_file)" 2>/dev/null)"
     if [[ -z "$transcript" || -z "$recorded" || "$recorded" != "$sid" ]]; then
       spawned="$(jq -r '.spawned_at // "unknown time"' "$(sb_orchestrator_worker_marker_file)" 2>/dev/null)"
-      SB_PROVENANCE_REFUSAL="a Task worker marker is active (spawned ${spawned}; it lapses after 2 hours or when the worker finishes) and this prompt cannot be tied to the recorded parent session; if the subagent was interrupted, delete $(sb_orchestrator_worker_marker_file) and retry"
+      SB_PROVENANCE_REFUSAL="a Task worker marker is active (spawned ${spawned}; it lapses after its 2 hour TTL; a finished worker does not clear it) and this prompt cannot be tied to the recorded parent session; if no subagent is running, the user can delete $(sb_orchestrator_worker_marker_file) and retry, or send the prompt from the recorded parent session"
       return 1
     fi
   fi
@@ -426,7 +435,7 @@ sb_orchestrator_prompt_provenance_ok() {
 sb_orchestrator_note_parent_prompt() {
   local input="${1:-}" sid tmp file
   sb_orchestrator_prompt_provenance_ok "$input" || return 0
-  sb_orchestrator_is_worker_session 2>/dev/null && return 0
+  sb_orchestrator_worker_marker_fresh && return 0
   sid="$(printf '%s' "$input" | jq -r '.session_id // ""' 2>/dev/null)"
   [[ "$sid" =~ ^[A-Za-z0-9_-]{1,64}$ ]] || return 0
   file="$(sb_orchestrator_parent_session_file)"
@@ -488,6 +497,21 @@ sb_orchestrator_sync_directive_from_state() {
 
   skill="$(jq -r '.current_flow // ""' "$orch_file" 2>/dev/null || true)"
   [[ -n "$skill" && "$skill" != "null" ]] || return 0
+
+  # A scheduler batch with handoffs still waiting is the authoritative "what next": rebuild
+  # the batch directive (it carries the handoff metadata) instead of guessing from current_flow.
+  if jq -e '(.scheduler.batch_dispatch.handoffs // []) | any(.join_status != "joined")' "$orch_file" >/dev/null 2>&1; then
+    local _sched_lib
+    _sched_lib="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/orchestrator-scheduler.sh"
+    if ! declare -f sb_scheduler_write_batch_directive >/dev/null 2>&1 && [[ -f "$_sched_lib" ]]; then
+      # shellcheck source=lib/orchestrator-scheduler.sh
+      source "$_sched_lib"
+    fi
+    if declare -f sb_scheduler_write_batch_directive >/dev/null 2>&1 \
+       && sb_scheduler_write_batch_directive "" 2>/dev/null; then
+      return 0
+    fi
+  fi
 
   skill="$(sb_orchestrator_flow_to_skill "$skill")"
   args="$(jq -r '.active_intent // ""' "$orch_file" 2>/dev/null | head -c 200 || true)"

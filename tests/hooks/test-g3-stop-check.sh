@@ -150,6 +150,8 @@ run_stop
 assert_eq "R3-02: the genuine trivial marker still bypasses (honest variant)" "0:" "$TL_STATUS:$TL_OUT"
 
 # ---- R5-06: the E2E routing marker is not a forgeable Stop exemption ------------------
+# Parent mode is the host default on Claude; on Codex it needs the explicit switch (no agent_id to tell workers apart).
+export SB_ORCHESTRATOR_PARENT=1
 reset
 printf 'x\n' >"$EC_PROJ/dirty.txt"
 jq -n --arg repo "$EC_PROJ" '{current_flow:"FLOW-EXECUTE",repo_root:$repo,workflow_id:"20260428T120000Z-abc123-silver-feature"}' >"$SD/orchestrator.json"
@@ -171,6 +173,7 @@ export SB_E2E_ENTERPRISE_MATRIX=1
 run_stop
 assert_eq "R5-06: harness env + valid marker still exempts (E2E routing row)" "0:" "$TL_STATUS:$TL_OUT"
 unset SB_E2E_ENTERPRISE_MATRIX
+unset SB_ORCHESTRATOR_PARENT
 
 # ---- release log unwritable: the release still happens; trivial file named trivial elsewhere ----------------
 reset

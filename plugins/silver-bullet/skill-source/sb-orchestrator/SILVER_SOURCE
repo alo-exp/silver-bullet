@@ -41,7 +41,7 @@ READ orchestrator-directive.json
 IF blocking and queue pending:
   LOAD template: .silver-bullet/orchestrator-workers/{next_worker_template}.md
   SPAWN Task worker with template + args + mandatory skill next_skill
-  WAIT for worker (SubagentStop clears worker marker)
+  WAIT for the worker (its SubagentStop ends it; hooks identify workers by the host's per-call agent id)
   REPEAT until current_flow empty
 IF no directive:
   INVOKE routing (same rules as silver SKILL) → seed composer queue via sb:feature|ui|devops|...
@@ -53,7 +53,7 @@ When spawning Task, include:
 
 1. Full text of worker template file
 2. `next_skill` and `args` from directive
-3. `SB_ORCHESTRATOR_WORKER=1` instruction (worker must invoke assigned skill first)
+3. The instruction that the worker must invoke the assigned skill first (do not tell it to set `SB_ORCHESTRATOR_WORKER`; a process cannot change its parent's environment and hooks identify workers from the host's agent id)
 4. Active intent from `orchestrator-intent.txt`
 
 ## Composer specs

@@ -14,12 +14,15 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib
 command -v jq >/dev/null 2>&1 || exit 0
 
 input="$(cat 2>/dev/null || true)"
+# shellcheck disable=SC2034  # read by sb_orchestrator_is_worker_session (subagent identity)
+SB_ORCH_HOOK_INPUT="$input"
 hook_event="$(printf '%s' "$input" | jq -r '.hook_event_name // "Stop"' 2>/dev/null || echo Stop)"
 case "$hook_event" in
   Stop|SubagentStop) ;;
   *) exit 0 ;;
 esac
 
+# On Claude every SubagentStop carries agent_id, so a worker's SubagentStop is always skipped here.
 if [[ "$hook_event" == "SubagentStop" && -f "$_lib_dir/orchestrator-parent.sh" ]]; then
   source "$_lib_dir/orchestrator-parent.sh"
   sb_orchestrator_is_worker_session 2>/dev/null && exit 0

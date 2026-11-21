@@ -107,6 +107,21 @@ tl_run_hook "$HOOK" "$(tool_json Shell 'touch x')"
 assert_eq "mutating Shell denied for the parent" deny "$(decision)"
 tl_run_hook "$HOOK" "$(tool_json Bash 'silver-bullet invoke-skill silver')"
 assert_eq "router invoke-skill adapter allowed" "0|" "$TL_STATUS|$TL_OUT"
+# R4-03: the exceptions parse the command; naming an allowed tool does not whitelist the rest.
+write_directive silver-plan PLAN
+for evil in "rm -f x # scripts/resolve-instruction-ledger.sh" "echo scripts/resolve-instruction-ledger.sh; rm x" "silver-bullet invoke-skill silver && rm -f x" $'silver-bullet invoke-skill sb\ntouch pwned' "bash -c 'silver-bullet invoke-skill silver' ; touch pwned2" "$TL_REPO_ROOT/scripts/resolve-instruction-ledger.sh list > out.txt" "$TL_TMP/evil/silver-bullet invoke-skill silver" "scripts/resolve-instruction-ledger.sh list"; do
+  tl_run_hook "$HOOK" "$(tool_json Bash "$evil")"
+  assert_eq "parent Bash denied: ${evil//$'\n'/ }" deny "$(decision)"
+done
+for honest in "silver-bullet invoke-skill silver 2>/dev/null" "$TL_REPO_ROOT/scripts/resolve-instruction-ledger.sh list 2>&1" "bash $TL_REPO_ROOT/scripts/resolve-instruction-ledger.sh done 3" "git status 2>&1 | head" "bash -c 'silver-bullet invoke-skill silver'"; do
+  tl_run_hook "$HOOK" "$(tool_json Bash "$honest")"
+  assert_eq "parent Bash allowed: $honest" "0|" "$TL_STATUS|$TL_OUT"
+done
+# A classifier failure is denied with a message that says how to proceed.
+PATH="$(tl_path_without python3)" tl_run_hook "$HOOK" "$(tool_json Bash 'git status')"
+assert_eq "no python3: parent Bash denied" deny "$(decision)"
+assert_contains "no python3: the denial names python3 and how to proceed" "$(reason)" "python3 is a required prerequisite"
+rm -f "$DIRF"
 printf '{"sb_initiated":false}\n' >"$PROJ/.silver-bullet.json"
 tl_run_hook "$HOOK" "$(tool_json Edit src/a.txt)"
 assert_eq "project not initiated yet: allow" "0|" "$TL_STATUS|$TL_OUT"
@@ -222,6 +237,7 @@ tl_run_hook "$HOOK" "$np"
 assert_eq "prompt without the marker does not bypass" deny "$(decision)"
 assert_not_contains "denial text no longer carries the literal marker (R4-12)" "$(reason)" "OVERRIDE: <reason>"
 assert_contains "denial text still explains how to override" "$(reason)" "SB OVERRIDE, a colon and your reason"
+reset
 
 echo "=== worker mode: edits without a workflow (P6) ==="
 reset
