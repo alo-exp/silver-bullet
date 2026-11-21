@@ -31,6 +31,7 @@ import subprocess
 import sys
 import threading
 import time
+import unicodedata
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
@@ -593,7 +594,7 @@ def _next_token_counter() -> int:
     return current + 1
 
 
-def write_user_token(project_root: Path, kind: str, run_id: str, *, session_id: str, prompt_sha256: str) -> Path:
+def write_user_token(project_root: Path, kind: str, run_id: str, *, session_id: str, prompt_sha256: str, bound: str = "") -> Path:
     if not getattr(_TOKEN_CONTEXT, "on", False):
         raise RflError("tokens are written only by the UserPromptSubmit hook, from a message the user typed")
     if not SESSION_RE.match(session_id or "") or not re.match(r"^[0-9a-f]{64}$", prompt_sha256 or ""):
@@ -602,8 +603,8 @@ def write_user_token(project_root: Path, kind: str, run_id: str, *, session_id: 
     counter = _next_token_counter()
     path = token_path(kind, run_id)
     write_json(path, {"kind": kind, "run_id": run_id, "expires_at": expires, "source": "UserPromptSubmit", "session_id": session_id,
-                      "prompt_sha256": prompt_sha256, "counter": counter,
-                      "proof": _token_proof(project_root, f"{kind}|{run_id}|{session_id}|{prompt_sha256}|{counter}")}, project_root)
+                      "prompt_sha256": prompt_sha256, "counter": counter, "bound": bound,
+                      "proof": _token_proof(project_root, f"{kind}|{run_id}|{session_id}|{prompt_sha256}|{counter}|{bound}")}, project_root)
     return path
 
 
@@ -615,12 +616,17 @@ def consume_user_token(project_root: Path, kind: str, run_id: str) -> dict[str, 
     token = read_signed(path, project_root, f"{kind} token")
     expires = quota_window.parse_iso_datetime(str(token.get("expires_at")))
     counter = token.get("counter")
-    fields = f"{kind}|{run_id}|{token.get('session_id')}|{token.get('prompt_sha256')}|{counter}"
+    fields = f"{kind}|{run_id}|{token.get('session_id')}|{token.get('prompt_sha256')}|{counter}|{token.get('bound', '')}"
     genuine = (isinstance(counter, int) and counter >= 1 and SESSION_RE.match(str(token.get("session_id"))) is not None
                and isinstance(token.get("proof"), str) and hmac.compare_digest(token["proof"], _token_proof(project_root, fields)))
     if (token.get("kind") != kind or token.get("run_id") != run_id or token.get("source") != "UserPromptSubmit"
             or expires is None or expires < quota_window.utcnow() or not genuine):
         raise RflError(f"the {kind} token for {run_id} is expired or does not match; {ask}")
+    record = load_record(project_root, run_id)
+    if counter <= int(record.get("last_token_counter") or 0):
+        raise RflError(f"the {kind} token for {run_id} was already used; {ask}")
+    record["last_token_counter"] = counter
+    save_record(project_root, record)
     path.unlink()
     return token
 
@@ -663,49 +669,60 @@ def _own_plugin_agents(directory: Path) -> bool:
     return manifest.get("name") == "silver-bullet"
 
 
-_NAME_KEY_RE = re.compile(r"""^(?:name|"name"|'name')\s*:\s*(.*)$""", re.I)
-_QUOTED_RE = re.compile(r"""^(?:"((?:[^"\\]|\\.)*)"|'((?:[^']|'')*)')""")
-AGENT_NAME_LINE_RE = re.compile(r"""(?im)^\s*["']?name["']?\s*:\s*["']?(?:[\w.-]+:)?(sb-rfl-reviewer|sb-rfl-verifier)\b""")
+MAX_AGENT_FILE_BYTES = 1024 * 1024
+MAX_AGENT_FILES = 500
+_ESCAPE_RES = (
+    (re.compile(r"\\[xX]([0-9a-fA-F]{2})"), 16), (re.compile(r"\\[uU]([0-9a-fA-F]{8})"), 16),
+    (re.compile(r"\\[uU]([0-9a-fA-F]{4})"), 16), (re.compile(r"\\([0-7]{1,3})"), 8),
+)
+_HYPHENS = dict.fromkeys(map(ord, "\u2010\u2011\u2012\u2013\u2014\u2212\ufe63\uff0d\u00ad"), "-")
 
 
-def _yaml_scalar(raw: str) -> str:
-    raw = raw.strip()
-    quoted = _QUOTED_RE.match(raw)
-    if quoted:
-        return (quoted.group(1) if quoted.group(1) is not None else quoted.group(2)).strip()
-    return re.split(r"\s#", raw, maxsplit=1)[0].strip()
-
-
-def declared_agent_names(text: str) -> list[str]:
-    """The ``name`` an agent definition declares in its YAML frontmatter (plain, quoted, commented, block scalar)."""
-    lines = text.lstrip("\ufeff").splitlines()
-    if not lines or lines[0].strip() != "---":
-        return []
-    names: list[str] = []
-    for index, line in enumerate(lines[1:], start=1):
-        if line.strip() == "---":
+def _normalise_agent_text(text: str) -> str:
+    """Undo the spellings a YAML parser resolves to the same string (escapes, invisible characters, width and case)."""
+    text = unicodedata.normalize("NFKC", "".join(ch for ch in text if unicodedata.category(ch) != "Cf"))
+    for _ in range(3):
+        before = text
+        for pattern, base in _ESCAPE_RES:
+            text = pattern.sub(lambda m, b=base: chr(int(m.group(1), b)) if int(m.group(1), b) < 0x110000 else "", text)
+        text = unicodedata.normalize("NFKC", text)
+        if text == before:
             break
-        match = _NAME_KEY_RE.match(line)
-        if not match:
-            continue
-        value = match.group(1).strip()
-        if value.split("#")[0].strip() in ("", "|", "|-", "|+", ">", ">-", ">+"):
-            value = next((n.strip() for n in lines[index + 1:index + 4] if n.strip() and not n.startswith("---")), "")
-        names.append(_yaml_scalar(value).lower())
-    return names
+    text = "".join(ch for ch in text if unicodedata.category(ch) not in ("Cf", "Cc") or ch in "\n\t ").translate(_HYPHENS)
+    return text.replace("\\", "").casefold()
 
 
-def shadow_agent_files(project_root: Path, role: str) -> list[str]:
-    """Agent definitions anywhere the host loads them (any depth) that declare the plugin role's name, with or without a namespace."""
-    found = []
+def mentions_reserved_agent(text: str) -> bool:
+    """Deliberately over-broad: any spelling that could resolve to an sb-rfl-* agent name, however YAML would write it."""
+    flat = _normalise_agent_text(text)
+    squeezed = re.sub(r"[^a-z0-9]", "", flat)
+    return "sb-rfl-" in re.sub(r"\s+", "", flat) or "sbrfl" in squeezed or "rflreviewer" in squeezed or "rflverifier" in squeezed
+
+
+SHADOW_NOTE = ("the scan is deliberately over-broad: any agent file whose text mentions the reserved sb-rfl-* names, in any spelling, "
+               "is refused even if it only talks about them; rename or move it")
+
+
+def shadow_agent_files(project_root: Path, role: str = "") -> list[str]:
+    """Agent files (any depth, project, user and other plugins) that could carry a reserved sb-rfl-* name. A file that
+    cannot be read in full, is too large or is not UTF-8 counts as a match (fail closed)."""
+    found: list[str] = []
+    seen = 0
     for directory in agent_dirs(project_root):
         if not directory.is_dir():
             continue
-        for path in sorted(directory.rglob("*.md"))[:500]:
-            text = ""
-            with contextlib.suppress(OSError):  # a directory or unreadable file named *.md
-                text = path.read_text(encoding="utf-8", errors="replace")[:4096]
-            if path.stem == role or any(n.split(":")[-1] == role for n in declared_agent_names(text)):
+        for path in sorted(directory.rglob("*")):
+            if path.suffix.lower() != ".md" or path.is_dir():
+                continue
+            seen += 1
+            if seen > MAX_AGENT_FILES:
+                return found + [f"{directory} (more than {MAX_AGENT_FILES} agent files)"]
+            try:
+                size = path.stat().st_size
+                text = path.read_bytes().decode("utf-8") if size <= MAX_AGENT_FILE_BYTES else None
+            except (OSError, UnicodeDecodeError):
+                text = None
+            if text is None or mentions_reserved_agent(path.stem) or mentions_reserved_agent(text):
                 found.append(str(path))
     return found
 
@@ -837,7 +854,8 @@ def approve(project_root: Path, run_dir: Path) -> dict[str, Any]:
     _active(status)
     run_id = status["run_id"]
     digest = charter_hash(load_charter(run_dir))
-    consume_user_token(root, "approve", run_id)
+    if consume_user_token(root, "approve", run_id).get("bound") != digest:
+        raise RflError(f"the approval was typed for a different charter than this run's; ask the user to type `RFL APPROVE {run_id}` again")
     record = load_record(root, run_id)
     record["approved_sha256"] = digest
     save_record(root, record)
@@ -855,8 +873,9 @@ def abort_run(project_root: Path, run_id: str) -> dict[str, Any]:
     """End a run. The sealed record is the authority, so this works even when the status file no longer verifies."""
     root = Path(project_root).resolve()
     run_dir = run_path(root, run_id)
-    record = load_record(root, run_id)
+    load_record(root, run_id)  # a run whose record does not verify is refused here (the hook's fallback handles it)
     token = consume_user_token(root, "abort", run_id)
+    record = load_record(root, run_id)  # re-read: consuming the token advanced its high-water mark
     record["status"] = "aborted"
     save_record(root, record)
     try:
@@ -983,10 +1002,9 @@ def issue_ticket(project_root: Path, run_dir: Path, phase: str) -> dict[str, Any
         raise RflError(
             f"Policy E: the rung brief is not approved for this charter; show it to the user, ask them to type "
             f"`RFL APPROVE {status['run_id']}`, then run --approve")
-    shadow = shadow_agent_files(root, ROLES[phase])
+    shadow = shadow_agent_files(root)
     if shadow:
-        raise RflError(f"a project or user agent file would shadow the plugin's {ROLES[phase]} for the plain name "
-                       f"({shadow[0]}); remove it so the encoder-issued reviewer is the one that runs")
+        raise RflError(f"an agent file ({shadow[0]}) could carry a reserved sb-rfl-* name: {SHADOW_NOTE}")
     key = _attempt_key(status, phase)
     attempt = status["attempts"].get(key, 0) + 1
     if attempt > MAX_ATTEMPTS:

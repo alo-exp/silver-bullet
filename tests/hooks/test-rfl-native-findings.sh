@@ -85,5 +85,12 @@ rfl_assert_registered PreToolUse Edit review-fix-ladder-guard.sh
 rfl_assert_registered Stop '' review-fix-ladder-guard.sh
 rfl_assert_registered UserPromptSubmit '' review-fix-ladder-guard.sh
 rfl_assert_registered SessionStart startup review-fix-ladder-guard.sh
+rfl_assert_registered PostToolUseFailure Agent review-fix-ladder-guard.sh
+
+# --- Codex: the PostToolUseFailure key is carried like every other event (acceptance by Codex is unverified live) ---
+printf '#!/usr/bin/env bash\ncat >/dev/null\n' >"$TL_TMP/quiet-hook.sh"; chmod +x "$TL_TMP/quiet-hook.sh"
+rc=0; out="$(printf '{"hook_event_name":"PostToolUseFailure","tool_name":"Agent"}' | bash "$REPO/hooks/codex-hook-adapter.sh" PostToolUseFailure "$TL_TMP/quiet-hook.sh" 2>&1)" || rc=$?
+assert_eq "Codex adapter passes an unknown-to-it event name through without failing" "0:" "$rc:$out"
+assert_eq "hooks.json stays valid JSON with the PostToolUseFailure key" "true" "$(jq -e '.hooks.PostToolUseFailure | length > 0' "$REPO/hooks/hooks.json")"
 
 tl_results

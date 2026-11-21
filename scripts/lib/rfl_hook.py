@@ -21,6 +21,7 @@ import rfl_native as native
 import rfl_policy_c
 
 AGENT_TOOLS = frozenset({"Task", "Subagent", "Agent"})
+SPAWN_KEYS = frozenset({"description", "subagent_type", "model", "effort", "prompt", "run_in_background"})
 EDIT_TOOLS = frozenset({"Edit", "Write", "MultiEdit", "apply_patch", "NotebookEdit"})
 USER_CMD_RE = re.compile(r"^\s*RFL (ABORT|APPROVE) ([A-Za-z0-9._-]{1,64})\s*$")
 PATCH_FILE_RE = re.compile(r"^\*\*\* (?:Add|Update|Delete) File: (.+)$|^\*\*\* Move to: (.+)$", re.M)
@@ -100,9 +101,10 @@ def prompt_submit(payload: dict[str, Any], root: Path) -> dict[str, Any]:
     if match:
         kind, run_id = match.group(1).lower(), match.group(2)
         try:
-            native.load_record(root, run_id)
+            record = native.load_record(root, run_id)
             with native.hook_token_context():
-                native.write_user_token(root, kind, run_id, session_id=sid, prompt_sha256=digest)
+                native.write_user_token(root, kind, run_id, session_id=sid, prompt_sha256=digest,
+                                        bound=record["charter_sha256"] if kind == "approve" else "")
         except native.RflError as exc:
             if kind == "abort":  # the user's exit must work even when the sealed record is corrupt or its key is gone
                 try:
@@ -134,20 +136,26 @@ def check_spawn(root: Path, run_dir: Path, status: dict[str, Any], payload: dict
     ticket = native.read_ticket(root, run_dir, status["open_ticket"])
     spec = payload.get("tool_input")
     spec = spec if isinstance(spec, dict) else {}
-    kind = str(spec.get("subagent_type") or spec.get("subagent") or "")
+    kind = str(spec.get("subagent_type") or "")
     if ticket["spawned"]:
         return f"RFL ticket {ticket['ticket']} already launched its subagent; wait for its result (one subagent at a time)"
+    extra = sorted(k for k in spec if k not in SPAWN_KEYS)
+    if extra:
+        return (f"RFL ticket {ticket['ticket']} allows only the issued spawn parameters; remove {', '.join(extra)} "
+                "(for example isolation would make the reviewer read a different copy than the one the ticket fingerprinted)")
     if kind not in (ticket["role"], f"silver-bullet:{ticket['role']}"):
         return f"RFL ticket {ticket['ticket']} requires subagent_type {ticket['role']} (got {kind or 'none'}); only the plugin's own agent is accepted"
-    shadow = native.shadow_agent_files(root, ticket["role"])
+    shadow = native.shadow_agent_files(root)
     if shadow:
-        return f"an agent file ({shadow[0]}) declares the name {ticket['role']}, which is reserved for the plugin's read-only agent; remove it"
+        return f"an agent file ({shadow[0]}) could carry a reserved name: {native.SHADOW_NOTE}"
     if str(spec.get("model") or "").lower() != ticket["model"] or str(spec.get("effort") or "").lower() != ticket["effort"]:
         return f"RFL ticket {ticket['ticket']} requires model {ticket['model']} with effort {ticket['effort']}"
-    if spec.get("run_in_background"):
+    if spec.get("run_in_background") not in (None, False):
         return "RFL review and verify subagents run in the foreground (run_in_background must be absent or false)"
     if native.sha256_text(str(spec.get("prompt") or "").strip()) != ticket["brief_sha256"]:
         return f"RFL ticket {ticket['ticket']} requires the exact brief returned by --issue-ticket (the prompt differs)"
+    if spec.get("description") != f"RFL {ticket['ticket']}":
+        return f"RFL ticket {ticket['ticket']} requires the issued description"
     ticket["spawned"] = True
     native.save_ticket(root, run_dir, ticket)
     return None
@@ -197,8 +205,8 @@ def check_edit(root: Path, run_dir: Path, payload: dict[str, Any]) -> str | None
         if _is_agent_path(target):
             return (f"{target} is an agent definition: a same-name agent would replace the plugin's read-only reviewer, "
                     "so no agent definition may be written while a review-fix ladder run is live")
-    if native.AGENT_NAME_LINE_RE.search("\n".join(_payload_texts(spec))):
-        return "the content declares an agent named sb-rfl-reviewer or sb-rfl-verifier; those names are reserved for the plugin's read-only agents"
+    if any(native.mentions_reserved_agent(t) for t in _payload_texts(spec)):
+        return f"the content mentions the reserved sb-rfl-* agent names; {native.SHADOW_NOTE.split('; ')[0]}"
     _, agent_type = _subagent(payload)
     if agent_type.split(":")[-1] in native.ROLES.values() and rels:
         return "RFL reviewers and verifiers are read-only: they must not edit files"
@@ -260,9 +268,12 @@ def _stop_problem(root: Path, run_id: str) -> tuple[str | None, bool]:
         record = native.load_record(root, run_id)
         if record["status"] != "active":
             return None, True
+    except native.RflError as exc:
+        return str(exc), False  # the sealed record is the authority: if it is gone or corrupt only the user can end the run
+    try:
         status = native.load_status(root, run_dir)
     except native.RflError as exc:
-        return str(exc), False  # tampered or missing state: nothing the agent may repair
+        return str(exc), True  # a damaged status file of a live run: the agent can re-validate with --resume (budget applies)
     if status["status"] != "active" or record.get("approved_sha256") is None:
         return None, True  # finished, or waiting for the user's Policy E approval
     errors = rfl_policy_c.assert_rfl_advance(run_dir, next_action="stop")["errors"]

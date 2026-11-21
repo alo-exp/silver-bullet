@@ -47,7 +47,7 @@ class AgentNameForgery(Fire):
             for rel in (f"{label}.md", f"sub/deep/{label}.md"):
                 path = self.agent_file(rel, text)
                 with self.subTest(label=label, rel=rel):
-                    with self.assertRaisesRegex(native.RflError, "shadow"):
+                    with self.assertRaisesRegex(native.RflError, "over-broad"):
                         self.ticket("review")
                     path.unlink()
         # a ticket issued before the file appeared is still refused at the spawn check
@@ -59,24 +59,25 @@ class AgentNameForgery(Fire):
 
     def test_innocent_agents_do_not_block(self):
         self.start()
-        self.agent_file("ok.md", "---\nname: other\ndescription: use sb-rfl-reviewer never\n---\nname: sb-rfl-reviewer\n")
-        self.agent_file("nofront.md", "name: sb-rfl-reviewer\n")
+        self.agent_file("ok.md", "---\nname: other\ndescription: reviews code\n---\nbody\n")
         self.agent_file("bad.md", "---\nname:\n---\n")
         self.agent_file("empty.md", "")
+        self.agent_file("notes.txt", "sb-rfl-reviewer in a file the host never loads as an agent")
+        (self.root / ".claude" / "agents" / "dir.md").mkdir()
         self.assertEqual(self.reason(self.fire(self.spawn_payload(self.ticket("review")))), "")
 
     def test_user_and_other_plugin_agent_dirs_are_scanned_but_not_our_own(self):
         self.start()
         user = native.home_root() / "agents"
         self.agent_file("u.md", FORGERIES["comment"], base=user)
-        with self.assertRaisesRegex(native.RflError, "shadow"):
+        with self.assertRaisesRegex(native.RflError, "over-broad"):
             self.ticket("review")
         (user / "u.md").unlink()
         other = native.home_root() / "plugins" / "cache" / "mk" / "other" / "1.0" / "agents"
         self.agent_file("o.md", FORGERIES["quoted-single"], base=other)
         (other.parent / ".claude-plugin").mkdir()
         (other.parent / ".claude-plugin" / "plugin.json").write_text('{"name": "other"}')
-        with self.assertRaisesRegex(native.RflError, "shadow"):
+        with self.assertRaisesRegex(native.RflError, "over-broad"):
             self.ticket("review")
         (other.parent / ".claude-plugin" / "plugin.json").write_text('{"name": "silver-bullet"}')  # our own copy is not a shadow
         self.assertTrue(self.ticket("review")["ticket"])
@@ -101,7 +102,7 @@ class AgentNameForgery(Fire):
                      {"input": "*** Begin Patch\n*** Add File: docs/x.md\n+---\n+name: sb-rfl-verifier\n+---\n*** End Patch"}):
             with self.subTest(spec=list(spec)):
                 self.assertIn("reserved", self.reason(self.edit("Write", **spec)))
-        self.assertEqual(self.reason(self.edit("Write", file_path=str(self.root / "docs/x.md"), content="mentions sb-rfl-verifier in prose")), "")
+        self.assertIn("over-broad", self.reason(self.edit("Write", file_path=str(self.root / "docs/x.md"), content="mentions sb-rfl-verifier in prose")))
 
 
 class SessionFallback(Fire):
@@ -283,7 +284,7 @@ class StopRelease(Fire):
             self.assertEqual(self.stop(True)["output"]["decision"], "block")
 
     def test_an_unclearable_problem_is_released_by_stop_hook_active(self):
-        (self.run_dir / native.STATUS_FILE).write_text("{}")
+        native.record_path(self.root, "demo").write_text("garbage")
         self.assertEqual(self.stop(False)["output"]["decision"], "block")
         out = self.stop(True)
         self.assertIn("released", out["output"]["systemMessage"])
@@ -410,9 +411,9 @@ class Corners(Fire):
                 with self.assertRaisesRegex(native.RflError, "needs the session id"):
                     native.write_user_token(self.root, "abort", "demo", session_id=sid, prompt_sha256=digest)
 
-    def test_frontmatter_without_a_closing_fence_and_non_agent_text(self):
-        self.assertEqual(native.declared_agent_names("---\nname: a\n"), ["a"])
-        self.assertEqual(native.declared_agent_names("no front matter"), [])
+    def test_the_scan_is_text_not_yaml(self):
+        self.assertFalse(native.mentions_reserved_agent("---\nname: a\n"))
+        self.assertTrue(native.mentions_reserved_agent("no front matter, but SB-RFL-Verifier"))
 
     def test_force_abort_without_a_run_directory(self):
         os.environ["CLAUDE_CODE_SESSION_ID"] = "s1"

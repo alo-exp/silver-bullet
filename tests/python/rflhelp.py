@@ -39,8 +39,9 @@ def accept_policy(ids=("F1",), rejected=(), file="src/a.py"):
 
 def mint_token(root, kind, run_id, session_id="s1"):
     """What the UserPromptSubmit hook does for a message the user typed."""
+    bound = native.load_record(root, run_id)["charter_sha256"] if kind == "approve" else ""
     with native.hook_token_context():
-        return native.write_user_token(root, kind, run_id, session_id=session_id, prompt_sha256="a" * 64)
+        return native.write_user_token(root, kind, run_id, session_id=session_id, prompt_sha256="a" * 64, bound=bound)
 
 
 class RflCase(unittest.TestCase):
