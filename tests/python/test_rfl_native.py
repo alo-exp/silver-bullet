@@ -195,6 +195,17 @@ class FingerprintTest(RflCase):
         self.assertNotIn("src/.git/x", linked["files"])
         self.assertEqual(native.fingerprint(self.root, ["nothing"])["files"], {})
 
+    def test_encoder_run_dirs_never_move_the_fingerprint(self):
+        (self.root / ".planning" / "rfl-x").mkdir(parents=True)
+        (self.root / ".planning" / "rfl-x" / "f").write_text("1")
+        (self.root / ".planning" / "keep").mkdir()
+        (self.root / ".planning" / "keep" / "g").write_text("1")
+        before = native.fingerprint(self.root, ["."])
+        (self.root / ".planning" / "rfl-x" / "f").write_text("2")
+        self.assertEqual(native.fingerprint(self.root, ["."])["digest"], before["digest"])
+        self.assertIn(".planning/keep/g", before["files"])
+        self.assertNotIn(".planning/rfl-x/f", before["files"])
+
     def test_too_many_files_and_no_git(self):
         for i in range(3):
             (self.root / "src" / f"f{i}").write_text(str(i))
@@ -510,6 +521,17 @@ class CycleTest(RflCase):
         self.assertIsNone(native.live_run_id(self.root))
         for name in ("review.md", "verify-1.md", "verify-2.md", "signals-1.json", "signals-2.json"):
             self.assertTrue((self.rung_dir() / name).is_file(), name)
+
+    def test_a_new_review_archives_the_previous_policy_c_so_triage_must_be_redone(self):
+        self.start()
+        self.clean_cycle()
+        issued = self.ticket("review")
+        self.reply(issued["ticket"], {"verdict": "CLEAN", "findings": []})
+        self.assertFalse((self.rung_dir() / "POLICY-C.json").exists())
+        self.assertTrue((self.rung_dir() / "POLICY-C-cycle-1.json").is_file())
+        self.assertTrue((self.rung_dir() / "POLICY-C-cycle-1.md").is_file())
+        with self.assertRaisesRegex(native.RflError, "write a valid POLICY-C"):
+            native.complete_triage(self.root, self.run_dir)
 
     def test_file_change_between_clean_reviews_resets_the_streak(self):
         self.start()

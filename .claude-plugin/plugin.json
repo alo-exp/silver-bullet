@@ -18,9 +18,5 @@
     "deploy-gate",
     "ci-cd"
   ],
-  "skills": "./agents/claude",
-  "agents": [
-    "./subagents/claude/sb-rfl-reviewer.md",
-    "./subagents/claude/sb-rfl-verifier.md"
-  ]
+  "skills": "./agents/claude"
 }

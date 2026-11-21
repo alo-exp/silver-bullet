@@ -294,7 +294,8 @@ def fingerprint(project_root: Path, scope: list[str]) -> dict[str, Any]:
             files[rel] = _hash_file(target)
         elif target.is_dir():
             for base, dirs, names in os.walk(target, followlinks=False):
-                dirs[:] = sorted(d for d in dirs if d != ".git")
+                # the encoder's own run directories change at every step and must not move the fingerprint
+                dirs[:] = sorted(d for d in dirs if d != ".git" and not (Path(base).name == ".planning" and d.startswith("rfl-")))
                 for name in sorted(names):
                     full = Path(base) / name
                     if not full.is_symlink() and full.is_file():
@@ -808,6 +809,11 @@ def _record_result(root: Path, run_dir: Path, status: dict[str, Any], ticket: di
         "response_sha256": sha256_text(text), "phase": phase, "result": result, "captured_at": now_iso(),
     }
     write_json(rung_dir / f"cycle-{cycle}-{phase}.capture.json", capture, root)
+    if phase == "review":  # the previous cycle's Policy C is history: the parent must triage this review afresh
+        for ext in ("json", "md"):
+            old_file = rung_dir / f"POLICY-C.{ext}"
+            if old_file.is_file():
+                old_file.replace(rung_dir / f"POLICY-C-cycle-{cycle - 1}.{ext}")
     names = {"review": "review.md", "verify_1": "verify-1.md", "verify_2": "verify-2.md"}
     write_atomic(rung_dir / names[phase], render_result_md(phase, ticket, result))
     (rung_dir / "STOP.md").unlink(missing_ok=True)  # a STOP clears when the failed phase is re-run and completes
