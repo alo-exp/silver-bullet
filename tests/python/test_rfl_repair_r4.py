@@ -65,6 +65,18 @@ class SymlinksAndAncestors(Fire):
         self.assertEqual(native.shadow_agent_files(self.root), [])
 
 
+    def test_the_agents_folder_itself_or_its_parent_being_a_link_is_a_match(self):
+        (self.elsewhere / "a").mkdir()
+        self.agents.rmdir()
+        (self.root / ".claude" / "agents").symlink_to(self.elsewhere / "a")
+        self.assertIn("symbolic link", native.shadow_agent_files(self.root)[0])
+        (self.root / ".claude" / "agents").unlink()
+        (self.root / ".claude").rmdir()
+        (self.root / ".claude").symlink_to(self.elsewhere)
+        (self.elsewhere / "agents").mkdir()
+        self.assertIn("symbolic link", native.shadow_agent_files(self.root)[0])
+
+
 class ContentCheckScope(Fire):
     def test_ordinary_files_mentioning_the_names_are_editable_during_a_run(self):
         self.start()
@@ -79,6 +91,11 @@ class ContentCheckScope(Fire):
             with self.subTest(rel=rel):
                 self.assertIn("agent", self.reason(self.edit("Write", file_path=str(self.root / rel), content="sb-rfl-reviewer")))
         self.assertEqual(self.reason(self.edit("Write", file_path=str(self.root / "docs/agents/x.md"), content="harmless")), "")
+
+    def test_malformed_edit_entries_are_ignored_safely(self):
+        self.start()
+        spec = {"file_path": str(self.root / "docs/agents/x.md"), "edits": [5, {"new_string": 3}, {"new_string": "fine"}]}
+        self.assertEqual(self.reason(self.edit("MultiEdit", **spec)), "")
 
     def test_a_patch_adding_a_file_under_an_agents_folder_is_checked(self):
         self.start()
