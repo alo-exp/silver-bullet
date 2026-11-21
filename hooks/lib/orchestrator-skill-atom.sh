@@ -26,7 +26,7 @@ sb_scheduler_resolve_atom_id() {
     return 0
   fi
 
-  local resolved normalized skill
+  local resolved normalized
   resolved="$(jq -r --arg t "$token" '
     .migration_map.runtime_queue_tokens[$t]
     // .migration_map.skill_to_entity[$t]
@@ -92,17 +92,4 @@ sb_scheduler_resolve_atom_id() {
   fi
 
   return 1
-}
-
-# True when handoff row matches completed atom or skill (join gate).
-sb_scheduler_handoff_matches_completion() {
-  local handoff_json="$1" atom_id="$2" skill="$3"
-  [[ -n "$handoff_json" ]] || return 1
-  command -v jq >/dev/null 2>&1 || return 1
-  jq -e --arg atom "$atom_id" --arg skill "$skill" '
-    (.atomic_flow_id == $atom and $atom != "")
-    or (.next_skill == $skill and $skill != "")
-    or ((.next_skill // "") | test("^sb:"))
-    and ($skill != "" and (.next_skill | gsub("^sb:"; "silver-")) == ($skill | gsub("^sb:"; "silver-")))
-  ' <<<"$handoff_json" >/dev/null 2>&1
 }

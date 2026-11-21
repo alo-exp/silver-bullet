@@ -48,6 +48,8 @@ run_pd() {
 }
 
 alh_script "0|ok-output"
+# Pi has no strict mode, so every case below that is not about strictness runs permissive
+export SB_AGENT_DELEGATE_DEFAULT_MODE=permissive
 
 # ---------------------------------------------------------------- argument handling
 tl_run timeout 60 bash "$DELEGATE" --help
@@ -68,7 +70,7 @@ run_pd --mode bogus --prompt hi
 assert_eq "pi delegate invalid --mode exits 2" "2" "$TL_STATUS"
 run_pd
 assert_eq "pi delegate without a prompt exits 2" "2" "$TL_STATUS"
-run_pd --prompt 'api_key=abcdef'
+run_pd --prompt "api_key=$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYQwErTyUiOp1')"
 assert_eq "pi delegate refuses a prompt with secrets" "2" "$TL_STATUS"
 run_pd --auto-policy bogus --prompt hi
 assert_eq "pi delegate invalid --auto-policy exits 2" "2" "$TL_STATUS"
@@ -137,9 +139,18 @@ assert_eq "RTK disabled" "1" "$(alh_env RTK_DISABLED)"
 assert_eq "idle seconds reach the adapter when given" "<unset>" "$(alh_env SB_AGENT_IDLE_SEC)"
 
 alh_script "0|ok"
-run_pd --prompt p --idle-sec 17 --mode strict
+run_pd --prompt p --idle-sec 17 --mode permissive
 assert_eq "idle seconds reach the adapter" "17" "$(alh_env SB_AGENT_IDLE_SEC)"
-assert_contains "strict mode reaches the adapter" "$(alh_rec)" "mode=strict"
+assert_contains "permissive mode reaches the adapter" "$(alh_rec)" "mode=permissive"
+# R4-23: Pi has no strict mode; strict (explicit, or the default outside the project) is refused
+alh_script "0|ok"
+: >"$ALH_RECORD"
+run_pd --prompt p --mode strict
+assert_eq "pi strict is refused" "2" "$TL_STATUS"
+assert_contains "pi strict refusal explains" "$TL_ERR" "Pi has no strict mode"
+assert_eq "pi strict never reaches the adapter" "" "$(cat "$ALH_RECORD")"
+tl_run timeout 60 env -u SB_AGENT_DELEGATE_DEFAULT_MODE bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p
+assert_eq "pi default outside the project is strict, hence refused" "2" "$TL_STATUS"
 
 alh_script "0|ok"
 tl_run timeout 60 env SB_AGENT_PI_LIGHTWEIGHT=0 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p
@@ -174,20 +185,22 @@ tl_run timeout 60 bash "$DELEGATE" --sb-root "$SB" --work-dir "$W" --prompt p
 assert_eq "preflight failure exits 2" "2" "$TL_STATUS"
 assert_contains "preflight failure message" "$TL_ERR" "recommended-tools preflight failed"
 assert_eq "preflight failure never reaches the adapter" "0" "$(alh_attempts)"
-rm -rf "$SB/scripts"
+rm -rf "$SB/scripts/enterprise-e2e"
 
 # ---------------------------------------------------------------- missing adapter / CLI
 MISSING_SB="$TL_TMP/sb-missing"
 mkdir -p "$MISSING_SB"
 tl_run timeout 60 bash "$DELEGATE" --sb-root "$MISSING_SB" --skip-preflight --work-dir "$W" --prompt p
 assert_eq "missing adapter exits 1" "1" "$TL_STATUS"
-assert_contains "missing adapter message" "$TL_ERR" "missing Pi live adapter at $MISSING_SB/tests/live/agents/pi/agent.sh"
+assert_contains "missing adapter message" "$TL_ERR" "missing Pi live adapter at $MISSING_SB/scripts/lib/agent-adapters/pi.sh"
 NOPI_PATH="$(tl_path_without pi)"
 tl_run timeout 60 env PATH="$NOPI_PATH" PI_BIN= bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p
 assert_eq "missing Pi CLI exits 1" "1" "$TL_STATUS"
 assert_contains "missing Pi CLI message" "$TL_ERR" "native Pi CLI not found"
 
 # ---------------------------------------------------------------- quota retry loop
+# an untouched git work dir lets the delegate re-run a quota failure without --quota-retry (R4-20)
+git -C "$W" init -q 2>/dev/null
 rm -f "$TL_TMP/sleep.log"
 alh_script "1|HTTP 429 rate limit hit"
 tl_run timeout 60 env AGENT_PI_QUOTA_RETRY_MAX=2 AGENT_PI_QUOTA_RETRY_INTERVAL=3 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p --no-escalate

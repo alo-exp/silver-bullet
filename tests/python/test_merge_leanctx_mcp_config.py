@@ -69,21 +69,21 @@ class JsonIoTest(Base):
         self.assertEqual(mod.load_json(self.tmp / "none.json"), {})
         self.assertEqual(mod.load_json(self.tmp / "none.json", {"d": 1}), {"d": 1})
         self.assertEqual(mod.load_json(self.write(self.tmp / "a.json", {"k": 1})), {"k": 1})
-        with self.assertRaises(json.JSONDecodeError):
+        with self.assertRaises(mod.sbc.ConfigError):
             mod.load_json(self.write(self.tmp / "bad.json", "{x"))
 
     def test_load_json_rejects_non_object_top_level(self):
         path = self.write(self.tmp / "list.json", "[1]")
-        with self.assertRaisesRegex(ValueError, "expected a JSON object"):
+        with self.assertRaisesRegex(ValueError, "expected an object"):
             mod.load_json(path)
 
     def test_save_json_writes_backup_and_creates_parents(self):
         target = self.tmp / "deep" / "dir" / "x.json"
         mod.save_json(target, {"a": 1}, dry_run=False)
         self.assertEqual(target.read_text(), '{\n  "a": 1\n}\n')
-        self.assertFalse(target.with_suffix(".json.bak").exists())
+        self.assertFalse(Path(str(target) + ".sb-backup").exists())
         mod.save_json(target, {"a": 2}, dry_run=False)
-        self.assertEqual(self.read_json(target.with_suffix(".json.bak")), {"a": 1})
+        self.assertEqual(self.read_json(Path(str(target) + ".sb-backup")), {"a": 1})
         self.assertEqual(self.read_json(target), {"a": 2})
 
     def test_save_json_dry_run(self):
@@ -134,6 +134,13 @@ class EnvTest(Base):
         self.assertFalse(mod.remove_upstream_lean_ctx_duplicate(servers))
 
 
+class LegacyEnvTest(Base):
+    def test_legacy_env_reads_only_string_pairs(self):
+        self.assertEqual(mod.legacy_lean_ctx_env({"lean-ctx": {"env": {"KEY": "sk-1", "N": 5}}}), {"KEY": "sk-1"})
+        for servers in ({}, {"lean-ctx": "x"}, {"lean-ctx": {}}, {"lean-ctx": {"env": ["a"]}}):
+            self.assertEqual(mod.legacy_lean_ctx_env(servers), {})
+
+
 class ClaudeMergeTest(Base):
     def target(self):
         return self.home / ".claude.json"
@@ -159,7 +166,14 @@ class ClaudeMergeTest(Base):
         self.assertEqual(set(data["mcpServers"]), {"user-context-mode", "leanctx"})
         lean = data["mcpServers"]["leanctx"]
         self.assertEqual(lean, mod.leanctx_mcp_server(True, MANIFEST))  # replaced wholesale
-        self.assertTrue(self.target().with_suffix(".json.bak").is_file())
+        self.assertTrue(Path(str(self.target()) + ".sb-backup").is_file())
+
+    def test_legacy_env_moves_to_leanctx(self):
+        self.write(self.target(), {"mcpServers": {"lean-ctx": {"env": {"LEANCTX_API_KEY": "sk-secret"}}}})
+        self.merge()
+        servers = self.read_json(self.target())["mcpServers"]
+        self.assertNotIn("lean-ctx", servers)
+        self.assertEqual(servers["leanctx"]["env"]["LEANCTX_API_KEY"], "sk-secret")
 
     def test_bad_container(self):
         for bad in ("oops", [{"name": "mine"}]):
@@ -169,7 +183,7 @@ class ClaudeMergeTest(Base):
                 with self.assertRaisesRegex(ValueError, "must be a JSON"):
                     self.merge(dry_run=dry)
             self.assertEqual(self.target().read_bytes(), before)
-            self.assertFalse(self.target().with_suffix(".json.bak").exists())
+            self.assertFalse(Path(str(self.target()) + ".sb-backup").exists())
         self.write(self.target(), {"mcpServers": None})
         self.assertTrue(self.merge(dry_run=True)["mcp_merged"])
         self.assertEqual(self.read_json(self.target()), {"mcpServers": None})
@@ -203,7 +217,7 @@ class OpenCodeMergeTest(Base):
             with self.assertRaisesRegex(ValueError, "mcp must be a JSON object"):
                 self.merge()
             self.assertEqual(self.target().read_bytes(), before)
-            self.assertFalse(self.target().with_suffix(".json.bak").exists())
+            self.assertFalse(Path(str(self.target()) + ".sb-backup").exists())
 
     def test_fills_missing_schema_and_replaces_empty_mcp(self):
         self.write(self.target(), {"mcp": [], "theme": "x"})
@@ -285,17 +299,6 @@ class CodexTomlTest(Base):
             return None
         return tomllib.loads(text)
 
-    def test_bounds(self):
-        text = "a = 1\n[one]\nx = 1\n[two]\ny = 2\n"
-        start, end = mod.toml_section_bounds(text, "[one]")
-        self.assertEqual(text[start:end], "[one]\nx = 1\n")
-        start, end = mod.toml_section_bounds(text, "[two]")
-        self.assertEqual(text[start:end], "[two]\ny = 2\n")
-        self.assertIsNone(mod.toml_section_bounds(text, "[three]"))
-        self.assertIsNone(mod.toml_section_bounds("[one] # c\n", "[one]"))
-        self.assertIsNotNone(mod.toml_section_bounds("[one]   \nx=1\n", "[one]"))
-        self.assertIsNone(mod.toml_section_bounds("[one]x\n", "[one]"))
-
     def test_creates_file(self):
         res = self.merge()
         self.assertEqual(res, {"host": "codex", "mcp_merged": True, "cm_active": False})
@@ -304,7 +307,7 @@ class CodexTomlTest(Base):
             '[mcp_servers.leanctx.env]\nLEANCTX_MCP_TOOL_PREFIX = "lctx_"\n'))
         if tomllib:
             self.assertEqual(self.parsed()["mcp_servers"]["leanctx"]["command"], "/opt/g/lean-ctx")
-        self.assertFalse(self.target().with_suffix(".toml.bak").exists())
+        self.assertFalse(Path(str(self.target()) + ".sb-backup").exists())
 
     def test_idempotent(self):
         self.merge()
@@ -318,7 +321,7 @@ class CodexTomlTest(Base):
         self.merge()
         text = self.target().read_text()
         self.assertTrue(text.startswith('model = "x"\n\n[mcp_servers.leanctx]\n'))
-        self.assertEqual(self.target().with_suffix(".toml.bak").read_text(), 'model = "x"')
+        self.assertEqual(Path(str(self.target()) + ".sb-backup").read_text(), 'model = "x"')
         if tomllib:
             self.assertEqual(self.parsed()["model"], "x")
 
@@ -347,6 +350,18 @@ class CodexTomlTest(Base):
         self.assertIn("[other]", text)
         if tomllib:
             self.assertEqual(self.parsed()["mcp_servers"]["lean-ctx-standalone"]["command"], "keep")
+
+    def test_legacy_env_moves_to_leanctx_env_without_overriding(self):
+        self.write(self.target(), (
+            '[mcp_servers.lean-ctx.env]\nLEANCTX_API_KEY = "sk-secret"\nLEANCTX_MCP_TOOL_PREFIX = "legacy_"\n'))
+        self.merge()
+        text = self.target().read_text()
+        self.assertIn('LEANCTX_API_KEY = "sk-secret"', text)
+        self.assertNotIn("legacy_", text)
+        self.assertNotIn("[mcp_servers.lean-ctx", text.replace("leanctx", ""))
+        if tomllib:
+            env = self.parsed()["mcp_servers"]["leanctx"]["env"]
+            self.assertEqual((env["LEANCTX_API_KEY"], env["LEANCTX_MCP_TOOL_PREFIX"]), ("sk-secret", "lctx_"))
 
     def test_removal_only_is_still_a_change_when_block_exists(self):
         self.merge()
@@ -400,17 +415,33 @@ class CodexTomlTest(Base):
                 self.assertEqual(lean["command"], "/opt/g/lean-ctx", text)
                 self.assertEqual(lean["env"], PREFIX, text)
 
-    def test_normalize_helpers_directly(self):
-        self.assertEqual(mod.normalize_codex_root("x = 1\n", "leanctx", MANIFEST), "x = 1\n")
-        out = mod.normalize_codex_env("", {"K": "v"})
-        self.assertEqual(out, '[mcp_servers.leanctx.env]\nK = "v"\n')
-        out = mod.normalize_codex_env("a = 1", {"K": "v"})
-        self.assertEqual(out, 'a = 1\n\n[mcp_servers.leanctx.env]\nK = "v"\n')
+    def test_unparseable_toml_is_refused_and_left_alone(self):
+        self.write(self.target(), "model = = broken\n")
+        with self.assertRaises(mod.sbc.ConfigError):
+            self.merge()
+        self.assertEqual(self.target().read_text(), "model = = broken\n")
+
+    def test_a_header_inside_a_string_is_not_a_table(self):
+        # R6-06: the old regex editor treated this as the context-mode table and broke the file
+        self.write(self.target(), 'notes = """\n[mcp_servers.context-mode]\n[mcp_servers.leanctx]\n"""\n')
+        res = self.merge()
+        self.assertFalse(res["cm_active"])
+        if tomllib:
+            parsed = self.parsed()
+            self.assertEqual(parsed["mcp_servers"]["leanctx"]["command"], "/opt/g/lean-ctx")
+            self.assertIn("[mcp_servers.leanctx]", parsed["notes"])
+
+    def test_spaced_and_commented_headers_are_updated_in_place(self):
+        self.write(self.target(), "[ mcp_servers . leanctx ] # mine\ncommand = 'old'\nstartup_timeout_sec = 9\n")
+        self.merge()
+        if tomllib:
+            lean = self.parsed()["mcp_servers"]["leanctx"]
+            self.assertEqual((lean["command"], lean["startup_timeout_sec"]), ("/opt/g/lean-ctx", 9))
 
     def test_dry_run_does_not_write(self):
         res = self.merge(dry_run=True)
         self.assertTrue(res["mcp_merged"])
-        self.assertIn(f"DRY-RUN: would append leanctx block to {self.target()}", self.last_out)
+        self.assertIn(f"DRY-RUN: would write leanctx block to {self.target()}", self.last_out)
         self.assertFalse(self.target().exists())
 
     def test_symlinked_config_is_written_through(self):

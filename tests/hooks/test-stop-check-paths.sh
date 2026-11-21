@@ -2,7 +2,8 @@
 # hooks/stop-check.sh: orchestrator, stall, branch-scope, anchor and fallback paths.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-tl_init
+tl_init claude
+export SILVER_BULLET_RUNTIME=claude
 source "$TL_REPO_ROOT/tests/lib/e-core-helpers.sh"
 
 HOOK="$TL_REPO_ROOT/hooks/stop-check.sh"
@@ -69,13 +70,28 @@ assert_eq "baseline exit" "0" "$TL_STATUS"
 assert_contains "baseline blocks on missing skills" "$(reason)" "silver-quality-gates"
 assert_not_contains "recorded skill is not listed as missing" "$(reason)" "- silver-context"
 
-# ---- SubagentStop of a worker clears the marker -----------------------------
+# ---- a trivial path in the config outside the state root never bypasses -------
+reset_state
+: >"$TL_TMP/outside-trivial"
+ec_cfg "$(jq -cn --arg t "$TL_TMP/outside-trivial" '{config_version:"0.40.0",sb_initiated:true,project:{src_pattern:"/src/",active_workflow:"full-dev-cycle"},skills:{},state:{trivial_file:$t}}')"
+run_stop
+assert_contains "a configured trivial file outside the state root does not bypass" "$(reason)" "silver-quality-gates"
+reset_state
+
+# ---- SubagentStop of a worker is skipped; shared state is left alone (R4-02) --
 reset_state
 marker="$SD/orchestrator-worker-active.json"
 jq -n --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '{skill:"silver-execute",spawned_at:$at}' >"$marker"
+run_stop '{"hook_event_name":"SubagentStop","agent_id":"agent-A","agent_type":"general-purpose"}'
+assert_eq "worker SubagentStop (payload agent_id) prints nothing" "" "$TL_OUT"
+assert_file_exists "another worker may still run: the spawn record stays" "$marker"
 run_stop '{"hook_event_name":"SubagentStop"}'
-assert_eq "worker SubagentStop prints nothing" "" "$TL_OUT"
-assert_file_absent "worker marker cleared" "$marker"
+assert_contains "SubagentStop without an agent id is not a worker: the floor applies" "$(reason)" "missing required skills"
+SB_ORCHESTRATOR_WORKER=1 run_stop '{"hook_event_name":"SubagentStop"}'
+assert_eq "worker env on SubagentStop prints nothing" "" "$TL_OUT"
+run_stop '{"hook_event_name":"Stop","agent_id":"agent-A"}'
+assert_contains "a Stop is always the parent's, whatever the payload says" "$(reason)" "missing required skills"
+rm -f "$marker"
 
 # ---- parent session with a pending flow queue -------------------------------
 reset_state
@@ -88,6 +104,46 @@ jq -n '{next_skill:"silver-verify",next_worker_template:"VERIFY"}' >"$SD/orchest
 run_stop
 assert_contains "parent directive skill wins" "$(reason)" "/silver-verify"
 assert_contains "parent directive template wins" "$(reason)" "(VERIFY.md)"
+
+# ---- a Stop that can never progress is released (R4-05) ----------------------
+reset_state
+rm -f "$SD/orchestrator-directive.json" "$SD/orchestrator-stop-blocks.json"
+jq -n --arg repo "$EC_PROJ" '{current_flow:"FLOW-EXECUTE",repo_root:$repo}' >"$SD/orchestrator.json"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
+assert_contains "first block with no progress still blocks" "$(reason)" "(FLOW-EXECUTE)"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
+assert_contains "second block with no progress still blocks" "$(reason)" "(FLOW-EXECUTE)"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
+assert_not_contains "third Stop: the orchestrator block is released" "$(reason)" "(FLOW-EXECUTE)"
+assert_contains "released Stop still hits the planning floor (BLOCKER fix)" "$(reason)" "missing required skills"
+assert_eq "release is logged" stop_release "$(jq -r 'select(.type=="stop_release")|.type' "$SD/orchestrator-events.jsonl" 2>/dev/null | head -1)"
+for _ in 1 2 3; do SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop; assert_contains "every later Stop still blocks on the floor" "$(reason)" "missing required skills"; done
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\n' >"$STATE"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
+assert_eq "released and floor satisfied: allowed" "" "$(reason)"
+printf 'silver-context\n' >"$STATE"
+printf '120' >"$SD/stall-block"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
+assert_contains "released Stop still honours the stall block" "$(reason)" "tool calls without workflow progress"
+rm -f "$SD/stall-block" "$SD/orchestrator-events.jsonl"
+jq -n --arg repo "$EC_PROJ" '{current_flow:"FLOW-VERIFY",repo_root:$repo}' >"$SD/orchestrator.json"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
+assert_contains "progress in the queue blocks again" "$(reason)" "(FLOW-VERIFY)"
+rm -f "$SD/orchestrator-stop-blocks.json"
+jq -n --arg repo "$EC_PROJ" '{repo_root:$repo,scheduler:{join_gates:{"gate-7":"blocked"}}}' >"$SD/orchestrator.json"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=1 run_stop
+assert_contains "scheduler block, first time: blocks" "$(reason)" "join gate blocked for gate-7"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=1 run_stop
+assert_not_contains "scheduler block released after repeated blocks" "$(reason)" "join gate blocked"
+assert_contains "released scheduler Stop still hits the planning floor" "$(reason)" "missing required skills"
+rm -f "$SD/orchestrator-stop-blocks.json"
+
+# ---- Codex cannot identify workers: the orchestrator block is inactive, the floor is not -----
+reset_state
+jq -n --arg repo "$EC_PROJ" '{current_flow:"FLOW-EXECUTE",repo_root:$repo}' >"$SD/orchestrator.json"
+SILVER_BULLET_RUNTIME=codex run_stop
+assert_not_contains "codex: no orchestrator queue block" "$(reason)" "flow queue pending"
+assert_eq "codex: the hook exits cleanly" 0 "$TL_STATUS"
 
 # ---- scheduler pending work blocks the parent -------------------------------
 reset_state

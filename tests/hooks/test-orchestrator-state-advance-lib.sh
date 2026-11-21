@@ -58,7 +58,7 @@ assert_file_absent "no jq: nothing happens" "$STATE"
 out="$(sb_orchestrator_on_composer_start silver-test "ship the thing" "$PROJ")"
 assert_eq "workflow id returned" WF-TEST-1 "$out"
 assert_eq "workflow id stored" WF-TEST-1 "$(orch_state_get .workflow_id)"
-assert_contains "workflow started with the composer and intent" "$(cat "$WFLOG")" "start /sb:test ship the thing PLAN,VALIDATE,EXECUTE,VERIFY"
+assert_contains "workflow started with the composer and intent" "$(cat "$WFLOG")" "start /sb:test ship the thing QUALITY GATE,CONTEXT,PLAN,VALIDATE,EXECUTE,VERIFY"
 clog="$PROJ/.planning/orchestrator-composition-log.jsonl"
 assert_eq "composition log first entry" silver-test "$(head -1 "$clog" | jq -r .composer)"
 assert_eq "composition log workflow" WF-TEST-1 "$(head -1 "$clog" | jq -r .workflow_id)"
@@ -123,7 +123,13 @@ assert_file_absent "fallback removes the directive file directly" "$DIRF"
 echo "=== clear on interrupt ==="
 # shellcheck source=../../hooks/lib/prompt-classifier.sh
 source "$TL_REPO_ROOT/hooks/lib/prompt-classifier.sh"
-interrupt() { sb_orchestrator_clear_queue_on_interrupt "$@" && echo cleared || echo kept; }
+# shellcheck source=../../hooks/lib/orchestrator-directive.sh
+source "$TL_REPO_ROOT/hooks/lib/orchestrator-directive.sh"
+# shellcheck source=../../hooks/lib/orchestrator-parent.sh
+source "$TL_REPO_ROOT/hooks/lib/orchestrator-parent.sh"
+IPROJ="$TL_TMP/iproj"; mkdir -p "$IPROJ"
+IIN='{"session_id":"sess-1"}'
+interrupt() { sb_orchestrator_clear_queue_on_interrupt "$1" "$IPROJ" "${2-$IIN}" && echo cleared || echo kept; }
 mkpending() { orch_write_state '{"current_flow":"silver-plan","flow_queue":["silver-plan"]}'; printf '{}' >"$DIRF"; }
 mkpending
 assert_eq "empty prompt" kept "$(interrupt "")"
@@ -132,15 +138,20 @@ assert_eq "no pending queue" kept "$(interrupt "what is the status?")"
 mkpending
 assert_eq "follow-up answers keep the queue" kept "$(interrupt "yes")"
 assert_file_exists "queue survives a follow-up" "$STATE"
-assert_eq "informational query clears" cleared "$(interrupt "what are the remaining deliverables?")"
-assert_file_absent "queue gone after the informational query" "$STATE"
-mkpending
+assert_eq "informational query keeps an active queue (R4-08)" kept "$(interrupt "what are the remaining deliverables?")"
+assert_file_exists "queue survives the status question" "$STATE"
 assert_eq "bare work request clears" cleared "$(interrupt "please build the login page")"
+assert_contains "the clear is traceable in the project audit log" "$(jq -r .reason "$IPROJ/.planning/orchestrator-override-log.jsonl")" "please build the login page"
 mkpending
+assert_eq "a payload without a session id never clears (R4-08)" kept "$(interrupt "please build the login page" '{}')"
+assert_eq "a worker session never clears (R4-08)" kept "$(SB_ORCHESTRATOR_WORKER=1 interrupt "please build the login page")"
+assert_file_exists "queue survives the forged clears" "$STATE"
 assert_eq "other prompts keep the queue" kept "$(interrupt "hmm")"
 mkpending
-assert_eq "without classifiers nothing clears" kept "$( unset -f sb_prompt_is_orchestrator_followup sb_prompt_is_informational_query sb_prompt_is_bare_work_request; interrupt "what are the remaining deliverables?")"
-assert_eq "without the informational classifier: bare work still clears" cleared "$( unset -f sb_prompt_is_informational_query; interrupt "please build the login page")"
+assert_eq "without classifiers nothing clears" kept "$( unset -f sb_prompt_is_orchestrator_followup sb_prompt_is_bare_work_request; interrupt "please build the login page")"
+assert_eq "without the followup classifier: bare work still clears" cleared "$( unset -f sb_prompt_is_orchestrator_followup; interrupt "please build the login page")"
+mkpending
+assert_eq "no repo root or payload: never clears" kept "$(sb_orchestrator_clear_queue_on_interrupt "please build the login page" >/dev/null 2>&1 && echo cleared || echo kept)"
 
 echo "=== composer chain ==="
 rm -f "$STATE" "$DIRF" "$EVENTS"
@@ -267,7 +278,9 @@ assert_eq "held: handoff joined" joined "$(orch_state_get '.scheduler.batch_disp
 assert_eq "held: advance event flagged" true "$(jq -r 'select(.type=="advance")|.payload.held_for_batch' "$EVENTS")"
 assert_eq "held: directive points at the remaining handoff" silver-fixture-read-b "$(orch_directive_get .next_skill)"
 out="$(adv silver-fixture-read-b "$PROJ")"
-assert_eq "joined batch hands over to the next batch: still held" "" "$out"
+assert_contains "joined batch hands over to the next batch: the queue moves on" "$out" "Next flow: security"
+assert_eq "next batch directive keeps its handoff metadata" pending_dispatch "$(orch_directive_get .batch_dispatch.status)"
+assert_eq "queue moved past the finished batch" security "$(orch_state_get .current_flow)"
 assert_eq "join gates evaluated for the completed atom" open "$(orch_state_get '.scheduler.join_gates["AF-READ-B"]')"
 assert_eq "second batch became active" 1 "$(orch_state_get .scheduler.active_batch_index)"
 assert_eq "second batch handoff awaits dispatch" AF-SECURE "$(orch_state_get '.scheduler.batch_dispatch.handoffs[0].atomic_flow_id')"

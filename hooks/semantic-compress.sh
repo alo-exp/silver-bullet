@@ -14,13 +14,20 @@ input=$(cat 2>/dev/null || true)
 
 skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""' 2>/dev/null || true)
 
+# Plugin-qualified names (silver-bullet:sb:plan) reach the same case as the bare ones.
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/skill-discovery.sh" ]]; then
+  # shellcheck source=lib/skill-discovery.sh
+  source "$_lib_dir/skill-discovery.sh"
+  skill="$(sb_skill_canonical_name "$skill" 2>/dev/null)" || skill=""
+fi
+
 case "${skill:-}" in
   sb:execute|sb:plan|sb:context|sb:deep-research|\
   silver-execute|silver-plan|silver-context|silver-deep-research) ;;
   *) exit 0 ;;
 esac
 
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
 if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"

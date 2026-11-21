@@ -11,6 +11,7 @@ sys.path.insert(0, str(SCRIPTS))
 
 from category_pack import load_category_pack  # noqa: E402
 from solution_classifier import classify_solutions  # noqa: E402
+from apo_pack_run_fixture import plain_vendor_spellings  # noqa: E402
 
 
 def _envelopes(*claims: str) -> list[dict]:
@@ -23,6 +24,7 @@ def _envelopes(*claims: str) -> list[dict]:
     ]
 
 
+@plain_vendor_spellings
 class SolutionClassifierTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

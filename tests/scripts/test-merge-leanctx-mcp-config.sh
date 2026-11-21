@@ -54,13 +54,13 @@ else
   fail "leanctx missing after merge (expected command lean-ctx or */lean-ctx)"
 fi
 
-if [[ -f "${TEST_HOME}/.claude.json.bak" ]]; then
-  pass "backup .bak written before merge overwrite"
+if [[ -f "${TEST_HOME}/.claude.json.sb-backup" ]]; then
+  pass "backup .sb-backup written before merge overwrite"
 else
-  fail "backup .bak missing"
+  fail "backup .sb-backup missing"
 fi
 
-if jq -e '.mcpServers["lean-ctx"]' "${TEST_HOME}/.claude.json.bak" >/dev/null 2>&1; then
+if jq -e '.mcpServers["lean-ctx"]' "${TEST_HOME}/.claude.json.sb-backup" >/dev/null 2>&1; then
   pass "backup retains original lean-ctx entry"
 else
   fail "backup should retain lean-ctx entry"

@@ -44,25 +44,52 @@ import json, re, sys
 try:
     data = json.loads(sys.stdin.read() or "{}")
 except Exception:
-    raise SystemExit(0)
+    raise SystemExit(1)  # unparsable payload: nothing to inspect
 
+# The ctx_read artifact shapes: an elision/summary line that STARTS with the marker (optionally
+# after "..."), and the ".plan.md [316L]" header line. A marker mentioned inside a sentence is
+# documentation, not an artifact.
 patterns = (
-    re.compile(r"\[lean-ctx:", re.I),
-    re.compile(r"\.\.\.\s*\[lean-ctx:", re.I),
+    re.compile(r"^\s*(?:\.\.\.\s*)?\[lean-ctx:", re.I | re.M),
     re.compile(r"^\s*\S+\.plan\.md\s*\[\d+L\]\s*$", re.M),
 )
+# Only text being WRITTEN counts: removing a marker (old_string, patch '-' lines) must stay possible.
+CONTENT_KEYS = {"content", "new_string", "new_str", "new_text", "text", "replacement", "contents", "source"}
+PATCH_KEYS = {"input", "patch", "diff"}
 
-def walk(value):
+def written(value, key=""):
     if isinstance(value, str):
-        yield value
+        if key in CONTENT_KEYS:
+            yield value
+        elif key in PATCH_KEYS:
+            yield "\n".join(line[1:] for line in value.splitlines() if line.startswith("+"))
     elif isinstance(value, dict):
-        for item in value.values():
-            yield from walk(item)
+        for k, item in value.items():
+            yield from written(item, k)
     elif isinstance(value, list):
         for item in value:
-            yield from walk(item)
+            yield from written(item, key)
 
-for text in walk(data.get("tool_input", {})):
+tool_input = data.get("tool_input", {})
+target = ""
+if isinstance(tool_input, dict):
+    for field in ("file_path", "notebook_path", "path"):
+        if isinstance(tool_input.get(field), str):
+            target = tool_input[field]
+            break
+# Files that document the marker: anything under a docs/ directory, or a file that already
+# contains it (editing it must not become impossible).
+if target:
+    if "docs" in target.replace("\\", "/").split("/"):
+        raise SystemExit(1)
+    try:
+        with open(target, "r", encoding="utf-8", errors="replace") as handle:
+            if "[lean-ctx:" in handle.read(2_000_000).lower():
+                raise SystemExit(1)
+    except OSError:
+        pass
+
+for text in written(tool_input):
     for pattern in patterns:
         if pattern.search(text):
             raise SystemExit(0)

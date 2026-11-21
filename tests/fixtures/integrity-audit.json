@@ -1,0 +1,1113 @@
+{
+ "description": "Protected-read audit: every line of hooks/, hooks/lib/ and scripts/ that reads the state file, the trivial marker, the config, silver-bullet.md or the unlock directly. record: Y verified record, A integrity machinery, X not an enforcement decision (reason), N bug. Regenerate with the scanner after review.",
+ "before": {
+  "rev": "e532366",
+  "counts": {
+   "X": 153,
+   "A": 19,
+   "N": 1
+  },
+  "rows_N": [
+   {
+    "file": "hooks/flow-advance.sh",
+    "line": 80,
+    "kind": "config",
+    "snippet": "sb_integrity_baseline \"$(cd \"$repo_root\" && pwd -P)\" entry config"
+   }
+  ]
+ },
+ "counts": {
+  "X": 114,
+  "A": 22
+ },
+ "rows": [
+  {
+   "file": "hooks/compliance-status.sh",
+   "line": 244,
+   "kind": "state",
+   "snippet": "state_contents=$(cat \"$state_file\")",
+   "record": "X",
+   "reason": "informational progress line, no gate decision"
+  },
+  {
+   "file": "hooks/dev-cycle-check.sh",
+   "line": 88,
+   "kind": "trivial",
+   "snippet": "[[ -e \"$marker_early\" || -e \"${SB_RUNTIME_STATE_DIR}/unlock-hint\" || -e \"${SB_RUNTIME_STATE_DIR}/trivial\" || -L \"${SB_RUNTIME_STATE_DIR}/trivial\" ]] && post_wor",
+   "record": "X",
+   "reason": "wake-up test: the presence of the marker only makes PostToolUse run the verification; it never trusts the marker"
+  },
+  {
+   "file": "hooks/flow-advance.sh",
+   "line": 78,
+   "kind": "config",
+   "snippet": "if [[ -f \"$repo_root/.silver-bullet.json\" ]]; then",
+   "record": "X",
+   "reason": "writes the one key (.project.active_workflow) in the live file after the RECORDED config said devops-cycle; the record changes by that key only"
+  },
+  {
+   "file": "hooks/flow-advance.sh",
+   "line": 79,
+   "kind": "config",
+   "snippet": "updated=\"$(jq '.project.active_workflow = \"full-dev-cycle\"' \"$repo_root/.silver-bullet.json\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "writes the one key (.project.active_workflow) in the live file after the RECORDED config said devops-cycle; the record changes by that key only"
+  },
+  {
+   "file": "hooks/industry-tooling-hint.sh",
+   "line": 30,
+   "kind": "config",
+   "snippet": "enabled=\"$(jq -r '.hooks.industry_tooling.enabled // false' \"$config_file\" 2>/dev/null || echo false)\"",
+   "record": "X",
+   "reason": "advisory hint, no gate decision"
+  },
+  {
+   "file": "hooks/lib/agentmemory-gate.sh",
+   "line": 30,
+   "kind": "config",
+   "snippet": "url=\"$(jq -r '.recommended_tools.agentmemory.health_url // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"
+  },
+  {
+   "file": "hooks/lib/agentmemory-gate.sh",
+   "line": 39,
+   "kind": "config",
+   "snippet": "rel=\"$(jq -r '.recommended_tools.agentmemory.export_root // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"
+  },
+  {
+   "file": "hooks/lib/agentmemory-gate.sh",
+   "line": 166,
+   "kind": "config",
+   "snippet": "ttl=\"$(jq -r '.recommended_tools.agentmemory.usage_ttl_seconds // \"\" | tostring' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"
+  },
+  {
+   "file": "hooks/lib/agentmemory-gate.sh",
+   "line": 175,
+   "kind": "config",
+   "snippet": "configured=\"$(jq -r '.recommended_tools.agentmemory.usage_state_file // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"
+  },
+  {
+   "file": "hooks/lib/alumnium-gate.sh",
+   "line": 24,
+   "kind": "config",
+   "snippet": "name=\"$(jq -r '.recommended_tools.alumnium.mcp_server_name // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"
+  },
+  {
+   "file": "hooks/lib/completion-audit/change-class.sh",
+   "line": 124,
+   "kind": "config",
+   "snippet": "src_pattern=\"$(jq -r '.project.src_pattern // \"/src/\"' \"$config_file\" 2>/dev/null || echo \"/src/\")\"",
+   "record": "X",
+   "reason": "reads $config_file, which completion-audit.sh sets to the verified snapshot"
+  },
+  {
+   "file": "hooks/lib/completion-audit/gates.sh",
+   "line": 224,
+   "kind": "config",
+   "snippet": "strict=$(jq -r '.hooks.evidence_schema.strict | if . == null then \"true\" else tostring end' \"$config_file\" 2>/dev/null || echo \"true\")",
+   "record": "X",
+   "reason": "reads $config_file, which completion-audit.sh sets to the verified snapshot"
+  },
+  {
+   "file": "hooks/lib/completion-audit/gates.sh",
+   "line": 227,
+   "kind": "config",
+   "snippet": "strict=$(jq -r '.hooks.evidence_schema.strict | if . == null then \"true\" else tostring end' \"$config_file\" 2>/dev/null || echo \"true\")",
+   "record": "X",
+   "reason": "reads $config_file, which completion-audit.sh sets to the verified snapshot"
+  },
+  {
+   "file": "hooks/lib/context-mode-gate.sh",
+   "line": 25,
+   "kind": "config",
+   "snippet": "min=\"$(jq -r '.recommended_tools.context_mode.min_node_version // \"\" | tostring' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"
+  },
+  {
+   "file": "hooks/lib/context-mode-read-deny.sh",
+   "line": 34,
+   "kind": "config",
+   "snippet": "bytes=\"$(jq -r '.recommended_tools.context_mode.read_deny_bytes // \"\" | tostring' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "tool consent key (.recommended_tools): kept by the hooks themselves and excluded from the record"
+  },
+  {
+   "file": "hooks/lib/context-mode-read-deny.sh",
+   "line": 83,
+   "kind": "config",
+   "snippet": "state_file=\"$(jq -r '.state.state_file // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "token-saving read gate: exempts the named runtime files from the read-size deny; it decides no planning or delivery gate"
+  },
+  {
+   "file": "hooks/lib/context-mode-read-deny.sh",
+   "line": 84,
+   "kind": "config",
+   "snippet": "trivial_file=\"$(jq -r '.state.trivial_file // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "token-saving read gate: exempts the named runtime files from the read-size deny; it decides no planning or delivery gate"
+  },
+  {
+   "file": "hooks/lib/enforcement-tier-gate.sh",
+   "line": 8,
+   "kind": "config",
+   "snippet": "jq -r 'if (.sb_enforcement_tier // \"\") != \"\" then (.sb_enforcement_tier | tostring) else \"\" end' \"$config_file\" 2>/dev/null || true",
+   "record": "X",
+   "reason": "the tier is min(configured, probed): a live value can only lower it; excluded from the record (hooks keep it)"
+  },
+  {
+   "file": "hooks/lib/enterprise-policy.sh",
+   "line": 13,
+   "kind": "config",
+   "snippet": "profile=\"$(jq -r '.enterprise_policy.active_profile // empty' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "handed the root's config path by the delivery tier only after the drift check proved it equals the record; session and prompt callers print advisory text with it"
+  },
+  {
+   "file": "hooks/lib/enterprise-policy.sh",
+   "line": 135,
+   "kind": "config",
+   "snippet": "hooks_strict=\"$(jq -r '.hooks.evidence_schema.strict | if . == null then \"true\" else tostring end' \"$config_file\" 2>/dev/null || echo true)\"",
+   "record": "X",
+   "reason": "handed the root's config path by the delivery tier only after the drift check proved it equals the record; session and prompt callers print advisory text with it"
+  },
+  {
+   "file": "hooks/lib/integrity-anchor.sh",
+   "line": 534,
+   "kind": "config",
+   "snippet": "if [[ -f \"$root/.silver-bullet.json\" && -f \"$root/silver-bullet.md\" ]]; then",
+   "record": "A",
+   "reason": "the integrity machinery: where the project is (record, contract files, git tracking)"
+  },
+  {
+   "file": "hooks/lib/integrity-anchor.sh",
+   "line": 540,
+   "kind": "config",
+   "snippet": "if [[ -f \"$d/.silver-bullet.json\" && -f \"$d/silver-bullet.md\" ]]; then",
+   "record": "A",
+   "reason": "the integrity machinery: where the project is (record, contract files, git tracking)"
+  },
+  {
+   "file": "hooks/lib/integrity.sh",
+   "line": 117,
+   "kind": "config",
+   "snippet": "if canon=\"$(jq -S -c 'del(.recommended_tools, .sb_enforcement_tier)' \"$cfg\" 2>/dev/null)\"; then",
+   "record": "A",
+   "reason": "the integrity machinery: reads the live files to verify and to record them"
+  },
+  {
+   "file": "hooks/lib/integrity.sh",
+   "line": 396,
+   "kind": "config",
+   "snippet": "if [[ ! -e \"${1:-/}/.silver-bullet.json\" || ! -e \"${1:-/}/silver-bullet.md\" ]]; then advice=\" $(_sb_iv_removal_advice \"${1:-/}\")\"; fi",
+   "record": "A",
+   "reason": "the integrity machinery: reads the live files to verify and to record them"
+  },
+  {
+   "file": "hooks/lib/integrity.sh",
+   "line": 584,
+   "kind": "config",
+   "snippet": "if new=\"$(jq -S -c --arg v \"$value\" '.project.active_workflow = $v' <<<\"$cfg\" 2>/dev/null)\" && [[ -n \"$new\" ]]; then",
+   "record": "A",
+   "reason": "the integrity machinery: reads the live files to verify and to record them"
+  },
+  {
+   "file": "hooks/lib/integrity.sh",
+   "line": 625,
+   "kind": "config",
+   "snippet": "if [[ -e \"$root/.silver-bullet.json\" || -L \"$root/.silver-bullet.json\" || -e \"$root/silver-bullet.md\" || -L \"$root/silver-bullet.md\" ]]; then printf 'present'; ",
+   "record": "A",
+   "reason": "the integrity machinery: reads the live files to verify and to record them"
+  },
+  {
+   "file": "hooks/lib/leanctx-gate.sh",
+   "line": 73,
+   "kind": "config",
+   "snippet": "ttl=\"$(jq -r '.recommended_tools.leanctx.usage_ttl_seconds // \"\" | tostring' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"
+  },
+  {
+   "file": "hooks/lib/leanctx-gate.sh",
+   "line": 82,
+   "kind": "config",
+   "snippet": "configured=\"$(jq -r '.recommended_tools.leanctx.usage_state_file // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"
+  },
+  {
+   "file": "hooks/lib/opt-in-gate.sh",
+   "line": 91,
+   "kind": "config",
+   "snippet": "trivial_cfg=\"$(jq -r '.state.trivial_file // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "the config trivial path is handed to sb_trivial_bypass, which ignores it once the project has a record (only an install without a record honours it)"
+  },
+  {
+   "file": "hooks/lib/orchestrator-parent.sh",
+   "line": 16,
+   "kind": "config",
+   "snippet": "mode=\"$(jq -r '.orchestrator_mode // \"parent\"' \"$config_file\" 2>/dev/null || echo parent)\"",
+   "record": "X",
+   "reason": "orchestrator parent mode: an extra directive layer; the planning floor and the delivery gates do not depend on it"
+  },
+  {
+   "file": "hooks/lib/orchestrator-state.sh",
+   "line": 74,
+   "kind": "config",
+   "snippet": "&& [[ \"$(jq -r '.project.active_workflow // \"\"' \"$cfg\" 2>/dev/null || true)\" == \"devops-cycle\" ]]; then",
+   "record": "X",
+   "reason": "flow-queue composition: picks which skill names the advisory queue lists (planning and deploy lists); the planning floor and the delivery gates read the verified record and enforce regardless of the queue"
+  },
+  {
+   "file": "hooks/lib/orchestrator-state.sh",
+   "line": 78,
+   "kind": "config",
+   "snippet": "[[ -n \"$repo_root\" && -f \"$cfg\" ]] && csv=\"$(jq -r --arg k \"$key\" '(.skills[$k] // []) | join(\",\")' \"$cfg\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "flow-queue composition: picks which skill names the advisory queue lists (planning and deploy lists); the planning floor and the delivery gates read the verified record and enforce regardless of the queue"
+  },
+  {
+   "file": "hooks/lib/prerequisite-probe.sh",
+   "line": 38,
+   "kind": "config",
+   "snippet": "if [[ ! -f \"$repo_root/.silver-bullet.json\" || ! -f \"$repo_root/silver-bullet.md\" ]]; then",
+   "record": "X",
+   "reason": "installer prerequisite probe: reports a missing contract file, decides no gate"
+  },
+  {
+   "file": "hooks/lib/prerequisite-probe.sh",
+   "line": 68,
+   "kind": "config",
+   "snippet": "if [[ ! -f \"$repo_root/.silver-bullet.json\" || ! -f \"$repo_root/silver-bullet.md\" ]]; then",
+   "record": "X",
+   "reason": "installer prerequisite probe: reports a missing contract file, decides no gate"
+  },
+  {
+   "file": "hooks/lib/project-active.sh",
+   "line": 32,
+   "kind": "config",
+   "snippet": "[[ \"$(jq -r '.sb_initiated // false' \"$config_file\" 2>/dev/null || echo false)\" == \"true\" ]]",
+   "record": "A",
+   "reason": "activation helper: record-aware"
+  },
+  {
+   "file": "hooks/lib/recommended-tools.sh",
+   "line": 70,
+   "kind": "config",
+   "snippet": "jq -e --arg id \"$tool_id\" '.recommended_tools[$id].enforcement_suspended == true' \"$config_file\" >/dev/null 2>&1",
+   "record": "X",
+   "reason": "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"
+  },
+  {
+   "file": "hooks/lib/required-skills.sh",
+   "line": 45,
+   "kind": "config",
+   "snippet": "jq -r '.config_version // .version // \"\"' \"${cfg}\" 2>/dev/null",
+   "record": "X",
+   "reason": "reads the TEMPLATE's default lists (templates/silver-bullet.config.json.default), not a project file"
+  },
+  {
+   "file": "hooks/lib/required-skills.sh",
+   "line": 87,
+   "kind": "config",
+   "snippet": "if project_version=$(jq -r '.config_version // .version // \"\"' \"$config_file\" 2>/dev/null); then :; fi",
+   "record": "X",
+   "reason": "only when no project was verified (a standalone caller); a verified gate reads the record"
+  },
+  {
+   "file": "hooks/lib/rtk-gate.sh",
+   "line": 24,
+   "kind": "config",
+   "snippet": "min=\"$(jq -r '.recommended_tools.rtk.min_version // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record"
+  },
+  {
+   "file": "hooks/lib/sb-project-gate.sh",
+   "line": 25,
+   "kind": "config",
+   "snippet": "[[ -f \"$root/.silver-bullet.json\" && -f \"$root/silver-bullet.md\" ]] || return 1",
+   "record": "A",
+   "reason": "activation helper: record-aware project lookup (root with a record wins)"
+  },
+  {
+   "file": "hooks/lib/sb-project-gate.sh",
+   "line": 39,
+   "kind": "config",
+   "snippet": "[[ -n \"$cached\" && -f \"$cached/.silver-bullet.json\" && -f \"$cached/silver-bullet.md\" ]] || return 1",
+   "record": "A",
+   "reason": "activation helper: record-aware project lookup (root with a record wins)"
+  },
+  {
+   "file": "hooks/lib/session-ledger.sh",
+   "line": 26,
+   "kind": "config",
+   "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]] && [[ -f \"$search_dir/silver-bullet.md\" ]]; then",
+   "record": "X",
+   "reason": "session log bookkeeping: finds the project directory for the ledger file, decides no gate"
+  },
+  {
+   "file": "hooks/lib/site-session.sh",
+   "line": 19,
+   "kind": "config",
+   "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" && -f \"$search_dir/silver-bullet.md\" ]]; then",
+   "record": "X",
+   "reason": "site-session bookkeeping: finds the project directory, decides no gate"
+  },
+  {
+   "file": "hooks/record-skill.sh",
+   "line": 280,
+   "kind": "config",
+   "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]] && [[ -f \"$search_dir/silver-bullet.md\" ]]; then",
+   "record": "A",
+   "reason": "sanctioned writer: keeps the record in step"
+  },
+  {
+   "file": "hooks/record-skill.sh",
+   "line": 281,
+   "kind": "config",
+   "snippet": "config_file=\"$search_dir/.silver-bullet.json\"",
+   "record": "A",
+   "reason": "sanctioned writer: keeps the record in step"
+  },
+  {
+   "file": "hooks/record-skill.sh",
+   "line": 304,
+   "kind": "config",
+   "snippet": "STATE_FILE=$(jq -r '.state.state_file // \"\"' \"$config_file\")",
+   "record": "A",
+   "reason": "sanctioned writer: keeps the record in step"
+  },
+  {
+   "file": "hooks/record-skill.sh",
+   "line": 333,
+   "kind": "config",
+   "snippet": "custom_tracked=$(jq -r '(.skills.all_tracked // []) | join(\" \")' \"$config_file\")",
+   "record": "A",
+   "reason": "sanctioned writer: keeps the record in step"
+  },
+  {
+   "file": "hooks/record-skill.sh",
+   "line": 409,
+   "kind": "state",
+   "snippet": "if ! grep -Fqx -- \"$skill\" \"$STATE_FILE\" 2>/dev/null; then",
+   "record": "A",
+   "reason": "sanctioned writer: keeps the record in step"
+  },
+  {
+   "file": "hooks/record-skill.sh",
+   "line": 424,
+   "kind": "state",
+   "snippet": "if ! grep -Fqx -- \"$mode_marker\" \"$STATE_FILE\" 2>/dev/null; then",
+   "record": "A",
+   "reason": "sanctioned writer: keeps the record in step"
+  },
+  {
+   "file": "hooks/record-skill.sh",
+   "line": 438,
+   "kind": "state",
+   "snippet": "if ! grep -Fqx -- \"$mode_marker\" \"$STATE_FILE\" 2>/dev/null; then",
+   "record": "A",
+   "reason": "sanctioned writer: keeps the record in step"
+  },
+  {
+   "file": "hooks/record-skill.sh",
+   "line": 465,
+   "kind": "state",
+   "snippet": "[[ -f \"$STATE_FILE\" ]] && state_contents=\"$(cat \"$STATE_FILE\" 2>/dev/null || true)\"",
+   "record": "A",
+   "reason": "sanctioned writer: keeps the record in step"
+  },
+  {
+   "file": "hooks/session-log-init.sh",
+   "line": 68,
+   "kind": "config",
+   "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]] && [[ -f \"$search_dir/silver-bullet.md\" ]]; then",
+   "record": "X",
+   "reason": "session log bookkeeping, no gate decision"
+  },
+  {
+   "file": "hooks/session-start",
+   "line": 108,
+   "kind": "config",
+   "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]] && [[ -f \"$search_dir/silver-bullet.md\" ]]; then",
+   "record": "A",
+   "reason": "the trust anchor: baselines the record at the end of session start"
+  },
+  {
+   "file": "hooks/session-start",
+   "line": 176,
+   "kind": "config",
+   "snippet": "if [[ -n \"$_rt_hb_script\" && -f \"${sb_project_root}/.silver-bullet.json\" ]]; then",
+   "record": "A",
+   "reason": "the trust anchor: baselines the record at the end of session start"
+  },
+  {
+   "file": "hooks/session-start",
+   "line": 177,
+   "kind": "config",
+   "snippet": "_sb_initiated=\"$(jq -r '.sb_initiated // false' \"${sb_project_root}/.silver-bullet.json\" 2>/dev/null || echo false)\"",
+   "record": "A",
+   "reason": "the trust anchor: baselines the record at the end of session start"
+  },
+  {
+   "file": "hooks/session-start",
+   "line": 406,
+   "kind": "config",
+   "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]]; then",
+   "record": "A",
+   "reason": "the trust anchor: baselines the record at the end of session start"
+  },
+  {
+   "file": "hooks/session-start",
+   "line": 407,
+   "kind": "config",
+   "snippet": "cfg_trivial=$(jq -r '.state.trivial_file // \"\"' \"$search_dir/.silver-bullet.json\" 2>/dev/null || true)",
+   "record": "A",
+   "reason": "the trust anchor: baselines the record at the end of session start"
+  },
+  {
+   "file": "scripts/deploy-gate-snippet.sh",
+   "line": 50,
+   "kind": "config",
+   "snippet": "if [[ -f \"$_dw_search_dir/.silver-bullet.json\" ]]; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/deploy-gate-snippet.sh",
+   "line": 51,
+   "kind": "config",
+   "snippet": "_dw_config_file=\"$_dw_search_dir/.silver-bullet.json\"",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/deploy-gate-snippet.sh",
+   "line": 92,
+   "kind": "config",
+   "snippet": "_val=$(jq -r '.state.state_file // \"\"' \"$_dw_config_file\")",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/deploy-gate-snippet.sh",
+   "line": 98,
+   "kind": "config",
+   "snippet": "_val=$(jq -r '.state.trivial_file // \"\"' \"$_dw_config_file\")",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/deploy-gate-snippet.sh",
+   "line": 104,
+   "kind": "config",
+   "snippet": "_val=$(jq -r '(.skills.required_deploy // []) | join(\" \")' \"$_dw_config_file\")",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/deploy-gate-snippet.sh",
+   "line": 115,
+   "kind": "trivial",
+   "snippet": "if [[ -f \"$TRIVIAL_FILE\" && ! -L \"$TRIVIAL_FILE\" ]]; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/deploy-gate-snippet.sh",
+   "line": 146,
+   "kind": "state",
+   "snippet": "sb_required_skill_is_recorded \"$(<\"$STATE_FILE\")\" \"$_skill\" && continue",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/deploy-gate-snippet.sh",
+   "line": 147,
+   "kind": "state",
+   "snippet": "elif grep -Fqx -- \"$_skill\" \"$STATE_FILE\" 2>/dev/null; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/dogfood-orchestrator-parent-surface.sh",
+   "line": 27,
+   "kind": "state",
+   "snippet": "grep -qx \"$skill\" \"$STATE_FILE\" 2>/dev/null || printf '%s\\n' \"$skill\" >>\"$STATE_FILE\"",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/dogfood-orchestrator-parent-surface.sh",
+   "line": 36,
+   "kind": "state",
+   "snippet": "echo \"PASS: lifecycle skills recorded ($(wc -l <\"$STATE_FILE\" | tr -d ' ') lines)\"",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/export-enterprise-evidence.sh",
+   "line": 79,
+   "kind": "config",
+   "snippet": "if [[ -f \"${PROJECT_ROOT}/.silver-bullet.json\" ]]; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/monitor-enterprise-e2e-matrix.sh",
+   "line": 170,
+   "kind": "state",
+   "snippet": "if grep -q \"^${key}=\" \"$STATE_FILE\" 2>/dev/null; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/optimize-five-tool-stack.sh",
+   "line": 108,
+   "kind": "config",
+   "snippet": "if [[ -n \"$PROJECT_ROOT\" && -f \"${PROJECT_ROOT}/.silver-bullet.json\" ]]; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/optimize-five-tool-stack.sh",
+   "line": 118,
+   "kind": "config",
+   "snippet": "[[ -z \"$cfg\" ]] || [[ \"$(jq -r '.recommended_tools.leanctx.enabled_by_user' \"$cfg\" 2>/dev/null)\" != \"false\" ]]",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/optimize-five-tool-stack.sh",
+   "line": 126,
+   "kind": "config",
+   "snippet": "profile=\"$(jq -r '.recommended_tools.leanctx.optimization_profile // \"five_tool_routed\"' \"$cfg\" 2>/dev/null || echo five_tool_routed)\"",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/phase-lock.sh",
+   "line": 129,
+   "kind": "config",
+   "snippet": "if [[ -n \"${REPO_ROOT}\" ]] && [[ -f \"${REPO_ROOT}/.silver-bullet.json\" ]]; then",
+   "record": "X",
+   "reason": "phase-lock coordination (run by phase-lock-claim.sh): the ttl and runtime tags are validated and only compared; not an enforcement decision"
+  },
+  {
+   "file": "scripts/sb-bootstrap.sh",
+   "line": 28,
+   "kind": "config",
+   "snippet": "if [[ -f \"$TARGET/.silver-bullet.json\" ]]; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-consent.sh",
+   "line": 92,
+   "kind": "config",
+   "snippet": "while [[ \"$_sb_probe\" != \"/\" && ! -f \"$_sb_probe/.silver-bullet.json\" ]]; do",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-consent.sh",
+   "line": 95,
+   "kind": "config",
+   "snippet": "if [[ -f \"$_sb_probe/.silver-bullet.json\" ]]; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-diagnostics.sh",
+   "line": 17,
+   "kind": "config",
+   "snippet": "while [[ \"$_sb_diag_dir\" != \"/\" && ! -f \"${_sb_diag_dir}/.silver-bullet.json\" && ! -e \"${_sb_diag_dir}/.git\" ]]; do",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-diagnostics.sh",
+   "line": 20,
+   "kind": "config",
+   "snippet": "[[ -f \"${_sb_diag_dir}/.silver-bullet.json\" ]] && PROJECT_ROOT=\"$_sb_diag_dir\"",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-doctor.sh",
+   "line": 673,
+   "kind": "md",
+   "snippet": "if [[ -f \"$sb_config\" && -f \"${PROJ_ROOT}/silver-bullet.md\" ]]; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-doctor.sh",
+   "line": 674,
+   "kind": "config",
+   "snippet": "if jq -e '.sb_initiated == true' \"$sb_config\" >/dev/null 2>&1; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-doctor.sh",
+   "line": 685,
+   "kind": "config",
+   "snippet": "if ! proj_ver=\"$(jq -r '.config_version // .version // \"0.0.0\"' \"$sb_config\" 2>/dev/null)\"; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-doctor.sh",
+   "line": 702,
+   "kind": "md",
+   "snippet": "elif [[ ! -f \"${PROJ_ROOT}/silver-bullet.md\" ]]; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-doctor.sh",
+   "line": 706,
+   "kind": "md",
+   "snippet": "grep -q \"^## ${d7_sec}\\\\. \" \"${PROJ_ROOT}/silver-bullet.md\" 2>/dev/null || d7_missing=\"${d7_missing:+${d7_missing}, }§${d7_sec}\"",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-migrate-orchestrator-parent.sh",
+   "line": 13,
+   "kind": "config",
+   "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]] && [[ -f \"$search_dir/silver-bullet.md\" ]]; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-migrate-orchestrator-parent.sh",
+   "line": 14,
+   "kind": "config",
+   "snippet": "config_file=\"$search_dir/.silver-bullet.json\"",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-migrate-orchestrator-parent.sh",
+   "line": 31,
+   "kind": "config",
+   "snippet": "mode=\"$(jq -r '.orchestrator_mode // \"absent\"' \"$config_file\")\"",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-migrate-orchestrator-parent.sh",
+   "line": 33,
+   "kind": "config",
+   "snippet": "updated=\"$(jq '.orchestrator_mode = \"parent\"' \"$config_file\")\"",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/sb-migrate-project.sh",
+   "line": 11,
+   "kind": "config",
+   "snippet": "if [[ -f \"$SEARCH_DIR/.silver-bullet.json\" ]]; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/semantic-compress.sh",
+   "line": 16,
+   "kind": "config",
+   "snippet": "[[ -f \"$dir/.silver-bullet.json\" ]] && { printf '%s' \"$dir\"; return; }",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/silver-add.sh",
+   "line": 129,
+   "kind": "config",
+   "snippet": "CREATE_CMD=$(jq -r '.issue_tracker_adapter.create_issue_command // empty' \"$cfg\" 2>/dev/null) || {",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/silver-add.sh",
+   "line": 133,
+   "kind": "config",
+   "snippet": "DEDUPE_CMD=$(jq -r '.issue_tracker_adapter.dedupe_command // empty' \"$cfg\" 2>/dev/null) || {",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/silver-add.sh",
+   "line": 137,
+   "kind": "config",
+   "snippet": "TRACKER=$(jq -r '.issue_tracker // \"local\"' \"$cfg\" 2>/dev/null) || {",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/stamp-interface-state.sh",
+   "line": 28,
+   "kind": "config",
+   "snippet": "if [[ -f \"$root/.silver-bullet.json\" ]]; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/stamp-interface-state.sh",
+   "line": 29,
+   "kind": "config",
+   "snippet": "stack=\"$(jq -r '.project.tech_stack // \"\"' \"$root/.silver-bullet.json\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/stamp-interface-state.sh",
+   "line": 30,
+   "kind": "config",
+   "snippet": "workflow=\"$(jq -r '.project.active_workflow // \"\"' \"$root/.silver-bullet.json\" 2>/dev/null || true)\"",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/verify-tests.sh",
+   "line": 20,
+   "kind": "config",
+   "snippet": "if [[ -f \"$start/.silver-bullet.json\" ]]; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/verify-tests.sh",
+   "line": 43,
+   "kind": "config",
+   "snippet": "if command -v jq >/dev/null 2>&1 && [[ -f \"$config_file\" ]]; then",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "scripts/verify-tests.sh",
+   "line": 44,
+   "kind": "config",
+   "snippet": "jq -r '.verify_commands[]? // empty' \"$config_file\" 2>/dev/null || true",
+   "record": "X",
+   "reason": "user-run or skill-run script, not a hook gate"
+  },
+  {
+   "file": "skills/silver-add/SKILL.md",
+   "line": 48,
+   "kind": "config",
+   "snippet": "TRACKER=$(jq -r '.issue_tracker // \"local\"' .silver-bullet.json)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-add/SKILL.md",
+   "line": 49,
+   "kind": "config",
+   "snippet": "ADAPTER_TYPE=$(jq -r '.issue_tracker_adapter.type // \"local\"' .silver-bullet.json)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-add/SKILL.md",
+   "line": 50,
+   "kind": "config",
+   "snippet": "CACHE=$(jq -r '._github_project // empty' .silver-bullet.json)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-add/SKILL.md",
+   "line": 266,
+   "kind": "config",
+   "snippet": "CACHE_OWNER=$(jq -r '._github_project.owner // empty' .silver-bullet.json)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-add/SKILL.md",
+   "line": 271,
+   "kind": "config",
+   "snippet": "PROJ_NUM=$(jq -r '._github_project.number' .silver-bullet.json)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-add/SKILL.md",
+   "line": 272,
+   "kind": "config",
+   "snippet": "NODE_ID=$(jq -r '._github_project.node_id' .silver-bullet.json)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-add/SKILL.md",
+   "line": 273,
+   "kind": "config",
+   "snippet": "STATUS_FIELD_ID=$(jq -r '._github_project.status_field_id' .silver-bullet.json)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-add/SKILL.md",
+   "line": 274,
+   "kind": "config",
+   "snippet": "BACKLOG_OPT_ID=$(jq -r '._github_project.backlog_option_id' .silver-bullet.json)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-add/SKILL.md",
+   "line": 275,
+   "kind": "config",
+   "snippet": "OWNER=$(jq -r '._github_project.owner' .silver-bullet.json)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-add/SKILL.md",
+   "line": 334,
+   "kind": "config",
+   "snippet": "CREATE_CMD=$(jq -r '.issue_tracker_adapter.create_issue_command // empty' .silver-bullet.json)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-add/SKILL.md",
+   "line": 335,
+   "kind": "config",
+   "snippet": "DEDUPE_CMD=$(jq -r '.issue_tracker_adapter.dedupe_command // empty' .silver-bullet.json)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-create-release/SKILL.md",
+   "line": 34,
+   "kind": "config",
+   "snippet": "- `jq` (read `.silver-bullet.json` config — verify_commands only)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-create-release/SKILL.md",
+   "line": 73,
+   "kind": "config",
+   "snippet": "jq -r '.verify_commands[]' .silver-bullet.json 2>/dev/null",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-ingest/SKILL.md",
+   "line": 20,
+   "kind": "md",
+   "snippet": "grep -A 50 \"^## [0-9]\\+\\. User Workflow Preferences\" silver-bullet.md | head -60",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-init/SKILL.md",
+   "line": 128,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.graphify.enabled_by_user // \"null\"' .silver-bullet.json 2>/dev/null || echo null",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-init/SKILL.md",
+   "line": 129,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.graphify.enforcement_suspended // false' .silver-bullet.json 2>/dev/null || echo false",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-init/SKILL.md",
+   "line": 263,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.agentmemory.enabled_by_user // \"null\"' .silver-bullet.json 2>/dev/null || echo null",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-init/SKILL.md",
+   "line": 264,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.agentmemory.enforcement_suspended // false' .silver-bullet.json 2>/dev/null || echo false",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-init/SKILL.md",
+   "line": 364,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.rtk.enabled_by_user // \"null\"' .silver-bullet.json 2>/dev/null || echo null",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-init/SKILL.md",
+   "line": 365,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.json 2>/dev/null || echo false",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-init/SKILL.md",
+   "line": 383,
+   "kind": "instruction",
+   "snippet": "5. Verify host hook artifact (grep `rtk` in settings/hooks/AGENTS.md)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-init/SKILL.md",
+   "line": 403,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.context_mode.enabled_by_user // \"null\"' .silver-bullet.json 2>/dev/null || echo null",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-init/SKILL.md",
+   "line": 404,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.context_mode.enforcement_suspended // false' .silver-bullet.json 2>/dev/null || echo false",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-migrate/SKILL.md",
+   "line": 94,
+   "kind": "md",
+   "snippet": "test -f silver-bullet.md && cp silver-bullet.md silver-bullet.md.backup",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-rem/SKILL.md",
+   "line": 128,
+   "kind": "config",
+   "snippet": "PROJECT_NAME=$(jq -r '.project.name // \"unknown\"' .silver-bullet.json 2>/dev/null || echo \"unknown\")",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-remove/SKILL.md",
+   "line": 84,
+   "kind": "config",
+   "snippet": "TRACKER=$(jq -r '.issue_tracker // \"local\"' .silver-bullet.json)",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-spec/SKILL.md",
+   "line": 22,
+   "kind": "md",
+   "snippet": "grep -A 50 \"^## [0-9]\\+\\. User Workflow Preferences\" silver-bullet.md | head -60",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-update/SKILL.md",
+   "line": 196,
+   "kind": "config",
+   "snippet": "test -f .silver-bullet.json && jq -r '.recommended_tools.graphify.enabled_by_user // \"null\"' .silver-bullet.json",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-update/SKILL.md",
+   "line": 197,
+   "kind": "config",
+   "snippet": "test -f .silver-bullet.json && jq -r '.recommended_tools.graphify.enforcement_suspended // false' .silver-bullet.json",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-update/SKILL.md",
+   "line": 236,
+   "kind": "config",
+   "snippet": "test -f .silver-bullet.json && jq -r '.recommended_tools.agentmemory.enabled_by_user // \"null\"' .silver-bullet.json",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-update/SKILL.md",
+   "line": 237,
+   "kind": "config",
+   "snippet": "test -f .silver-bullet.json && jq -r '.recommended_tools.agentmemory.enforcement_suspended // false' .silver-bullet.json",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-update/SKILL.md",
+   "line": 263,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.rtk.enabled_by_user // \"null\"' .silver-bullet.json",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-update/SKILL.md",
+   "line": 264,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.json",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-update/SKILL.md",
+   "line": 296,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.context_mode.enabled_by_user // \"null\"' .silver-bullet.json",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-update/SKILL.md",
+   "line": 297,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.context_mode.enforcement_suspended // false' .silver-bullet.json",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-update/SKILL.md",
+   "line": 321,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.leanctx.enabled_by_user // \"null\"' .silver-bullet.json",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-update/SKILL.md",
+   "line": 322,
+   "kind": "config",
+   "snippet": "jq -r '.recommended_tools.leanctx.enforcement_suspended // false' .silver-bullet.json",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  },
+  {
+   "file": "skills/silver-validate/SKILL.md",
+   "line": 20,
+   "kind": "md",
+   "snippet": "grep -A 50 \"^## [0-9]\\+\\. User Workflow Preferences\" silver-bullet.md | head -60",
+   "record": "X",
+   "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
+  }
+ ]
+}

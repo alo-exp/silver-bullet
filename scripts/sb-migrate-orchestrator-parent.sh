@@ -4,6 +4,8 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PLUGIN_ROOT="${PLUGIN_ROOT:-$REPO_ROOT}"
+# shellcheck source=../hooks/lib/nofollow-guard.sh
+source "$REPO_ROOT/hooks/lib/nofollow-guard.sh"
 
 config_file=""
 search_dir="${1:-$PWD}"
@@ -28,8 +30,8 @@ command -v jq >/dev/null 2>&1 || { echo "jq required" >&2; exit 1; }
 proj_root="$(dirname "$config_file")"
 mode="$(jq -r '.orchestrator_mode // "absent"' "$config_file")"
 
-tmp="${config_file}.tmp"
-jq '.orchestrator_mode = "parent"' "$config_file" >"$tmp" && mv "$tmp" "$config_file"
+updated="$(jq '.orchestrator_mode = "parent"' "$config_file")"
+printf '%s\n' "$updated" | sb_atomic_write_file "$config_file" || { echo "Cannot update $config_file (symlink or unwritable directory)" >&2; exit 1; }
 echo "Set orchestrator_mode=parent (was: $mode)"
 
 mkdir -p "$proj_root/.silver-bullet/orchestrator-workers"

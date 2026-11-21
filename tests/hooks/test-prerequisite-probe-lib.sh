@@ -24,10 +24,11 @@ assert_eq "repair: non-executable ignored" 1 "$(rc sb_prereq_find_repair_script 
 chmod +x "$S/scripts/sb-prerequisite-repair.sh"
 assert_eq "repair: plugin-relative script found" "$S/scripts/sb-prerequisite-repair.sh" "$(sb_prereq_find_repair_script "$P")"
 mkdir -p "$P/scripts"; printf '#!/bin/sh\nexit 0\n' >"$P/scripts/sb-prerequisite-repair.sh"; chmod +x "$P/scripts/sb-prerequisite-repair.sh"
-assert_eq "repair: project script preferred" "$P/scripts/sb-prerequisite-repair.sh" "$(sb_prereq_find_repair_script "$P")"
+assert_eq "repair: project script never used (R2-12)" "$S/scripts/sb-prerequisite-repair.sh" "$(sb_prereq_find_repair_script "$P")"
+rm -f "$S/scripts/sb-prerequisite-repair.sh"
+assert_eq "repair: a project-only script is ignored" 1 "$(rc sb_prereq_find_repair_script "$P")"
 rm -f "$P/scripts/sb-prerequisite-repair.sh"
-assert_eq "repair: default root is PWD" "$P/scripts/x" "$(cd "$P" && printf '#!/bin/sh\n' >scripts/sb-prerequisite-repair.sh && chmod +x scripts/sb-prerequisite-repair.sh && sb_prereq_find_repair_script | sed 's|sb-prerequisite-repair.sh|x|')"
-rm -f "$P/scripts/sb-prerequisite-repair.sh"
+printf '#!/bin/sh\nexit 0\n' >"$S/scripts/sb-prerequisite-repair.sh"; chmod +x "$S/scripts/sb-prerequisite-repair.sh"
 
 # --- checks ------------------------------------------------------------------------
 assert_eq "check jq: present" 0 "$(rc sb_prereq_check_jq)"

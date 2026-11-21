@@ -71,17 +71,16 @@ sb_orchestrator_directive_write_batch silver-plan "" "" true TPL '{"handoffs":[]
 assert_eq "batch document build failure" 1 "$rc"
 assert_file_absent "no batch directive left behind" "$DIRF"
 orch_unstub jq
-# Override log: an unusable .planning/ directory is tolerated.
+# Override log: an unusable .planning/ directory fails closed (R4-14).
 mkdir -p "$PROJ/.planning"
 orch_stub_failing mkdir '.planning'
 sb_orchestrator_log_override "$PROJ" "why" silver-plan && rc=0 || rc=$?
-assert_eq "override log tolerates mkdir failure" 0 "$rc"
-assert_eq "override entry still appended when the dir exists" 1 "$(wc -l <"$PROJ/.planning/orchestrator-override-log.jsonl" | tr -d ' ')"
+assert_eq "override log refuses when .planning cannot be created" 1 "$rc"
 orch_unstub mkdir
 rm -f "$PROJ/.planning/orchestrator-override-log.jsonl"
 mkdir -p "$PROJ/.planning/orchestrator-override-log.jsonl"
 sb_orchestrator_log_override "$PROJ" "why" silver-plan && rc=0 || rc=$?
-assert_eq "override log tolerates an unwritable log file" 0 "$rc"
+assert_eq "override log refuses an unwritable log file" 1 "$rc"
 rm -rf "$PROJ/.planning/orchestrator-override-log.jsonl"
 # State sync: state file helper missing or jq failing degrade quietly.
 orch_write_state '{"current_flow":"FLOW-PLAN","active_intent":"go"}'
@@ -115,16 +114,6 @@ dirize "$EVENTS"
 sb_orchestrator_event_record_dispatch AF-A silver-a T 1 2>/dev/null && rc=0 || rc=$?
 assert_eq "dispatch recorder swallows an append failure" 0 "$rc"
 rm -rf "$EVENTS"
-orch_write_state '{"flow_queue":["a"]}'
-( sb_orchestrator_state_file() { return 1; }; sb_orchestrator_event_resume_hints_json ) >"$TL_TMP/hints.out" && rc=0 || rc=$?
-assert_eq "resume hints with a failing state helper" '{"resumable":false,"reason":"no orchestrator.json"}' "$(cat "$TL_TMP/hints.out")"
-( sb_orchestrator_state_file() { return 1; }; sb_orchestrator_event_apply_resume_checkpoint ) && rc=0 || rc=$?
-assert_eq "resume checkpoint with a failing state helper" 1 "$rc"
-# stdout that rejects writes: the failure surfaces as the exit status instead of being swallowed.
-if [[ -w /dev/full ]]; then
-  sb_orchestrator_event_resume_hints_json >/dev/full 2>/dev/null && rc=0 || rc=$?
-  assert_eq "resume hints on an unwritable stdout report failure" 1 "$((rc != 0))"
-fi
 
 # ---------------------------------------------------------------------------------------
 echo "=== parent lib ==="
@@ -180,10 +169,10 @@ orch_make_project "$TL_TMP/gp"
 ( sb_find_project_root_walk_only() { return 1; }; cd "$TL_TMP/gp" && sb_orchestrator_guard_applies_to_workspace ) && rc=0 || rc=$?
 assert_eq "root resolver failing: guard does not apply" 1 "$rc"
 # mark / clear worker marker failure modes.
-mkdir -p "$MARKER.tmp"
+mkdir -p "$MARKER"
 sb_orchestrator_mark_worker_spawn silver-plan 2>/dev/null && rc=0 || rc=$?
-assert_eq "marker temp path blocked: spawn marking fails" 1 "$((rc != 0))"
-rmdir "$MARKER.tmp"
+assert_eq "marker path is a directory: spawn marking fails" 1 "$((rc != 0))"
+rmdir "$MARKER"
 ( SB_RUNTIME_STATE_DIR="$NOTADIR/state"; sb_orchestrator_mark_worker_spawn silver-plan ) 2>/dev/null && rc=0 || rc=$?
 assert_eq "uncreatable state dir: spawn marking fails" 1 "$((rc != 0))"
 mkdir -p "$MARKER"

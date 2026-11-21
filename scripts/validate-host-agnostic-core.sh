@@ -185,6 +185,7 @@ SCRIPTS_HOST_TOOLING_PREFIXES = (
     "scripts/silver-scan.py",
     "scripts/lib/enterprise-e2e",
     "scripts/agent-",
+    "scripts/lib/agent-adapters/",  # the per-host /sb:agent-* adapters name their own host by design
     "scripts/lib/post-release-uninstall.sh",
     "scripts/prune-stale-claude",
     "scripts/watch-enterprise-e2e",

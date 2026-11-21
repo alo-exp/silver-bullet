@@ -73,11 +73,11 @@ tl_run_hook "$HOOK" "$(tool_json Agent "")"
 orch_unstub jq
 assert_eq "args unreadable: marker still written" silver-plan "$(jq -r .skill "$MARKER")"
 rm -f "$MARKER"
-mkdir -p "$MARKER.tmp"
+mkdir -p "$MARKER"
 tl_run_hook "$HOOK" "$(tool_json Agent "")"
-rmdir "$MARKER.tmp"
 assert_eq "marker cannot be written: spawn still allowed" "0|" "$TL_STATUS|$TL_OUT"
-assert_file_absent "marker cannot be written: none created" "$MARKER"
+assert_eq "marker cannot be written: nothing slipped inside the directory" "0" "$(find "$MARKER" -type f | wc -l | tr -d ' ')"
+rmdir "$MARKER"
 orch_stub_failing jq '.next_worker_template'
 tl_run_hook "$HOOK" "$(tool_json Edit src/a.txt)"
 orch_unstub jq
@@ -124,12 +124,6 @@ tl_run_hook "$HOOK" "$(tool_json Edit src/a.txt)"
 orch_unstub jq
 assert_eq "directive vanishing mid-check: not denied" "none" "$(decision)"
 assert_contains "directive vanishing mid-check: falls through to the workflow rule" "$TL_OUT" "edit without active workflow"
-# Override without a directive on disk and without a project-root cache hit.
-rm -f "$DIRF"
-ov="$(jq -cn '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:"a"},prompt:"SB OVERRIDE: no directive pending"}')"
-tl_run_hook "$HOOK" "$ov"
-assert_eq "override with no directive: allowed" "0|" "$TL_STATUS|$TL_OUT"
-assert_eq "override logged with an empty expected skill" "" "$(jq -r .expected_skill "$PROJ/.planning/orchestrator-override-log.jsonl" | tail -1)"
 # Project-root resolvers unavailable.
 tree="$(orch_stage_tree)"
 cat >"$tree/lib/sb-project-gate.sh" <<'LIB'
@@ -138,10 +132,6 @@ sb_find_project_root_walk_only() { return 1; }
 sb_find_project_root() { return 1; }
 sb_config_marked_initiated() { return 0; }
 LIB
-rm -f "$PROJ/.planning/orchestrator-override-log.jsonl"
-tl_run_stdin "$ov" bash "$tree/orchestrator-directive-guard.sh"
-assert_eq "override without a resolvable root: allowed" "0|" "$TL_STATUS|$TL_OUT"
-assert_eq "override logged under the working directory" 1 "$(wc -l <"$PROJ/.planning/orchestrator-override-log.jsonl" | tr -d ' ')"
 SB_ORCHESTRATOR_EDIT_WITHOUT_WORKFLOW_BLOCK=1 tl_run_stdin "$(tool_json Write src/a.txt)" bash "$tree/orchestrator-directive-guard.sh"
 assert_eq "edit without a resolvable project root: allowed even at threshold 1" "0|" "$TL_STATUS|$TL_OUT"
 

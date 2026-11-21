@@ -13,6 +13,9 @@ import sys
 from typing import Any
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "global-toolstack"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+
+import sb_host_config as sbc  # noqa: E402
 
 from five_tool_instances import (  # noqa: E402
     disable_claude_native_context_mode,
@@ -44,12 +47,10 @@ LEANCTX_ENV_BASE = {"LEANCTX_MCP_TOOL_PREFIX": "lctx_"}
 
 
 def load_json(path: pathlib.Path, default: dict | None = None) -> dict:
+    """The JSON object in PATH; DEFAULT when it is absent; sbc.ConfigError (a ValueError) when
+    it cannot be parsed, in which case the caller leaves the file alone."""
     if path.is_file():
-        with path.open(encoding="utf-8") as handle:
-            data = json.load(handle)
-        if not isinstance(data, dict):
-            raise ValueError(f"{path}: expected a JSON object at the top level")
-        return data
+        return sbc.read_json(path)
     return default or {}
 
 
@@ -72,19 +73,12 @@ def json_member(data: dict, key: str, kind: type, path: pathlib.Path) -> Any:
 
 
 def save_json(path: pathlib.Path, data: dict, dry_run: bool) -> None:
+    """Write DATA atomically, through a symlink, keeping the mode and the previous content in
+    <file>.sb-backup; nothing is written when the bytes would not change."""
     if dry_run:
         print(f"DRY-RUN: would write {path}")
         return
-    path.parent.mkdir(parents=True, exist_ok=True)
-    backup_file(path)
-    with path.open("w", encoding="utf-8") as handle:
-        json.dump(data, handle, indent=2)
-        handle.write("\n")
-
-
-def backup_file(path: pathlib.Path) -> None:
-    if path.is_file():
-        shutil.copy2(path, path.with_suffix(path.suffix + ".bak"))
+    sbc.write_json(path, data)
 
 
 def merge_codex_hooks_file(target: pathlib.Path, fragment: dict, dry_run: bool) -> int:
@@ -116,7 +110,8 @@ def merge_codex_hooks_file(target: pathlib.Path, fragment: dict, dry_run: bool) 
             if not found and group not in event_list:
                 event_list.append(group)
                 added += 1
-    save_json(target, settings, dry_run)
+    if added or not target.is_file():
+        save_json(target, settings, dry_run)
     return added
 
 
@@ -161,10 +156,7 @@ def copy_file(src: pathlib.Path, dest: pathlib.Path, dry_run: bool) -> bool:
     if dry_run:
         print(f"DRY-RUN: would copy {src} -> {dest}")
         return True
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    backup_file(dest)
-    shutil.copy2(src, dest)
-    return True
+    return sbc.write_atomic(dest, src.read_bytes())
 
 
 def stage_agents_template(src: pathlib.Path, dest: pathlib.Path, dry_run: bool) -> str:
@@ -185,7 +177,7 @@ def stage_agents_template(src: pathlib.Path, dest: pathlib.Path, dry_run: bool) 
     if dry_run:
         print(f"DRY-RUN: would stage {src} -> {staged} (existing {dest} kept)")
         return "staged"
-    shutil.copy2(src, staged)
+    sbc.write_atomic(staged, src.read_bytes(), backup=False)
     print(
         f"NOTICE: kept existing {dest}; Context Mode template staged at {staged}. "
         f"Merge any new rules into {dest} by hand.",
@@ -217,10 +209,7 @@ def write_opencode_rtk_plugin(
     if dry_run:
         print(f"DRY-RUN: would write {target}")
         return True
-    target.parent.mkdir(parents=True, exist_ok=True)
-    backup_file(target)
-    target.write_text(rendered, encoding="utf-8")
-    return True
+    return sbc.write_atomic(target, rendered.encode("utf-8"))
 
 
 def context_mode_pkg_root() -> pathlib.Path | None:
@@ -249,6 +238,8 @@ def context_mode_pkg_root() -> pathlib.Path | None:
 
 
 def merge_codex_config_toml(target: pathlib.Path, dry_run: bool) -> bool:
+    """Add [mcp_servers.context-mode] to Codex's config.toml unless the table exists; the file is
+    edited structurally and written atomically (a config that does not parse is refused)."""
     cm_pkg = context_mode_pkg_root()
     manifest = ensure_global_instances(dry_run=dry_run)
     if not cm_pkg:
@@ -256,25 +247,25 @@ def merge_codex_config_toml(target: pathlib.Path, dry_run: bool) -> bool:
     snippet_path = cm_pkg / "configs" / "codex" / "config.toml"
     if not snippet_path.is_file():
         return False
-    marker = "[mcp_servers.context-mode]"
-    if target.is_file() and marker in target.read_text(encoding="utf-8"):
+    doc = sbc.read_toml(target)
+    if doc.headers(("mcp_servers", "context-mode")):
         return False
-    spec = mcp_server_spec(ensure_global_instances(dry_run=dry_run), "context_mode")
-    snippet = (
-        f"{marker}\n"
-        f"command = {json.dumps(spec['command'])}\n"
-        f"args = {json.dumps(spec['args'])}\n"
+    spec = mcp_server_spec(manifest, "context_mode")
+    doc.append_tables(
+        [
+            (
+                ("mcp_servers", "context-mode"),
+                [
+                    ("command", json.dumps(spec["command"], ensure_ascii=False)),
+                    ("args", json.dumps(spec["args"], ensure_ascii=False)),
+                ],
+            )
+        ]
     )
     if dry_run:
         print(f"DRY-RUN: would append context-mode block to {target}")
         return True
-    target.parent.mkdir(parents=True, exist_ok=True)
-    if target.is_file():
-        backup_file(target)
-    with target.open("a", encoding="utf-8") as handle:
-        if target.stat().st_size > 0:
-            handle.write("\n")
-        handle.write(snippet)
+    sbc.write_toml(target, doc)
     return True
 
 
@@ -352,8 +343,7 @@ def merge_hermes_context_mode_mcp(config_path: pathlib.Path, dry_run: bool) -> b
             updated = f"plugins:\n  enabled: []\n\n{block}"
     if crlf:
         updated = updated.replace("\n", "\r\n")
-    backup_file(config_path)
-    config_path.write_bytes(updated.encode("utf-8"))
+    sbc.write_atomic(config_path, updated.encode("utf-8"))
     return True
 
 

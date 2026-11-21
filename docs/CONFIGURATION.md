@@ -19,9 +19,10 @@ This page lists every key in the template, which code reads it, and the keys the
 | Key | Template value | Meaning |
 |-----|----------------|---------|
 | `project.name` | `{{PROJECT_NAME}}` (filled by `/sb:init`) | Project display name, used by skills such as `sb:rem` |
-| `project.src_pattern` | `/src/` | Path pattern for files that count as source and trigger the planning-floor gate. Must look like a path segment pattern (`^/[a-zA-Z0-9/_.\|()-]*/?$`); unsafe or match-everything values fall back to `/src/` |
-| `project.src_exclude_pattern` | `__tests__\|\.test\.` | Regex for source-like files to exempt (tests). Limited to 200 safe characters, otherwise the default is used |
+| `project.src_pattern` | `/src/` | Path-segment pattern for files that count as source and trigger the planning-floor gate; it is matched against the project-relative path, so `tools/src-gen.py` does not match `/src/`. Must look like a path segment pattern (`^/[a-zA-Z0-9/_.\|()-]*/?$`); unsafe or match-everything values fall back to `/src/` |
+| `project.src_exclude_pattern` | `__tests__\|\.test\.` | Regex for source-like files to exempt (tests), matched against the project-relative path. Limited to 200 safe characters, otherwise the default is used. Built-in test layouts (`tests/`, `test/`, `__tests__/`, `*_test.*`, `test_*.py`, `*Test.java`) are always exempt |
 | `project.active_workflow` | `full-dev-cycle` | `full-dev-cycle` or `devops-cycle`; selects the workflow doc and the `_devops` skill lists. In `devops-cycle`, `.yml`, `.yaml`, `.json` and `.toml` files count as infrastructure code |
+| `project.push_to_default_branch_tier` | `completion` | `completion` (default): a push to the default branch, of a tag, or with `--all`/`--mirror` needs the full `required_deploy` floor. `intermediate`: such pushes need only the planning floor (the explicit opt-out). A push is intermediate only when it is proved to be a feature-branch push; the remote's default branch must be known locally (`refs/remotes/<remote>/HEAD`, set by `git clone` or `git remote set-head <remote> --auto`), otherwise the push counts as final delivery |
 
 `dev-cycle-check.sh` reads the patterns; `completion-audit.sh` uses them to classify a change set.
 
@@ -44,7 +45,7 @@ Project lists replace the template defaults (`hooks/lib/required-skills.sh` supp
 | Key | Default | Meaning |
 |-----|---------|---------|
 | `state.state_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` | Skill-marker state file. Paths that do not resolve inside the state root are rejected and the default is used |
-| `state.trivial_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | Legacy trivial-session marker; `session-start` deletes it and agents cannot create it |
+| `state.trivial_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | Not honoured by the gates (a config value could point it at any file under the state root and arm the legacy bypass); the guards still refuse an agent writing it. The default marker is the user's to create from a terminal; `session-start` deletes it |
 
 Configured and overridden state paths are checked after resolving `.`, `..`, `//` and symlinked directories (`sb_runtime_state_path` in `hooks/lib/runtime-paths.sh`): they must lie strictly inside `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`, and a symlinked file must point inside it too, so a repository's config cannot make the hooks delete or write files elsewhere.
 
@@ -57,13 +58,13 @@ Read by `completion-audit.sh` on `gh release create` ([ENFORCEMENT.md](ENFORCEME
 | Key | Template value | Meaning |
 |-----|----------------|---------|
 | `release.profile` | `"generic"` | Release profile label; carried forward by migration, not read by the hooks |
-| `release.require_plugin_runtime_matrix` | `true` | Require the live runtime matrix markers (`release-live-matrix`, `e2e-live-matrix`, `inline-e2e-matrix`) |
-| `release.require_pre_release_quality_gate` | `true` | Require the quality-gate markers `adversarial-review-clean`, `sentinel-skills-clean`, `quality-gate-stage-3`, `full-test-suite-rerun` |
-| `release.require_rc_matrix` | `true` | Require the six operator-local RC validation markers |
+| `release.require_plugin_runtime_matrix` | `false` | Require the live runtime matrix markers (`release-live-matrix`, `e2e-live-matrix`, `inline-e2e-matrix`) |
+| `release.require_pre_release_quality_gate` | `false` | Require the quality-gate markers `adversarial-review-clean`, `sentinel-skills-clean`, `quality-gate-stage-3`, `full-test-suite-rerun` |
+| `release.require_rc_matrix` | `false` | Require six operator-local live RC `pass` markers for the commit being released |
 | `release.quality_gate_state_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` | Where the quality-gate markers are read; cleared at session start |
 | `release._comment_quality_gate_markers` | — | Comment only |
 
-These gates were built for multi-host plugin releases. A downstream project that does not run live matrices sets the `require_*` flags it does not need to `false`.
+These gates were built for Silver Bullet's own multi-host plugin releases, so the template leaves them off and this repository turns them on. A project that runs the live matrices sets the `require_*` flags it needs to `true`.
 
 ## `hooks`
 
@@ -81,11 +82,11 @@ Common fields:
 
 | Field | Meaning |
 |-------|---------|
-| `enabled_by_user` | `null` = consent pending (advisory), `true` = opted in (gates enforce), `false` = opted out |
+| `enabled_by_user` | `null` = no preference, `true` = the project recommends the tool, `false` = the project turns it off. Never consent: consent is per user ([CONSENT.md](CONSENT.md)) |
 | `enforcement_suspended` | `true` after a failed install, so the gate stays advisory |
 | `install_status`, `install_failure_reason` | Written by the installers and reconciler |
 | `required_when_enabled` | Whether an opted-in tool is mandatory (all but `search_cli`) |
-| `install_commands`, `platform_install_commands.<host>.pre_index` / `post_index` | Install steps per host (`claude`, `codex`, `opencode`, `pi`, `goose`, `hermes`) |
+| `install_commands`, `platform_install_commands` | Ignored (repository content is never run or shown as an instruction); install steps come from the built-in tables in `hooks/lib/recommended-tools.sh` |
 | `benefits_summary` | Text shown when asking for consent |
 
 Tool-specific fields:
@@ -114,8 +115,8 @@ Named settings bundles for the five-tool stack, read by `hooks/lib/stack-optimiz
 | `issue_tracker` | `local` (default; `docs/issues/`), `github`, or `custom` | `sb:add`, `scripts/silver-add.sh` |
 | `issue_tracker_adapter.type`, `.create_issue_command`, `.dedupe_command`, `.payload_schema` | Command adapter used when `issue_tracker` is `custom` | `scripts/silver-add.sh` |
 | `compactPrompt` | Instruction text for context compaction: preserve `silver-bullet.md` rules verbatim. Carried forward by migration; no hook reads it | — |
-| `semantic_compression.enabled`, `.context_budget_kb`, `.min_file_size_bytes`, `.chunk_size_bytes`, `.top_chunks_per_file`, `.debug` | Context assembly after phase skills (budget, files considered, chunking, ranking) | `scripts/semantic-compress.sh` |
-| `multi_agent.identity_tags`, `.stale_lock_ttl_seconds` | Runtime identities allowed to hold phase locks, and when a lock is stale | `.planning/scripts/phase-lock.sh` (phase-lock hooks) |
+| `semantic_compression.enabled`, `.context_budget_kb`, `.min_file_size_bytes`, `.chunk_size_bytes`, `.top_chunks_per_file`, `.debug` | Context assembly after phase skills (budget, files considered, chunking, ranking) | `scripts/semantic-compress.sh` (numbers are validated, `project.src_pattern` must stay inside the repository, symlinks and credential-like files are skipped, the cache in `.planning/.context-cache/` ignores itself) |
+| `multi_agent.identity_tags`, `.stale_lock_ttl_seconds` | Runtime identities allowed to hold phase locks, and when a lock is stale | `scripts/phase-lock.sh` (plugin root) (phase-lock hooks) |
 | `multi_agent.delegation_timeout_seconds` | Child delegation timeout described in [multi-agent-coordination.md](multi-agent-coordination.md); no script reads it at present | — |
 
 ### `enterprise_policy`
@@ -127,7 +128,8 @@ Named settings bundles for the five-tool stack, read by `hooks/lib/stack-optimiz
 | `session_mode_default` | `interactive` or `autonomous`; `session-start` applies it as the default session mode (`autonomous` only on hook-enforced hosts, and never over an existing choice) |
 | `clarify_auto` | Allow bounded `sb:clarify --auto` |
 | `production_deploy_requires_human` | When true, `gh pr create/merge`, `gh release create` and deploy commands are blocked until a human creates `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` ([ENFORCEMENT.md](ENFORCEMENT.md#enterprise-policy-delivery-block)). It is true in every shipped profile and is the default when no profile is configured |
-| `non_production_deploy_autonomy` | Exempt delivery commands that name a non-production target (`internal_dogfood` only) |
+| `non_production_deploy_autonomy` | Exempt a plain deploy command when a non-production word (staging, preview, non-prod, sandbox, dogfood, internal) appears as a whole word in its arguments; never `gh pr create/merge` or `gh release create` (`internal_dogfood` only). Residual: the word is not tied to a target flag, so `deploy --prod --token internal` is exempt too; prefer `supervised` where that matters |
+| `human_approval_ttl_minutes` (on `enterprise_policy`, not per profile) | How long the human approval marker stays valid (default 480) |
 | `evidence_schema_strict` | Force strict evidence-schema validation |
 | `orchestrator_mode`, `label`, `description` | Informational |
 

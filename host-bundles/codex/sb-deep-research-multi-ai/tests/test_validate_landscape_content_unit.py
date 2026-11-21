@@ -132,6 +132,24 @@ class HelperTests(_Base):
                                "unknown thing"]}
         self.assertEqual(f(comp, need), ["winner 'w' lacks must-have 'unknown thing'"])
 
+    def test_symbol_distinct_features_stay_distinct_in_either_row_order(self):
+        """C++, C# and C are three features: the gate must not check whichever row came last."""
+        sols = {"C++ support": {"coverity": True, "pvs": True}, "C# support": {"coverity": False, "pvs": True},
+                "C support": {"coverity": False, "pvs": True}}
+        for order in (["C++ support", "C# support", "C support"], ["C support", "C# support", "C++ support"]):
+            rows = [{"type": "feature", "name": n, "solutions": sols[n]} for n in order]
+            comp = {"winner": "coverity", "rows": rows}
+            self.assertEqual(vlc._winner_must_have_coverage(comp, {"must_haves": ["C++ support"]}), [], order)
+            self.assertEqual(vlc._winner_must_have_coverage(comp, {"must_haves": ["C# support"]}),
+                             ["winner 'coverity' lacks must-have 'C# support'"], order)
+            self.assertEqual(vlc._winner_must_have_coverage(comp, {"must_haves": ["c support"]}),
+                             ["winner 'coverity' lacks must-have 'c support'"], order)
+
+    def test_the_gate_folds_exactly_like_the_packager(self):
+        import materialize_solution_artifacts as m
+        for name in ("C++ support", "C# support", "C support", "Hook-enforced gates", " CI / CD "):
+            self.assertEqual(vlc._fold(name), m._feature_key(name))
+
     def test_winner_coverage_gap_when_row_unfilled(self):
         comp = {"winner": "w", "rows": [
             {"type": "feature", "name": "Workflow composition", "solutions": {"w": False}}]}
