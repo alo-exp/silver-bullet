@@ -152,7 +152,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit|apply_patch",
+        "matcher": "Edit|Write|MultiEdit|apply_patch|NotebookEdit",
         "hooks": [
           {
             "type": "command",

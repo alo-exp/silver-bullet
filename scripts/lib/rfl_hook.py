@@ -104,8 +104,6 @@ def prompt_submit(payload: dict[str, Any], root: Path) -> dict[str, Any]:
             record = native.load_record(root, run_id)
         except native.RflError as exc:
             return {"output": None, "audit": {"decision": "ignore", "reason": f"RFL {kind.upper()} {run_id} refused: {exc}"}}
-        if record.get("project_root") != str(root):
-            return {"output": None, "audit": {"decision": "ignore", "reason": f"RFL {kind.upper()} {run_id} refused: the run belongs to another project"}}
         native.write_user_token(root, kind, run_id, session_id=sid, prompt_sha256=digest)
         text = (f"RFL ABORT {run_id} accepted for 30 minutes. Run: review-fix-ladder.py --abort {run_id}" if kind == "abort"
                 else f"RFL APPROVE {run_id}: approval accepted for 30 minutes. Run: review-fix-ladder.py --approve --run-dir .planning/rfl-{run_id}")

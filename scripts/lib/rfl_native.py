@@ -17,6 +17,7 @@ result is captured from the host's tool response by the PostToolUse hook, never 
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import hmac
 import json
@@ -407,17 +408,12 @@ def clear_live(project_root: Path, run_id: str = "") -> None:
 
 def prune_pointers(project_root: Path, session_id: str) -> None:
     """SessionStart startup/clear: remove this session's own pointer and pointers nobody has touched for a day."""
-    try:
-        pointer_path(project_root, session_id).unlink()
-    except OSError:
-        pass
+    pointer_path(project_root, session_id).unlink(missing_ok=True)
     cutoff = time.time() - STALE_POINTER_SECONDS
     for path in (state_dir() / "rfl-live").glob("*.json"):
-        try:
+        with contextlib.suppress(OSError):  # a concurrent prune may have removed it already
             if path.stat().st_mtime < cutoff:
                 path.unlink()
-        except OSError:
-            pass
 
 
 def live_run_id(project_root: Path, session_id: str | None = None) -> str | None:
@@ -534,10 +530,9 @@ def shadow_agent_files(project_root: Path, role: str) -> list[str]:
         if not directory.is_dir():
             continue
         for path in sorted(directory.glob("*.md"))[:200]:
-            try:
+            head = ""
+            with contextlib.suppress(OSError):  # a directory or unreadable file named *.md
                 head = path.read_text(encoding="utf-8", errors="replace")[:2048]
-            except OSError:
-                head = ""
             if path.stem == role or re.search(rf"(?m)^name:\s*{re.escape(role)}\s*$", head):
                 found.append(str(path))
     return found

@@ -14,7 +14,7 @@ Escalate review and fix work through a ladder of **native read-only subagents** 
 
 **RFL session exception:** Inside a review-fix-ladder session, the launcher / parent of the ladder triages findings and applies ACCEPT fixes with Edit/Write. This is an explicit exception to any "parent orchestrator never implements" rule. Rung subagents remain REVIEW ONLY (their tools are Read, Grep, Glob).
 
-**How the harness enforces this.** One encoder script (`scripts/review-fix-ladder.py`, run from the plugin, never a project copy) owns the run state `.planning/rfl-<id>/LADDER-STATUS.json`, signed with a per-project key that lives outside the repository. A subagent is launched only under a **ticket** the encoder issues (it binds the role, model, effort, the exact brief and a worktree fingerprint); a hook checks every spawn against the open ticket and **captures the subagent's result from the host's tool response**, so the parent cannot type or steer a verdict. While a ticket is open the parent cannot edit in-scope files, and encoder-owned artifacts are never editable. Stop is blocked while a run is active; only the user can end it early. In the commands below `<plugin>` is the Silver Bullet plugin root (`$CLAUDE_PLUGIN_ROOT`, or the installed plugin directory).
+**How the harness enforces this.** One encoder script (`scripts/review-fix-ladder.py`, run from the plugin, never a project copy) owns the run state `.planning/rfl-<id>/LADDER-STATUS.json`, signed with a per-project key that lives outside the repository. A subagent is launched only under a **ticket** the encoder issues (it binds the role, model, effort, the exact brief and a worktree fingerprint); a hook checks every spawn against the open ticket and **captures the subagent's result from the host's tool response**, so the parent cannot type or steer a verdict. While a ticket is open the parent cannot edit in-scope files, and encoder-owned artifacts are never editable. The run's authority is a sealed record in the runtime state dir (not `.planning`), keyed to this session and project: moving or deleting `.planning/rfl-<id>` frees nothing. Stop is blocked while a ticket is open, artifacts are unmet or the run no longer verifies (it is free while Policy E approval is pending, and the host's `stop_hook_active` releases the gate visibly after one block); only the user can end a run early. In the commands below `<plugin>` is the Silver Bullet plugin root (`$CLAUDE_PLUGIN_ROOT`, or the installed plugin directory).
 
 ## Triage and Fix Owner (HARD)
 
@@ -73,7 +73,7 @@ After each rung's review, the agent that launched the RFL applies ACCEPT fixes. 
 - After each verify **FAIL**, Policy B the leftovers in the **same** follow-up turn (launcher Edit/Write; `--record-apply`), then issue the re-verify ticket. Do not wait for the user.
 - **Corpus sweep, not one-line cycles:** If the same defect class fails verify more than **twice**, the next Policy B pass MUST scan **all** in-scope artifacts for that class and patch every live hit in one pass.
 - **Cap residual loops:** After **5** leftover cycles on the same rung verify, STOP and escalate to the user with the remaining `file:line` list.
-- **Launch/timeout retry then skip (HARD):** If a rung's subagent **cannot be launched**, **times out**, or returns **no valid result block** (the encoder records `cannot_launch`, `timeout` or `no_verdict` from the captured tool response), the encoder counts an attempt. After **2** failed attempts on the same phase it writes `SKIPPED.md` (with the captured error text) and moves to the next rung. After the **entire ladder**, each skipped rung is retried once more. A subagent that was never launched is cancelled with `--cancel-ticket`, which counts as an attempt. A skip is **never** a CLEAN advance and never a substitution: the host rejecting a model is a launch failure, not a reason to use another model or vendor. **Never Fast.** Do **not** skip because of a CLEAN/NOT CLEAN review — only when the rung **failed to produce a verdict**.
+- **Launch/timeout retry then skip (HARD):** If a rung's subagent **cannot be launched**, **times out**, or returns **no valid result block** (the encoder records `cannot_launch`, `timeout` or `no_verdict` from the captured tool response), the encoder counts an attempt. After **2** failed attempts on the same phase it writes `SKIPPED.md` (with the captured error text) and moves to the next rung. After the **entire ladder**, each skipped rung is retried once more. Only the hook's own observation counts: a `--cancel-ticket` (a ticket you issued but did not spawn) just returns it to its pre-spawn state; it is rate limited, recorded, never counts toward a skip, and a ticket whose subagent already launched cannot be cancelled until it is 30 minutes stale. A skip is **never** a CLEAN advance and never a substitution: the host rejecting a model is a launch failure, not a reason to use another model or vendor. **Never Fast.** Do **not** skip because of a CLEAN/NOT CLEAN review — only when the rung **failed to produce a verdict**.
 - **Quota and rate limits:** A subagent shares your account, so a usage limit stops you too. The hook classifies a quota response (`BLOCKED.md`, `QUOTA-CLASSIFY.json`) and pauses the run (`paused_quota`, with `resume_after` when the window is 5 hours or less). Nothing is scheduled and no timer is armed. Tell the user; when the window has reset, `--resume <run-id>` (SessionStart also prints a fixed resume notice). The attempt does not count toward a skip.
 
 ### Policy C — launcher reports after every rung
@@ -148,7 +148,7 @@ Before launching rungs, the **parent/launcher** MUST present a **concise bullet 
 
 **Until approved:** do not issue a reviewer ticket or spawn a reviewer subagent.
 
-After the user agrees, record it with `--approve --run-dir .planning/rfl-<id>/` (`RUNG-PROMPT-APPROVAL.md` gets `approved: yes` and the charter hash). `--start` writes `approved: no`. This wait is a **launch gate**, not a Policy B anti-stall violation.
+After you show the bullets, ask the user to type exactly `RFL APPROVE <run-id>` as their own message; the prompt hook (provenance-checked like `RFL ABORT`) records a single-use token, and only then does `--approve --run-dir .planning/rfl-<id>/` succeed (it seals `approved` and the charter hash in the run record; `RUNG-PROMPT-APPROVAL.md` is a readable copy). `--start` leaves it unapproved and the agent cannot self-approve. This wait is a **launch gate**, not a Policy B anti-stall violation.
 
 ### Policy F — two consecutive CLEAN reviews per rung (HARD)
 
@@ -255,13 +255,13 @@ python3 <plugin>/scripts/review-fix-ladder.py --json [--rungs "<override>"]
 
 Print the resolved `rungs` (`model` + `effort`) before executing. **Defaults** (latest version of each tier, resolved by the host at run time from the alias; **Fable is never used**): `haiku:xhigh`, `sonnet:high`, `sonnet:xhigh`, `opus:low`, `opus:medium`, `opus:high`. Not in the default ladder: Sonnet low/medium/max, Opus xhigh/max.
 
-The user may exclude or include any rung when prompting, e.g. `rungs: +opus:xhigh -haiku:xhigh` (add and remove against the defaults), or a plain list `rungs: sonnet:high opus:high` (replaces the defaults, in that order). Pass it as `--rungs "<text>"`. A project can set `"review_fix_ladder": {"rungs": "-haiku:xhigh"}` (or a list) in `.silver-bullet.json`. Models are the aliases `haiku`, `sonnet`, `opus`; efforts `low|medium|high|xhigh|max`.
+The user may exclude or include any rung when prompting, e.g. `rungs: +opus:xhigh -haiku:xhigh` (add and remove against the defaults), or a plain list `rungs: sonnet:high opus:high` (replaces the defaults, in that order). The hook records only a `rungs:` line that the **user** typed; `--rungs` must repeat exactly that text (the agent cannot change the ladder), and a project can set `"review_fix_ladder": {"rungs": "+opus:xhigh"}` in `.silver-bullet.json` to **add** rungs only. Dropping rungs always needs the user's own message. Models are the aliases `haiku`, `sonnet`, `opus`; efforts `low|medium|high|xhigh|max`.
 
 Then **Policy E**: present the 5–12 key-task bullets and **get user approval**. Start the run and record the approval:
 
 ```bash
 python3 <plugin>/scripts/review-fix-ladder.py --start --charter-file charter.json [--run-id <id>] [--rungs "<override>"]
-python3 <plugin>/scripts/review-fix-ladder.py --approve --run-dir .planning/rfl-<id>/     # only after the user agreed
+python3 <plugin>/scripts/review-fix-ladder.py --approve --run-dir .planning/rfl-<id>/     # only after the user typed `RFL APPROVE <id>`
 ```
 
 `--start` makes the run **live in this session** (it also removes leftover launchd agents of the retired quota scheduler). A session that did not start or resume a run is never gated, so a run found in a repository does nothing until you `--resume <id>`. Invoking this skill again never resets a run.
@@ -314,7 +314,7 @@ If **any** check fails → **STOP**. Do **not** start the next rung.
 
 ### Ending a run early: `RFL ABORT <run-id>`
 
-Only the **user** can end an unfinished ladder: they type exactly `RFL ABORT <run-id>` as their own message (alone, nothing else on the line). The prompt hook checks that it is a real user prompt of the parent session, writes a signed 30-minute token and audits it. Then run `--abort <run-id>`. Without the token `--abort` is refused, and Stop stays blocked. Do **not** ask the user to type it just to get past a gate; say what is blocking and fix it.
+Only the **user** can end an unfinished ladder: they type exactly `RFL ABORT <run-id>` as their own message (alone, nothing else on the line). The prompt hook checks that it is a real user prompt of the parent session, writes a signed 30-minute token and audits it. Then run `--abort <run-id>`. The abort works even when the run's status file no longer verifies (the sealed record is the authority), and `ABORTED.md` cites the hook's token (session and prompt hash). Without the token `--abort` is refused, and Stop stays blocked (after one block per turn the host's `stop_hook_active` releases it visibly). Do **not** ask the user to type it just to get past a gate; say what is blocking and fix it.
 
 ### STOP Conditions (immediate halt)
 
@@ -363,7 +363,7 @@ rung_N_review → rung_N_triage → rung_N_file_valid_issues → rung_N_fix_para
 
 ### Residuals the harness cannot close
 
-You still have a shell: a same-user command can write files the hook does not see. The signature turns that into a blocked Stop and a failed re-validation, not into a quiet pass. Triage honesty (Policy A) and the Policy E `approved: yes` marker remain parent-asserted; the user sees both in the Policy C report. `<rfl-result>` blocks are captured from the host's tool response, so their provenance is the hook, not you.
+You still have a shell: a same-user command can write files the hook does not see. The signature turns that into a blocked Stop and a failed re-validation (`--resume` never migrates a file that carries a signature field), not into a quiet pass. The plugin's own Python API is callable by the same user too, so the abort/approve token's provenance is the hook's recorded session and prompt hash, not a secret. Triage honesty (Policy A) and the Policy E `approved: yes` marker remain parent-asserted; the user sees both in the Policy C report. `<rfl-result>` blocks are captured from the host's tool response, so their provenance is the hook, not you.
 
 ## Step 4: Close Out
 
