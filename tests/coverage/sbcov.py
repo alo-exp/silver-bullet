@@ -1026,6 +1026,8 @@ def python_coverage(cov_dir: Path, scoped: list[str]) -> dict:
             "missing_lines": stmts["lines"],
             "missing_branches": {},
         }
+        if "parse_error" in stmts:
+            results[rel]["parse_error"] = stmts["parse_error"]
     return results
 
 
@@ -1042,8 +1044,10 @@ def _python_statement_count(path: str) -> dict:
                 exits.setdefault(a, set()).add(b)
         branches = sum(len(v) for v in exits.values() if len(v) > 1)
         return {"statements": len(parser.statements), "branches": branches, "lines": sorted(parser.statements)}
-    except Exception:
-        return {"statements": 0, "branches": 0, "lines": []}
+    except Exception as exc:
+        # A file that cannot be analysed must never leave the denominator as 0/0 (100%): it counts as one
+        # uncovered statement and report() fails on it.
+        return {"statements": 1, "branches": 0, "lines": [1], "parse_error": f"{type(exc).__name__}: {exc}"}
 
 
 def js_coverage(cov_dir: Path, scoped: list[str]) -> dict:
@@ -1247,6 +1251,7 @@ def report(cov_dir: Path, fail_under: float | None, show_missing: bool, only: li
         scoped,
     )
     known_errors += apply_errors
+    parse_failures = {rel: r["parse_error"] for rel, r in py.items() if "parse_error" in r}
     bt = _totals(bash, ["statements", "lines", "functions"])
     pt = _totals(py, ["statements", "branches"])
     jt = _totals(js, ["lines", "functions", "branches"])
@@ -1261,6 +1266,7 @@ def report(cov_dir: Path, fail_under: float | None, show_missing: bool, only: li
         "exclusions": exclusions,
         "known_limits": known_limits,
         "known_limit_errors": known_errors,
+        "python_parse_errors": parse_failures,
     }
     (cov_dir / "coverage-summary.json").write_text(
         json.dumps({"summary": summary, "bash": bash, "python": py, "javascript": js}, indent=1, sort_keys=True)
@@ -1345,6 +1351,11 @@ def report(cov_dir: Path, fail_under: float | None, show_missing: bool, only: li
     if known_errors:
         print(f"FAIL: {len(known_errors)} invalid known limit(s)")
         return 3
+    if parse_failures:
+        for rel, msg in sorted(parse_failures.items()):
+            print(f"ERROR: {rel}: cannot be analysed ({msg}); it is counted as uncovered", file=sys.stderr)
+        print(f"FAIL: {len(parse_failures)} Python file(s) in scope could not be parsed")
+        return 4
     if fail_under is not None:
         metrics = [
             _pct(bt["statements_covered"], bt["statements"]),
