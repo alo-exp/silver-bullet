@@ -539,7 +539,7 @@ class MainJsonHostsTest(McpCase):
     def test_unparseable_mcp_json_is_refused_not_replaced(self):
         # R6-26: a host config with comments/trailing commas is the user's; nothing is written over it
         path = self.mcp_path("claude")
-        path.parent.mkdir(parents=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('{ "mcpServers": {}, // mine\n}')
         self.flags(agentmemory=True)
         code, out, err = self.run_main()
@@ -549,11 +549,11 @@ class MainJsonHostsTest(McpCase):
 
     def test_symlinked_mcp_json_stays_a_symlink_with_a_backup(self):
         real = self.home / "dotfiles" / "mcp.json"
-        real.parent.mkdir(parents=True)
+        real.parent.mkdir(parents=True, exist_ok=True)
         real.write_text(json.dumps({"mcpServers": {"mine": {"command": "x"}}}))
         real.chmod(0o640)
         link = self.mcp_path("claude")
-        link.parent.mkdir(parents=True)
+        link.parent.mkdir(parents=True, exist_ok=True)
         link.symlink_to(real)
         self.flags(agentmemory=True)
         self.run_main()

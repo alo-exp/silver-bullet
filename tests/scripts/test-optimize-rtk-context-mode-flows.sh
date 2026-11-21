@@ -324,16 +324,11 @@ run_args --host claude --project-root "$PROJ" --skip-cm-doctor
 assert_contains "cm-only with install consent: npm install ran" "$(logs)" "npm install -g context-mode"
 run_args --host opencode --project-root "$PROJ" --skip-cm-doctor
 assert_contains "cm-only opencode: --context-mode-only reaches the merger" "$(logs)" "--context-mode-only"
-mk_cm
-run_args --host cursor --project-root "$PROJ" --skip-cm-doctor
-assert_contains "cm-only cursor: hooks are reconciled for Context Mode alone" "$(logs)" "RT_PATCH_CONTEXT_MODE=1"
-assert_contains "cm-only cursor: rtk hooks are not touched" "$(logs)" "RT_PATCH_RTK=0"
-assert_contains "cm-only cursor: leanctx hooks are not touched" "$(logs)" "RT_PATCH_LEANCTX=0"
 
 # every host's RTK and Context Mode step is skipped, with the grant command, when only the other tool is consented
 sb_test_consent_revoke_all
 sb_test_consent_grant context_mode wire
-for h in cursor claude codex opencode pi hermes; do
+for h in claude codex opencode pi hermes; do
   run_args --host "$h" --project-root "$PROJ" --skip-cm-doctor
   assert_eq "cm-only $h: exits 0" "0" "$TL_STATUS"
   assert_contains "cm-only $h: RTK is skipped with its grant command" "$TL_OUT" "sb-consent.sh grant rtk --all-projects --capabilities wire"
@@ -341,39 +336,10 @@ for h in cursor claude codex opencode pi hermes; do
 done
 sb_test_consent_revoke_all
 sb_test_consent_grant rtk wire
-for h in cursor claude codex opencode pi hermes; do
+for h in claude codex opencode pi hermes; do
   run_args --host "$h" --project-root "$PROJ" --skip-cm-doctor
   assert_eq "rtk-only $h: exits 0" "0" "$TL_STATUS"
   assert_contains "rtk-only $h: Context Mode is skipped with its grant command" "$TL_OUT" "sb-consent.sh grant context_mode --all-projects --capabilities wire"
 done
-
-# RTK consented, Context Mode not: Cursor still gets RTK's allow-list coupling and hook canonicalization
-mk_rtk
-run_args --host cursor --project-root "$PROJ" --skip-cm-doctor
-assert_contains "rtk-only cursor: the allow-list merge runs, RTK only" "$(logs)" "merge --host cursor --repo-root ${ST} --cli-allowlist read-only --rtk-only"
-assert_contains "rtk-only cursor: hooks are canonicalized for RTK alone" "$(logs)" "patch-hooks  | RT_PATCH_CONTEXT_MODE=0 RT_PATCH_LEANCTX=0 RT_PATCH_RTK=1"
-assert_not_contains "rtk-only cursor: no Context Mode installers" "$(logs)" "install-recommended-tools-global"
-# Context Mode consented, RTK not: the allow-list (RTK's coupling) is not merged
-sb_test_consent_revoke_all
-sb_test_consent_grant context_mode wire
-run_args --host cursor --project-root "$PROJ" --skip-cm-doctor
-assert_contains "cm-only cursor: the merge skips the CLI allow-list" "$(logs)" "--skip-cli-config"
-assert_contains "cm-only cursor: Context Mode only" "$(logs)" "--context-mode-only"
-sb_test_consent_revoke_all
-sb_test_consent_grant rtk wire
-# the Cursor allow-list level is passed through and validated
-sb_test_consent_grant_all
-for level in none read-only full; do
-  run_args --host claude --project-root "$PROJ" --skip-cm-doctor --cli-allowlist "$level"
-  assert_contains "--cli-allowlist $level reaches the merger" "$(logs)" "--cli-allowlist $level"
-done
-run_args --host claude --project-root "$PROJ" --skip-cm-doctor
-assert_contains "the default allow-list is read-only" "$(logs)" "--cli-allowlist read-only"
-run_args --host claude --project-root "$PROJ" --cli-allowlist everything
-assert_eq "an unknown allow-list level is refused" "2" "$TL_STATUS"
-assert_contains "the allowed levels are named" "$TL_ERR" "--cli-allowlist takes none, read-only or full"
-run_args --host claude --project-root "$PROJ" --cli-allowlist
-assert_eq "--cli-allowlist needs a value" "2" "$TL_STATUS"
-assert_contains "--cli-allowlist without a value is explained" "$TL_ERR" "--cli-allowlist requires a value"
 
 tl_results

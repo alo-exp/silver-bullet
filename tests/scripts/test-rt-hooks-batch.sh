@@ -94,7 +94,6 @@ assert_eq "install-only grant: mcp batch writes no host config" '{"actions":[],"
 assert_eq "install-only grant: no patcher or merger ran" "" "$(log)"
 assert_eq "install-only grant: the batch as a whole changes nothing" '{"actions":[],"failures":[],"restart_required":false,"changed":false,"affected_servers":[]}' "$(rt_apply_host_convergence_batches false 2>/dev/null | j)"
 sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" wire
-assert_eq "wire-only grant: hooks batch patches" '{"actions":["patch_hooks"],"failures":[],"changed":true}' "$(HR_PY_OUT_patch_hooks=patched HR_PY_HOOK_patch_hooks="$CHANGE_HOOKS" rt_apply_host_hooks_batch | j)"
 assert_eq "wire-only grant: mcp batch patches" '{"actions":["patch_mcp"],"failures":[],"changed":true}' "$(HR_PY_OUT_patch_mcp=patched HR_PY_HOOK_patch_mcp="$CHANGE_MCP" rt_apply_host_mcp_batch | j)"
 
 

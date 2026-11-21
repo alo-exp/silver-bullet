@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# scripts/lib/recommended-tools/{heartbeat,session-verify,vendor-doctor,installer}.sh:
-# bridge heartbeats, the SessionStart drift report, bounded vendor `doctor` runs
-# and the installer's reconciler deployment. Libraries are sourced in-process;
+# scripts/lib/recommended-tools/{heartbeat,session-verify,vendor-doctor}.sh:
+# bridge heartbeats, the SessionStart drift report and bounded vendor `doctor` runs. Libraries are sourced in-process;
 # reconcilers, vendor CLIs and timeouts are stubs inside the sandboxed HOME.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
