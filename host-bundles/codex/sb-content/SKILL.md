@@ -68,29 +68,34 @@ verified where applicable, and high-risk changes are approved or tracked.
 
 ## Site and help batch protocol (`site/**`)
 
-Use this lightweight V-loop for iterative site/help work (hooks enforce regression + publish evidence at Stop/push).
+Use this lightweight V-loop for iterative site/help work. It applies to a project that opts in with `site_profile.enabled` in its `.silver-bullet.json` (see `silver-bullet.md` §8.2); hooks then enforce regression, visual and publish evidence at Stop and before a real push.
 
 ### Preconditions
 
 1. Route via `/sb` → `sb:content --mode fix` (or `audit` for read-only review).
-2. **Composer 2.5 workers only** — parent orchestrator spawns `Task` with `model=composer-2.5`; parent never edits `site/**` directly.
+2. Under the parent orchestrator, site edits are made by Task workers like all other implementation work; the parent verifies the worker's claims via `/sb:completion-audit`. No hook blocks a parent edit of the site, so this is a rule you follow, not one the hooks check.
 3. `graphify query` before exploration; `agentmemory` save after each batch.
 
 ### Batch steps (per turn)
 
 | Step | Action | Evidence |
 |------|--------|----------|
-| 1 Preflight | Run site freshness tests if last edit > prior regression marker | `test-site-*-freshness.sh` output |
-| 2 Implement | Worker edits `site/**` only; parent verifies worker claims via `/sb:completion-audit` | diff + worker summary |
-| 3 Regression | `bash tests/scripts/test-site-chrome-regression.sh` (+ doc/content freshness) | hook `site-regression-gate` pass |
-| 4 Visual | 1280px light+dark screenshots (Alumnium or host browser MCP) — Wave 2 gate | `.planning/` or agentmemory |
-| 5 Publish | push `main` → wait `pages.yml` → fetch public URL → write `live-publish-evidence.json` | explicit LIVE / NOT LIVE |
+| 1 Preflight | Run the profile's regression scripts if the last edit is newer than the last pass | script output; `site-regression-gate` pass |
+| 2 Implement | Worker edits the site directory only | diff + worker summary |
+| 3 Regression | The profile's `regression_scripts` (commit them first: the gate runs only scripts that are committed as they stand) | `site-regression-gate` pass |
+| 4 Visual | Screenshots (Alumnium or host browser MCP, e.g. `browser_take_screenshot` at 1280px, light and dark) taken after the last edit; the hook records the screenshot file by itself | `site-visual-evidence.json`, written by the hook only |
+| 5 Publish | push the default branch, wait for the deploy, then run `bash <plugin>/scripts/site-live-evidence.sh --marker '<text only the new page contains>'` | `live-publish-evidence.json` for the current HEAD, written by that script only: LIVE or NOT LIVE |
+
+The state directory is protected: never write `site-visual-evidence.json` or `live-publish-evidence.json` yourself.
 
 ### Stop gates (runtime)
 
 - `instruction-ledger-gate` — multi-bullet prompts need per-item resolution.
-- `site-regression-gate` — blocks Stop/push when `site/**` touched without passing regression tests.
-- `live-publish-evidence-gate` — blocks push-to-main / LIVE claims without fetched-page evidence.
+- `site-regression-gate` — blocks Stop and a real `git push` when the site was edited without a passing regression run of committed scripts.
+- `site-visual-evidence-gate` and `v-loop-rollup-gate` — block Stop until a screenshot taken after the last edit is recorded.
+- `live-publish-evidence-gate` — blocks Stop after a site push or a LIVE claim until fresh evidence for the current HEAD exists.
 - `subagent-stop-enforcement` — parent Stop requires `silver-completion-audit` after Task workers.
+
+A Stop gate that already told you once releases on `stop_hook_active` and logs the release to `stop-loop-release.log`.
 
 See `silver-bullet.md` §8.2 and `AGENTS.md` publish policy.

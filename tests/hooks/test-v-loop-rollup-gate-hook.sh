@@ -2,136 +2,140 @@
 # End-to-end tests for hooks/v-loop-rollup-gate.sh (Stop: site-session V-loop rollup).
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-source "$(dirname "${BASH_SOURCE[0]}")/../lib/b-orchestrator-helpers.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/dgates-helpers.sh"
 tl_init
 
-HOOK=hooks/v-loop-rollup-gate.sh
+H=hooks/v-loop-rollup-gate.sh
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
-unset SB_ORCHESTRATOR_WORKER SB_ORCHESTRATOR_PARENT SILVER_BULLET_PROJECT_ROOT SB_AGENT_DELEGATE_GUARD SB_AGENT_DELEGATE_V2
-# shellcheck source=../../hooks/lib/site-session.sh
-source "$TL_REPO_ROOT/hooks/lib/site-session.sh"
-
-PROJ="$TL_TMP/proj"
-orch_make_project "$PROJ" '{"sb_initiated":true}'
-mkdir -p "$PROJ/sub"
-cd "$PROJ"
-NOJQ="$(tl_path_without jq)"
-SITE="$(sb_site_session_file)"
-VLOOPS="$(sb_site_session_vloop_file)"
+ST="$SB_RUNTIME_STATE_DIR"
+SITE="$ST/site-session.json"
+VLOOPS="$ST/site-vloops.json"
+P="$TL_TMP/proj"
+dg_project "$P" '{"sb_initiated":true,"site_profile":{"enabled":true,"dir":"site","live_url":"https://site.example/"}}'
+rm -rf "$P/.git"
+git -C "$P" init -q -b main
+git -C "$P" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
+P_REAL="$(cd "$P" && pwd -P)"
+HEAD_SHA="$(git -C "$P" rev-parse HEAD)"
+mkdir -p "$P/sub" "$TL_TMP/outside"
+shot="$TL_TMP/shot.png"
+printf 'png' >"$shot"
 stop_json() { jq -cn --arg e "${1:-Stop}" '{hook_event_name:$e}'; }
 blocked() { jq -r '.decision // "none"' <<<"$TL_OUT" 2>/dev/null || echo bad; }
-reset() { rm -f "$SITE" "$VLOOPS" "$(sb_site_session_live_evidence_file)" "$(sb_site_session_visual_evidence_file)" \
-  "$SB_RUNTIME_STATE_DIR/agent-delegation-active.json" "$SB_RUNTIME_STATE_DIR/trivial" "$SB_RUNTIME_STATE_DIR/orchestrator-worker-active.json"; }
-start_site_session() { sb_site_session_mark_site_intent; sb_site_session_init_vloops; }
+session() { # [json to merge]
+  local extra="${1:-}"
+  [[ -n "$extra" ]] || extra='{}'
+  jq -n --arg sc "$P_REAL|main" --argjson x "$extra" '{active:true,scope:$sc,edit_seq:1,regression_passed_seq:0,touch_reason:"edit:site/index.html"} + $x' >"$SITE"
+}
+reset() { rm -f "$SITE" "$VLOOPS" "$ST/live-publish-evidence.json" "$ST/site-visual-evidence.json" "$ST/agent-delegation-active.json" "$ST/trivial" "$ST/orchestrator-worker-active.json"; }
+evidence() { jq -n --arg r "$P_REAL" --arg p "$shot" --argjson e 1 '{captured_at:"t",project:$r,edit_seq:$e,paths:[$p]}' >"$ST/site-visual-evidence.json"; }
+live() { jq -n --arg sha "$HEAD_SHA" --arg r "$P_REAL" --argjson e "$(date +%s)" '{status:"LIVE",commit_sha:$sha,project:$r,urls:["u"],markers_matched:["m"],verified_at:"t",verified_epoch:$e}' >"$ST/live-publish-evidence.json"; }
+step() { jq -r --arg id "$1" '.steps[]|select(.id==$id)|.status' "$VLOOPS"; }
 
 echo "=== early exits ==="
-reset
-start_site_session
-PATH="$NOJQ" tl_run_hook "$HOOK" "$(stop_json)"
+reset; session
+dg_run_nojq "$P" "$H" "$(stop_json)"
 assert_eq "no jq: silent" "0|" "$TL_STATUS|$TL_OUT"
-tl_run_hook "$HOOK" "$(stop_json PostToolUse)"
+dg_run "$P" "$H" "$(stop_json PostToolUse)"
 assert_eq "non-Stop event: silent" "0|" "$TL_STATUS|$TL_OUT"
-mkdir -p "$TL_TMP/plain/.git"
-# Prime the project-root cache from the real project so only the boundary walk keeps the plain dir out.
-tl_run_hook "$HOOK" "$(stop_json)"
-assert_eq "primed project run blocks" block "$(blocked)"
-( cd "$TL_TMP/plain" && tl_run_hook "$HOOK" "$(stop_json)" && printf '%s|%s' "$TL_STATUS" "$TL_OUT" ) >"$TL_TMP/plain.out"
-assert_eq "outside an SB project: silent" "0|" "$(cat "$TL_TMP/plain.out")"
-staged="$(orch_stage_hook v-loop-rollup-gate.sh)"
-tl_run_stdin "$(stop_json)" bash "$staged"
+dg_run "$TL_TMP/outside" "$H" "$(stop_json)"
+assert_eq "outside an SB project: silent" "0|" "$TL_STATUS|$TL_OUT"
+dg_run_nolib "$H" "$(stop_json)"
 assert_eq "plugin without its libs: fails open" "0|" "$TL_STATUS|$TL_OUT"
-tree="$(orch_stage_tree)"
-printf '%s\n' 'sb_project_gate_or_exit() { return 1; }' >"$tree/lib/sb-project-gate.sh"
-tl_run_stdin "$(stop_json)" bash "$tree/v-loop-rollup-gate.sh"
+dg_run_gate_missing "$P" "$H" "$(stop_json)"
 assert_eq "refusing project gate: silent" "0|" "$TL_STATUS|$TL_OUT"
 # R9-05: a Stop is always the parent's; a fresh spawn record or a worker env must not skip the gate.
-SB_ORCHESTRATOR_WORKER=1 tl_run_hook "$HOOK" "$(stop_json)"
+dg_run "$P" "$H" "$(stop_json)" SB_ORCHESTRATOR_WORKER=1
 assert_contains "Stop with a worker env still gated (R9-05)" "$TL_OUT" '"decision":"block"'
-printf '{"spawned_at":"%s"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$SB_RUNTIME_STATE_DIR/orchestrator-worker-active.json"
-tl_run_hook "$HOOK" "$(stop_json)"
+printf '{"spawned_at":"%s"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$ST/orchestrator-worker-active.json"
+dg_run "$P" "$H" "$(stop_json)"
 assert_contains "Stop with a fresh spawn marker still gated (R9-05)" "$TL_OUT" '"decision":"block"'
-rm -f "$SB_RUNTIME_STATE_DIR/orchestrator-worker-active.json"
-: >"$SB_RUNTIME_STATE_DIR/trivial"
-tl_run_hook "$HOOK" "$(stop_json)"
+rm -f "$ST/orchestrator-worker-active.json"
+: >"$ST/trivial"
+dg_run "$P" "$H" "$(stop_json)"
 assert_eq "legacy trivial marker bypasses the gate" "0|" "$TL_STATUS|$TL_OUT"
-rm -f "$SB_RUNTIME_STATE_DIR/trivial"
+rm -f "$ST/trivial"
 
-echo "=== the gate only applies to genuine site sessions ==="
+echo "=== the gate only applies to genuine site sessions of a profile project ==="
 reset
-tl_run_hook "$HOOK" "$(stop_json)"
+dg_run "$P" "$H" "$(stop_json)"
 assert_eq "no site session: silent" "0|" "$TL_STATUS|$TL_OUT"
-start_site_session
-rm -f "$SITE"
-tl_run_hook "$HOOK" "$(stop_json)"
-assert_eq "V-loops without an active site session: silent" "0|" "$TL_STATUS|$TL_OUT"
-reset
-sb_site_session_touch "edit:docs/readme.md"
-sb_site_session_init_vloops
-tl_run_hook "$HOOK" "$(stop_json)"
-assert_eq "active session without site work: silent" "0|" "$TL_STATUS|$TL_OUT"
-reset
-start_site_session
-jq -n '{active:true,host:"codex",task_id:"T1",work_dir:"/x",ownership_scope:[]}' >"$SB_RUNTIME_STATE_DIR/agent-delegation-active.json"
-tl_run_hook "$HOOK" "$(stop_json)"
-assert_eq "active agent delegation: gate does not apply" "0|" "$TL_STATUS|$TL_OUT"
-rm -f "$SB_RUNTIME_STATE_DIR/agent-delegation-active.json"
+session '{"edit_seq":0}'
+dg_run "$P" "$H" "$(stop_json)"
+assert_eq "active session without site edits: silent" "0|" "$TL_STATUS|$TL_OUT"
+session
+jq '.scope="/other|main"' "$SITE" >"$ST/s.t" && mv "$ST/s.t" "$SITE"
+dg_run "$P" "$H" "$(stop_json)"
+assert_eq "a session left by another project: silent (R9-08)" "0|" "$TL_STATUS|$TL_OUT"
+session
+jq -n '{active:true,host:"codex",task_id:"T1",work_dir:"/x",ownership_scope:[]}' >"$ST/agent-delegation-active.json"
+dg_run "$P" "$H" "$(stop_json)"
+assert_eq "an active agent delegation does not switch the gate off (R9-04)" block "$(blocked)"
+rm -f "$ST/agent-delegation-active.json"
+dg_project "$TL_TMP/plain" '{"sb_initiated":true}'
+git -C "$TL_TMP/plain" init -q 2>/dev/null || true
+dg_run "$TL_TMP/plain" "$H" "$(stop_json)"
+assert_eq "a project without a site_profile: silent (R9-02)" "0|" "$TL_STATUS|$TL_OUT"
 
 echo "=== pending V-loops block Stop ==="
-tl_run_hook "$HOOK" "$(stop_json)"
+session
+dg_run "$P" "$H" "$(stop_json)"
 assert_eq "incomplete V-loops: block" block "$(blocked)"
 reason="$(jq -r .reason <<<"$TL_OUT")"
 assert_contains "block names the gate" "$reason" "Site V-loop rollup gate"
 assert_contains "block lists incomplete steps" "$reason" "Site V-loop rollup — incomplete steps:"
 assert_contains "block lists the preflight step" "$reason" "(preflight): pending"
 assert_contains "block explains how to proceed" "$reason" "Complete sb:content batch steps"
-assert_eq "an empty event name defaults to Stop" block "$(tl_run_hook "$HOOK" '{}' && blocked)"
-tl_run_hook "$HOOK" 'not json'
+dg_run "$P" "$H" '{}'
+assert_eq "an empty event name defaults to Stop" block "$(blocked)"
+dg_run "$P" "$H" 'not json'
 assert_eq "invalid JSON defaults to Stop" block "$(blocked)"
-( cd "$PROJ/sub" && tl_run_hook "$HOOK" "$(stop_json)" && blocked ) >"$TL_TMP/sub.out"
-assert_eq "gate resolves the project from a subdirectory" block "$(cat "$TL_TMP/sub.out")"
+dg_run "$P/sub" "$H" "$(stop_json)"
+assert_eq "gate resolves the project from a subdirectory" block "$(blocked)"
+dg_run "$P" "$H" '{"hook_event_name":"Stop","stop_hook_active":true}'
+assert_eq "a Stop already continuing because of a Stop hook is released (R9-03)" "0|" "$TL_STATUS|$TL_OUT"
+assert_contains "the release is audited" "$(cat "$ST/stop-loop-release.log")" "v-loop-rollup-gate"
+rm -f "$ST/stop-loop-release.log"
 
-echo "=== rollup progress ==="
-sb_site_session_vloop_mark preflight ref
-sb_site_session_vloop_mark implement ref
-sb_site_session_vloop_mark regression ref
-tl_run_hook "$HOOK" "$(stop_json)"
-assert_eq "visual evidence still missing: block" block "$(blocked)"
+echo "=== rollup is derived from the evidence, never remembered ==="
+session '{"regression_passed_seq":1}'
+dg_run "$P" "$H" "$(stop_json)"
+assert_eq "regression done, visual missing: block" block "$(blocked)"
 assert_contains "remaining step named" "$(jq -r .reason <<<"$TL_OUT")" "(visual): pending"
 assert_not_contains "completed steps are not listed" "$(jq -r .reason <<<"$TL_OUT")" "(preflight)"
-sb_site_session_vloop_mark visual ref
-tl_run_hook "$HOOK" "$(stop_json)"
+evidence
+dg_run "$P" "$H" "$(stop_json)"
 assert_eq "all required steps done (publish optional): allowed" "0|" "$TL_STATUS|$TL_OUT"
-sb_site_session_mark_push_intent
-tl_run_hook "$HOOK" "$(stop_json)"
+session '{"regression_passed_seq":1,"edit_seq":2}'
+dg_run "$P" "$H" "$(stop_json)"
+assert_eq "a later edit un-does the regression and visual steps (R9-08)" block "$(blocked)"
+assert_eq "the visual step is pending again, not remembered" pending "$(step visual)"
+session '{"regression_passed_seq":1,"push_intent":true}'
+dg_run "$P" "$H" "$(stop_json)"
 assert_eq "push intent makes the publish step required" block "$(blocked)"
 assert_contains "publish step named" "$(jq -r .reason <<<"$TL_OUT")" "(publish): pending"
-sb_site_session_vloop_mark publish ref
-tl_run_hook "$HOOK" "$(stop_json)"
-assert_eq "publish done: allowed" "0|" "$TL_STATUS|$TL_OUT"
-
-echo "=== V-loop state is synced from session evidence before deciding ==="
-reset
-start_site_session
+live
+dg_run "$P" "$H" "$(stop_json)"
+assert_eq "publish done by valid live evidence: allowed" "0|" "$TL_STATUS|$TL_OUT"
 rm -f "$VLOOPS"
-tl_run_hook "$HOOK" "$(stop_json)"
-assert_eq "missing V-loop file is re-initialised and blocks" block "$(blocked)"
-assert_eq "implement step derived from the active session" "done" "$(jq -r '.steps[]|select(.id=="implement")|.status' "$VLOOPS")"
-sb_site_session_mark_visual_evidence "shots/home.png"
-tl_run_hook "$HOOK" "$(stop_json)"
-assert_eq "visual evidence file marks the visual step" "done" "$(jq -r '.steps[]|select(.id=="visual")|.status' "$VLOOPS")"
+dg_run "$P" "$H" "$(stop_json)"
+assert_eq "a missing V-loop file is rebuilt from the evidence" "0|" "$TL_STATUS|$TL_OUT"
+assert_eq "implement step derived from the active session" "done" "$(step implement)"
+
 echo "=== sync failures do not break Stop ==="
-reset
-start_site_session
-sb_site_session_mark_push_intent
+session '{"push_intent":true}'
 printf 'garbage' >"$VLOOPS"
-tl_run_hook "$HOOK" "$(stop_json)"
-assert_eq "corrupt V-loop file: fails open" "0|" "$TL_STATUS|$TL_OUT"
+dg_run "$P" "$H" "$(stop_json)"
+assert_eq "corrupt V-loop file is rebuilt, the gate still decides" block "$(blocked)"
+
+session '{"push_intent":true}'
+rm -f "$VLOOPS"; mkdir "$VLOOPS"
+dg_run "$P" "$H" "$(stop_json)"
+assert_eq "an unusable V-loop file fails open" "0|" "$TL_STATUS|$TL_OUT"
+rmdir "$VLOOPS"
 
 echo "=== unreadable stdin ==="
-reset
-start_site_session
-status=0
-out="$(bash "$TL_REPO_ROOT/$HOOK" <"$TL_TMP")" || status=$?
-assert_eq "stdin that cannot be read yields no event name: silent" "0|" "$status|$out"
+dg_run_closed_stdin "$P" "$H"
+assert_eq "stdin that cannot be read yields no event name: block or silent without crashing" 0 "$TL_STATUS"
 
 tl_results

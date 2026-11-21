@@ -243,6 +243,15 @@ reset_docs
 echo '{ not json' >"$R/docs/doc-scheme.json"; run_enforce
 assert_contains "enforce: a malformed contract is still reported as malformed" "$(cat "$EMITTED")" "malformed"
 reset_docs
+jq '.enforcement.granularity_levels="abc"' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"; run_enforce
+assert_file_absent "enforce: a contract the comparison cannot read is not reported as weakened" "$EMITTED"
+reset_docs
+printf '{ not json' >"$R/docs/doc-scheme.json"; git -C "$R" add docs/doc-scheme.json; git -C "$R" -c user.email=a@b -c user.name=n commit -q -m "break HEAD contract"
+git -C "$R" show HEAD:docs/doc-scheme.json >/dev/null
+printf '%s' '{"enforcement":{"enabled":false},"required_docs":[{"key":"docs/CHANGELOG.md","required_sections":[]}]}' >"$R/docs/doc-scheme.json"; rm -f "$EMITTED"; run_enforce
+assert_file_absent "enforce: a HEAD contract that is not JSON gives nothing to compare with" "$EMITTED"
+git -C "$R" checkout -q HEAD~1 -- docs
+git -C "$R" -c user.email=a@b -c user.name=n commit -q -m "restore HEAD contract"
 git -C "$R" rm -q --cached docs/doc-scheme.md docs/doc-scheme.json; git -C "$R" -c user.email=a@b -c user.name=n commit -q -m untrack
 rm -f "$EMITTED" "$R/docs/doc-scheme.md" "$R/docs/doc-scheme.json"; run_enforce
 assert_file_absent "enforce: a repo whose scheme git does not track is not governed once the files are gone" "$EMITTED"

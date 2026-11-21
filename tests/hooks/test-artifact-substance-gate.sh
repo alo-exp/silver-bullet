@@ -193,6 +193,49 @@ result=$(run_gate $'silver-verify\n')
 assert_blocked "a newer top-level VERIFICATION.md with an empty fence does not shadow a stub (R9-11)" "$result"
 teardown
 
+# pre-existing branches of the gate, kept covered here: stubs, review rounds, plan checks, strict and warn modes
+setup
+mkdir -p "$TMPDIR_TEST/.planning/phases/01-test"
+printf '# Verification\nTODO\n' >"$TMPDIR_TEST/.planning/phases/01-test/VERIFICATION.md"
+result=$(run_gate $'silver-verify\n')
+assert_blocked "a VERIFICATION.md with only a placeholder line is a stub" "$result"
+printf '# Review\nTBD\n' >"$TMPDIR_TEST/.planning/phases/01-test/REVIEW.md"
+result=$(run_gate $'silver-review\n')
+assert_blocked "a REVIEW.md with only a placeholder line is a stub" "$result"
+printf '# Review\nNo findings - clean pass.\n' >"$TMPDIR_TEST/.planning/phases/01-test/REVIEW.md"
+printf '# Rounds\nnothing yet\n' >"$TMPDIR_TEST/.planning/REVIEW-ROUNDS.md"
+result=$(run_gate $'silver-review\n')
+assert_blocked "a REVIEW-ROUNDS.md with no round blocks" "$result"
+printf '## Round 1\nx\n' >"$TMPDIR_TEST/.planning/REVIEW-ROUNDS.md"
+result=$(run_gate $'silver-review\n')
+assert_blocked "a REVIEW-ROUNDS.md with one round blocks" "$result"
+printf '# Plan\nTODO\n' >"$TMPDIR_TEST/.planning/phases/01-test/PLAN.md"
+result=$(run_gate $'silver-plan\n')
+assert_blocked "a PLAN.md with only a placeholder line is a stub" "$result"
+printf '# Plan\nsome prose without the usual headings\n' >"$TMPDIR_TEST/.planning/phases/01-test/PLAN.md"
+result=$(run_gate $'silver-plan\n')
+assert_blocked "a PLAN.md without task, acceptance or verification text blocks" "$result"
+printf '# Plan\nTask 1 with acceptance criteria\n' >"$TMPDIR_TEST/.planning/phases/01-test/PLAN.md"
+result=$(run_gate $'silver-plan\n')
+assert_passed "a PLAN.md with task text passes" "$result"
+printf '# Verification\nTODO\n' >"$TMPDIR_TEST/.planning/phases/01-test/VERIFICATION.md"
+result=$(
+  emit_warn() { printf 'warned\n%s\n' "$1"; }
+  emit_block() { printf 'blocked\n'; }
+  sb_artifact_substance_gate_enforce "$TMPDIR_TEST" emit_warn emit_block 0 $'silver-verify\n'
+  echo passed
+)
+assert_contains_word() { if [[ "$2" == *"$3"* ]]; then echo "  ok: $1"; PASS=$((PASS + 1)); else echo "  FAIL: $1"; FAIL=$((FAIL + 1)); fi; }
+assert_contains_word "non-strict mode warns instead of blocking" "$result" "warned"
+result=$(
+  emit_warn() { :; }
+  emit_block() { printf 'blocked\n'; }
+  sb_artifact_substance_gate_enforce "$TMPDIR_TEST" emit_warn emit_block 1 $'silver-verify\n'
+  echo passed-after-block
+)
+assert_contains_word "strict mode exits after the block (here: a block function that returns)" "$result" "blocked"
+teardown
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1

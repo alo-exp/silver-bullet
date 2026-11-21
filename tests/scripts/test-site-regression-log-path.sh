@@ -28,6 +28,15 @@ trap 'rm -rf "$TMP_ROOT"' EXIT
 export SB_RUNTIME_STATE_DIR="$TMP_ROOT/state"
 mkdir -p "$SB_RUNTIME_STATE_DIR"
 
+# The scripts come from the site profile; the gate runs only scripts committed as they stand (R9-07).
+# shellcheck disable=SC2034  # read by hooks/lib/site-session.sh
+SB_SITE_REGRESSION_SCRIPTS=$'tests/scripts/test-site-chrome-regression.sh\ntests/scripts/test-site-doc-freshness.sh\ntests/scripts/test-site-content-freshness.sh\n'
+commit_repo() {
+  git -C "$1" init -q -b main
+  git -C "$1" add -A >/dev/null 2>&1
+  git -C "$1" -c user.name=t -c user.email=t@t commit -q -m init
+}
+
 # Stub repo: three trivial passing suites so the real site tests never run.
 STUB_REPO="$TMP_ROOT/stub-repo"
 mkdir -p "$STUB_REPO/tests/scripts"
@@ -35,6 +44,7 @@ for stub in test-site-chrome-regression test-site-doc-freshness test-site-conten
   printf '#!/usr/bin/env bash\nexit 0\n' >"$STUB_REPO/tests/scripts/$stub.sh"
   chmod +x "$STUB_REPO/tests/scripts/$stub.sh"
 done
+commit_repo "$STUB_REPO"
 
 # --- 1. Two consecutive calls must produce different log paths -----------------
 rc1=0
@@ -94,7 +104,7 @@ for candidate in "$log1" "$log2" "$log3"; do
   fi
 done
 
-# --- 4. Missing tests dir returns 90, not 1 -----------------------------------
+# --- 4. Missing regression scripts return 90, not 1 ---------------------------
 NO_TESTS_REPO="$TMP_ROOT/no-tests-repo"
 mkdir -p "$NO_TESTS_REPO"
 
@@ -102,9 +112,9 @@ rc4=0
 sb_site_session_run_regression_tests "$NO_TESTS_REPO" >/dev/null 2>&1 || rc4=$?
 
 if [[ $rc4 -eq 90 ]]; then
-  pass "missing tests dir returns 90 (setup error, distinguishable from test failure)"
+  pass "missing scripts return 90 (setup error, distinguishable from test failure)"
 else
-  fail "missing tests dir returned $rc4 (expected 90)"
+  fail "missing scripts returned $rc4 (expected 90)"
 fi
 
 rc5=0
@@ -124,6 +134,7 @@ for stub in test-site-doc-freshness test-site-content-freshness; do
   printf '#!/usr/bin/env bash\nexit 0\n' >"$FAIL_REPO/tests/scripts/$stub.sh"
 done
 chmod +x "$FAIL_REPO"/tests/scripts/*.sh
+commit_repo "$FAIL_REPO"
 
 rc6=0
 log6="$(sb_site_session_run_regression_tests "$FAIL_REPO")" || rc6=$?

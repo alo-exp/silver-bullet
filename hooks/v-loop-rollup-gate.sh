@@ -23,6 +23,7 @@ search_dir="${config_file:+${config_file%/*}}"
 search_dir="${search_dir:-$PWD}"
 [[ -n "$config_file" ]] || exit 0
 sb_project_gate_or_exit 2>/dev/null || exit 0
+sb_site_profile_load || exit 0
 
 # A Stop event is always the parent session's: workers end with SubagentStop, which this gate
 # ignores above. Never skip on a worker marker here (R9-05).
@@ -37,6 +38,7 @@ sb_site_session_gates_apply || exit 0
 sb_site_session_sync_vloops_from_state 2>/dev/null || true
 sb_site_session_vloop_pending || exit 0
 
+if sb_site_stop_loop_release v-loop-rollup-gate "$input"; then exit 0; fi
 summary="$(sb_site_session_vloop_pending_summary)"
 reason=$(printf 'Site V-loop rollup gate — active site session has incomplete child V-loops.\n\n%s\n\nComplete sb:content batch steps (preflight → implement → regression → visual → publish).' "$summary")
 json_reason=$(printf '%s' "$reason" | jq -Rs '.')
