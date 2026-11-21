@@ -90,9 +90,13 @@ elif check == "rendered":
         # Claude Code: the plugin cache holds the repo layout; skills load from <root>/agents/claude/<dir>/.
         croot = os.path.join(tmp, "claude", "plugins", "cache", "alo-labs", "silver-bullet", "1.0")
         os.makedirs(croot)
-        for part in ("agents", "scripts", "templates", "hooks", "skills", "docs"):
+        # scripts/install-claude.sh links the cache's skills/ to agents/claude (the source skills/ tree is not
+        # installed under that name). A marketplace install carries the repo (scripts/, templates/, hooks/);
+        # the offline local-materialize fallback copies only hooks/ and agents/claude until H1 fixes it.
+        for part in ("agents", "scripts", "templates", "hooks", "docs"):
             if os.path.exists(os.path.join(ROOT, part)):
                 os.symlink(os.path.join(ROOT, part), os.path.join(croot, part))
+        os.symlink(os.path.join(ROOT, "agents", "claude"), os.path.join(croot, "skills"))
         # Codex: the installed package is plugins/silver-bullet (scripts/, templates/, hooks/, skill-source/).
         home = os.path.join(tmp, "home")
         pkg = os.path.join(home, ".codex", "plugins", "cache", "alo-labs-codex", "silver-bullet", "current")

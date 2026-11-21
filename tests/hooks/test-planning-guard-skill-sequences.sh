@@ -87,12 +87,13 @@ fi
 echo "--- sb:spec REQUIREMENTS.md (owner allowance) ---"
 STATE_FILE="${SB_RUNTIME_STATE_DIR}/state"
 mkdir -p "$(dirname "$STATE_FILE")"
-printf 'silver-quality-gates\nsilver-plan\nsilver-spec\n' >"$STATE_FILE"
-assert_allowed "sb:spec is the latest recorded skill" "$ACTIVE" ".planning/REQUIREMENTS.md"
-printf 'silver-quality-gates\nsilver-spec\nsilver-plan\n' >"$STATE_FILE"
-assert_denied "another skill was recorded after sb:spec" "$ACTIVE" ".planning/REQUIREMENTS.md"
-rm -f "$STATE_FILE"
-if skill_has silver-spec 'latest skill recorded' && ! skill_has silver-spec 'REQUIREMENTS.draft.md'; then
+own() { ( export SB_RUNTIME_STATE_DIR; source "$REPO_ROOT/hooks/lib/state-seal.sh"; _sb_state_seal_ensure_key "$STATE_FILE"; sb_state_last_write "$STATE_FILE" "$1" ); }
+own silver-plan; own silver-spec
+assert_allowed "sb:spec is the skill invoked last" "$ACTIVE" ".planning/REQUIREMENTS.md"
+own silver-plan
+assert_denied "another skill was invoked after sb:spec" "$ACTIVE" ".planning/REQUIREMENTS.md"
+rm -f "$STATE_FILE" "$STATE_FILE.last" "$STATE_FILE.lasthwm"
+if skill_has silver-spec 'skill invoked last' && ! skill_has silver-spec 'REQUIREMENTS.draft.md'; then
   ok "spec skill writes the real file and says what to do when another skill was recorded"
 else
   bad "spec skill text does not match the owner allowance"

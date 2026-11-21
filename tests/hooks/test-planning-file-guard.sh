@@ -295,9 +295,13 @@ run_hook_bash() {
   ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
 }
 STATE="${SB_TEST_DIR}/state"
+# The skill invoked last, sealed the way record-skill.sh does it.
+own_at() { ( export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"; source "$REPO_ROOT/hooks/lib/state-seal.sh"; _sb_state_seal_ensure_key "$1"; sb_state_last_write "$1" "$2" ); }
+own() { own_at "$STATE" "$1"; }
+unown() { rm -f "$STATE.last" "$STATE.lasthwm"; }
 
 setup
-printf 'silver-quality-gates\nsilver-plan\nsilver-spec\n' >"$STATE"
+unown; own silver-plan; own silver-spec
 out=$(run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
 assert_passes "latest skill silver-spec may Write REQUIREMENTS.md" "$out"
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
@@ -333,23 +337,23 @@ rm -f "${TMPDIR_TEST}/.planning/REQUIREMENTS.md"
 teardown
 
 setup
-printf 'silver-ingest\n' >"$STATE"
+unown; own silver-ingest
 out=$(run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
 assert_passes "latest skill silver-ingest may Write REQUIREMENTS.md" "$out"
-printf 'silver-spec\nsilver-plan\n' >"$STATE"
+own silver-spec; own silver-plan
 out=$(run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
 assert_blocks "a stale silver-spec (another skill recorded after it) gets no allowance" "$out"
-printf 'silver-plan\n' >"$STATE"
+unown; own silver-plan
 out=$(run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
 assert_blocks "the wrong skill gets no allowance" "$out"
-: >"$STATE"
+unown
 out=$(run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
 assert_blocks "an empty state gets no allowance" "$out"
-rm -f "$STATE"
+rm -f "$STATE" "$STATE.last"
 out=$(run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
 assert_blocks "a missing state gets no allowance" "$out"
-printf 'silver-plan\n' >"$STATE"
-printf 'silver-spec\n' >"${TMPDIR_TEST}/forged-state"
+own silver-plan
+own_at "${TMPDIR_TEST}/forged-state" silver-spec
 out=$(SILVER_BULLET_STATE_FILE="${TMPDIR_TEST}/forged-state" run_hook_write "${TMPDIR_TEST}/.planning/REQUIREMENTS.md")
 assert_blocks "a state file outside the state directory is ignored" "$out"
 teardown

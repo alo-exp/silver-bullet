@@ -25,6 +25,15 @@
 #   sb_state_seal_trusted STATE    print the content the gates may trust
 #   sb_state_seal_file STATE       the seal path
 #   sb_state_seal_lock STATE / sb_state_seal_unlock   serialise a recorder's enforce, append and re-seal
+#   sb_state_last_write STATE SKILL   record (and key-seal) the skill invoked last, re-invocations included
+#   sb_state_last_read STATE          print that skill when its keyed record verifies; nothing otherwise
+#
+# The state lists a skill only the first time it is recorded, so it cannot say which skill ran last.
+# <state>.last holds "v1, skill, counter, branch checksum, HMAC"; <state>.lasthwm holds the highest
+# counter issued, so an older copy put back is refused, and a record from another branch does not
+# verify. Only a keyed seal counts (no key, no openssl/python3: nothing is trusted). Old installs have
+# no .last: nothing is trusted either. The record is in the state directory the state-tamper guard
+# protects, and session-start removes it with the state on a branch change.
 
 sb_state_seal_file() { printf '%s.seal' "$1"; }
 _sb_state_seal_hwm_file() { printf '%s.hwm' "$1"; }
@@ -226,4 +235,51 @@ sb_state_seal_lock() { # STATE
 sb_state_seal_unlock() {
   if [[ -n "${SB_STATE_SEAL_LOCK_HELD:-}" ]]; then rm -rf -- "$SB_STATE_SEAL_LOCK_HELD"; fi
   SB_STATE_SEAL_LOCK_HELD=""
+}
+
+_sb_state_last_file() { printf '%s.last' "$1"; }
+_sb_state_last_hwm_file() { printf '%s.lasthwm' "$1"; }
+
+_sb_state_last_message() { # SKILL COUNTER BRANCHSUM
+  printf 'sb-last-v1\n%s\n%s\n%s\n' "$1" "$2" "$3"
+}
+
+sb_state_last_write() {
+  local state="$1" skill="$2" last hwm c prev bsum digest tmp
+  last="$(_sb_state_last_file "$state")"
+  hwm="$(_sb_state_last_hwm_file "$state")"
+  [[ ! -L "$last" && ! -L "$hwm" ]] || return 0
+  # The key is made by the first seal or session start; a record never creates it (that would make a
+  # legacy unsealed state look tampered).
+  [[ -f "$(_sb_state_seal_key_file "$state")" && ! -L "$(_sb_state_seal_key_file "$state")" ]] || return 0
+  c="$(_sb_state_seal_number "$hwm")"
+  prev=0
+  [[ ! -f "$last" ]] || prev="$(sed -n '3p' "$last" 2>/dev/null)"
+  [[ "$prev" =~ ^[0-9]+$ ]] || prev=0
+  [[ "$prev" -le "$c" ]] || c="$prev"
+  c=$((c + 1))
+  bsum="$(_sb_state_seal_branch_sum "$state")"
+  digest="$(_sb_state_last_message "$skill" "$c" "$bsum" | _sb_state_seal_digest hmac "$state")" || return 0
+  tmp="${last}.$$"
+  if printf 'v1\n%s\n%s\n%s\n%s\n' "$skill" "$c" "$bsum" "$digest" 2>/dev/null >"$tmp"; then mv -f -- "$tmp" "$last"; fi
+  rm -f -- "$tmp"
+  tmp="${hwm}.$$"
+  if printf '%s\n' "$c" 2>/dev/null >"$tmp"; then mv -f -- "$tmp" "$hwm"; fi
+  rm -f -- "$tmp"
+  return 0
+}
+
+sb_state_last_read() {
+  local state="$1" last hwm version skill c bsum digest high now
+  last="$(_sb_state_last_file "$state")"
+  hwm="$(_sb_state_last_hwm_file "$state")"
+  [[ -f "$last" && ! -L "$last" && ! -L "$hwm" ]] || return 0
+  { read -r version; read -r skill; read -r c; read -r bsum; read -r digest; } <"$last" 2>/dev/null || true
+  [[ "$version" == v1 && -n "$skill" && "$c" =~ ^[0-9]+$ ]] || return 0
+  high="$(_sb_state_seal_number "$hwm")"
+  [[ "$c" -ge "$high" ]] || return 0
+  now="$(_sb_state_seal_branch_sum "$state")"
+  [[ "$bsum" == "$now" ]] || return 0
+  [[ "$digest" == "$(_sb_state_last_message "$skill" "$c" "$bsum" | _sb_state_seal_digest hmac "$state")" ]] || return 0
+  printf '%s' "$skill"
 }
