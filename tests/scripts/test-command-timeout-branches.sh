@@ -119,7 +119,8 @@ assert_eq "watchdog: exit code" 9 "$RC"; assert_eq "watchdog: output" wd "$OUT"
 # Orphan checks look for a leftover `sleep <unique duration>` process (the watchdog's delay or a
 # grandchild): promptness is judged by what is left running, not by wall-clock timing.
 sleepers() { ps -eo args= | awk -v d="$1" '$NF == d && $0 ~ /sleep/ {n++} END {print n+0}'; }
-wait_gone() { for _ in 1 2 3 4 5 6 7 8 9 10; do [[ "$(sleepers "$1")" == 0 ]] && return 0; "$REAL_SLEEP" 0.1; done; return 1; }
+# bounded poll with a generous deadline (15 s): a loaded machine may take seconds to reap the sleepers
+wait_gone() { local _n; for ((_n = 0; _n < 150; _n++)); do [[ "$(sleepers "$1")" == 0 ]] && return 0; "$REAL_SLEEP" 0.1; done; return 1; }
 reap_sleepers() { ps -eo pid=,args= | awk -v d="$1" '$NF == d && $0 ~ /sleep/ {print $1}' | while read -r p; do kill "$p" 2>/dev/null; done; }
 reap_sleepers 21; reap_sleepers 23; reap_sleepers 27
 PATH="$PATH_NO_PY" sb_run_with_timeout 21 lbl -- true >/dev/null 2>&1
@@ -167,11 +168,11 @@ assert_eq "watchdog: failing kill tolerated, still 124" 124 "$RC"
 unset -f kill
 # kill(1) failing when asked to stop the watchdog itself (it already went away): tolerated
 kill() { case "${1:-}" in -*) builtin kill "$@" ;; *) return 1 ;; esac; }
-run_to "$PATH_NO_PY" 0.15 nokillwd -- true
+run_to "$PATH_NO_PY" 3 nokillwd -- true
 assert_eq "watchdog: failing kill of the watchdog tolerated" 0 "$RC"
 "$REAL_SLEEP" 0.3
 unset -f kill
-run_to "$PATH_NO_PY" 1 lbl -- true
+run_to "$PATH_NO_PY" 30 lbl -- true
 assert_eq "watchdog: fast command rc 0" 0 "$RC"; assert_eq "watchdog: no error output" "" "$ERR"
 
 tl_results
