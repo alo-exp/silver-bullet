@@ -31,7 +31,10 @@ registry_before="$(registry_state)"
 
 mkdir -p "$FIXTURE/.planning/workflows" "$FIXTURE/.planning/enterprise-e2e"
 
-out="$(SB_E2E_MATRIX_DRY_RUN=1 \
+# The ledger is isolated too: the default ledger is host-specific (codex: a tracked ROUND-CODEX-* file whose rows 3/4
+# are Pass), and a historical ledger must not vouch for a run that has no evidence.
+NO_LEDGER="$FIXTURE/no-such-ledger.md"
+out="$(SB_E2E_LEDGER_FILE="$NO_LEDGER" SB_E2E_MATRIX_DRY_RUN=1 \
   SB_E2E_TEST_APP_BRANCH_ENFORCE=0 \
   SB_E2E_FIXTURE_BRANCH_LOCK=0 \
   SB_E2E_HOST_GIT_BRANCH_ENFORCE=0 \
@@ -44,7 +47,7 @@ assert_ok "dry-run row 22 internal FAILS without parent evidence" grep -q 'valid
 assert_ok "bugfix-health.md is not seeded without evidence" \
   test ! -e "$FIXTURE/.planning/workflows/bugfix-health.md"
 
-out21="$(SB_E2E_MATRIX_DRY_RUN=1 \
+out21="$(SB_E2E_LEDGER_FILE="$NO_LEDGER" SB_E2E_MATRIX_DRY_RUN=1 \
   SB_E2E_TEST_APP_BRANCH_ENFORCE=0 \
   SB_E2E_FIXTURE_BRANCH_LOCK=0 \
   SB_E2E_HOST_GIT_BRANCH_ENFORCE=0 \
