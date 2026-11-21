@@ -16,6 +16,7 @@ If Phase 0 determined this is an update:
 4. If the project instruction file already exists, verify it contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 5. Run conflict detection (same as step 3.1c below).
 5a. Run step 3.7.5 to remove Silver Bullet's duplicate hook copies from `$HOME/.codex/settings.json` (it never adds hooks).
+5b. Run step 3.2.6 (ignore the phase-lock runtime state; idempotent).
 6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All SB-owned lifecycle skills active."
 
 ### Template refresh (only when user explicitly requests it)
@@ -125,6 +126,24 @@ cp -R "${PLUGIN_ROOT}/templates/orchestrator-workers/." .silver-bullet/orchestra
 
 Set `orchestrator_mode` to `"parent"` in `.silver-bullet.json` (only supported mode).
 
+
+### 3.2.6 Ignore phase-lock runtime state
+
+`.planning/.phase-locks.json*` (the lock file and its `.lock` sidecar) is per-checkout runtime state: a committed copy would carry another machine's locks onto every clone. Add the line once to the project `.gitignore` (the exact line and idempotence `scripts/sb-migrate-project.sh` uses; never write through a symlink):
+
+```bash
+LOCKS_IGNORE='.planning/.phase-locks.json*'
+if [ -L .gitignore ]; then
+  echo "Skipped .gitignore: it is a symlink. Add $LOCKS_IGNORE to it yourself."
+elif ! grep -qF "$LOCKS_IGNORE" .gitignore 2>/dev/null; then
+  {
+    [ -s .gitignore ] && echo ""
+    echo "# Phase-lock runtime state — local, never committed (Silver Bullet)"
+    echo "$LOCKS_IGNORE"
+  } >>.gitignore
+  echo "Added $LOCKS_IGNORE to .gitignore"
+fi
+```
 
 ### 3.2.5 CI setup
 
