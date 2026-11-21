@@ -104,7 +104,7 @@ done
 # the exemption weakened. Because it sits in source, a command that is NOT exempt is judged as the source write it
 # is and denied; an exempt one has its script word dropped. So only the exemption logic decides allow or deny.
 make_tree() { # name -> prints the root
-  local name="$1" root="$PROJ/src/mut-$1" mat
+  local name="$1" root="$PROJ/src/mut-$1"
   mkdir -p "$root/skills/silver-multi-ai-task/scripts" "$root/skills/silver-deep-research-multi-ai/scripts"
   cp -R "$TL_REPO_ROOT/hooks" "$root/hooks"
   cp "$MAT" "$root/skills/silver-multi-ai-task/scripts/"
