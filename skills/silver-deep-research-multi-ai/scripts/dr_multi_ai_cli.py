@@ -9,7 +9,9 @@ import sys
 if __name__ == "__main__" and not sys.flags.isolated:
     # PYTHONPATH, PYTHONSTARTUP and the user site are invisible to the hooks that let this CLI run, so a script
     # start re-runs itself in isolated mode (-I) before it imports anything but the interpreter's own modules.
-    os.execv(sys.executable, [sys.executable, "-I", *sys.argv])
+    os.execv(sys.executable, [sys.executable, "-I", "-B", *sys.argv])  # -I ignores PYTHONDONTWRITEBYTECODE: -B keeps the plugin directory free of bytecode
+
+sys.dont_write_bytecode = True  # also when started another way (imported, or already isolated)
 
 import argparse
 import json
