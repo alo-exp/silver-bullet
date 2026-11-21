@@ -72,7 +72,7 @@ Checks: `jq`, hook config presence, Graphify availability, package version,
 state root, inferred runtime name, and capability tier. The scripts take no runtime
 argument; set `SILVER_BULLET_RUNTIME` to check a specific host.
 
-Host detection follows `hooks/lib/runtime-paths.sh`: `SILVER_BULLET_RUNTIME` when set, otherwise Codex env markers, `PI_CODING_AGENT_DIR`, OpenCode markers, or `CLAUDE_PLUGIN_ROOT` paths, defaulting to `claude`. Accepted runtime names are `claude`, `codex`, `opencode`, `pi`, `goose` and `hermes`; each has its own state root (`~/.claude`, `~/.codex`, `~/.config/opencode`, `~/.pi/agent`, `~/.config/goose`, `~/.hermes`). Doctor and diagnostics **do not** infer a host from unrelated hosts' config files on the same machine. Cursor is no longer a supported host; `scripts/uninstall-cursor-legacy.sh` removes what an older install left under `~/.cursor`.
+Host detection follows `hooks/lib/runtime-paths.sh`: `SILVER_BULLET_RUNTIME` when set, otherwise Codex env markers (including a `CLAUDE_PLUGIN_ROOT` that contains `/.codex/`), `PI_CODING_AGENT_DIR` or a `/.pi/` script path, OpenCode markers, defaulting to `claude`. Accepted runtime names are `claude`, `codex`, `opencode`, `pi`, `goose` and `hermes`; each has its own state root (`~/.claude`, `~/.codex`, `~/.config/opencode`, `~/.pi/agent`, `~/.config/goose`, `~/.hermes`). **Goose and Hermes are never auto-detected**: without `SILVER_BULLET_RUNTIME=goose` (or `hermes`) they fall back to `claude` and their state lands under `~/.claude/.silver-bullet`. Doctor and diagnostics **do not** infer a host from unrelated hosts' config files on the same machine. Cursor is no longer a supported host; `scripts/uninstall-cursor-legacy.sh` removes what an older install left under `~/.cursor`.
 
 ### sb:doctor host-scoped checks
 
@@ -143,3 +143,11 @@ Runtime state for five-tool reconciliation lives under `${SB_RUNTIME_STATE_DIR}/
 | Host-global receipt | `reload-receipts/<host>/_host-global/_host-global/<receipt-id>.json` |
 
 Skills supply host MCP attestation on stdin (`--host-evidence-stdin`) immediately after real tool calls. Attestations convey liveness only — not consent or repair authorization. Canonical `ready` requires no active receipt and full activation.
+
+### Kay limits
+
+`hooks/kay-project-hook-bridge.sh` maps Kay's native events onto the PreToolUse and PostToolUse hooks only: `tool.before` and `file.before_write` run the PreToolUse hooks (every path of a multi-file write is gated), `tool.after` and `file.after_write` run PostToolUse. Kay has **no SessionStart, Stop, SubagentStop or UserPromptSubmit gating**: `session.start` and `session.end` run no hooks and only repair stale denial locks. On Kay this means the Stop planning floor, the session-start state reset and the prompt-time reminders do not run, so those checks are advisory there; the commit, push, PR, deploy and protected-file gates still apply through the tool hooks. A hook that exits 2 (with or without a reason), or that answers `deny`, `block` or `ask`, blocks the call; Kay cannot prompt, so `ask` is treated as a block.
+
+### Codex adapter
+
+`hooks/codex-hook-adapter.sh` only reshapes hook output for Codex and enforces the hook's own timeout (the installer passes each hook's `hooks.json` timeout as `--timeout`). It does **not** translate tool names: the installer expands each shell matcher into `Bash`, `shell` and `exec_command` entries. A hook that times out on PreToolUse, Stop or SubagentStop is blocked (fail closed); set `SB_CODEX_HOOK_ON_TIMEOUT=allow` to opt out. If the output transform cannot run, the hook's own output is passed through unchanged, so a deny is never dropped.
