@@ -273,7 +273,8 @@ sb_state_last_read() {
   local state="$1" last hwm version skill c bsum digest high now
   last="$(_sb_state_last_file "$state")"
   hwm="$(_sb_state_last_hwm_file "$state")"
-  [[ -f "$last" && ! -L "$last" && ! -L "$hwm" ]] || return 0
+  # A missing counter file is no counter: deleting it must not re-enable an older valid record.
+  [[ -f "$last" && ! -L "$last" && -f "$hwm" && ! -L "$hwm" ]] || return 0
   { read -r version; read -r skill; read -r c; read -r bsum; read -r digest; } <"$last" 2>/dev/null || true
   [[ "$version" == v1 && -n "$skill" && "$c" =~ ^[0-9]+$ ]] || return 0
   high="$(_sb_state_seal_number "$hwm")"
