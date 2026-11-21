@@ -1226,6 +1226,18 @@ assert_hook_command_matchers "SB pretool completion-audit covers Bash and exec_c
 assert_hook_command_matchers "SB pretool dev-cycle-check covers Bash and exec_command" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" "PreToolUse" "dev-cycle-check.sh" "Bash" "exec_command"
 assert_hook_command_matchers "SB pretool ci-status-check covers Bash and exec_command" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" "PreToolUse" "ci-status-check.sh" "Bash" "exec_command"
 assert_hook_command_matchers "SB posttool completion-audit covers Bash and exec_command" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" "PostToolUse" "completion-audit.sh" "Bash" "exec_command"
+# R7-01: each wrapped hook carries its own hooks.json budget, so the adapter never
+# stops a gate before the manifest allows (site-regression-gate 120 s, ci-status 30 s).
+assert_eq_text() {
+  local desc="$1" want="$2" got="$3"
+  if [[ "$want" == "$got" ]]; then echo "PASS: $desc"; (( PASS++ )) || true
+  else echo "FAIL: $desc — want '$want' got '$got'"; (( FAIL++ )) || true; fi
+}
+for budget_case in "site-regression-gate.sh:120" "ci-status-check.sh:30" "completion-audit.sh:15"; do
+  hook_script="${budget_case%%:*}"; want_budget="${budget_case##*:}"
+  got_budgets="$(jq -r --arg s "$hook_script" '[.hooks[][].hooks[] | select(.command | contains($s)) | (.command | capture("--timeout (?<t>[0-9]+)").t // "none")] | unique | join(",")' "$FAKE_CACHE_ROOT/hooks/hooks.json")"
+  assert_eq_text "Codex manifest passes ${hook_script} budget ${want_budget} to the adapter" "$want_budget" "$got_budgets"
+done
 assert_contains "Current cache hooks config includes workflow-chain guard" 'workflow-chain-guard.sh' "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_contains "Current cache hooks config routes commands through Codex hook adapter" 'codex-hook-adapter.sh' "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_contains "Current cache hooks config includes exact Bash matcher" '"matcher": "Bash"' "$FAKE_CACHE_ROOT/hooks/hooks.json"
