@@ -577,6 +577,19 @@
         ]
       }
     ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Task|Subagent|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "SubagentStart": [
       {
         "matcher": ".*",

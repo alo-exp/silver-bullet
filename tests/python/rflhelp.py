@@ -37,6 +37,12 @@ def accept_policy(ids=("F1",), rejected=(), file="src/a.py"):
             "resolved": [{"id": i, "severity": "HIGH", "title": "t", "decision": "ACCEPT", "resolved": "yes"} for i in ids] if ids else "none"}
 
 
+def mint_token(root, kind, run_id, session_id="s1"):
+    """What the UserPromptSubmit hook does for a message the user typed."""
+    with native.hook_token_context():
+        return native.write_user_token(root, kind, run_id, session_id=session_id, prompt_sha256="a" * 64)
+
+
 class RflCase(unittest.TestCase):
     CHARTER = {"goal": "fix a", "scope": ["src"], "key_tasks": ["t1"],
                "signals": [{"id": "has-x", "argv": ["grep", "-q", "x", "src/a.py"]}]}
@@ -53,6 +59,7 @@ class RflCase(unittest.TestCase):
         os.environ["SB_RUNTIME_HOME_ROOT"] = str(self.tmp / "home" / ".claude")
         os.environ["SB_RUNTIME_STATE_DIR"] = str(self.tmp / "home" / ".claude" / ".silver-bullet")
         os.environ["SILVER_BULLET_RUNTIME"] = "claude"
+        os.environ["CLAUDE_CODE_SESSION_ID"] = "s1"
         (self.tmp / "home").mkdir()
         self.root = self.tmp / "proj"
         (self.root / "src").mkdir(parents=True)
@@ -79,7 +86,7 @@ class RflCase(unittest.TestCase):
     def approve(self):
         """The user types `RFL APPROVE <id>` (hook token), then the encoder records it."""
         run_id = self.run_dir.name[len("rfl-"):]
-        native.write_user_token(self.root, "approve", run_id, prompt_sha256="test")
+        mint_token(self.root, "approve", run_id)
         return native.approve(self.root, self.run_dir)
 
     def status(self):

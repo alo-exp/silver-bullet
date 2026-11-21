@@ -208,7 +208,7 @@ class StopTest(HookCase):
 
 class SessionStartTest(HookCase):
     def start_event(self, source="startup"):
-        return self.fire({"hook_event_name": "SessionStart", "source": source})
+        return self.fire({"hook_event_name": "SessionStart", "source": source, "session_id": "s1"})
 
     def test_startup_clears_the_pointer_and_the_legacy_state_file(self):
         self.start()
@@ -271,7 +271,7 @@ class SessionStartTest(HookCase):
 
 class AbortPromptTest(HookCase):
     def prompt(self, text, **extra):
-        return self.fire({"hook_event_name": "UserPromptSubmit", "prompt": text, **extra})
+        return self.fire({"hook_event_name": "UserPromptSubmit", "prompt": text, "session_id": "s1", **extra})
 
     def test_exact_user_message_writes_a_token_and_audits(self):
         self.start()

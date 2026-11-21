@@ -100,10 +100,18 @@ def prompt_submit(payload: dict[str, Any], root: Path) -> dict[str, Any]:
     if match:
         kind, run_id = match.group(1).lower(), match.group(2)
         try:
-            record = native.load_record(root, run_id)
+            native.load_record(root, run_id)
+            with native.hook_token_context():
+                native.write_user_token(root, kind, run_id, session_id=sid, prompt_sha256=digest)
         except native.RflError as exc:
+            if kind == "abort":  # the user's exit must work even when the sealed record is corrupt or its key is gone
+                try:
+                    native.force_abort(root, run_id, session_id=sid, prompt_sha256=digest, why=str(exc))
+                except native.RflError as inner:
+                    return {"output": None, "audit": {"decision": "ignore", "reason": f"RFL ABORT {run_id} refused: {exc}; fallback: {inner}"}}
+                return {"output": None, "audit": {"decision": "allow", "reason": (
+                    f"RFL ABORT {run_id} applied by the corrupt-record fallback (prompt_sha256 {digest}); the sealed record was unusable: {exc}")}}
             return {"output": None, "audit": {"decision": "ignore", "reason": f"RFL {kind.upper()} {run_id} refused: {exc}"}}
-        native.write_user_token(root, kind, run_id, session_id=sid, prompt_sha256=digest)
         text = (f"RFL ABORT {run_id} accepted for 30 minutes. Run: review-fix-ladder.py --abort {run_id}" if kind == "abort"
                 else f"RFL APPROVE {run_id}: approval accepted for 30 minutes. Run: review-fix-ladder.py --approve --run-dir .planning/rfl-{run_id}")
         result = _context("UserPromptSubmit", text)
@@ -234,32 +242,47 @@ def post_tool(payload: dict[str, Any], root: Path, run_dir: Path) -> dict[str, A
     return {"output": None, "audit": {"decision": "allow", "reason": f"RFL capture: {outcome}"}}
 
 
-def _stop_problem(root: Path, run_id: str) -> str | None:
-    """Why this session may not stop (None = it may). The sealed record, not .planning, says a run is active."""
+def post_failure(payload: dict[str, Any], root: Path, run_dir: Path) -> dict[str, Any]:
+    if str(payload.get("tool_name") or "") not in AGENT_TOOLS or _subagent(payload)[0] or payload.get("is_interrupt") is True:
+        return NOOP
+    result = native.capture_failure(root, run_dir, str(payload.get("tool_name")), payload.get("error"))
+    outcome = result.get("outcome")
+    if not outcome:
+        return NOOP
+    return {"output": None, "audit": {"decision": "allow", "reason": f"RFL capture: {outcome} (the host rejected or failed the spawn)"}}
+
+
+def _stop_problem(root: Path, run_id: str) -> tuple[str | None, bool]:
+    """Why this session may not stop (None = it may) and whether the agent can clear it from inside the session.
+    The sealed record, not .planning, says a run is active."""
     run_dir = native.run_path(root, run_id)
     try:
         record = native.load_record(root, run_id)
         if record["status"] != "active":
-            return None
+            return None, True
         status = native.load_status(root, run_dir)
     except native.RflError as exc:
-        return str(exc)
+        return str(exc), False  # tampered or missing state: nothing the agent may repair
     if status["status"] != "active" or record.get("approved_sha256") is None:
-        return None  # finished, or waiting for the user's Policy E approval
+        return None, True  # finished, or waiting for the user's Policy E approval
     errors = rfl_policy_c.assert_rfl_advance(run_dir, next_action="stop")["errors"]
     if status["open_ticket"]:
         errors = [f"ticket {status['open_ticket']} is still open"] + errors
-    return "; ".join(errors) or None
+    return ("; ".join(errors) or None), True
 
 
 def stop(payload: dict[str, Any], root: Path, run_id: str) -> dict[str, Any]:
-    problem = _stop_problem(root, run_id)
+    """Block while the agent can still clear the problem, a bounded number of times per problem (the host's
+    stop_hook_active flag marks the continuation); release at once for a state only the user can fix."""
+    problem, clearable = _stop_problem(root, run_id)
+    prior = native.stop_blocks(root, run_id, problem)
     if problem is None:
         return NOOP
     text = (f"Review-fix ladder run {run_id}: {problem}. Continue the ladder; only the user can end it early by typing "
             f"`RFL ABORT {run_id}`.")
-    if payload.get("stop_hook_active") is True:
-        text = "Review-fix ladder gate released after one block (stop_hook_active): " + text
+    if payload.get("stop_hook_active") is True and (not clearable or prior >= native.STOP_BLOCK_LIMIT):
+        why = ("this state cannot clear from inside the session" if not clearable else f"{prior} reminders were ignored")
+        text = f"Review-fix ladder gate released ({why}); the run is still active: " + text
         return {"output": {"systemMessage": text}, "audit": {"decision": "allow", "reason": text}}
     return _deny("Stop", text)
 
@@ -274,10 +297,11 @@ def handle(payload: dict[str, Any], root: Path) -> dict[str, Any]:
     if run_id is None:
         return NOOP
     run_dir = native.run_path(root, run_id)
-    if event == "PreToolUse":
-        return pre_tool(payload, root, run_dir)
-    if event == "PostToolUse":
-        return post_tool(payload, root, run_dir)
+    if event in ("PreToolUse", "PostToolUse", "PostToolUseFailure"):
+        with native.run_lock(root, run_id):
+            if event == "PreToolUse":
+                return pre_tool(payload, root, run_dir)
+            return (post_tool if event == "PostToolUse" else post_failure)(payload, root, run_dir)
     if event == "Stop":
         return stop(payload, root, run_id)
     return NOOP
