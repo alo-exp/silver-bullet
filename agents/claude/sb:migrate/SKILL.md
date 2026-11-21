@@ -145,7 +145,7 @@ This script (idempotent) runs `sb-migrate-config.sh`, `sb-migrate-orchestrator-p
 If the script is unavailable, perform the same steps manually:
 
 1. Set `orchestrator_mode: parent` and copy `${PLUGIN_ROOT}/templates/orchestrator-workers/` → `.silver-bullet/orchestrator-workers/`.
-2. The orchestrator directive contract is delivered by hook injection on Claude Code and Codex: there is no host rule file to refresh.
+2. The orchestrator directive contract is delivered by hook injection: there is no host rule file to refresh.
 3. Copy `${PLUGIN_ROOT}/scripts/workflows.sh` → `scripts/workflows.sh` (`chmod +x`) when absent.
 4. `mkdir -p .planning/workflows/.archive docs/workflows`.
 5. Copy workflow docs from `${PLUGIN_ROOT}/templates/workflows/` only when the destination file is absent (back up before any explicit user-requested refresh).
@@ -172,7 +172,7 @@ Regenerate stale host instruction files from the init contract when they predate
 
 4. Strip SB-owned sections from the existing file (headings `## N.` through next `## ` or EOF). Preserve all user-owned sections.
 
-5. Merge in missing neutral sections from `${PLUGIN_ROOT}/scripts/lib/install-claude/templates/CLAUDE.md.base`:
+5. Merge in missing neutral sections from the host's project-instruction template under `${PLUGIN_ROOT}/scripts/lib/install-<runtime>/templates/` (when the host ships one):
    - **User-owned** sections (heading exists only in project file): keep unchanged
    - **New from template** (heading exists only in template): append
    - **SB-owned overlap**: prefer template neutral wording; ask the user directly when content conflicts materially
@@ -202,11 +202,11 @@ Report capability tier and any WARN/FAIL lines. Point the user to `docs/RUNTIME-
 
 Remove Silver Bullet's duplicate hook copies from the active host settings file (same contract as `/sb:init` update mode §3.7.5; it never adds hooks on a registered plugin). Resolve `INSTALL_PATH` from `$HOME/.claude/plugins/installed_plugins.json` only; with no registry entry, skip the step.
 
-The hook merge script is `scripts/lib/install-claude/merge-hooks.py` (Codex needs none) — see `docs/RUNTIME-COMPATIBILITY.md` (`merge-hooks.py`).
+Only a host that keeps hooks in a settings file ships a merge script (`scripts/lib/install-<runtime>/merge-hooks.py`) — see `docs/RUNTIME-COMPATIBILITY.md` (`merge-hooks.py`).
 
 ```bash
 INSTALL_PATH="${INSTALL_PATH:-${PLUGIN_ROOT}}"
-python3 "${PLUGIN_ROOT}/scripts/lib/install-claude/merge-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
+python3 "${PLUGIN_ROOT}/scripts/lib/install-<runtime>/merge-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
 ```
 
 Confirm merged entries in the host hooks manifest. If merge fails, advise the host-specific install path from `docs/RUNTIME-COMPATIBILITY.md` (`install-<runtime>.sh`).
