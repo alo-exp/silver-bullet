@@ -1226,6 +1226,30 @@ assert_hook_command_matchers "SB pretool completion-audit covers Bash and exec_c
 assert_hook_command_matchers "SB pretool dev-cycle-check covers Bash and exec_command" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" "PreToolUse" "dev-cycle-check.sh" "Bash" "exec_command"
 assert_hook_command_matchers "SB pretool ci-status-check covers Bash and exec_command" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" "PreToolUse" "ci-status-check.sh" "Bash" "exec_command"
 assert_hook_command_matchers "SB posttool completion-audit covers Bash and exec_command" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" "PostToolUse" "completion-audit.sh" "Bash" "exec_command"
+# R7-01: every wrapped hook gets an adapter budget BELOW its manifest timeout (Codex
+# enforces the manifest timeout on the adapter process itself, so the adapter must be
+# able to emit its fail-closed deny/block first): budget = max(1, T - max(2, T/10)).
+assert_eq_text() {
+  local desc="$1" want="$2" got="$3"
+  if [[ "$want" == "$got" ]]; then echo "PASS: $desc"; (( PASS++ )) || true
+  else echo "FAIL: $desc — want '$want' got '$got'"; (( FAIL++ )) || true; fi
+}
+budget_report="$(jq -r '
+  [.hooks[][].hooks[] | select(.command | contains("codex-hook-adapter.sh"))
+   | {t: .timeout, b: (.command | capture("--timeout (?<b>[0-9]+)").b // "none")}] as $all
+  | ($all | length) as $n
+  | [$all[] | select(.t == null or .b == "none" or ((.b | tonumber) != ([1, (.t - ([2, (.t / 10 | floor)] | max))] | max)) or ((.t > 2) and ((.b | tonumber) >= .t)))] | length as $bad
+  | "\($n) \($bad)"' "$FAKE_CACHE_ROOT/hooks/hooks.json")"
+wrapped_count="${budget_report%% *}"
+bad_count="${budget_report##* }"
+assert_eq_text "every wrapped hook has an adapter budget below its manifest timeout (0 mismatches)" "0" "$bad_count"
+if [[ "$wrapped_count" -gt 50 ]]; then echo "PASS: budget check covered $wrapped_count wrapped hooks"; (( PASS++ )) || true
+else echo "FAIL: budget check covered only $wrapped_count hooks"; (( FAIL++ )) || true; fi
+for budget_case in "site-regression-gate.sh:120:108" "ci-status-check.sh:30:27" "completion-audit.sh:15:13"; do
+  IFS=: read -r hook_script manifest_t want_budget <<<"$budget_case"
+  got_budgets="$(jq -r --arg s "$hook_script" '[.hooks[][].hooks[] | select(.command | contains($s)) | (.command | capture("--timeout (?<t>[0-9]+)").t // "none")] | unique | join(",")' "$FAKE_CACHE_ROOT/hooks/hooks.json")"
+  assert_eq_text "Codex manifest: ${hook_script} (timeout ${manifest_t}) adapter budget ${want_budget}" "$want_budget" "$got_budgets"
+done
 assert_contains "Current cache hooks config includes workflow-chain guard" 'workflow-chain-guard.sh' "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_contains "Current cache hooks config routes commands through Codex hook adapter" 'codex-hook-adapter.sh' "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_contains "Current cache hooks config includes exact Bash matcher" '"matcher": "Bash"' "$FAKE_CACHE_ROOT/hooks/hooks.json"

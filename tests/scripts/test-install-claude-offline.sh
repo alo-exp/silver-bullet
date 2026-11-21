@@ -18,6 +18,11 @@ stage_root() {
   cp -R "$TL_REPO_ROOT/scripts/lib" "$root/scripts/lib"
   cp -R "$TL_REPO_ROOT/hooks" "$root/hooks"
   printf '{"version":"9.9.9"}\n' >"$root/.claude-plugin/plugin.json"
+  mkdir -p "$root/templates" "$root/docs/generated"
+  printf '{}\n' >"$root/templates/silver-bullet.config.json.default"
+  printf '{}\n' >"$root/docs/apo-catalog.json"
+  printf '{}\n' >"$root/docs/generated/atomic-flow-index.json"
+  printf '#!/usr/bin/env bash\n' >"$root/scripts/phase-lock.sh"
   printf 'skill\n' >"$root/agents/claude/demo/SKILL.md"
   mkdir -p "$root/agents/codex" "$root/agents/other" "$root/host-bundles/codex"
   cat >"$root/scripts/render-agent-bundle.py" <<'PY'
@@ -97,6 +102,12 @@ assert_file_absent "other agent dirs pruned from checkout" "$ROOT/agents/other"
 assert_file_exists "host-bundles kept in the dev checkout" "$ROOT/host-bundles/codex"
 assert_file_exists "plugin json materialized" "$CACHE/9.9.9/.claude-plugin/plugin.json"
 assert_file_exists "hooks materialized" "$CACHE/9.9.9/hooks/session-start"
+# R7-08: the fallback cache carries everything the hooks resolve from the plugin root
+assert_file_exists "fallback cache: templates default config" "$CACHE/9.9.9/templates/silver-bullet.config.json.default"
+assert_file_exists "fallback cache: scripts/phase-lock.sh" "$CACHE/9.9.9/scripts/phase-lock.sh"
+assert_file_exists "fallback cache: scripts/lib" "$CACHE/9.9.9/scripts/lib/install-claude/merge-hooks.py"
+assert_file_exists "fallback cache: apo catalog" "$CACHE/9.9.9/docs/apo-catalog.json"
+assert_file_exists "fallback cache: atomic flow index" "$CACHE/9.9.9/docs/generated/atomic-flow-index.json"
 assert_eq "skills symlink points at agents/claude" "agents/claude" "$(readlink "$CACHE/9.9.9/skills")"
 assert_eq "current alias targets new version" "$CACHE/9.9.9" "$(readlink "$CACHE/current")"
 assert_eq "registry records version" "9.9.9" "$(jq -r '.plugins["silver-bullet@alo-labs"][0].version' "$CLAUDE_DIR/plugins/installed_plugins.json")"
@@ -117,6 +128,13 @@ assert_contains "non-ASCII text is written as UTF-8, not escaped" "$(<"$CLAUDE_D
 assert_contains "non-ASCII keys are written as UTF-8" "$(<"$CLAUDE_DIR/settings.json")" '"ключ": "значение"'
 assert_eq "top-level key order preserved" "hooks,keep,theme,env,list,only,zeta,alpha" "$(jq -r 'keys_unsorted | join(",")' "$CLAUDE_DIR/settings.json")"
 assert_file_absent "commands dir removed from cache" "$CACHE/9.9.9/commands"
+
+# R7-08: an incomplete checkout fails loudly instead of writing a half cache
+mv "$ROOT/templates" "$ROOT/templates.away"
+install_claude
+assert_eq "missing templates/: fallback refuses" 1 "$TL_STATUS"
+assert_contains "missing templates/: says what is missing" "$TL_ERR" "offline fallback needs $ROOT/templates"
+mv "$ROOT/templates.away" "$ROOT/templates"
 
 # ---- registry: a registry whose "plugins" is not an object must not be mangled
 printf '{"plugins":["user-data"]}\n' >"$CLAUDE_DIR/plugins/installed_plugins.json"

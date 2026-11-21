@@ -23,7 +23,8 @@ assert_eq "codex adapter without its helper libraries: the missing runner is rep
 # ---- subprocess timeouts ----------------------------------------------------
 SB_CODEX_HOOK_SUBPROC_TIMEOUT=0.3 tl_run_stdin '{}' bash "$CODEX" PreToolUse sleep 5
 assert_eq "codex adapter: a timed-out hook is not a failure" "0" "$TL_STATUS"
-assert_contains "codex adapter: timeout message" "$TL_OUT" "Silver Bullet hook subprocess timed out."
+assert_contains "codex adapter: a timed-out PreToolUse hook is denied (fail closed)" "$TL_OUT" '"permissionDecision":"deny"'
+assert_contains "codex adapter: timeout reason" "$TL_OUT" "timed out after 0.3s"
 
 # ---- industry tooling hint --------------------------------------------------
 ec_project
