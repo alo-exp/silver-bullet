@@ -5,7 +5,8 @@ name: E2E Live (optional)
 # runner. This workflow installs none and passes no credentials, so on a GitHub-hosted runner
 # it stops at the preflight and FAILS, with the reason in the job summary, instead of
 # reporting a green run in which nothing ran. It runs the suite only on a runner that
-# provides the CLIs (a self-hosted runner). scripts/run-release-live-matrix.sh is not run
+# provides the CLIs: dispatch it with the `runner` input set to a self-hosted runner label
+# (default ubuntu-latest). scripts/run-release-live-matrix.sh is not run
 # here: it is an operator-local release gate that needs that machine's verify-tests marker
 # (docs/RELEASE.md, step 4).
 
@@ -16,6 +17,10 @@ on:
         description: 'Runtimes, comma- or space-separated: claude, codex, kay'
         required: false
         default: 'claude'
+      runner:
+        description: 'Runner label (a self-hosted runner that provides the host CLIs and credentials)'
+        required: false
+        default: 'ubuntu-latest'
 
 permissions:
   contents: read
@@ -25,23 +30,12 @@ env:
 
 jobs:
   e2e-live:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
-
-      - name: Seed Silver Bullet runtime env
-        run: |
-          export SILVER_BULLET_RUNTIME=codex
-          source hooks/lib/runtime-paths.sh
-          {
-            echo "SILVER_BULLET_RUNTIME=$SILVER_BULLET_RUNTIME"
-            echo "SB_RUNTIME_NAME=$SB_RUNTIME_NAME"
-            echo "SB_RUNTIME_HOME_ROOT=$SB_RUNTIME_HOME_ROOT"
-            echo "SB_RUNTIME_STATE_DIR=$SB_RUNTIME_STATE_DIR"
-          } >> "$GITHUB_ENV"
 
       - name: Install jq
         run: sudo apt-get install -y jq git
@@ -72,12 +66,24 @@ jobs:
             {
               echo "### E2E Live did not run"
               echo
-              echo "No host CLI on this runner for: ${missing[*]}. This workflow installs no agent CLI and passes no credentials, so the live suite cannot run on a GitHub-hosted runner. Run \`tests/e2e-live/run-e2e-live-tests.sh\` on an operator machine (docs/RELEASE.md, step 4), or dispatch this workflow on a runner that provides the CLIs."
+              echo "No host CLI on this runner for: ${missing[*]}. This workflow installs no agent CLI and passes no credentials, so the live suite cannot run on a GitHub-hosted runner. Run \`tests/e2e-live/run-e2e-live-tests.sh\` on an operator machine (docs/RELEASE.md, step 4), or dispatch this workflow with the `runner` input set to a runner that provides the CLIs."
             } >>"$GITHUB_STEP_SUMMARY"
             echo "::error::E2E Live cannot run here: no host CLI for ${missing[*]} (see the job summary)"
             exit 1
           fi
           echo "SB_E2E_LIVE_RUNTIMES=${runtimes[*]}" >>"$GITHUB_ENV"
+          # Seed the runtime paths for the first requested runtime (claude -> claude, codex/kay -> codex).
+          case "${runtimes[0]}" in
+            claude) export SILVER_BULLET_RUNTIME=claude ;;
+            *) export SILVER_BULLET_RUNTIME=codex ;;
+          esac
+          source hooks/lib/runtime-paths.sh
+          {
+            echo "SILVER_BULLET_RUNTIME=$SILVER_BULLET_RUNTIME"
+            echo "SB_RUNTIME_NAME=$SB_RUNTIME_NAME"
+            echo "SB_RUNTIME_HOME_ROOT=$SB_RUNTIME_HOME_ROOT"
+            echo "SB_RUNTIME_STATE_DIR=$SB_RUNTIME_STATE_DIR"
+          } >>"$GITHUB_ENV"
 
       - name: Run live E2E suite
         run: bash tests/e2e-live/run-e2e-live-tests.sh

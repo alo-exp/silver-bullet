@@ -36,7 +36,9 @@ run_suite() {
 run_suite
 assert_eq "default run passes" 0 "$TL_STATUS"
 assert_eq "only the hook-failure scenario ran" "test-e2e-live-hook-failures claude" "$(<"$RAN")"
-assert_eq "e2e-live marker written for the claude-only run" "matrix=claude-only" "$(cat "$E2EM")"
+assert_eq "e2e-live marker written for the claude-only run" "matrix=claude-only" "$(sed -n 1p "$E2EM")"
+assert_match "e2e-live marker carries the commit it was earned at (R14-16)" '^commit=.+$' "$(sed -n 2p "$E2EM")"
+assert_match "e2e-live marker carries a timestamp (R14-16)" '^written_at=[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z$' "$(sed -n 3p "$E2EM")"
 assert_file_absent "no inline-full-surface marker without the journey" "$INLINE"
 assert_contains "the missing journey is explained" "$TL_OUT" "inline-e2e-matrix not written"
 
@@ -49,7 +51,8 @@ assert_file_absent "stale inline marker removed by a run without the journey" "$
 run_suite SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1
 assert_eq "journey run passes" 0 "$TL_STATUS"
 assert_contains "the journey ran" "$(<"$RAN")" "test-e2e-live-full-surface-journey claude"
-assert_eq "inline marker written after the journey ran" "matrix=inline-full-surface" "$(cat "$INLINE")"
+assert_eq "inline marker written after the journey ran" "matrix=inline-full-surface" "$(sed -n 1p "$INLINE")"
+assert_match "inline marker carries the commit (R14-16)" '^commit=.+$' "$(sed -n 2p "$INLINE")"
 
 # A failing journey writes no evidence at all.
 run_suite SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1 STUB_TEST_E2E_LIVE_FULL_SURFACE_JOURNEY_RC=1
@@ -107,7 +110,7 @@ assert_eq "run passes" 0 "$TL_STATUS"
 assert_eq "release-live-matrix survives the live session reset" "matrix=claude-only" "$(cat "$STATE/release-live-matrix")"
 assert_eq "quality-gate-state survives the live session reset" "adversarial-review-clean" "$(cat "$STATE/quality-gate-state")"
 assert_eq "verify-tests-state restored" "verify-tests" "$(cat "$STATE/verify-tests-state")"
-assert_eq "e2e marker still written on a full pass" "matrix=claude-only" "$(cat "$E2EM")"
+assert_eq "e2e marker still written on a full pass" "matrix=claude-only" "$(sed -n 1p "$E2EM")"
 run_suite STUB_HOOK_RC=1
 assert_eq "failing run exits 1" 1 "$TL_STATUS"
 assert_eq "release-live-matrix survives a failing run" "matrix=claude-only" "$(cat "$STATE/release-live-matrix")"

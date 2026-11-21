@@ -426,6 +426,7 @@ if [[ "$sb_should_mutate" == true ]]; then
   rm -f -- "$trivial_file" "${SB_STATE_DIR}/trivial" 2>/dev/null || true
   rm -f -- "${SB_STATE_DIR}/release-live-matrix" 2>/dev/null || true
   rm -f -- "${SB_STATE_DIR}/e2e-live-matrix" 2>/dev/null || true
+  rm -f -- "${SB_STATE_DIR}/inline-e2e-matrix" 2>/dev/null || true
   # (Human approvals and the CI-red override belong to one session: removed below with the other
   # per-session gate files.)
   rm -f -- "$quality_gate_state_file" 2>/dev/null || true

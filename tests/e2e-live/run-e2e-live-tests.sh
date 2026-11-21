@@ -121,10 +121,9 @@ runner_exit() {
   fi
   sb_evidence_restore e2e-live-matrix inline-e2e-matrix
   if [[ "$rc" -eq 0 && -n "$PENDING_E2E_MARKER" ]]; then
-    mkdir -p "$SB_RUNTIME_STATE_DIR"
-    printf 'matrix=%s\n' "$PENDING_E2E_MARKER" > "$HOST_E2E_LIVE_MATRIX_FILE"
+    sb_evidence_write_marker "$HOST_E2E_LIVE_MATRIX_FILE" "$PENDING_E2E_MARKER" "$REPO_ROOT"
     if [[ "$PENDING_INLINE_MARKER" == true ]]; then
-      printf 'matrix=inline-full-surface\n' > "$HOST_INLINE_E2E_MATRIX_FILE"
+      sb_evidence_write_marker "$HOST_INLINE_E2E_MATRIX_FILE" "inline-full-surface" "$REPO_ROOT"
     fi
   fi
   sb_evidence_discard
