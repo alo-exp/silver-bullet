@@ -7,7 +7,7 @@ version: 0.1.0
 
 # /sb:triage — Generic Review Finding Triage
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-triage/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `skills/` (`${PLUGIN_ROOT}/skills/silver-triage/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 SB-owned triage for **any** review output: code review, artifact review, ladder review, domain audit, or external feedback. Classifies each finding, files valid non-duplicates through `/sb:add`, and produces a fix plan — **without** the review subagent triaging its own findings.
 

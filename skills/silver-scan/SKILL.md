@@ -6,7 +6,7 @@ version: 0.1.0
 
 # /sb:scan — Retrospective Session Scanner
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-scan/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `skills/` (`${PLUGIN_ROOT}/skills/silver-scan/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 Use this skill when you want to review completed work and surface loose ends that were mentioned in prior sessions but never filed or recorded. This is the retrospective catch-up workflow, not a codebase-orientation workflow.
 

@@ -21,13 +21,13 @@ outputs for solution-landscape and solution-compare runs.
 COUNTIFS score row). Standalone:
 
 ```bash
-python3 "${PLUGIN_ROOT}/skills/silver-deep-research/scripts/generate_comparison_xlsx.py" --dir "$SB_RESEARCH_OUT_DIR"
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research/scripts/generate_comparison_xlsx.py" --dir "$SB_RESEARCH_OUT_DIR"
 ```
 
 DR-multi-AI packaging:
 
 ```bash
-python3 "${PLUGIN_ROOT}/skills/silver-deep-research-multi-ai/scripts/package_solution_outputs.py" --dir "$SB_RESEARCH_OUT_DIR"
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research-multi-ai/scripts/package_solution_outputs.py" --dir "$SB_RESEARCH_OUT_DIR"
 ```
 
 `matrix_ops.py` supports add-platform, reorder-columns, combo, verify on existing matrices.

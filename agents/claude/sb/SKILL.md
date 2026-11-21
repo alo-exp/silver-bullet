@@ -7,7 +7,7 @@ version: 0.2.0
 
 # /sb — Smart Skill Orchestrator
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `agents/claude/` (`${PLUGIN_ROOT}/agents/claude/sb/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 Smart orchestrator for Silver Bullet. Accepts freeform natural language and routes to:
 

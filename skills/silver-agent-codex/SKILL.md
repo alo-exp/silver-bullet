@@ -13,7 +13,7 @@ version: 0.2.0
 
 # /sb:agent-codex — Codex TUI Subagent Delegation
 
-**Plugin root**: `SB_ROOT` is the Silver Bullet plugin root, the installed plugin unless a fixture overrides it, two directories above this file (`${SB_ROOT}/skills/silver-agent-codex/SKILL.md`). Run Silver Bullet scripts and read its templates through `${SB_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `SB_ROOT` is the Silver Bullet plugin root, the installed plugin unless a fixture overrides it, the directory above `skills/` (`${SB_ROOT}/skills/silver-agent-codex/SKILL.md`). Run Silver Bullet scripts and read its templates through `${SB_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **Codex TUI** executes in the target project working directory.
 
