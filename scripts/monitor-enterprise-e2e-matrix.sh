@@ -279,26 +279,56 @@ random_network_wait() {
   echo $((NETWORK_WAIT_MIN + RANDOM % range))
 }
 
-kill_matrix_agent_children() {
-  local sig="${1:-TERM}" host
+# Every descendant PID of $1 (children first-level, then theirs), one per line.
+matrix_descendant_pids() {
+  local root="$1" kid
+  while IFS= read -r kid; do
+    [[ -n "$kid" ]] || continue
+    printf '%s\n' "$kid"
+    matrix_descendant_pids "$kid"
+  done < <(pgrep -P "$root" 2>/dev/null || true)
+}
+
+# Exact PIDs of the agent processes (expect wrapper or CLI) that belong to THIS matrix run: the
+# descendants of the batch runner recorded in the batch pid file. A Claude/Codex session the
+# operator started, an IDE-spawned one or another checkout's matrix run is never in that tree, so a
+# command line that merely looks alike is never signalled (R14-10).
+matrix_agent_child_pids() {
+  local host root pid cmd pattern
   host="$(enterprise_e2e_matrix_host)"
   case "$host" in
-    codex)
-      pkill "-$sig" -f 'codex-interactive-invoke\.expect' 2>/dev/null || true
-      ;;
-    *)
-      pkill "-$sig" -f 'claude-interactive-invoke\.expect' 2>/dev/null || true
-      pkill "-$sig" -f '/claude --model' 2>/dev/null || true
-      ;;
+    codex) pattern='codex-interactive-invoke\.expect' ;;
+    *) pattern='claude-interactive-invoke\.expect|/claude --model' ;;
   esac
+  root="$(tr -d '[:space:]' <"$BATCH_PID_FILE" 2>/dev/null || true)"
+  [[ "$root" =~ ^[0-9]+$ ]] || return 0
+  while IFS= read -r pid; do
+    [[ -n "$pid" ]] || continue
+    cmd="$(ps -p "$pid" -o command= 2>/dev/null || true)"
+    if [[ "$cmd" =~ $pattern ]]; then
+      printf '%s\n' "$pid"
+    fi
+  done < <(matrix_descendant_pids "$root")
+}
+
+kill_matrix_agent_children() {
+  local sig="${1:-TERM}" pid
+  local -a pids=()
+  while IFS= read -r pid; do
+    pids+=("$pid")
+  done < <(matrix_agent_child_pids)
+  if ((${#pids[@]} == 0)); then
+    return 0
+  fi
+  for pid in "${pids[@]}"; do
+    kill "-$sig" "$pid" 2>/dev/null || true
+  done
   sleep 3
-  case "$host" in
-    codex) pkill -KILL -f 'codex-interactive-invoke\.expect' 2>/dev/null || true ;;
-    *)
-      pkill -KILL -f 'claude-interactive-invoke\.expect' 2>/dev/null || true
-      pkill -KILL -f '/claude --model' 2>/dev/null || true
-      ;;
-  esac
+  for pid in "${pids[@]}"; do
+    if kill -0 "$pid" 2>/dev/null; then
+      kill -KILL "$pid" 2>/dev/null || true
+    fi
+  done
 }
 
 kill_claude_children() {
