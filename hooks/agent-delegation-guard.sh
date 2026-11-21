@@ -97,7 +97,7 @@ if [[ "${SB_TI_STATUS:-}" == "ok" ]]; then
   done < <(printf '%s' "$SB_SA_JSON" | jq -r '
     def under($c): if startswith("/") then . else $c + "/" + . end;
     (.writes[]? | select((.path // "") != "") | .path),
-    (.commands[]? | select(.program == "git") | . as $c | .argv as $a
+    (.commands[]? | select(((.program // "") | split("/") | last) == "git") | . as $c | .argv as $a
       | ([range(1; $a | length) as $k | select(($a[$k] | startswith("-") | not)
           and ($k == 1 or (["-C", "-c", "--git-dir", "--work-tree", "--namespace"] | index($a[$k - 1]) | not))) | $k][0]) as $i
       | select($i != null)
