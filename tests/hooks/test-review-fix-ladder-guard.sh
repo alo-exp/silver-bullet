@@ -231,8 +231,9 @@ rfl_assert_registered Stop '' review-fix-ladder-guard.sh
 rfl_assert_registered UserPromptSubmit '' review-fix-ladder-guard.sh
 rfl_assert_registered SessionStart startup review-fix-ladder-guard.sh
 rfl_assert_registered SessionStart compact review-fix-ladder-guard.sh
-if rfl_registered_commands PreToolUse Bash | grep -q rfl; then tl_fail "no RFL hook is registered for Bash (ordering lives in the encoder, tampering in the MAC)"; else tl_pass "no RFL hook is registered for Bash"; fi
-if rfl_registered_commands PreToolUse Skill | grep -q 'rfl\|review-fix'; then tl_fail "invoking the skill is a no-op (no Skill registration)"; else tl_pass "invoking the skill never resets a run (no Skill registration)"; fi
+bash_cmds="$(rfl_registered_commands PreToolUse Bash)"; skill_cmds="$(rfl_registered_commands PreToolUse Skill)"
+if grep -q rfl <<<"$bash_cmds"; then tl_fail "no RFL hook is registered for Bash (ordering lives in the encoder, tampering in the MAC)"; else tl_pass "no RFL hook is registered for Bash"; fi
+if grep -q 'rfl\|review-fix' <<<"$skill_cmds"; then tl_fail "invoking the skill is a no-op (no Skill registration)"; else tl_pass "invoking the skill never resets a run (no Skill registration)"; fi
 [[ -d "$FIX" ]] && tl_pass "fixture directory exists" || tl_fail "fixture directory exists"
 
 tl_results

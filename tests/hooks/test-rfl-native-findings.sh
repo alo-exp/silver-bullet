@@ -68,7 +68,8 @@ assert_eq "R4-10: the plugin repo's own catalog is still used when the project i
 # --- R4-25: no timers ------------------------------------------------------------------------------
 rc=0; python3 "$CLI" --schedule-quota-retry --run-dir "$P/.planning/rfl-x" --rung-id r --model m >/dev/null 2>&1 || rc=$?
 assert_eq "R4-25: --schedule-quota-retry no longer exists (argparse rejects it)" 2 "$rc"
-if grep -rEn 'list2cmdline|launchctl (bootstrap|load)|LaunchAgents' "$REPO/scripts/lib/rfl_"*.py "$REPO/scripts/lib/quota_window.py" "$REPO/scripts/_review_fix_ladder_impl.py" 2>/dev/null | grep -v 'rfl_native.py' | grep -q .; then
+timer_hits="$(grep -rEn 'list2cmdline|launchctl (bootstrap|load)|LaunchAgents' "$REPO/scripts/lib/rfl_"*.py "$REPO/scripts/lib/quota_window.py" "$REPO/scripts/_review_fix_ladder_impl.py" 2>/dev/null | grep -v 'rfl_native.py' || true)"
+if [[ -n "$timer_hits" ]]; then
   tl_fail "R4-25: scheduler code (at / launchd) still present"
 else tl_pass "R4-25: no at / launchd scheduler code"; fi
 

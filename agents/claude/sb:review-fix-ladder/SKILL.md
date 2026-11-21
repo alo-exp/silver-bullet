@@ -351,7 +351,7 @@ rung_N_review → rung_N_triage → rung_N_file_valid_issues → rung_N_fix_para
 
 1. **One subagent at a time** — **FORBIDDEN** to batch `Agent` calls or launch another rung's phase while a ticket is open. Anti-stall means no user-wait between phases, not parallel work.
 2. **Two-pass gate** — per cycle: (a) review-only subagent, (b) Policy C update + triage by the launcher, (c) PM filing, (d) launcher APPLY, (e) verify-only subagent, (f) signals, (g) verify_2 only on a CLEAN rung. **FORBIDDEN** to combine passes in one prompt, to advance after only one CLEAN review, for a review subagent to triage or fix, to reject a finding on a forbidden reason, to skip the per-rung Policy C artifact, or to dump raw review.md in place of encoder stdout.
-3. **Verify-only passes** — verifiers cannot edit (no Write/Edit tools; the hook denies edits from RFL roles).
+3. **Verify-only passes** — verifiers cannot edit (they have no write or edit capability; the hook denies edits from RFL roles).
 4. **Encoder evidence** — **FORBIDDEN** to advance on subagent self-reported PASS alone. The encoder runs the signals; subagent reports are input.
 5. **Scope lock** — **FORBIDDEN** to read/edit/run tests outside locked scope paths.
 6. **Model lock** — each rung uses exactly the `model` + `effort` the ticket names (aliases, so the host resolves the latest version). **FORBIDDEN** to substitute models or vendors. A model the host rejects is a launch failure (counts toward the skip), never a substitution. **Never Fast.**
