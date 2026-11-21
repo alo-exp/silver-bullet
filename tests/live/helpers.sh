@@ -68,6 +68,7 @@ REAL_TRIVIAL_BACKUP="${SB_TEST_DIR}/trivial.live-test-backup-${TEST_RUN_ID}"
 
 # Paths set by live_setup (kept for compatibility but assertions use REAL_STATE)
 WORK_DIR=""
+LIVE_SETUP_ACTIVE=0
 TMPSTATE=""
 TMPTRIVIAL=""
 
@@ -83,11 +84,24 @@ live_setup() {
   # shellcheck disable=SC2034  # compatibility variable for scripts that source this helper
   TMPTRIVIAL="$REAL_TRIVIAL"
 
-  # Backup and clear the real state file so each test starts clean
+  # Back up every file this setup mutates BEFORE mutating any of them, then arm the EXIT trap, so
+  # an abort anywhere after this point (a failing git, jq or agent call) still restores the
+  # operator's real state, trivial marker and MCP auth cache (R14-07).
   mkdir -p "$SB_TEST_DIR"
   if [[ -f "$REAL_STATE" ]]; then
     cp "$REAL_STATE" "$REAL_STATE_BACKUP"
   fi
+  if [[ -f "$REAL_TRIVIAL" ]]; then
+    cp "$REAL_TRIVIAL" "$REAL_TRIVIAL_BACKUP"
+  fi
+  if [[ -f "$REAL_MCP_AUTH_CACHE" ]]; then
+    cp "$REAL_MCP_AUTH_CACHE" "$REAL_MCP_AUTH_CACHE_BACKUP"
+  else
+    rm -f "$REAL_MCP_AUTH_CACHE_BACKUP"
+  fi
+  LIVE_SETUP_ACTIVE=1
+  trap live_exit_cleanup EXIT
+
   : > "$REAL_STATE"
   if [[ "${SB_LIVE_DEBUG_DUMP:-0}" == "1" ]]; then
     : > "${SB_TEST_DIR}/debug-dump"
@@ -95,17 +109,7 @@ live_setup() {
   else
     rm -f "${SB_TEST_DIR}/debug-dump" "${SB_TEST_DIR}/hook-dump.jsonl"
   fi
-
-  if [[ -f "$REAL_TRIVIAL" ]]; then
-    cp "$REAL_TRIVIAL" "$REAL_TRIVIAL_BACKUP"
-    rm -f "$REAL_TRIVIAL"
-  fi
-
-  if [[ -f "$REAL_MCP_AUTH_CACHE" ]]; then
-    cp "$REAL_MCP_AUTH_CACHE" "$REAL_MCP_AUTH_CACHE_BACKUP"
-  else
-    rm -f "$REAL_MCP_AUTH_CACHE_BACKUP"
-  fi
+  rm -f "$REAL_TRIVIAL"
   printf '{}\n' > "$REAL_MCP_AUTH_CACHE"
 
   if [[ "$LIVE_AGENT" == "kay" ]]; then
@@ -260,7 +264,10 @@ EOF
 }
 
 live_teardown() {
+  [[ "$LIVE_SETUP_ACTIVE" == "1" ]] || return 0
+  LIVE_SETUP_ACTIVE=0
   rm -rf "$WORK_DIR"
+  live_hook_audit_disable
 
   # Restore backed-up state file (or remove if it didn't exist before)
   if [[ -f "$REAL_STATE_BACKUP" ]]; then
@@ -280,6 +287,68 @@ live_teardown() {
   fi
 
   rm -f "${SB_TEST_DIR}/config-cache-"*
+}
+
+# EXIT trap armed by live_setup: an aborted scenario never leaves the operator's real state
+# truncated (R14-07). Idempotent after a normal live_teardown.
+live_exit_cleanup() {
+  live_teardown || true
+}
+
+# Hook audit: a real hook decision is the only acceptable evidence that enforcement ran. The
+# flag file makes hooks in the agent's own session write <state dir>/hook-audit.jsonl; direct
+# hook calls export SILVER_BULLET_HOOK_AUDIT_LOG=$LIVE_HOOK_AUDIT_FILE (R14-11).
+LIVE_HOOK_AUDIT_FILE="${SB_TEST_DIR}/hook-audit.jsonl"
+
+live_hook_audit_enable() {
+  mkdir -p "$SB_TEST_DIR"
+  : > "$LIVE_HOOK_AUDIT_FILE"
+  : > "${SB_TEST_DIR}/hook-audit-enabled"
+}
+
+live_hook_audit_disable() {
+  rm -f "$LIVE_HOOK_AUDIT_FILE" "${SB_TEST_DIR}/hook-audit-enabled"
+}
+
+live_hook_audit_clear() {
+  : > "$LIVE_HOOK_AUDIT_FILE"
+}
+
+# assert_hook_audit_entry <label> <hook> <decision> [detail-regex] [timeout-seconds]
+assert_hook_audit_entry() {
+  local label="$1" hook_name="$2" decision="$3" detail="${4:-}" timeout_seconds="${5:-10}"
+  local deadline=$((SECONDS + timeout_seconds))
+  while :; do
+    if [[ -s "$LIVE_HOOK_AUDIT_FILE" ]] && jq -e \
+      --arg h "$hook_name" --arg d "$decision" --arg p "$detail" \
+      'select(.hook_name == $h and .decision == $d and ($p == "" or ((.detail // "") | test($p; "i"))))' \
+      "$LIVE_HOOK_AUDIT_FILE" >/dev/null 2>&1; then
+      PASS=$((PASS + 1))
+      printf 'PASS: %s\n' "$label"
+      return 0
+    fi
+    (( SECONDS < deadline )) || break
+    sleep 1
+  done
+  FAIL=$((FAIL + 1))
+  printf 'FAIL: %s\n  (no audit entry hook=%s decision=%s detail~=%s in %s)\n' "$label" "$hook_name" "$decision" "$detail" "$LIVE_HOOK_AUDIT_FILE"
+  return 0
+}
+
+# assert_hook_json_decision <label> <hook-output> <decision>: the output must be a non-empty,
+# well-formed hook JSON whose permissionDecision (or decision) equals the expected value. Empty
+# output never counts as an allow.
+assert_hook_json_decision() {
+  local label="$1" output="$2" expected="$3"
+  if [[ -n "$output" ]] && printf '%s' "$output" | jq -e --arg e "$expected" \
+    '((.hookSpecificOutput.permissionDecision // .decision // "") == $e)' >/dev/null 2>&1; then
+    PASS=$((PASS + 1))
+    printf 'PASS: %s\n' "$label"
+  else
+    FAIL=$((FAIL + 1))
+    printf 'FAIL: %s\n  (expected decision "%s" in well-formed hook JSON)\n' "$label" "$expected"
+    printf '  Output snippet: %s\n' "$(printf '%s' "$output" | head -c 400)"
+  fi
 }
 
 # invoke_claude: default invocation — hook denials (permissionDecision:deny) are enforced.
@@ -372,12 +441,27 @@ print_results() {
   [[ $FAIL -eq 0 ]] && exit 0 || exit 1
 }
 
+# GNU stat is tried first: on GNU coreutils `stat -f` means --file-system and prints a multi-line
+# report, which poisoned the value the BSD-first form returned (R14-08). The result is always one
+# integer (0 when the file cannot be read).
 capture_mtime() {
-  stat -f "%m" "$1" 2>/dev/null || stat --format="%Y" "$1" 2>/dev/null || echo "0"
+  local value
+  value="$(stat -c %Y "$1" 2>/dev/null || true)"
+  if [[ ! "$value" =~ ^[0-9]+$ ]]; then
+    value="$(stat -f %m "$1" 2>/dev/null || true)"
+  fi
+  if [[ ! "$value" =~ ^[0-9]+$ ]]; then
+    value=0
+  fi
+  printf '%s\n' "$value"
 }
 
 capture_digest() {
-  shasum -a 256 "$1" 2>/dev/null | awk '{print $1}' || sha256sum "$1" 2>/dev/null | awk '{print $1}' || echo ""
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" 2>/dev/null | awk '{print $1}'
+  elif command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" 2>/dev/null | awk '{print $1}'
+  fi
 }
 
 assert_file_contains() {
