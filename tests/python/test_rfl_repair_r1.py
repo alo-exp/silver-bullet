@@ -224,7 +224,7 @@ class AgentIdentity(Fire):
         agents = self.root / ".claude" / "agents"
         agents.mkdir(parents=True)
         (agents / "sb-rfl-reviewer.md").write_text("x")
-        self.assertIn("shadow", self.reason(self.fire(self.spawn_payload(issued))))
+        self.assertIn("reserved", self.reason(self.fire(self.spawn_payload(issued))))
 
 
 class SessionScoping(Fire):
