@@ -38,9 +38,16 @@ setup() {
   export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
   export SB_RUNTIME_PRESERVE_STATE_DIR=1
   cat >"$TMPDIR_TEST/.silver-bullet.json" <<'JSON'
-{"sb_initiated":true,"orchestrator_mode":"parent","project":{"name":"test","active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"]}}
+{"sb_initiated":true,"orchestrator_mode":"parent","project":{"name":"test","active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"]},"site_profile":{"enabled":true,"stop_block_limit":1000,"dir":"site","live_url":"https://site.example/","regression_scripts":["tests/site-regression.sh"]}}
 JSON
   cp "$REPO_ROOT/silver-bullet.md" "$TMPDIR_TEST/silver-bullet.md"
+  mkdir -p "$TMPDIR_TEST/tests"
+  printf '#!/usr/bin/env bash\nexit "${SITE_REGRESSION_RC:-1}"\n' >"$TMPDIR_TEST/tests/site-regression.sh"
+  git -C "$TMPDIR_TEST" init -q -b main
+  git -C "$TMPDIR_TEST" add -A >/dev/null 2>&1
+  git -C "$TMPDIR_TEST" -c user.name=t -c user.email=t@t commit -q -m init
+  SITE_ROOT="$(cd "$TMPDIR_TEST" && pwd -P)"
+  HEAD_SHA="$(git -C "$TMPDIR_TEST" rev-parse HEAD)"
   export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
   export SILVER_BULLET_STATE_FILE="${SB_TEST_DIR}/state-$$"
   export SILVER_BULLET_BRANCH_FILE="${SB_TEST_DIR}/branch-$$"
@@ -68,6 +75,13 @@ setup_with_agentmemory() {
 {"sb_initiated":true,"config_version":"${CURRENT_CONFIG_VERSION}","orchestrator_mode":"parent","project":{"name":"test","active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"]},"recommended_tools":{"agentmemory":{"enabled_by_user":true,"usage_state_file":"${AM_STATE}"}}}
 EOF
 }
+
+# mk_session JSON: write site-session.json in this project's scope with one counted edit unless JSON says otherwise.
+mk_session() {
+  jq -n --arg sc "$SITE_ROOT" "{scope:\$sc, edit_seq:1, nonce:\"n1\"} + $1" >"${SB_TEST_DIR}/site-session.json"
+}
+# A profile-aware lib call needs the profile loaded for the project.
+load_profile() { local old="$PWD"; sb_integrity_forget; cd "$TMPDIR_TEST"; sb_site_profile_load; cd "$old"; }
 
 run_hook() {
   local hook="$1" payload="$3" # $2 (event) labels the call site only
@@ -140,23 +154,21 @@ teardown
 
 echo "--- site-regression-gate ---"
 setup
-jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",regression_passed_at:null,push_intent:false,touch_reason:"edit:site/index.html"}' \
-  >"${SB_TEST_DIR}/site-session.json"
+mk_session '{active:true,regression_passed_seq:0,push_intent:false,touch_reason:"edit:site/index.html"}'
 out=$(run_hook "$SITE_REG_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_block "Stop blocks active site session without regression pass" "$out"
-jq '.regression_passed_at = "2026-06-28T13:00:00Z"' "${SB_TEST_DIR}/site-session.json" >"${SB_TEST_DIR}/site-session.json.tmp" \
+jq '.regression_passed_seq = 1' "${SB_TEST_DIR}/site-session.json" >"${SB_TEST_DIR}/site-session.json.tmp" \
   && mv "${SB_TEST_DIR}/site-session.json.tmp" "${SB_TEST_DIR}/site-session.json"
 out=$(run_hook "$SITE_REG_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
-assert_allow "Stop allows when regression_passed_at >= last_touch_at" "$out"
+assert_allow "Stop allows when the regression pass covers the latest counted edit" "$out"
 teardown
 
 echo "--- live-publish-evidence-gate ---"
 setup
-jq -n '{active:true,push_intent:true,live_claim_pending:false,last_touch_at:"2026-06-28T12:00:00Z"}' \
-  >"${SB_TEST_DIR}/site-session.json"
+mk_session '{active:true,push_intent:true,live_claim_pending:false}'
 out=$(run_hook "$LIVE_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_block "Stop blocks site push intent without live evidence" "$out"
-jq -n '{commit_sha:"abc123",urls:["https://sb.alolabs.dev/"],markers_matched:["hero"],status:"LIVE",verified_at:"2026-06-28T12:00:00Z"}' \
+jq -n --arg sha "$HEAD_SHA" --arg r "$SITE_ROOT" --argjson e "$(date +%s)" '{commit_sha:$sha,project:$r,urls:["https://site.example/"],markers_matched:["hero"],status:"LIVE",verified_at:"t",verified_epoch:$e}' \
   >"${SB_TEST_DIR}/live-publish-evidence.json"
 out=$(run_hook "$LIVE_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_allow "Stop allows with valid live-publish-evidence.json" "$out"
@@ -164,8 +176,7 @@ teardown
 
 echo "--- R9-05: a fresh spawn marker never skips the parent's Stop gates ---"
 setup
-jq -n '{active:true,push_intent:true,live_claim_pending:false,last_touch_at:"2026-06-28T12:00:00Z"}' \
-  >"${SB_TEST_DIR}/site-session.json"
+mk_session '{active:true,push_intent:true,live_claim_pending:false}'
 printf '{"spawned_at":"%s"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"${SB_TEST_DIR}/orchestrator-worker-active.json"
 out=$(run_hook "$LIVE_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_block "live-publish gate still blocks Stop with a fresh worker marker" "$out"
@@ -236,15 +247,17 @@ teardown
 
 echo "--- v-loop-rollup-gate ---"
 setup
-jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",touch_reason:"edit:site/index.html"}' >"${SB_TEST_DIR}/site-session.json"
+mk_session '{active:true,regression_passed_seq:0,touch_reason:"edit:site/index.html"}'
 source "$REPO_ROOT/hooks/lib/site-session.sh"
 export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
+load_profile
 sb_site_session_init_vloops
 out=$(run_hook "$VLOOP_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_block "Stop blocks active site session with incomplete V-loops" "$out"
 sb_site_session_sync_vloops_from_state
-sb_site_session_mark_visual_evidence "/tmp/screenshot.png"
-jq '.regression_passed_at = "2026-06-28T13:00:00Z"' "${SB_TEST_DIR}/site-session.json" >"${SB_TEST_DIR}/site-session.json.tmp" && mv "${SB_TEST_DIR}/site-session.json.tmp" "${SB_TEST_DIR}/site-session.json"
+printf '\x89PNG\r\n\x1a\n\0\0\0\rIHDR' >"${SB_TEST_DIR}/screenshot.png"
+sb_site_session_mark_visual_evidence "${SB_TEST_DIR}/screenshot.png"
+jq '.regression_passed_seq = 1' "${SB_TEST_DIR}/site-session.json" >"${SB_TEST_DIR}/site-session.json.tmp" && mv "${SB_TEST_DIR}/site-session.json.tmp" "${SB_TEST_DIR}/site-session.json"
 sb_site_session_sync_vloops_from_state
 out=$(run_hook "$VLOOP_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_allow "Stop allows when site V-loops synced" "$out"
@@ -252,17 +265,20 @@ teardown
 
 echo "--- site-visual-evidence-gate ---"
 setup
-jq -n '{active:true,last_touch_at:"2026-06-28T12:00:00Z",touch_reason:"site-intent"}' >"${SB_TEST_DIR}/site-session.json"
+mk_session '{active:true,touch_reason:"edit:site/index.html"}'
 out=$(run_hook "$VISUAL_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_block "Stop blocks site session without visual evidence" "$out"
-jq -n '{captured_at:"2026-06-28T12:00:00Z",paths:["/tmp/x.png"]}' >"${SB_TEST_DIR}/site-visual-evidence.json"
+printf '\x89PNG\r\n\x1a\n\0\0\0\rIHDR' >"${SB_TEST_DIR}/x.png"
+jq -n --arg r "$SITE_ROOT" --arg p "${SB_TEST_DIR}/x.png" '{captured_at:"t",project:$r,nonce:"n1",edit_seq:1,paths:[$p]}' >"${SB_TEST_DIR}/site-visual-evidence.json"
 out=$(run_hook "$VISUAL_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_allow "Stop allows with site-visual-evidence.json" "$out"
 teardown
 
 echo "--- record-site-visual-evidence ---"
 setup
-run_hook "$RECORD_VISUAL_HOOK" PostToolUse "$(jq -n '{hook_event_name:"PostToolUse",tool_name:"browser_take_screenshot",tool_response:{path:"/tmp/site-shot.png"}}')" >/dev/null
+mk_session '{active:true,touch_reason:"edit:site/index.html"}'
+printf '\x89PNG\r\n\x1a\n\0\0\0\rIHDR' >"${SB_TEST_DIR}/site-shot.png"
+run_hook "$RECORD_VISUAL_HOOK" PostToolUse "$(jq -n --arg p "${SB_TEST_DIR}/site-shot.png" '{hook_event_name:"PostToolUse",tool_name:"mcp__playwright__browser_take_screenshot",tool_response:{path:$p}}')" >/dev/null
 if [[ -f "${SB_TEST_DIR}/site-visual-evidence.json" ]]; then
   echo "  ok: records screenshot path for visual V-loop"
   PASS=$((PASS + 1))
@@ -351,8 +367,7 @@ teardown
 
 echo "--- site-session gate scoping (#244/#245) ---"
 setup
-jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z"}' \
-  >"${SB_TEST_DIR}/site-session.json"
+mk_session '{active:true,edit_seq:0}'
 out=$(run_hook "$VISUAL_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_allow "active without site work — visual gate allows Stop" "$out"
 out=$(run_hook "$VLOOP_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
@@ -362,23 +377,22 @@ assert_allow "active without site work — regression gate allows Stop" "$out"
 teardown
 
 setup
-jq -n '{active:true,touch_reason:"edit:site/index.html",last_touch_at:"2026-06-28T12:00:00Z"}' \
-  >"${SB_TEST_DIR}/site-session.json"
+mk_session '{active:true,touch_reason:"edit:site/index.html"}'
 jq -n '{active:true,host:"opencode",task_id:"t1",work_dir:"/tmp",ownership_scope:[]}' \
   >"${SB_TEST_DIR}/agent-delegation-active.json"
 out=$(run_hook "$VISUAL_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
-assert_allow "site work + agent delegation — visual gate allows Stop" "$out"
+assert_block "site work + agent delegation — visual gate still blocks Stop (R9-04)" "$out"
 out=$(run_hook "$VLOOP_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
-assert_allow "site work + agent delegation — vloop gate allows Stop" "$out"
+assert_block "site work + agent delegation — vloop gate still blocks Stop (R9-04)" "$out"
 out=$(run_hook "$SITE_REG_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
-assert_allow "site work + agent delegation — regression gate allows Stop" "$out"
+assert_block "site work + agent delegation — regression gate still blocks Stop (R9-04)" "$out"
 teardown
 
 setup
-jq -n '{active:true,touch_reason:"site-intent",last_touch_at:"2026-06-28T12:00:00Z"}' \
-  >"${SB_TEST_DIR}/site-session.json"
+mk_session '{active:true,touch_reason:"site-intent"}'
 source "$REPO_ROOT/hooks/lib/site-session.sh"
 export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
+load_profile
 sb_site_session_record_subagent_spawn '{"description":"silver-agent-opencode pi TUI delegation"}'
 if [[ -f "${SB_TEST_DIR}/site-session.json" ]] && jq -e '.touch_reason == "site-intent"' "${SB_TEST_DIR}/site-session.json" >/dev/null; then
   echo "  ok: silver-agent-opencode spawn does not mark site session"
@@ -390,18 +404,16 @@ fi
 teardown
 
 setup
-jq -n '{active:true,touch_reason:"edit:site/index.html",last_touch_at:"2026-06-28T12:00:00Z"}' \
-  >"${SB_TEST_DIR}/site-session.json"
+mk_session '{active:true,touch_reason:"edit:site/index.html"}'
 run_hook "$RECORD_HOOK" UserPromptSubmit "$(jq -n --arg p 'invoke silver-agent-opencode for pi TUI delegation' '{hook_event_name:"UserPromptSubmit",prompt:$p}')" >/dev/null
-if [[ ! -f "${SB_TEST_DIR}/site-session.json" ]]; then
-  echo "  ok: agent delegation prompt clears stale site session"
+if [[ -f "${SB_TEST_DIR}/site-session.json" ]]; then
+  echo "  ok: an agent delegation prompt never wipes the site session (R9-12)"
   PASS=$((PASS + 1))
 else
-  echo "  FAIL: agent delegation prompt did not clear site session"
+  echo "  FAIL: an agent delegation prompt cleared the site session"
   FAIL=$((FAIL + 1))
 fi
 teardown
-
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]

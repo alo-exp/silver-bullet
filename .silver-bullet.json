@@ -575,5 +575,21 @@
         "orchestrator_mode": "parent"
       }
     }
+  },
+  "site_profile": {
+    "enabled": true,
+    "dir": "site",
+    "regression_scripts": [
+      "tests/scripts/test-site-chrome-regression.sh",
+      "tests/scripts/test-site-doc-freshness.sh",
+      "tests/scripts/test-site-content-freshness.sh"
+    ],
+    "live_url": "https://sb.alolabs.dev/",
+    "preview_port": 8765,
+    "preview_script": "site/serve.sh",
+    "trusted_helpers": [
+      "scripts/check-apo-invariants.py",
+      "tests/scripts/check-site-help-consistency.py"
+    ]
   }
 }
