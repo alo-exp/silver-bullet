@@ -226,7 +226,9 @@ sb_doc_scheme__state_has_skill() {
   esac
   # only the verified, sealed state counts (the integrity library's accessor); without it nothing is recorded
   declare -f sb_integrity_state_contents >/dev/null 2>&1 || return 1
-  sb_integrity_state_contents "$state_file" 2>/dev/null | grep -Fqx -- "$skill"
+  local contents
+  contents="$(sb_integrity_state_contents "$state_file" 2>/dev/null)" || true
+  grep -Fqx -- "$skill" <<<"$contents"
 }
 
 # Enforce doc-scheme contract.
