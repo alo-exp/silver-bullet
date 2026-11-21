@@ -153,8 +153,20 @@ set_matrix claude-only claude-only inline-partial
 run_ca PreToolUse "$REL"; assert_eq "inline matrix must be the full surface" "deny" "$(decision)"
 # ── R14-16: the inline marker must be bound to the tree being released ─────────────────────────────
 INL="$SB_RUNTIME_STATE_DIR/inline-e2e-matrix"
+GC=(git -C "$PROJ" -c user.email=t@e.x -c user.name=t)
+# a project carrying the release-surface files at the version the matrix ran on
+mkdir -p "$PROJ/.claude-plugin" "$PROJ/plugins/silver-bullet/.codex-plugin" "$PROJ/templates" "$PROJ/hooks" "$PROJ/site/x" "$PROJ/docs" "$PROJ/.planning/enterprise-e2e"
+printf '{"name":"sb","version":"1.0.0"}\n' >"$PROJ/package.json"
+printf '{"name":"sb","version":"1.0.0","skills":"./skills"}\n' >"$PROJ/.claude-plugin/plugin.json"
+printf '{"plugins":[{"name":"silver-bullet","version":"1.0.0","source":{"ref":"v1.0.0","path":"."}}]}\n' >"$PROJ/.claude-plugin/marketplace.json"
+printf '{"version":"1.0.0","config_version":"1.0.0","hooks":"./hooks/hooks.json"}\n' >"$PROJ/plugins/silver-bullet/.codex-plugin/plugin.json"
+printf '{"config_version":"1.0.0","skills":{"required_planning":["a"]}}\n' >"$PROJ/templates/silver-bullet.config.json.default"
+printf '#!/bin/sh\n' >"$PROJ/hooks/gate.sh"; printf '<html>1.0.0</html>\n' >"$PROJ/site/x/index.html"; printf '#!/bin/sh\n' >"$PROJ/site/x/run.sh"
+printf 'notes\n' >"$PROJ/CHANGELOG.md"
+"${GC[@]}" add -A; "${GC[@]}" commit -q -m "release surface baseline"
 set_matrix claude-only claude-only inline-full-surface
 OLD_SHA="$(git -C "$PROJ" rev-parse HEAD)"
+BASE_BRANCH="$(git -C "$PROJ" rev-parse --abbrev-ref HEAD)"
 printf 'matrix=inline-full-surface\n' >"$INL"
 run_ca PreToolUse "$REL"; assert_eq "marker without commit= is rejected (fail closed)" "deny" "$(decision)"
 assert_contains "the block says the commit is required" "$(message)" "commit= naming the commit the matrix ran on"
@@ -163,42 +175,66 @@ run_ca PreToolUse "$REL"; assert_eq "malformed commit= (not a sha) is rejected" 
 printf 'matrix=inline-full-surface\ncommit=%s\n' "${OLD_SHA:0:12}" >"$INL"
 run_ca PreToolUse "$REL"; assert_eq "abbreviated commit= is rejected" "deny" "$(decision)"
 printf 'matrix=inline-full-surface\ncommit=%s\n' "$OLD_SHA" >"$INL"
-run_ca PreToolUse "$REL"; assert_eq "commit= equal to the released commit is accepted" "allow" "$(decision)"
 green() { printf '[{"workflowName":"CI","status":"completed","conclusion":"success","headSha":"%s","createdAt":"1"}]' "$(git -C "$PROJ" rev-parse HEAD)"; }
-# a release commit that only bumps version-bearing files and the changelog is accepted
-printf '{"version":"9.9.9"}\n' >"$PROJ/package.json"; mkdir -p "$PROJ/docs" "$PROJ/.claude-plugin" "$PROJ/site/changelog"
-printf 'notes\n' >"$PROJ/CHANGELOG.md"; printf 'notes\n' >"$PROJ/docs/CHANGELOG.md"; printf '{}\n' >"$PROJ/.claude-plugin/marketplace.json"
-printf '<html>9.9.9</html>\n' >"$PROJ/site/changelog/index.html"
-git -C "$PROJ" add package.json CHANGELOG.md docs/CHANGELOG.md .claude-plugin/marketplace.json site/changelog/index.html
-git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit -q -m "release surface only"
-run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "a bump-only release commit after the matrix is accepted" "allow" "$(decision)"
-BUMP_SHA="$(git -C "$PROJ" rev-parse HEAD)"
-# squash/rebase equivalent: a new commit with the same tree and no ancestry is accepted
-SQ="$(git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit-tree "$BUMP_SHA^{tree}" -m squash)"
-git -C "$PROJ" checkout -q --detach "$SQ"
-printf 'matrix=inline-full-surface\ncommit=%s\n' "$BUMP_SHA" >"$INL"
-run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "a squash-equivalent commit (same tree, no ancestry) is accepted" "allow" "$(decision)"
-git -C "$PROJ" checkout -q "$BUMP_SHA" 2>/dev/null; git -C "$PROJ" checkout -q -
-printf 'matrix=inline-full-surface\ncommit=%s\n' "$OLD_SHA" >"$INL"
+run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "commit= equal to the released commit is accepted" "allow" "$(decision)"
+# variant NAME EXPECT SETUP: a release commit on a throw-away branch from the matrix commit, judged by the real gate
+variant() {
+  local name="$1" expect="$2" setup="$3"
+  git -C "$PROJ" checkout -q -b "variant-$$-$RANDOM" "$OLD_SHA"
+  ( cd "$PROJ" && eval "$setup" )
+  "${GC[@]}" add -A; "${GC[@]}" commit -q -m "variant" --allow-empty
+  printf 'matrix=inline-full-surface\ncommit=%s\n' "$OLD_SHA" >"$INL"
+  run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"
+  assert_eq "$name" "$expect" "$(decision)"
+  git -C "$PROJ" checkout -q -f "$BASE_BRANCH"
+}
+# accepted: what the release process itself rewrites
+variant "a version-only bump of every manifest, the changelog, a site page and the ledger is accepted" allow '
+jq ".version=\"1.1.0\"" package.json >p.tmp && mv p.tmp package.json
+jq ".version=\"1.1.0\"" .claude-plugin/plugin.json >p.tmp && mv p.tmp .claude-plugin/plugin.json
+jq ".plugins[0].version=\"1.1.0\" | .plugins[0].source.ref=\"v1.1.0\"" .claude-plugin/marketplace.json >p.tmp && mv p.tmp .claude-plugin/marketplace.json
+jq ".version=\"1.1.0\" | .config_version=\"1.1.0\"" plugins/silver-bullet/.codex-plugin/plugin.json >p.tmp && mv p.tmp plugins/silver-bullet/.codex-plugin/plugin.json
+jq ".config_version=\"1.1.0\"" templates/silver-bullet.config.json.default >p.tmp && mv p.tmp templates/silver-bullet.config.json.default
+printf "more notes\n" >>CHANGELOG.md; printf "<html>1.1.0</html>\n" >site/x/index.html
+printf "ledger\n" >.planning/enterprise-e2e/ROUND-9-LEDGER.md'
+variant "a release commit with an empty file diff is accepted" allow ':'
+# rejected: anything else, however it is dressed up
+variant "a hook moved into site/ (a rename shows only the new path) is rejected" deny 'mkdir -p site/y && git mv hooks/gate.sh site/y/gate.sh'
+variant "a Codex manifest whose hooks path is redirected into site/ is rejected" deny 'jq ".version=\"1.1.0\" | .hooks=\"./site/hooks.json\"" plugins/silver-bullet/.codex-plugin/plugin.json >p.tmp && mv p.tmp plugins/silver-bullet/.codex-plugin/plugin.json'
+variant "a plugin manifest whose skills path is redirected is rejected" deny 'jq ".skills=\"./site/skills\"" .claude-plugin/plugin.json >p.tmp && mv p.tmp .claude-plugin/plugin.json'
+variant "a config template default change (required skills) is rejected" deny 'jq ".skills.required_planning=[]" templates/silver-bullet.config.json.default >p.tmp && mv p.tmp templates/silver-bullet.config.json.default'
+variant "a marketplace source path change is rejected" deny 'jq ".plugins[0].source.path=\"./elsewhere\"" .claude-plugin/marketplace.json >p.tmp && mv p.tmp .claude-plugin/marketplace.json'
+variant "an allowlisted JSON file turned into a symlink is rejected" deny 'rm package.json && ln -s site/x/index.html package.json'
+variant "a mode change on an allowlisted prose file is rejected" deny 'chmod +x CHANGELOG.md'
+variant "a script edited under site/ is rejected" deny 'echo "rm -rf /" >>site/x/run.sh'
+variant "a new script added under site/ is rejected" deny 'echo x >site/x/new.sh'
+variant "a deleted manifest is rejected" deny 'git rm -q package.json'
+variant "an added unlisted JSON file is rejected" deny 'echo {} >site/x/hooks.json'
+variant "a hook change after the matrix is rejected" deny 'echo x >>hooks/gate.sh'
 # fail closed: when git cannot produce the diff since the marker's commit, the marker is rejected
 GIT_REAL="$(command -v git)"
-tl_stub git "if [[ \"\$*\" == *'diff --name-only'* ]]; then exit 1; fi; exec $GIT_REAL \"\$@\""
+tl_stub git "if [[ \"\$*\" == *'diff '* ]]; then exit 1; fi; exec $GIT_REAL \"\$@\""
+printf 'matrix=inline-full-surface\ncommit=%s\n' "$OLD_SHA" >"$INL"
+"${GC[@]}" commit -q --allow-empty -m "next"
 run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "an unreadable diff since the marker's commit is rejected (fail closed)" "deny" "$(decision)"
 rm -f "$TL_BIN/git"
-# a hook/script/skill change after the matrix invalidates it
-printf 'x\n' >"$PROJ/hooks-changed.sh"
-git -C "$PROJ" add hooks-changed.sh; git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit -q -m "code change"
-run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "a code change since the marker is rejected" "deny" "$(decision)"
-# a marker from an unrelated history/branch (code differs) is rejected
-git -C "$PROJ" checkout -q -b side "$OLD_SHA"; printf 'side\n' >"$PROJ/side.txt"; git -C "$PROJ" add side.txt
-git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit -q -m side; SIDE_SHA="$(git -C "$PROJ" rev-parse HEAD)"
-git -C "$PROJ" checkout -q -
+# a squash/rebase equivalent: a new commit with the same tree and no ancestry is accepted
+SQ="$("${GC[@]}" commit-tree "HEAD^{tree}" -m squash)"
+git -C "$PROJ" checkout -q --detach "$SQ"
+run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "a squash-equivalent commit (same tree, no ancestry) is accepted" "allow" "$(decision)"
+git -C "$PROJ" checkout -q -f "$BASE_BRANCH"
+# a marker from an unrelated history (different code) is rejected
+git -C "$PROJ" checkout -q -b side "$OLD_SHA"; printf 'side\n' >"$PROJ/side.txt"; "${GC[@]}" add side.txt
+"${GC[@]}" commit -q -m side; SIDE_SHA="$(git -C "$PROJ" rev-parse HEAD)"
+git -C "$PROJ" checkout -q -f "$BASE_BRANCH"
 printf 'matrix=inline-full-surface\ncommit=%s\n' "$SIDE_SHA" >"$INL"
 run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "a commit on a diverged branch with different code is rejected" "deny" "$(decision)"
 # a marker commit that is not in this checkout (shallow clone) fails closed with a clear instruction
 printf 'matrix=inline-full-surface\ncommit=%s\n' "$(printf '%040d' 1)" >"$INL"
 run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "a marker commit missing locally is rejected" "deny" "$(decision)"
 assert_contains "the block tells the operator to fetch full history" "$(message)" "git fetch --unshallow"
+# the limits are stated: the gate binds the marker to a tree, it cannot prove a matrix ran
+assert_contains "the block states what the gate does not prove" "$(message)" "does not prove that a matrix ran"
 # the tamper guard is lexical: a shell redirect to the marker is denied, but the gate's trust comes from re-verifying commit/tree
 TAMPER_CMD="printf 'matrix=inline-full-surface\\ncommit=$OLD_SHA\\n' > $INL"
 tl_run_hook hooks/dev-cycle-check.sh "$(jq -nc --arg c "$TAMPER_CMD" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}')"

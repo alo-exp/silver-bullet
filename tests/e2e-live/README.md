@@ -29,7 +29,7 @@ Release creation requires live matrix markers in addition to the shared hook/age
 written by `tests/live/run-live-tests.sh`. The gate (`hooks/lib/completion-audit/deploy-tier.sh`)
 also requires `inline-e2e-matrix=matrix=inline-full-surface`, which only the inline full-surface
 journey writes (`SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1`). The Claude supervised matrix (`scripts/run-enterprise-e2e-matrix.sh`, all 22 rows, no skips) writes the same marker
-after a full real pass; both writers stamp `commit=`; the gate requires the released tree to differ from that commit only in release-surface files (see docs/RELEASE.md), and the supervised writer refuses a dirty tree.
+after a full real pass; both writers stamp `commit=`; the gate requires the released tree to differ from that commit only in release-surface files (docs/RELEASE.md; the round ledger is the one allowed harness output), and the supervised writer refuses a dirty tree.
 
 Current scenarios:
 
