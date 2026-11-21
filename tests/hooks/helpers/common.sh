@@ -4,6 +4,12 @@
 
 HOOK_TEST_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
+# KAY_HOME, PI_CODING_AGENT_DIR, CODEX_HOME, XDG_*, git redirects ...: nothing may point the runtime paths
+# below, or a fixture, at the developer's real install
+# shellcheck source=tests/lib/sandbox-env.sh
+source "${HOOK_TEST_REPO_ROOT}/tests/lib/sandbox-env.sh"
+sb_test_scrub_host_env
+
 if [[ -f "${HOOK_TEST_REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "${HOOK_TEST_REPO_ROOT}/hooks/lib/runtime-paths.sh"
@@ -11,6 +17,7 @@ fi
 
 export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
 export SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME
+sb_test_assert_sandboxed || exit 70
 
 hook_test_init_counters() {
   HOOK_TEST_PASS="${HOOK_TEST_PASS:-0}"

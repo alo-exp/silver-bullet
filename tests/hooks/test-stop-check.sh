@@ -161,6 +161,12 @@ assert_passes() {
   fi
 }
 
+# A repository file these scenarios exercise is not optional: its absence is a failure, never a skip.
+fail_missing() {
+  FAIL=$((FAIL + 1))
+  printf 'FAIL: %s\n' "$1"
+}
+
 assert_contains() {
   local label="$1"
   local output="$2"
@@ -862,7 +868,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" ]]; then
   out=$(run_hook)
   assert_blocks "ORCH-3b: without routing marker orchestrator queue still blocks Stop" "$out"
 else
-  echo "  SKIP: e2e-matrix-routing.sh missing"
+  fail_missing "ORCH-3: hooks/lib/e2e-matrix-routing.sh is missing"
 fi
 teardown
 
@@ -885,7 +891,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" ]]; then
   assert_blocks "ORCH-4: marker alone (no SB_E2E_ENTERPRISE_MATRIX in hook env) still blocks the queue" "$out"
   sb_e2e_matrix_clear_routing_row_marker
 else
-  echo "  SKIP: e2e-matrix-routing.sh missing"
+  fail_missing "ORCH-4: hooks/lib/e2e-matrix-routing.sh is missing"
 fi
 teardown
 
@@ -910,7 +916,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$SUBAGENT_HOOK" ]];
   sub_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SUBAGENT_HOOK" 2>/dev/null || true )
   assert_blocks "ORCH-5b: subagent-stop blocks without routing marker when workers ran" "$sub_out"
 else
-  echo "  SKIP: subagent-stop or e2e-matrix-routing missing"
+  fail_missing "ORCH-5: hooks/subagent-stop-enforcement.sh or hooks/lib/e2e-matrix-routing.sh is missing or not executable"
 fi
 teardown
 
@@ -931,7 +937,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$LEDGER_HOOK" ]]; t
   sb_e2e_matrix_clear_routing_row_marker
   unset SB_E2E_ENTERPRISE_MATRIX
 else
-  echo "  SKIP: instruction-ledger-gate or e2e-matrix-routing missing"
+  fail_missing "ORCH-6: hooks/instruction-ledger-gate.sh or hooks/lib/e2e-matrix-routing.sh is missing or not executable"
 fi
 teardown
 
@@ -952,7 +958,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$SITE_REG_HOOK" ]];
   sb_e2e_matrix_clear_routing_row_marker
   unset SB_E2E_ENTERPRISE_MATRIX
 else
-  echo "  SKIP: site-regression-gate or e2e-matrix-routing missing"
+  fail_missing "ORCH-7: hooks/site-regression-gate.sh or hooks/lib/e2e-matrix-routing.sh is missing or not executable"
 fi
 teardown
 
