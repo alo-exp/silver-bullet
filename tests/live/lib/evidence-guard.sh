@@ -15,6 +15,7 @@
 SB_EVIDENCE_FILES=(release-live-matrix e2e-live-matrix inline-e2e-matrix quality-gate-state verify-tests-state)
 SB_EVIDENCE_DIR=""
 SB_EVIDENCE_STATE_DIR=""
+SB_EVIDENCE_REPO_ROOT=""
 
 # Put back every evidence file of snapshot dir $1 that is ABSENT from the state dir; a file that exists
 # now is never overwritten (another session may have earned newer evidence) and nothing is deleted.
@@ -28,23 +29,35 @@ _sb_evidence_put_back_missing() {
   done
 }
 
-# A runner killed with SIGKILL leaves its snapshot (kept inside the state dir, with the runner's pid):
-# the next start puts back what is still missing, then removes the dead runner's snapshot.
+# A runner killed with SIGKILL leaves its snapshot (kept inside the state dir, with the runner's pid). The next
+# start recovers it, but only evidence that is still valid for THIS checkout: a marker whose `commit=` equals the
+# repository HEAD now. Session-scoped stage markers without a commit (quality-gate-state, verify-tests-state) and
+# markers from another commit belong to an earlier session and are discarded, never brought back. Existing files
+# are never overwritten; the dead runner's snapshot is then removed.
 sb_evidence_recover() {
-  local snap owner
+  local snap owner head name commit
+  head="$(git -C "${SB_EVIDENCE_REPO_ROOT:-/nonexistent}" rev-parse HEAD 2>/dev/null || true)"
   for snap in "${SB_EVIDENCE_STATE_DIR}"/.sb-evidence-snapshot.*; do
     [[ -d "$snap" && ! -L "$snap" ]] || continue
     owner="$(cat "${snap}/owner.pid" 2>/dev/null)"
     if [[ "$owner" =~ ^[0-9]+$ ]] && kill -0 "$owner" 2>/dev/null; then
       continue
     fi
+    for name in "${SB_EVIDENCE_FILES[@]}"; do
+      commit="$(grep -m1 -E "^commit=" "${snap}/${name}" 2>/dev/null | cut -d= -f2- || true)"
+      if [[ -z "$head" || "$commit" != "$head" ]]; then
+        rm -f -- "${snap}/${name}"
+      fi
+    done
     _sb_evidence_put_back_missing "$snap"
     rm -rf -- "$snap"
   done
 }
 
+# sb_evidence_snapshot <state-dir> [<repo-root>]: the repository whose HEAD recovered markers must match.
 sb_evidence_snapshot() {
   SB_EVIDENCE_STATE_DIR="$1"
+  SB_EVIDENCE_REPO_ROOT="${2:-}"
   mkdir -p "$SB_EVIDENCE_STATE_DIR"
   sb_evidence_recover
   SB_EVIDENCE_DIR="$(mktemp -d "${SB_EVIDENCE_STATE_DIR}/.sb-evidence-snapshot.XXXXXX")"

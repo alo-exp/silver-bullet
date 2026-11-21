@@ -13,6 +13,8 @@ export SB_RTK_COMPAT_MODE=verbatim
 source "${SB_ROOT}/hooks/lib/rtk-compat.sh"
 # shellcheck source=tests/live/lib/detach-background.sh
 source "${SB_ROOT}/tests/live/lib/detach-background.sh"
+# shellcheck source=tests/live/lib/evidence-guard.sh
+source "${SB_ROOT}/tests/live/lib/evidence-guard.sh"
 sb_prepend_harness_path
 # shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
@@ -416,13 +418,56 @@ enterprise_e2e_matrix_ensure_internal_gate_markers() {
   done
 }
 
+# The directory the RELEASE GATE reads its markers from: the releasing session's own runtime state dir
+# (hooks/lib/runtime-paths.sh from the operator's HOME). In isolated-config mode (SB_E2E_ISOLATED_CLAUDE_CONFIG=1,
+# set by the agent-claude wrapper) the nested sessions use a throw-away state dir that the gate never reads, so the
+# marker must not go there (R14-05 review).
+enterprise_e2e_matrix_gate_state_dir() {
+  if [[ "${SB_E2E_ISOLATED_CLAUDE_CONFIG:-}" == "1" ]]; then
+    ( unset SB_RUNTIME_STATE_DIR SB_RUNTIME_HOME_ROOT SB_RUNTIME_PRESERVE_STATE_DIR SB_RUNTIME_EXTRA_STATE_ROOTS
+      export SILVER_BULLET_RUNTIME="${MATRIX_HOST:-claude}"
+      # shellcheck source=hooks/lib/runtime-paths.sh
+      source "${SB_ROOT}/hooks/lib/runtime-paths.sh"
+      printf '%s\n' "$SB_RUNTIME_STATE_DIR" )
+  else
+    enterprise_e2e_runtime_state_dir
+  fi
+}
+
+# True when the SB checkout has uncommitted or untracked changes (git-ignored files do not count): that tree
+# is what the nested sessions install and test, so evidence from a dirty tree proves nothing about a commit.
+enterprise_e2e_matrix_tree_dirty() {
+  [[ -n "$(git -C "$SB_ROOT" status --porcelain 2>/dev/null)" ]]
+}
+
+# At run start: bind the run to the checkout's HEAD and cleanliness, and snapshot the gate's evidence files so the
+# 22 nested sessions' SessionStart resets (they delete release-live-matrix, e2e-live-matrix, quality-gate-state,
+# verify-tests-state in the gate's state dir) cannot destroy the operator's evidence.
+enterprise_e2e_matrix_evidence_begin() {
+  MATRIX_START_HEAD="$(git -C "$SB_ROOT" rev-parse HEAD 2>/dev/null || true)"
+  MATRIX_START_DIRTY=false
+  if enterprise_e2e_matrix_tree_dirty; then
+    MATRIX_START_DIRTY=true
+  fi
+  sb_evidence_snapshot "$(enterprise_e2e_matrix_gate_state_dir)" "$SB_ROOT"
+  sb_evidence_restore inline-e2e-matrix
+}
+
+# Idempotent: put back what the nested sessions' resets removed, drop the snapshot.
+enterprise_e2e_matrix_evidence_finish() {
+  sb_evidence_restore inline-e2e-matrix
+  sb_evidence_discard
+}
+
 # The release marker `inline-e2e-matrix` (matrix=inline-full-surface, commit=<SB HEAD>, written_at=) is
 # written ONLY after a complete real pass: every one of the 22 rows run in this invocation (no row
-# arguments, not a dry run) and passed, with no skipped row. A partial, dry, skipped or failed run writes
-# nothing, and rows 21/22 already need their parent rows' evidence to pass (R14-02). The release gate
-# (hooks/lib/completion-audit/deploy-tier.sh) accepts the marker only for the commit being released.
+# arguments, not a dry run) and passed, with no skipped row, on a CLEAN tree whose HEAD did not move during the
+# run. A partial, dry, skipped, failed or dirty run writes nothing, and rows 21/22 already need their parent rows'
+# evidence to pass (R14-02). The release gate (hooks/lib/completion-audit/deploy-tier.sh) accepts the marker
+# only for a tree that differs from the released one in release-surface files alone.
 enterprise_e2e_matrix_write_release_marker() {
   local requested_count="$1" dir head file
+  enterprise_e2e_matrix_evidence_finish
   if [[ "${SB_E2E_MATRIX_DRY_RUN:-}" == "1" || "$requested_count" -ne 0 || "$FAIL_ROWS" -ne 0 \
         || "$SKIP_ROWS" -ne 0 || "$PASS_ROWS" -ne 22 ]]; then
     echo "NOTE: inline-e2e-matrix not written: it needs a full, non-dry, no-skip 22/22 run (pass=${PASS_ROWS} skip=${SKIP_ROWS} fail=${FAIL_ROWS})."
@@ -433,7 +478,15 @@ enterprise_e2e_matrix_write_release_marker() {
     echo "NOTE: inline-e2e-matrix not written: ${SB_ROOT} has no commit to bind it to."
     return 0
   fi
-  dir="$(enterprise_e2e_runtime_state_dir)"
+  if [[ "$MATRIX_START_DIRTY" == true ]] || enterprise_e2e_matrix_tree_dirty; then
+    echo "NOTE: inline-e2e-matrix not written: ${SB_ROOT} has uncommitted or untracked changes (commit or remove them and re-run)."
+    return 0
+  fi
+  if [[ "$head" != "$MATRIX_START_HEAD" ]]; then
+    echo "NOTE: inline-e2e-matrix not written: HEAD moved during the run (${MATRIX_START_HEAD:0:12} -> ${head:0:12})."
+    return 0
+  fi
+  dir="$(enterprise_e2e_matrix_gate_state_dir)"
   mkdir -p "$dir"
   file="${dir}/inline-e2e-matrix"
   rm -f -- "$file"
@@ -787,10 +840,11 @@ main() {
   setup_workspace
   if [[ -n "$_matrix_batch_pid_file" ]]; then
     # shellcheck disable=SC2064  # capture the pid-file path now, as intended
-    trap "rm -f '$_matrix_batch_pid_file' '${_matrix_batch_pid_file}.id'; cleanup_workspace" EXIT
+    trap "rm -f '$_matrix_batch_pid_file' '${_matrix_batch_pid_file}.id'; enterprise_e2e_matrix_evidence_finish; cleanup_workspace" EXIT
   else
-    trap cleanup_workspace EXIT
+    trap "enterprise_e2e_matrix_evidence_finish; cleanup_workspace" EXIT
   fi
+  enterprise_e2e_matrix_evidence_begin
   enterprise_e2e_matrix_quiesce_orchestrator_queue "$SB_ROOT"
   fi
   WORK_DIR="${WORK_DIR:-$FIXTURE_DIR}"

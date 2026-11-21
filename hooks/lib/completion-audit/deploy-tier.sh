@@ -1,21 +1,32 @@
 #!/usr/bin/env bash
 # completion-audit: TIER 2 final delivery gate
 
-# ca_marker_commit_ok FILE ROOT RELEASE_SHA: the live-matrix marker FILE was earned at the commit being
-# released. Its `commit=` line must be a full sha (missing or malformed fails closed) and must equal
-# RELEASE_SHA, or be an ancestor of it with every path changed since limited to the changelog
-# (CHANGELOG.md, docs/CHANGELOG.md): the release-notes commit that normally follows a matrix run (R14-16).
+# ca_marker_commit_ok FILE ROOT RELEASE_SHA: the live-matrix marker FILE was earned on the tree being
+# released (R14-16). Its `commit=` line must be a full sha (missing or malformed fails closed) that exists
+# in this checkout (status 2 when it does not: a shallow clone or a commit from another history) and whose
+# file-level diff to RELEASE_SHA touches only paths on the release-surface allowlist
+# (release-surface-allowlist.txt: version-bearing files and release metadata the release process itself
+# rewrites). No ancestry is required (a squash or rebase merge with an identical tree is fine); a hook,
+# skill, script or test changed since the matrix ran is rejected, and so is an unreadable diff.
 ca_marker_commit_ok() {
-  local file="$1" root="$2" release_sha="$3" commit changed
+  local file="$1" root="$2" release_sha="$3" commit changed path pattern ok
+  local allowlist
+  allowlist="$(dirname "${BASH_SOURCE[0]}")/release-surface-allowlist.txt"
   commit="$(grep -m1 -E '^commit=' "$file" 2>/dev/null | cut -d= -f2-)"
   [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || return 1
   [[ "$commit" == "$release_sha" ]] && return 0
-  git -C "$root" merge-base --is-ancestor "$commit" "$release_sha" 2>/dev/null || return 1
+  git -C "$root" cat-file -e "${commit}^{commit}" 2>/dev/null || return 2
   changed="$(git -C "$root" diff --name-only "$commit" "$release_sha" 2>/dev/null)" || return 1
-  # Any changed path other than the changelog rejects the marker (a commit with no file changes is fine).
-  if [[ -n "$changed" ]] && printf '%s\n' "$changed" | grep -qvxE 'CHANGELOG\.md|docs/CHANGELOG\.md'; then
-    return 1
-  fi
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    ok=false
+    while IFS= read -r pattern; do
+      case "$pattern" in ''|'#'*) continue ;; esac
+      # shellcheck disable=SC2254  # the allowlist line is a glob pattern by design
+      case "$path" in $pattern) ok=true; break ;; esac
+    done <"$allowlist"
+    [[ "$ok" == true ]] || return 1
+  done <<<"$changed"
   return 0
 }
 
@@ -116,8 +127,11 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
     # The inline marker is written by the enterprise-grade-test-app journey or by the Claude supervised
     # enterprise matrix (full 22-row pass); either way it must carry the commit it was earned at.
     inline_commit_ok=false
+    inline_commit_missing=false
     if ca_marker_commit_ok "$inline_e2e_matrix_file" "$project_root" "$release_commit_sha"; then
       inline_commit_ok=true
+    elif [[ $? -eq 2 ]]; then
+      inline_commit_missing=true
     fi
     if [[ "$inline_commit_ok" == true && "$release_matrix_value" == 'matrix=full-claude-codex' && "$e2e_matrix_value" == 'matrix=full-claude-codex' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
@@ -126,7 +140,11 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
     elif [[ "$inline_commit_ok" == true && "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
     else
-      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh in the standard Claude direct-OAuth configuration (or Kay/OpenCode Go/DeepSeek V4 Flash low when isolated Codex-compatible runs are required), and record matrix=inline-full-surface in the host runtime inline-e2e-matrix by completing the enterprise-grade-test-app journey: the Claude supervised enterprise-e2e-matrix (all 22 rows, per .planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md) or the inline journey (tests/e2e-live/run-e2e-live-tests.sh with SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1). The inline marker must carry commit= naming the commit being released (or an ancestor whose only later changes are to the changelog); a marker without it, or from another commit, is rejected. Then retry. A full Claude/Codex matrix is still accepted when explicitly run, but it is no longer required for the release gate.' )"
+      inline_missing_note=""
+      if [[ "$inline_commit_missing" == true ]]; then
+        inline_missing_note=" The marker commit is not in this checkout (shallow clone or another history): fetch full history (git fetch --unshallow) and retry."
+      fi
+      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh in the standard Claude direct-OAuth configuration (or Kay/OpenCode Go/DeepSeek V4 Flash low when isolated Codex-compatible runs are required), and record matrix=inline-full-surface in the host runtime inline-e2e-matrix by completing the enterprise-grade-test-app journey: the Claude supervised enterprise-e2e-matrix (all 22 rows, per .planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md) or the inline journey (tests/e2e-live/run-e2e-live-tests.sh with SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1). The inline marker must carry commit= naming the commit the matrix ran on: the released commit, or a commit whose tree differs only in release-surface files (hooks/lib/completion-audit/release-surface-allowlist.txt: version bumps, manifests, changelog); a marker without it, or from a tree with other changes, is rejected. Then retry. A full Claude/Codex matrix is still accepted when explicitly run, but it is no longer required for the release gate.%s' "$inline_missing_note")"
       exit 0
     fi
   fi
