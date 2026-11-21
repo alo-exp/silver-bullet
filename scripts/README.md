@@ -17,8 +17,7 @@ Called by skills and hooks while Silver Bullet runs in a project.
 | `silver-add.sh` | Fingerprint, dedupe and file findings for `sb:add` (local, GitHub or custom tracker) |
 | `silver-scan.sh`, `silver-scan.py` | `sb:scan` engine: scan, file, record and reject deferred items |
 | `resolve-instruction-ledger.sh` | Sanctioned writer for instruction-ledger leaf status (direct edits are blocked) |
-| `review-fix-ladder.py`, `_review_fix_ladder_impl.py` | Resolve host-aware model/reasoning rungs for `sb:review-fix-ladder` |
-| `rfl-assert-advance.sh` | Fail closed when the active review-fix-ladder run lacks Policy C or sibling artifacts |
+| `review-fix-ladder.py`, `_review_fix_ladder_impl.py` | Native-subagent review-fix ladder encoder for `sb:review-fix-ladder` (rungs, run lifecycle, Policy C, hook entry) |
 | `deploy-gate-snippet.sh` | Deploy gate snippet for project CI/deploy scripts; keeps a fallback `REQUIRED_DEPLOY` list CI compares with the template |
 
 ## Install, setup and tool stack

@@ -5,7 +5,7 @@
     "**Codex** loads the same manifest from the plugin package. `scripts/install-codex.sh` rewrites the paths and routes each command through `hooks/codex-hook-adapter.sh`.",
     "Matchers name tools from every host: `Bash` (Claude) and `exec_command` (Codex) are shell calls; `apply_patch` is the Codex edit tool; `MCP` is the generic MCP call; `Task|Subagent|Agent` are subagent spawns.",
     "Enforcement hooks first check that the project is activated (`.silver-bullet.json` and `silver-bullet.md` at the project root, see `hooks/lib/sb-project-gate.sh`); outside an SB project they exit 0 (a missing `jq` included).",
-    "Unexpected errors fail open: almost every hook installs an `ERR` trap that exits 0 (some print a notice or a no-op payload first). Exceptions: `phase-archive.sh` denies the `phases clear` it guards when archiving fails, and `rfl-policy-c-gate.sh` has no `ERR` trap, so an unexpected error surfaces as a non-blocking hook error.",
+    "Unexpected errors fail open: almost every hook installs an `ERR` trap that exits 0 (some print a notice or a no-op payload first). Exceptions: `phase-archive.sh` denies the `phases clear` it guards when archiving fails, and `review-fix-ladder-guard.sh` denies or blocks (instead of failing open) when it cannot check an event while a ladder run is live.",
     "A missing `jq` does not fail open everywhere. `session-start` warns that enforcement is disabled and most hooks exit 0. In an SB project (`hooks/lib/jq-gate.sh`), `completion-audit.sh` still blocks the commands its classifier calls delivery (commit, push, PR, merge, release, deploy), and `dev-cycle-check.sh`, `forbidden-skill-check.sh`, `planning-file-guard.sh`, `uat-gate.sh` and `workflow-chain-guard.sh` block what they cannot evaluate, except shell commands that install or probe `jq` (a package-manager install with value-less flags only (no `--config-file=`, `--setopt=`, `-c=` and the like) and at most harmless installer env prefixes such as `DEBIAN_FRONTEND=`; `apt`/`apt-get update` is the only metadata refresh; Codex argv arrays `[bash, -lc, SCRIPT]` are unwrapped) or, when `python3` is available, are read-only, so the agent can always recover; the block message lists the install commands. Outside an SB project nothing is blocked."
   ],
   "event_notes": {
@@ -56,9 +56,7 @@
     "record-site-visual-evidence.sh": "Records browser screenshot paths as site visual evidence.",
     "record-skill.sh": "Records completed skill invocations (host Skill tool, or `silver-bullet invoke-skill` receipts on Codex) in the state file.",
     "record-token-compression-usage.sh": "Records token-compression CLI usage (RTK) for the opt-in usage-freshness gate.",
-    "review-fix-ladder-guard.sh": "Enforces the review-fix-ladder state machine while a ladder session is active.",
-    "rfl-policy-c-gate.sh": "While a review-fix-ladder run is active (`.planning/rfl-*/LADDER-STATUS.json`), denies advancing when Policy C or sibling artifacts are missing.",
-    "rfl-quota-retry-due.sh": "Activates review-fix-ladder quota-retry jobs whose retry time has arrived. No-op when none are scheduled.",
+    "review-fix-ladder-guard.sh": "Review-fix-ladder guard, inert unless this session started or resumed a run: validates each ladder subagent spawn against its ticket, captures its result, protects encoder-owned artifacts, blocks Stop while a run is active, records a user-typed `RFL ABORT <run-id>`, and prints a fixed resume notice at session start.",
     "roadmap-freshness.sh": "Blocks a `git commit` (any form: `git -C`, `git add … && git commit`, `commit -a`, pathspecs) that brings in a phase `SUMMARY.md` whose `ROADMAP.md` checkbox is not ticked.",
     "rtk-gate.sh": "Opt-in (`recommended_tools.rtk`): checks RTK install, version and host hook wiring (it does not rewrite commands itself).",
     "semantic-compress.sh": "After phase skills, assembles a ranked context summary for the current phase goal (`semantic_compression` config).",
@@ -162,9 +160,7 @@
         "orchestrator-scheduler.sh",
         "orchestrator-skill-atom.sh",
         "orchestrator-state.sh",
-        "agent-delegation-state.sh",
-        "review-fix-ladder-state.sh",
-        "rfl-policy-c-assert.sh"
+        "agent-delegation-state.sh"
       ]
     },
     {
