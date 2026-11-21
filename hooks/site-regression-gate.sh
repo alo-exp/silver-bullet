@@ -26,6 +26,7 @@ search_dir="${config_file:+${config_file%/*}}"
 search_dir="${search_dir:-$PWD}"
 [[ -n "$config_file" ]] || exit 0
 sb_project_gate_or_exit 2>/dev/null || exit 0
+sb_site_profile_load || exit 0
 
 if [[ -f "$_lib_dir/e2e-matrix-routing.sh" ]]; then
   # shellcheck source=lib/e2e-matrix-routing.sh
@@ -49,6 +50,8 @@ emit_block() {
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
     [[ "${SB_KAY_HOOK_BRIDGE_INVOKED:-}" == "1" ]] && { printf '%s\n' "$reason" >&2; exit 2; }
   else
+    # A Stop gate that already told the agent once must not trap the session (R9-03).
+    if sb_site_stop_loop_release site-regression-gate "$input"; then exit 0; fi
     printf '{"decision":"block","reason":%s}' "$json_reason"
   fi
   exit 0
@@ -67,13 +70,10 @@ elif [[ "$hook_event" == "PreToolUse" ]]; then
     Bash|Shell|shell|exec_command) ;;
     *) exit 0 ;;
   esac
-  cmd="$(sb_tool_command_string "$input" 2>/dev/null || true)"
-  if grep -qE '\bgit push\b' <<<"$cmd"; then
-    sb_site_session_mark_push_intent 2>/dev/null || true
-    sb_site_session_gates_apply && should_check=true
-  else
-    exit 0
-  fi
+  # Any real push (not a command that merely mentions one) runs the suites first when site edits exist.
+  sb_tool_input_load "$input"
+  sb_site_shell_push_kind >/dev/null || exit 0
+  sb_site_session_gates_apply && should_check=true
 else
   exit 0
 fi
@@ -99,8 +99,11 @@ if [[ $rc -eq 0 ]]; then
 fi
 
 if [[ $rc -eq 90 ]]; then
-  reason="Site session regression gate — cannot run: no tests directory at ${repo_root}/tests.
-This is a gate setup problem, not a test failure."
+  reason="Site session regression gate — cannot run: a regression script named in site_profile.regression_scripts is missing under ${repo_root}.
+This is a gate setup problem, not a test failure. Fix site_profile in .silver-bullet.json or restore the script."
+elif [[ $rc -eq 92 ]]; then
+  reason="Site session regression gate — not trusted: $(sb_site_regression_untrusted "$repo_root") is not committed as it stands (untracked, or changed against HEAD).
+The gate does not run a regression script that was edited in the working tree: a pass could be forged by replacing it. Review the change and commit it, then retry."
 elif [[ $rc -eq 91 ]]; then
   reason="Site session regression gate — cannot run: failed to create a log file under ${SB_RUNTIME_STATE_DIR:-/tmp}.
 This is a gate setup problem, not a test failure. Check that the directory exists and is writable, and remove any stale 'site-regression.XXXXXX.log' literal file left by older SB versions."
@@ -110,15 +113,12 @@ elif [[ -z "$log_file" || ! -f "$log_file" ]]; then
   reason="Site session regression gate — cannot run: regression helper returned rc=${rc} without a usable log file.
 This is a gate setup problem, not a test failure. No log file was produced."
 else
-  reason="Site session regression gate — suites ran and failed. Re-run site freshness + chrome regression before push/Stop.
+  scripts_list="$(printf '%s' "$SB_SITE_REGRESSION_SCRIPTS" | sed 's/^/  bash /')"
+  reason="Site session regression gate — suites ran and failed. Re-run the site regression suites before push/Stop.
 
 Required (all must pass):
-  bash tests/scripts/test-site-chrome-regression.sh
-  bash tests/scripts/test-site-doc-freshness.sh
-  bash tests/scripts/test-site-content-freshness.sh
+${scripts_list}
 
 Fix failures then retry. Log: ${log_file}"
 fi
 emit_block "$reason"
-
-

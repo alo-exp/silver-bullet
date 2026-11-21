@@ -970,31 +970,46 @@ SB composes optional third-party tools; they never own lifecycle routing, planni
 
 ### 8.2 Public site and help center work
 
-These rules apply to `site/**`, Help Center pages, homepage copy, `site/help/search.js`, OG cards, and other public-facing HTML under `site/`.
+These rules apply only to a project that opts in with a `site_profile` section in its own `.silver-bullet.json`. Without `site_profile.enabled: true` the site hooks are inert, so a project with a `site/` folder of its own is not affected:
+
+```json
+"site_profile": {
+  "enabled": true,
+  "dir": "site",
+  "regression_scripts": ["tests/scripts/test-site-chrome-regression.sh"],
+  "live_url": "https://example.com/",
+  "preview_port": 8765,
+  "preview_script": "site/serve.sh"
+}
+```
+
+Everything the hooks run, fetch or probe comes from that section: the regression scripts, the live URL, the preview port and script. A path counts as a site edit only when it lies inside `<project>/<dir>`. A prompt that merely mentions the site never starts a site session.
 
 **Authoring model**
-- Website and help-center edits MUST be authored and reviewed via **Composer 2.5 subagents** (`Task` with `model=composer-2.5`), not by the parent agent alone or other models.
 - Route site intents through `/sb` → `sb:content` (site batch protocol in `skills/silver-content/SKILL.md`).
+- Under the parent orchestrator, site edits are made by Task workers, as every other implementation is. That is the orchestrator's rule (§2h), not a site-specific hook: only `site-preview-preflight.sh` and `site-chrome-guard.sh` act on the edits themselves, and the parent's own edits are not preview-checked.
 
 **Workflow catalog presentation order**
 - Homepage (`site/index.html` tabs) and Help Center workflow listings MUST follow typical SDLC order: entry/router → discovery/planning → primary delivery → fast/specialized → infrastructure → ship/release → post-delivery gates → operations/learning.
 - Atomic flows (`AF-*`) order by capability class: orient/bootstrap → plan/specify → research → execute → verify/test → review → ship/deploy → document/process.
 - This is documentation presentation order, not runtime composition order.
 
-**Site/help publish policy**
+**Site/help publish policy** (this repository: publishes via direct commits to `main` through GitHub Pages)
 - `site/**` publishes via direct commits to `main` without a patch release, version bump, git tag, or GitHub release unless the user explicitly requests a release.
-- Before pushing, run `bash tests/scripts/test-site-doc-freshness.sh` and `bash tests/scripts/test-site-content-freshness.sh`; site-only work does not require the full `tests/run-all-tests.sh` suite.
-- Publish path: commit + push to `main` (a push to the default branch is final delivery; a site-only change uses the light change-class floor); GitHub Pages deploys via `.github/workflows/pages.yml` (path-filtered to `site/**`).
+- Before pushing, run the profile's regression scripts (`site-regression-gate.sh` runs them for a real `git push` and at Stop; it runs only scripts that are committed as they stand). Site-only work does not require the full `tests/run-all-tests.sh` suite.
+- A push to the default branch is final delivery; a site-only change uses the light change-class floor.
 - Expect **~1–15 minutes** end-to-end deploy latency (Pages queue + `Cache-Control: max-age=600` on GitHub Pages).
 
 **Live publish notification (mandatory)**
-- Do **not** tell the user changes are **LIVE** until deployed page content is verified at the public URL (e.g. `https://sb.alolabs.dev/` or the specific `site/help/` path).
+- Do **not** tell the user changes are **LIVE** until deployed page content is verified at the public URL.
 - A commit pushed to `main` or a queued/succeeded Pages workflow is **not** sufficient alone.
-- Before claiming live status: fetch URL(s), confirm key markers match the commit, inspect headers (`Last-Modified`, `ETag`, `Cache-Control`, `Age`), wait for `pages.yml` when needed.
-- Write `${SB_RUNTIME_STATE_DIR}/live-publish-evidence.json` with `commit_sha`, `urls`, `markers_matched`, `status` (`LIVE`|`NOT_LIVE`), `verified_at`.
+- Verify with the plugin's verifier, never by writing the state directory (the state-tamper guard denies that): `bash <plugin>/scripts/site-live-evidence.sh --marker '<text only the new page contains>'`. It fetches the profile's `live_url`, matches every marker and records `live-publish-evidence.json` for the current `HEAD` itself. The gate accepts the evidence only for this project's current commit, within `site_profile.live_evidence_max_age_seconds` (default 24 hours).
 - Notify the user with: commit SHA; what went live; explicit **LIVE** or **NOT LIVE** with fetched-page evidence; GitHub release URL if applicable.
 
-**Runtime hooks:** `site-regression-gate.sh`, `live-publish-evidence-gate.sh`, `instruction-ledger-gate.sh`, `subagent-stop-enforcement.sh` enforce the above at Stop/push.
+**Visual evidence**
+- Take screenshots with the host browser MCP (Alumnium or the Playwright MCP's `browser_take_screenshot`) after the last site edit. `record-site-visual-evidence.sh` records the screenshot file when the tool returns; do not write `site-visual-evidence.json` by hand. A later site edit needs a new screenshot.
+
+**Runtime hooks:** `site-regression-gate.sh`, `site-visual-evidence-gate.sh`, `v-loop-rollup-gate.sh`, `live-publish-evidence-gate.sh`, `instruction-ledger-gate.sh`, `subagent-stop-enforcement.sh` enforce the above at Stop (and the regression gate before a real push). A Stop gate that has already told the agent once releases when the host reports `stop_hook_active`, and writes an audit line to `stop-loop-release.log`. The parent's file-write rule for worker-only site edits is advisory: no hook blocks a parent edit.
 
 ---
 

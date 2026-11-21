@@ -24,11 +24,14 @@ search_dir="${search_dir:-$PWD}"
 [[ -n "$config_file" ]] || exit 0
 sb_project_gate_or_exit 2>/dev/null || exit 0
 
+sb_site_profile_load || exit 0
+sb_site_set_cwd "$input"
+
 if [[ "$hook_event" == "UserPromptSubmit" ]]; then
-  prompt="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)"
-  if sb_site_prompt_is_agent_delegation_intent "$prompt"; then
-    sb_site_session_clear_all
-  elif sb_site_prompt_is_site_intent "$prompt"; then
+  # A prompt never starts a site session and never clears one: it only annotates a session that already holds
+  # real site edits (R9-02, R9-12).
+  prompt="$(printf '%s' "$input" | jq -r '.prompt // ""')"
+  if sb_site_prompt_is_site_intent "$prompt"; then
     sb_site_session_mark_site_intent
     if grep -qiE '\blive\b|publish|pushed to main|go live' <<<"$prompt"; then
       sb_site_session_mark_live_claim_pending
@@ -38,27 +41,33 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
 fi
 
 [[ "$hook_event" == "PostToolUse" ]] || exit 0
-tool_name="$(sb_tool_name "$input" 2>/dev/null || true)"
-file_path="$(sb_tool_file_path "$input" 2>/dev/null || printf '%s' "$input" | jq -r '.tool_input.file_path // ""' 2>/dev/null || true)"
+tool_name="$(sb_tool_name "$input")"
 
+# One counted edit per tool call that wrote under the site directory.
+edited=""
 case "$tool_name" in
-  Task|Subagent|Agent)
-    tool_preview="$(printf '%s' "$input" | jq -c '.tool_input // {}' 2>/dev/null || echo '{}')"
-    if sb_site_text_is_agent_delegation_intent "$tool_preview"; then
-      sb_site_session_clear_all
-    fi
-    ;;
   Edit|Write|MultiEdit|apply_patch)
-    if sb_site_session_path_is_site "$file_path"; then
-      sb_site_session_touch "edit:${file_path}"
-    fi
+    candidates="$({ sb_tool_file_path "$input"; sb_tool_patch_paths "$input"; })"
     ;;
   Bash|Shell|shell|exec_command)
-    cmd="$(sb_tool_command_string "$input" 2>/dev/null || true)"
-    if grep -qE '\bgit push\b' <<<"$cmd"; then
+    sb_tool_input_load "$input"
+    candidates="${SB_SA_WRITE_PATHS:-}"
+    # A push that is not provably a feature-branch push is a publish: it needs live evidence at Stop. It is
+    # recorded here, after the host reports the command ran, never on the attempt (R9-06).
+    if [[ "$(sb_site_shell_push_kind)" == final ]]; then
       sb_site_session_mark_push_intent
     fi
     ;;
+  *) candidates="" ;;
 esac
+while IFS= read -r candidate; do
+  if sb_site_session_path_is_site "$candidate"; then
+    edited="$candidate"
+    break
+  fi
+done <<<"$candidates"
+if [[ -n "$edited" ]]; then
+  sb_site_session_touch "edit:${edited}"
+fi
 
 exit 0
