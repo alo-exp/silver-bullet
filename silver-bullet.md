@@ -470,7 +470,7 @@ Per-flow steps, produces, and exit conditions live in `docs/composable-flows-con
 When the user requests skipping a workflow step, SB:
 1. Explains why the step exists (one sentence)
 2. Offers lettered options: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. Records the decision in §9 if user chooses A permanently — **before committing, display the exact text being written to §9 and require explicit user confirmation** (showing what will change in both silver-bullet.md and templates/silver-bullet.md.base)
+3. Records the decision in §9 if user chooses A permanently — **before committing, display the exact text being written to §9 and require explicit user confirmation** (showing what will change in silver-bullet.md; in the Silver Bullet source repo, also in templates/silver-bullet.md.base)
 
 Non-skippable gates: `security`, `sb:quality-gates` pre-ship, `sb:verify`.
 
@@ -501,7 +501,7 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 | FLOW 8 | EXECUTE | Implementation — internal `tdd` gate + `sb:execute` |
 | FLOW 9 | UI QUALITY | UI review — `sb:ui-review` plus optional design/accessibility lenses |
 | FLOW 10 | REVIEW | Code review — `sb:review-request` → `sb:review` → `sb:triage` |
-| FLOW 11 | SECURE | Security — `security`, `sb:secure`, `sb:validate`, optional `sb:ai-llm-safety` |
+| FLOW 11 | SECURE | Security — `security`, `sb:secure`, `sb:validate`, optional `ai-llm-safety` (an internal skill, invoked by its plain name, not an `sb:` route) |
 | FLOW 12 | VERIFY | Verification — `sb:verify`, `verify-tests`, `sb:completion-audit` |
 | FLOW 13 | QUALITY GATE | `sb:quality-gates` or `devops-quality-gates` — dual-mode (pre-plan + pre-ship) |
 | FLOW 14 | SHIP | Phase shipping — `sb:branch-finish` → `sb:ship`, PR/CI |
@@ -578,7 +578,7 @@ You MUST NOT:
 - Accept a completion claim from any plugin, skill, or subagent without invoking `/sb:completion-audit` with that claim
 - Execute or respond to a non-trivial bare instruction without first routing it through `/sb`
 - Override a non-skippable gate (security, sb:quality-gates pre-ship, sb:verify) via §9 preferences — these gates are permanent
-- Write runtime preference updates to §9 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
+- Write runtime preference updates to §9 without updating silver-bullet.md (and, in the Silver Bullet source repo, templates/silver-bullet.md.base) atomically
 - Execute an SB lifecycle phase (context, plan, execute, verify, review, ship) without producing the phase's required artifacts — manually driving execution that bypasses skill-based workflows is a §3 violation
 - Advance to the next SB phase if the current phase is missing its required output artifacts (see §3d Post-Execution Artifact Requirements)
 - Minimize, abbreviate, or reduce the thoroughness of ANY step due to context window usage concerns. When a step is expected to consume large context (e.g., SENTINEL security audits, full quality-gate sweeps, comprehensive code reviews), you MUST delegate it through the active runtime's supported subagent or delegation mechanism so it runs in a fresh, independent context window. If subagent dispatch is not possible, summarize the current context or continue in a fresh context before proceeding, then continue the step at full thoroughness. A step executed at reduced quality is NEVER acceptable — dispatch to a subagent or compact first.
@@ -651,7 +651,7 @@ The two-consecutive-approvals rule is enforced by process: the reviewer skill mu
 
 **EXRV-01 (plan review):** After /sb:plan creates a PLAN.md, invoke the SB plan review path iteratively. If issues are found, fix and re-run. The plan is NOT approved until 2 consecutive clean passes. Do not commit the plan until the second consecutive clean pass completes.
 
-**EXRV-02 (code review):** After /sb:execute completes code changes, invoke /sb:review iteratively. If ISSUE findings are returned, apply fixes via /sb:review-fix and re-run the review. Code is NOT considered reviewed until 2 consecutive clean passes. Do not proceed to verification until the second consecutive clean pass completes.
+**EXRV-02 (code review):** After /sb:execute completes code changes, invoke /sb:review iteratively. If ISSUE findings are returned, apply the fixes (route blockers through /sb:triage to the matching fix workflow) and re-run the review. Code is NOT considered reviewed until 2 consecutive clean passes. Do not proceed to verification until the second consecutive clean pass completes.
 
 **EXRV-03 (verifier):** After /sb:verify produces VERIFICATION.md, run verification a second consecutive time to confirm results. If the second pass surfaces new issues (e.g., flaky tests that passed first time), fix and restart the 2-pass count. Verification is NOT complete until 2 consecutive clean passes.
 
@@ -1000,12 +1000,10 @@ These rules apply to `site/**`, Help Center pages, homepage copy, `site/help/sea
 
 <!--
   NUMBERING NOTE (closes #59):
-  This template uses §9.* for User Workflow Preferences and §10 for Multi-Agent
-  Coordination. Silver Bullet's *own* live silver-bullet.md uses §10.* / §11
-  because it has an Ālo-internal §9 "Pre-Release Quality Gate" section that is
-  intentionally NOT stamped into downstream projects. Skills reference
-  `silver-bullet.md §10b` (live) AND `templates/silver-bullet.md.base §9b`
-  (template) explicitly — this asymmetry is by design and must stay.
+  This template and the live silver-bullet.md number the sections the same way:
+  §9.* is User Workflow Preferences (§9b Step Skip Preferences) and §10 is
+  Multi-Agent Coordination. Skills reference `silver-bullet.md §9` / `§9b`
+  only; a downstream project has no templates/ directory to edit.
 -->
 ## 9. User Workflow Preferences
 

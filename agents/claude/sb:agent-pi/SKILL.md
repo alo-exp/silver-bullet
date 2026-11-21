@@ -13,6 +13,8 @@ version: 0.1.0
 
 # /sb:agent-pi — Pi CLI Subagent Delegation
 
+**Plugin root**: `SB_ROOT` is the Silver Bullet plugin root, the installed plugin unless a fixture overrides it, two directories above this file (`${SB_ROOT}/skills/silver-agent-pi/SKILL.md`). Run Silver Bullet scripts and read its templates through `${SB_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **Pi CLI** executes in the target project working directory via **`pi -p --provider opencode-go --model mimo-v2.5`** (NI) or **`pi`** without `-p` (interactive REPL).
 
 **Contrast with Sidekick:** Sidekick is session-persistent (quality gates, cross-session advisor). This skill activates **per task** and tears down when the task completes or escalates.
@@ -49,7 +51,7 @@ Parent **must not** implement the delegated task in parallel in the same files. 
 
 1. Parent receives a delegatable task (user request or orchestrator handoff).
 2. Parent invokes **`/sb:agent-pi`** with a structured brief (below).
-3. Parent runs `bash scripts/agent-pi/invoke.sh` (preflight + env + delegate) **once per delegation wave**.
+3. Parent runs `bash "${SB_ROOT}/scripts/agent-pi/invoke.sh"` (preflight + env + delegate) **once per delegation wave**.
 4. On completion or escalation, parent records evidence and clears delegation state.
 
 No session-persistent marker is written. Each invocation is independent.
@@ -78,7 +80,7 @@ Use the canonical delegation atomic flow instead of direct wrapper supervision:
 
 1. Complete **FS-DELEGATE-BRIEF** (brief + `ownership_scope` path prefixes).
 2. Call **`sb_orchestrator_seed_delegation_directive`** (`host=pi`, `task_id`, `brief_path`, ownership JSON).
-3. Spawn native worker **`.silver-bullet/orchestrator-workers/AGENT-DELEGATE.md`** (Task subagent).
+3. Spawn native worker from the plugin template **`${SB_ROOT}/templates/orchestrator-workers/AGENT-DELEGATE.md`** (Task subagent; never the project copy).
 4. Worker launches `agent-pi-delegate.sh`; external agent loads **`silver-agent-worker`** contract.
 5. Host runs **FS-DELEGATE-MENTOR** — verify evidence vs brief before user report.
 
@@ -180,7 +182,7 @@ Optional: `AGENT_PI_MONITOR_INTERVAL` (default 30) — parent `monitor.sh` poll 
 
 ```bash
 export SB_ROOT=/path/to/silver-bullet/repo
-bash scripts/agent-pi/preflight.sh --sb-root "$SB_ROOT"
+bash "${SB_ROOT}/scripts/agent-pi/preflight.sh" --sb-root "$SB_ROOT"
 ```
 
 **Launch (recommended path — `pi -p` primary):**
@@ -188,7 +190,7 @@ bash scripts/agent-pi/preflight.sh --sb-root "$SB_ROOT"
 ```bash
 export PI_WORK_DIR=/path/to/target/project
 
-bash scripts/agent-pi/invoke.sh \
+bash "${SB_ROOT}/scripts/agent-pi/invoke.sh" \
   --work-dir "$PI_WORK_DIR" \
   --brief-file .planning/agent-pi/<task-id>/brief.md \
   --log .planning/agent-pi/<task-id>/pi-run.log
@@ -197,7 +199,7 @@ bash scripts/agent-pi/invoke.sh \
 Inline prompt (small tasks):
 
 ```bash
-bash scripts/agent-pi/invoke.sh \
+bash "${SB_ROOT}/scripts/agent-pi/invoke.sh" \
   --work-dir "$PI_WORK_DIR" \
   --prompt "Add GET /api/health returning {status: ok}. Run tests. Commit on branch feature/..." \
   --log .planning/agent-pi/smoke/pi-run.log
@@ -206,7 +208,7 @@ bash scripts/agent-pi/invoke.sh \
 **Parent monitor (channel timeline)** — run in a second terminal while Pi works:
 
 ```bash
-bash scripts/agent-pi/monitor.sh --log .planning/agent-pi/<task-id>/pi-run.log
+bash "${SB_ROOT}/scripts/agent-pi/monitor.sh" --log .planning/agent-pi/<task-id>/pi-run.log
 ```
 
 Monitor emits checkpoint bullets: prompt submitted, byte growth, log-floor status, stall/auth/quota signals. Do **not** claim PASS on 0-byte or sub-floor logs.

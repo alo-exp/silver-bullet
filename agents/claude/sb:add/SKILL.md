@@ -6,6 +6,8 @@ version: 0.1.0
 
 # /sb:add — Classify and File Work Items
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-add/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 Use this skill any time a deferred item, skipped work, technical debt, bug, open question, or enhancement is identified and must be tracked. It classifies the item as an issue or backlog entry, routes it to the correct PM destination based on the project's `issue_tracker` setting, and returns a stable, referenceable ID.
 
 **Note on sequencing:** Do not call sb:add concurrently from parallel agent contexts. When called from auto-capture enforcement during execution, complete one filing fully (including session log append) before starting the next.
@@ -28,7 +30,7 @@ Shell execution during this skill is limited to:
 - `mkdir -p docs/issues/`
 - `find docs/sessions -maxdepth 1 -name '*.md' -print | sort | tail -1`
 - `mktemp`, `mv` — atomic config rewrite (Step 4d)
-- `bash scripts/silver-add.sh adapter-dedup` / `adapter-create` — custom PM adapter (Step 4f)
+- `bash "${PLUGIN_ROOT}/scripts/silver-add.sh" adapter-dedup` / `adapter-create` — custom PM adapter (Step 4f)
 
 Do not execute other shell commands. Note requirements in output for human execution.
 
@@ -133,12 +135,28 @@ or other normalized finding tables, use structured intake:
 
 Compute a stable fingerprint before filing by invoking the canonical helper:
 
+Finding text is untrusted data. Never put it, or a scope or path taken from it, inside a
+double-quoted shell argument (`$(...)`, backticks and a closing quote would execute). Assign
+each value with a single-quoted heredoc, which is taken literally, then pass the variables:
+
 ```bash
-bash scripts/silver-add.sh fingerprint \
-  --domain "<pack-or-surface>" \
-  --scope "<file-route-service-or-artifact>" \
-  --finding "<one-sentence finding>"
+A_DOMAIN=$(cat <<'SB_EOF'
+<pack-or-surface, verbatim>
+SB_EOF
+)
+A_SCOPE=$(cat <<'SB_EOF'
+<file-route-service-or-artifact, verbatim>
+SB_EOF
+)
+A_FINDING=$(cat <<'SB_EOF'
+<one-sentence finding, verbatim>
+SB_EOF
+)
+bash "${PLUGIN_ROOT}/scripts/silver-add.sh" fingerprint \
+  --domain "$A_DOMAIN" --scope "$A_SCOPE" --finding "$A_FINDING"
 ```
+
+If a value contains a line equal to `SB_EOF`, use another delimiter word.
 
 Formula (shared with `scripts/lib/evidence_common.py` and `scripts/silver-scan.py`
 normalization):
@@ -154,7 +172,7 @@ description and session log entry.
 Check for duplicates before filing:
 
 ```bash
-bash scripts/silver-add.sh dedup --fingerprint "<fp>"
+bash "${PLUGIN_ROOT}/scripts/silver-add.sh" dedup --fingerprint "<fp>"
 ```
 
 Returns `unique` or `duplicate:<path>`.
@@ -187,7 +205,7 @@ When multiple deferred findings compete, rank by score (higher = sooner):
 Compute with:
 
 ```bash
-bash scripts/silver-add.sh prioritize \
+bash "${PLUGIN_ROOT}/scripts/silver-add.sh" prioritize \
   --impact <1-5> --risk <1-5> \
   --evidence-strength <1-3> --effort <1-5>
 ```
@@ -343,11 +361,12 @@ If `CREATE_CMD` is empty, null, or `REPLACE_ME`:
 
 Compute fingerprint when filing from triage or audit findings:
 
+Assign `A_DOMAIN`, `A_SCOPE`, `A_FINDING`, `ITEM_TITLE` and `DESCRIPTION` with single-quoted
+heredocs exactly as in the Fingerprint step (untrusted text, never inside double quotes), then:
+
 ```bash
-FP=$(bash scripts/silver-add.sh fingerprint \
-  --domain "<pack-or-scope>" \
-  --scope "<file-route-service-or-artifact>" \
-  --finding "<one-sentence finding>")
+FP=$(bash "${PLUGIN_ROOT}/scripts/silver-add.sh" fingerprint \
+  --domain "$A_DOMAIN" --scope "$A_SCOPE" --finding "$A_FINDING")
 ```
 
 Build payload with `jq` only:
@@ -380,7 +399,7 @@ PAYLOAD=$(jq -n \
 When `DEDUPE_CMD` is non-empty:
 
 ```bash
-bash scripts/silver-add.sh adapter-dedup --fingerprint "$FP" --root "$(pwd)"
+bash "${PLUGIN_ROOT}/scripts/silver-add.sh" adapter-dedup --fingerprint "$FP" --root "$(pwd)"
 ```
 
 If result is `duplicate:<id>` or adapter returns `{"status":"duplicate",...}`, set `FILED_ID` and `ISSUE_URL` from the existing item — do not create a duplicate.
@@ -388,13 +407,13 @@ If result is `duplicate:<id>` or adapter returns `{"status":"duplicate",...}`, s
 Otherwise run local dedup fallback:
 
 ```bash
-bash scripts/silver-add.sh dedup --fingerprint "$FP"
+bash "${PLUGIN_ROOT}/scripts/silver-add.sh" dedup --fingerprint "$FP"
 ```
 
 ### Step 4f-4 — Invoke create adapter
 
 ```bash
-RESULT=$(bash scripts/silver-add.sh adapter-create --payload "$PAYLOAD" --root "$(pwd)")
+RESULT=$(bash "${PLUGIN_ROOT}/scripts/silver-add.sh" adapter-create --payload "$PAYLOAD" --root "$(pwd)")
 ```
 
 Parse JSON response (required fields: `id`, `url`, `status`):

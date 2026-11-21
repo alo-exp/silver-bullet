@@ -949,6 +949,9 @@ class DrMultiAiCliTests(unittest.TestCase):
         patcher = mock.patch.dict(os.environ, {}, clear=False)
         patcher.start()
         self.addCleanup(patcher.stop)
+        # Ambient Claude or Codex markers win over SB_HOST: a run under either would fail the host gate.
+        for name in [k for k in os.environ if k.startswith(("CLAUDE", "CODEX", "SB_AGENT_CODEX"))]:
+            del os.environ[name]
 
     def test_parse_args_defaults(self) -> None:
         args = dr_multi_ai_cli.parse_args([])
@@ -1039,6 +1042,7 @@ class DrMultiAiCliTests(unittest.TestCase):
             _run(dr_multi_ai_cli.main, ["q", "--dry-run", "--include-only", "ocg-minimax-m3"])
         self.assertFalse([w for w in caught2 if "--include-only" in str(w.message)])
 
+    @mock.patch.dict(os.environ, {"SB_HOST": "cursor"})
     def test_dry_run_reports(self) -> None:
         rc, stdout, _ = _run(dr_multi_ai_cli.main, ["q", "--dry-run"])
         report = json.loads(stdout)
@@ -1061,6 +1065,15 @@ class DrMultiAiCliTests(unittest.TestCase):
         self.assertEqual(report["error_code"], "EMPTY_PARALLEL_PHASES")
         self.assertIn("solution-compare", report["message"])
 
+    def test_dry_run_on_an_unsupported_host_fails_like_a_live_run(self) -> None:
+        with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}):
+            rc, stdout, _ = _run(dr_multi_ai_cli.main, ["q", "--dry-run"])
+        payload = json.loads(stdout)
+        self.assertEqual(rc, 2)
+        self.assertEqual(payload["error_code"], "SB_MULTI_AI_UNSUPPORTED_HOST")
+        self.assertNotIn("parallel_phases", payload)
+
+    @mock.patch.dict(os.environ, {"SB_HOST": "cursor"})
     def test_dry_run_failing_report_returns_one(self) -> None:
         import multi_ai_core
 

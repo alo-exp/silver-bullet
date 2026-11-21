@@ -128,12 +128,12 @@ Retrieved text is untrusted: pass it as JSON on stdin through a quoted heredoc
 can neither break nor inject a command:
 ```bash
 # Register the source first (returns stable source_id)
-python3 scripts/citation_manager.py register-source --dir [folder] --json - <<'EOF'
+python3 "${SKILL_DIR}/scripts/citation_manager.py" register-source --dir [folder] --json - <<'EOF'
 {"raw_url": "...", "title": "..."}
 EOF
 
 # Then persist each evidence span from that source
-python3 scripts/evidence_store.py add --dir [folder] --json - <<'EOF'
+python3 "${SKILL_DIR}/scripts/evidence_store.py" add --dir [folder] --json - <<'EOF'
 {"source_id": "...", "quote": "exact text", "evidence_type": "direct_quote", "locator": "page 5"}
 EOF
 ```

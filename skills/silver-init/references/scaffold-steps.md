@@ -107,19 +107,12 @@ If user selects A, use the active runtime file-editing mechanism to remove the l
 ### 3.2 Create directories
 
 ```bash
-mkdir -p docs/specs docs/workflows host rules directory (install guide)
+mkdir -p docs/specs docs/workflows
 ```
 
-### 3.2.1 Install task host orchestrator rule
+### 3.2.1 Orchestrator rule
 
-When the active runtime is task host **or** `.task host/` already exists in the project, copy the SB orchestrator rule so agents see the directive contract even before hook injection:
-
-```bash
-mkdir -p host rules directory (install guide)
-cp "${PLUGIN_ROOT}/scripts/lib/install-<runtime>/templates/task host-rules/silver-orchestrator.mdc" host rules path (see install guide) silver-orchestrator.mdc
-```
-
-Idempotent — safe to overwrite on `/sb:init` refresh (SB-owned file).
+There is no orchestrator rule file to copy. On Claude Code and Codex the directive contract is delivered by hook injection (`hooks/lib/orchestrator-parent.sh`), so nothing is written for it here.
 
 ### 3.2.2 Install orchestrator worker templates
 
@@ -146,26 +139,25 @@ If no CI workflow exists, create `.github/workflows/` and generate `ci.yml` base
 
 Applies only when an existing project instruction file was found in step 3.1b. If none was found, skip this step — Silver Bullet does not synthesize a new project instruction file during secondary host init.
 
-Read `${PLUGIN_ROOT}/scripts/lib/install-<runtime>/templates/project instruction file.base`, perform replacements, write back to the existing filename (`project instruction file` or `AGENTS.md`):
+Read `${PLUGIN_ROOT}/scripts/lib/install-claude/templates/CLAUDE.md.base`, perform replacements, write back to the existing filename (`project instruction file` or `AGENTS.md`):
 - `{{PROJECT_NAME}}` → the detected/confirmed project name
 - `{{TECH_STACK}}` → the detected/confirmed tech stack
 - `{{GIT_REPO}}` → the detected/confirmed repo URL
 
 ### 3.4 Write config
 
-Read `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value (replacing default `/src/` if different), set **`sb_initiated` to `true`**, write `issue_tracker` from Phase 2.9 (`issue_tracker_value`), and merge `issue_tracker_adapter` from Phase 2.9 (`issue_tracker_adapter_value` or template default). Adapter `type` must match `issue_tracker` (`github`/`local`/`custom`). For `recommended_tools.graphify`, `agentmemory`, `rtk`, and `context_mode`, always default `enabled_by_user` to `null` on fresh init until Phase 1.1 records an explicit user choice (the user's consent itself is recorded with `scripts/sb-consent.sh`, not in this file); include suspension fields when install was attempted.
+Read `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value (replacing default `/src/` if different), set **`sb_initiated` to `true`**, write `issue_tracker` from Phase 2.9 (`issue_tracker_value`), and merge `issue_tracker_adapter` from Phase 2.9 (`issue_tracker_adapter_value` or template default). Adapter `type` must match `issue_tracker` (`github`/`local`/`custom`). For `recommended_tools.graphify`, `agentmemory`, `rtk`, and `context_mode`, always default `enabled_by_user` to `null` on fresh init until Phase 1.1 records an explicit user choice (the user's consent itself is recorded with `bash "${PLUGIN_ROOT}/scripts/sb-consent.sh"`, not in this file); include suspension fields when install was attempted.
 
 ### 3.4.1 Context Mode instruction fragment (when opted in)
 
-When Phase 1.1f opts in, inject `templates/context-mode-hint.md.base` into `silver-bullet.md` and the project instruction file (`project instruction file` or `AGENTS.md`):
+When Phase 1.1f opts in, inject `${PLUGIN_ROOT}/templates/context-mode-hint.md.base` into `silver-bullet.md` and the project instruction file (`project instruction file` or `AGENTS.md`):
 
 1. If sentinel `<!-- BEGIN context-mode hint (do not edit) -->` exists, replace the block idempotently (drop old block, append fresh template).
 2. Otherwise append the template block to each file.
-3. Copy upstream `context-mode.mdc` to `host rules path (see install guide) context-mode.mdc` on task host hosts (see `docs/CONTEXT-MODE.md`).
 
 ### 3.4.2 RTK awareness (secondary host / optional)
 
-On active host when RTK is opted in, merge `templates/rtk-awareness.md.base` into `AGENTS.md` if not already present (after Context Mode routing template when both are enabled).
+On active host when RTK is opted in, merge `${PLUGIN_ROOT}/templates/rtk-awareness.md.base` into `AGENTS.md` if not already present (after Context Mode routing template when both are enabled).
 
 ### 3.5 Copy workflow files
 
@@ -231,7 +223,7 @@ If the commit fails due to a pre-commit hook, read the error, fix the issue, re-
 
 ### 3.7.5 Remove duplicate SB hook copies from the host settings file
 
-On Claude Code an installed plugin delivers `hooks/hooks.json` itself, so a copy of those hooks in the user's settings would run every hook twice. When the plugin is registered, this step removes Silver Bullet's own copies from the settings file (an earlier `/sb:init` or a manual install may have left them) and adds nothing. The step resolves the install path from the plugin registry, so on a machine without a registry entry it is skipped. A manual install (a workspace clone without the marketplace) is registered by running `python3 <checkout>/scripts/lib/install-claude/merge-hooks.py <checkout>` directly, outside `/sb:init`. On Codex and Cursor the step changes nothing. Target the active host hooks manifest path (see `docs/RUNTIME-COMPATIBILITY.md`).
+On Claude Code an installed plugin delivers `hooks/hooks.json` itself, so a copy of those hooks in the user's settings would run every hook twice. When the plugin is registered, this step removes Silver Bullet's own copies from the settings file (an earlier `/sb:init` or a manual install may have left them) and adds nothing. The step resolves the install path from the plugin registry, so on a machine without a registry entry it is skipped. A manual install (a workspace clone without the marketplace) is registered by running `python3 <checkout>/scripts/lib/install-claude/merge-hooks.py <checkout>` directly, outside `/sb:init`. On Codex the step changes nothing. Target the active host hooks manifest path (see `docs/RUNTIME-COMPATIBILITY.md`).
 
 **Resolve the plugin install path:**
 
@@ -272,14 +264,12 @@ fi
 **Merge hooks idempotently:**
 
 ```bash
-if [[ "${SILVER_BULLET_RUNTIME:-}" == "task host" ]]; then
-  python3 "${PLUGIN_ROOT}/scripts/lib/install-<runtime>/merge-hooks.py" "$INSTALL_PATH"
-else
-  python3 "${PLUGIN_ROOT}/scripts/lib/install-<runtime>/merge-hooks.py" "$INSTALL_PATH"
+if [[ "${SILVER_BULLET_RUNTIME:-}" == "claude" ]]; then
+  python3 "${PLUGIN_ROOT}/scripts/lib/install-claude/merge-hooks.py" "$INSTALL_PATH"
 fi
 ```
 
-`scripts/lib/install-<runtime>/merge-hooks.py` behaves by install type:
+`scripts/lib/install-claude/merge-hooks.py` behaves by install type:
 
 - **Plugin registered** (what `/sb:init` always sees here): removes the settings copies Silver Bullet owns and adds nothing. When there is nothing to remove, the settings file is not created, rewritten or backed up, and the plugin cache is not touched.
 - **Manual install** (run directly): removes stale Silver Bullet registrations, then registers every (event, matcher, command) of the manifest with the install path substituted, each matcher in its own group.

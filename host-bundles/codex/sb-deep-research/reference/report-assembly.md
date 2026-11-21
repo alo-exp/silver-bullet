@@ -44,13 +44,13 @@ Each Write/Edit call contains ONE section (<=2,000 words per call)
 **Initialize research run (persist to disk):**
 ```bash
 # Create run manifest and artifact files using citation_manager CLI
-python scripts/citation_manager.py init-run --out-dir [folder] --query "[question]" --mode [mode]
+python3 "${SKILL_DIR}/scripts/citation_manager.py" init-run --out-dir [folder] --query "[question]" --mode [mode]
 # Creates: run_manifest.json, sources.jsonl, evidence.jsonl, claims.jsonl
 ```
 
 **Register each source as you encounter it:**
 ```bash
-python3 scripts/citation_manager.py register-source --dir [folder] --json - <<'EOF'
+python3 "${SKILL_DIR}/scripts/citation_manager.py" register-source --dir [folder] --json - <<'EOF'
 {"raw_url": "...", "title": "...", "source_type": "academic", "year": "2024"}
 EOF
 # Returns stable source_id (sha256-based, survives renumbering and continuation)
@@ -64,7 +64,7 @@ can be `supported`").
 
 **Assign display numbers after all sources registered:**
 ```bash
-python scripts/citation_manager.py assign-display-numbers --dir [folder]
+python3 "${SKILL_DIR}/scripts/citation_manager.py" assign-display-numbers --dir [folder]
 # Maps stable source_ids to [1], [2], [3]... for rendering
 ```
 

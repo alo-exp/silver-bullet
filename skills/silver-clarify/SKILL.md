@@ -7,6 +7,8 @@ version: 0.2.0
 
 # /sb:clarify — Clarify, Compare, and Hand Off
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-clarify/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 SB orchestrator for the front end of planning. It merges product framing, one-question-at-a-time interviewing, brainstorming discipline, and SB lifecycle handoff into one coherent workflow. It does not implement work or write plans; it reduces uncertainty until the next step is obvious.
 
 **Document-authoring split:** interviewing that used to live in `/sb:spec` (context gathering, Turns 1–9, assumption protocol) belongs here when `next=spec`. Spec is a compiler: it reads this brief and writes `SPEC.md` / `REQUIREMENTS.md`. This skill **never** writes `.planning/SPEC.md` or `.planning/REQUIREMENTS.md`.
@@ -183,7 +185,7 @@ Write the brief to a **timestamped, plan-scoped** path — not a fixed `.plannin
 Resolve the path with:
 
 ```bash
-source scripts/lib/planning-clarify-path.sh
+source "${PLUGIN_ROOT}/scripts/lib/planning-clarify-path.sh"
 sb_planning_clarify_output_path "$REPO_ROOT" "$PLAN_FILE_PATH"
 ```
 

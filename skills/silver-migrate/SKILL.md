@@ -6,13 +6,15 @@ version: 0.5.0
 
 # sb:migrate
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-migrate/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 Migrates an older mid-milestone project to the current Silver Bullet contract:
 
 - per-instance workflow tracking (replaces legacy `.planning/WORKFLOW.md`)
 - `docs/learnings/` terminology (replaces `docs/lessons/`)
 - agent-neutral `silver-bullet.md` and project instruction files
-- current `.silver-bullet.json` defaults from `templates/silver-bullet.config.json.default`
-- orchestrator parent mode (`orchestrator_mode: parent`, worker templates, task host rule)
+- current `.silver-bullet.json` defaults from `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`
+- orchestrator parent mode (`orchestrator_mode: parent`, worker templates)
 - `scripts/workflows.sh` and `docs/workflows/*.md` when absent (parity with `/sb:init`)
 - `.gitignore` entry for `.planning/workflows/` (local runtime state)
 - runtime parity awareness (evidence schema, diagnostics, bootstrap probes)
@@ -102,13 +104,13 @@ Re-stamp from the bundled template without host-specific leaks. Silver Bullet ow
 
 ### Step 2: Upgrade `.silver-bullet.json` to Current Defaults
 
-Merge forward from `templates/silver-bullet.config.json.default` without discarding project customizations.
+Merge forward from `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default` without discarding project customizations.
 
 Run the mechanical merge when the script is available:
 
 ```bash
 bash "${PLUGIN_ROOT}/scripts/sb-migrate-config.sh" 2>/dev/null || \
-  bash scripts/sb-migrate-config.sh
+  bash "${PLUGIN_ROOT}/scripts/sb-migrate-config.sh"
 ```
 
 If neither script is available, merge manually:
@@ -135,7 +137,7 @@ Bring mechanical bootstrap artifacts to parity with `/sb:init` without overwriti
 
 ```bash
 bash "${PLUGIN_ROOT}/scripts/sb-migrate-project.sh" 2>/dev/null || \
-  bash scripts/sb-migrate-project.sh
+  bash "${PLUGIN_ROOT}/scripts/sb-migrate-project.sh"
 ```
 
 This script (idempotent) runs `sb-migrate-config.sh`, `sb-migrate-orchestrator-parent.sh`, copies `scripts/workflows.sh` when absent, creates `.planning/workflows/.archive/`, seeds missing `docs/workflows/{full-dev-cycle,devops-cycle}.md` from templates, and ensures `.gitignore` contains `.planning/workflows/`.
@@ -143,7 +145,7 @@ This script (idempotent) runs `sb-migrate-config.sh`, `sb-migrate-orchestrator-p
 If the script is unavailable, perform the same steps manually:
 
 1. Set `orchestrator_mode: parent` and copy `${PLUGIN_ROOT}/templates/orchestrator-workers/` → `.silver-bullet/orchestrator-workers/`.
-2. When the active host supports orchestrator parent mode or `host rules path (see install guide) ` exists, refresh `host rules path (see install guide) silver-orchestrator.mdc` from `${PLUGIN_ROOT}/scripts/lib/install-task host/templates/task host-rules/silver-orchestrator.mdc`. (other hosts: skip — orchestrator uses hook directive injection.)
+2. The orchestrator directive contract is delivered by hook injection on Claude Code and Codex: there is no host rule file to refresh.
 3. Copy `${PLUGIN_ROOT}/scripts/workflows.sh` → `scripts/workflows.sh` (`chmod +x`) when absent.
 4. `mkdir -p .planning/workflows/.archive docs/workflows`.
 5. Copy workflow docs from `${PLUGIN_ROOT}/templates/workflows/` only when the destination file is absent (back up before any explicit user-requested refresh).
@@ -170,7 +172,7 @@ Regenerate stale host instruction files from the init contract when they predate
 
 4. Strip SB-owned sections from the existing file (headings `## N.` through next `## ` or EOF). Preserve all user-owned sections.
 
-5. Merge in missing neutral sections from `${PLUGIN_ROOT}/scripts/lib/install-primary host/templates/primary host.md.base`:
+5. Merge in missing neutral sections from `${PLUGIN_ROOT}/scripts/lib/install-claude/templates/CLAUDE.md.base`:
    - **User-owned** sections (heading exists only in project file): keep unchanged
    - **New from template** (heading exists only in template): append
    - **SB-owned overlap**: prefer template neutral wording; ask the user directly when content conflicts materially
@@ -190,10 +192,10 @@ Run when scripts are available:
 
 ```bash
 bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
-  bash scripts/sb-diagnostics.sh 2>/dev/null || true
+  bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
 
 bash "${PLUGIN_ROOT}/scripts/sb-bootstrap.sh" 2>/dev/null || \
-  bash scripts/sb-bootstrap.sh 2>/dev/null || true
+  bash "${PLUGIN_ROOT}/scripts/sb-bootstrap.sh" 2>/dev/null || true
 ```
 
 Report capability tier and any WARN/FAIL lines. Point the user to `docs/RUNTIME-COMPATIBILITY.md` for tier definitions and install surfaces.
@@ -202,11 +204,11 @@ Report capability tier and any WARN/FAIL lines. Point the user to `docs/RUNTIME-
 
 Remove Silver Bullet's duplicate hook copies from the active host settings file (same contract as `/sb:init` update mode §3.7.5; it never adds hooks on a registered plugin). Resolve `INSTALL_PATH` from `${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json` only; with no registry entry, skip the step.
 
-Per-host merge scripts live under `scripts/lib/install-<runtime>/` — see `docs/RUNTIME-COMPATIBILITY.md` (`merge-hooks.py`).
+The hook merge script is `scripts/lib/install-claude/merge-hooks.py` (Codex needs none) — see `docs/RUNTIME-COMPATIBILITY.md` (`merge-hooks.py`).
 
 ```bash
 INSTALL_PATH="${INSTALL_PATH:-${PLUGIN_ROOT}}"
-python3 "${PLUGIN_ROOT}/scripts/lib/install-primary host/merge-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
+python3 "${PLUGIN_ROOT}/scripts/lib/install-claude/merge-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
 ```
 
 Confirm merged entries in the host hooks manifest. If merge fails, advise the host-specific install path from `docs/RUNTIME-COMPATIBILITY.md` (`install-<runtime>.sh`).
@@ -222,8 +224,8 @@ Ensure the project doc surface acknowledges parity artifacts when missing. Do no
 | Artifact | Purpose | Action when missing |
 |----------|---------|---------------------|
 | `docs/evidence-schema.md` | Normalized finding/evidence tables for reviews and gates | Note in migration report; invoke `sb:ensure-docs --bootstrap` if user wants full doc scaffold |
-| `scripts/sb-diagnostics.sh` (via plugin) | Capability tier probe | Covered by Step 4.1 run |
-| `scripts/sb-bootstrap.sh` (via plugin) | Onboarding orientation | Covered by Step 4.1 run |
+| `bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh"` (via plugin) | Capability tier probe | Covered by Step 4.1 run |
+| `bash "${PLUGIN_ROOT}/scripts/sb-bootstrap.sh"` (via plugin) | Onboarding orientation | Covered by Step 4.1 run |
 | `docs/RUNTIME-COMPATIBILITY.md` (plugin-dev only) | Host parity matrix | Skip in downstream projects unless copied during init |
 
 For downstream projects, record in the migration report which parity scripts ran and whether evidence-schema doc keys exist in `docs/doc-scheme.json`.
@@ -249,7 +251,7 @@ When the project has UI surface signals (for example `silver-ui` workflow, front
 
    ```bash
    bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" 2>/dev/null || \
-     bash scripts/stamp-interface-state.sh 2>/dev/null || true
+     bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" 2>/dev/null || true
    ```
 
 2. If the stamp script is unavailable, copy `${PLUGIN_ROOT}/templates/interface/STATE.md.base` to `.planning/interface/STATE.md` (create `.planning/interface/` first).
@@ -348,7 +350,7 @@ Recommend `/sb:init` in update mode when hook registration or full doc bootstrap
 - refreshed `silver-bullet.md` from agent-neutral template
 - merged `.silver-bullet.json` with current default fields (`sb_initiated: true`, `orchestrator_mode: parent`)
 - `scripts/workflows.sh` and missing `docs/workflows/*.md` when absent
-- `.silver-bullet/orchestrator-workers/` and `host rules path (see install guide) silver-orchestrator.mdc` when applicable
+- `.silver-bullet/orchestrator-workers/` when applicable
 - `.gitignore` entry for `.planning/workflows/` when missing
 - reconciled `primary host.md` or `AGENTS.md` when stale
 - `docs/learnings/` — current portable learnings path
