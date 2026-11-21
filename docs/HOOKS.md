@@ -51,19 +51,19 @@ Before a tool runs; a hook can deny the call.
 | 15 | `Edit\|Write\|MultiEdit\|apply_patch\|NotebookEdit` | `review-fix-ladder-guard.sh` | 10 |
 | 16 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `subagent-stop-enforcement.sh` | 10 |
 | 17 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-preview-preflight.sh` | 10 |
-| 18 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-chrome-guard.sh` | 10 |
-| 19 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `compression-marker-guard.sh` | 10 |
-| 20 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `orchestrator-directive-guard.sh` | 10 |
-| 21 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `agent-delegation-guard.sh` | 10 |
-| 22 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `trivial-file-guard.sh` | 10 |
-| 23 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `graphify-gate.sh` | 10 |
-| 24 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `agentmemory-gate.sh` | 10 |
-| 25 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `alumnium-gate.sh` | 10 |
-| 26 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `leanctx-gate.sh` | 10 |
-| 27 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `stack-compression-coordinator.sh` | 10 |
-| 28 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `rtk-gate.sh` | 10 |
-| 29 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `context-mode-gate.sh` | 10 |
-| 30 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `token-compression-tools-gate.sh` | 10 |
+| 18 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `compression-marker-guard.sh` | 10 |
+| 19 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `orchestrator-directive-guard.sh` | 10 |
+| 20 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `agent-delegation-guard.sh` | 10 |
+| 21 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `trivial-file-guard.sh` | 10 |
+| 22 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `graphify-gate.sh` | 10 |
+| 23 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `agentmemory-gate.sh` | 10 |
+| 24 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `alumnium-gate.sh` | 10 |
+| 25 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `leanctx-gate.sh` | 10 |
+| 26 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `stack-compression-coordinator.sh` | 10 |
+| 27 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `rtk-gate.sh` | 10 |
+| 28 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `context-mode-gate.sh` | 10 |
+| 29 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `token-compression-tools-gate.sh` | 10 |
+| 30 | `Edit\|Write\|MultiEdit\|apply_patch` | `site-chrome-guard.sh` | 10 |
 | 31 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save\|insert\|copy\|upload\|apply\|_mv\|mv_\|_put\|put_\|update\|modify\|set_\|touch\|truncate\|unlink\|_rm\|rm_)[A-Za-z0-9_]*` | `dev-cycle-check.sh` | 15 |
 | 32 | `Read\|Grep` | `stack-compression-coordinator.sh` | 10 |
 | 33 | `Read\|Grep` | `context-mode-read-deny.sh` | 10 |
@@ -72,9 +72,8 @@ Before a tool runs; a hook can deny the call.
 | 36 | `mcp__.*lean-?ctx.*\|mcp__.*context[-_]mode.*` | `stack-compression-coordinator.sh` | 10 |
 | 37 | `Skill` | `dependency-skill-check.sh` | 10 |
 | 38 | `Bash\|exec_command` | `site-regression-gate.sh` | 120 |
-| 39 | `Bash\|exec_command` | `live-publish-evidence-gate.sh` | 15 |
-| 40 | `Bash\|exec_command` | `industry-tooling-hint.sh` | 5 |
-| 41 | `Bash\|exec_command` | `roadmap-freshness.sh` | 10 |
+| 39 | `Bash\|exec_command` | `industry-tooling-hint.sh` | 5 |
+| 40 | `Bash\|exec_command` | `roadmap-freshness.sh` | 10 |
 
 ### PostToolUse
 
@@ -103,11 +102,12 @@ After a tool runs; a hook can report, record state, or ask the agent to stop.
 | 19 | `Bash\|exec_command` | `record-agentmemory-usage.sh` | 10 |
 | 20 | `Bash\|exec_command` | `record-token-compression-usage.sh` | 10 |
 | 21 | `Bash\|exec_command` | `record-leanctx-usage.sh` | 10 |
-| 22 | `Bash\|exec_command` | `record-site-visual-evidence.sh` | 10 |
-| 23 | `MCP` | `record-leanctx-usage.sh` | 10 |
-| 24 | `MCP` | `record-recommended-mcp.sh` | 10 |
-| 25 | `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | `record-leanctx-usage.sh` | 10 |
-| 26 | `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | `record-recommended-mcp.sh` | 10 |
+| 22 | `Bash\|exec_command` | `record-site-session.sh` | 10 |
+| 23 | `mcp__.*screenshot.*\|browser_take_screenshot\|MCP` | `record-site-visual-evidence.sh` | 10 |
+| 24 | `MCP` | `record-leanctx-usage.sh` | 10 |
+| 25 | `MCP` | `record-recommended-mcp.sh` | 10 |
+| 26 | `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | `record-leanctx-usage.sh` | 10 |
+| 27 | `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | `record-recommended-mcp.sh` | 10 |
 
 ### PostToolUseFailure
 
@@ -189,14 +189,14 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `instruction-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save\|insert\|copy\|upload\|apply\|_mv\|mv_\|_put\|put_\|update\|modify\|set_\|touch\|truncate\|unlink\|_rm\|rm_)[A-Za-z0-9_]*` | Blocks creating a brand-new root `CLAUDE.md` or `AGENTS.md` (any case) with the file tools, MCP file-write tools, apply_patch or shell writes (unreadable commands are refused); existing files may be reconciled in place. |
 | `instruction-ledger-gate.sh` | Stop `.*`; SubagentStop `.*`; UserPromptSubmit `.*` | Maintains the nested per-session instruction ledger; at Stop, blocks while ledger items remain open. |
 | `leanctx-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.leanctx`): checks LeanCTX install, wiring and usage freshness. |
-| `live-publish-evidence-gate.sh` | PreToolUse `Bash\|exec_command`; Stop `.*` | Requires fetched live-page evidence before a site publish is claimed LIVE (Stop) and before `git push` to main for site work. |
+| `live-publish-evidence-gate.sh` | Stop `.*` | At Stop, after a site push or a LIVE claim, requires live-page evidence for the current HEAD, written by `scripts/site-live-evidence.sh` (profile projects only). |
 | `orchestrator-directive-guard.sh` | PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Orchestrator parent mode: blocks edits, shell commands and Task spawns until the skill named by the pending directive has been invoked. |
 | `outcomes-check.sh` | Stop `.*`; SubagentStop `.*`; UserPromptSubmit `.*` | Tracks the per-prompt outcome checklist; at Stop, blocks while outcomes are incomplete. |
 | `phase-archive.sh` | PreToolUse `Bash\|Skill\|exec_command\|mcp__.*` | Archives `.planning/phases/` directories before a real `phases clear` invocation (or a shell delete of the whole phases directory) runs; never skips new phases when an earlier archive exists. Fails closed: if archiving fails, the clear is denied. |
 | `phase-lock-claim.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | Claims the `.planning/phases/<NNN>/` lock (via `scripts/phase-lock.sh` (plugin root)) before a session edits a phase's files. |
 | `phase-lock-heartbeat.sh` | PostToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Refreshes heartbeats for the phase locks this session holds (throttled to once per 5 minutes per phase). |
 | `phase-lock-release.sh` | Stop `.*`; SubagentStop `.*` | Releases this session's phase locks at Stop. A SubagentStop that carries an agent_id releases nothing, so a finishing subagent never drops its parent session's locks. Never blocks. |
-| `planning-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save\|insert\|copy\|upload\|apply\|_mv\|mv_\|_put\|put_\|update\|modify\|set_\|touch\|truncate\|unlink\|_rm\|rm_)[A-Za-z0-9_]*` | Blocks direct edits to SB-managed planning artifacts (`.planning/ROADMAP.md`, `STATE.md`, phase `*-PLAN.md`/`*-SUMMARY.md`, ...) by the file tools (and MCP file-write tools), every apply_patch path and shell writes (a copy, extract or move over a directory that holds them included; unreadable commands are refused); they change only through the owning SB skill. Overrides are the user's: `planning-edit-override` is created from a terminal, and `roadmap-edit-override` works only while `sb:phase` or `sb:undo` is recorded. |
+| `planning-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save\|insert\|copy\|upload\|apply\|_mv\|mv_\|_put\|put_\|update\|modify\|set_\|touch\|truncate\|unlink\|_rm\|rm_)[A-Za-z0-9_]*` | Blocks direct edits to SB-managed planning artifacts (`.planning/ROADMAP.md`, `STATE.md`, phase `*-PLAN.md`/`*-SUMMARY.md`, ...) by the file tools (and MCP file-write tools), every apply_patch path and shell writes (a copy, extract or move over a directory that holds them included; unreadable commands are refused); they change only through the owning SB skill. Overrides are the user's: `planning-edit-override` is created from a terminal, and `roadmap-edit-override` works only while `sb:phase` or `sb:undo` is recorded. `.planning/REQUIREMENTS.md` alone may be written with a file tool by its owner, `sb:spec` or `sb:ingest`, while that skill is the one invoked last (sealed by `record-skill.sh`). |
 | `pr-traceability.sh` | PostToolUse `Bash\|exec_command` | After `gh pr create`, appends the spec traceability block to the PR body and records the PR URL in `SPEC.md`. |
 | `prompt-reminder.sh` | UserPromptSubmit `.*` | Injects a compact compliance reminder (missing skills, active workflow position, opted-in tool notes) before each prompt. |
 | `record-agentmemory-usage.sh` | PostToolUse `Bash\|exec_command` | Records a successful agentmemory CLI or loopback REST retrieval (run on its own) for the opt-in agentmemory gate. |
@@ -204,8 +204,8 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `record-leanctx-usage.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `MCP`; PostToolUse `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | Records LeanCTX CLI/MCP usage for the opt-in LeanCTX gate. |
 | `record-recommended-mcp.sh` | PostToolUse `MCP`; PostToolUse `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | Records agentmemory and Graphify MCP retrieval calls (from the tool's own server) for the opt-in gates. |
 | `record-requested-skill.sh` | UserPromptSubmit `.*` | Records the SB route requested in the user prompt (for example `/sb:feature`) in the state file. |
-| `record-site-session.sh` | PostToolUse `Write\|Edit\|MultiEdit\|apply_patch`; UserPromptSubmit `.*` | Records `site/**` edits and site-intent prompts so the site session gates know a site session is active. |
-| `record-site-visual-evidence.sh` | PostToolUse `Bash\|exec_command` | Records browser screenshot paths as site visual evidence. |
+| `record-site-session.sh` | PostToolUse `Write\|Edit\|MultiEdit\|apply_patch`; PostToolUse `Bash\|exec_command`; UserPromptSubmit `.*` | Records edits under the profile's site directory (file tools, notebooks, MCP writes, shell writes and shell commands that change the site tree) and, after the command ran, final-delivery pushes, so the site gates know a site session is active; inert without `site_profile`. |
+| `record-site-visual-evidence.sh` | PostToolUse `mcp__.*screenshot.*\|browser_take_screenshot\|MCP` | Records the screenshot a browser MCP tool took (an image file under the project or a temporary directory, written after the latest site edit, bound to the session) as site visual evidence. |
 | `record-skill.sh` | PostToolUse `Skill\|Bash\|exec_command` | Records completed skill invocations (host Skill tool, or `silver-bullet invoke-skill` receipts on Codex) in the state file. |
 | `record-token-compression-usage.sh` | PostToolUse `Bash\|exec_command` | Records token-compression CLI usage (RTK) for the opt-in usage-freshness gate. |
 | `review-fix-ladder-guard.sh` | SessionStart `startup\|clear\|compact`; PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|apply_patch\|NotebookEdit`; PostToolUse `Task\|Subagent\|Agent`; PostToolUseFailure `Task\|Subagent\|Agent`; Stop `.*`; UserPromptSubmit `.*` | Review-fix-ladder guard, inert unless this session started or resumed a run: validates each ladder subagent spawn against its ticket, captures its result, protects encoder-owned artifacts, blocks Stop while a run is active, records a user-typed `RFL ABORT <run-id>`, and prints a fixed resume notice at session start. |
@@ -214,10 +214,10 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `semantic-compress.sh` | PostToolUse `Skill` | After phase skills, assembles a ranked context summary for the current phase goal (`semantic_compression` config). |
 | `session-log-init.sh` | PostToolUse `Bash\|exec_command` | When the session mode is written, creates the `docs/sessions/` log skeleton; in autonomous mode starts the timeout sentinel. |
 | `session-start` | SessionStart `startup\|clear\|compact`; SessionStart `resume` | Injects the core rules, resets branch- and worktree-scoped state, clears the trivial marker and stale gate files, and probes prerequisites (warns when `jq` is missing). |
-| `site-chrome-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Blocks inline `<nav>`/`<footer>` in site HTML (canonical fragments live in `site/_chrome/`) and unmarked font edits in `site/tokens.css`. |
-| `site-preview-preflight.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Before `site/**` edits, checks that the local site preview server is healthy. |
-| `site-regression-gate.sh` | PreToolUse `Bash\|exec_command`; Stop `.*`; SubagentStop `.*` | Runs the site regression tests at Stop and before `git push` when `site/**` was touched in the session. |
-| `site-visual-evidence-gate.sh` | Stop `.*` | At Stop, requires 1280px visual evidence for active site sessions. |
+| `site-chrome-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | Blocks inline `<nav>`/`<footer>` in site HTML (canonical fragments live in `site/_chrome/`) and unmarked font edits in `site/tokens.css`; reads Edit, Write, MultiEdit and apply_patch content, not shell writes. |
+| `site-preview-preflight.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Before writes under the profile's site directory (file tools and shell), checks that the profile's local preview server is healthy. |
+| `site-regression-gate.sh` | PreToolUse `Bash\|exec_command`; Stop `.*`; SubagentStop `.*` | Runs the profile's committed site regression scripts at Stop and before a real `git push` when the site was edited in the session. |
+| `site-visual-evidence-gate.sh` | Stop `.*` | At Stop, requires a browser screenshot taken after the latest edit of an active site session. |
 | `spec-floor-check.sh` | PreToolUse `Bash\|Skill\|exec_command` | Spec floor: blocks `sb:plan` (Skill tool or Codex `invoke-skill`) without a minimum viable `SPEC.md`; advisory for `sb:fast`. |
 | `spec-session-record.sh` | SessionStart `startup\|clear\|compact` | Captures spec version and Jira ID from `.planning/SPEC.md` for `pr-traceability.sh`. |
 | `stack-compression-coordinator.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PreToolUse `Read\|Grep`; PreToolUse `WebFetch`; PreToolUse `MCP`; PreToolUse `mcp__.*lean-?ctx.*\|mcp__.*context[-_]mode.*` | Five-tool stack coordinator: routes Read/Grep/shell/WebFetch/MCP surfaces to their owning tool and blocks double compression. |
@@ -229,7 +229,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `trivial-file-clear.sh` | PostToolUse `Write\|Edit\|MultiEdit\|apply_patch`; PostToolUse `Bash\|exec_command\|NotebookEdit\|mcp__.*(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save\|insert\|copy\|upload\|apply\|_mv\|mv_\|_put\|put_\|update\|modify\|set_\|touch\|truncate\|unlink\|_rm\|rm_)[A-Za-z0-9_]*` | Deletes the legacy trivial-session marker after any file write. |
 | `trivial-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Blocks agents from creating the legacy trivial marker (any spelling of its path: `~`, `$HOME`, `cd` + relative, cp/mv/ln/tee/dd); small changes go through `/sb:fast`. |
 | `uat-gate.sh` | PreToolUse `Bash\|Skill\|exec_command` | Blocks `sb:release` (Skill tool or Codex `invoke-skill`) and milestone completion when `UAT.md` is missing, failing or stale against the spec version. |
-| `v-loop-rollup-gate.sh` | Stop `.*` | At Stop, blocks when active site-session V-loops lack evidence. |
+| `v-loop-rollup-gate.sh` | Stop `.*` | At Stop, blocks when active site-session V-loops lack evidence (derived from the state, never remembered). |
 | `workflow-chain-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save\|insert\|copy\|upload\|apply\|_mv\|mv_\|_put\|put_\|update\|modify\|set_\|touch\|truncate\|unlink\|_rm\|rm_)[A-Za-z0-9_]*` | Inside a composed workflow (`.planning/workflows/<id>.md`), blocks implementation writes (file tools and shell writes into source) until the pre-execution chain is recorded; the planning skills' own artifacts (`.planning/**`, `docs/specs/**`) are never gated. |
 
 ## Other files in hooks/
@@ -238,11 +238,11 @@ These files are not registered in `hooks/hooks.json`.
 
 | File | Role |
 |------|------|
-| `codex-hook-adapter.sh` | Codex adapter: `scripts/install-codex.sh` rewrites installed hook commands to run through it (`codex-hook-adapter.sh <event> <hook>`); it buffers stdin/stdout and applies a subprocess timeout (`SB_CODEX_HOOK_SUBPROC_TIMEOUT`). |
+| `codex-hook-adapter.sh` | Codex adapter: `scripts/install-codex.sh` rewrites installed hook commands to run through it (`codex-hook-adapter.sh <event> --timeout <seconds> <hook>`); it buffers stdin/stdout, applies a budget just below the hook's own `hooks.json` timeout (override `SB_CODEX_HOOK_SUBPROC_TIMEOUT`), blocks on a PreToolUse/Stop timeout (fail closed) and never drops a hook's deny. |
 | `core-rules.md` | Core enforcement rules that `session-start` injects into context. |
 | `core-rules.sha256` | Integrity pin for `core-rules.md`, checked by `hooks/lib/core-rules-integrity.sh` before injection. |
 | `hooks.json` | The registration manifest itself (Claude Code plugin format; Codex reads the same file from the plugin package). |
-| `kay-project-hook-bridge.sh` | Project-level hook bridge for the Kay (Codex-compatible) runtime; the live-test harness registers it in `~/.kay/config.toml` (`tests/live/lib/kay-codex-isolation.sh`). |
+| `kay-project-hook-bridge.sh` | Project-level hook bridge for the Kay (Codex-compatible) runtime; the live-test harness registers it in `~/.kay/config.toml` (`tests/live/lib/kay-codex-isolation.sh`). It runs the tool hooks (and SessionStart hooks on session.start for the state reset); Kay has no Stop gating (see RUNTIME-COMPATIBILITY.md, Kay limits). |
 | `run-hook.cmd` | Windows/Unix polyglot wrapper: `run-hook.cmd <script> [args]` finds Git for Windows bash (or bash on PATH) and runs the hook. |
 
 ## Shared libraries (hooks/lib/)

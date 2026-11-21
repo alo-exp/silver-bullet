@@ -941,7 +941,13 @@ SITE_REG_HOOK="$REPO_ROOT/hooks/site-regression-gate.sh"
 if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$SITE_REG_HOOK" ]]; then
   # shellcheck source=hooks/lib/e2e-matrix-routing.sh
   source "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh"
-  jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",touch_reason:"site-intent",regression_passed_at:null,push_intent:false}' \
+  # The site gates run only for a project with a site_profile (R9-02): a failing committed regression script.
+  jq '.site_profile={enabled:true,regression_scripts:["tests/site-fail.sh"]}' "$TMPDIR_TEST/.silver-bullet.json" >"$TMPDIR_TEST/.cfg.t" && mv "$TMPDIR_TEST/.cfg.t" "$TMPDIR_TEST/.silver-bullet.json"
+  mkdir -p "$TMPDIR_TEST/tests"
+  printf '#!/usr/bin/env bash\nexit 1\n' >"$TMPDIR_TEST/tests/site-fail.sh"
+  git -C "$TMPDIR_TEST" add -A >/dev/null 2>&1
+  git -C "$TMPDIR_TEST" -c user.name=t -c user.email=t@t commit -q -m site-profile
+  jq -n --arg sc "$(cd "$TMPDIR_TEST" && pwd -P)" '{active:true,scope:$sc,edit_seq:1,regression_passed_seq:0,touch_reason:"edit:site/index.html",push_intent:false}' \
     >"${SB_TEST_DIR}/site-session.json"
   site_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SITE_REG_HOOK" 2>/dev/null || true )
   assert_blocks "ORCH-7a: site-regression blocks Stop with active session" "$site_out"

@@ -470,7 +470,7 @@ Per-flow steps, produces, and exit conditions live in `docs/composable-flows-con
 When the user requests skipping a workflow step, SB:
 1. Explains why the step exists (one sentence)
 2. Offers lettered options: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. Records the decision in §9 if user chooses A permanently — **before committing, display the exact text being written to §9 and require explicit user confirmation** (showing what will change in both silver-bullet.md and templates/silver-bullet.md.base)
+3. Records the decision in §9 if user chooses A permanently — **before committing, display the exact text being written to §9 and require explicit user confirmation** (showing what will change in silver-bullet.md; in the Silver Bullet source repo, also in templates/silver-bullet.md.base)
 
 Non-skippable gates: `security`, `sb:quality-gates` pre-ship, `sb:verify`.
 
@@ -501,7 +501,7 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 | FLOW 8 | EXECUTE | Implementation — internal `tdd` gate + `sb:execute` |
 | FLOW 9 | UI QUALITY | UI review — `sb:ui-review` plus optional design/accessibility lenses |
 | FLOW 10 | REVIEW | Code review — `sb:review-request` → `sb:review` → `sb:triage` |
-| FLOW 11 | SECURE | Security — `security`, `sb:secure`, `sb:validate`, optional `sb:ai-llm-safety` |
+| FLOW 11 | SECURE | Security — `security`, `sb:secure`, `sb:validate`, optional `ai-llm-safety` (an internal skill, invoked by its plain name, not an `sb:` route) |
 | FLOW 12 | VERIFY | Verification — `sb:verify`, `verify-tests`, `sb:completion-audit` |
 | FLOW 13 | QUALITY GATE | `sb:quality-gates` or `devops-quality-gates` — dual-mode (pre-plan + pre-ship) |
 | FLOW 14 | SHIP | Phase shipping — `sb:branch-finish` → `sb:ship`, PR/CI |
@@ -578,7 +578,7 @@ You MUST NOT:
 - Accept a completion claim from any plugin, skill, or subagent without invoking `/sb:completion-audit` with that claim
 - Execute or respond to a non-trivial bare instruction without first routing it through `/sb`
 - Override a non-skippable gate (security, sb:quality-gates pre-ship, sb:verify) via §9 preferences — these gates are permanent
-- Write runtime preference updates to §9 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
+- Write runtime preference updates to §9 without updating silver-bullet.md (and, in the Silver Bullet source repo, templates/silver-bullet.md.base) atomically
 - Execute an SB lifecycle phase (context, plan, execute, verify, review, ship) without producing the phase's required artifacts — manually driving execution that bypasses skill-based workflows is a §3 violation
 - Advance to the next SB phase if the current phase is missing its required output artifacts (see §3d Post-Execution Artifact Requirements)
 - Minimize, abbreviate, or reduce the thoroughness of ANY step due to context window usage concerns. When a step is expected to consume large context (e.g., SENTINEL security audits, full quality-gate sweeps, comprehensive code reviews), you MUST delegate it through the active runtime's supported subagent or delegation mechanism so it runs in a fresh, independent context window. If subagent dispatch is not possible, summarize the current context or continue in a fresh context before proceeding, then continue the step at full thoroughness. A step executed at reduced quality is NEVER acceptable — dispatch to a subagent or compact first.
@@ -651,7 +651,7 @@ The two-consecutive-approvals rule is enforced by process: the reviewer skill mu
 
 **EXRV-01 (plan review):** After /sb:plan creates a PLAN.md, invoke the SB plan review path iteratively. If issues are found, fix and re-run. The plan is NOT approved until 2 consecutive clean passes. Do not commit the plan until the second consecutive clean pass completes.
 
-**EXRV-02 (code review):** After /sb:execute completes code changes, invoke /sb:review iteratively. If ISSUE findings are returned, apply fixes via /sb:review-fix and re-run the review. Code is NOT considered reviewed until 2 consecutive clean passes. Do not proceed to verification until the second consecutive clean pass completes.
+**EXRV-02 (code review):** After /sb:execute completes code changes, invoke /sb:review iteratively. If ISSUE findings are returned, apply the fixes (route blockers through /sb:triage to the matching fix workflow) and re-run the review. Code is NOT considered reviewed until 2 consecutive clean passes. Do not proceed to verification until the second consecutive clean pass completes.
 
 **EXRV-03 (verifier):** After /sb:verify produces VERIFICATION.md, run verification a second consecutive time to confirm results. If the second pass surfaces new issues (e.g., flaky tests that passed first time), fix and restart the 2-pass count. Verification is NOT complete until 2 consecutive clean passes.
 
@@ -970,42 +970,57 @@ SB composes optional third-party tools; they never own lifecycle routing, planni
 
 ### 8.2 Public site and help center work
 
-These rules apply to `site/**`, Help Center pages, homepage copy, `site/help/search.js`, OG cards, and other public-facing HTML under `site/`.
+These rules apply only to a project that opts in with a `site_profile` section in its own `.silver-bullet.json`. Without `site_profile.enabled: true` the site hooks are inert, so a project with a `site/` folder of its own is not affected:
+
+```json
+"site_profile": {
+  "enabled": true,
+  "dir": "site",
+  "regression_scripts": ["tests/scripts/test-site-chrome-regression.sh"],
+  "live_url": "https://example.com/",
+  "preview_port": 8765,
+  "preview_script": "site/serve.sh",
+  "trusted_helpers": ["scripts/check-site.py"],
+  "stop_block_limit": 3
+}
+```
+
+Everything the hooks run, fetch or probe comes from that section: the regression scripts, the live URL, the preview port and script. `trusted_helpers` lists the files those scripts themselves run (checkers, generators): like the scripts, they count only when committed as they stand, and a helper the profile does not list is not covered. A path counts as a site edit only when it lies inside `<project>/<dir>`; the session belongs to the project, not to a branch, so switching branches does not drop it. Shell writes that name no path (`git apply`, `find -exec`, a script) are seen through a change of the site tree's content between two shell commands; a script that writes the site before the session's first shell look is not seen (the first look records the baseline). A prompt that merely mentions the site never starts a site session.
 
 **Authoring model**
-- Website and help-center edits MUST be authored and reviewed via **Composer 2.5 subagents** (`Task` with `model=composer-2.5`), not by the parent agent alone or other models.
 - Route site intents through `/sb` → `sb:content` (site batch protocol in `skills/silver-content/SKILL.md`).
+- Under the parent orchestrator, site edits are made by Task workers, as every other implementation is. That is the orchestrator's rule (§2h), not a site-specific hook: only `site-preview-preflight.sh` and `site-chrome-guard.sh` act on the edits themselves, and the parent's own edits are not preview-checked.
 
 **Workflow catalog presentation order**
 - Homepage (`site/index.html` tabs) and Help Center workflow listings MUST follow typical SDLC order: entry/router → discovery/planning → primary delivery → fast/specialized → infrastructure → ship/release → post-delivery gates → operations/learning.
 - Atomic flows (`AF-*`) order by capability class: orient/bootstrap → plan/specify → research → execute → verify/test → review → ship/deploy → document/process.
 - This is documentation presentation order, not runtime composition order.
 
-**Site/help publish policy**
+**Site/help publish policy** (this repository: publishes via direct commits to `main` through GitHub Pages)
 - `site/**` publishes via direct commits to `main` without a patch release, version bump, git tag, or GitHub release unless the user explicitly requests a release.
-- Before pushing, run `bash tests/scripts/test-site-doc-freshness.sh` and `bash tests/scripts/test-site-content-freshness.sh`; site-only work does not require the full `tests/run-all-tests.sh` suite.
-- Publish path: commit + push to `main` (a push to the default branch is final delivery; a site-only change uses the light change-class floor); GitHub Pages deploys via `.github/workflows/pages.yml` (path-filtered to `site/**`).
+- Before pushing, run the profile's regression scripts (`site-regression-gate.sh` runs them for a real `git push` and at Stop; it runs only scripts that are committed as they stand). Site-only work does not require the full `tests/run-all-tests.sh` suite.
+- A push to the default branch is final delivery; a site-only change uses the light change-class floor.
 - Expect **~1–15 minutes** end-to-end deploy latency (Pages queue + `Cache-Control: max-age=600` on GitHub Pages).
 
 **Live publish notification (mandatory)**
-- Do **not** tell the user changes are **LIVE** until deployed page content is verified at the public URL (e.g. `https://sb.alolabs.dev/` or the specific `site/help/` path).
+- Do **not** tell the user changes are **LIVE** until deployed page content is verified at the public URL.
 - A commit pushed to `main` or a queued/succeeded Pages workflow is **not** sufficient alone.
-- Before claiming live status: fetch URL(s), confirm key markers match the commit, inspect headers (`Last-Modified`, `ETag`, `Cache-Control`, `Age`), wait for `pages.yml` when needed.
-- Write `${SB_RUNTIME_STATE_DIR}/live-publish-evidence.json` with `commit_sha`, `urls`, `markers_matched`, `status` (`LIVE`|`NOT_LIVE`), `verified_at`.
+- Verify with the plugin's verifier, never by writing the state directory (the state-tamper guard denies that): `bash <plugin>/scripts/site-live-evidence.sh --marker '<text only the new page contains>'`. It fetches the profile's `live_url`, matches every marker and records `live-publish-evidence.json` for the current `HEAD` itself. The gate accepts the evidence only for this project's current commit, within `site_profile.live_evidence_max_age_seconds` (default 24 hours).
 - Notify the user with: commit SHA; what went live; explicit **LIVE** or **NOT LIVE** with fetched-page evidence; GitHub release URL if applicable.
 
-**Runtime hooks:** `site-regression-gate.sh`, `live-publish-evidence-gate.sh`, `instruction-ledger-gate.sh`, `subagent-stop-enforcement.sh` enforce the above at Stop/push.
+**Visual evidence**
+- Take screenshots with the host browser MCP (Alumnium or the Playwright MCP's `browser_take_screenshot`) after the last site edit. `record-site-visual-evidence.sh` records the screenshot file when the tool returns; do not write `site-visual-evidence.json` by hand. A later site edit needs a new screenshot.
+
+**Runtime hooks:** `site-regression-gate.sh`, `site-visual-evidence-gate.sh`, `v-loop-rollup-gate.sh`, `live-publish-evidence-gate.sh`, `instruction-ledger-gate.sh`, `subagent-stop-enforcement.sh` enforce the above at Stop (and the regression gate before a real push). A Stop gate is not a one-time warning: the host sets `stop_hook_active` on every Stop that follows a block, so the flag alone releases nothing the agent can clear. A gate releases a condition that has blocked `site_profile.stop_block_limit` consecutive times (default 3) with nothing changed, or one the agent cannot clear (a gate setup problem) once the host reports `stop_hook_active`. A new edit, new evidence or a pass starts the count again, and every release is logged to `stop-loop-release.log`. The parent's file-write rule for worker-only site edits is advisory: no hook blocks a parent edit.
 
 ---
 
 <!--
   NUMBERING NOTE (closes #59):
-  This template uses §9.* for User Workflow Preferences and §10 for Multi-Agent
-  Coordination. Silver Bullet's *own* live silver-bullet.md uses §10.* / §11
-  because it has an Ālo-internal §9 "Pre-Release Quality Gate" section that is
-  intentionally NOT stamped into downstream projects. Skills reference
-  `silver-bullet.md §10b` (live) AND `templates/silver-bullet.md.base §9b`
-  (template) explicitly — this asymmetry is by design and must stay.
+  This template and the live silver-bullet.md number the sections the same way:
+  §9.* is User Workflow Preferences (§9b Step Skip Preferences) and §10 is
+  Multi-Agent Coordination. Skills reference `silver-bullet.md §9` / `§9b`
+  only; a downstream project has no templates/ directory to edit.
 -->
 ## 9. User Workflow Preferences
 

@@ -96,12 +96,11 @@ run_bridge file.after_write '{"changes":[{"path":""},{"new_path":"/n/p"}]}'
 assert_eq "file path from new_path" "/n/p" "$(jq -r .tool_input.file_path "$TL_TMP_DUMP")"
 run_bridge file.after_write '{}'
 assert_eq "no changes: empty path" "" "$(jq -r .tool_input.file_path "$TL_TMP_DUMP")"
-# session events have no tool name, so no tool-scoped hook runs
-write_hooks "$(jq -cn --argjson h "$(cmd_of dump)" '{hooks:{SessionStart:[{matcher:".*",hooks:[$h]}],Stop:[{matcher:".*",hooks:[$h]}]}}')"
+# session.end has no tool name and Kay has no Stop gating: no hook runs on it
+write_hooks "$(jq -cn --argjson h "$(cmd_of dump)" '{hooks:{Stop:[{matcher:".*",hooks:[$h]}]}}')"
 rm -f "$TL_TMP_DUMP"
-run_bridge session.start '{}'
 run_bridge session.end '{}'
-assert_file_absent "session events run no tool-matched hooks" "$TL_TMP_DUMP"
+assert_file_absent "session.end runs no hook" "$TL_TMP_DUMP"
 assert_eq "session events are allowed" "0" "$TL_STATUS"
 write_hooks "$(jq -cn --argjson h "$(cmd_of dump)" '{hooks:{PreToolUse:[{matcher:"Bash|exec_command",hooks:[$h]}],PostToolUse:[{matcher:"Bash|exec_command",hooks:[$h]}]}}')"
 
@@ -144,11 +143,165 @@ for spec in "deny2:stderr reason" "denyjson:json deny reason" "denyjson_noreason
   assert_eq "$s: native deny status" "2" "$TL_STATUS"
   assert_contains "$s: reason on stderr" "$TL_ERR" "$want"
 done
-for s in allowjson fail1 deny2quiet; do
+for s in allowjson fail1; do
   write_hooks "$(jq -cn --argjson h "$(cmd_of "$s")" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
   run_bridge tool.before '{"command":"echo hi"}' "r-$s"
   assert_eq "$s: no usable reason, call allowed" "0" "$TL_STATUS"
 done
+# R7-07: a bare exit 2 is still the host's blocking error; "ask" cannot be
+# answered on Kay and blocks too; a noisy stream falls back to its last line.
+write_hooks "$(jq -cn --argjson h "$(cmd_of deny2quiet)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+run_bridge tool.before '{"command":"echo hi"}' r-quiet
+assert_eq "exit 2 with no output blocks" "2" "$TL_STATUS"
+assert_contains "exit 2 default reason names the hook" "$TL_ERR" "blocked this call (exit 2)"
+mk_script askjson 'cat >/dev/null; echo "{\"hookSpecificOutput\":{\"permissionDecision\":\"ask\"}}"'
+write_hooks "$(jq -cn --argjson h "$(cmd_of askjson)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+run_bridge tool.before '{"command":"echo hi"}' r-ask
+assert_eq "permissionDecision ask blocks (fail closed)" "2" "$TL_STATUS"
+assert_contains "ask has a default reason" "$TL_ERR" "requires approval"
+mk_script noisyjson 'cat >/dev/null; echo "banner text"; echo "{\"decision\":\"block\",\"reason\":\"noisy block\"}"'
+write_hooks "$(jq -cn --argjson h "$(cmd_of noisyjson)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+run_bridge tool.before '{"command":"echo hi"}' r-noisy
+assert_eq "noisy stdout: last-line JSON block honoured" "2" "$TL_STATUS"
+assert_contains "noisy stdout reason" "$TL_ERR" "noisy block"
+mk_script blanknoise 'cat >/dev/null; echo "just text"'
+write_hooks "$(jq -cn --argjson h "$(cmd_of blanknoise)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+run_bridge tool.before '{"command":"echo hi"}' r-text
+assert_eq "plain text stdout is not a block" "0" "$TL_STATUS"
+
+# R7-04: hooks run under a non-login shell: a login profile that prints or
+# exits cannot disable a gate.
+PROFILE_HOME="$TL_TMP/profilehome"
+mkdir -p "$PROFILE_HOME"
+write_hooks "$(jq -cn --argjson h "$(cmd_of denyjson)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+for profile_body in 'echo "Welcome back"' 'exit 0'; do
+  printf '%s\n' "$profile_body" >"$PROFILE_HOME/.bash_profile"
+  cp "$PROFILE_HOME/.bash_profile" "$PROFILE_HOME/.profile"
+  tl_run bash -c 'cd "$1" && exec env HOME="$2" CLAUDE_PLUGIN_ROOT="$3" CODE_HOOK_EVENT=tool.before CODE_HOOK_PAYLOAD="$4" CODE_HOOK_SOURCE_CALL_ID=prof bash "$5"' \
+    _ "$WORK" "$PROFILE_HOME" "$PLUG" '{"command":"echo hi"}' "$BRIDGE"
+  assert_eq "profile [$profile_body] cannot disable the deny" "2" "$TL_STATUS"
+  assert_contains "profile [$profile_body]: reason kept" "$TL_ERR" "json deny reason"
+done
+
+# R7-03: every path of a multi-file write is gated, not just the first.
+mk_script protect 'p="$(cat)"; case "$p" in *PROTECTED*) echo "{\"hookSpecificOutput\":{\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"protected path\"}}";; esac'
+write_hooks "$(jq -cn --argjson h "$(cmd_of protect)" '{hooks:{PreToolUse:[{matcher:"Write|Edit|MultiEdit|apply_patch",hooks:[$h]}]}}')"
+run_bridge file.before_write '{"changes":[{"path":"/x/PROTECTED.md"}]}' mf1
+assert_eq "single protected path denied" "2" "$TL_STATUS"
+run_bridge file.after_write '{}' mf1
+run_bridge file.before_write '{"changes":[{"path":"/x/ok.md"},{"path":"/x/PROTECTED.md"}]}' mf2
+assert_eq "protected SECOND path is denied" "2" "$TL_STATUS"
+assert_contains "multi-file deny reason surfaced" "$TL_ERR" "protected path"
+run_bridge file.after_write '{}' mf2
+run_bridge file.before_write '{"changes":[{"path":"/x/a.md"},{"path":"/x/b.md"},{"path":"/x/a.md"}]}' mf3
+assert_eq "all-clean multi-file write allowed" "0" "$TL_STATUS"
+
+# R7-03 (r1): every path-like key of a change is gated, so the DESTINATION of a
+# rename or move cannot hide a protected file behind a harmless source path.
+for key in path filePath file_path new_path newPath move_path movePath old_path from_path to_path destination dest target_path targetPath; do
+  run_bridge file.before_write "$(jq -cn --arg k "$key" '{changes:[{path:"/x/ok.md",($k):"/x/PROTECTED.md"}]}')" "key-$key"
+  assert_eq "ok.md -> PROTECTED.md via [$key] is denied" "2" "$TL_STATUS"
+  run_bridge file.after_write '{}' "key-$key"
+done
+run_bridge file.before_write '{"changes":[{"path":"/x/a.md","new_path":"/x/b.md"},{"filePath":"/x/c.md","destination":"/x/d.md"}]}' keys-clean
+assert_eq "a rename between clean paths is allowed" "0" "$TL_STATUS"
+run_bridge file.before_write '{"changes":[{"path":7,"new_path":""},{"path":"/x/PROTECTED.md"}]}' keys-weird
+assert_eq "non-string and empty path values are ignored, later change still gated" "2" "$TL_STATUS"
+run_bridge file.after_write '{}' keys-weird
+
+# R7-03 (r2): Kay's real change schema is not documented in this repo, so unknown
+# shapes are gated by the UNION of every path-like value found: changes keyed by
+# path, a top-level path, nested rename objects and case variants of the keys.
+shape_denied() { # description payload
+  run_bridge file.before_write "$2" shape
+  assert_eq "$1" "2" "$TL_STATUS"
+  run_bridge file.after_write '{}' shape
+}
+shape_denied "changes object keyed by path" '{"changes":{"/x/ok.md":{"kind":"update"},"/x/PROTECTED.md":{"kind":"add"}}}'
+shape_denied "changes object keyed by path, protected first" '{"changes":{"/x/PROTECTED.md":"diff text"}}'
+shape_denied "top-level path" '{"path":"/x/PROTECTED.md"}'
+shape_denied "top-level filePath next to clean changes" '{"filePath":"/x/PROTECTED.md","changes":[{"path":"/x/ok.md"}]}'
+shape_denied "nested rename object" '{"changes":[{"path":"/x/ok.md","rename":{"to":{"newPath":"/x/PROTECTED.md"}}}]}'
+shape_denied "case variant NewPath" '{"changes":[{"Path":"/x/ok.md","NewPath":"/x/PROTECTED.md"}]}'
+shape_denied "case variant FILE_PATH" '{"changes":[{"FILE_PATH":"/x/PROTECTED.md"}]}'
+shape_denied "path list inside a change" '{"changes":[{"files":[{"path":"/x/PROTECTED.md"}]}]}'
+run_bridge file.before_write '{"changes":{"/x/a.md":{"kind":"add"},"/x/b.md":{"kind":"add"}},"path":"/x/c.md"}' shape-ok
+assert_eq "clean paths in every shape are allowed" "0" "$TL_STATUS"
+# a write-shaped payload with no recognisable path at all fails closed, even with no hook denying
+mk_script allowall2 'cat >/dev/null'
+write_hooks "$(jq -cn --argjson h "$(cmd_of allowall2)" '{hooks:{PreToolUse:[{matcher:"Write|Edit|MultiEdit|apply_patch",hooks:[$h]}]}}')"
+for blank in '{}' '{"changes":[]}' '{"changes":[{"content":"x"}]}' '{"something":"else"}'; do
+  run_bridge file.before_write "$blank" nopath
+  assert_eq "no recognisable path in $blank: denied (fail closed)" "2" "$TL_STATUS"
+  assert_contains "fail-closed reason says why" "$TL_ERR" "no file path"
+done
+run_bridge file.after_write '{}' nopath
+assert_eq "an after event without a path is not blocked" "0" "$TL_STATUS"
+write_hooks "$(jq -cn --argjson h "$(cmd_of protect)" '{hooks:{PreToolUse:[{matcher:"Write|Edit|MultiEdit|apply_patch",hooks:[$h]}]}}')"
+
+# R7-04 (r2): bridge hooks run under a timeout derived from the hooks.json budget
+# (T - max(2, T/10), min 1): a hung hook cannot stall a Kay session. A timed-out
+# gating (Pre) hook denies (fail closed); a timed-out Post/SessionStart hook does not block.
+mk_script hang 'cat >/dev/null; sleep 30'
+hang_hooks() { # event matcher
+  jq -cn --argjson h "$(cmd_of hang | jq -c '. + {timeout:3}')" --arg ev "$1" --arg m "$2" '{hooks:{($ev):[{matcher:$m,hooks:[$h]}]}}'
+}
+write_hooks "$(hang_hooks PreToolUse Bash)"
+start_s=$SECONDS
+run_bridge tool.before '{"command":"echo hi"}' hang1
+assert_eq "a hung PreToolUse hook is denied after its budget (fail closed)" "2" "$TL_STATUS"
+assert_contains "timeout reason names the cause" "$TL_ERR" "timed out"
+assert_eq "the hang was cut short (under 20 s)" "1" "$(( SECONDS - start_s < 20 ? 1 : 0 ))"
+write_hooks "$(hang_hooks PostToolUse Bash)"
+run_bridge tool.after '{"command":"echo hi"}' hang2
+assert_eq "a timed-out PostToolUse hook does not block" "0" "$TL_STATUS"
+write_hooks "$(hang_hooks SessionStart 'startup|clear|compact')"
+start_s=$SECONDS
+run_bridge session.start '{}' hang3
+assert_eq "a hung SessionStart hook does not stall or block session.start" "0" "$TL_STATUS"
+assert_eq "session.start returned within 20 s" "1" "$(( SECONDS - start_s < 20 ? 1 : 0 ))"
+write_hooks "$(jq -cn --argjson h "$(cmd_of protect)" '{hooks:{PreToolUse:[{matcher:"Write|Edit|MultiEdit|apply_patch",hooks:[$h]}]}}')"
+
+# the matched hook list is cached per (event, tool): a 20-path write costs the
+# same number of matching lookups as a 1-path write.
+REAL_PY="$(command -v python3)"
+MATCH_LOG="$TL_TMP/match-calls.log"
+tl_stub python3 "case \"\$2\" in */hooks.json) echo m >>\"$MATCH_LOG\";; esac; exec $REAL_PY \"\$@\""
+mk_script allowall 'cat >/dev/null'
+write_hooks "$(jq -cn --argjson h "$(cmd_of allowall)" '{hooks:{PreToolUse:[{matcher:"Write|Edit|MultiEdit|apply_patch",hooks:[$h]}]}}')"
+: >"$MATCH_LOG"
+run_bridge file.before_write '{"changes":[{"path":"/x/1"}]}' cnt1
+one_path_calls="$(wc -l <"$MATCH_LOG" | tr -d ' ')"
+: >"$MATCH_LOG"
+many="$(jq -cn '{changes:[range(0;20) | {path:("/x/f\(.)")}]}')"
+run_bridge file.before_write "$many" cnt20
+twenty_path_calls="$(wc -l <"$MATCH_LOG" | tr -d ' ')"
+assert_eq "matching lookups do not scale with path count" "$one_path_calls" "$twenty_path_calls"
+assert_eq "four tool aliases looked up once each" "4" "$twenty_path_calls"
+rm -f "${TL_BIN:?}/python3"
+
+# a banner before a pretty-printed multi-line deny is still a deny
+mk_script prettydeny 'cat >/dev/null; echo "banner"; echo "{\"decision\":\"block\",\"reason\":\"pretty reason\"}" | jq .'
+write_hooks "$(jq -cn --argjson h "$(cmd_of prettydeny)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+run_bridge tool.before '{"command":"echo hi"}' r-pretty
+assert_eq "banner + pretty multi-line JSON deny is honoured" "2" "$TL_STATUS"
+assert_contains "pretty deny reason" "$TL_ERR" "pretty reason"
+
+# R7-05 (documented limit): Kay has no Stop/UserPromptSubmit gating
+# (docs/RUNTIME-COMPATIBILITY.md, "Kay limits"). session.end runs no hooks, so a
+# Stop block is not enforced. session.start runs the SessionStart hooks for their
+# side effects only (branch-state reset): their output and decision are ignored.
+write_hooks "$(jq -cn --argjson h "$(cmd_of dump)" --argjson b "$(cmd_of blockjson)" '{hooks:{SessionStart:[{matcher:"startup|clear|compact",hooks:[$b,$h]}],Stop:[{matcher:".*",hooks:[$b,$h]}]}}')"
+rm -f "$TL_TMP_DUMP"
+run_bridge session.start '{}' lim1
+assert_eq "session.start never blocks, even when a SessionStart hook says block" "0" "$TL_STATUS"
+assert_eq "session.start runs the SessionStart hooks (source startup)" "startup" "$(jq -r .source "$TL_TMP_DUMP")"
+rm -f "$TL_TMP_DUMP"
+run_bridge session.end '{}' lim2
+assert_eq "documented limit: a Stop block is not enforced on session.end" "0" "$TL_STATUS"
+assert_file_absent "documented limit: no Stop hook runs on session.end" "$TL_TMP_DUMP"
+write_hooks "$(jq -cn --argjson h "$(cmd_of denyjson)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$h]}]}}')"
+
 # the first reason wins
 write_hooks "$(jq -cn --argjson a "$(cmd_of deny2)" --argjson b "$(cmd_of blockjson)" '{hooks:{PreToolUse:[{matcher:"Bash",hooks:[$a,$b]}]}}')"
 run_bridge tool.before '{"command":"echo hi"}' r-first

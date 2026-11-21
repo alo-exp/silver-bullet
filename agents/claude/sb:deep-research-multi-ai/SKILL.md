@@ -2,18 +2,25 @@
 name: sb:deep-research-multi-ai
 description: >
   Opt-in multi-model deep research. Composes canonical silver-deep-research engine,
-  new /sb:multi-ai-task primitive, and Cursor/OCG backends. Dual serverless HTML reports.
+  new /sb:multi-ai-task primitive, and Cursor/OCG backends. Dual serverless HTML reports. Runs only on a Cursor-hosted session in v1: on Claude Code and Codex, `--dry-run` and live runs both fail closed with `SB_MULTI_AI_UNSUPPORTED_HOST`.
 argument-hint: "<research question> [--mode deep|ultradeep] [--research-type default|solution-landscape|solution-compare] [--dry-run]"
 version: 1.0.0
 ---
 
 # /sb:deep-research-multi-ai — Multi-Model Deep Research
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `agents/claude/` (`${PLUGIN_ROOT}/agents/claude/sb:deep-research-multi-ai/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 **Catalog:** workflow `WF-SILVER-DEEP-RESEARCH-MULTI-AI` · flow step
 `FS-SILVER_DEEP_RESEARCH_MULTI_AI` · composes `AF-MULTI-AI-TASK` per eligible phase.
 
 Opt-in sibling of [`silver-deep-research`](../silver-deep-research/SKILL.md). Does **not**
 replace single-agent `/sb:deep-research` or revive removed `FS-SILVER_MULTI_AI` MultAI surfaces.
+
+**Availability:** every parallel phase runs through `/sb:multi-ai-task`, which needs a
+Cursor-hosted session in v1. On Claude Code and Codex this skill is listed but cannot run: both
+`--dry-run` and a live run exit 2 with `SB_MULTI_AI_UNSUPPORTED_HOST`. Use single-agent
+`/sb:deep-research` there.
 
 ## Architecture (locked)
 
@@ -36,7 +43,7 @@ auto-starts multi-AI research.
 ## Usage
 
 ```bash
-python3 skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py \
+python3 "${PLUGIN_ROOT}/agents/claude/sb:deep-research-multi-ai/scripts/dr_multi_ai_cli.py" \
   "Which event streaming platform for our scale?" \
   --mode deep \
   --research-type default \
@@ -71,7 +78,7 @@ Migrates from strict-v3 or host-v3 copy-on-write only.
 ## Consolidation
 
 ```bash
-python3 skills/silver-deep-research-multi-ai/scripts/consolidate.py \
+python3 "${PLUGIN_ROOT}/agents/claude/sb:deep-research-multi-ai/scripts/consolidate.py" \
   --envelopes contributions.json \
   --index result-index.json \
   --resolved-pool 11 \
@@ -154,7 +161,7 @@ is built in or special-cased.
 After consolidation and SCR `features.json` artifacts exist:
 
 ```bash
-python3 skills/silver-deep-research-multi-ai/scripts/package_solution_outputs.py \
+python3 "${PLUGIN_ROOT}/agents/claude/sb:deep-research-multi-ai/scripts/package_solution_outputs.py" \
   --dir "$SB_RESEARCH_OUT_DIR"
 ```
 
@@ -201,9 +208,9 @@ Subscription-gated: Cursor pool if subscribed; OCG pool otherwise. `unknown` blo
 ## Validation
 
 ```bash
-python3 skills/silver-deep-research/scripts/validate_spa_report.py \
+python3 "${PLUGIN_ROOT}/agents/claude/sb:deep-research/scripts/validate_spa_report.py" \
   --report "$SB_RESEARCH_OUT_DIR/report.html" --profile general
-python3 skills/silver-deep-research/scripts/validate_spa_report.py \
+python3 "${PLUGIN_ROOT}/agents/claude/sb:deep-research/scripts/validate_spa_report.py" \
   --report "$SB_RESEARCH_OUT_DIR/landscape-report.html" --profile landscape
 ```
 

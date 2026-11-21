@@ -315,7 +315,7 @@ Before generating PDF, verify:
 ## Generation Command
 
 ```bash
-python3 scripts/html_to_pdf.py --html input.html --pdf output.pdf
+python3 "${SKILL_DIR}/scripts/html_to_pdf.py" --html input.html --pdf output.pdf
 ```
 
 The script calls WeasyPrint with a URL fetcher that refuses `file://` and network URLs

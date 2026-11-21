@@ -252,6 +252,12 @@ def main(argv: list[str] | None = None) -> int:
         cursor_subscription=args.cursor_subscription,
     )
 
+    gate = host_gate()
+    if not gate["ok"]:
+        # A dry run fails the same way a live run does on a host that cannot run it.
+        print(json.dumps({"ok": False, "error_code": gate["error_code"], "message": gate.get("message", "")}, indent=2))
+        return 2
+
     if args.dry_run:
         report = dry_run_report(selection)
         report["parallel_phases"] = parallel
@@ -269,11 +275,6 @@ def main(argv: list[str] | None = None) -> int:
             }
         print(json.dumps(report, indent=2))
         return 0 if report.get("ok") else 1
-
-    gate = host_gate()
-    if not gate["ok"]:
-        print(json.dumps({"ok": False, "error_code": gate["error_code"], "message": gate.get("message", "")}, indent=2))
-        return 2
 
     output_root = Path(args.output_root) if args.output_root else default_output_root(args.query)
     moved_aside: Path | None = None

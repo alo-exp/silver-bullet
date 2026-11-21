@@ -136,6 +136,26 @@ class TextRewriteTest(unittest.TestCase):
         self.assertEqual(pairs["$HOME/.claude/"], "$HOME/.codex/")
         self.assertEqual(pairs[os.path.join("~", ".claude") + "/"], "$HOME/.codex/")
 
+    def test_plugin_root_paths_follow_the_host_layout(self):
+        text = (
+            "root, the directory above `skills/` (`${PLUGIN_ROOT}/skills/silver-add/SKILL.md`). "
+            "run ${PLUGIN_ROOT}/skills/silver-deep-research/scripts/a.py, \"${PLUGIN_ROOT}/skills\", "
+            "${PLUGIN_ROOT}/skills/modularity/SKILL.md, ${SB_ROOT}/skills/silver/SKILL.md, ${PLUGIN_ROOT}/scripts/x.sh"
+        )
+        claude = r.rewrite_plugin_root_paths(text, "claude")
+        self.assertIn("the directory above `agents/claude/` (`${PLUGIN_ROOT}/agents/claude/sb:add/SKILL.md`)", claude)
+        self.assertIn("${PLUGIN_ROOT}/agents/claude/sb:deep-research/scripts/a.py", claude)
+        self.assertIn('"${PLUGIN_ROOT}/agents/claude"', claude)
+        self.assertIn("${PLUGIN_ROOT}/agents/claude/modularity/SKILL.md", claude)
+        self.assertIn("${SB_ROOT}/agents/claude/sb/SKILL.md", claude)
+        self.assertIn("${PLUGIN_ROOT}/scripts/x.sh", claude)
+        codex = r.rewrite_plugin_root_paths(text, "codex")
+        self.assertIn(r.CODEX_PACKAGE_ROOT + "` (this skill is installed at `$HOME/.codex/skills/sb-add/SKILL.md`", codex)
+        self.assertIn("${PLUGIN_ROOT}/skill-source/sb-deep-research/scripts/a.py", codex)
+        self.assertIn('"${PLUGIN_ROOT}/skill-source"', codex)
+        self.assertIn("${PLUGIN_ROOT}/skill-source/modularity/SKILL.md", codex)
+        self.assertEqual(r.rewrite_plugin_root_paths("no anchors here", "codex"), "no anchors here")
+
     def test_sanitize_codex_text(self):
         out = r.sanitize_codex_text("Use the Skill tool and /compact; Agent tool; secondary host; PostToolUse/Skill")
         self.assertEqual(

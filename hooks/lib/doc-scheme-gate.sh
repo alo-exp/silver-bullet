@@ -162,6 +162,75 @@ sb_doc_scheme__changed_since() {
   [[ -n "$(git -C "$repo" log --since="$since" --pretty=format: --name-only -- "$spec" 2>/dev/null)" ]]
 }
 
+# sb_doc_scheme__baseline REPO: the trusted revision the scheme is compared with: the merge-base of HEAD with the
+# default branch (origin/HEAD, then origin/main|master, then main|master), so a commit made on this branch cannot
+# redefine it (one intermediate commit would otherwise switch the delivery gate off); HEAD when there is no default
+# branch to compare with.
+sb_doc_scheme__baseline() {
+  local repo="$1" ref mb
+  for ref in "$(git -C "$repo" symbolic-ref -q refs/remotes/origin/HEAD 2>/dev/null)" \
+    refs/remotes/origin/main refs/remotes/origin/master refs/heads/main refs/heads/master; do
+    [[ -n "$ref" ]] || continue
+    if mb="$(git -C "$repo" merge-base HEAD "$ref" 2>/dev/null)"; then
+      printf '%s' "$mb"
+      return 0
+    fi
+  done
+  printf 'HEAD'
+}
+
+# sb_doc_scheme__head_tracks REPO: git has a doc-scheme file at the trusted baseline, so the repo opted into the
+# scheme even when the files are gone from the work tree or deleted in a commit (R9-09).
+sb_doc_scheme__head_tracks() {
+  local repo="$1" f base
+  base="$(sb_doc_scheme__baseline "$repo")"
+  for f in docs/doc-scheme.md docs/doc-scheme.json; do
+    git -C "$repo" cat-file -e "$base:$f" >/dev/null 2>&1 && return 0
+  done
+  return 1
+}
+
+# sb_doc_scheme__weakened REPO CONTRACT: what the work-tree contract gives up against the one at the trusted baseline
+# (sb_doc_scheme__baseline: enforcement switched off, enforced levels narrowed, a mandatory doc dropped, a governed
+# doc dropped, renamed or repointed, the checklist or policy path repointed); nothing when it is not weaker or there
+# is no baseline contract to compare with. Committing on this branch does not change the baseline; only what the
+# default branch holds does.
+sb_doc_scheme__weakened() {
+  local repo="$1" contract="$2" head_json
+  head_json="$(git -C "$repo" show "$(sb_doc_scheme__baseline "$repo"):docs/doc-scheme.json" 2>/dev/null)" || return 0
+  jq -e . <<<"$head_json" >/dev/null 2>&1 || return 0
+  jq -rn --argjson h "$head_json" --slurpfile w "$contract" '
+    def en: (.enforcement.enabled | if . == null then true else . end);
+    def lv: ((.enforcement.granularity_levels // [2,3]) | if length == 0 then [2,3] else . end);
+    def mand: ((.mandatory_updated_docs // []) + ((.required_docs // []) | map(select(.mandatory_updated == true) | .key))) | unique;
+    def keys: ((.required_docs // []) | map(.key) | unique);
+    def paths: ((.required_docs // []) | map({(.key): (.path // .key)}) | add // {});
+    def sync($k; $d): (.sync[$k] // $d);
+    $w[0] as $w
+    | [ (if (($h | keys) - ($w | keys)) | length > 0 then "a governed doc was dropped or renamed" else empty end),
+        (if ([($h | paths) | to_entries[] | select(($w | paths)[.key] != null and ($w | paths)[.key] != .value)] | length) > 0 then "a governed doc was repointed" else empty end),
+        (if ($h | sync("task_checklist_path"; "docs/task-doc-checklist.json")) != ($w | sync("task_checklist_path"; "docs/task-doc-checklist.json")) then "the checklist was repointed" else empty end),
+        (if ($h | sync("doc_scheme_md_path"; "docs/doc-scheme.md")) != ($w | sync("doc_scheme_md_path"; "docs/doc-scheme.md")) then "the policy file was repointed" else empty end),
+        (if ($h | en) == true and ($w | en) != true then "enforcement switched off" else empty end),
+        (if (($h | lv) - ($w | lv)) | length > 0 then "enforced granularity levels narrowed" else empty end),
+        (if (($h | mand) - ($w | mand)) | length > 0 then "a mandatory doc was dropped" else empty end) ]
+    | join("; ")' 2>/dev/null || true
+}
+
+# sb_doc_scheme__state_has_skill STATE_DIR SKILL: the recorded skill state (written only by the hooks) names SKILL.
+sb_doc_scheme__state_has_skill() {
+  local state_dir="$1" skill="$2" state_file="${SILVER_BULLET_STATE_FILE:-${1}/state}"
+  case "$state_file" in
+    "$state_dir"/*) ;;
+    *) state_file="${state_dir}/state" ;;
+  esac
+  # only the verified, sealed state counts (the integrity library's accessor); without it nothing is recorded
+  declare -f sb_integrity_state_contents >/dev/null 2>&1 || return 1
+  local contents
+  contents="$(sb_integrity_state_contents "$state_file" 2>/dev/null)" || true
+  grep -Fqx -- "$skill" <<<"$contents"
+}
+
 # Enforce doc-scheme contract.
 # Args:
 #   $1 mode ("task" or "delivery")
@@ -192,10 +261,11 @@ sb_doc_scheme_gate_enforce() {
   local should_enforce="false"
   local remediation_cmd=""
   local mode_label=""
+  local weakened=""
 
-  # Gate applies only when the repo opted into doc-scheme governance.
+  # Gate applies only when the repo opted into doc-scheme governance: the files exist, or git has them at HEAD.
   if [[ ! -f "$doc_scheme_md" && ! -f "$contract_file" ]]; then
-    return 0
+    sb_doc_scheme__head_tracks "$repo_root" || return 0
   fi
 
   mode_label="Task completion"
@@ -260,6 +330,25 @@ EOF
     exit 0
   fi
 
+  weakened="$(sb_doc_scheme__weakened "$repo_root" "$contract_file")"
+  if [[ -n "$weakened" ]]; then
+    gate_issues+="  - docs/doc-scheme.json weakens the contract on the default branch (${weakened})"$'\n'
+    sb_doc_scheme__write_gap_report "$mode" "$repo_root" "$state_dir" "$task_id" "$task_granularity_raw" "docs/task-doc-checklist.json" "docs/doc-scheme.json" "$gate_issues"
+    message=$(cat <<EOF
+🛑 DOC-SCHEME GATE — ${mode_label} blocked.
+
+\`docs/doc-scheme.json\` weakens the contract on the default branch: ${weakened}.
+
+Restore it from the default branch (\`git checkout <default-branch> -- docs/doc-scheme.json docs/doc-scheme.md\`); a commit on this branch does not change what it is compared with.
+
+Latest gap report:
+\`${SB_DOC_SCHEME_GAP_REPORT_PATH}\`
+EOF
+)
+    "$emit_fn" "$message"
+    exit 0
+  fi
+
   checklist=$(jq -r '.sync.task_checklist_path // "docs/task-doc-checklist.json"' "$contract_file" 2>/dev/null || true)
   [[ -n "$checklist" ]] || checklist="docs/task-doc-checklist.json"
   if [[ "$checklist" = /* ]]; then
@@ -306,8 +395,12 @@ EOF
       gate_issues+="  - Missing numeric task granularity in checklist ('task_granularity')."$'\n'
       gate_issues+="  - Contract enforces these levels: $(printf '%s ' ${_sb_granularity_levels[@]+"${_sb_granularity_levels[@]}"} | sed 's/ $//')."$'\n'
     else
-      # Explicitly out-of-scope granularity: do not gate this task.
-      return 0
+      # An out-of-scope granularity is written by the agent in its own checklist, so it cannot switch the gate
+      # off: it is honoured only for a session that ran the sanctioned small-change flow (R9-09). Otherwise the
+      # task is judged as an in-scope one.
+      if sb_doc_scheme__state_has_skill "$state_dir" silver-fast; then
+        return 0
+      fi
     fi
   fi
 

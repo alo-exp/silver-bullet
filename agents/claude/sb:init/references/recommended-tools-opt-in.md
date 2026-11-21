@@ -7,7 +7,7 @@ Load this reference when executing Phase 1.1a–§1.1g during `/sb:init` or upda
 
 Graphify powers SB's retrieval-oriented project memory. SB **asks for explicit permission**
 before enabling mandatory enforcement. The user's consent is recorded with
-`scripts/sb-consent.sh` in their own consent store (`docs/CONSENT.md`), never in the repository.
+`bash "${PLUGIN_ROOT}/scripts/sb-consent.sh"` in their own consent store (`docs/CONSENT.md`), never in the repository.
 `.silver-bullet.json` carries only the project's recommendation,
 `recommended_tools.graphify.enabled_by_user` (`null` = pending, `true` = recommended, `false` = turned off).
 
@@ -230,8 +230,8 @@ Add agentmemory gitignore block if missing (see `docs/AGENTMEMORY.md`).
 
 | Host | Pre-index | Post-index |
 |------|-----------|------------|
-| `<SB_HOST>` | *(none)* | `agentmemory connect (see install guide)` |
-| `<SB_HOST>` | `host plugin marketplace (see install guide) add rohitg00/agentmemory`; `host plugin add agentmemory@agentmemory` | `agentmemory connect (see install guide) --with-hooks` |
+| `<SB_HOST>` | *(none)* | `agentmemory connect claude-code` |
+| `<SB_HOST>` | `codex plugin marketplace add rohitg00/agentmemory`; `host plugin add agentmemory@agentmemory` | `agentmemory connect codex --with-hooks` |
 | `<SB_HOST>` | *(none)* | Merge MCP block per `docs/AGENTMEMORY.md` (host MCP config) |
 
 Read `recommended_tools.agentmemory.platform_install_commands.<host>` from config when present.
@@ -265,8 +265,8 @@ Same rules as Graphify §1.1a Step 5: re-prompt when `null`; retry when suspende
 When **either** Graphify or agentmemory is opted in (`enabled_by_user: true`), run the synergy optimizer after install steps complete:
 
 ```bash
-bash scripts/sb-optimize-stack.sh --apply
-bash scripts/sb-optimize-stack.sh --verify
+bash "${PLUGIN_ROOT}/scripts/sb-optimize-stack.sh" --apply
+bash "${PLUGIN_ROOT}/scripts/sb-optimize-stack.sh" --verify
 ```
 
 - Default profile: `synergy_max` (see `optimization_profiles` in config template)
@@ -302,10 +302,10 @@ Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBen
 
 1. Run `install_commands` from config (Homebrew or curl installer — see `docs/RTK.md`)
 2. Verify: `rtk --version` (v0.4x), `rtk gain --help`
-3. Run host `platform_install_commands` (`rtk init -g`, `rtk init -g (see install guide)`, or `rtk init -g (see install guide)`)
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto --project-root "$(pwd)"` — merges hooks, MCP, host CLI config allow-list, and global rules (see `docs/RTK.md` optimization checklist)
+3. Run host `platform_install_commands` (`rtk init -g` on Claude Code, `rtk init -g --codex` on Codex; see `docs/RTK.md`)
+4. **Run optimization:** `bash "${PLUGIN_ROOT}/scripts/optimize-rtk-context-mode.sh" --host <runtime>|auto --project-root "$(pwd)"` — merges hooks, MCP, host CLI config allow-list, and global rules (see `docs/RTK.md` optimization checklist)
 5. Verify host hook artifact (grep `rtk` in settings/hooks/AGENTS.md)
-6. Run `bash scripts/enable-rtk-context-mode.sh --tool rtk`
+6. Run `bash "${PLUGIN_ROOT}/scripts/enable-rtk-context-mode.sh" --tool rtk`
 
 On success: `install_status: "ok"`, `enforcement_suspended: false`. On failure: suspend, preserve consent.
 
@@ -339,11 +339,10 @@ Include ELv2 license disclosure and MCP-value note in the question.
 1. **Node >= 22.5** check first
 2. `npm install -g context-mode` (or host plugin path per host — see `docs/CONTEXT-MODE.md`)
 3. Host-specific plugin/MCP/hook steps from `platform_install_commands`
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto --project-root "$(pwd)"` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, task host allow-list, global host rules directory directory (see `docs/CONTEXT-MODE.md`)
-5. **Scaffold instruction fragment** into `silver-bullet.md` and `project instruction file` from `templates/context-mode-hint.md.base` (idempotent sentinel block — see `references/scaffold-steps.md`)
-6. **Host-specific:** copy `context-mode.mdc` to `host rules path (see install guide) ` per upstream (also done by optimize script)
-7. Remind user to **restart agent** after plugin install
-8. Run `bash scripts/enable-rtk-context-mode.sh --tool context_mode`
+4. **Run optimization:** `bash "${PLUGIN_ROOT}/scripts/optimize-rtk-context-mode.sh" --host <runtime>|auto --project-root "$(pwd)"` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, host allow-list, global rules (see `docs/CONTEXT-MODE.md`)
+5. **Scaffold instruction fragment** into `silver-bullet.md` and `project instruction file` from `${PLUGIN_ROOT}/templates/context-mode-hint.md.base` (idempotent sentinel block — see `references/scaffold-steps.md`)
+6. Remind user to **restart agent** after plugin install
+7. Run `bash "${PLUGIN_ROOT}/scripts/enable-rtk-context-mode.sh" --tool context_mode`
 
 On success/failure: same jq pattern as Graphify/agentmemory.
 
@@ -381,8 +380,8 @@ Question: "Silver Bullet recommends **LeanCTX** for parallel-routed compression 
 
 1. Run `install_commands` from config (`curl -fsSL https://leanctx.com/install.sh | sh`)
 2. Verify: `lean-ctx --version`
-3. Run host `platform_install_commands` (`bash scripts/install-leanctx-sb.sh --host <runtime> --project-root "$(pwd)"`)
-4. **Phase 2:** Run `bash scripts/optimize-five-tool-stack.sh --host <runtime>|auto --project-root "$(pwd)"` instead of `optimize-rtk-context-mode.sh`
+3. Run host `platform_install_commands` (`bash "${PLUGIN_ROOT}/scripts/install-leanctx-sb.sh" --host <runtime> --project-root "$(pwd)"`)
+4. **Phase 2:** Run `bash "${PLUGIN_ROOT}/scripts/optimize-five-tool-stack.sh" --host <runtime>|auto --project-root "$(pwd)"` instead of `optimize-rtk-context-mode.sh`
 
 On success/failure: same jq pattern as Graphify/agentmemory.
 

@@ -141,10 +141,26 @@ materialize_local_silver_bullet_plugin_cache() {
   stable_alias="${plugin_cache_root}/current"
   registry="${CLAUDE_HOME}/plugins/installed_plugins.json"
 
-  mkdir -p "$version_dir/.claude-plugin" "${version_dir}/agents/claude" "${version_dir}/hooks"
+  # The hooks resolve ../scripts, ../templates and ../docs/{apo-catalog,generated}
+  # relative to the plugin root, so the fallback cache must carry them too. An
+  # incomplete cache would run enforcement on fallback lists and with silently
+  # missing helpers: refuse (loudly) instead.
+  local required_path
+  for required_path in .claude-plugin/plugin.json hooks agents/claude scripts templates docs/apo-catalog.json docs/generated; do
+    if [[ ! -e "${REPO_ROOT}/${required_path}" ]]; then
+      echo "install-claude: offline fallback needs ${REPO_ROOT}/${required_path}, which is missing; not writing an incomplete plugin cache." >&2
+      return 1
+    fi
+  done
+
+  mkdir -p "$version_dir/.claude-plugin" "${version_dir}/agents/claude" "${version_dir}/hooks" "${version_dir}/docs"
   install -m 644 "${REPO_ROOT}/.claude-plugin/plugin.json" "${version_dir}/.claude-plugin/plugin.json"
   rsync -a --delete "${REPO_ROOT}/hooks/" "${version_dir}/hooks/"
   rsync -a --delete "${REPO_ROOT}/agents/claude/" "${version_dir}/agents/claude/"
+  rsync -a --delete --exclude '__pycache__' --exclude '*.pyc' "${REPO_ROOT}/scripts/" "${version_dir}/scripts/"
+  rsync -a --delete "${REPO_ROOT}/templates/" "${version_dir}/templates/"
+  rsync -a --delete "${REPO_ROOT}/docs/generated/" "${version_dir}/docs/generated/"
+  install -m 644 "${REPO_ROOT}/docs/apo-catalog.json" "${version_dir}/docs/apo-catalog.json"
   ln -sfn "agents/claude" "${version_dir}/skills"
   rm -rf "${version_dir}/commands" 2>/dev/null || true
   prune_claude_cross_host_agent_surfaces "$version_dir"

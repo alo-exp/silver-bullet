@@ -7,7 +7,9 @@ version: 0.2.0
 
 # /sb:doctor — Install and Activation Audit
 
-`/sb:doctor` is an alias of `/sb:doctor`. Both resolve to `scripts/sb-doctor.sh` and forward `--fix` / `--dry-run`. Do not implement a second doctor.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `skills/` (`${PLUGIN_ROOT}/skills/silver-doctor/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
+`/sb:doctor` is an alias of `/sb:doctor`. Both resolve to `${PLUGIN_ROOT}/scripts/sb-doctor.sh` and forward `--fix` / `--dry-run`. Do not implement a second doctor.
 
 Audits whether local SB installation is correct for the active host and whether the current project is on the current enforcement surface. **Default and `--deep` are read-only.** Repair requires `--fix=SCOPE`.
 
@@ -25,19 +27,19 @@ Audits whether local SB installation is correct for the active host and whether 
 From the project root (or pass an explicit path):
 
 ```bash
-bash scripts/sb-doctor.sh
-bash scripts/sb-doctor.sh --deep          # adds bounded expensive probes (Graphify MCP stdio handshake as WARN)
-bash scripts/sb-doctor.sh --dry-run       # reconciler plan only — no writes
-bash scripts/sb-doctor.sh --fix=local     # project-scope repair via reconciler doctor-fix
-bash scripts/sb-doctor.sh --fix=host      # host hooks/MCP/routes (user runs it and confirms)
-bash scripts/sb-doctor.sh --fix=packages  # package installs only (user confirms)
-bash scripts/sb-doctor.sh --fix           # same as --fix=all (user confirms)
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh"
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" --deep          # adds bounded expensive probes (Graphify MCP stdio handshake as WARN)
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" --dry-run       # reconciler plan only — no writes
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" --fix=local     # project-scope repair via reconciler doctor-fix
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" --fix=host      # host hooks/MCP/routes (user runs it and confirms)
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" --fix=packages  # package installs only (user confirms)
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" --fix           # same as --fix=all (user confirms)
 ```
 
 JSON output (schema 2.0.0 — includes full reconciler component evidence):
 
 ```bash
-SB_DOCTOR_FORMAT=json bash scripts/sb-doctor.sh
+SB_DOCTOR_FORMAT=json bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh"
 ```
 
 ### Step 2: Interpret results
@@ -50,7 +52,7 @@ SB_DOCTOR_FORMAT=json bash scripts/sb-doctor.sh
 
 **Overall PASS** requires zero FAIL lines. WARN is allowed.
 
-**D10 checks** use `scripts/reconcile-recommended-tools.sh` for Graphify, agentmemory, RTK, Context Mode, LeanCTX, Alumnium (when opted in), search_cli (when opted in), and cross-tool route/heartbeat convergence. Per-tool IDs: `D10-graphify`, `D10-agentmemory`, `D10-rtk`, `D10-context_mode`, `D10-leanctx`, `D10-alumnium`, `D10-search_cli`, `D10-routes`. When Alumnium or search_cli is not opted in (`enabled_by_user` null/false), the matching `D10-*` check is PASS N/A (pending/disabled) — the default tree must not FAIL solely because those keys are unset.
+**D10 checks** use `${PLUGIN_ROOT}/scripts/reconcile-recommended-tools.sh` for Graphify, agentmemory, RTK, Context Mode, LeanCTX, Alumnium (when opted in), search_cli (when opted in), and cross-tool route/heartbeat convergence. Per-tool IDs: `D10-graphify`, `D10-agentmemory`, `D10-rtk`, `D10-context_mode`, `D10-leanctx`, `D10-alumnium`, `D10-search_cli`, `D10-routes`. When Alumnium or search_cli is not opted in (`enabled_by_user` null/false), the matching `D10-*` check is PASS N/A (pending/disabled) — the default tree must not FAIL solely because those keys are unset.
 
 When a tool is opted in (`enabled_by_user`) on a supported host, default `sb-doctor` D10 verifies **installation and configuration** (not live MCP session tools). CONFIGURED (MCP key / hook line) is not LIVE (this-chat tools). PATH-only is not Health PASS.
 
@@ -76,18 +78,18 @@ Omni / OmniRoute is planned WS7, not D10 Graphify — footnote only, not an F4 s
 ### Step 3: Fix FAILs inline
 
 ```bash
-bash scripts/sb-doctor.sh --fix=local    # project index, export roots, consent-scoped repairs
-bash scripts/sb-doctor.sh --fix=host     # hooks, MCP merge, route ownership
-bash scripts/sb-doctor.sh --fix=all      # bounded dependency-ordered convergence
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" --fix=local    # project index, export roots, consent-scoped repairs
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" --fix=host     # hooks, MCP merge, route ownership
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" --fix=all      # bounded dependency-ordered convergence
 ```
 
 | Check | Typical fix |
 |-------|-------------|
-| D2/D3 plugin stale | `/sb:update` or `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` |
-| D4 hooks missing | Reinstall the plugin with `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` (`/sb:init` §3.7.5 only removes duplicate hook copies and never adds hooks) |
-| D6 config stale | `bash scripts/sb-migrate-config.sh` or `/sb:migrate` |
-| D10-* five-tool | `bash scripts/sb-doctor.sh --fix=local|host|packages|all` |
-| D10-routes drift | `--fix=host` or `bash scripts/optimize-five-tool-stack.sh --host claude --project-root "$(pwd)"` |
+| D2/D3 plugin stale | `/sb:update` or `bash "${PLUGIN_ROOT}/scripts/install-${SILVER_BULLET_RUNTIME}.sh"` |
+| D4 hooks missing | Reinstall the plugin with `bash "${PLUGIN_ROOT}/scripts/install-${SILVER_BULLET_RUNTIME}.sh"` (`/sb:init` §3.7.5 only removes duplicate hook copies and never adds hooks) |
+| D6 config stale | `bash "${PLUGIN_ROOT}/scripts/sb-migrate-config.sh"` or `/sb:migrate` |
+| D10-* five-tool | `bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" --fix=local|host|packages|all` |
+| D10-routes drift | `--fix=host` or `bash "${PLUGIN_ROOT}/scripts/optimize-five-tool-stack.sh" --host claude --project-root "$(pwd)"` |
 | D13 manifest paths | Host install script for active runtime |
 | D20 stack mutex | `--fix` clears mutex + scaffolds agentmemory export root |
 
@@ -96,7 +98,7 @@ Log friction in `${SB_RUNTIME_STATE_DIR}/sb-friction-log.md` when doctor surface
 ### Step 4: Re-run until PASS
 
 ```bash
-bash scripts/sb-doctor.sh && echo "doctor PASS"
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" && echo "doctor PASS"
 ```
 
 ## Check catalog (D1–D20 + D10-*)
@@ -120,10 +122,10 @@ bash scripts/sb-doctor.sh && echo "doctor PASS"
 - D20 stack compression mutex
 
 ```bash
-bash scripts/validate-host-install-surface.sh
-bash scripts/validate-host-agnostic-core.sh
-bash scripts/sb-doctor.sh --dry-run
-bash scripts/sb-doctor.sh --fix=all
+bash "${PLUGIN_ROOT}/scripts/validate-host-install-surface.sh"
+bash "${PLUGIN_ROOT}/scripts/validate-host-agnostic-core.sh"
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" --dry-run
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" --fix=all
 ```
 
 ## Tests

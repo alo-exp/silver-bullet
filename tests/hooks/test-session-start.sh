@@ -273,9 +273,14 @@ HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 # Write a state file and point branch file at a different branch
 printf 'silver-quality-gates\ncode-review\n' > "$TMPSTATE"
+printf 'silver-spec\n' > "${TMPSTATE}.last"; printf '1\n' > "${TMPSTATE}.lasthwm"; printf 'x\n' > "${TMPSTATE}.last.w1"; printf '1\n' > "${TMPSTATE}.lasthwm.w1"
 printf 'old-branch-xyz' > "$TMPBRANCH"
 run_hook "$HOOK_WORKDIR" >/dev/null
 assert_file_missing "branch changed -> state file deleted" "$TMPSTATE"
+assert_file_missing "branch changed -> the last-invoked-skill record is deleted" "${TMPSTATE}.last"
+assert_file_missing "branch changed -> its counter is deleted" "${TMPSTATE}.lasthwm"
+assert_file_missing "branch changed -> a worker's record is deleted" "${TMPSTATE}.last.w1"
+assert_file_missing "branch changed -> a worker's counter is deleted" "${TMPSTATE}.lasthwm.w1"
 # branch file should now reflect current branch
 if [[ -f "$TMPBRANCH" ]]; then
   stored=$(head -1 "$TMPBRANCH" 2>/dev/null | tr -d '\n')

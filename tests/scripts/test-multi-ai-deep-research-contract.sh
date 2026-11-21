@@ -32,8 +32,8 @@ done
 
 CONTRACT_TMP="$(mktemp -d)"
 trap 'rm -rf "$CONTRACT_TMP"' EXIT
-python3 skills/silver-multi-ai-task/scripts/multi_ai_cli.py --output-root "$CONTRACT_TMP/mat" --dry-run >/dev/null && pass "multi-ai dry-run cli" || fail "multi-ai dry-run cli"
-python3 skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py "contract probe" --dry-run >/dev/null && pass "dr-multi-ai dry-run cli" || fail "dr-multi-ai dry-run cli"
+env -u CLAUDECODE -u CLAUDE_CODE -u CODEX_SANDBOX -u SB_AGENT_CODEX_DELEGATE SB_HOST=cursor python3 skills/silver-multi-ai-task/scripts/multi_ai_cli.py --output-root "$CONTRACT_TMP/mat" --dry-run >/dev/null && pass "multi-ai dry-run cli" || fail "multi-ai dry-run cli"
+env -u CLAUDECODE -u CLAUDE_CODE -u CODEX_SANDBOX -u SB_AGENT_CODEX_DELEGATE SB_HOST=cursor python3 skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py "contract probe" --dry-run >/dev/null && pass "dr-multi-ai dry-run cli" || fail "dr-multi-ai dry-run cli"
 
 # The unit tests stay offline: without these switches the landscape renderer probes every
 # vendor URL over HTTP and renders PDFs through `npx --yes playwright`, which took minutes

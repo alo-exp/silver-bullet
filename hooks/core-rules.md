@@ -15,7 +15,7 @@ You MUST NOT:
 
 ## Enforcement Model (Section 1)
 
-Sixteen enforcement layers are active. Hooks are invocation-based — the hooks track supported skill invocation events/receipts, not your judgment:
+Twelve enforcement layers are active (items 1-12), plus four opt-in tool gates (items 13-16). Hooks are invocation-based — the hooks track supported skill invocation events/receipts, not your judgment:
 
 1. **Skill tracker** (PostToolUse/Skill or Codex `silver-bullet invoke-skill`) — records every supported skill invocation to state file
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning incomplete before code edits
@@ -36,7 +36,7 @@ Sixteen enforcement layers are active. Hooks are invocation-based — the hooks 
 
 ## Active Workflow (Section 2)
 
-Read `docs/workflows/full-dev-cycle.md` before starting any non-trivial task. If a required skill cannot be invoked, STOP and notify the user — do NOT silently skip.
+Read the active workflow file named on the `**Active**:` line of `silver-bullet.md` §2 before starting any non-trivial task (it differs per workflow, for example `devops-cycle.md` for DevOps projects). If a required skill cannot be invoked, STOP and notify the user — do NOT silently skip.
 
 Silver Bullet owns the agentic loop in SB-activated projects. On every non-trivial user goal, wait for SB route/workflow guidance first, then invoke only the SB-owned or optional extension skills that guidance selects. When an SB-launched workflow step completes, return control to the active SB workflow and let it choose the next step until the user goal is achieved or user feedback is required.
 
