@@ -48,7 +48,7 @@ agent_host_pi_maybe_schedule_quota_retry() {
 
   blob="$(mktemp "${TMPDIR:-/tmp}/agent-pi-quota-XXXXXX")"
   printf '%s' "$text" >"$blob"
-  classified="$(python3 -I "$resolver" --classify-quota-window \
+  classified="$(python3 -I -B "$resolver" --classify-quota-window \
     --quota-host "$host" --model "$model" \
     --subscription-output-file "$blob" 2>/dev/null)" || {
     rm -f "$blob"
