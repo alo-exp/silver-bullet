@@ -3,15 +3,22 @@
 
 from __future__ import annotations
 
+import os
+import sys
+
+if __name__ == "__main__" and not sys.flags.isolated:
+    # PYTHONPATH, PYTHONSTARTUP and the user site are invisible to the hooks that let this CLI run, so a script
+    # start re-runs itself in isolated mode (-I) before it imports anything but the interpreter's own modules.
+    os.execv(sys.executable, [sys.executable, "-I", *sys.argv])
+
 import argparse
 import json
-import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from live_dispatch import run_multi_ai_live, stub_mode  # noqa: E402
+from live_dispatch import backend_availability, run_multi_ai_live, stub_mode  # noqa: E402
 from multi_ai_core import (  # noqa: E402
     DEFAULT_CONCURRENCY,
     DEFAULT_MAX_AGENTS,
@@ -19,6 +26,8 @@ from multi_ai_core import (  # noqa: E402
     PoolSelection,
     dry_run_report,
     host_gate,
+    output_root_refusal,
+    resolve_output_root,
 )
 
 
@@ -56,11 +65,20 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"ok": False, "error_code": "OUTPUT_ROOT_REQUIRED", "message": "--output-root required for live dispatch"}, indent=2))
         return 2
 
-    # A dry run is a plan for a run, so it fails the same way a live run does on a host that cannot run it.
+    # A dry run is a plan for a run, so it fails the same way a live run does on a host that cannot
+    # run it (Cursor and unknown hosts); Claude Code and Codex are the supported hosts.
     gate = host_gate()
     if not gate["ok"]:
         payload = {"ok": False, "error_code": gate["error_code"], "message": gate["message"]}
         print(json.dumps(payload, indent=2))
+        return 2
+
+    # The hooks cannot see what this script writes, so it keeps their boundaries itself.
+    # Resolved once: the check and every write use this same path (a literal "~" is expanded here).
+    output_root = resolve_output_root(args.output_root) if args.output_root else None
+    refusal = output_root_refusal(output_root) if output_root else None
+    if refusal:
+        print(json.dumps({"ok": False, "error_code": "OUTPUT_ROOT_NOT_ALLOWED", "message": refusal}, indent=2))
         return 2
 
     selection = PoolSelection(
@@ -72,6 +90,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     if args.dry_run:
         report = dry_run_report(selection, max_agents=args.max_agents)
+        if report.get("ok"):
+            # Looks for each backend CLI the plan needs; nothing is started or written.
+            report["backend_availability"] = backend_availability(report["resolved_pool"])
         print(json.dumps(report, indent=2))
         return 0 if report.get("ok") else 1
 
@@ -85,7 +106,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     result = run_multi_ai_live(
-        output_root=Path(args.output_root),
+        output_root=output_root,
         selection=selection,
         budget=BudgetPolicy(max_agents=args.max_agents, concurrency=args.concurrency),
         task_prompt=args.task_prompt,

@@ -32,8 +32,17 @@ done
 
 CONTRACT_TMP="$(mktemp -d)"
 trap 'rm -rf "$CONTRACT_TMP"' EXIT
-env -u CLAUDECODE -u CLAUDE_CODE -u CODEX_SANDBOX -u SB_AGENT_CODEX_DELEGATE SB_HOST=cursor python3 skills/silver-multi-ai-task/scripts/multi_ai_cli.py --output-root "$CONTRACT_TMP/mat" --dry-run >/dev/null && pass "multi-ai dry-run cli" || fail "multi-ai dry-run cli"
-env -u CLAUDECODE -u CLAUDE_CODE -u CODEX_SANDBOX -u SB_AGENT_CODEX_DELEGATE SB_HOST=cursor python3 skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py "contract probe" --dry-run >/dev/null && pass "dr-multi-ai dry-run cli" || fail "dr-multi-ai dry-run cli"
+# Hosts: Claude Code and Codex are supported; Cursor is only a backend and is refused as a host.
+host_env() { env -u CLAUDECODE -u CLAUDE_CODE -u CODEX_SANDBOX -u SB_AGENT_CODEX_DELEGATE -u CODEX_CI -u CODEX_THREAD_ID -u CODEX_INTERNAL_ORIGINATOR_OVERRIDE -u CURSOR_AGENT -u CURSOR_TRACE_ID "SB_HOST=$1" "${@:2}"; }
+for host in claude codex; do
+  host_env "$host" python3 skills/silver-multi-ai-task/scripts/multi_ai_cli.py --output-root "$CONTRACT_TMP/mat" --dry-run >/dev/null && pass "multi-ai dry-run cli on $host" || fail "multi-ai dry-run cli on $host"
+  host_env "$host" python3 skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py "contract probe" --dry-run >/dev/null && pass "dr-multi-ai dry-run cli on $host" || fail "dr-multi-ai dry-run cli on $host"
+done
+for cli in "skills/silver-multi-ai-task/scripts/multi_ai_cli.py --output-root $CONTRACT_TMP/none --dry-run" "skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py probe --dry-run"; do
+  out="$(host_env cursor python3 $cli 2>&1 || true)"
+  [[ "$out" == *SB_MULTI_AI_UNSUPPORTED_HOST* && "$out" == *"Cursor is no longer a supported host"* ]] && pass "cursor is refused as a host: ${cli%% *}" || fail "cursor must be refused as a host: ${cli%% *}"
+done
+[[ ! -e "$CONTRACT_TMP/none" ]] && pass "refused dry run wrote nothing" || fail "refused dry run wrote output"
 
 # The unit tests stay offline: without these switches the landscape renderer probes every
 # vendor URL over HTTP and renders PDFs through `npx --yes playwright`, which took minutes

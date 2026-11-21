@@ -3,7 +3,7 @@ name: "sb:deep-research-multi-ai"
 title: "Deep Research Multi AI"
 description: >
   Opt-in multi-model deep research. Composes canonical silver-deep-research engine,
-  new /sb:multi-ai-task primitive, and Cursor/OCG backends. Dual serverless HTML reports. Runs only on a Cursor-hosted session in v1: on Claude Code and Codex, `--dry-run` and live runs both fail closed with `SB_MULTI_AI_UNSUPPORTED_HOST`.
+  new /sb:multi-ai-task primitive, and the Cursor-CLI/OCG/Codex/Claude backends. Dual serverless HTML reports. Runs on Claude Code and Codex; Cursor is a backend CLI only, not a host.
 argument-hint: "<research question> [--mode deep|ultradeep] [--research-type default|solution-landscape|solution-compare] [--dry-run]"
 version: 1.0.0
 ---
@@ -18,10 +18,18 @@ version: 1.0.0
 Opt-in sibling of [`silver-deep-research`](../silver-deep-research/SKILL.md). Does **not**
 replace single-agent `/sb:deep-research` or revive removed `FS-SILVER_MULTI_AI` MultAI surfaces.
 
-**Availability:** every parallel phase runs through `/sb:multi-ai-task`, which needs a
-Cursor-hosted session in v1. On Claude Code and Codex this skill is listed but cannot run: both
-`--dry-run` and a live run exit 2 with `SB_MULTI_AI_UNSUPPORTED_HOST`. Use single-agent
-`/sb:deep-research` there.
+**Availability:** every parallel phase runs through `/sb:multi-ai-task`, so the host matrix is the same:
+Claude Code and Codex are supported hosts; Cursor is **not a host** (it is only the `cursor-agent` backend
+CLI); an unknown host fails closed. On a host that cannot run it, both `--dry-run` and a live run exit 2
+with `SB_MULTI_AI_UNSUPPORTED_HOST` and write nothing. Consolidation needs an envelope from every agent, so
+a backend CLI that is not installed (`cursor-agent`, OpenCode, `codex`, `claude`) stops a live run before
+any phase or file write with `BACKEND_CLI_MISSING` and a fix per backend (a host error it is not); narrow
+the pool (`--ocg-pool none`, `--cursor-pool none`, `--exclude`, `--include-only`) to run on the backends
+you have. `--dry-run` lists `backend_availability` for the planned pool. Under an orchestrator parent
+session, run the CLI from a worker (the parent may not run Bash: in a parent-mode project delegate the run to an `Agent`/`spawn_agent` worker first). The planning floor does not hold back exactly `python3 <plugin>/skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py ...`, so the run works at its own flow step (`AF-DECIDE`, before PLAN) in a fresh session. The CLI refuses an output root inside
+Silver Bullet's runtime state or plugin cache, a `.git` directory, the home directory or the ownership
+scope of an active agent delegation (`OUTPUT_ROOT_NOT_ALLOWED`). The details are in
+[`/sb:multi-ai-task`](../silver-multi-ai-task/SKILL.md).
 
 ## Architecture (locked)
 
@@ -204,7 +212,7 @@ therefore does not guess from the words around a name. Identity is declared (`sc
 
 ## GLM-5.2 routing
 
-Subscription-gated: Cursor pool if subscribed; OCG pool otherwise. `unknown` blocks dispatch.
+Subscription-gated: the Cursor backend pool if subscribed; the OCG pool otherwise. `unknown` blocks dispatch.
 
 ## Validation
 
