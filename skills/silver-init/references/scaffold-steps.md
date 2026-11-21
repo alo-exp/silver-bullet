@@ -211,12 +211,11 @@ fi
 if test -f AGENTS.md; then
   git add AGENTS.md
 fi
-git commit -m "$(cat <<'EOF'
+git commit -F - <<'EOF'
 feat: initialize Silver Bullet enforcement
 
 Co-Authored-By: host-appropriate co-author line
 EOF
-)"
 ```
 
 If the commit fails due to a pre-commit hook, read the error, fix the issue, re-stage, and create a new commit (do NOT use `--amend`).

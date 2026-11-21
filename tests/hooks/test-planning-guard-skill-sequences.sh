@@ -63,7 +63,7 @@ fi
 echo "--- sb:ship section ---"
 assert_denied "guard baseline" "$ACTIVE" ".planning/STATE.md"
 assert_allowed "sb:ship" "$ACTIVE" ".planning/phases/01-x/SHIP.md"
-if skill_has silver-ship '.planning/phases/<phase>/SHIP.md' && ! grep -q 'ship section in `.planning/STATE.md`' "$REPO_ROOT/skills/silver-ship/SKILL.md"; then
+if skill_has silver-ship 'Record the ship result' && ! skill_has silver-ship 'Update planning state' && skill_has silver-ship '.planning/phases/<phase>/SHIP.md' && ! grep -q 'ship section in `.planning/STATE.md`' "$REPO_ROOT/skills/silver-ship/SKILL.md"; then
   ok "ship skill writes its section to the phase SHIP.md, not STATE.md"
 else
   bad "ship skill still writes STATE.md"

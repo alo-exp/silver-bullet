@@ -133,6 +133,52 @@ elif check == "rendered":
             src = os.path.join(pkg, "skill-source", d, "SILVER_SOURCE")
             if os.path.isfile(src) and "**Plugin root**" in open(src, encoding="utf-8").read() and pkg_marker not in open(src, encoding="utf-8").read():
                 problems.append(f"skill-source/{d}: plugin root definition lacks the installed Codex package path")
+elif check == "heredoc":
+    import subprocess, tempfile
+    payload = "don't $(touch PWNED) `touch PWNED2` it's (unbalanced \"quote ${HOME} \\\nline two"
+    read_re = re.compile(r"^([ \t]*)IFS= read -r -d '' (\w+) <<'(\w+)' \|\| true\n(.*?)\n\1\3\n\1\2=\"\$\{\2%\$'\\n'\}\"\n", re.M | re.S)
+    fence = re.compile(r"^[ \t]*```bash\n(.*?)^[ \t]*```", re.M | re.S)
+    names_by_skill = {}
+    for rel in skill_files():
+        text = read(rel)
+        skill = rel.split(os.sep)[1]
+        if "$(cat <<" in text:
+            problems.append(f"{rel}: heredoc inside command substitution (does not parse safely on macOS bash 3.2); use IFS= read -r -d ''")
+        for blk in fence.findall(text):
+            blk = "\n".join(l[len(l) - len(l.lstrip(" \t")) :] if False else l for l in blk.split("\n"))
+            assigned = [m.group(2) for m in read_re.finditer(blk)]
+            names_by_skill.setdefault(skill, set()).update(assigned)
+            for m in read_re.finditer(blk):
+                with tempfile.TemporaryDirectory() as tmp:
+                    snippet = f"IFS= read -r -d '' {m.group(2)} <<'{m.group(3)}' || true\n{payload}\n{m.group(3)}\n{m.group(2)}=\"${{{m.group(2)}%$'\\n'}}\"\nprintf '%s' \"${m.group(2)}\" >out\n"
+                    subprocess.run(["bash", "-c", snippet], cwd=tmp, check=False, capture_output=True)
+                    got = open(os.path.join(tmp, "out"), encoding="utf-8").read() if os.path.exists(os.path.join(tmp, "out")) else None
+                    if got != payload or os.path.exists(os.path.join(tmp, "PWNED")) or os.path.exists(os.path.join(tmp, "PWNED2")):
+                        problems.append(f"{rel}: the {m.group(2)} heredoc read does not take hostile text verbatim")
+            # the whole block must parse with the hostile text in the heredoc bodies
+            probe = read_re.sub(lambda m: f"IFS= read -r -d '' {m.group(2)} <<'{m.group(3)}' || true\n{payload}\n{m.group(3)}\n{m.group(2)}=\"${{{m.group(2)}%$'\\n'}}\"\n", blk)
+            if assigned:
+                r = subprocess.run(["bash", "-n"], input=re.sub(r"<[^<>\n]*>", "X", probe) if False else probe, text=True, capture_output=True)
+                if r.returncode != 0:
+                    problems.append(f"{rel}: documented snippet does not parse (bash -n): {r.stderr.strip()[:100]}")
+    # Untrusted variables are never assigned from a double-quoted literal or a command substitution, and are
+    # only used after a quoted-heredoc read in the same skill.
+    for skill in ("silver-add", "silver-triage", "silver-review", "silver-ingest", "silver-spec", "silver-review-triage"):
+        rel = f"skills/{skill}/SKILL.md"
+        text = read(rel)
+        names = {"DESCRIPTION", "ITEM_TITLE"} | names_by_skill.get(skill, set())
+        for blk in fence.findall(text):
+            for n, line in enumerate(blk.split("\n"), 1):
+                for name in names:
+                    if re.search(rf'(?<![\w$]){name}=(?!"\$\{{{name}%)(["\']|\$\()', line):
+                        problems.append(f"{rel}: {name} is assigned from a double-quoted or substituted value: {line.strip()[:80]}")
+        first_read = {}
+        for m in re.finditer(r"IFS= read -r -d '' (\w+) <<", text):
+            first_read.setdefault(m.group(1), m.start())
+        for name in ("DESCRIPTION", "ITEM_TITLE"):
+            use = re.search(rf'"\${name}"', text)
+            if use and (name not in first_read or first_read[name] > use.start()):
+                problems.append(f"{rel}: ${name} is used before a quoted-heredoc assignment")
 elif check == "untrusted":
     flag = re.compile(r'--(?:finding|scope|domain|title|body|description|comment)\s+"[^"]*<[^<>"]+>[^"]*"')
     for rel in skill_files():
@@ -232,6 +278,7 @@ PY
 run_check "R10-02 plugin scripts and templates are plugin-root anchored" anchored
 run_check "R10-02 rendered Claude and Codex bundles resolve every anchored path in their install layout" rendered
 run_check "R10-03 no untrusted free text inside double-quoted shell arguments" untrusted
+run_check "R10-03 untrusted values are read through quoted heredocs that parse on bash 3.2 and take hostile text verbatim" heredoc
 run_check "R10-04 every worker template has the data-boundary line" boundary
 run_check "R10-06 every sb:<route> resolves to a packaged skill" routes
 run_check "R10-07 every silver-bullet.md section reference resolves" sections
