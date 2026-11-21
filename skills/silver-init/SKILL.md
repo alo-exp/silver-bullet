@@ -17,7 +17,7 @@ This skill initializes Silver Bullet enforcement for a project. Follow each phas
 - **Never run `git clean`, `git checkout --`, `git reset --hard`**, or any command that discards uncommitted work
 - **Config is preserved** — in update mode, `.silver-bullet.json` customizations are read first and carried forward
 
-**Plugin root**: Determine `PLUGIN_ROOT` from this skill file's own path. This file lives at `${PLUGIN_ROOT}/skills/silver-init/SKILL.md`, so the plugin root is two directories up from this file's location.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `skills/` (`${PLUGIN_ROOT}/skills/silver-init/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory.
 
 ---
 
@@ -432,8 +432,7 @@ After core dependencies are confirmed, run the SB diagnostics probe when the
 script is available in the plugin or repo:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
-  bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
 ```
 
 Surface WARN/FAIL lines to the user. Capability tier and hook presence are
@@ -903,8 +902,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
   `silver-ui` workflow, or similar), stamp durable interface state:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || \
-  bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || true
 ```
 
 This creates `.planning/interface/STATE.md` from
@@ -922,8 +920,7 @@ it thereafter.
 - **3.9 Done**: run capability probe and surface enforcement tier honestly:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
-  bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
 ```
 
 Read `sb_enforcement_tier` / capability tier from diagnostics output. Completion message MUST reflect tier:

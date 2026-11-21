@@ -6,7 +6,7 @@ version: 0.1.0
 
 # /sb:add — Classify and File Work Items
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-add/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `agents/claude/` (`${PLUGIN_ROOT}/agents/claude/sb:add/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 Use this skill any time a deferred item, skipped work, technical debt, bug, open question, or enhancement is identified and must be tracked. It classifies the item as an issue or backlog entry, routes it to the correct PM destination based on the project's `issue_tracker` setting, and returns a stable, referenceable ID.
 
@@ -137,21 +137,21 @@ Compute a stable fingerprint before filing by invoking the canonical helper:
 
 Finding text is untrusted data. Never put it, or a scope or path taken from it, inside a
 double-quoted shell argument (`$(...)`, backticks and a closing quote would execute). Assign
-each value with a single-quoted heredoc, which is taken literally, then pass the variables:
+each value with a single-quoted heredoc read (taken literally, and valid on macOS bash 3.2), then pass the variables:
 
 ```bash
-A_DOMAIN=$(cat <<'SB_EOF'
+IFS= read -r -d '' A_DOMAIN <<'SB_EOF' || true
 <pack-or-surface, verbatim>
 SB_EOF
-)
-A_SCOPE=$(cat <<'SB_EOF'
+A_DOMAIN="${A_DOMAIN%$'\n'}"
+IFS= read -r -d '' A_SCOPE <<'SB_EOF' || true
 <file-route-service-or-artifact, verbatim>
 SB_EOF
-)
-A_FINDING=$(cat <<'SB_EOF'
+A_SCOPE="${A_SCOPE%$'\n'}"
+IFS= read -r -d '' A_FINDING <<'SB_EOF' || true
 <one-sentence finding, verbatim>
 SB_EOF
-)
+A_FINDING="${A_FINDING%$'\n'}"
 bash "${PLUGIN_ROOT}/scripts/silver-add.sh" fingerprint \
   --domain "$A_DOMAIN" --scope "$A_SCOPE" --finding "$A_FINDING"
 ```
@@ -227,6 +227,30 @@ Record:
 
 ---
 
+### Step 3b — Assign untrusted text safely (before any shell use)
+
+`DESCRIPTION`, `ITEM_TITLE` and the `A_*` values come from the item text or from a finding, which can
+be an external review comment: **untrusted data**. Never type them inside a double-quoted shell
+argument (`$(...)`, backticks and a closing quote would execute). Assign each one with a
+single-quoted heredoc read (no command substitution, so it also parses on macOS bash 3.2), then use
+only the variables, quoted, in later commands:
+
+```bash
+IFS= read -r -d '' DESCRIPTION <<'SB_EOF' || true
+<the description, verbatim>
+SB_EOF
+DESCRIPTION="${DESCRIPTION%$'\n'}"
+IFS= read -r -d '' ITEM_TITLE <<'SB_EOF' || true
+<the title, verbatim, 72 characters at most>
+SB_EOF
+ITEM_TITLE="${ITEM_TITLE%$'\n'}"
+```
+
+If a value contains a line equal to `SB_EOF`, use another delimiter word. Every later step in this skill
+(4c, 4f-2, 5) uses `"$DESCRIPTION"` and `"$ITEM_TITLE"` only after this step.
+
+---
+
 ## Step 4 — File to GitHub
 
 Execute only when `TRACKER` = `"github"`.
@@ -254,6 +278,8 @@ gh label create "filed-by-silver-bullet" \
 ```
 
 ### Step 4c — Create GitHub Issue
+
+Run Step 3b first: `DESCRIPTION` and `ITEM_TITLE` must already be assigned through quoted heredocs; the issue body and title below take them only through those variables.
 
 ```bash
 REMOTE=$(git remote get-url origin 2>/dev/null)
@@ -361,8 +387,7 @@ If `CREATE_CMD` is empty, null, or `REPLACE_ME`:
 
 Compute fingerprint when filing from triage or audit findings:
 
-Assign `A_DOMAIN`, `A_SCOPE`, `A_FINDING`, `ITEM_TITLE` and `DESCRIPTION` with single-quoted
-heredocs exactly as in the Fingerprint step (untrusted text, never inside double quotes), then:
+Assign `A_DOMAIN`, `A_SCOPE`, `A_FINDING`, `ITEM_TITLE` and `DESCRIPTION` with the quoted heredoc reads of Step 3b and the Fingerprint step (untrusted text, never inside double quotes), then:
 
 ```bash
 FP=$(bash "${PLUGIN_ROOT}/scripts/silver-add.sh" fingerprint \

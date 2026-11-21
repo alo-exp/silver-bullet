@@ -6,7 +6,7 @@ version: 0.5.0
 
 # sb:migrate
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-migrate/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `skills/` (`${PLUGIN_ROOT}/skills/silver-migrate/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 Migrates an older mid-milestone project to the current Silver Bullet contract:
 
@@ -40,7 +40,7 @@ Per-host install paths, hook manifests, and skill invocation channels are docume
 
 - `.planning/STATE.md` must exist.
 - `scripts/workflows.sh` must be available from the project root or plugin install.
-- Resolve `PLUGIN_ROOT` from this skill file's location (`skills/silver-migrate/SKILL.md` → two directories up from the skill directory, or the installed plugin root).
+- `PLUGIN_ROOT` is defined at the top of this skill (the installed plugin root).
 - If `.planning/workflows/*.md` already contains an active workflow, report the active id and skip only the workflow-tracker migration (Step 5). Still run Steps 0–4.
 
 ## Steps
@@ -191,11 +191,9 @@ Surface runtime parity expectations and refresh host hook delivery when applicab
 Run when scripts are available:
 
 ```bash
-bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
-  bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true
 
-bash "${PLUGIN_ROOT}/scripts/sb-bootstrap.sh" 2>/dev/null || \
-  bash "${PLUGIN_ROOT}/scripts/sb-bootstrap.sh" 2>/dev/null || true
+bash "${PLUGIN_ROOT}/scripts/sb-bootstrap.sh" 2>/dev/null || true
 ```
 
 Report capability tier and any WARN/FAIL lines. Point the user to `docs/RUNTIME-COMPATIBILITY.md` for tier definitions and install surfaces.
@@ -250,8 +248,7 @@ When the project has UI surface signals (for example `silver-ui` workflow, front
 1. If `.planning/interface/STATE.md` is absent, stamp from template:
 
    ```bash
-   bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" 2>/dev/null || \
-     bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" 2>/dev/null || true
+   bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" 2>/dev/null || true
    ```
 
 2. If the stamp script is unavailable, copy `${PLUGIN_ROOT}/templates/interface/STATE.md.base` to `.planning/interface/STATE.md` (create `.planning/interface/` first).

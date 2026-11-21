@@ -14,7 +14,7 @@ version: 0.1.0
 
 # /sb:agent-pi — Pi CLI Subagent Delegation
 
-**Plugin root**: `SB_ROOT` is the Silver Bullet plugin root, the installed plugin unless a fixture overrides it, two directories above this file (`${SB_ROOT}/skills/silver-agent-pi/SKILL.md`). Run Silver Bullet scripts and read its templates through `${SB_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `SB_ROOT` is the Silver Bullet plugin root, the installed plugin unless a fixture overrides it, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-agent-pi/SKILL.md`; use that package directory as `SB_ROOT`). Run Silver Bullet scripts and read its templates through `${SB_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **Pi CLI** executes in the target project working directory via **`pi -p --provider opencode-go --model mimo-v2.5`** (NI) or **`pi`** without `-p` (interactive REPL).
 

@@ -32,9 +32,19 @@ _sb_substance_is_stub() {
   [[ -z "$body" ]]
 }
 
+# Command output: a fenced bash/sh/shell/console/text block with at least one non-blank line in it (an empty
+# fence proves nothing, R9-11), or an unfenced `$ <test command>` transcript line.
 _sb_substance_has_command_output() {
   local file="$1"
-  grep -qE '```(bash|sh|shell|console|text)' "$file" 2>/dev/null && return 0
+  awk '
+    /^[[:space:]]*```/ {
+      if (infence) { infence = 0; next }
+      if ($0 ~ /^[[:space:]]*```(bash|sh|shell|console|text)/) { infence = 1 }
+      next
+    }
+    infence && $0 ~ /[^[:space:]]/ { found = 1 }
+    END { exit !found }
+  ' "$file" 2>/dev/null && return 0
   grep -qiE '\$ (bash|npm|pytest|cargo|go test|make test)' "$file" 2>/dev/null && return 0
   return 1
 }
@@ -49,6 +59,9 @@ sb_artifact_substance_gate_enforce() {
   local issues="" vfile rfile
 
   # Only validate REVIEW when review skill was recorded this session
+  # A recorded skill whose artifact does not exist at all is the lifecycle gate's finding (ARTIFACT BLOCKED in
+  # completion-audit/deploy-tier.sh, which also names the phase files it looked for): this gate judges the
+  # substance of the artifact that is there.
   local check_review=false check_verify=false
   if [[ -n "$state_contents" ]]; then
     grep -Fqx 'silver-review' <<<"$state_contents" 2>/dev/null && check_review=true

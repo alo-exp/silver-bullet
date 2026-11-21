@@ -9,7 +9,7 @@ version: 0.1.0
 
 # /sb:ingest — External Artifact Ingestion Workflow
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-ingest/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-ingest/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 SB orchestrator for external artifact ingestion. Pulls JIRA tickets, Figma designs, Google Docs, and Confluence pages into canonical `.planning/SPEC.md` + `.planning/DESIGN.md` format. Also handles cross-repo spec fetching for multi-repo workflows.
 

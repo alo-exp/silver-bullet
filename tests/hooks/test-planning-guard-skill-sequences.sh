@@ -63,7 +63,7 @@ fi
 echo "--- sb:ship section ---"
 assert_denied "guard baseline" "$ACTIVE" ".planning/STATE.md"
 assert_allowed "sb:ship" "$ACTIVE" ".planning/phases/01-x/SHIP.md"
-if skill_has silver-ship '.planning/phases/<phase>/SHIP.md' && ! grep -q 'ship section in `.planning/STATE.md`' "$REPO_ROOT/skills/silver-ship/SKILL.md"; then
+if skill_has silver-ship 'Record the ship result' && ! skill_has silver-ship 'Update planning state' && skill_has silver-ship '.planning/phases/<phase>/SHIP.md' && ! grep -q 'ship section in `.planning/STATE.md`' "$REPO_ROOT/skills/silver-ship/SKILL.md"; then
   ok "ship skill writes its section to the phase SHIP.md, not STATE.md"
 else
   bad "ship skill still writes STATE.md"
@@ -84,13 +84,19 @@ else
   bad "init ordering or denial handling text is missing"
 fi
 
-echo "--- sb:spec REQUIREMENTS.md ---"
-assert_denied "guard (no owning-skill allowance)" "$ACTIVE" ".planning/REQUIREMENTS.md"
-assert_allowed "sb:spec draft fallback" "$ACTIVE" ".planning/REQUIREMENTS.draft.md"
-if skill_has silver-spec '.planning/REQUIREMENTS.draft.md' && skill_has silver-spec 'do not retry it and do not work around the guard'; then
-  ok "spec skill falls back to a draft file and asks the user instead of looping"
+echo "--- sb:spec REQUIREMENTS.md (owner allowance) ---"
+STATE_FILE="${SB_RUNTIME_STATE_DIR}/state"
+mkdir -p "$(dirname "$STATE_FILE")"
+own() { ( export SB_RUNTIME_STATE_DIR; source "$REPO_ROOT/hooks/lib/state-seal.sh"; _sb_state_seal_ensure_key "$STATE_FILE"; sb_state_last_write "$STATE_FILE" "$1" ); }
+own silver-plan; own silver-spec
+assert_allowed "sb:spec is the skill invoked last" "$ACTIVE" ".planning/REQUIREMENTS.md"
+own silver-plan
+assert_denied "another skill was invoked after sb:spec" "$ACTIVE" ".planning/REQUIREMENTS.md"
+rm -f "$STATE_FILE" "$STATE_FILE.last" "$STATE_FILE.lasthwm"
+if skill_has silver-spec 'skill invoked last' && ! skill_has silver-spec 'REQUIREMENTS.draft.md'; then
+  ok "spec skill writes the real file and says what to do when another skill was recorded"
 else
-  bad "spec skill lacks the denied-write fallback"
+  bad "spec skill text does not match the owner allowance"
 fi
 
 echo

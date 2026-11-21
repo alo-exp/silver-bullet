@@ -9,7 +9,7 @@ version: 0.2.0
 
 # /sb:spec -- Spec Compiler
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-spec/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-spec/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 SB orchestrator for compiling canonical `.planning/SPEC.md` and `.planning/REQUIREMENTS.md` from the newest `*-CLARIFY-*.md` brief and any ingest SPEC draft.
 
@@ -256,7 +256,7 @@ Derive from **SPEC.md acceptance criteria**, not from the clarify brief.
 4. Mirror the Out of Scope section from SPEC.md.
 5. Mirror the Open Questions section from SPEC.md.
 6. Write to `.planning/REQUIREMENTS.md` using the active runtime file-writing mechanism.
-7. planning-file-guard protects `.planning/REQUIREMENTS.md` and has no owning-skill allowance. If the write is denied, do not retry it and do not work around the guard with a shell redirect or another tool. Save the same content to `.planning/REQUIREMENTS.draft.md` (not guarded), tell the user the guard blocked the final file and that only they can allow it, and run Step 8a on the draft path until they do.
+7. planning-file-guard protects `.planning/REQUIREMENTS.md` but lets its owner, `sb:spec` (or `sb:ingest`), write it with a file tool while that skill is the **skill invoked last** in this session (every invocation counts, including a re-run). Write it right here, with no other skill invoked since `sb:spec`. If the write is denied, another skill ran after `sb:spec`: do not retry it and do not work around the guard with a shell redirect; re-invoke `sb:spec` (that makes it the skill invoked last again) and write the file, or tell the user.
 
 ### Step 8a: Review REQUIREMENTS.md
 

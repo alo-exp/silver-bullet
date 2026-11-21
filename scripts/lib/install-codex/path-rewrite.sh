@@ -9,7 +9,7 @@ rewrite_codex_bundle_host_paths() {
 
   [[ -d "$package_root" ]] || return 0
 
-  python3 - "$marketplace_root" "$package_root" "${CODEX_HOME_ROOT}/.codex/plugins/cache" <<'PY'
+  python3 - "$marketplace_root" "$package_root" "${REPO_ROOT:-}" "${CODEX_HOME_ROOT}/.codex/plugins/cache" <<'PY'
 import json
 import os
 import pathlib
@@ -18,11 +18,16 @@ import sys
 
 marketplace_root = pathlib.Path(sys.argv[1])
 package_root = pathlib.Path(sys.argv[2])
-cache_roots = [pathlib.Path(arg) for arg in sys.argv[3:] if arg]
+repo_root = sys.argv[3]
+cache_roots = [pathlib.Path(arg) for arg in sys.argv[4:] if arg]
+
+# When the marketplace is the developer's own checkout, its mirrors are the
+# source of truth: rewrite only the cache copies, never the working tree (R7-09).
+in_checkout = bool(repo_root) and os.path.realpath(marketplace_root) == os.path.realpath(repo_root)
 
 canonical_hooks_path = marketplace_root / "hooks" / "hooks.json"
 
-install_targets = [package_root]
+install_targets = [] if in_checkout else [package_root]
 for cache_root in cache_roots:
     package_cache_root = cache_root / "alo-labs-codex" / "silver-bullet"
     if not package_cache_root.exists():
@@ -32,7 +37,7 @@ for cache_root in cache_roots:
             continue
         install_targets.append(version_dir)
 
-path_rewrite_roots = [package_root]
+path_rewrite_roots = [] if in_checkout else [package_root]
 for cache_root in cache_roots:
     package_cache_root = cache_root / "alo-labs-codex" / "silver-bullet"
     if not package_cache_root.exists():
@@ -44,7 +49,7 @@ for cache_root in cache_roots:
 
 for optional_sub in ("host-bundles/codex", "agents/codex"):
     optional_root = marketplace_root / optional_sub
-    if optional_root.is_dir():
+    if optional_root.is_dir() and not in_checkout:
         path_rewrite_roots.append(optional_root)
 
 skip_path_parts = {
@@ -178,7 +183,16 @@ def rewrite_hook_manifest(file_path, source_text=None):
                     continue
                 if adapter_path in command:
                     continue
-                hook["command"] = f'"{adapter_path}" "{event_name}" {command}'
+                # Pass a budget derived from the hook's own hooks.json timeout (R7-01).
+                budget = hook.get("timeout")
+                timeout_arg = ""
+                if isinstance(budget, (int, float)) and not isinstance(budget, bool) and budget > 0:
+                    # Codex enforces the manifest timeout on the adapter process
+                    # itself, so the adapter's budget sits below it: it must be able
+                    # to emit its fail-closed deny/block before Codex's timer fires.
+                    whole = int(budget)
+                    timeout_arg = f" --timeout {max(1, whole - max(2, whole // 10))}"
+                hook["command"] = f'"{adapter_path}" "{event_name}"{timeout_arg} {command}'
                 changed = True
 
     if normalized_hooks != updated.get("hooks", {}):

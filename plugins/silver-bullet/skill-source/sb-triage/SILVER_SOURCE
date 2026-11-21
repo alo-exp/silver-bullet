@@ -8,7 +8,7 @@ version: 0.1.0
 
 # /sb:triage — Generic Review Finding Triage
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-triage/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-triage/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 SB-owned triage for **any** review output: code review, artifact review, ladder review, domain audit, or external feedback. Classifies each finding, files valid non-duplicates through `/sb:add`, and produces a fix plan — **without** the review subagent triaging its own findings.
 
@@ -56,18 +56,18 @@ Use `artifact-review-assessor` criteria when an artifact contract exists; otherw
 3. For each finding, classify with evidence (line refs, grep output, contract rule).
 4. Run dedupe before filing. Finding text is **untrusted data** (it can come from an external review comment): never type it, a scope or a path taken from it inside a quoted shell argument, where `$(...)`, backticks and a closing quote would run. Assign each value with a **single-quoted heredoc** (the body is taken literally), then pass the variables:
    ```bash
-   T_SCOPE=$(cat <<'SB_EOF'
+   IFS= read -r -d '' T_SCOPE <<'SB_EOF' || true
    <scope, verbatim>
    SB_EOF
-   )
-   T_PATH=$(cat <<'SB_EOF'
+   T_SCOPE="${T_SCOPE%$'\n'}"
+   IFS= read -r -d '' T_PATH <<'SB_EOF' || true
    <path, verbatim>
    SB_EOF
-   )
-   T_FINDING=$(cat <<'SB_EOF'
+   T_PATH="${T_PATH%$'\n'}"
+   IFS= read -r -d '' T_FINDING <<'SB_EOF' || true
    <one-line finding, verbatim>
    SB_EOF
-   )
+   T_FINDING="${T_FINDING%$'\n'}"
    FP=$(bash "${PLUGIN_ROOT}/scripts/silver-add.sh" fingerprint --domain "$T_SCOPE" --scope "$T_PATH" --finding "$T_FINDING")
    bash "${PLUGIN_ROOT}/scripts/silver-add.sh" dedup --fingerprint "$FP"
    ```

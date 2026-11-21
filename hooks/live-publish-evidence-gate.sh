@@ -2,13 +2,12 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# Stop + PreToolUse (git push main) — live publish evidence before LIVE claims / site push.
+# Stop — live publish evidence for the current HEAD after a site push or a LIVE claim.
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
 [[ -f "$_lib_dir/runtime-paths.sh" ]] && source "$_lib_dir/runtime-paths.sh"
 [[ -f "$_lib_dir/site-session.sh" ]] && source "$_lib_dir/site-session.sh"
-[[ -f "$_lib_dir/tool-input.sh" ]] && source "$_lib_dir/tool-input.sh"
 [[ -f "$_lib_dir/trivial-bypass.sh" ]] && source "$_lib_dir/trivial-bypass.sh"
 [[ -f "$_lib_dir/sb-project-gate.sh" ]] && source "$_lib_dir/sb-project-gate.sh"
 
@@ -24,64 +23,36 @@ search_dir="${config_file:+${config_file%/*}}"
 search_dir="${search_dir:-$PWD}"
 [[ -n "$config_file" ]] || exit 0
 if declare -f sb_project_gate_or_exit >/dev/null 2>&1; then sb_project_gate_or_exit 2>/dev/null; fi
+sb_site_profile_load || exit 0
+# Nothing to verify without a live URL in the profile.
+[[ -n "$SB_SITE_LIVE_URL" ]] || exit 0
 
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
 trivial_file="${SB_STATE_DIR}/trivial"
-evidence_file="$(sb_site_session_live_evidence_file)"
 
-emit_block() {
-  local reason="$1"
-  local json_reason
-  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
-  if [[ "$hook_event" == "PreToolUse" ]]; then
-    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
-    [[ "${SB_KAY_HOOK_BRIDGE_INVOKED:-}" == "1" ]] && { printf '%s\n' "$reason" >&2; exit 2; }
-  else
-    printf '{"decision":"block","reason":%s}' "$json_reason"
-  fi
-  exit 0
-}
-
-needs_evidence=false
-
-if [[ "$hook_event" == "PreToolUse" ]]; then
-  tool_name="$(sb_tool_name "$input" 2>/dev/null || true)"
-  case "$tool_name" in
-    Bash|Shell|shell|exec_command) ;;
-    *) exit 0 ;;
-  esac
-  cmd="$(sb_tool_command_string "$input" 2>/dev/null || true)"
-  if sb_site_session_push_targets_main "$cmd" && sb_site_session_gates_apply; then
-    needs_evidence=true
-  fi
-elif [[ "$hook_event" == "Stop" ]]; then
-  # Stop is always the parent's event (workers end with SubagentStop): no worker skip (R9-05).
-  if sb_site_session_gates_apply; then
-    if [[ -f "${SB_STATE_DIR}/site-session.json" ]]; then
-      push_intent="$(jq -r '.push_intent // false' "${SB_STATE_DIR}/site-session.json" 2>/dev/null || echo false)"
-      live_pending="$(jq -r '.live_claim_pending // false' "${SB_STATE_DIR}/site-session.json" 2>/dev/null || echo false)"
-      [[ "$push_intent" == "true" || "$live_pending" == "true" ]] && needs_evidence=true
-    fi
-  fi
-else
-  exit 0
-fi
-
-[[ "$needs_evidence" == true ]] || exit 0
+# Stop only. Live evidence is about the deployed result, so it cannot exist before the push that deploys it: a
+# push is recorded (record-site-session.sh, after it ran) and the evidence is demanded at Stop (R9-03, R9-06).
+# Stop is always the parent's event (workers end with SubagentStop): no worker skip (R9-05).
+[[ "$hook_event" == "Stop" ]] || exit 0
+sb_site_session_gates_apply || exit 0
+jq -e '.push_intent == true or .live_claim_pending == true' "$(sb_site_session_file)" >/dev/null 2>&1 || exit 0
 if declare -f sb_trivial_bypass >/dev/null 2>&1; then
   sb_trivial_bypass "$trivial_file"
 fi
 
 if sb_live_publish_evidence_valid; then
+  sb_site_stop_loop_reset live-publish-evidence-gate
   exit 0
 fi
 
-reason="Live publish evidence required before push/Stop with site changes.
+if sb_site_stop_loop_release live-publish-evidence-gate "$input" "$(jq -r '.edit_seq // 0' "$(sb_site_session_file)")|$(git -C "$SB_SITE_ROOT" rev-parse HEAD 2>/dev/null)"; then exit 0; fi
+reason="Live publish evidence required before Stop: this site session pushed or claimed a publish.
 
-Write ${evidence_file} with:
-  commit_sha, urls[], markers_matched[], status (LIVE|NOT_LIVE), verified_at
+After the push has deployed, verify the live page with the plugin's verifier (it fetches ${SB_SITE_LIVE_URL}, matches your markers and records the result for the current HEAD itself; the state directory is protected, so do not write the evidence file by hand):
+  bash ${_lib_dir%/hooks/lib}/scripts/site-live-evidence.sh --marker '<text that only the new page contains>'
 
-Verify deployed content at https://sb.alolabs.dev/ (fetch + marker match) before claiming LIVE.
-See silver-bullet.md §8.2 and AGENTS.md publish policy."
-emit_block "$reason"
+Evidence is valid for this commit for $((SB_SITE_LIVE_MAX_AGE / 3600)) hour(s). See silver-bullet.md §8.2."
+json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+printf '{"decision":"block","reason":%s}' "$json_reason"
+exit 0

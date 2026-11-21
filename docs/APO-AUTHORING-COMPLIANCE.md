@@ -135,7 +135,7 @@ Commit both `docs/apo-catalog.json` and regenerated files under `docs/composable
 
 **Symptom:** `test-worker-template-parity.sh` fails.
 
-**Fix:** Edit source under `.silver-bullet/orchestrator-workers/`, then sync plugin mirror: `bash scripts/sync-templates.sh`.
+**Fix:** Edit source under `templates/orchestrator-workers/`, then sync plugin mirror: `bash scripts/sync-templates.sh`.
 
 ## Release gate
 

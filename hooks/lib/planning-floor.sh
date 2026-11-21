@@ -36,6 +36,7 @@
 #   sb_pf_mcp_write_tool NAME            an MCP tool name that writes files
 #   sb_pf_contract_unlocked              a skill that legitimately writes the contract files is recorded
 #   sb_pf_state_has_skill SKILL...       one of the skills is recorded in this session's state
+#   sb_pf_owner_may_write REL VIA TARGET TOOLOK [AGENT]   the owning skill was invoked last and may write REL (REQUIREMENTS.md)
 #   sb_pf_workflow_id WF_DIR [COMMAND]   the active composed workflow id for this call
 #   sb_pf_config_files ROOT              the enforcement contract files of a project, one per line
 #   sb_pf_opaque_targets [all]           canonical path-like words of the command when it holds an
@@ -492,6 +493,35 @@ sb_pf_state_has_skill() {
     sb_required_skill_is_recorded "$contents" "$skill" && return 0
   done
   return 1
+}
+
+# The skill invoked last in this session: the sealed record record-skill.sh keeps on every invocation
+# (hooks/lib/state-seal.sh). Empty when it is absent, unverifiable or from another branch.
+sb_pf_state_latest_skill() { # [AGENT_ID of the write payload; empty: the main session]
+  local state_file
+  state_file="${SILVER_BULLET_STATE_FILE:-${SB_RUNTIME_STATE_DIR}/state}"
+  sb_runtime_path_is_state_scoped "$state_file" || state_file="${SB_RUNTIME_STATE_DIR}/state"
+  sb_state_last_read "$state_file" "${1:-}"
+}
+
+# Owner allowance (narrow): the skill that compiles a planning file may write exactly that file, with a
+# file tool, while it is the skill invoked LAST in this session (sealed by record-skill.sh). sb:spec and
+# sb:ingest own .planning/REQUIREMENTS.md. Any other file, skill, operation (shell write, copy, move,
+# delete), tool (MCP tools, an apply_patch that deletes or moves a file), hard-linked target or an
+# earlier-invoked skill gets no allowance. No environment or config switch exists.
+# Usage: sb_pf_owner_may_write <path relative to .planning> <via> <canonical target> <tool ok: 1|0> [agent id]
+# The record consulted is the WRITER's own: a payload with an agent_id reads that agent's record (none: deny), one
+# without reads the main session's.
+sb_pf_owner_may_write() {
+  local rel="$1" via="$2" target="$3" tool_ok="$4" agent="${5:-}" latest
+  [[ "$via" == edit && "$tool_ok" == 1 ]] || return 1
+  case "$(printf '%s' "$rel" | tr '[:upper:]' '[:lower:]')" in
+    requirements.md) ;;
+    *) return 1 ;;
+  esac
+  if [[ -e "$target" ]] && { [[ ! -f "$target" || -L "$target" ]] || [[ "$(sb_pf_nlink "$target")" != 1 ]]; }; then return 1; fi
+  latest="$(sb_pf_state_latest_skill "$agent")"
+  [[ "$latest" == silver-spec || "$latest" == silver-ingest ]]
 }
 
 # The active composed workflow: SB_WORKFLOW_ID (tests), the id persisted in

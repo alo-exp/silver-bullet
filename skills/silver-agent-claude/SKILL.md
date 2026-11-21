@@ -13,7 +13,7 @@ version: 0.1.0
 
 # /sb:agent-claude — Claude TUI Subagent Delegation
 
-**Plugin root**: `SB_ROOT` is the Silver Bullet plugin root, the installed plugin unless a fixture overrides it, two directories above this file (`${SB_ROOT}/skills/silver-agent-claude/SKILL.md`). Run Silver Bullet scripts and read its templates through `${SB_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `SB_ROOT` is the Silver Bullet plugin root, the installed plugin unless a fixture overrides it, the directory above `skills/` (`${SB_ROOT}/skills/silver-agent-claude/SKILL.md`). Run Silver Bullet scripts and read its templates through `${SB_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **Claude TUI** executes in the target project working directory.
 

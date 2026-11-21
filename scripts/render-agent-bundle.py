@@ -274,10 +274,57 @@ def sanitize_codex_text(text: str) -> str:
     return updated
 
 
+# Canonical skills say where the plugin root is relative to the SOURCE layout (the directory above skills/). An installed skill sits elsewhere, so each host render rewrites that definition, and the
+# ${PLUGIN_ROOT}/skills/... references to sibling skills, to the host's real layout:
+#   claude: <plugin root>/agents/claude/sb:<route>/SKILL.md (the directory above agents/claude/); siblings in agents/claude
+#   codex:  the installed package $HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current; the skill
+#           sits at $HOME/.codex/skills/sb-<route>/SKILL.md and the package keeps sibling sources in skill-source/
+PLUGIN_ROOT_DEFINITION_RE = re.compile(
+    r"the directory above `skills/` \(`\$\{(PLUGIN_ROOT|SB_ROOT)\}/skills/([A-Za-z0-9_-]+)/SKILL\.md`\)"
+)
+SKILLS_DIR_REF_RE = re.compile(r"\$\{(PLUGIN_ROOT|SB_ROOT)\}/skills(?=[/\"'`)\s]|$)(/silver(?:-[A-Za-z0-9_-]+)?)?")
+CODEX_PACKAGE_ROOT = "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
+
+
+def _route_dirname(dirname: str, *, colon: bool) -> str:
+    if dirname == "silver":
+        return "sb"
+    if dirname.startswith("silver-"):
+        return ("sb:" if colon else "sb-") + dirname.removeprefix("silver-")
+    return dirname
+
+
+def rewrite_plugin_root_paths(text: str, agent: str) -> str:
+    if "${PLUGIN_ROOT}/skills" not in text and "${SB_ROOT}/skills" not in text:
+        return text
+
+    def definition(match: re.Match[str]) -> str:
+        var, skill = match.group(1), match.group(2)
+        if agent == "claude":
+            where = _route_dirname(skill, colon=True)
+            return f"the directory above `agents/claude/` (`${{{var}}}/agents/claude/{where}/SKILL.md`)"
+        where = _route_dirname(skill, colon=False)
+        return (
+            f"the installed Silver Bullet package `{CODEX_PACKAGE_ROOT}` (this skill is installed at "
+            f"`$HOME/.codex/skills/{where}/SKILL.md`; use that package directory as `{var}`)"
+        )
+
+    def skills_dir(match: re.Match[str]) -> str:
+        var, sub = match.group(1), match.group(2)
+        base = "agents/claude" if agent == "claude" else "skill-source"
+        if sub:
+            return f"${{{var}}}/{base}/{_route_dirname(sub[1:], colon=agent == 'claude')}"
+        return f"${{{var}}}/{base}"
+
+    updated = PLUGIN_ROOT_DEFINITION_RE.sub(definition, text)
+    return SKILLS_DIR_REF_RE.sub(skills_dir, updated)
+
+
 def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = False) -> str:
     updated = text
     if agent in {"claude", "codex"}:
         updated = rewrite_names(updated)
+        updated = rewrite_plugin_root_paths(updated, agent)
     if agent == "claude":
         updated = resolve_claude_host_agnostic_terms(updated)
     if agent == "codex":
