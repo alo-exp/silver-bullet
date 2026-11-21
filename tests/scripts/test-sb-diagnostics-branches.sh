@@ -332,4 +332,9 @@ tl_run env PATH="$NJ" SILVER_BULLET_RUNTIME=claude bash "$D"
 assert_contains "jq missing failure" "$TL_OUT" "FAIL: jq — missing — SB hooks fail-open without jq"
 assert_contains "text summary without jq" "$TL_OUT" "Results: "
 
+# A non-existent RELATIVE project path used to loop forever (dirname walk ended at ".").
+tl_run env SILVER_BULLET_RUNTIME=claude timeout 20 bash "$D" no/such/relative/project
+assert_eq "relative nonexistent project path terminates (not a timeout)" "ok" "$([[ "$TL_STATUS" == 124 ]] && echo timeout || echo ok)"
+assert_contains "relative nonexistent project path still reports" "$TL_OUT" "Results: "
+
 tl_results
