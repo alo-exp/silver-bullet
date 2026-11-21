@@ -17,7 +17,7 @@ ensure_dir_on_path(DRM_SCRIPTS)
 
 from consolidate import consolidate, finalize  # noqa: E402
 from json_hash import sha256_bytes, sha256_json  # noqa: E402
-from live_dispatch import dispatch_phase_parallel, stub_mode  # noqa: E402
+from live_dispatch import backend_availability, dispatch_phase_parallel, stub_mode  # noqa: E402
 from materialize_solution_artifacts import materialize_solution_artifacts  # noqa: E402
 from synthesize_landscape import synthesize_landscape  # noqa: E402
 from category_pack import (  # noqa: E402
@@ -400,12 +400,26 @@ def run_dr_live(
     if max_phases is not None and max_phases < 1:
         raise ValueError("max_phases must be at least 1 (or None for every phase)")
 
+    resolved = resolve_pool(selection)
+    # Consolidation needs an envelope from every agent, so a backend CLI that is not installed stops the
+    # run here, before anything is written or any cost is spent: a per-backend error, never a host error.
+    missing = {name: info["hint"] for name, info in backend_availability(resolved).items() if not info["available"]}
+    if missing:
+        return {
+            "ok": False,
+            "error_code": "BACKEND_CLI_MISSING",
+            "message": (
+                f"backend CLI not found for: {', '.join(sorted(missing))}. Install it (see missing_backends), or run "
+                "on the other backends with --ocg-pool none, --cursor-pool none, --exclude <id> or --include-only <id>"
+            ),
+            "missing_backends": missing,
+        }
+
     prepare_run_inputs(output_root, query, research_type)
 
     run_id = new_run_id()
     started_at = utc_now_iso()
     brief = build_phase_query(output_root, query, research_type)
-    resolved = resolve_pool(selection)
     phases_to_run = list(parallel_phases[:max_phases] if max_phases else parallel_phases)
 
     all_envelopes: list[dict[str, Any]] = []

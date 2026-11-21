@@ -408,6 +408,7 @@ class LiveRunnerTests(_Tmp):
     def _run(self, dispatch, **kw):
         sel = PoolSelection(ocg_pool="lite", cursor_pool="default", include_only=list(self.TWO))
         with mock.patch.object(drl, "dispatch_phase_parallel", dispatch), \
+                mock.patch.object(drl, "backend_availability", lambda resolved: {}), \
                 mock.patch.object(drl, "materialize_solution_artifacts", return_value={}), \
                 mock.patch.object(drl, "synthesize_landscape", return_value={}), \
                 mock.patch.dict(os.environ, {"SB_MULTI_AI_STUB": ""}):

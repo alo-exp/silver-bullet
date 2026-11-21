@@ -180,6 +180,16 @@ main() {
     skill_adapter="${SB_SA_SKILL_ADAPTER:-false}"
     shell_command="${SB_TI_COMMAND:-}"
     invoked_script="${SB_SA_INVOKED_SCRIPT:-}"
+    # The plugin's own multi-AI CLIs (an exact `python3 <plugin path> ...` with a plain literal output root):
+    # neither an opaque writer nor a shell script to analyse. Their output root is judged below as a recursive
+    # write target, like any other tree write; the words of the command (a prompt naming src/) are not scanned.
+    multi_ai_exempt=false
+    payload_cwd="$(printf '%s' "$input" | jq -r '.cwd // empty | strings' 2>/dev/null)"
+    if [[ "$parse_failed_shell" != true ]] && sb_pf_multi_ai_cli_exempt "${payload_cwd:-$PWD}"; then
+      multi_ai_exempt=true
+      opaque_records=""
+      invoked_script=""
+    fi
     # The body of a script the command runs is analysed too: its writes are this command's writes.
     if [[ -n "$invoked_script" && -f "$invoked_script" ]]; then
       script_body="$(cat "$invoked_script" 2>/dev/null)"
@@ -196,6 +206,7 @@ main() {
     skill_adapter=false
     shell_command=""
   fi
+  [[ "${multi_ai_exempt:-false}" != true ]] || records="$records$nl$(sb_pf_multi_ai_root_records)"
   records="$(printf '%s\n' "$records" | awk 'NF && !seen[$0]++')"
   # --- Third-party plugin boundary (§8) — HARD STOP on upstream plugin edits ---------------
   plugin_cache="${SB_RUNTIME_PLUGIN_CACHE_ROOT}"

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Cursor host adapter for multi-ai-task-v2 live dispatch."""
+"""Cursor backend adapter for multi-ai-task-v2 live dispatch.
+
+Cursor is a backend here: the cursor-agent CLI runs as an external process under Claude Code or
+Codex. The ``cursor-host-adapter-v1`` schema and error-code names are kept as stable identifiers.
+"""
 
 from __future__ import annotations
 
@@ -53,7 +57,7 @@ def launch(request: LaunchRequest) -> dict[str, Any]:
             "live_status": "not-live",
             "ok": False,
             "error_code": "CURSOR_HOST_ADAPTER_NOT_LIVE",
-            "message": "Cursor host adapter stubbed (SB_MULTI_AI_STUB=1)",
+            "message": "Cursor backend adapter stubbed (SB_MULTI_AI_STUB=1)",
             "launch": _launch_echo(request),
             "handles": {},
         }
@@ -176,7 +180,7 @@ def cas_select_authoritative_attempt(current_generation: int, expected_generatio
 def main(argv: list[str] | None = None) -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(description="Cursor host adapter (live on cursor host)")
+    parser = argparse.ArgumentParser(description="Cursor backend adapter (runs the cursor-agent CLI; Cursor is not a host)")
     sub = parser.add_subparsers(dest="command", required=True)
 
     launch_p = sub.add_parser("launch")

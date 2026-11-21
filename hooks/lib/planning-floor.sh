@@ -126,7 +126,7 @@ sb_pf_logical_var() {
 
 # Tree-scope writes (the whole work tree at a path) that G2 gates: extractors. Patch appliers are
 # judged by sb_pf_patch_verdict and recorded by the paths of their diff.
-SB_PF_TREE_VIAS='tar -x|unzip|patch|git apply|git am'
+SB_PF_TREE_VIAS='tar -x|unzip|patch|git apply|git am|multi-ai'
 # Extractors write whatever their archive holds, so they can also cover the contract files.
 sb_pf_extract_via() {
   case "$1" in "tar -x" | unzip) return 0 ;; esac
@@ -306,6 +306,77 @@ sb_pf_opaque_targets() {
       sb_pf_canon "$tok"
       printf '\n'
     done
+}
+
+# sb_pf_multi_ai_cli_exempt [CWD]: status 0 when the loaded shell command is exactly one plain
+# `python3 /abs/path/to/<cli> ...` of the plugin's own multi-AI CLIs (silver-multi-ai-task/scripts/multi_ai_cli.py,
+# silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py), and nothing else:
+#   - the script is an absolute path that resolves (physical directory + file name, not a symlink) to the plugin's
+#     own skills/ (or the Codex package's skill-source/) copy; the launcher is a bare python name with no option;
+#   - no redirection or other write, no env/NAME=value/rtk prefix, no chain, pipe or substitution;
+#   - the output root is a plain literal: exactly one `--output-root V` / `--output-root=V` (no abbreviation such as
+#     --output-r, no repeat), without $ ` * ? [ { ~ \ quotes ! or `..`; a missing root is accepted only where the CLI
+#     writes nothing (a dry run, the task CLI) or at its default (`research/` below CWD, deep research).
+# CWD is the payload's working directory (relative roots resolve against it). On success SB_PF_EXEMPT_ROOT holds the
+# canonical output root the CLI will write below ("" when it writes nothing); the caller judges it as a recursive
+# write target (sb_pf_multi_ai_root_records), exactly like any other tree write. The words of the command are NOT
+# scanned for paths: a task prompt may name src/app.py. Everything else about the call is judged as before.
+SB_PF_EXEMPT_SCRIPT="" SB_PF_EXEMPT_ROOT="" SB_PF_EXEMPT_LROOT=""
+sb_pf_multi_ai_cli_exempt() {
+  local cwd="${1:-$PWD}" plugin_root script dir kind mode root parsed
+  SB_PF_EXEMPT_SCRIPT="" SB_PF_EXEMPT_ROOT="" SB_PF_EXEMPT_LROOT=""
+  [[ "${SB_TI_STATUS:-}" == "ok" && -z "${SB_SA_WRITE_PATHS:-}" && -z "${SB_SA_RTK_UNWRAPPED:-}" ]] || return 1
+  [[ -z "${SB_SA_UNSEEN_REASONS:-}" && "$cwd" == /* && -d "$cwd" ]] || return 1
+  parsed="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '
+    (.commands // []) as $c
+    | select(($c | length) == 1)
+    | ($c[0].argv // []) as $a
+    | select(($a | length) >= 2 and ($a[0] | test("^python[0-9.]*$")) and ($a[1] | startswith("-") | not) and ($a[1] | startswith("/")))
+    | $a[2:] as $r
+    | ([$r | to_entries[] | select(.value == "--output-root" or (.value | startswith("--output-root=")))]) as $o
+    | ([$r[] | select(startswith("--ou") and ((. == "--output-root" or startswith("--output-root=")) | not))]) as $abbr
+    | (if any($a[]; test("[\n\r\t]")) or ($abbr | length) > 0 or ($o | length) > 1 then "BAD"
+       else (if any($r[]; . == "--dry-run") then "DRY" else "LIVE" end) as $m
+         | if ($o | length) == 0 then "\($a[1])\t\($m)\t"
+           else ($o[0]) as $e
+             | (if $e.value == "--output-root" then ($r[$e.key + 1] // "") else ($e.value | sub("^--output-root="; "")) end) as $v
+             | if $v == "" or ($v | startswith("-")) then "BAD" else "\($a[1])\t\($m)\t\($v)" end
+         end end)' 2>/dev/null)"
+  [[ -n "$parsed" && "$parsed" != BAD ]] || return 1
+  IFS=$'\t' read -r script mode root <<<"$parsed"
+  [[ ! -L "$script" && -f "$script" ]] || return 1
+  plugin_root="$(sb_pf_canon "${_sb_pf_dir}/../..")"
+  case "$(sb_pf_canon "$script")" in
+    "$plugin_root/skills/silver-multi-ai-task/scripts/multi_ai_cli.py" | "$plugin_root/skill-source/sb-multi-ai-task/scripts/multi_ai_cli.py") kind=task ;;
+    "$plugin_root/skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py" | "$plugin_root/skill-source/sb-deep-research-multi-ai/scripts/dr_multi_ai_cli.py") kind=dr ;;
+    *) return 1 ;;
+  esac
+  if [[ -z "$root" ]]; then
+    # No root: the task CLI writes nothing (a dry run, or a refusal); deep research writes below research/ unless dry.
+    if [[ "$kind" == dr && "$mode" == LIVE ]]; then
+      root="research"
+    fi
+  else
+    case "$root" in
+      *[\$\`\*\?\[\{\}~\\\"\'\!]*) return 1 ;;
+    esac
+    case "/$root/" in */../*) return 1 ;; esac
+  fi
+  SB_PF_EXEMPT_SCRIPT="$script"
+  if [[ -n "$root" ]]; then
+    SB_PF_EXEMPT_ROOT="$(sb_pf_canon "$root" "$cwd")"
+    sb_pf_logical_var "$root" "$cwd"
+    SB_PF_EXEMPT_LROOT="$_SB_PF_LOGICAL"
+  fi
+  return 0
+}
+
+# sb_pf_multi_ai_root_records: the exempt CLI's output root as "multi-ai<TAB>path" tree-write records (resolved and
+# logical spelling, like sb_pf_write_records), for the same judgement every recursive write gets.
+sb_pf_multi_ai_root_records() {
+  [[ -n "$SB_PF_EXEMPT_ROOT" ]] || return 0
+  printf 'multi-ai\t%s\n' "$SB_PF_EXEMPT_ROOT"
+  [[ "$SB_PF_EXEMPT_LROOT" == "$SB_PF_EXEMPT_ROOT" ]] || printf 'multi-ai\t%s\n' "$SB_PF_EXEMPT_LROOT"
 }
 
 # sb_pf_opaque_records [all]: sb_pf_opaque_targets as "opaque<TAB>path" records.

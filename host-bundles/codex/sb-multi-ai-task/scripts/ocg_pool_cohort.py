@@ -25,10 +25,11 @@ from live_dispatch import (  # noqa: E402
     build_worker_prompt,
     extract_json_payload,
     ocg_model_for,
+    resolve_opencode_bin,
     sanitize_phase_context,
 )
 
-OPENCODE_BIN = os.environ.get("SB_OPENCODE_BIN", os.path.expanduser("~/.opencode/bin/opencode"))
+OPENCODE_BIN = resolve_opencode_bin()
 DEFAULT_PER_MODEL_TIMEOUT = int(os.environ.get("SB_OCG_PER_MODEL_TIMEOUT_SEC", "240"))
 
 
