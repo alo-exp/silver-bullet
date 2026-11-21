@@ -84,13 +84,18 @@ else
   bad "init ordering or denial handling text is missing"
 fi
 
-echo "--- sb:spec REQUIREMENTS.md ---"
-assert_denied "guard (no owning-skill allowance)" "$ACTIVE" ".planning/REQUIREMENTS.md"
-assert_allowed "sb:spec draft fallback" "$ACTIVE" ".planning/REQUIREMENTS.draft.md"
-if skill_has silver-spec '.planning/REQUIREMENTS.draft.md' && skill_has silver-spec 'do not retry it and do not work around the guard'; then
-  ok "spec skill falls back to a draft file and asks the user instead of looping"
+echo "--- sb:spec REQUIREMENTS.md (owner allowance) ---"
+STATE_FILE="${SB_RUNTIME_STATE_DIR}/state"
+mkdir -p "$(dirname "$STATE_FILE")"
+printf 'silver-quality-gates\nsilver-plan\nsilver-spec\n' >"$STATE_FILE"
+assert_allowed "sb:spec is the latest recorded skill" "$ACTIVE" ".planning/REQUIREMENTS.md"
+printf 'silver-quality-gates\nsilver-spec\nsilver-plan\n' >"$STATE_FILE"
+assert_denied "another skill was recorded after sb:spec" "$ACTIVE" ".planning/REQUIREMENTS.md"
+rm -f "$STATE_FILE"
+if skill_has silver-spec 'latest skill recorded' && ! skill_has silver-spec 'REQUIREMENTS.draft.md'; then
+  ok "spec skill writes the real file and says what to do when another skill was recorded"
 else
-  bad "spec skill lacks the denied-write fallback"
+  bad "spec skill text does not match the owner allowance"
 fi
 
 echo

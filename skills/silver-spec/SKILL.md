@@ -255,7 +255,7 @@ Derive from **SPEC.md acceptance criteria**, not from the clarify brief.
 4. Mirror the Out of Scope section from SPEC.md.
 5. Mirror the Open Questions section from SPEC.md.
 6. Write to `.planning/REQUIREMENTS.md` using the active runtime file-writing mechanism.
-7. planning-file-guard protects `.planning/REQUIREMENTS.md` and has no owning-skill allowance. If the write is denied, do not retry it and do not work around the guard with a shell redirect or another tool. Save the same content to `.planning/REQUIREMENTS.draft.md` (not guarded), tell the user the guard blocked the final file and that only they can allow it, and run Step 8a on the draft path until they do.
+7. planning-file-guard protects `.planning/REQUIREMENTS.md` but lets its owner, `sb:spec` (or `sb:ingest`), write it with a file tool while that skill is the **latest skill recorded** in this session. Write it right here, with no other skill invoked since `sb:spec`. If the write is denied, another skill was recorded after `sb:spec`: do not retry it and do not work around the guard with a shell redirect; re-invoke `sb:spec` (it becomes the latest recorded skill again) and write the file, or tell the user.
 
 ### Step 8a: Review REQUIREMENTS.md
 
