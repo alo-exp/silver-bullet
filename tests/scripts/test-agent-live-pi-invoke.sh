@@ -215,8 +215,8 @@ reset
 FAKE_RC=1 FAKE_OUT='HTTP 429 rate_limit_error: 5-hour usage limit reached. Resets in 2hr 32min' \
   tl_run timeout 60 env SB_RFL_QUOTA_HOST=claude SB_RFL_RUN_ID=rfl-t SB_RFL_RUNG_ID=rung-1 PI_MODEL=claude/claude-opus-5-high bash "$INVOKE" --work-dir "$W" --prompt p
 assert_eq "a quota failure propagates the delegate status" "1" "$TL_STATUS"
-assert_contains "a 5-hour quota failure is classified and scheduled" "$TL_ERR$TL_OUT" "[agent-pi] quota 5h; retry at"
-assert_file_exists "the retry schedule is written under the run dir" "$TL_TMP/rfl/quota-retry-schedule.json"
+assert_contains "a 5-hour quota failure is classified and reported" "$TL_ERR$TL_OUT" "[agent-pi] quota 5h; window resets in"
+assert_file_absent "nothing is scheduled or persisted for the window" "$TL_TMP/rfl/quota-retry-schedule.json"
 
 # ---------------------------------------------------------------- fault injection
 # the captured output cannot be read back: invoke still passes the delegate status through
