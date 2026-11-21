@@ -157,5 +157,39 @@ class ResolvedLinks(Fire):
         self.assertIn("rename or move it", self.reason(self.fire(self.spawn_payload(issued))))
 
 
+class Corners(ResolvedLinks):
+    def test_other_stat_errors_are_reported_as_unreadable(self):
+        import errno
+        self.assertIn("unreadable", native._stat_reason(OSError(errno.EACCES, "Permission denied")))
+
+    def test_an_agents_folder_that_is_dangling_or_a_file_is_refused(self):
+        self.agents.parent.mkdir(parents=True)
+        self.agents.symlink_to(self.tmp / "nowhere")
+        self.assertIn("dangling", native.shadow_agent_files(self.root)[0])
+        self.agents.unlink()
+        self.agents.write_text("not a folder")
+        self.assertIn("not a folder", native.shadow_agent_files(self.root)[0])
+
+    def test_an_unscannable_folder_or_file_is_reported(self):
+        from unittest import mock
+        self.agents.mkdir(parents=True)
+        (self.agents / "a.md").write_text(HARMLESS)
+        with mock.patch.object(native.os, "scandir", side_effect=PermissionError(13, "denied")):
+            self.assertIn("unreadable", native.shadow_agent_files(self.root)[0])
+        with mock.patch("pathlib.Path.read_bytes", side_effect=PermissionError(13, "denied")):
+            self.assertIn("unreadable", native.shadow_agent_files(self.root)[0])
+
+    def test_the_total_cap_is_reported_once(self):
+        self.agents.mkdir(parents=True)
+        old = native.MAX_AGENT_FILES_TOTAL
+        native.MAX_AGENT_FILES_TOTAL = 1
+        try:
+            for i in range(4):
+                (self.agents / f"a{i}.md").write_text(HARMLESS)
+            self.assertEqual(len([f for f in native.shadow_agent_files(self.root) if "in total" in f]), 1)
+        finally:
+            native.MAX_AGENT_FILES_TOTAL = old
+
+
 if __name__ == "__main__":
     unittest.main()
