@@ -80,23 +80,43 @@ def family_for_logical(logical_id: str, registry: dict[str, Any] | None = None) 
     return mapping[canonical]
 
 
+_CLAUDE_MARKERS = ("CLAUDECODE", "CLAUDE_CODE")
+_CODEX_MARKERS = (
+    "CODEX_SANDBOX",
+    "SB_AGENT_CODEX_DELEGATE",
+    "CODEX_CI",
+    "CODEX_THREAD_ID",
+    "CODEX_INTERNAL_ORIGINATOR_OVERRIDE",
+)
+_CURSOR_MARKERS = ("CURSOR_AGENT", "CURSOR_TRACE_ID")
+_EXPLICIT_HOSTS = {"claude": "claude-code", "claude-code": "claude-code", "codex": "codex"}
+_SUPPORTED_HOSTS_TEXT = "Claude Code or Codex"
+
+
+def _any_set(names: tuple[str, ...]) -> bool:
+    return any(os.environ.get(name) for name in names)
+
+
 def detect_host() -> str:
+    """Name the host this process runs under: ``claude-code``, ``codex``, ``cursor``, ``unknown`` or another name.
+
+    ``SB_HOST`` can only make the gate stricter: an explicit name that is not Claude Code or Codex
+    (``cursor``, or anything unrecognised) is returned as is, whatever else is in the environment,
+    so no override can hide an unsupported host. Real process markers (``CLAUDECODE``, ``CODEX_*``)
+    beat a supported override. ``CURSOR_*`` markers only count when neither is present, because a
+    Claude Code or Codex session started from a Cursor terminal inherits them.
+    """
     explicit = os.environ.get("SB_HOST", "").strip().lower()
-    # Ambient fail-closed hosts win over a more permissive SB_HOST override.
-    if os.environ.get("CLAUDECODE") or os.environ.get("CLAUDE_CODE"):
-        return "claude-code"
-    if os.environ.get("CODEX_SANDBOX") or os.environ.get("SB_AGENT_CODEX_DELEGATE"):
-        return "codex"
-    if explicit in {"claude", "claude-code"}:
-        return "claude-code"
-    if explicit == "codex":
-        return "codex"
-    if explicit == "cursor":
-        return "cursor"
-    if os.environ.get("CURSOR_AGENT") or os.environ.get("CURSOR_TRACE_ID"):
-        return "cursor"
-    if explicit:
+    if explicit and explicit not in _EXPLICIT_HOSTS:
         return explicit
+    if _any_set(_CLAUDE_MARKERS):
+        return "claude-code"
+    if _any_set(_CODEX_MARKERS):
+        return "codex"
+    if explicit:
+        return _EXPLICIT_HOSTS[explicit]
+    if _any_set(_CURSOR_MARKERS):
+        return "cursor"
     return "unknown"
 
 
@@ -109,14 +129,14 @@ def host_gate() -> dict[str, Any]:
             "ok": False,
             "host": host,
             "error_code": UNSUPPORTED_HOST_ERROR,
-            "message": f"Host {host!r} is unsupported for multi-ai-task v1",
+            "message": f"Host {host!r} is unsupported for multi-ai-task: run it from {_SUPPORTED_HOSTS_TEXT}",
         }
     if entry["status"] != "supported":
         return {
             "ok": False,
             "host": host,
-            "error_code": entry.get("error_code", UNSUPPORTED_HOST_ERROR),
-            "message": f"Host {host!r} is packaged-fail-closed for multi-ai-task v1",
+            "error_code": entry.get("error_code") or UNSUPPORTED_HOST_ERROR,
+            "message": entry.get("message") or f"Host {host!r} is not supported for multi-ai-task: run it from {_SUPPORTED_HOSTS_TEXT}",
         }
     return {"ok": True, "host": host}
 

@@ -70,47 +70,80 @@ class HostDetectionTests(HermeticCase):
         with mock.patch.dict(os.environ, env):
             return core.detect_host()
 
-    def test_detect_host_precedence(self) -> None:
+    def test_detect_host_from_ambient_markers(self) -> None:
         self.assertEqual(self.host(), "unknown")
         self.assertEqual(self.host(CLAUDECODE="1"), "claude-code")
         self.assertEqual(self.host(CLAUDE_CODE="1"), "claude-code")
-        # Ambient fail-closed hosts beat a permissive SB_HOST override.
-        self.assertEqual(self.host(CLAUDECODE="1", SB_HOST="cursor"), "claude-code")
-        self.assertEqual(self.host(CODEX_SANDBOX="seatbelt", SB_HOST="cursor"), "codex")
-        self.assertEqual(self.host(SB_AGENT_CODEX_DELEGATE="1"), "codex")
+        for marker in ("CODEX_SANDBOX", "SB_AGENT_CODEX_DELEGATE", "CODEX_CI", "CODEX_THREAD_ID", "CODEX_INTERNAL_ORIGINATOR_OVERRIDE"):
+            self.assertEqual(self.host(**{marker: "1"}), "codex", marker)
+        # Both supported hosts at once: a fixed order, never an error.
+        self.assertEqual(self.host(CLAUDECODE="1", CODEX_SANDBOX="seatbelt"), "claude-code")
+
+    def test_detect_host_explicit_supported_names(self) -> None:
         self.assertEqual(self.host(SB_HOST="Claude"), "claude-code")
         self.assertEqual(self.host(SB_HOST="claude-code"), "claude-code")
         self.assertEqual(self.host(SB_HOST=" CODEX "), "codex")
+        # Real process evidence beats a supported override (both are supported: nothing weaker is selectable).
+        self.assertEqual(self.host(CODEX_SANDBOX="seatbelt", SB_HOST="claude"), "codex")
+        self.assertEqual(self.host(CLAUDECODE="1", SB_HOST="codex"), "claude-code")
+
+    def test_cursor_is_never_a_host(self) -> None:
         self.assertEqual(self.host(SB_HOST="cursor"), "cursor")
         self.assertEqual(self.host(CURSOR_AGENT="1"), "cursor")
         self.assertEqual(self.host(CURSOR_TRACE_ID="t"), "cursor")
+        # Claude Code or Codex started from a Cursor terminal inherits CURSOR_* markers: it is still that host.
+        self.assertEqual(self.host(CLAUDECODE="1", CURSOR_TRACE_ID="t"), "claude-code")
+        self.assertEqual(self.host(CODEX_CI="1", CURSOR_AGENT="1"), "codex")
+
+    def test_explicit_unsupported_override_always_fails_closed(self) -> None:
+        # An override can only make the gate stricter, never hide an unsupported or unknown host.
+        self.assertEqual(self.host(SB_HOST="cursor", CLAUDECODE="1"), "cursor")
+        self.assertEqual(self.host(SB_HOST="Weird", CODEX_SANDBOX="1"), "weird")
         self.assertEqual(self.host(SB_HOST="Weird"), "weird")
         self.assertEqual(self.host(SB_HOST="  "), "unknown")
 
-    def test_host_gate_supported_and_fail_closed(self) -> None:
-        with mock.patch.dict(os.environ, {"SB_HOST": "cursor"}):
-            self.assertEqual(core.host_gate(), {"ok": True, "host": "cursor"})
-        with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}):
-            gate = core.host_gate()
-        self.assertFalse(gate["ok"])
-        self.assertEqual(gate["host"], "claude-code")
-        self.assertEqual(gate["error_code"], core.UNSUPPORTED_HOST_ERROR)
-        self.assertIn("packaged-fail-closed", gate["message"])
+    def test_host_gate_supports_claude_and_codex(self) -> None:
+        for env, host in (({"CLAUDECODE": "1"}, "claude-code"), ({"SB_HOST": "claude"}, "claude-code"),
+                          ({"CODEX_THREAD_ID": "t"}, "codex"), ({"SB_HOST": "codex"}, "codex")):
+            with mock.patch.dict(os.environ, env):
+                self.assertEqual(core.host_gate(), {"ok": True, "host": host}, env)
+
+    def test_host_gate_cursor_says_it_is_no_longer_a_host(self) -> None:
+        for env in ({"SB_HOST": "cursor"}, {"CURSOR_AGENT": "1"}, {"CURSOR_TRACE_ID": "t"}, {"SB_HOST": "cursor", "CLAUDECODE": "1"}):
+            with mock.patch.dict(os.environ, env):
+                gate = core.host_gate()
+            self.assertFalse(gate["ok"], env)
+            self.assertEqual(gate["host"], "cursor")
+            self.assertEqual(gate["error_code"], core.UNSUPPORTED_HOST_ERROR)
+            self.assertIn("Cursor is no longer a supported host", gate["message"])
+            self.assertIn("Claude Code or Codex", gate["message"])
+            self.assertNotIn("packaged-fail-closed", gate["message"])
 
     def test_host_gate_unknown_host_is_unsupported(self) -> None:
         gate = core.host_gate()
         self.assertEqual(gate["host"], "unknown")
         self.assertEqual(gate["error_code"], "SB_MULTI_AI_UNSUPPORTED_HOST")
-        self.assertIn("unsupported for multi-ai-task v1", gate["message"])
+        self.assertIn("unsupported for multi-ai-task", gate["message"])
+        self.assertIn("Claude Code or Codex", gate["message"])
 
-    def test_host_gate_non_supported_entry_without_error_code_uses_default(self) -> None:
+    def test_shipped_matrix_lists_exactly_claude_and_codex(self) -> None:
+        matrix = json.loads(core.HOST_MATRIX_PATH.read_text(encoding="utf-8"))
+        status = {name: entry["status"] for name, entry in matrix["hosts"].items()}
+        self.assertEqual(status, {"claude-code": "supported", "codex": "supported", "cursor": "unsupported"})
+        self.assertEqual(matrix["execution_hosts"], ["claude-code", "codex"])
+        self.assertEqual(sorted(matrix["backends"]), ["claude", "codex", "cursor", "ocg"])
+
+    def test_host_gate_non_supported_entry_without_error_code_or_message_uses_defaults(self) -> None:
         matrix = self.tmp / "matrix.json"
-        matrix.write_text(json.dumps({"hosts": {"cursor": {"status": "beta"}, "codex": {"status": "off", "error_code": "CUSTOM"}}}))
+        matrix.write_text(json.dumps({"hosts": {"claude-code": {"status": "beta"}, "codex": {"status": "off", "error_code": "CUSTOM", "message": "custom words"}}}))
         with mock.patch.object(core, "HOST_MATRIX_PATH", matrix):
-            with mock.patch.dict(os.environ, {"SB_HOST": "cursor"}):
-                self.assertEqual(core.host_gate()["error_code"], core.UNSUPPORTED_HOST_ERROR)
+            with mock.patch.dict(os.environ, {"SB_HOST": "claude"}):
+                gate = core.host_gate()
+                self.assertEqual(gate["error_code"], core.UNSUPPORTED_HOST_ERROR)
+                self.assertIn("not supported for multi-ai-task", gate["message"])
             with mock.patch.dict(os.environ, {"SB_HOST": "codex"}):
-                self.assertEqual(core.host_gate()["error_code"], "CUSTOM")
+                gate = core.host_gate()
+                self.assertEqual((gate["error_code"], gate["message"]), ("CUSTOM", "custom words"))
 
 
 def ids(resolved: list[dict]) -> list[str]:
@@ -247,10 +280,10 @@ class DocumentBuilderTests(HermeticCase):
 
 class DryRunReportTests(HermeticCase):
     def test_ok_report(self) -> None:
-        with mock.patch.dict(os.environ, {"SB_HOST": "cursor"}):
+        with mock.patch.dict(os.environ, {"SB_HOST": "codex"}):
             report = core.dry_run_report(core.PoolSelection(include_only=["composer-2.5"]))
         self.assertTrue(report["ok"])
-        self.assertEqual(report["host"], "cursor")
+        self.assertEqual(report["host"], "codex")
         self.assertFalse(report["host_gate_enforced"])
         self.assertTrue(report["dry_run"])
         self.assertEqual(report["resolved_count"], 1)
