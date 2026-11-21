@@ -94,10 +94,9 @@ tl_run env SILVER_BULLET_RUNTIME=pi PI_CODING_AGENT_DIR="$TL_TMP/real-pi" HOME="
 assert_contains "a pi runtime root is under HOME, not PI_CODING_AGENT_DIR" "$TL_OUT" "ROOT=$fresh_home/.pi/agent"
 
 # the hook-test helper scrubs the same way
-tl_run env SILVER_BULLET_RUNTIME=codex KAY_HOME="$TL_TMP/real-kay" GIT_INDEX_FILE="$TL_TMP/idx" HOME="$fresh_home" \
-  bash -c 'source "$1/tests/hooks/helpers/common.sh"; hook_test_setup scrub; echo "ROOT=$SB_RUNTIME_HOME_ROOT IDX=${GIT_INDEX_FILE:-}"' _ "$TL_REPO_ROOT"
-assert_contains "the hook-test helper keeps a codex runtime root under HOME" "$TL_OUT" "ROOT=$fresh_home/.codex IDX="
+tl_run env SILVER_BULLET_RUNTIME=codex KAY_HOME="$TL_TMP/real-kay" HOME="$fresh_home" \
+  bash -c 'source "$1/tests/hooks/helpers/common.sh"; hook_test_setup scrub; echo "ROOT=$SB_RUNTIME_HOME_ROOT"' _ "$TL_REPO_ROOT"
+assert_contains "the hook-test helper keeps a codex runtime root under HOME" "$TL_OUT" "ROOT=$fresh_home/.codex"
 assert_file_absent "and never touches KAY_HOME" "$TL_TMP/real-kay"
-assert_file_absent "nor the caller's git index" "$TL_TMP/idx"
 
 tl_results

@@ -43,9 +43,9 @@ tl_init() {
     chmod +x "$TL_BIN/$guarded"
   done
   export SILVER_BULLET_RUNTIME="$runtime"
-  # KAY_HOME, PI_CODING_AGENT_DIR, CODEX_HOME, XDG_*, git repository redirects, ...: none may point the
+  # KAY_HOME, PI_CODING_AGENT_DIR, CODEX_HOME, CLAUDE_CONFIG_DIR, ...: none may point the
   # recomputed runtime paths, or a fixture, at the developer's real install
-  sb_test_scrub_host_env
+  sb_test_scrub_runtime_env
   # shellcheck source=../../hooks/lib/runtime-paths.sh
   source "$TL_REPO_ROOT/hooks/lib/runtime-paths.sh"
   export SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME

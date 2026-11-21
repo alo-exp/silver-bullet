@@ -104,9 +104,20 @@ assert_file_absent "the test body never ran" "$TL_TMP/body-ran"
 assert_contains "the error names the escaped root" "$TL_OUT" "escaped-kay/.codex' is outside the sandbox HOME"
 
 # the same scrub applies to tl_init for a test file run directly
-tl_run env KAY_HOME="$real/kay" PI_CODING_AGENT_DIR="$real/pi" SILVER_BULLET_RUNTIME=codex GIT_INDEX_FILE="$TL_TMP/x" \
-  bash -c 'source "$1/tests/lib/testlib.sh"; tl_init; echo "ROOT=$SB_RUNTIME_HOME_ROOT HOME=$HOME IDX=${GIT_INDEX_FILE:-}"' _ "$TL_REPO_ROOT"
-assert_match "tl_init scrubs KAY_HOME so the runtime root is inside the sandbox" 'ROOT=(/[^ ]*)/\.codex HOME=\1 IDX=$' "$TL_OUT"
+tl_run env KAY_HOME="$real/kay" PI_CODING_AGENT_DIR="$real/pi" SILVER_BULLET_RUNTIME=codex \
+  bash -c 'source "$1/tests/lib/testlib.sh"; tl_init; echo "ROOT=$SB_RUNTIME_HOME_ROOT HOME=$HOME"' _ "$TL_REPO_ROOT"
+assert_match "tl_init scrubs KAY_HOME so the runtime root is inside the sandbox" 'ROOT=(/[^ ]*)/\.codex HOME=\1$' "$TL_OUT"
+
+# ... but it never clobbers what a test set deliberately before calling it: the consent store that
+# consent-helpers.sh puts in XDG_CONFIG_HOME, and the git identity
+tl_run env GIT_AUTHOR_NAME=kept bash -c 'source "$1/tests/lib/consent-helpers.sh"; source "$1/tests/lib/testlib.sh"
+  sb_test_consent_grant_all; before="$XDG_CONFIG_HOME"; tl_init
+  echo "XDG=$([[ "$XDG_CONFIG_HOME" == "$before" && -d "$before" ]] && echo kept || echo lost) AUTHOR=${GIT_AUTHOR_NAME:-}"' _ "$TL_REPO_ROOT"
+assert_contains "tl_init keeps a consent store set through XDG_CONFIG_HOME" "$TL_OUT" "XDG=kept AUTHOR=kept"
+for helper in tests/hooks/helpers/common.sh tests/integration/helpers/common.sh; do
+  tl_run env XDG_CONFIG_HOME="$TL_TMP/consent" GIT_AUTHOR_NAME=kept bash -c 'source "$1/$2"; echo "XDG=$XDG_CONFIG_HOME AUTHOR=${GIT_AUTHOR_NAME:-}"' _ "$TL_REPO_ROOT" "$helper"
+  assert_contains "$helper keeps XDG_CONFIG_HOME and the git identity" "$TL_OUT" "XDG=$TL_TMP/consent AUTHOR=kept"
+done
 
 # an escape from the sandbox aborts before the test body runs
 tl_run bash -c 'source "$1/tests/lib/sandbox-env.sh"; HOME=/a SB_RUNTIME_HOME_ROOT=/b sb_test_assert_sandboxed' _ "$TL_REPO_ROOT"
