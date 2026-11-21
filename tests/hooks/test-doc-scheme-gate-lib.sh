@@ -310,6 +310,15 @@ ln -s "$TL_TMP/elsewhere" "$ST/doc-scheme-baseline-$KEY"
 sb_doc_scheme__baseline "$R" >/dev/null
 assert_file_absent "sealed baseline: nothing is written through a symlinked record" "$TL_TMP/elsewhere"
 rm -f "$ST"/doc-scheme-baseline-*
+# no usable state dir / a repo path that does not exist: nothing is sealed, the baseline is still computed
+fresh_branch_repo
+assert_eq "sealed baseline: without a state dir it is computed, not sealed" "$(git -C "$R" rev-parse origin/main)" "$(SB_RUNTIME_STATE_DIR="" sb_doc_scheme__baseline "$R")"
+assert_eq "sealed baseline: a repo path that does not exist falls back to HEAD" HEAD "$(sb_doc_scheme__baseline "$TL_TMP/no-such-repo")"
+# a record that cannot be written (its temp name is taken by a directory) is not an error
+KEY="$(printf '%s' "$(cd "$R" && pwd -P)" | cksum | cut -d' ' -f1)"
+rm -f "$ST"/doc-scheme-baseline-*; mkdir "$ST/doc-scheme-baseline-$KEY.$$"
+assert_eq "sealed baseline: an unwritable record still yields the baseline" "$(git -C "$R" rev-parse origin/main)" "$(sb_doc_scheme__baseline "$R")"
+rmdir "$ST/doc-scheme-baseline-$KEY.$$"; rm -f "$ST"/doc-scheme-baseline-*
 # without origin: the local main is the baseline; with no default branch at all it is HEAD
 fresh_branch_repo; git -C "$R" update-ref -d refs/remotes/origin/main
 assert_eq "baseline: the local main when there is no origin" "$(git -C "$R" rev-parse main)" "$(sb_doc_scheme__baseline "$R")"
