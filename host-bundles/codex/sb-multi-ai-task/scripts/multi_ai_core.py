@@ -80,23 +80,43 @@ def family_for_logical(logical_id: str, registry: dict[str, Any] | None = None) 
     return mapping[canonical]
 
 
+_CLAUDE_MARKERS = ("CLAUDECODE", "CLAUDE_CODE")
+_CODEX_MARKERS = (
+    "CODEX_SANDBOX",
+    "SB_AGENT_CODEX_DELEGATE",
+    "CODEX_CI",
+    "CODEX_THREAD_ID",
+    "CODEX_INTERNAL_ORIGINATOR_OVERRIDE",
+)
+_CURSOR_MARKERS = ("CURSOR_AGENT", "CURSOR_TRACE_ID")
+_EXPLICIT_HOSTS = {"claude": "claude-code", "claude-code": "claude-code", "codex": "codex"}
+_SUPPORTED_HOSTS_TEXT = "Claude Code or Codex"
+
+
+def _any_set(names: tuple[str, ...]) -> bool:
+    return any(os.environ.get(name) for name in names)
+
+
 def detect_host() -> str:
+    """Name the host this process runs under: ``claude-code``, ``codex``, ``cursor``, ``unknown`` or another name.
+
+    ``SB_HOST`` can only make the gate stricter: an explicit name that is not Claude Code or Codex
+    (``cursor``, or anything unrecognised) is returned as is, whatever else is in the environment,
+    so no override can hide an unsupported host. Real process markers (``CLAUDECODE``, ``CODEX_*``)
+    beat a supported override. ``CURSOR_*`` markers only count when neither is present, because a
+    Claude Code or Codex session started from a Cursor terminal inherits them.
+    """
     explicit = os.environ.get("SB_HOST", "").strip().lower()
-    # Ambient fail-closed hosts win over a more permissive SB_HOST override.
-    if os.environ.get("CLAUDECODE") or os.environ.get("CLAUDE_CODE"):
-        return "claude-code"
-    if os.environ.get("CODEX_SANDBOX") or os.environ.get("SB_AGENT_CODEX_DELEGATE"):
-        return "codex"
-    if explicit in {"claude", "claude-code"}:
-        return "claude-code"
-    if explicit == "codex":
-        return "codex"
-    if explicit == "cursor":
-        return "cursor"
-    if os.environ.get("CURSOR_AGENT") or os.environ.get("CURSOR_TRACE_ID"):
-        return "cursor"
-    if explicit:
+    if explicit and explicit not in _EXPLICIT_HOSTS:
         return explicit
+    if _any_set(_CLAUDE_MARKERS):
+        return "claude-code"
+    if _any_set(_CODEX_MARKERS):
+        return "codex"
+    if explicit:
+        return _EXPLICIT_HOSTS[explicit]
+    if _any_set(_CURSOR_MARKERS):
+        return "cursor"
     return "unknown"
 
 
@@ -109,16 +129,97 @@ def host_gate() -> dict[str, Any]:
             "ok": False,
             "host": host,
             "error_code": UNSUPPORTED_HOST_ERROR,
-            "message": f"Host {host!r} is unsupported for multi-ai-task v1",
+            "message": f"Host {host!r} is unsupported for multi-ai-task: run it from {_SUPPORTED_HOSTS_TEXT}",
         }
     if entry["status"] != "supported":
         return {
             "ok": False,
             "host": host,
-            "error_code": entry.get("error_code", UNSUPPORTED_HOST_ERROR),
-            "message": f"Host {host!r} is packaged-fail-closed for multi-ai-task v1",
+            "error_code": entry.get("error_code") or UNSUPPORTED_HOST_ERROR,
+            "message": entry.get("message") or f"Host {host!r} is not supported for multi-ai-task: run it from {_SUPPORTED_HOSTS_TEXT}",
         }
     return {"ok": True, "host": host}
+
+
+def _real(path: str | Path) -> Path:
+    return Path(os.path.realpath(os.path.expanduser(str(path))))
+
+
+def _inside(path: Path, root: Path) -> bool:
+    return path == root or root in path.parents
+
+
+def _runtime_homes() -> list[Path]:
+    home = Path(os.path.expanduser("~"))
+    homes = [home / ".claude", home / ".codex"]
+    if os.environ.get("CODEX_HOME"):
+        homes.append(Path(os.environ["CODEX_HOME"]))
+    return homes
+
+
+def _state_dirs() -> list[Path]:
+    dirs = [h / ".silver-bullet" for h in _runtime_homes()]
+    if os.environ.get("SB_RUNTIME_STATE_DIR"):
+        dirs.append(Path(os.environ["SB_RUNTIME_STATE_DIR"]))
+    return dirs
+
+
+def _active_delegation() -> tuple[list[Path], str, str]:
+    """The ownership scope of the active agent delegation, as the delegation guard keeps it.
+
+    Returns ``(scopes, host, task_id)``; nothing is active when the guard is switched
+    off (SB_AGENT_DELEGATE_GUARD=0, SB_AGENT_DELEGATE_V2=0) or the state file is absent or unreadable.
+    """
+    if os.environ.get("SB_AGENT_DELEGATE_GUARD") == "0" or os.environ.get("SB_AGENT_DELEGATE_V2") == "0":
+        return [], "", ""
+    for state_dir in _state_dirs():
+        state_file = state_dir / "agent-delegation-active.json"
+        try:
+            state = json.loads(state_file.read_text(encoding="utf-8"))
+        except (OSError, ValueError, RecursionError):
+            continue
+        if not isinstance(state, dict) or state.get("active") is not True:
+            continue
+        raw = state.get("ownership_scope")
+        scopes = [_real(item) for item in raw if isinstance(item, str) and item] if isinstance(raw, list) else []
+        host, task = state.get("host"), state.get("task_id")
+        return scopes, host if isinstance(host, str) else "", task if isinstance(task, str) else ""
+    return [], "", ""
+
+
+def output_root_refusal(output_root: Path) -> str | None:
+    """Why a run may not write below ``output_root`` (None when it may).
+
+    The hooks cannot see what this script writes, so the script keeps the hooks' boundaries itself: a run
+    never writes into Silver Bullet's runtime state or plugin cache, a ``.git`` directory, the home
+    directory (or a parent of it), or the ownership scope of an active agent delegation. That scope's own
+    evidence directory (``.planning/agent-<host>/<task>/``) stays open, as it does for the delegation guard.
+    """
+    root = _real(output_root)
+    home = _real("~")
+    if root == home or root in home.parents:
+        return f"output root {root} is the home directory or one of its parents; use a project directory such as .planning/multi-ai/<run-id>/"
+    if ".git" in root.parts:
+        return f"output root {root} is inside a .git directory"
+    protected = [_real(d) for d in _state_dirs()]
+    protected += [_real(h / "plugins") for h in _runtime_homes()]
+    if os.environ.get("SB_RUNTIME_PLUGIN_CACHE_ROOT"):
+        protected.append(_real(os.environ["SB_RUNTIME_PLUGIN_CACHE_ROOT"]))
+    for base in protected:
+        if _inside(root, base):
+            return f"output root {root} is inside Silver Bullet's runtime state or plugin cache ({base}); use a project directory such as .planning/multi-ai/<run-id>/"
+    scopes, host, task = _active_delegation()
+    for scope in scopes:
+        if _inside(root, scope):
+            marker = (".planning", f"agent-{host}", task)
+            parts = root.relative_to(scope).parts
+            if any(parts[i : i + 3] == marker for i in range(len(parts))):
+                continue
+            return (
+                f"output root {root} is inside the ownership scope of the active agent delegation ({scope}); "
+                f"use .planning/agent-{host or '<host>'}/{task or '<task>'}/ or a directory outside that scope"
+            )
+    return None
 
 
 @dataclass

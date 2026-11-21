@@ -949,8 +949,8 @@ class DrMultiAiCliTests(unittest.TestCase):
         patcher = mock.patch.dict(os.environ, {}, clear=False)
         patcher.start()
         self.addCleanup(patcher.stop)
-        # Ambient Claude or Codex markers win over SB_HOST: a run under either would fail the host gate.
-        for name in [k for k in os.environ if k.startswith(("CLAUDE", "CODEX", "SB_AGENT_CODEX"))]:
+        # No ambient host marker leaks in: each test names the host it runs under.
+        for name in [k for k in os.environ if k.startswith(("CLAUDE", "CODEX", "CURSOR", "SB_HOST", "SB_AGENT_CODEX"))]:
             del os.environ[name]
 
     def test_parse_args_defaults(self) -> None:
@@ -1042,7 +1042,7 @@ class DrMultiAiCliTests(unittest.TestCase):
             _run(dr_multi_ai_cli.main, ["q", "--dry-run", "--include-only", "ocg-minimax-m3"])
         self.assertFalse([w for w in caught2 if "--include-only" in str(w.message)])
 
-    @mock.patch.dict(os.environ, {"SB_HOST": "cursor"})
+    @mock.patch.dict(os.environ, {"SB_HOST": "claude"})
     def test_dry_run_reports(self) -> None:
         rc, stdout, _ = _run(dr_multi_ai_cli.main, ["q", "--dry-run"])
         report = json.loads(stdout)
@@ -1065,15 +1065,52 @@ class DrMultiAiCliTests(unittest.TestCase):
         self.assertEqual(report["error_code"], "EMPTY_PARALLEL_PHASES")
         self.assertIn("solution-compare", report["message"])
 
-    def test_dry_run_on_an_unsupported_host_fails_like_a_live_run(self) -> None:
-        with mock.patch.dict(os.environ, {"CLAUDECODE": "1"}):
-            rc, stdout, _ = _run(dr_multi_ai_cli.main, ["q", "--dry-run"])
-        payload = json.loads(stdout)
-        self.assertEqual(rc, 2)
-        self.assertEqual(payload["error_code"], "SB_MULTI_AI_UNSUPPORTED_HOST")
-        self.assertNotIn("parallel_phases", payload)
+    def test_dry_run_plans_on_claude_and_codex_without_starting_or_writing_anything(self) -> None:
+        import live_dispatch
 
-    @mock.patch.dict(os.environ, {"SB_HOST": "cursor"})
+        for env, host in (({"CLAUDECODE": "1"}, "claude-code"), ({"CODEX_THREAD_ID": "t"}, "codex")):
+            with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, env), \
+                    mock.patch.object(live_dispatch, "_run_cli", side_effect=AssertionError("a dry run must not start a worker")):
+                cwd = os.getcwd()
+                os.chdir(tmp)
+                try:
+                    rc, stdout, _ = _run(dr_multi_ai_cli.main, ["q", "--dry-run"])
+                finally:
+                    os.chdir(cwd)
+                self.assertEqual(os.listdir(tmp), [], "a dry run must not write anything")
+            report = json.loads(stdout)
+            self.assertEqual((rc, report["ok"], report["host"], report["dry_run"]), (0, True, host, True))
+            self.assertEqual(report["parallel_phases"], ["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"])
+            self.assertEqual(sorted(report["backend_availability"]), ["claude", "codex", "cursor", "ocg"])
+
+    def test_output_root_in_a_protected_place_is_refused_for_every_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as home, mock.patch.dict(os.environ, {"HOME": home, "SB_HOST": "claude"}):
+            protected = str(Path(home) / ".codex" / ".silver-bullet" / "run")
+            for argv in (["q", "--dry-run", "--output-root", protected], ["q", "--output-root", protected],
+                         ["q", "--package-only", "--research-type", "solution-landscape", "--output-root", protected]):
+                rc, stdout, _ = _run(dr_multi_ai_cli.main, argv)
+                payload = json.loads(stdout)
+                self.assertEqual((rc, payload["ok"], payload["error_code"]), (2, False, "OUTPUT_ROOT_NOT_ALLOWED"), argv)
+            self.assertFalse(Path(protected).exists())
+            # No output root given on a dry run: the default under the working directory is never checked.
+            rc, _, _ = _run(dr_multi_ai_cli.main, ["q", "--dry-run"])
+            self.assertEqual(rc, 0)
+
+    def test_dry_run_on_an_unsupported_host_fails_like_a_live_run(self) -> None:
+        for env in ({"SB_HOST": "cursor"}, {"CURSOR_AGENT": "1"}, {}):
+            for argv in (["q", "--dry-run"], ["q"]):
+                with mock.patch.dict(os.environ, env):
+                    rc, stdout, _ = _run(dr_multi_ai_cli.main, argv)
+                payload = json.loads(stdout)
+                self.assertEqual(rc, 2, (env, argv))
+                self.assertEqual(payload["error_code"], "SB_MULTI_AI_UNSUPPORTED_HOST")
+                self.assertIn("Claude Code or Codex", payload["message"])
+                self.assertNotIn("parallel_phases", payload)
+        with mock.patch.dict(os.environ, {"SB_HOST": "cursor"}):
+            _, stdout, _ = _run(dr_multi_ai_cli.main, ["q", "--dry-run"])
+        self.assertIn("Cursor is no longer a supported host", json.loads(stdout)["message"])
+
+    @mock.patch.dict(os.environ, {"SB_HOST": "codex"})
     def test_dry_run_failing_report_returns_one(self) -> None:
         import multi_ai_core
 
@@ -1117,7 +1154,7 @@ class DrMultiAiCliTests(unittest.TestCase):
             return pkg_result
 
         pkg.package_solution_outputs = package
-        with mock.patch.object(multi_ai_core, "host_gate", return_value={"ok": True, "host": "cursor"}), \
+        with mock.patch.object(multi_ai_core, "host_gate", return_value={"ok": True, "host": "claude-code"}), \
                 mock.patch.dict(sys.modules, {"dr_live_runner": runner, "package_solution_outputs": pkg}):
             rc, stdout, _ = _run(dr_multi_ai_cli.main, argv)
         return rc, json.loads(stdout), calls
@@ -1132,9 +1169,10 @@ class DrMultiAiCliTests(unittest.TestCase):
             self.assertEqual((live["query"], live["output_root"], live["max_phases"], live["timeout_sec"]), ("q", Path(tmp), 2, 9))
             self.assertEqual(live["parallel_phases"], ["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"])
             self.assertNotIn("pkg", calls)
-            self.assertEqual(os.environ.get("SB_HOST"), "cursor")
+            # The CLI never invents a host: the live runner reports the one detected from the real environment.
+            self.assertNotIn("SB_HOST", os.environ)
 
-    def test_live_force_moves_previous_run_aside_and_keeps_existing_host(self) -> None:
+    def test_live_force_moves_previous_run_aside_and_leaves_sb_host_alone(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "out"
             root.mkdir()

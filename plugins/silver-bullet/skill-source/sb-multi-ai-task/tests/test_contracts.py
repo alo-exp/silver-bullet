@@ -15,12 +15,12 @@ REGISTRY = SKILL_ROOT / "reference" / "model-family-registry-v1.json"
 sys.path.insert(0, str(SCRIPTS))
 
 
-def cursor_env(**extra: str) -> dict[str, str]:
-    """Process environment for the supported (Cursor) host: ambient Claude or Codex markers win over SB_HOST."""
+def host_env(host: str = "claude", **extra: str) -> dict[str, str]:
+    """Process environment for a run on ``host`` (claude or codex are supported; cursor is not a host)."""
     import os
 
     env = {k: v for k, v in os.environ.items() if not k.startswith(("CLAUDE", "CODEX", "CURSOR", "SB_HOST", "SB_AGENT_CODEX"))}
-    env["SB_HOST"] = "cursor"
+    env["SB_HOST"] = host
     env.update(extra)
     return env
 
@@ -32,7 +32,7 @@ class MultiAiContractTests(unittest.TestCase):
         lite = data["ocg_lite_pool"]
         self.assertEqual(len(cursor), 6)
         self.assertGreaterEqual(len(lite), 1)
-        env = cursor_env()
+        env = host_env()
         dry = subprocess.run(
             [
                 sys.executable,
@@ -63,18 +63,26 @@ class MultiAiContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             resolve_pool(PoolSelection(ocg_pool="none", cursor_pool="none"))
 
-    def test_dry_run_fails_on_an_unsupported_host_like_a_live_run(self) -> None:
-        """R10-05: a dry run is a plan for a run, so it reports the unsupported host the way a live run does."""
-        results = {}
-        for label, extra in (("dry", ["--dry-run"]), ("live", [])):
+    def test_dry_run_and_live_run_agree_on_every_host(self) -> None:
+        """A dry run is a plan for a run: supported hosts plan (Claude Code, Codex), Cursor and unknown hosts fail like a live run."""
+        for host in ("claude", "codex"):
             proc = subprocess.run(
-                [sys.executable, str(SCRIPTS / "multi_ai_cli.py"), "--output-root", "/tmp/sb-multi-ai-unsupported", *extra],
-                capture_output=True, text=True, check=False, env=cursor_env(CLAUDECODE="1"),
+                [sys.executable, str(SCRIPTS / "multi_ai_cli.py"), "--output-root", "/tmp/sb-multi-ai-host-probe", "--dry-run"],
+                capture_output=True, text=True, check=False, env=host_env(host),
             )
-            results[label] = (proc.returncode, json.loads(proc.stdout))
-        self.assertEqual(results["dry"], results["live"])
-        self.assertEqual(results["dry"][0], 2)
-        self.assertEqual(results["dry"][1]["error_code"], "SB_MULTI_AI_UNSUPPORTED_HOST")
+            self.assertEqual(proc.returncode, 0, (host, proc.stdout, proc.stderr))
+            self.assertTrue(json.loads(proc.stdout)["ok"], host)
+        for host in ("cursor", "nowhere"):
+            results = {}
+            for label, extra in (("dry", ["--dry-run"]), ("live", [])):
+                proc = subprocess.run(
+                    [sys.executable, str(SCRIPTS / "multi_ai_cli.py"), "--output-root", "/tmp/sb-multi-ai-unsupported", *extra],
+                    capture_output=True, text=True, check=False, env=host_env(host),
+                )
+                results[label] = (proc.returncode, json.loads(proc.stdout))
+            self.assertEqual(results["dry"], results["live"], host)
+            self.assertEqual(results["dry"][0], 2)
+            self.assertEqual(results["dry"][1]["error_code"], "SB_MULTI_AI_UNSUPPORTED_HOST")
 
     def test_skill_md_cli_block_runs_as_documented(self) -> None:
         """R11-15: the documented command must work exactly as written (with placeholders filled)."""
@@ -95,7 +103,7 @@ class MultiAiContractTests(unittest.TestCase):
             proc = subprocess.run(
                 [sys.executable, argv[1].replace("${PLUGIN_ROOT}", str(repo)), *argv[2:]],
                 capture_output=True, text=True, check=False, cwd=tmp,
-                env=cursor_env(),
+                env=host_env(),
             )
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertTrue(json.loads(proc.stdout)["ok"])
@@ -118,32 +126,26 @@ class MultiAiContractTests(unittest.TestCase):
         self.assertEqual(normalize_logical_id("sb-dr-glm-5.2"), "glm-5.2")
         self.assertEqual(normalize_logical_id("ocg-glm-5.2"), "glm-5.2")
 
-    def test_host_gate_rejects_claude_with_cursor_sb_host(self) -> None:
+    def test_host_gate_rejects_cursor_even_next_to_claude_markers(self) -> None:
         import os
         from unittest import mock
 
         from multi_ai_core import host_gate
 
-        with mock.patch.dict(
-            os.environ,
-            {"SB_HOST": "cursor", "CLAUDECODE": "1"},
-            clear=False,
-        ):
+        with mock.patch.dict(os.environ, {"SB_HOST": "cursor", "CLAUDECODE": "1"}, clear=False):
             gate = host_gate()
         self.assertFalse(gate["ok"])
-        self.assertEqual(gate["host"], "claude-code")
+        self.assertEqual(gate["host"], "cursor")
+        self.assertIn("no longer a supported host", gate["message"])
 
-    def test_dry_run_report_skips_host_gate_enforcement(self) -> None:
+    def test_dry_run_report_itself_does_not_enforce_the_host_gate(self) -> None:
+        """The CLIs gate before planning; the planner only resolves the pool and says so."""
         import os
         from unittest import mock
 
         from multi_ai_core import PoolSelection, dry_run_report
 
-        with mock.patch.dict(
-            os.environ,
-            {"SB_HOST": "cursor", "CLAUDECODE": "1"},
-            clear=False,
-        ):
+        with mock.patch.dict(os.environ, {"SB_HOST": "cursor"}, clear=False):
             report = dry_run_report(PoolSelection())
         self.assertTrue(report["ok"])
         self.assertFalse(report["host_gate_enforced"])

@@ -201,6 +201,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _output_root_not_allowed(output_root: Path) -> int | None:
+    """Exit status 2 (after printing why) when a run may not write below `output_root`, else None.
+
+    The hooks cannot see what this script writes, so it keeps their boundaries itself.
+    """
+    _bootstrap()
+    from multi_ai_core import output_root_refusal  # noqa: E402
+
+    refusal = output_root_refusal(output_root)
+    if refusal is None:
+        return None
+    print(json.dumps({"ok": False, "error_code": "OUTPUT_ROOT_NOT_ALLOWED", "message": refusal}, indent=2))
+    return 2
+
+
 def _package_solution_outputs(args: argparse.Namespace) -> int:
     if not needs_solution_packaging(args.research_type):
         print(json.dumps({"ok": False, "error_code": "SOLUTION_PACKAGING_TYPE_MISMATCH", "message": "--package-only requires solution-landscape or solution-compare"}, indent=2))
@@ -208,6 +223,10 @@ def _package_solution_outputs(args: argparse.Namespace) -> int:
     if not args.output_root:
         print(json.dumps({"ok": False, "error_code": "OUTPUT_ROOT_REQUIRED", "message": "--package-only requires --output-root"}, indent=2))
         return 2
+
+    refused = _output_root_not_allowed(Path(args.output_root))
+    if refused is not None:
+        return refused
 
     try:
         _bootstrap()
@@ -258,8 +277,21 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"ok": False, "error_code": gate["error_code"], "message": gate.get("message", "")}, indent=2))
         return 2
 
+    if args.output_root or not args.dry_run:
+        output_root = Path(args.output_root) if args.output_root else default_output_root(args.query)
+        # --force on a path it cannot move aside reports that itself (FORCE_REFUSED) below.
+        force_will_refuse = args.force and output_root.exists() and force_refusal(output_root)
+        refused = None if force_will_refuse else _output_root_not_allowed(output_root)
+        if refused is not None:
+            return refused
+
     if args.dry_run:
         report = dry_run_report(selection)
+        if report.get("ok"):
+            # Looks for each backend CLI the plan needs; nothing is started or written.
+            from live_dispatch import backend_availability  # noqa: E402
+
+            report["backend_availability"] = backend_availability(report["resolved_pool"])
         report["parallel_phases"] = parallel
         if not parallel and args.mode not in {"quick"}:
             report["ok"] = False
@@ -290,8 +322,6 @@ def main(argv: list[str] | None = None) -> int:
         carried = carry_over_user_inputs(moved_aside, output_root, args.query)
         skipped = [name for name in ("need_profile.json", "scope.md")
                    if (moved_aside / name).is_file() and name not in carried]
-    os.environ.setdefault("SB_HOST", "cursor")
-
     from dr_live_runner import run_dr_live  # noqa: E402
 
     try:

@@ -14,12 +14,12 @@ SCRIPTS = SKILL_ROOT / "scripts"
 REPO_ROOT = SKILL_ROOT.parents[1]
 
 
-def cursor_env() -> dict[str, str]:
-    """Environment for the supported (Cursor) host: ambient Claude or Codex markers win over SB_HOST."""
+def host_env(host: str = "claude") -> dict[str, str]:
+    """Environment for a run on ``host`` (claude or codex; Cursor is not a host)."""
     import os
 
     env = {k: v for k, v in os.environ.items() if not k.startswith(("CLAUDE", "CODEX", "CURSOR", "SB_HOST", "SB_AGENT_CODEX"))}
-    env["SB_HOST"] = "cursor"
+    env["SB_HOST"] = host
     return env
 
 
@@ -45,7 +45,7 @@ class DrMultiAiContractTests(unittest.TestCase):
             text=True,
             check=False,
             cwd=str(REPO_ROOT),
-            env=cursor_env(),
+            env=host_env(),
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
         report = json.loads(proc.stdout)
@@ -66,7 +66,7 @@ class DrMultiAiContractTests(unittest.TestCase):
             text=True,
             check=False,
             cwd=str(REPO_ROOT),
-            env=cursor_env(),
+            env=host_env(),
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
         report = json.loads(proc.stdout)
@@ -89,7 +89,7 @@ class DrMultiAiContractTests(unittest.TestCase):
             text=True,
             check=False,
             cwd=str(REPO_ROOT),
-            env=cursor_env(),
+            env=host_env(),
         )
         self.assertEqual(proc.returncode, 2, proc.stdout)
         report = json.loads(proc.stdout)
