@@ -156,13 +156,15 @@ rm -f "$STATE/e2e-live-matrix" "$STATE/quality-gate-state"
 exit "\${STUB_LIVE_RC:-0}"
 EOS
 done
+tl_git_repo "$TL_TMP/livetree"
 tl_stub claude 'echo "claude 0.0.0-stub"'
 printf 'matrix=claude-only\n' >"$STATE/e2e-live-matrix"
 printf 'adversarial-review-clean\n' >"$STATE/quality-gate-state"
 live_run() { tl_run env -u SB_LIVE_RUNTIMES CLAUDE_BIN=claude "$@" timeout 60 bash "$LT/run-live-tests.sh"; }
 live_run STUB_LIVE_RC=0
 assert_eq "legacy live runner passes with stubs" 0 "$TL_STATUS"
-assert_eq "release-live-matrix written only on the full pass" "matrix=claude-only" "$(cat "$STATE/release-live-matrix")"
+assert_eq "release-live-matrix written only on the full pass" "matrix=claude-only" "$(sed -n 1p "$STATE/release-live-matrix")"
+assert_match "release-live-matrix carries the commit (R14-16)" '^commit=[0-9a-f]{40}$' "$(sed -n 2p "$STATE/release-live-matrix")"
 assert_eq "e2e-live-matrix survives the legacy live run" "matrix=claude-only" "$(cat "$STATE/e2e-live-matrix")"
 assert_eq "quality-gate-state survives the legacy live run" "adversarial-review-clean" "$(cat "$STATE/quality-gate-state")"
 live_run STUB_LIVE_RC=1
@@ -212,5 +214,30 @@ assert_eq "kay fallback transcript dir is a private cache dir" "$HOME/.cache/sil
 /explicit" "$TL_OUT"
 assert_eq "transcript directories are gitignored" 0 "$(cd "$TL_REPO_ROOT" && git check-ignore -q tests/live/agents/kay/transcripts/latest.jsonl && git check-ignore -q tests/live/agents/codex/transcripts/x.jsonl; echo $?)"
 assert_eq "codex isolation no longer defaults transcripts into the checkout" 0 "$(grep -c 'SB_ROOT}/tests/live/agents/codex/transcripts' "$TL_REPO_ROOT/tests/live/lib/codex-cli-isolation.sh" || true)"
+
+# --- R14-13: the READMEs describe what the runners do -------------------------------------------
+LIVE_README="$TL_REPO_ROOT/tests/live/README.md"
+E2E_README="$TL_REPO_ROOT/tests/e2e-live/README.md"
+default_rt="$(grep -E '^  RUNTIMES=\(claude\)$' "$TL_REPO_ROOT/tests/live/run-live-tests.sh" >/dev/null && echo claude)"
+assert_eq "the legacy runner defaults to the claude runtime" claude "$default_rt"
+assert_eq "the e2e runner defaults to the claude runtime" claude "$(grep -E '^  RUNTIMES=\(claude\)$' "$TL_REPO_ROOT/tests/e2e-live/run-e2e-live-tests.sh" >/dev/null && echo claude)"
+assert_contains "live README names the claude default runtime" "$(cat "$LIVE_README")" "Claude by default"
+assert_contains "live README names the claude-only marker" "$(cat "$LIVE_README")" "matrix=claude-only"
+assert_not_contains "live README no longer calls codex-only the standard prerequisite" "$(cat "$LIVE_README")" "are now the standard release prerequisite"
+assert_not_contains "live README no longer claims PID-named isolated state files" "$(cat "$LIVE_README")" "live-test-state-{PID}"
+assert_not_contains "live README no longer says the Kay agent is the default" "$(cat "$LIVE_README")" "real Kay-backed agent**"
+assert_contains "live README describes the backup and restore of the real state" "$(cat "$LIVE_README")" "arms an \`EXIT\` trap"
+assert_contains "e2e README names the claude-only marker" "$(cat "$E2E_README")" "matrix=claude-only"
+assert_not_contains "e2e README no longer promises the supervised matrix satisfies the gate" "$(cat "$E2E_README")" "complete either the Kay diagnostic path"
+assert_not_contains "the release block message no longer offers the supervised matrix as an alternative" "$(cat "$TL_REPO_ROOT/hooks/lib/completion-audit/deploy-tier.sh")" "(or complete the Claude supervised enterprise-e2e-matrix"
+
+# --- R14-14: the workflow can really target a self-hosted runner ---------------------------------
+WF_FILE="$TL_REPO_ROOT/.github/workflows/e2e-live.yml"
+assert_contains "e2e-live.yml takes a runner input" "$(cat "$WF_FILE")" "      runner:"
+assert_contains "e2e-live.yml runs on the runner input" "$(cat "$WF_FILE")" 'runs-on: ${{ inputs.runner }}'
+assert_not_contains "e2e-live.yml no longer pins ubuntu-latest" "$(cat "$WF_FILE")" "runs-on: ubuntu-latest"
+assert_not_contains "e2e-live.yml no longer hard-seeds the codex runtime" "$(cat "$WF_FILE")" "export SILVER_BULLET_RUNTIME=codex
+          source"
+assert_contains "e2e-live.yml seeds the runtime of the first requested runtime" "$(cat "$WF_FILE")" 'case "${runtimes[0]}" in'
 
 tl_results

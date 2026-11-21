@@ -51,3 +51,13 @@ sb_evidence_discard() {
   fi
   SB_EVIDENCE_DIR=""
 }
+
+# sb_evidence_write_marker <file> <matrix-value> <repo-root>: the release marker. The first line is
+# the `matrix=` value the release gate reads; `commit=` (the repository HEAD the evidence was earned
+# at) and `written_at=` let a gate or an operator reject evidence from another commit (R14-16).
+sb_evidence_write_marker() {
+  local file="$1" value="$2" root="$3" head
+  head="$(git -C "$root" rev-parse HEAD 2>/dev/null || true)"
+  mkdir -p "$(dirname "$file")"
+  printf 'matrix=%s\ncommit=%s\nwritten_at=%s\n' "$value" "${head:-unknown}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$file"
+}

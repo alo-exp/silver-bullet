@@ -95,8 +95,7 @@ runner_exit() {
   fi
   sb_evidence_restore release-live-matrix
   if [[ "$rc" -eq 0 && -n "$PENDING_RELEASE_MARKER" ]]; then
-    mkdir -p "$SB_RUNTIME_STATE_DIR"
-    printf 'matrix=%s\n' "$PENDING_RELEASE_MARKER" > "$HOST_RELEASE_LIVE_MATRIX_FILE"
+    sb_evidence_write_marker "$HOST_RELEASE_LIVE_MATRIX_FILE" "$PENDING_RELEASE_MARKER" "$(cd "${LIVE_TEST_ROOT}/../.." && pwd)"
   fi
   sb_evidence_discard
   exit "$rc"
