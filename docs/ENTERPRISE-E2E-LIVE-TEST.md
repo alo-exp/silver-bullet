@@ -231,7 +231,7 @@ Classify failures from log snippets: `bash scripts/lib/matrix-failure-class.sh .
 Minimum **2 consecutive clean rounds**:
 
 1. **22/22 PASS** in ledger (graphify + agentmemory refs)
-2. **`/sb:review-fix-ladder`** — 8 rungs, 2 consecutive clean verify passes each
+2. **`/sb:review-fix-ladder`** — the native Claude ladder (default 6 rungs; 2 consecutive captured clean reviews each)
 3. **`bash tests/run-all-tests.sh`** → 0 failures
 4. **`graphify update .`** in SB repo post-fixes
 5. No open MUST-FIX issues

@@ -48,7 +48,7 @@ Before a tool runs; a hook can deny the call.
 | 12 | `Task\|Subagent\|Agent` | `orchestrator-directive-guard.sh` | 10 |
 | 13 | `Task\|Subagent\|Agent` | `subagent-stop-enforcement.sh` | 10 |
 | 14 | `Task\|Subagent\|Agent` | `review-fix-ladder-guard.sh` | 10 |
-| 15 | `Edit\|Write\|MultiEdit\|apply_patch` | `review-fix-ladder-guard.sh` | 10 |
+| 15 | `Edit\|Write\|MultiEdit\|apply_patch\|NotebookEdit` | `review-fix-ladder-guard.sh` | 10 |
 | 16 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `subagent-stop-enforcement.sh` | 10 |
 | 17 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-preview-preflight.sh` | 10 |
 | 18 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-chrome-guard.sh` | 10 |
@@ -202,7 +202,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `record-site-visual-evidence.sh` | PostToolUse `Bash\|exec_command` | Records browser screenshot paths as site visual evidence. |
 | `record-skill.sh` | PostToolUse `Skill\|Bash\|exec_command` | Records completed skill invocations (host Skill tool, or `silver-bullet invoke-skill` receipts on Codex) in the state file. |
 | `record-token-compression-usage.sh` | PostToolUse `Bash\|exec_command` | Records token-compression CLI usage (RTK) for the opt-in usage-freshness gate. |
-| `review-fix-ladder-guard.sh` | SessionStart `startup\|clear\|compact`; PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|apply_patch`; PostToolUse `Task\|Subagent\|Agent`; Stop `.*`; UserPromptSubmit `.*` | Review-fix-ladder guard, inert unless this session started or resumed a run: validates each ladder subagent spawn against its ticket, captures its result, protects encoder-owned artifacts, blocks Stop while a run is active, records a user-typed `RFL ABORT <run-id>`, and prints a fixed resume notice at session start. |
+| `review-fix-ladder-guard.sh` | SessionStart `startup\|clear\|compact`; PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|apply_patch\|NotebookEdit`; PostToolUse `Task\|Subagent\|Agent`; Stop `.*`; UserPromptSubmit `.*` | Review-fix-ladder guard, inert unless this session started or resumed a run: validates each ladder subagent spawn against its ticket, captures its result, protects encoder-owned artifacts, blocks Stop while a run is active, records a user-typed `RFL ABORT <run-id>`, and prints a fixed resume notice at session start. |
 | `roadmap-freshness.sh` | PreToolUse `Bash\|exec_command` | Blocks a `git commit` (any form: `git -C`, `git add … && git commit`, `commit -a`, pathspecs) that brings in a phase `SUMMARY.md` whose `ROADMAP.md` checkbox is not ticked. |
 | `rtk-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.rtk`): checks RTK install, version and host hook wiring (it does not rewrite commands itself). |
 | `semantic-compress.sh` | PostToolUse `Skill` | After phase skills, assembles a ranked context summary for the current phase goal (`semantic_compression` config). |

@@ -254,6 +254,27 @@ class SessionScoping(Fire):
         self.assertIsNone(native.live_run_id(self.root, "s1"))
 
 
+class Coverage(Fire):
+    def test_a_status_without_a_record_syncs_nothing(self):
+        other = native.run_path(self.root, "norecord")
+        other.mkdir(parents=True)
+        native.project_key(self.root, create=True)
+        native.save_status(self.root, other, native.new_status(self.root, "norecord", native.configured_rungs(self.root)))
+        self.assertFalse(native.record_path(self.root, "norecord").exists())
+
+    def test_unreadable_agent_files_do_not_break_the_shadow_scan(self):
+        agents = self.root / ".claude" / "agents"
+        (agents / "dir.md").mkdir(parents=True)
+        (agents / "other.md").write_text("---\nname: something-else\n---\n")
+        self.assertEqual(native.shadow_agent_files(self.root, "sb-rfl-reviewer"), [])
+        (agents / "sb-rfl-reviewer.md").write_text("x")
+        self.assertEqual(len(native.shadow_agent_files(self.root, "sb-rfl-reviewer")), 1)
+
+    def test_an_invalid_rungs_line_in_a_message_is_ignored(self):
+        self.assertEqual(self.fire({"hook_event_name": "UserPromptSubmit", "prompt": "rungs: haiku:ultra"}), hook.NOOP)
+        self.assertEqual(native.user_rungs(self.root), "")
+
+
 class Small(Fire):
     def test_codex_detected_from_the_thread_env_alone(self):
         del os.environ["SILVER_BULLET_RUNTIME"]
