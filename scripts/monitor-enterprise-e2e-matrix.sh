@@ -283,7 +283,6 @@ random_network_wait() {
 matrix_descendant_pids() {
   local root="$1" kid
   while IFS= read -r kid; do
-    [[ -n "$kid" ]] || continue
     printf '%s\n' "$kid"
     matrix_descendant_pids "$kid"
   done < <(pgrep -P "$root" 2>/dev/null || true)
@@ -300,10 +299,9 @@ matrix_agent_child_pids() {
     codex) pattern='codex-interactive-invoke\.expect' ;;
     *) pattern='claude-interactive-invoke\.expect|/claude --model' ;;
   esac
-  root="$(tr -d '[:space:]' <"$BATCH_PID_FILE" 2>/dev/null || true)"
-  [[ "$root" =~ ^[0-9]+$ ]] || return 0
+  # A missing or junk pid file makes `pgrep -P` fail and print nothing: no agent is signalled.
+  root="$(tr -d '[:space:]' <"$BATCH_PID_FILE" 2>/dev/null)"
   while IFS= read -r pid; do
-    [[ -n "$pid" ]] || continue
     cmd="$(ps -p "$pid" -o command= 2>/dev/null || true)"
     if [[ "$cmd" =~ $pattern ]]; then
       printf '%s\n' "$pid"

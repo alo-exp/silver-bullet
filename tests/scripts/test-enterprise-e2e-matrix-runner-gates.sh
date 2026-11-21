@@ -81,8 +81,10 @@ assert_file_absent "marker cleared after failure" "$marker_file"
 assert_file_absent "queue quiesced after failure" "$queue_file"
 assert_file_absent "no evidence written on failure" "$EVID1"
 
-# comm failing is tolerated and counts as no new skills
+# comm failing is tolerated and counts as no new skills (the state file must exist for comm to be reached)
 reset
+mkdir -p "$SB_RUNTIME_STATE_DIR"
+: >"$STATE"
 agent <<'EOS'
 echo "nothing useful"
 EOS
