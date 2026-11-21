@@ -27,7 +27,7 @@ strip_frontmatter() {
 # ${PLUGIN_ROOT}/skills/... references follow the host's install layout (render-agent-bundle.py).
 # The canonical body is compared after that same substitution, so every other difference is still drift.
 apply_host_root() {
-  python3 -I -c '
+  python3 -I -B -c '
 import importlib.util, sys
 spec = importlib.util.spec_from_file_location("rab", sys.argv[1])
 mod = importlib.util.module_from_spec(spec)
