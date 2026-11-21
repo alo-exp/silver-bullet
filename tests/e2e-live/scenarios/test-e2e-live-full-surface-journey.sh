@@ -872,7 +872,7 @@ fi
 
 journey_turn "sb:validate" "validate the app end state" "no" "validate turn recorded" "$(skill_prompt 'sb:validate' 'Route-smoke the validation surface after the deterministic clear-completed API and npm test assertions have passed.')"
 
-journey_turn "sb:quality-gates" "run quality gates for release readiness" "no" "quality-gates turn recorded" "$(skill_prompt 'sb:quality-gates' 'Route-smoke the Quality Gates surface for this inline todo-app journey. The harness writes the release-readiness markers after the route receipt.')"
+journey_turn "sb:quality-gates" "run quality gates for release readiness" "no" "quality-gates turn recorded" "$(skill_prompt 'sb:quality-gates' 'Route-smoke the Quality Gates surface for this inline todo-app journey. Stop after the route receipt; release evidence is written only by run-e2e-live-tests.sh after a full pass.')"
 wait_for_state_contains "sb:quality-gates recorded in workflow state" "sb:quality-gates"
 # Release evidence (e2e-live-matrix, inline-e2e-matrix) is written only by run-e2e-live-tests.sh
 # after every scenario passed, and quality-gate-state is never written by a test (R14-06).

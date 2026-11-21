@@ -16,10 +16,40 @@ SB_EVIDENCE_FILES=(release-live-matrix e2e-live-matrix inline-e2e-matrix quality
 SB_EVIDENCE_DIR=""
 SB_EVIDENCE_STATE_DIR=""
 
+# Put back every evidence file of snapshot dir $1 that is ABSENT from the state dir; a file that exists
+# now is never overwritten (another session may have earned newer evidence) and nothing is deleted.
+_sb_evidence_put_back_missing() {
+  local snap="$1" name
+  for name in "${SB_EVIDENCE_FILES[@]}"; do
+    if [[ -f "${snap}/${name}" && ! -e "${SB_EVIDENCE_STATE_DIR}/${name}" ]]; then
+      mkdir -p "$SB_EVIDENCE_STATE_DIR"
+      cp -p "${snap}/${name}" "${SB_EVIDENCE_STATE_DIR}/${name}"
+    fi
+  done
+}
+
+# A runner killed with SIGKILL leaves its snapshot (kept inside the state dir, with the runner's pid):
+# the next start puts back what is still missing, then removes the dead runner's snapshot.
+sb_evidence_recover() {
+  local snap owner
+  for snap in "${SB_EVIDENCE_STATE_DIR}"/.sb-evidence-snapshot.*; do
+    [[ -d "$snap" && ! -L "$snap" ]] || continue
+    owner="$(cat "${snap}/owner.pid" 2>/dev/null)"
+    if [[ "$owner" =~ ^[0-9]+$ ]] && kill -0 "$owner" 2>/dev/null; then
+      continue
+    fi
+    _sb_evidence_put_back_missing "$snap"
+    rm -rf -- "$snap"
+  done
+}
+
 sb_evidence_snapshot() {
   SB_EVIDENCE_STATE_DIR="$1"
-  SB_EVIDENCE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sb-live-evidence.XXXXXX")"
+  mkdir -p "$SB_EVIDENCE_STATE_DIR"
+  sb_evidence_recover
+  SB_EVIDENCE_DIR="$(mktemp -d "${SB_EVIDENCE_STATE_DIR}/.sb-evidence-snapshot.XXXXXX")"
   chmod 700 "$SB_EVIDENCE_DIR"
+  printf '%s\n' "$$" >"${SB_EVIDENCE_DIR}/owner.pid"
   local name
   for name in "${SB_EVIDENCE_FILES[@]}"; do
     if [[ -f "${SB_EVIDENCE_STATE_DIR}/${name}" && ! -L "${SB_EVIDENCE_STATE_DIR}/${name}" ]]; then
@@ -28,20 +58,21 @@ sb_evidence_snapshot() {
   done
 }
 
+# sb_evidence_restore <owned-file>...: owned files are removed (the runner rewrites them only on a full
+# pass); every other file is put back only when a live session's reset removed it. Evidence that exists
+# now, earned by this run's session or a concurrent one, is left exactly as it is.
 sb_evidence_restore() {
   [[ -n "$SB_EVIDENCE_DIR" ]] || return 0
-  local name o is_owned
-  for name in "${SB_EVIDENCE_FILES[@]}"; do
-    is_owned=false
-    for o in "$@"; do
-      [[ "$o" == "$name" ]] && is_owned=true
-    done
+  local name o
+  for name in "$@"; do
     rm -f -- "${SB_EVIDENCE_STATE_DIR}/${name}"
-    if [[ "$is_owned" == false && -f "${SB_EVIDENCE_DIR}/${name}" ]]; then
-      mkdir -p "$SB_EVIDENCE_STATE_DIR"
-      cp -p "${SB_EVIDENCE_DIR}/${name}" "${SB_EVIDENCE_STATE_DIR}/${name}"
-    fi
   done
+  for name in "${SB_EVIDENCE_FILES[@]}"; do
+    for o in "$@"; do
+      [[ "$o" == "$name" ]] && rm -f -- "${SB_EVIDENCE_DIR}/${name}"
+    done
+  done
+  _sb_evidence_put_back_missing "$SB_EVIDENCE_DIR"
   return 0
 }
 

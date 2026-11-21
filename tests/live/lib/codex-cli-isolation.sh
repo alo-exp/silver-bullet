@@ -31,9 +31,9 @@ default_codex_isolation_parent() {
   local workspace_root
   workspace_root="$(cd "${SB_ROOT}/.." && pwd)"
   mkdir -p "${workspace_root}/.tmp"
-  # The copied auth.json lives below this directory: closed to other users (R14-15).
-  chmod 700 "${workspace_root}/.tmp"
-  printf '%s\n' "${workspace_root}/.tmp"
+  # The copied auth.json lives below this directory: a private (0700) subdirectory this run creates;
+  # the shared workspace .tmp itself is never chmod'ed (R14-15).
+  mktemp -d "${workspace_root}/.tmp/sb-codex-isolation.XXXXXX"
 }
 
 seed_native_codex_runtime_config() {

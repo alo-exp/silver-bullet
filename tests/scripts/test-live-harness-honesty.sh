@@ -51,19 +51,24 @@ assert_eq "capture_digest is empty when no hasher exists" "" "$TL_OUT"
 # --- R14-07: an aborted live scenario restores the operator's real state ----------------------
 mkdir -p "$STATE"
 printf 'silver-plan\n' >"$STATE/state"
+printf 'main\n' >"$STATE/branch"
 printf '{"keep":1}\n' >"$SB_RUNTIME_HOME_ROOT/mcp-needs-auth-cache.json"
 : >"$STATE/trivial"
 cat >"$TL_TMP/abort.sh" <<EOS
 source "$TL_REPO_ROOT/tests/live/helpers.sh"
 agent_preflight() { :; }
 live_setup
-[[ ! -s "$STATE/state" ]] || { echo "state was not truncated"; exit 9; }
+[[ "\$(cat "$STATE/state")" == silver-plan ]] || { echo "operator state was touched"; exit 9; }
+[[ "\$SILVER_BULLET_STATE_FILE" == "$STATE"/state-live-test-* && "\$SILVER_BULLET_BRANCH_FILE" == "$STATE"/branch-live-test-* ]] || { echo "nested session not isolated"; exit 8; }
 false   # any failing command between setup and teardown aborts the script
 echo "not reached"
 EOS
 tl_run bash "$TL_TMP/abort.sh"
 assert_eq "aborted scenario exits non-zero" 1 "$TL_STATUS"
 assert_eq "real state restored after abort" "silver-plan" "$(cat "$STATE/state")"
+assert_eq "operator branch file untouched after abort (R14-03)" "main" "$(cat "$STATE/branch")"
+leftover=("$STATE"/state-live-test-* "$STATE"/branch-live-test-*)
+assert_eq "no per-run state file left after abort" "0" "$([[ -e "${leftover[0]}" ]] && echo "${#leftover[@]}" || echo 0)"
 assert_eq "mcp auth cache restored after abort" '{"keep":1}' "$(cat "$SB_RUNTIME_HOME_ROOT/mcp-needs-auth-cache.json")"
 assert_file_exists "trivial marker restored after abort" "$STATE/trivial"
 assert_file_absent "no state backup left behind" "$STATE/state.live-test-backup-$$"
@@ -226,7 +231,7 @@ assert_contains "live README names the claude-only marker" "$(cat "$LIVE_README"
 assert_not_contains "live README no longer calls codex-only the standard prerequisite" "$(cat "$LIVE_README")" "are now the standard release prerequisite"
 assert_not_contains "live README no longer claims PID-named isolated state files" "$(cat "$LIVE_README")" "live-test-state-{PID}"
 assert_not_contains "live README no longer says the Kay agent is the default" "$(cat "$LIVE_README")" "real Kay-backed agent**"
-assert_contains "live README describes the backup and restore of the real state" "$(cat "$LIVE_README")" "arms an \`EXIT\` trap"
+assert_contains "live README describes the backup and restore of trivial/cache" "$(cat "$LIVE_README")" "EXIT\` trap that restores them"
 assert_contains "e2e README names the claude-only marker" "$(cat "$E2E_README")" "matrix=claude-only"
 assert_not_contains "e2e README no longer promises the supervised matrix satisfies the gate" "$(cat "$E2E_README")" "complete either the Kay diagnostic path"
 assert_not_contains "the release block message no longer offers the supervised matrix as an alternative" "$(cat "$TL_REPO_ROOT/hooks/lib/completion-audit/deploy-tier.sh")" "(or complete the Claude supervised enterprise-e2e-matrix"
@@ -239,5 +244,10 @@ assert_not_contains "e2e-live.yml no longer pins ubuntu-latest" "$(cat "$WF_FILE
 assert_not_contains "e2e-live.yml no longer hard-seeds the codex runtime" "$(cat "$WF_FILE")" "export SILVER_BULLET_RUNTIME=codex
           source"
 assert_contains "e2e-live.yml seeds the runtime of the first requested runtime" "$(cat "$WF_FILE")" 'case "${runtimes[0]}" in'
+
+# review r1 minors
+assert_not_contains "the journey prompt no longer says the harness writes release markers" "$(cat "$TL_REPO_ROOT/tests/e2e-live/scenarios/test-e2e-live-full-surface-journey.sh")" "The harness writes the release-readiness markers"
+assert_contains "workflow summary escapes the backticks around runner" "$(cat "$WF_FILE")" 'with the \`runner\` input set to a runner'
+assert_not_contains "the shared workspace .tmp is never chmod'ed" "$(cat "$TL_REPO_ROOT/tests/live/lib/codex-cli-isolation.sh" "$TL_REPO_ROOT/tests/live/lib/kay-codex-isolation.sh")" 'chmod 700 "${workspace_root}/.tmp"'
 
 tl_results

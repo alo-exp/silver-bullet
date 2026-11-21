@@ -85,14 +85,12 @@ cat >"$E2E/scenarios/test-e2e-live-full-surface-journey.sh" <<EOS
 mkdir -p "$STATE"
 printf 'matrix=inline-full-surface\n' >"$INLINE"
 printf 'matrix=claude-only\n' >"$E2EM"
-printf 'quality-gate-stage-1\nfull-test-suite-rerun\n' >"$STATE/quality-gate-state"
 exit 1
 EOS
 run_suite SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1
 assert_eq "failing journey fails the run" 1 "$TL_STATUS"
 assert_file_absent "self-written inline marker removed after failure" "$INLINE"
 assert_file_absent "self-written e2e-live marker removed after failure" "$E2EM"
-assert_file_absent "self-written quality-gate state removed after failure" "$STATE/quality-gate-state"
 
 # --- R14-03/R14-06: release evidence the operator earned survives a run ------------------------
 printf 'matrix=claude-only\n' >"$STATE/release-live-matrix"
@@ -102,7 +100,7 @@ cat >"$E2E/scenarios/test-e2e-live-hook-failures.sh" <<EOS
 #!/usr/bin/env bash
 # a real session's SessionStart removes branch-scoped evidence
 rm -f "$STATE/release-live-matrix" "$STATE/quality-gate-state"
-printf 'tampered\n' >"$STATE/verify-tests-state"
+rm -f "$STATE/verify-tests-state"
 exit "\${STUB_HOOK_RC:-0}"
 EOS
 run_suite STUB_HOOK_RC=0
@@ -115,6 +113,40 @@ run_suite STUB_HOOK_RC=1
 assert_eq "failing run exits 1" 1 "$TL_STATUS"
 assert_eq "release-live-matrix survives a failing run" "matrix=claude-only" "$(cat "$STATE/release-live-matrix")"
 assert_eq "quality-gate-state survives a failing run" "adversarial-review-clean" "$(cat "$STATE/quality-gate-state")"
+
+# --- evidence a concurrent session earns during the run is never rolled back or deleted ---------
+cat >"$E2E/scenarios/test-e2e-live-hook-failures.sh" <<EOS
+#!/usr/bin/env bash
+rm -f "$STATE/release-live-matrix"
+printf 'matrix=full-claude-codex\\ncommit=newer\\n' >"$STATE/release-live-matrix"
+printf 'earned-by-another-session\\n' >"$STATE/quality-gate-state"
+exit 0
+EOS
+printf 'matrix=claude-only\n' >"$STATE/release-live-matrix"
+run_suite
+assert_contains "newer foreign release evidence is kept" "$(cat "$STATE/release-live-matrix")" "commit=newer"
+assert_eq "newer foreign quality-gate-state is kept" "earned-by-another-session" "$(cat "$STATE/quality-gate-state")"
+assert_eq "no snapshot directory is left behind" 0 "$(find "$STATE" -maxdepth 1 -name '.sb-evidence-snapshot.*' | wc -l | tr -d ' ')"
+
+# a snapshot left by a SIGKILLed runner is recovered by the next start (missing files only)
+mkdir -p "$STATE/.sb-evidence-snapshot.dead"
+printf 'matrix=claude-only\ncommit=old\n' >"$STATE/.sb-evidence-snapshot.dead/release-live-matrix"
+printf 'stale\n' >"$STATE/.sb-evidence-snapshot.dead/quality-gate-state"
+echo 2147483646 >"$STATE/.sb-evidence-snapshot.dead/owner.pid"
+mkdir -p "$STATE/.sb-evidence-snapshot.live"
+printf 'live-owner\n' >"$STATE/.sb-evidence-snapshot.live/verify-tests-state"
+echo $$ >"$STATE/.sb-evidence-snapshot.live/owner.pid"
+rm -f "$STATE/release-live-matrix"
+cat >"$E2E/scenarios/test-e2e-live-hook-failures.sh" <<'EOS'
+#!/usr/bin/env bash
+exit 0
+EOS
+run_suite
+assert_contains "the crashed runner's missing evidence is put back" "$(cat "$STATE/release-live-matrix")" "commit=old"
+assert_eq "recovery never overwrites existing evidence" "earned-by-another-session" "$(cat "$STATE/quality-gate-state")"
+assert_file_absent "the dead runner's snapshot is removed" "$STATE/.sb-evidence-snapshot.dead"
+assert_file_exists "a snapshot of a live runner is left alone" "$STATE/.sb-evidence-snapshot.live/owner.pid"
+rm -rf "$STATE/.sb-evidence-snapshot.live"
 
 # --- R14-15: every post-setup exit tears the isolated home down ---------------------------------
 cat >"$TREE/tests/live/lib/codex-cli-isolation.sh" <<EOS

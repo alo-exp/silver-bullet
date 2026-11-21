@@ -94,14 +94,15 @@ Useful tuning flags:
 
 Each scenario run uses:
 - An isolated temp workspace directory (`mktemp -d`)
-- The operator's **real** runtime state files (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`, `trivial`,
-  `mcp-needs-auth-cache.json`): a real agent session's hooks always write there, so `live_setup` backs
-  them up first and arms an `EXIT` trap, which restores them even when a scenario aborts. Do not run a
-  live suite while another Silver Bullet session is using the same runtime home.
+- Per-run state and branch files (`state-live-test-<pid>`, `branch-live-test-<pid>` under the runtime
+  state dir), handed to the nested agent through `SILVER_BULLET_STATE_FILE` / `SILVER_BULLET_BRANCH_FILE`,
+  so the operator's own `state` and `branch` files are never touched. The `trivial` marker and
+  `mcp-needs-auth-cache.json` are still the operator's real files: `live_setup` backs them up and arms an
+  `EXIT` trap that restores them even when a scenario aborts.
 - Release evidence (`release-live-matrix`, `e2e-live-matrix`, `inline-e2e-matrix`, `quality-gate-state`,
-  `verify-tests-state`) is snapshotted by the runner (`tests/live/lib/evidence-guard.sh`) and restored on
-  every exit; a live session's SessionStart hook resets branch-scoped state, which would otherwise erase
-  evidence you earned earlier.
+  `verify-tests-state`) is snapshotted by the runner (`tests/live/lib/evidence-guard.sh`); on every exit a file
+  that a live session's SessionStart reset removed is put back, while evidence that exists then is never
+  overwritten or deleted. A snapshot left by a killed runner is recovered by the next start.
 - For Kay-agent runs, an isolated temporary `KAY_HOME` root backed by Kay's
   MiniMax.io provider path so the test installer never rewrites the user's
   real `~/.codex` hook cache. Isolated homes are torn down on every exit.
