@@ -114,6 +114,9 @@ for cli in "$MAT" "$DRM"; do
   tl_run bash -c 'cd "$1" && shift && SB_HOST=claude python3 "$@"' _ "$SYS/usr/src/app" "$cli" "${extra[@]}" --output-root /usr/bin/x --dry-run
   assert_eq "$(basename "$cli"): the real /usr/bin is refused outside the project" 2 "$TL_STATUS"
 done
+# no project at all (no git toplevel, no .silver-bullet.json): a system path is refused
+run_in "$SYS" "$SYS/usr" "$MAT" --output-root "$SYS/usr/bin/x" --dry-run
+assert_eq "outside any project a system path is refused" 2 "$TL_STATUS"
 # the harness switch is ignored without the test variable
 tl_run bash -c 'cd "$1/usr/src/app" && SB_MULTI_AI_TEST_SYSTEM_TREE="$1/usr" SB_HOST=claude env -u SILVER_BULLET_TEST_HOOK_ENFORCED python3 "$2" --output-root "$1/usr/bin/x" --dry-run' _ "$SYS" "$MAT"
 assert_eq "the test-only system tree is ignored without the harness switch" 0 "$TL_STATUS"

@@ -311,7 +311,8 @@ sb_doc_scheme_seal_session "$R" replace
 assert_eq "sealed baseline: with no default branch the seal is HEAD" "$(git -C "$R" rev-parse HEAD)" "$(cat "$ST"/doc-scheme-baseline-* | tr -d '\n')"
 mkdir -p "$TL_TMP/not-a-repo"; rm -f "$ST"/doc-scheme-baseline-*
 assert_eq "sealed baseline: a directory that is not a repository is not sealed" "1" "$(sb_doc_scheme_seal_session "$TL_TMP/not-a-repo" replace && echo 0 || echo 1)"
-fresh_branch_repo; sb_doc_scheme_seal_session "$R" replace
+fresh_branch_repo; SEALED="$(git -C "$R" rev-parse origin/main)"; sb_doc_scheme_seal_session "$R" replace
+assert_eq "sealed baseline: no state dir, nothing to seal" "1" "$(SB_RUNTIME_STATE_DIR="" sb_doc_scheme_seal_session "$R" replace && echo 0 || echo 1)"
 # a seal whose commit no longer exists (history rewritten and garbage collected) fails CLOSED for delivery
 SEALFILE="$(ls "$ST"/doc-scheme-baseline-* | head -1)"
 printf '%s' "0000000000000000000000000000000000000000" >"$SEALFILE"
