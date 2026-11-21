@@ -141,6 +141,87 @@ def host_gate() -> dict[str, Any]:
     return {"ok": True, "host": host}
 
 
+def _real(path: str | Path) -> Path:
+    return Path(os.path.realpath(os.path.expanduser(str(path))))
+
+
+def _inside(path: Path, root: Path) -> bool:
+    return path == root or root in path.parents
+
+
+def _runtime_homes() -> list[Path]:
+    home = Path(os.path.expanduser("~"))
+    homes = [home / ".claude", home / ".codex"]
+    if os.environ.get("CODEX_HOME"):
+        homes.append(Path(os.environ["CODEX_HOME"]))
+    return homes
+
+
+def _state_dirs() -> list[Path]:
+    dirs = [h / ".silver-bullet" for h in _runtime_homes()]
+    if os.environ.get("SB_RUNTIME_STATE_DIR"):
+        dirs.append(Path(os.environ["SB_RUNTIME_STATE_DIR"]))
+    return dirs
+
+
+def _active_delegation() -> tuple[list[Path], str, str]:
+    """The ownership scope of the active agent delegation, as the delegation guard keeps it.
+
+    Returns ``(scopes, host, task_id)``; nothing is active when the guard is switched
+    off (SB_AGENT_DELEGATE_GUARD=0, SB_AGENT_DELEGATE_V2=0) or the state file is absent or unreadable.
+    """
+    if os.environ.get("SB_AGENT_DELEGATE_GUARD") == "0" or os.environ.get("SB_AGENT_DELEGATE_V2") == "0":
+        return [], "", ""
+    for state_dir in _state_dirs():
+        state_file = state_dir / "agent-delegation-active.json"
+        try:
+            state = json.loads(state_file.read_text(encoding="utf-8"))
+        except (OSError, ValueError, RecursionError):
+            continue
+        if not isinstance(state, dict) or state.get("active") is not True:
+            continue
+        raw = state.get("ownership_scope")
+        scopes = [_real(item) for item in raw if isinstance(item, str) and item] if isinstance(raw, list) else []
+        host, task = state.get("host"), state.get("task_id")
+        return scopes, host if isinstance(host, str) else "", task if isinstance(task, str) else ""
+    return [], "", ""
+
+
+def output_root_refusal(output_root: Path) -> str | None:
+    """Why a run may not write below ``output_root`` (None when it may).
+
+    The hooks cannot see what this script writes, so the script keeps the hooks' boundaries itself: a run
+    never writes into Silver Bullet's runtime state or plugin cache, a ``.git`` directory, the home
+    directory (or a parent of it), or the ownership scope of an active agent delegation. That scope's own
+    evidence directory (``.planning/agent-<host>/<task>/``) stays open, as it does for the delegation guard.
+    """
+    root = _real(output_root)
+    home = _real("~")
+    if root == home or root in home.parents:
+        return f"output root {root} is the home directory or one of its parents; use a project directory such as .planning/multi-ai/<run-id>/"
+    if ".git" in root.parts:
+        return f"output root {root} is inside a .git directory"
+    protected = [_real(d) for d in _state_dirs()]
+    protected += [_real(h / "plugins") for h in _runtime_homes()]
+    if os.environ.get("SB_RUNTIME_PLUGIN_CACHE_ROOT"):
+        protected.append(_real(os.environ["SB_RUNTIME_PLUGIN_CACHE_ROOT"]))
+    for base in protected:
+        if _inside(root, base):
+            return f"output root {root} is inside Silver Bullet's runtime state or plugin cache ({base}); use a project directory such as .planning/multi-ai/<run-id>/"
+    scopes, host, task = _active_delegation()
+    for scope in scopes:
+        if _inside(root, scope):
+            marker = (".planning", f"agent-{host}", task)
+            parts = root.relative_to(scope).parts
+            if any(parts[i : i + 3] == marker for i in range(len(parts))):
+                continue
+            return (
+                f"output root {root} is inside the ownership scope of the active agent delegation ({scope}); "
+                f"use .planning/agent-{host or '<host>'}/{task or '<task>'}/ or a directory outside that scope"
+            )
+    return None
+
+
 @dataclass
 class PoolSelection:
     ocg_pool: str = "lite"
