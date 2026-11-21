@@ -28,7 +28,6 @@ from __future__ import annotations
 import os
 import pathlib
 import re
-import shutil
 import sys
 
 LIB_DIR = pathlib.Path(__file__).resolve().parents[1]
@@ -60,11 +59,17 @@ def stable_install_path(raw_install_path: str) -> str:
     alias_path = pathlib.Path(alias_path_of(raw_install_path))
     try:
         alias_path.parent.mkdir(parents=True, exist_ok=True)
-        if alias_path.exists() or alias_path.is_symlink():
-            if alias_path.is_dir() and not alias_path.is_symlink():
-                shutil.rmtree(alias_path)
-            else:
-                alias_path.unlink()
+        if alias_path.is_symlink():
+            # Only a link (the alias Silver Bullet itself creates) is replaced.
+            alias_path.unlink()
+        elif alias_path.exists():
+            # A real directory or file named "current" is the user's data (a working
+            # tree next to release checkouts): never delete it (R7-11).
+            sys.stderr.write(
+                f"merge-hooks: {alias_path} exists and is not a symlink; leaving it untouched "
+                f"and using {raw_install_path} directly\n"
+            )
+            return raw_install_path
         alias_path.symlink_to(versioned_path)
         return str(alias_path)
     except OSError:

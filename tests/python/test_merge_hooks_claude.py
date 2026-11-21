@@ -5,6 +5,7 @@ import contextlib
 import io
 import json
 import os
+import shutil
 import runpy
 import stat
 import tempfile
@@ -167,7 +168,7 @@ class MergeHooksTest(unittest.TestCase):
         self.assertEqual(os.readlink(alias), str(install))
         self.assertEqual(self.load()["hooks"]["PreToolUse"][0]["hooks"], [hook(f"{alias}/hooks/a.sh")])
 
-    def test_versioned_install_replaces_existing_symlink_dir_and_file_alias(self):
+    def test_versioned_install_replaces_an_existing_symlink_alias_only(self):
         install = self.make_install("silver-bullet/1.2.3")
         alias = self.tmp / "silver-bullet" / "current"
         other = self.tmp / "elsewhere"
@@ -176,15 +177,22 @@ class MergeHooksTest(unittest.TestCase):
         self.run_script(install)
         self.assertEqual(os.readlink(alias), str(install))
         self.assertTrue(other.is_dir())
-        alias.unlink()
+
+    def test_real_directory_or_file_named_current_is_never_deleted(self):
+        # R7-11: ~/src/silver-bullet/current may be the user's working tree.
+        install = self.make_install("silver-bullet/1.2.3")
+        alias = self.tmp / "silver-bullet" / "current"
         alias.mkdir()
-        (alias / "junk").write_text("x")
+        (alias / "work.txt").write_text("my work")
         self.run_script(install)
-        self.assertTrue(alias.is_symlink())
-        alias.unlink()
+        self.assertFalse(alias.is_symlink())
+        self.assertEqual((alias / "work.txt").read_text(), "my work")
+        self.assertEqual(self.load()["hooks"]["PreToolUse"][0]["hooks"], [hook(f"{install}/hooks/a.sh")])
+        shutil.rmtree(alias)
         alias.write_text("plain file")
         self.run_script(install)
-        self.assertEqual(os.readlink(alias), str(install))
+        self.assertFalse(alias.is_symlink())
+        self.assertEqual(alias.read_text(), "plain file")
 
     def test_versioned_install_falls_back_to_raw_path_when_symlink_fails(self):
         install = self.make_install("silver-bullet/2.0.0")
