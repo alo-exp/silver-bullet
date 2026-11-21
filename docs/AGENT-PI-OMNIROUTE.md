@@ -42,19 +42,17 @@ Pi GitHub: [earendil-works/pi](https://github.com/badlogic/pi-mono) (`@earendil-
 
 Env: `PI_NI_ZERO_BYTE_IDLE_SEC` (test override), `PI_NI_ZERO_BYTE_IDLE_QWEN_SEC` (default 120), `PI_NI_ZERO_BYTE_IDLE_NON_QWEN_SEC` (default 600).
 
-## Claude 5-hour quota (auto-schedule)
+## Claude 5-hour quota (classify and report)
 
-When Pi/Omni stdout/stderr reports Claude/Anthropic **5-hour** exhaustion (rate limit, `429`, `rate_limit_error`, `retry-after`, “5-hour” / “5-hr”, usage reset), `scripts/agent-pi/invoke.sh` classifies the blob and **schedules an idempotent retry** for when the window reopens. Look for:
+When Pi/Omni stdout/stderr reports Claude/Anthropic **5-hour** exhaustion (rate limit, `429`, `rate_limit_error`, `retry-after`, “5-hour” / “5-hr”, usage reset), `scripts/agent-pi/invoke.sh` classifies the blob with the plugin's `scripts/review-fix-ladder.py --classify-quota-window` and **reports the window**. It schedules nothing and writes no state (a delegate shares the caller's account, so the window stops the caller too). Look for:
 
 ```text
-[agent-pi] quota 5h; retry at 2026-08-28T15:41:00Z
+[agent-pi] quota 5h; window resets in 9120s; no retry is scheduled, re-run after it
 ```
 
-- **5-hour** (and generic `429` when the provider is Claude/Anthropic, unless the text clearly says weekly/monthly) → `should_schedule: true`. Persist `reset_at` / `wake_at` from the parsed remaining time (do not wait a full 5h when Console says 2h32m).
-- **Weekly / monthly** → HOLD / ask. Do **not** arm a 5h job (OpenCode weekly SKIP is a different path).
-- **EXIT 124** idle/hard-timeout hang is **not** quota and does **not** `--continue`.
-
-Jobs live under the active RFL run-dir (`quota-retry-schedule.json`) or `.planning/agent-pi/quota-retry/` outside a ladder. Wake: `python3 scripts/review-fix-ladder.py --quota-retry-wake --run-dir <dir>` (also `at` / launchd and `hooks/rfl-quota-retry-due.sh` on SessionStart / UserPromptSubmit).
+- **5-hour** (and generic `429` when the provider is Claude/Anthropic, unless the text clearly says weekly/monthly) → `should_schedule: true`, `reset_seconds` from the parsed remaining time (Console says 2h32m → 9120s).
+- **Weekly / monthly** → HOLD (`[agent-pi] quota weekly; HOLD (no 5h retry)`).
+- **EXIT 124** idle/hard-timeout hang is **not** quota and does **not** `--continue`; neither does a quota window (`agent_host_pi_should_continue`).
 
 ## xhigh remaining risk
 

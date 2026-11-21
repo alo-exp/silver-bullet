@@ -50,19 +50,6 @@ run_stop
 ec_unfail git
 assert_contains "git failing for the branch: the planning floor still blocks" "$(reason)" "silver-quality-gates"
 
-# ---- an active RFL run whose Policy C assertion fails blocks the stop ---------------
-ec_stage_hooks "$TL_TMP/rfl" rfl-policy-c-assert.sh
-cat >"$TL_TMP/rfl/hooks/lib/rfl-policy-c-assert.sh" <<'EOF'
-sb_rfl_policy_c_gate_disabled() { return 1; }
-sb_rfl_policy_c_has_active_run() { return 0; }
-sb_rfl_policy_c_run_assert() { printf '{"ok":false,"why":"fake"}'; return 1; }
-sb_rfl_policy_c_reason_from_json() { printf 'RFL-POLICY-C-MISSING'; }
-EOF
-reset_state
-run_stop "" "$TL_TMP/rfl/hooks/stop-check.sh"
-assert_eq "active RFL run, failing assertion: block decision" "block" "$(jq -r '.decision // ""' <<<"$TL_OUT")"
-assert_eq "active RFL run, failing assertion: reason from the assertion" "RFL-POLICY-C-MISSING" "$(reason)"
-
 # ---- baseline: missing planning skills block --------------------------------
 reset_state
 run_stop

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Wrapper-style scripts: rfl-assert-advance, post-release-refresh,
+# Wrapper-style scripts: post-release-refresh,
 # sb-migrate-orchestrator-parent, run-apo-authoring-compliance,
 # dogfood-orchestrator-parent-surface. Each runs from a temp copy of the tree.
 set -euo pipefail
@@ -7,19 +7,6 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 
 R="$TL_REPO_ROOT"
-
-# --- rfl-assert-advance.sh -------------------------------------------------
-T="$TL_TMP/rfl"
-mkdir -p "$T/scripts"
-cp "$R/scripts/rfl-assert-advance.sh" "$T/scripts/"
-cat >"$T/scripts/review-fix-ladder.py" <<'EOF'
-import sys
-print("ARGS:" + "|".join(sys.argv[1:]))
-sys.exit(3)
-EOF
-tl_run bash "$T/scripts/rfl-assert-advance.sh" --run abc
-assert_eq "rfl wrapper propagates resolver exit code" 3 "$TL_STATUS"
-assert_contains "rfl wrapper passes flag then args" "$TL_OUT" "ARGS:--assert-rfl-advance|--run|abc"
 
 # --- post-release-refresh.sh ----------------------------------------------
 tl_run env SB_POST_RELEASE_VERIFY_SCRIPT="$TL_TMP/nope.sh" bash "$R/scripts/post-release-refresh.sh"

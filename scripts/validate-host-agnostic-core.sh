@@ -121,7 +121,6 @@ HOOKS_ALLOWLIST = {
     "hooks/planning-file-guard.sh",
     "hooks/session-start",
     "hooks/lib/leanctx-gate.sh",
-    "hooks/lib/review-fix-ladder-state.sh",
 }
 
 SCRIPTS_ALLOWLIST = {
@@ -136,6 +135,7 @@ SCRIPTS_ALLOWLIST = {
     "scripts/lib/agent-host-exec.sh",
     "scripts/lib/agent-delegate-common.sh",
     "scripts/lib/rfl_launcher_policy.py",
+    "scripts/lib/rfl_native.py",
     "scripts/optimize-rtk-context-mode.sh",
     "scripts/optimize-five-tool-stack.sh",
     "scripts/pre-release-gate.sh",

@@ -307,7 +307,7 @@ If `--chain` is set in `next=spec` mode, hand off to `/sb:spec` after the brief 
 
 ## Multi-host `--auto` ladders (Pi / OpenCode)
 
-When `/sb:clarify --auto` launches OpenCode or Pi rungs (including `PI_PROVIDER=omniroute` + `PI_MODEL=opencode-go/*` via `scripts/agent-pi/invoke.sh`): if launch fails with OmniRoute/OpenCode `401` `Missing API key` (or `cannot_launch` / timeout) after **attempt + one retry**, substitute **Grok 4.6 High** (`sb-grok-4-6-high`). Never Fast. Never Extra High as the unspecified default. Do not skip-failed. Encoder: `python3 scripts/review-fix-ladder.py --launch-policy --host pi --attempts 2 --outcome cannot_launch`.
+When `/sb:clarify --auto` launches OpenCode or Pi rungs (including `PI_PROVIDER=omniroute` + `PI_MODEL=opencode-go/*` via `scripts/agent-pi/invoke.sh`): if launch fails (`cannot_launch`, timeout, or OmniRoute/OpenCode `401` `Missing API key`) after **attempt + one retry**, skip that rung and continue; skipped rungs are retried once after the ladder. Never substitute another model or vendor. Never Fast. Encoder: `python3 scripts/review-fix-ladder.py --launch-policy --attempts 2 --outcome cannot_launch`.
 
 ## Exit Condition
 
