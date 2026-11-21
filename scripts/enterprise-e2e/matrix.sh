@@ -416,6 +416,32 @@ enterprise_e2e_matrix_ensure_internal_gate_markers() {
   done
 }
 
+# The release marker `inline-e2e-matrix` (matrix=inline-full-surface, commit=<SB HEAD>, written_at=) is
+# written ONLY after a complete real pass: every one of the 22 rows run in this invocation (no row
+# arguments, not a dry run) and passed, with no skipped row. A partial, dry, skipped or failed run writes
+# nothing, and rows 21/22 already need their parent rows' evidence to pass (R14-02). The release gate
+# (hooks/lib/completion-audit/deploy-tier.sh) accepts the marker only for the commit being released.
+enterprise_e2e_matrix_write_release_marker() {
+  local requested_count="$1" dir head file
+  if [[ "${SB_E2E_MATRIX_DRY_RUN:-}" == "1" || "$requested_count" -ne 0 || "$FAIL_ROWS" -ne 0 \
+        || "$SKIP_ROWS" -ne 0 || "$PASS_ROWS" -ne 22 ]]; then
+    echo "NOTE: inline-e2e-matrix not written: it needs a full, non-dry, no-skip 22/22 run (pass=${PASS_ROWS} skip=${SKIP_ROWS} fail=${FAIL_ROWS})."
+    return 0
+  fi
+  head="$(git -C "$SB_ROOT" rev-parse HEAD 2>/dev/null || true)"
+  if [[ ! "$head" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "NOTE: inline-e2e-matrix not written: ${SB_ROOT} has no commit to bind it to."
+    return 0
+  fi
+  dir="$(enterprise_e2e_runtime_state_dir)"
+  mkdir -p "$dir"
+  file="${dir}/inline-e2e-matrix"
+  rm -f -- "$file"
+  ( umask 077; printf 'matrix=inline-full-surface\ncommit=%s\nwritten_at=%s\nsource=claude-supervised-matrix\n' \
+      "$head" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$file" )
+  echo "inline-e2e-matrix written for commit ${head} (${file})"
+}
+
 matrix_force_rerun() {
   [[ "${SB_E2E_MATRIX_FORCE:-}" == "1" || "${SB_E2E_MATRIX_FORCE_ALL:-}" == "1" ]]
 }
@@ -845,6 +871,8 @@ main() {
   if [[ "$FAIL_ROWS" -gt 0 ]]; then
     exit 1
   fi
+
+  enterprise_e2e_matrix_write_release_marker "${#requested[@]}"
 
   if [[ "${SB_E2E_MATRIX_FAIL_ON_SKIP:-}" == "1" ]]; then
     local evidence_skip=$((SKIP_ROWS - INSTALL_PASS_SKIP_ROWS))

@@ -234,7 +234,8 @@ assert_not_contains "live README no longer says the Kay agent is the default" "$
 assert_contains "live README describes the backup and restore of trivial/cache" "$(cat "$LIVE_README")" "EXIT\` trap that restores them"
 assert_contains "e2e README names the claude-only marker" "$(cat "$E2E_README")" "matrix=claude-only"
 assert_not_contains "e2e README no longer promises the supervised matrix satisfies the gate" "$(cat "$E2E_README")" "complete either the Kay diagnostic path"
-assert_not_contains "the release block message no longer offers the supervised matrix as an alternative" "$(cat "$TL_REPO_ROOT/hooks/lib/completion-audit/deploy-tier.sh")" "(or complete the Claude supervised enterprise-e2e-matrix"
+assert_contains "e2e README states the supervised matrix writes the inline marker" "$(cat "$E2E_README")" "writes the same marker"
+assert_contains "the release block message names the supervised matrix and the commit rule" "$(cat "$TL_REPO_ROOT/hooks/lib/completion-audit/deploy-tier.sh")" "commit= naming the commit being released"
 
 # --- R14-14: the workflow can really target a self-hosted runner ---------------------------------
 WF_FILE="$TL_REPO_ROOT/.github/workflows/e2e-live.yml"

@@ -140,7 +140,7 @@ assert_contains "devops release default list applies" "$(message)" "silver-creat
 # ── more release matrix variants and CI listings ─────────────────────────────
 mkproj matrices '.release={require_plugin_runtime_matrix:true} | .skills.required_release=["inst-b"]'
 state inst-a inst-b
-set_matrix() { printf 'matrix=%s\n' "$1" >"$SB_RUNTIME_STATE_DIR/release-live-matrix"; printf 'matrix=%s\n' "$2" >"$SB_RUNTIME_STATE_DIR/e2e-live-matrix"; printf 'matrix=%s\n' "$3" >"$SB_RUNTIME_STATE_DIR/inline-e2e-matrix"; }
+set_matrix() { printf 'matrix=%s\n' "$1" >"$SB_RUNTIME_STATE_DIR/release-live-matrix"; printf 'matrix=%s\n' "$2" >"$SB_RUNTIME_STATE_DIR/e2e-live-matrix"; printf 'matrix=%s\ncommit=%s\n' "$3" "$(git -C "$PROJ" rev-parse HEAD)" >"$SB_RUNTIME_STATE_DIR/inline-e2e-matrix"; }
 set_matrix full-claude-codex full-claude-codex inline-full-surface
 run_ca PreToolUse "$REL"; assert_eq "full claude+codex matrix accepted" "allow" "$(decision)"
 set_matrix codex-only codex-only inline-full-surface
@@ -151,6 +151,42 @@ set_matrix codex-only claude-only inline-full-surface
 run_ca PreToolUse "$REL"; assert_eq "inconsistent matrix pair rejected" "deny" "$(decision)"
 set_matrix claude-only claude-only inline-partial
 run_ca PreToolUse "$REL"; assert_eq "inline matrix must be the full surface" "deny" "$(decision)"
+# ── R14-16: the inline marker must be bound to the commit being released ─────────────────────────
+INL="$SB_RUNTIME_STATE_DIR/inline-e2e-matrix"
+set_matrix claude-only claude-only inline-full-surface
+OLD_SHA="$(git -C "$PROJ" rev-parse HEAD)"
+printf 'matrix=inline-full-surface\n' >"$INL"
+run_ca PreToolUse "$REL"; assert_eq "marker without commit= is rejected (fail closed)" "deny" "$(decision)"
+assert_contains "the block says the commit is required" "$(message)" "commit= naming the commit being released"
+printf 'matrix=inline-full-surface\ncommit=HEAD\n' >"$INL"
+run_ca PreToolUse "$REL"; assert_eq "malformed commit= (not a sha) is rejected" "deny" "$(decision)"
+printf 'matrix=inline-full-surface\ncommit=%s\n' "${OLD_SHA:0:12}" >"$INL"
+run_ca PreToolUse "$REL"; assert_eq "abbreviated commit= is rejected" "deny" "$(decision)"
+printf 'matrix=inline-full-surface\ncommit=%s\n' "$OLD_SHA" >"$INL"
+run_ca PreToolUse "$REL"; assert_eq "commit= equal to the released commit is accepted" "allow" "$(decision)"
+# a later commit that only touches the changelog keeps the evidence valid
+printf 'notes\n' >"$PROJ/CHANGELOG.md"; mkdir -p "$PROJ/docs"; printf 'notes\n' >"$PROJ/docs/CHANGELOG.md"
+git -C "$PROJ" add CHANGELOG.md docs/CHANGELOG.md; git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit -q -m "changelog only"
+GREEN="[{\"workflowName\":\"CI\",\"status\":\"completed\",\"conclusion\":\"success\",\"headSha\":\"$(git -C "$PROJ" rev-parse HEAD)\",\"createdAt\":\"1\"}]"
+run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$GREEN"; assert_eq "ancestor commit with only changelog changes since is accepted" "allow" "$(decision)"
+# a later commit touching anything else invalidates it
+printf 'x\n' >"$PROJ/hooks-changed.sh"
+git -C "$PROJ" add hooks-changed.sh; git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit -q -m "code change"
+run_ca PreToolUse "$REL"; assert_eq "ancestor commit with a code change since is rejected" "deny" "$(decision)"
+# a sha that is not an ancestor (another history) is rejected
+printf 'matrix=inline-full-surface\ncommit=%s\n' "$(printf '%040d' 1)" >"$INL"
+run_ca PreToolUse "$REL"; assert_eq "a commit that is not in the release history is rejected" "deny" "$(decision)"
+# a hand-written marker with a stale commit cannot satisfy the gate; the real hook also denies writing it
+git -C "$PROJ" checkout -q -b side "$OLD_SHA"; printf 'side\n' >"$PROJ/side.txt"; git -C "$PROJ" add side.txt
+git -C "$PROJ" -c user.email=t@e.x -c user.name=t commit -q -m side; SIDE_SHA="$(git -C "$PROJ" rev-parse HEAD)"
+git -C "$PROJ" checkout -q -
+printf 'matrix=inline-full-surface\ncommit=%s\n' "$SIDE_SHA" >"$INL"
+run_ca PreToolUse "$REL"; assert_eq "a commit on a diverged branch (not an ancestor) is rejected" "deny" "$(decision)"
+# G2 state-tamper guard: an agent cannot hand-write the marker through a shell redirect
+TAMPER_CMD="printf 'matrix=inline-full-surface\\ncommit=$OLD_SHA\\n' > $INL"
+tl_run_hook hooks/dev-cycle-check.sh "$(jq -nc --arg c "$TAMPER_CMD" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}')"
+assert_contains "dev-cycle-check denies hand-writing the inline marker" "$TL_OUT" "STATE TAMPER BLOCKED"
+set_matrix claude-only claude-only inline-full-surface
 set_matrix claude-only claude-only inline-full-surface
 SHA="$(git -C "$PROJ" rev-parse HEAD)"
 run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="[{\"workflowName\":\"CI\",\"status\":\"in_progress\",\"headSha\":\"$SHA\",\"createdAt\":\"1\"},{\"workflowName\":\"Lint\",\"status\":\"completed\",\"conclusion\":\"failure\",\"headSha\":\"$SHA\",\"createdAt\":\"2\"},{\"workflowName\":\"Old\",\"status\":\"completed\",\"conclusion\":\"failure\",\"headSha\":\"other\",\"createdAt\":\"3\"}]"

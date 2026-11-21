@@ -81,6 +81,7 @@ f2_stage_matrix() {
   rm -f "$root/scripts/lib/enterprise-e2e-outcome-assessment.sh"
   f2_stub_script "$root/scripts/install-codex.sh" scripts/install-codex.sh
   ln -s "$TL_REPO_ROOT/scripts/lib/matrix-quota.sh" "$root/scripts/lib/matrix-quota.sh"
+  ln -s "$TL_REPO_ROOT/scripts/lib/pid-identity.sh" "$root/scripts/lib/pid-identity.sh"
   ln -s "$TL_REPO_ROOT/tests/e2e-live/lib/skill-prompt.sh" "$root/tests/e2e-live/lib/skill-prompt.sh"
 
   cat >"$root/scripts/lib/claude-matrix-auth.sh" <<'EOS'

@@ -28,8 +28,8 @@ Codex/Kay home on every exit.
 Release creation requires live matrix markers in addition to the shared hook/agent matrix marker
 written by `tests/live/run-live-tests.sh`. The gate (`hooks/lib/completion-audit/deploy-tier.sh`)
 also requires `inline-e2e-matrix=matrix=inline-full-surface`, which only the inline full-surface
-journey writes (`SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1`). The Claude supervised matrix is not
-accepted in its place today.
+journey writes (`SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1`). The Claude supervised matrix (`scripts/run-enterprise-e2e-matrix.sh`, all 22 rows, no skips) writes the same marker
+after a full real pass; both writers stamp `commit=` and the gate requires it to match the released commit.
 
 Current scenarios:
 
