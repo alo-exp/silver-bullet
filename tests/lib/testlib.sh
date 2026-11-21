@@ -75,6 +75,7 @@ tl_fake_plugin_root() {
       [[ -d "$TL_REPO_ROOT/$stub" ]] && ln -s "$TL_REPO_ROOT/$stub" "$dest/$stub"
     done
     cp "$TL_REPO_ROOT/scripts/lib/pre-release-host-isolation.sh" "$TL_REPO_ROOT/scripts/lib/evidence_common.py" "$dest/scripts/lib/"
+    cp "$TL_REPO_ROOT/scripts/lib/release-surface-allowlist.txt" "$dest/scripts/lib/"
     cp "$TL_REPO_ROOT/scripts/validate-evidence-findings.sh" "$TL_REPO_ROOT/scripts/validate-evidence-findings.py" "$dest/scripts/"
     for stub in validate-launch-review.sh validate-sentinel-skills-manifest.sh; do
       printf '#!/usr/bin/env bash\nexit 0\n' >"$dest/scripts/$stub"

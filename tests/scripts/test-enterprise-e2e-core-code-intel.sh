@@ -136,6 +136,8 @@ assert_eq "graphify: no recorder defined is tolerated" 0 "$TL_STATUS"
 # --- agentmemory --------------------------------------------------------------
 tl_stub agentmemory 'echo started >>"$AM_STARTED"; exit 0'
 tl_stub lsof 'echo 2147483646'
+# ps names the listener: the process is this user's agentmemory unless AM_PS says otherwise
+tl_stub ps 'printf "%s\n" "${AM_PS:-$(id -un) agentmemory serve}"'
 AM_ENV=("AM_STARTED=$TL_TMP/am.started")
 am() {  # am DRY HOST ENV...
   local dry="$1" host="$2"
@@ -166,6 +168,32 @@ assert_contains "agentmemory: start announced" "$TL_OUT" "agentmemory server not
 for _ in $(seq 1 50); do [[ -f "$TL_TMP/am.started" ]] && break; sleep 0.1; done
 assert_file_exists "agentmemory: the server binary was launched" "$TL_TMP/am.started"
 assert_file_exists "agentmemory: server log location prepared" "$HOME/.agentmemory/server.log"
+# R14-10: the listener is terminated by exact PID with TERM (a real decoy process stands in for it),
+# never kill -9 through xargs, and a foreign process on the port is left alone.
+sleep 300 & LISTENER=$!
+tl_stub lsof "echo $LISTENER"
+am 0 h "A_HEALTHY_AFTER=1"
+for _ in $(seq 1 30); do kill -0 "$LISTENER" 2>/dev/null || break; sleep 0.1; done
+if kill -0 "$LISTENER" 2>/dev/null; then tl_fail "agentmemory: the stale agentmemory listener was terminated"; kill -KILL "$LISTENER" 2>/dev/null; else tl_pass "agentmemory: the stale agentmemory listener was terminated"; fi
+assert_contains "agentmemory: listener pid reported" "$TL_OUT" "recycling stale listener (agentmemory, pid $LISTENER)"
+sleep 300 & LISTENER=$!
+tl_stub lsof "echo $LISTENER"
+am 0 h "A_HEALTHY_AFTER=1" "AM_PS=otheruser nginx -g daemon off"
+assert_contains "agentmemory: foreign listener reported" "$TL_OUT" "is not this user's agentmemory (pid $LISTENER) — not touching it"
+if kill -0 "$LISTENER" 2>/dev/null; then tl_pass "agentmemory: a foreign listener survives"; else tl_fail "agentmemory: a foreign listener survives"; fi
+kill -TERM "$LISTENER" 2>/dev/null || true
+# a listener whose ps entry vanished is not this user's agentmemory either
+sleep 300 & LISTENER=$!
+tl_stub lsof "echo $LISTENER"
+tl_stub ps 'exit 1'
+am 0 h "A_HEALTHY_AFTER=1"
+assert_contains "agentmemory: unidentifiable listener left alone" "$TL_OUT" "is not this user's agentmemory (pid $LISTENER) — not touching it"
+kill -TERM "$LISTENER" 2>/dev/null || true
+tl_stub ps 'printf "%s\n" "${AM_PS:-$(id -un) agentmemory serve}"'
+# a non-numeric lsof answer is ignored
+tl_stub lsof 'echo not-a-pid'
+am 0 h "A_HEALTHY_AFTER=1"
+assert_not_contains "agentmemory: non-numeric lsof output recycles nothing" "$TL_OUT" "recycling stale listener ("
 tl_stub lsof 'exit 1'
 am 0 h "A_HEALTHY_AFTER=1"
 assert_not_contains "agentmemory: no listener, nothing to recycle" "$TL_OUT" "recycling stale listener"

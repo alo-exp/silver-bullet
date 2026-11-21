@@ -71,7 +71,7 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | scripts/dogfood-orchestrator-parent-surface.sh:27 | state | `grep -qx "$skill" "$STATE_FILE" 2>/dev/null \|\| printf '%s\n' "$skill" >>"$STATE_FILE"` | X | user-run or skill-run script, not a hook gate |
 | scripts/dogfood-orchestrator-parent-surface.sh:36 | state | `echo "PASS: lifecycle skills recorded ($(wc -l <"$STATE_FILE" \| tr -d ' ') lines)"` | X | user-run or skill-run script, not a hook gate |
 | scripts/export-enterprise-evidence.sh:79 | config | `if [[ -f "${PROJECT_ROOT}/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
-| scripts/monitor-enterprise-e2e-matrix.sh:167 | state | `if grep -q "^${key}=" "$STATE_FILE" 2>/dev/null; then` | X | user-run or skill-run script, not a hook gate |
+| scripts/monitor-enterprise-e2e-matrix.sh:142 | state | `if grep -q "^${key}=" "$STATE_FILE" 2>/dev/null; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/optimize-five-tool-stack.sh:103 | config | `if [[ -n "$PROJECT_ROOT" && -f "${PROJECT_ROOT}/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/optimize-five-tool-stack.sh:113 | config | `[[ -z "$cfg" ]] \|\| [[ "$(jq -r '.recommended_tools.leanctx.enabled_by_user' "$cfg" 2>/de` | X | user-run or skill-run script, not a hook gate |
 | scripts/optimize-five-tool-stack.sh:121 | config | `profile="$(jq -r '.recommended_tools.leanctx.optimization_profile // "five_tool_routed"' "` | X | user-run or skill-run script, not a hook gate |

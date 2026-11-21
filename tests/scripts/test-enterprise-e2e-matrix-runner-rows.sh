@@ -28,7 +28,7 @@ assert_contains "prompt carries slug route and evidence" "$CALLS" "prompt#1 /sb 
 assert_contains "agent env: workflow quiet timeout" "$CALLS" "agent-env#1 quiet=600 timeout=900 evidence=docs/ADR-001-runtime.md routing=0"
 assert_contains "attempt log header" "$(cat "$R/.e2e-row2-attempt.log")" 'HARNESS graphify: graphify query "silver-deep-research routes hooks skills orchestrator"'
 assert_contains "agent output stored in attempt log" "$(cat "$R/.e2e-row2-attempt.log")" "agent said hello"
-assert_contains "slug recorded in routing state" "$(cat "$STATE")" "silver-deep-research"
+assert_not_contains "R14-02: the slug is not pre-seeded into the runtime state" "$(cat "$STATE" 2>/dev/null || true)" "silver-deep-research"
 assert_eq "registry records the pass" "true" "$(jq -r '.installs | to_entries[0].value.rows["2"].outcome_pass' "$REG")"
 assert_contains "workspace set up and cleaned" "$CALLS" "cleanup_workspace"
 assert_file_absent "pid file removed" "$TL_TMP/batch.pid"

@@ -54,8 +54,6 @@ else
   MCP_AUTH_CACHE="${SB_RUNTIME_HOME_ROOT}/mcp-needs-auth-cache.json"
   MCP_AUTH_CACHE_BACKUP="${SB_TEST_DIR}/mcp-needs-auth-cache.e2e-live-backup-$$"
 fi
-INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
-E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 HOOK_AUDIT_FILE="${SB_TEST_DIR}/hook-audit.jsonl"
 # shellcheck disable=SC2034 # Reserved for live-run budget enforcement.
 MAX_BUDGET="${SB_E2E_LIVE_BUDGET_USD:-10.00}"
@@ -202,26 +200,6 @@ clear_hook_audit_log() {
   : > "$HOOK_AUDIT_FILE"
 }
 
-write_inline_e2e_matrix_marker() {
-  mkdir -p "$SB_TEST_DIR"
-  cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
-}
-
-write_e2e_live_matrix_marker() {
-  mkdir -p "$SB_TEST_DIR"
-  local marker="full-claude-codex"
-  if [[ "${SB_E2E_LIVE_RUNTIMES:-}" == "claude" ]]; then
-    marker="claude-only"
-  elif [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" || "${SB_E2E_LIVE_RUNTIMES:-}" == "codex" || "${SB_E2E_LIVE_RUNTIMES:-}" == "kay" ]]; then
-    marker="codex-only"
-  fi
-  cat > "$E2E_LIVE_MATRIX_FILE" <<EOF
-matrix=${marker}
-EOF
-}
-
 dependency_access_preflight_file() {
   printf '%s\n' "${E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE:-}"
 }
@@ -287,10 +265,6 @@ emit_hook_delivery_diagnostic() {
   fi
 }
 
-clear_inline_e2e_matrix_marker() {
-  rm -f "$INLINE_E2E_MATRIX_FILE"
-}
-
 port_is_available() {
   local port="$1"
   python3 - "$port" <<'PY'
@@ -318,18 +292,6 @@ sock.bind(("127.0.0.1", 0))
 print(sock.getsockname()[1])
 sock.close()
 PY
-}
-
-write_quality_gate_state_marker() {
-  local gate_file="${SB_TEST_DIR}/quality-gate-state"
-  mkdir -p "$(dirname "$gate_file")"
-  cat > "$gate_file" <<'EOF'
-quality-gate-stage-1
-quality-gate-stage-2
-quality-gate-stage-3
-quality-gate-stage-4
-full-test-suite-rerun
-EOF
 }
 
 workspace_trust_config_files() {
@@ -1082,6 +1044,10 @@ ensure_runtime_dependency_access_preflight() {
 }
 
 verify_runtime_hook_delivery() {
+  # R14-01: a pass requires the real agent turn to have produced a real hook decision.
+  # Only audit entries written after the log was cleared and the live turn ran count. Piping a
+  # payload into the hook from this shell proves nothing about the runtime, so there is no
+  # direct-hook shortcut and a mutated source file is a failure, never an accepted outcome.
   local target_file
   local digest_before
   local digest_after
@@ -1099,32 +1065,14 @@ verify_runtime_hook_delivery() {
 
   local hook_probe_cmd="bash -lc \"printf '\\n// sb-hook-probe\\n' >> ${E2E_PROBE_SOURCE_FILE}\""
 
-  probe_dev_cycle_bash_command "$hook_probe_cmd" || true
-  if hook_audit_has_entry "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete'; then
-    echo "PASS: hook-delivery preflight records dev-cycle deny via deterministic bash probe"
-    PASS=$((PASS + 1))
-    HOOK_AUDIT_LAST_WAIT_PASSED=1
-  else
-    run_hook_probe_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`${hook_probe_cmd}\` and do not do anything else." >/dev/null || true
-    if ! wait_for_hook_audit_entry "hook-delivery preflight records dev-cycle deny" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete' 30 2; then
-      if probe_dev_cycle_bash_command "$hook_probe_cmd" && hook_audit_has_entry "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete'; then
-        echo "PASS: hook-delivery preflight records dev-cycle deny via deterministic bash probe"
-        PASS=$((PASS + 1))
-        HOOK_AUDIT_LAST_WAIT_PASSED=1
-      else
-        failed=1
-      fi
-    fi
+  run_hook_probe_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`${hook_probe_cmd}\` and do not do anything else." >/dev/null || true
+  if ! wait_for_hook_audit_entry "hook-delivery preflight records dev-cycle deny" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete' 30 2; then
+    failed=1
   fi
 
   digest_after="$(capture_digest "$target_file")"
 
   if [[ -n "$digest_before" && "$digest_after" == "$digest_before" ]]; then
-    echo "PASS: hook-delivery preflight keeps source unchanged before planning"
-    PASS=$((PASS + 1))
-  elif [[ "${HOOK_AUDIT_LAST_WAIT_PASSED:-0}" == "1" ]]; then
-    git -C "$WORK_DIR" checkout -- "$E2E_PROBE_SOURCE_FILE" >/dev/null 2>&1 || true
-    echo "WARN: Kay mutated the file despite dev-cycle deny; restored baseline and accepted hook audit evidence"
     echo "PASS: hook-delivery preflight keeps source unchanged before planning"
     PASS=$((PASS + 1))
   else
@@ -1426,55 +1374,6 @@ wait_for_state_contains() {
 }
 
 
-probe_completion_audit_bash_command() {
-  local command="$1"
-  local hook_script="${SB_ROOT}/hooks/completion-audit.sh"
-  [[ -x "$hook_script" ]] || return 1
-  (
-    cd "$WORK_DIR"
-    export SILVER_BULLET_HOOK_AUDIT_LOG="$HOOK_AUDIT_FILE"
-    export SILVER_BULLET_STATE_FILE="$STATE_FILE"
-    jq -n --arg cmd "$command" '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$cmd}}'       | bash "$hook_script" >/dev/null
-  )
-}
-
-probe_dev_cycle_bash_command() {
-  local command="$1"
-  local hook_script="${SB_ROOT}/hooks/dev-cycle-check.sh"
-  [[ -x "$hook_script" ]] || return 1
-  rm -f "$TRIVIAL_FILE"
-  if [[ ! -f "${WORK_DIR}/.silver-bullet.json" ]]; then
-    printf '{"project":{"status":"active"}}
-' > "${WORK_DIR}/.silver-bullet.json"
-  fi
-  if [[ ! -f "${WORK_DIR}/silver-bullet.md" ]]; then
-    printf '# E2E hook probe
-' > "${WORK_DIR}/silver-bullet.md"
-  fi
-  (
-    cd "$WORK_DIR"
-    export SILVER_BULLET_HOOK_AUDIT_LOG="$HOOK_AUDIT_FILE"
-    export SILVER_BULLET_STATE_FILE="$STATE_FILE"
-    if [[ -n "${SILVER_BULLET_BRANCH_FILE:-}" ]]; then
-      export SILVER_BULLET_BRANCH_FILE
-    fi
-    if jq -n --arg cmd "$command" '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$cmd}}' \
-      | bash "$hook_script" >/dev/null; then
-      :
-    fi
-    if [[ -f "$HOOK_AUDIT_FILE" ]] && jq -e \
-      --arg hook_name dev-cycle-check \
-      --arg decision deny \
-      'select(.hook_name == $hook_name and .decision == $decision)' \
-      "$HOOK_AUDIT_FILE" >/dev/null 2>&1; then
-      exit 0
-    fi
-    jq -n --arg fp "$E2E_PROBE_SOURCE_FILE" '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$fp}}' \
-      | bash "$hook_script" >/dev/null
-  )
-  hook_audit_has_entry "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete'
-}
-
 hook_audit_has_entry() {
   local hook_name="$1"
   local decision="$2"
@@ -1489,7 +1388,6 @@ hook_audit_has_entry() {
 }
 
 wait_for_hook_audit_entry() {
-  HOOK_AUDIT_LAST_WAIT_PASSED=0
   local label="$1"
   local hook_name="$2"
   local decision="$3"
@@ -1507,7 +1405,6 @@ wait_for_hook_audit_entry() {
       "$HOOK_AUDIT_FILE" >/dev/null 2>&1; then
       echo "PASS: $label"
       PASS=$((PASS + 1))
-      HOOK_AUDIT_LAST_WAIT_PASSED=1
       return 0
     fi
     sleep "$interval_seconds"

@@ -66,6 +66,7 @@ f2_stage_matrix() {
   rm -f "$root/tests/live/lib"
   mkdir -p "$root/tests/live/lib"
   printf 'sb_prepend_harness_path() { :; }\n' >"$root/tests/live/lib/detach-background.sh"
+  ln -s "$TL_REPO_ROOT/tests/live/lib/evidence-guard.sh" "$root/tests/live/lib/evidence-guard.sh"
 
   rm -f "$root/scripts/enterprise-e2e/lib"
   mkdir -p "$root/scripts/enterprise-e2e/lib/deterministic"
@@ -81,6 +82,7 @@ f2_stage_matrix() {
   rm -f "$root/scripts/lib/enterprise-e2e-outcome-assessment.sh"
   f2_stub_script "$root/scripts/install-codex.sh" scripts/install-codex.sh
   ln -s "$TL_REPO_ROOT/scripts/lib/matrix-quota.sh" "$root/scripts/lib/matrix-quota.sh"
+  ln -s "$TL_REPO_ROOT/scripts/lib/pid-identity.sh" "$root/scripts/lib/pid-identity.sh"
   ln -s "$TL_REPO_ROOT/tests/e2e-live/lib/skill-prompt.sh" "$root/tests/e2e-live/lib/skill-prompt.sh"
 
   cat >"$root/scripts/lib/claude-matrix-auth.sh" <<'EOS'
