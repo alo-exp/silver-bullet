@@ -39,9 +39,16 @@ assert_eq "env catalog wins" "$CAT" "$(sb_scheduler_catalog_file "$PROJ")"
 assert_eq "disabled scheduler has no catalog" 1 "$(SB_ORCHESTRATOR_RUNTIME_SCHEDULER=0 rc_of sb_scheduler_catalog_file "$PROJ")"
 mkdir -p "$PROJ/docs"
 cp "$CAT" "$PROJ/docs/apo-catalog.json"
-assert_eq "env pointing at a missing file is ignored" "$PROJ/docs/apo-catalog.json" "$(SB_APO_CATALOG_FILE=/no/such sb_scheduler_catalog_file "$PROJ")"
+# A project's own docs/apo-catalog.json is repo-controlled data: it is never the scheduler catalog (R4-10);
+# the plugin tree's catalog is used, and the project's only when the project is the plugin tree.
+got="$(SB_APO_CATALOG_FILE=/no/such sb_scheduler_catalog_file "$PROJ")"
+assert_contains "env pointing at a missing file is ignored; a project catalog is not used" "$got" "/../../docs/apo-catalog.json"
+assert_eq "the project catalog itself is never returned" 0 "$([[ "$got" == "$PROJ/docs/apo-catalog.json" ]] && echo 1 || echo 0)"
 assert_contains "plugin catalog is the last resort" "$(unset SB_APO_CATALOG_FILE; sb_scheduler_catalog_file "")" "/../../docs/apo-catalog.json"
 stg="$(dirname "$(dirname "$(orch_stage_libs orchestrator-scheduler.sh orchestrator-state.sh orchestrator-skill-atom.sh orchestrator-event-log.sh orchestrator-directive.sh orchestrator-parent.sh)")")"
+mkdir -p "$stg/docs"; cp "$CAT" "$stg/docs/apo-catalog.json"
+assert_eq "the plugin tree's own catalog is used when the project is the plugin tree" "$stg/docs/apo-catalog.json" "$(bash -c 'unset SB_APO_CATALOG_FILE; source "$1"; sb_scheduler_catalog_file "$2"' _ "$stg/hooks/lib/orchestrator-scheduler.sh" "$stg")"
+rm -rf "$stg/docs"
 assert_eq "no catalog anywhere" 1 "$(bash -c 'unset SB_APO_CATALOG_FILE; source "$1"; sb_scheduler_catalog_file "" >/dev/null; echo $?' _ "$stg/hooks/lib/orchestrator-scheduler.sh")"
 
 echo "=== mutation scope conflicts ==="
