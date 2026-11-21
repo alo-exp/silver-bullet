@@ -18,11 +18,11 @@ git -C "$P" init -q -b main
 P_REAL="$(cd "$P" && pwd -P)"
 mkdir -p "$P/shots" "$TL_TMP/outside"
 shot="$P/shots/home.png"
-printf 'png' >"$shot"
-printf 'png' >"$TL_TMP/dark.png"
+printf '\x89PNG\r\n\x1a\n\0\0\0\rIHDR' >"$shot"
+printf '\x89PNG\r\n\x1a\n\0\0\0\rIHDR' >"$TL_TMP/dark.png"
 reset() {
   rm -f "$VE" "$VL"
-  jq -n --arg sc "$P_REAL|main" '{active:true,scope:$sc,edit_seq:2,touch_reason:"edit:site/index.html"}' >"$SS"
+  jq -n --arg sc "$P_REAL" '{active:true,scope:$sc,edit_seq:2,nonce:"n1",touch_reason:"edit:site/index.html"}' >"$SS"
 }
 shot_input() { # tool response-json [tool_input-json]
   jq -cn --arg t "$1" --argjson r "$2" --argjson i "${3:-{\}}" \
@@ -71,6 +71,29 @@ reset; rm -f "$SS"; dg_run "$P" "$H" "$(shot_input mcp__playwright__browser_take
 assert_no_evidence "evidence: no site session, nothing to prove"
 reset; jq '.edit_seq=0' "$SS" >"$ST/s.t" && mv "$ST/s.t" "$SS"; dg_run "$P" "$H" "$(shot_input mcp__playwright__browser_take_screenshot "{\"path\":\"$shot\"}")"
 assert_no_evidence "evidence: a session without site edits has nothing to prove"
+
+
+# review r1: only a real image, under the project or a temporary directory, written after the latest edit
+reset; printf 'not an image' >"$P/shots/fake.png"
+dg_run "$P" "$H" "$(shot_input mcp__playwright__browser_take_screenshot "{\"path\":\"$P/shots/fake.png\"}")"
+assert_no_evidence "evidence: a text file named .png is not a screenshot"
+reset; dg_run "$P" "$H" "$(shot_input mcp__shop__theme_screenshot '{}' '{"filename":"/etc/hostname"}')"
+assert_no_evidence "evidence: an arbitrary readable path such as /etc/hostname is not a screenshot"
+reset; dg_run "$P" "$H" "$(shot_input mcp__shop__theme_screenshot "{\"path\":\"/etc/hostname\"}")"
+assert_no_evidence "evidence: nor is one named by the tool's own response"
+reset; jq '.last_edit_epoch = 4102444800' "$SS" >"$ST/s.t" && mv "$ST/s.t" "$SS"
+dg_run "$P" "$H" "$(shot_input mcp__playwright__browser_take_screenshot "{\"path\":\"$shot\"}")"
+assert_no_evidence "evidence: a screenshot older than the latest site edit is not evidence"
+reset; jq '.last_edit_epoch = 1' "$SS" >"$ST/s.t" && mv "$ST/s.t" "$SS"
+dg_run "$P" "$H" "$(shot_input mcp__playwright__browser_take_screenshot "{\"path\":\"$shot\"}")"
+assert_eq "evidence: one taken after the edit is" "$shot" "$(ve_path)"
+assert_eq "evidence: the record carries the session nonce" "n1" "$(jq -r .nonce "$VE")"
+reset; jpg="$P/shots/p.jpg"; printf '\xff\xd8\xff\xe0\0\x10JFIF\0' >"$jpg"
+dg_run "$P" "$H" "$(shot_input mcp__playwright__browser_take_screenshot "{\"path\":\"$jpg\"}")"
+assert_eq "evidence: a JPEG is accepted" "$jpg" "$(ve_path)"
+mkdir -p "$TL_TMP/elsewhere"; 
+reset; dg_run "$P" "$H" "$(shot_input mcp__playwright__browser_take_screenshot '{"path":"/usr/share/zoneinfo/UTC"}')"
+assert_no_evidence "evidence: a path outside the project and the temporary directories is refused"
 
 for mcp_tool in browser_take_screenshot take_screenshot screenshot; do
   reset; dg_run "$P" "$H" "$(shot_input MCP "{\"path\":\"$shot\"}" "{\"toolName\":\"$mcp_tool\"}")"

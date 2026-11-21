@@ -947,7 +947,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$SITE_REG_HOOK" ]];
   printf '#!/usr/bin/env bash\nexit 1\n' >"$TMPDIR_TEST/tests/site-fail.sh"
   git -C "$TMPDIR_TEST" add -A >/dev/null 2>&1
   git -C "$TMPDIR_TEST" -c user.name=t -c user.email=t@t commit -q -m site-profile
-  jq -n --arg sc "$(cd "$TMPDIR_TEST" && pwd -P)|$(git -C "$TMPDIR_TEST" symbolic-ref -q --short HEAD)" '{active:true,scope:$sc,edit_seq:1,regression_passed_seq:0,touch_reason:"edit:site/index.html",push_intent:false}' \
+  jq -n --arg sc "$(cd "$TMPDIR_TEST" && pwd -P)" '{active:true,scope:$sc,edit_seq:1,regression_passed_seq:0,touch_reason:"edit:site/index.html",push_intent:false}' \
     >"${SB_TEST_DIR}/site-session.json"
   site_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SITE_REG_HOOK" 2>/dev/null || true )
   assert_blocks "ORCH-7a: site-regression blocks Stop with active session" "$site_out"

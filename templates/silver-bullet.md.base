@@ -979,11 +979,13 @@ These rules apply only to a project that opts in with a `site_profile` section i
   "regression_scripts": ["tests/scripts/test-site-chrome-regression.sh"],
   "live_url": "https://example.com/",
   "preview_port": 8765,
-  "preview_script": "site/serve.sh"
+  "preview_script": "site/serve.sh",
+  "trusted_helpers": ["scripts/check-site.py"],
+  "stop_block_limit": 3
 }
 ```
 
-Everything the hooks run, fetch or probe comes from that section: the regression scripts, the live URL, the preview port and script. A path counts as a site edit only when it lies inside `<project>/<dir>`. A prompt that merely mentions the site never starts a site session.
+Everything the hooks run, fetch or probe comes from that section: the regression scripts, the live URL, the preview port and script. `trusted_helpers` lists the files those scripts themselves run (checkers, generators): like the scripts, they count only when committed as they stand, and a helper the profile does not list is not covered. A path counts as a site edit only when it lies inside `<project>/<dir>`; the session belongs to the project, not to a branch, so switching branches does not drop it. Shell writes that name no path (`git apply`, `find -exec`, a script) are seen through a change of the site tree's content between two shell commands; a script that writes the site before the session's first shell look is not seen (the first look records the baseline). A prompt that merely mentions the site never starts a site session.
 
 **Authoring model**
 - Route site intents through `/sb` → `sb:content` (site batch protocol in `skills/silver-content/SKILL.md`).
@@ -1009,7 +1011,7 @@ Everything the hooks run, fetch or probe comes from that section: the regression
 **Visual evidence**
 - Take screenshots with the host browser MCP (Alumnium or the Playwright MCP's `browser_take_screenshot`) after the last site edit. `record-site-visual-evidence.sh` records the screenshot file when the tool returns; do not write `site-visual-evidence.json` by hand. A later site edit needs a new screenshot.
 
-**Runtime hooks:** `site-regression-gate.sh`, `site-visual-evidence-gate.sh`, `v-loop-rollup-gate.sh`, `live-publish-evidence-gate.sh`, `instruction-ledger-gate.sh`, `subagent-stop-enforcement.sh` enforce the above at Stop (and the regression gate before a real push). A Stop gate that has already told the agent once releases when the host reports `stop_hook_active`, and writes an audit line to `stop-loop-release.log`. The parent's file-write rule for worker-only site edits is advisory: no hook blocks a parent edit.
+**Runtime hooks:** `site-regression-gate.sh`, `site-visual-evidence-gate.sh`, `v-loop-rollup-gate.sh`, `live-publish-evidence-gate.sh`, `instruction-ledger-gate.sh`, `subagent-stop-enforcement.sh` enforce the above at Stop (and the regression gate before a real push). A Stop gate is not a one-time warning: the host sets `stop_hook_active` on every Stop that follows a block, so the flag alone releases nothing the agent can clear. A gate releases a condition that has blocked `site_profile.stop_block_limit` consecutive times (default 3) with nothing changed, or one the agent cannot clear (a gate setup problem) once the host reports `stop_hook_active`. A new edit, new evidence or a pass starts the count again, and every release is logged to `stop-loop-release.log`. The parent's file-write rule for worker-only site edits is advisory: no hook blocks a parent edit.
 
 ---
 

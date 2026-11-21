@@ -7,7 +7,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/dgates-helpers.sh"
 tl_init
 
 P="$TL_TMP/proj"
-PROFILE='{"sb_initiated":true,"site_profile":{"enabled":true,"dir":"site","preview_port":8765,"preview_script":"site/serve.sh","live_url":"https://site.example/","regression_scripts":["tests/scripts/test-site-chrome-regression.sh","tests/scripts/test-site-doc-freshness.sh","tests/scripts/test-site-content-freshness.sh"]}}'
+PROFILE='{"sb_initiated":true,"site_profile":{"enabled":true,"dir":"site","preview_port":8765,"stop_block_limit":1000,"preview_script":"site/serve.sh","live_url":"https://site.example/","regression_scripts":["tests/scripts/test-site-chrome-regression.sh","tests/scripts/test-site-doc-freshness.sh","tests/scripts/test-site-content-freshness.sh"]}}'
 dg_project "$P" "$PROFILE"
 rm -rf "$P/.git"
 git -C "$P" init -q -b main
@@ -17,9 +17,9 @@ SESS="$ST/site-session.json"
 P_REAL="$(cd "$P" && pwd -P)"
 commit_all() { git -C "$P" add -A >/dev/null 2>&1; git -C "$P" -c user.name=t -c user.email=t@t commit -q --allow-empty -m "${1:-c}"; }
 commit_all init
-scope() { printf '%s|%s' "$P_REAL" "$(git -C "$P" symbolic-ref -q --short HEAD 2>/dev/null || true)"; }
+scope() { printf '%s' "$P_REAL"; }
 # site_session REASON PUSH LIVE EDITS: a session in the current scope (EDITS = edit_seq, 1 by default).
-site_session() { jq -n --arg r "${1:-site-intent}" --arg sc "$(scope)" --argjson e "${4:-1}" '{active:true,scope:$sc,touch_reason:$r,edit_seq:$e,regression_passed_seq:0,push_intent:'"${2:-false}"',live_claim_pending:'"${3:-false}"'}' >"$SESS"; }
+site_session() { jq -n --arg r "${1:-site-intent}" --arg sc "$(scope)" --argjson e "${4:-1}" '{active:true,scope:$sc,nonce:"n1",touch_reason:$r,edit_seq:$e,regression_passed_seq:0,push_intent:'"${2:-false}"',live_claim_pending:'"${3:-false}"'}' >"$SESS"; }
 
 edit_json() { # tool path content
   jq -cn --arg t "$1" --arg p "$2" --arg c "$3" '{hook_event_name:"PreToolUse",tool_name:$t,tool_input:{file_path:$p,new_string:$c}}'
@@ -174,8 +174,8 @@ tl_stub curl 'printf 500'
 H=hooks/site-visual-evidence-gate.sh
 stop_json='{"hook_event_name":"Stop"}'
 shot="$TL_TMP/shot.png"
-printf 'png' >"$shot"
-visual_evidence() { jq -n --arg r "$P_REAL" --arg p "$shot" --argjson e 1 '{captured_at:"t",project:$r,edit_seq:$e,paths:[$p]}' >"$ST/site-visual-evidence.json"; }
+printf '\x89PNG\r\n\x1a\n\0\0\0\rIHDR' >"$shot"
+visual_evidence() { jq -n --arg r "$P_REAL" --arg p "$shot" --argjson e 1 '{captured_at:"t",project:$r,nonce:"n1",edit_seq:$e,paths:[$p]}' >"$ST/site-visual-evidence.json"; }
 rm -f "$SESS"
 dg_run_nolib "$H" "$stop_json"
 assert_eq "visual: lib-dir fallback inert" "" "$TL_OUT"
@@ -200,9 +200,7 @@ dg_run "$P" "$H" "$stop_json"
 assert_eq "visual: an active delegation does not switch the gate off (R9-04)" "block" "$(decision)"
 rm -f "$ST/agent-delegation-active.json"
 dg_run "$P" "$H" '{"hook_event_name":"Stop","stop_hook_active":true}'
-assert_eq "visual: a Stop already continuing because of a Stop hook is released (R9-03)" "" "$TL_OUT"
-assert_contains "visual: the release is audited" "$(cat "$ST/stop-loop-release.log")" "site-visual-evidence-gate"
-rm -f "$ST/stop-loop-release.log"
+assert_eq "visual: stop_hook_active alone does not release a condition the agent can clear" "block" "$(decision)"
 dg_run "$P" "$H" '{"hook_event_name":"SubagentStop"}' SB_ORCHESTRATOR_PARENT=0
 assert_eq "visual: SubagentStop in worker session skipped" "" "$TL_OUT"
 dg_assert_ok "visual: SubagentStop in worker session skipped: exits 0"
@@ -220,7 +218,7 @@ visual_evidence
 rm -f "$shot"
 dg_run "$P" "$H" "$stop_json"
 assert_eq "visual: evidence naming a file that is gone does not count" "block" "$(decision)"
-printf 'png' >"$shot"
+printf '\x89PNG\r\n\x1a\n\0\0\0\rIHDR' >"$shot"
 jq '.project="/other/project"' "$ST/site-visual-evidence.json" >"$ST/v.t" && mv "$ST/v.t" "$ST/site-visual-evidence.json"
 dg_run "$P" "$H" "$stop_json"
 assert_eq "visual: evidence left by another project does not count (R9-08)" "block" "$(decision)"
@@ -235,7 +233,7 @@ dg_run "$P" "$H" "$stop_json"
 assert_eq "visual: session without site edits allowed" "" "$TL_OUT"
 dg_assert_ok "visual: session without site edits allowed: exits 0"
 site_session
-jq '.scope="/elsewhere|main"' "$SESS" >"$ST/s.t" && mv "$ST/s.t" "$SESS"
+jq '.scope="/elsewhere"' "$SESS" >"$ST/s.t" && mv "$ST/s.t" "$SESS"
 dg_run "$P" "$H" "$stop_json"
 assert_eq "visual: a session left by another project or branch is not this one's (R9-08)" "" "$TL_OUT"
 rm -f "$SESS"
@@ -276,9 +274,7 @@ dg_run "$P/sub" "$H" "$stop_json"
 assert_eq "live: Stop with push intent and no evidence blocks" "block" "$(decision)"
 assert_contains "live: the reason names the sanctioned writer" "$TL_OUT" "scripts/site-live-evidence.sh"
 dg_run "$P" "$H" '{"hook_event_name":"Stop","stop_hook_active":true}'
-assert_eq "live: a Stop already continuing is released and audited (R9-03)" "" "$TL_OUT"
-assert_contains "live: the release is audited" "$(cat "$ST/stop-loop-release.log")" "live-publish-evidence-gate"
-rm -f "$ST/stop-loop-release.log"
+assert_eq "live: stop_hook_active alone does not release a condition the agent can clear" "block" "$(decision)"
 site_session site-intent false true
 dg_run "$P" "$H" "$stop_json"
 assert_eq "live: Stop with live claim pending blocks" "block" "$(decision)"
@@ -395,9 +391,7 @@ assert_contains "regression: block says suites failed" "$TL_OUT" "suites ran and
 assert_contains "regression: block cites a log file" "$TL_OUT" "site-regression."
 assert_contains "regression: block lists the profile's scripts" "$TL_OUT" "bash tests/scripts/test-site-doc-freshness.sh"
 dg_run "$P" "$H" '{"hook_event_name":"Stop","stop_hook_active":true}'
-assert_eq "regression: a Stop already continuing is released and audited (R9-03)" "" "$TL_OUT"
-assert_contains "regression: the release is audited" "$(cat "$ST/stop-loop-release.log")" "site-regression-gate"
-rm -f "$ST/stop-loop-release.log"
+assert_eq "regression: stop_hook_active alone does not release a failing suite" "block" "$(decision)"
 echo '{"active":true}' >"$ST/agent-delegation-active.json"
 dg_run "$P" "$H" "$stop_json"
 assert_eq "regression: an active delegation does not switch the gate off (R9-04)" "block" "$(decision)"
@@ -529,5 +523,70 @@ rm -f "$SESS"
 dg_run "$P" "$H" "$stop_json"
 assert_eq "regression: no session => allow" "" "$TL_OUT"
 dg_assert_ok "regression: no session => allow: exits 0"
+
+# ===================== a branch switch keeps the session (review r1) ====
+site_session
+suite doc-freshness 'exit 7'; commit_all failing-for-branch
+git -C "$P" checkout -q -b tmpx
+dg_run "$P" hooks/site-regression-gate.sh "$(shell_json 'git push origin tmpx:main')"
+assert_eq "branch: a push of tmpx:main still runs the regression gate after a branch switch" "deny" "$(decision)"
+dg_run "$P" hooks/site-regression-gate.sh "$stop_json"
+assert_eq "branch: Stop still blocks on the other branch" "block" "$(decision)"
+git -C "$P" checkout -q main
+suite doc-freshness 'echo ok'; commit_all fixed-after-branch
+
+# ===================== bounded loop breaker (R9-03, review r1) =========
+dg_project "$P" "$(jq -c '.site_profile.stop_block_limit=2' <<<"$PROFILE")"
+good_suites
+site_session site-intent true
+rm -f "$ST/site-stop-loop.json" "$ST/stop-loop-release.log" "$ST/live-publish-evidence.json" "$ST/site-visual-evidence.json"
+active_stop='{"hook_event_name":"Stop","stop_hook_active":true}'
+for g in live-publish-evidence-gate site-visual-evidence-gate; do
+  dg_run "$P" "hooks/$g.sh" "$stop_json"
+  assert_eq "loop: $g blocks the first Stop" "block" "$(decision)"
+  dg_run "$P" "hooks/$g.sh" "$active_stop"
+  assert_eq "loop: $g blocks the repeat Stop too (the agent can still clear it)" "block" "$(decision)"
+  dg_run "$P" "hooks/$g.sh" "$active_stop"
+  assert_eq "loop: $g releases a condition that did not change after the limit" "" "$TL_OUT"
+  assert_contains "loop: the release is logged" "$(cat "$ST/stop-loop-release.log")" "$g released: unchanged after 2 consecutive blocks"
+done
+# a changed condition (another counted edit) starts the count again
+site_session site-intent true false 2
+dg_run "$P" hooks/site-visual-evidence-gate.sh "$stop_json"
+assert_eq "loop: a new edit makes the same gate block again" "block" "$(decision)"
+# a cleared condition resets the count
+visual_evidence; jq '.edit_seq=2' "$ST/site-visual-evidence.json" >"$ST/v.t" && mv "$ST/v.t" "$ST/site-visual-evidence.json"
+dg_run "$P" hooks/site-visual-evidence-gate.sh "$stop_json"
+assert_eq "loop: evidence clears the gate" "" "$TL_OUT"
+rm -f "$ST/site-visual-evidence.json"
+dg_run "$P" hooks/site-visual-evidence-gate.sh "$stop_json"
+dg_run "$P" hooks/site-visual-evidence-gate.sh "$stop_json"
+assert_eq "loop: the count restarted after the pass (still blocking on the 2nd identical block)" "block" "$(decision)"
+# regression: a failing suite is clearable, a missing script is a setup problem released on the host's repeat
+site_session
+suite doc-freshness 'exit 7'; commit_all failing-loop
+rm -f "$ST/site-stop-loop.json"
+dg_run "$P" hooks/site-regression-gate.sh "$stop_json"
+dg_run "$P" hooks/site-regression-gate.sh "$active_stop"
+assert_eq "loop: a failing suite is blocked on the repeat" "block" "$(decision)"
+dg_run "$P" hooks/site-regression-gate.sh "$active_stop"
+assert_eq "loop: and released only once it did not change after the limit" "" "$TL_OUT"
+site_session
+rm -f "$P/tests/scripts/test-site-content-freshness.sh"
+dg_run "$P" hooks/site-regression-gate.sh "$stop_json"
+assert_eq "loop: a setup problem blocks the first Stop" "block" "$(decision)"
+dg_run "$P" hooks/site-regression-gate.sh "$active_stop"
+assert_eq "loop: a setup problem the agent cannot clear is released on the host's repeat" "" "$TL_OUT"
+assert_contains "loop: and logged as a setup problem" "$(cat "$ST/stop-loop-release.log")" "gate setup problem (rc=90) (stop_hook_active)"
+git -C "$P" checkout -q -- tests/scripts
+# the v-loop gate
+site_session
+rm -f "$ST/site-stop-loop.json" "$ST/site-vloops.json"
+dg_run "$P" hooks/v-loop-rollup-gate.sh "$stop_json"
+dg_run "$P" hooks/v-loop-rollup-gate.sh "$stop_json"
+assert_eq "loop: the V-loop gate blocks twice" "block" "$(decision)"
+dg_run "$P" hooks/v-loop-rollup-gate.sh "$stop_json"
+assert_eq "loop: and then releases" "" "$TL_OUT"
+dg_project "$P" "$PROFILE"
 
 tl_results

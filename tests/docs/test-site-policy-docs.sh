@@ -20,6 +20,9 @@ body="$(sec silver-bullet.md)"
 assert_contains "8.2 states the opt-in profile" "$body" '"site_profile"'
 assert_contains "8.2 states that the hooks are inert without it" "$body" "inert"
 assert_contains "8.2 names the sanctioned live-evidence writer" "$body" "scripts/site-live-evidence.sh"
+assert_contains "8.2 documents the bounded Stop loop breaker" "$body" "stop_block_limit"
+assert_contains "8.2 documents trusted helpers" "$body" "trusted_helpers"
+assert_contains "8.2 states the shell-write limit" "$body" "first shell look"
 assert_not_contains "8.2 does not hard-code this repository's live URL" "$body" "sb.alolabs.dev"
 assert_not_contains "8.2 does not hard-code this repository's Pages workflow" "$body" "pages.yml"
 assert_not_contains "8.2 does not tell the agent to write the state directory" "$body" 'Write `${SB_RUNTIME_STATE_DIR}'

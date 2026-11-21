@@ -38,7 +38,7 @@ rm -rf "$PS/.git"; git -C "$PS" init -q -b main
 mkdir -p "$PS/tests"; printf '#!/usr/bin/env bash\nexit 1\n' >"$PS/tests/s.sh"
 git -C "$PS" add -A >/dev/null 2>&1; git -C "$PS" -c user.name=t -c user.email=t@t commit -q -m init
 SESS="$ST/site-session.json"
-jq -n --arg sc "$(cd "$PS" && pwd -P)|main" '{active:true,scope:$sc,edit_seq:1,touch_reason:"edit:site/a.html",push_intent:true}' >"$SESS"
+jq -n --arg sc "$(cd "$PS" && pwd -P)" '{active:true,scope:$sc,edit_seq:1,touch_reason:"edit:site/a.html",push_intent:true}' >"$SESS"
 S3="$TL_TMP/s3"; dg_stage_hooks "$S3" tool-input.sh
 PRE='{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git push origin main"}}'
 dg_run_with_fn "$PS" "$S3/hooks/site-regression-gate.sh" "$PRE" 'sb_tool_name() { return 1; }; export -f sb_tool_name'

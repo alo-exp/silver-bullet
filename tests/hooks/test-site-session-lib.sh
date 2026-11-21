@@ -25,14 +25,14 @@ git -C "$PROJ" init -q -b main
 git -C "$PROJ" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
 PROJ_REAL="$(cd "$PROJ" && pwd -P)"
 HEAD_SHA="$(git -C "$PROJ" rev-parse HEAD)"
-SCOPE="$PROJ_REAL|main"
+SCOPE="$PROJ_REAL"
 
 rc() { local r=0; "$@" >/dev/null 2>&1 || r=$?; echo "$r"; }
 # rcn: 0 on success, 1 on any failure (jq answers 5 for unparsable input)
 rcn() { local r=0; "$@" >/dev/null 2>&1 || r=1; echo "$r"; }
 reset() { rm -f "$SB_RUNTIME_STATE_DIR"/*.json "$SB_RUNTIME_STATE_DIR"/*.jsonl "$SB_RUNTIME_STATE_DIR"/*.log 2>/dev/null || true; }
 # session JSON: an active session in this scope with one counted edit, merged with $1
-mksession() { jq -cn --arg sc "$SCOPE" --argjson x "${1:-{\}}" '{active:true,scope:$sc,edit_seq:1,regression_passed_seq:0,touch_reason:"edit:site/a.html"} + $x' >"$SESS"; }
+mksession() { jq -cn --arg sc "$SCOPE" --argjson x "${1:-{\}}" '{active:true,scope:$sc,edit_seq:1,regression_passed_seq:0,touch_reason:"edit:site/a.html",nonce:"n1"} + $x' >"$SESS"; }
 
 # --- profile load ---------------------------------------------------------
 assert_eq "profile: outside any project" 1 "$(cd "$TL_TMP" && rc sb_site_profile_load)"
@@ -111,12 +111,13 @@ assert_eq "delegation intent: silver-agent-codex" 0 "$(rc sb_site_text_is_agent_
 assert_eq "delegation intent: plain text" 1 "$(rc sb_site_text_is_agent_delegation_intent "hello")"
 
 # --- scope ----------------------------------------------------------------
-assert_eq "scope: project and branch" "$SCOPE" "$(sb_site_session_scope)"
+assert_eq "scope: the project root (a branch switch must not drop the session)" "$SCOPE" "$(sb_site_session_scope)"
 SB_SITE_ROOT_SAVE="$SB_SITE_ROOT"; SB_SITE_ROOT=""
-assert_eq "scope: no profile loaded" "|" "$(sb_site_session_scope)"
+assert_eq "scope: no profile loaded" "" "$(sb_site_session_scope)"
 SB_SITE_ROOT="$SB_SITE_ROOT_SAVE"
 git -C "$PROJ" checkout -q --detach
-assert_eq "scope: a detached HEAD has an empty branch" "$PROJ_REAL|" "$(sb_site_session_scope)"
+assert_eq "scope: a detached HEAD keeps the scope" "$SCOPE" "$(sb_site_session_scope)"
+assert_eq "branch: a detached HEAD has an empty branch" "" "$(sb_site_session_branch)"
 git -C "$PROJ" checkout -q main
 
 # --- touch / note ---------------------------------------------------------
@@ -129,7 +130,7 @@ assert_eq "touch new file: push_intent false" "false" "$(jq -r .push_intent "$SE
 sb_site_session_touch "edit:site/a.html"
 assert_eq "touch updates the existing reason" "edit:site/a.html" "$(jq -r .touch_reason "$SESS")"
 assert_eq "touch: the second edit is counted" "2" "$(jq -r .edit_seq "$SESS")"
-jq '.scope="/other|main" | .push_intent=true' "$SESS" >"$SESS.t" && mv "$SESS.t" "$SESS"
+jq '.scope="/other" | .push_intent=true' "$SESS" >"$SESS.t" && mv "$SESS.t" "$SESS"
 sb_site_session_touch "edit:site/b.html"
 assert_eq "touch: a session left by another scope restarts" "1" "$(jq -r .edit_seq "$SESS")"
 assert_eq "touch: the restart drops stale flags" "false" "$(jq -r .push_intent "$SESS")"
@@ -170,7 +171,7 @@ assert_eq "has_site_work: push intent and claims are not site work (R9-01)" 1 "$
 assert_eq "gates_apply: push intent alone does not apply the gates (R9-01)" 1 "$(rc sb_site_session_gates_apply)"
 mksession '{"active":false}'
 assert_eq "gates_apply: inactive session" 1 "$(rc sb_site_session_gates_apply)"
-mksession '{"scope":"/elsewhere|main"}'
+mksession '{"scope":"/elsewhere"}'
 assert_eq "active: a session of another scope is not active (R9-08)" 1 "$(rc sb_site_session_active)"
 mksession
 echo '{"active":true}' >"$SB_RUNTIME_STATE_DIR/agent-delegation-active.json"
@@ -186,15 +187,37 @@ ln -sf "$TL_TMP/none" "$SESS"
 assert_eq "active: a symlinked session file is refused" 1 "$(rc sb_site_session_active)"
 rm -f "$SESS"
 
-# --- stop loop release ----------------------------------------------------
+# --- stop loop breaker -----------------------------------------------------
 reset
-assert_eq "loop release: a first Stop is not released" 1 "$(rc sb_site_stop_loop_release gate-a '{"hook_event_name":"Stop"}')"
-assert_eq "loop release: invalid input is not released" 1 "$(rc sb_site_stop_loop_release gate-a 'not json')"
-assert_eq "loop release: a Stop already continuing is released" 0 "$(rc sb_site_stop_loop_release gate-a '{"stop_hook_active":true}')"
-assert_contains "loop release: the release leaves an audit line" "$(cat "$SB_RUNTIME_STATE_DIR/stop-loop-release.log")" "gate-a released on stop_hook_active"
-rm -f "$SB_RUNTIME_STATE_DIR/stop-loop-release.log"; mkdir "$SB_RUNTIME_STATE_DIR/stop-loop-release.log"
-assert_eq "loop release: an unwritable audit log still releases" 0 "$(rc sb_site_stop_loop_release gate-a '{"stop_hook_active":true}')"
-rmdir "$SB_RUNTIME_STATE_DIR/stop-loop-release.log"
+SLOG="$SB_RUNTIME_STATE_DIR/stop-loop-release.log"
+lr() { rc sb_site_stop_loop_release "$@"; }
+assert_eq "loop: the host's stop_hook_active alone releases nothing the agent can clear" 1 "$(lr gate-a '{"stop_hook_active":true}' fp1)"
+assert_eq "loop: block 2 of an identical condition" 1 "$(lr gate-a '{"stop_hook_active":true}' fp1)"
+assert_eq "loop: block 3 of an identical condition" 1 "$(lr gate-a '{"stop_hook_active":true}' fp1)"
+assert_eq "loop: the default limit (3) released the condition that never changed" 0 "$(lr gate-a '{"stop_hook_active":true}' fp1)"
+assert_contains "loop: the release is logged with the reason" "$(cat "$SLOG")" "gate-a released: unchanged after 3 consecutive blocks (fp1)"
+assert_eq "loop: after a release the count starts again" 1 "$(lr gate-a '{}' fp1)"
+assert_eq "loop: a changed condition starts the count again" 1 "$(lr gate-a '{}' fp2)"
+sb_site_stop_loop_reset gate-a
+assert_eq "loop: a gate that passed (reset) starts again" 1 "$(lr gate-a '{}' fp2)"
+assert_eq "loop: another gate has its own count" 1 "$(lr gate-b '{}' fp2)"
+rm -f "$SLOG"
+assert_eq "loop: an unclearable condition on a first Stop is not released" 1 "$(lr gate-c '{"hook_event_name":"Stop"}' fp1 "gate setup problem")"
+assert_eq "loop: an unclearable condition on a repeat Stop is released" 0 "$(lr gate-c '{"stop_hook_active":true}' fp1 "gate setup problem")"
+assert_contains "loop: the unclearable release is logged" "$(cat "$SLOG")" "gate-c released: gate setup problem (stop_hook_active)"
+echo 'not json' >"$SB_RUNTIME_STATE_DIR/site-stop-loop.json"
+assert_eq "loop: a corrupt counter file starts over" 1 "$(lr gate-a '{}' fp1)"
+assert_eq "loop: and is rewritten as valid JSON" "1" "$(jq -r '.["gate-a"].count' "$SB_RUNTIME_STATE_DIR/site-stop-loop.json")"
+echo '{"gate-a":{"fp":"fp1","count":"many"}}' >"$SB_RUNTIME_STATE_DIR/site-stop-loop.json"
+assert_eq "loop: a non-numeric count starts over" 1 "$(lr gate-a '{}' fp1)"
+rm -f "$SB_RUNTIME_STATE_DIR/site-stop-loop.json"
+sb_site_stop_loop_reset gate-a
+assert_file_absent "loop: reset without a counter file is a no-op" "$SB_RUNTIME_STATE_DIR/site-stop-loop.json"
+rm -f "$SLOG"; mkdir "$SLOG"
+SB_SITE_STOP_LIMIT=1 lr gate-d '{}' f >/dev/null
+assert_eq "loop: an unwritable audit log still releases" 0 "$(SB_SITE_STOP_LIMIT=1 lr gate-d '{}' f)"
+rmdir "$SLOG"
+rm -f "$SB_RUNTIME_STATE_DIR/site-stop-loop.json"
 
 # --- subagent input detection --------------------------------------------
 assert_eq "subagent related: empty" 1 "$(rc sb_site_session_subagent_input_is_site_related "")"
@@ -325,7 +348,9 @@ ev
 assert_eq "live evidence: complete for HEAD" 0 "$(rc sb_live_publish_evidence_valid)"
 ev NOT_LIVE
 jq '.markers_matched=[]' "$EV" >"$EV.t" && mv "$EV.t" "$EV"
-assert_eq "live evidence: an honest NOT_LIVE needs no markers" 0 "$(rc sb_live_publish_evidence_valid)"
+assert_eq "live evidence: NOT_LIVE with no matched marker does not count (R9-03)" 1 "$(rc sb_live_publish_evidence_valid)"
+ev NOT_LIVE
+assert_eq "live evidence: an honest NOT_LIVE with a matched marker counts" 0 "$(rc sb_live_publish_evidence_valid)"
 ev LIVE
 jq '.markers_matched=[]' "$EV" >"$EV.t" && mv "$EV.t" "$EV"
 assert_eq "live evidence: LIVE needs a matched marker" 1 "$(rc sb_live_publish_evidence_valid)"
@@ -408,7 +433,7 @@ sb_site_session_sync_vloops_from_state
 assert_eq "sync: no session creates pending vloops" "pending" "$(jq -r '.steps[]|select(.id=="implement").status' "$VL")"
 mksession '{"edit_seq":2,"regression_passed_seq":2,"push_intent":false}'
 ev
-jq -n --arg r "$PROJ_REAL" --arg p "$shot" '{captured_at:"t",project:$r,edit_seq:2,paths:[$p]}' >"$(sb_site_session_visual_evidence_file)"
+jq -n --arg r "$PROJ_REAL" --arg p "$shot" '{captured_at:"t",project:$r,nonce:"n1",edit_seq:2,paths:[$p]}' >"$(sb_site_session_visual_evidence_file)"
 sb_site_session_sync_vloops_from_state
 for s in preflight regression implement publish visual; do
   assert_eq "sync: $s marked done" "done" "$(jq -r --arg s "$s" '.steps[]|select(.id==$s).status' "$VL")"
@@ -465,6 +490,73 @@ PA="$(sb_site_session_pending_audit_file)"
 ln -s "$TL_TMP/real-ev.json" "$PA"
 assert_eq "pending audit: symlink refused" 1 "$(rc sb_site_session_pending_completion_audit)"
 rm -f "$PA"
+
+# --- visual evidence is bound to the session ------------------------------
+reset
+mksession '{"edit_seq":2}'
+sb_site_session_mark_visual_evidence "$shot"
+assert_eq "visual: the evidence carries the session nonce" "n1" "$(jq -r .nonce "$VE")"
+assert_eq "visual valid: same session" 0 "$(rc sb_site_session_visual_evidence_valid)"
+mksession '{"edit_seq":9,"nonce":"n2"}'
+assert_eq "visual valid: a screenshot of an earlier session does not count, whatever the counter says" 1 "$(rc sb_site_session_visual_evidence_valid)"
+mksession '{"edit_seq":2}'
+sb_site_session_mark_visual_evidence "$shot"
+mksession '{"edit_seq":2,"nonce":"n2"}'
+sb_site_session_mark_visual_evidence "$TL_TMP/shot2.png"
+assert_eq "visual: a new session starts the path list afresh" "1" "$(jq -r '.paths|length' "$VE")"
+rm -f "$VE"
+
+# --- images, directories, mtime ---------------------------------------------
+png="$TL_TMP/real.png"; printf '\x89PNG\r\n\x1a\n\0\0\0\rIHDR' >"$png"
+jpg="$TL_TMP/real.jpg"; printf '\xff\xd8\xff\xe0\0\x10JFIF\0' >"$jpg"
+webp="$TL_TMP/real.webp"; printf 'RIFF\x10\0\0\0WEBPVP8 ' >"$webp"
+txt="$TL_TMP/note.png"; printf 'not an image at all' >"$txt"
+assert_eq "image: a PNG" 0 "$(rc sb_site_is_image_file "$png")"
+assert_eq "image: a JPEG" 0 "$(rc sb_site_is_image_file "$jpg")"
+assert_eq "image: a WebP" 0 "$(rc sb_site_is_image_file "$webp")"
+assert_eq "image: a text file named .png is not one" 1 "$(rc sb_site_is_image_file "$txt")"
+assert_eq "image: /etc/hostname is not one" 1 "$(rc sb_site_is_image_file /etc/hostname)"
+assert_eq "image: a missing file" 1 "$(rc sb_site_is_image_file "$TL_TMP/none.png")"
+ln -sf "$png" "$TL_TMP/link.png"
+assert_eq "image: a symlink" 1 "$(rc sb_site_is_image_file "$TL_TMP/link.png")"
+assert_eq "dir: under the project" 0 "$(rc sb_site_screenshot_dir_ok "$PROJ/site/x.png")"
+assert_eq "dir: under TMPDIR" 0 "$(rc sb_site_screenshot_dir_ok "$TMPDIR/x.png")"
+assert_eq "dir: /etc is neither the project nor a temporary directory" 1 "$(rc sb_site_screenshot_dir_ok /etc/hostname)"
+assert_eq "dir: other system paths are not allowed either" 1 "$(rc sb_site_screenshot_dir_ok /usr/share/zoneinfo/UTC)"
+touch -d "@1700000000" "$png"
+assert_eq "mtime: epoch seconds" "1700000000" "$(sb_site_file_mtime "$png")"
+
+# --- tree digest: a content change under the site directory ------------------
+mkdir -p "$PROJ/site"; echo a >"$PROJ/site/t.html"
+rm -f "$SB_RUNTIME_STATE_DIR/site-tree-digest"
+assert_eq "tree: the first look only records a baseline" 1 "$(rc sb_site_tree_changed)"
+assert_eq "tree: nothing changed since" 1 "$(rc sb_site_tree_changed)"
+echo b >"$PROJ/site/t.html"
+assert_eq "tree: a content change is an edit" 0 "$(rc sb_site_tree_changed)"
+assert_eq "tree: and is seen once" 1 "$(rc sb_site_tree_changed)"
+git -C "$PROJ" add site; git -C "$PROJ" -c user.name=t -c user.email=t@t commit -q -m "site"
+assert_eq "tree: committing unchanged content is not an edit" 1 "$(rc sb_site_tree_changed)"
+echo c >"$PROJ/site/new.html"
+assert_eq "tree: a new untracked file is an edit" 0 "$(rc sb_site_tree_changed)"
+printf 'other-root x' >"$SB_RUNTIME_STATE_DIR/site-tree-digest"
+assert_eq "tree: a baseline of another project is replaced, not compared" 1 "$(rc sb_site_tree_changed)"
+git -C "$PROJ" rm -q -f -r site; git -C "$PROJ" -c user.name=t -c user.email=t@t commit -q -m "drop site"
+
+# --- trusted helpers ---------------------------------------------------------
+profile '{"enabled":true,"regression_scripts":["tests/scripts/one.sh"],"trusted_helpers":["tests/scripts/helper.py","../bad.py"],"stop_block_limit":5}'
+assert_eq "profile: trusted helpers" "tests/scripts/helper.py"$'\n' "$SB_SITE_TRUSTED_HELPERS"
+assert_eq "profile: stop block limit" "5" "$SB_SITE_STOP_LIMIT"
+profile '{"enabled":true,"stop_block_limit":0}'
+assert_eq "profile: a zero stop limit is dropped" "3" "$SB_SITE_STOP_LIMIT"
+profile '{"enabled":true,"regression_scripts":["tests/scripts/one.sh"],"trusted_helpers":["tests/scripts/helper.py"]}'
+printf 'print(1)\n' >"$PROJ/tests/scripts/helper.py"
+assert_eq "helpers: an untracked helper is not trusted (R9-07)" "tests/scripts/helper.py" "$(sb_site_regression_untrusted "$PROJ")"
+git -C "$PROJ" add -A; git -C "$PROJ" -c user.name=t -c user.email=t@t commit -q -m helper
+assert_eq "helpers: a committed helper is trusted" "" "$(sb_site_regression_untrusted "$PROJ")"
+printf 'print(2)\n' >"$PROJ/tests/scripts/helper.py"
+assert_eq "helpers: a helper edited in the work tree is not trusted" "tests/scripts/helper.py" "$(sb_site_regression_untrusted "$PROJ")"
+git -C "$PROJ" checkout -q -- tests/scripts/helper.py
+profile '{"enabled":true}'
 
 # --- fault injection: unusable state dir -----------------------------------
 reset

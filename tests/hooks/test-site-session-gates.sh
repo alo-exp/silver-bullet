@@ -38,7 +38,7 @@ setup() {
   export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
   export SB_RUNTIME_PRESERVE_STATE_DIR=1
   cat >"$TMPDIR_TEST/.silver-bullet.json" <<'JSON'
-{"sb_initiated":true,"orchestrator_mode":"parent","project":{"name":"test","active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"]},"site_profile":{"enabled":true,"dir":"site","live_url":"https://site.example/","regression_scripts":["tests/site-regression.sh"]}}
+{"sb_initiated":true,"orchestrator_mode":"parent","project":{"name":"test","active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"]},"site_profile":{"enabled":true,"stop_block_limit":1000,"dir":"site","live_url":"https://site.example/","regression_scripts":["tests/site-regression.sh"]}}
 JSON
   cp "$REPO_ROOT/silver-bullet.md" "$TMPDIR_TEST/silver-bullet.md"
   mkdir -p "$TMPDIR_TEST/tests"
@@ -78,7 +78,7 @@ EOF
 
 # mk_session JSON: write site-session.json in this project's scope with one counted edit unless JSON says otherwise.
 mk_session() {
-  jq -n --arg sc "${SITE_ROOT}|main" "{scope:\$sc, edit_seq:1} + $1" >"${SB_TEST_DIR}/site-session.json"
+  jq -n --arg sc "$SITE_ROOT" "{scope:\$sc, edit_seq:1, nonce:\"n1\"} + $1" >"${SB_TEST_DIR}/site-session.json"
 }
 # A profile-aware lib call needs the profile loaded for the project.
 load_profile() { local old="$PWD"; sb_integrity_forget; cd "$TMPDIR_TEST"; sb_site_profile_load; cd "$old"; }
@@ -255,7 +255,7 @@ sb_site_session_init_vloops
 out=$(run_hook "$VLOOP_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_block "Stop blocks active site session with incomplete V-loops" "$out"
 sb_site_session_sync_vloops_from_state
-printf 'png' >"${SB_TEST_DIR}/screenshot.png"
+printf '\x89PNG\r\n\x1a\n\0\0\0\rIHDR' >"${SB_TEST_DIR}/screenshot.png"
 sb_site_session_mark_visual_evidence "${SB_TEST_DIR}/screenshot.png"
 jq '.regression_passed_seq = 1' "${SB_TEST_DIR}/site-session.json" >"${SB_TEST_DIR}/site-session.json.tmp" && mv "${SB_TEST_DIR}/site-session.json.tmp" "${SB_TEST_DIR}/site-session.json"
 sb_site_session_sync_vloops_from_state
@@ -268,8 +268,8 @@ setup
 mk_session '{active:true,touch_reason:"edit:site/index.html"}'
 out=$(run_hook "$VISUAL_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_block "Stop blocks site session without visual evidence" "$out"
-printf 'png' >"${SB_TEST_DIR}/x.png"
-jq -n --arg r "$SITE_ROOT" --arg p "${SB_TEST_DIR}/x.png" '{captured_at:"t",project:$r,edit_seq:1,paths:[$p]}' >"${SB_TEST_DIR}/site-visual-evidence.json"
+printf '\x89PNG\r\n\x1a\n\0\0\0\rIHDR' >"${SB_TEST_DIR}/x.png"
+jq -n --arg r "$SITE_ROOT" --arg p "${SB_TEST_DIR}/x.png" '{captured_at:"t",project:$r,nonce:"n1",edit_seq:1,paths:[$p]}' >"${SB_TEST_DIR}/site-visual-evidence.json"
 out=$(run_hook "$VISUAL_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_allow "Stop allows with site-visual-evidence.json" "$out"
 teardown
@@ -277,7 +277,7 @@ teardown
 echo "--- record-site-visual-evidence ---"
 setup
 mk_session '{active:true,touch_reason:"edit:site/index.html"}'
-printf 'png' >"${SB_TEST_DIR}/site-shot.png"
+printf '\x89PNG\r\n\x1a\n\0\0\0\rIHDR' >"${SB_TEST_DIR}/site-shot.png"
 run_hook "$RECORD_VISUAL_HOOK" PostToolUse "$(jq -n --arg p "${SB_TEST_DIR}/site-shot.png" '{hook_event_name:"PostToolUse",tool_name:"mcp__playwright__browser_take_screenshot",tool_response:{path:$p}}')" >/dev/null
 if [[ -f "${SB_TEST_DIR}/site-visual-evidence.json" ]]; then
   echo "  ok: records screenshot path for visual V-loop"

@@ -9,6 +9,7 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib
 [[ -f "$_lib_dir/runtime-paths.sh" ]] && source "$_lib_dir/runtime-paths.sh"
 [[ -f "$_lib_dir/site-session.sh" ]] && source "$_lib_dir/site-session.sh"
 [[ -f "$_lib_dir/tool-input.sh" ]] && source "$_lib_dir/tool-input.sh"
+[[ -f "$_lib_dir/tool-path-fields.sh" ]] && source "$_lib_dir/tool-path-fields.sh"
 [[ -f "$_lib_dir/sb-project-gate.sh" ]] && source "$_lib_dir/sb-project-gate.sh"
 
 command -v jq >/dev/null 2>&1 || exit 0
@@ -45,13 +46,19 @@ tool_name="$(sb_tool_name "$input")"
 
 # One counted edit per tool call that wrote under the site directory.
 edited=""
+shell_call=false
 case "$tool_name" in
   Edit|Write|MultiEdit|apply_patch)
     candidates="$({ sb_tool_file_path "$input"; sb_tool_patch_paths "$input"; })"
     ;;
+  NotebookEdit | mcp__*)
+    # a notebook or a filesystem MCP tool: every path-like field of the call
+    candidates="$(sb_tool_input_path_fields "$input")"
+    ;;
   Bash|Shell|shell|exec_command)
     sb_tool_input_load "$input"
     candidates="${SB_SA_WRITE_PATHS:-}"
+    shell_call=true
     # A push that is not provably a feature-branch push is a publish: it needs live evidence at Stop. It is
     # recorded here, after the host reports the command ran, never on the attempt (R9-06).
     if [[ "$(sb_site_shell_push_kind)" == final ]]; then
@@ -66,6 +73,10 @@ while IFS= read -r candidate; do
     break
   fi
 done <<<"$candidates"
+# Writes the analysis cannot name (git apply, find -exec, a script): the content of the site tree changed.
+if [[ -z "$edited" && "$shell_call" == true && "${SB_SA_READ_ONLY:-false}" != true ]] && sb_site_tree_changed; then
+  edited="(site tree changed by a shell command)"
+fi
 if [[ -n "$edited" ]]; then
   sb_site_session_touch "edit:${edited}"
 fi

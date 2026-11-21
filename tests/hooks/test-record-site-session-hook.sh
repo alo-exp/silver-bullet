@@ -35,7 +35,8 @@ assert_eq "session: site/ edit status" "0" "$TL_STATUS"
 assert_eq "session: site/ edit activates session" "true" "$(sj .active)"
 assert_eq "session: site/ edit touch reason" "edit:site/index.html" "$(sj .touch_reason)"
 assert_eq "session: the edit is counted" "1" "$(sj .edit_seq)"
-assert_eq "session: the session is stamped with project and branch" "$P_REAL|main" "$(sj .scope)"
+assert_eq "session: the session is stamped with its project" "$P_REAL" "$(sj .scope)"
+assert_eq "session: the branch is stamped for information" "main" "$(sj .branch)"
 assert_eq "session: site/ edit leaves push_intent false" "false" "$(sj .push_intent)"
 assert_eq "session: site/ edit writes nothing to stdout" "" "$TL_OUT"
 dg_run "$P" "$H" "$(post_input MultiEdit '{"file_path":"site/b.html"}')"
@@ -91,11 +92,51 @@ assert_eq "session: a command that only mentions git push records nothing (R9-06
 dg_run "$P" "$H" "$(shell_post 'git status')"
 assert_eq "session: other shell commands are ignored" "1" "$(sj .edit_seq)"
 
+
+# ------------------------------------------------------------------ a branch switch keeps the session (review r1)
+reset; dg_run "$P" "$H" "$(post_input Edit '{"file_path":"site/index.html"}')"
+git -C "$P" checkout -q -b tmpx
+dg_run "$P" "$H" "$(shell_post 'git push origin tmpx:main')"
+assert_eq "session: a push of tmpx:main after a branch switch is a publish" "true" "$(sj .push_intent)"
+assert_eq "session: the session survived the switch" "1" "$(sj .edit_seq)"
+dg_run "$P" "$H" "$(post_input Edit '{"file_path":"site/b.html"}')"
+assert_eq "session: edits on the new branch continue the same session" "2" "$(sj .edit_seq)"
+assert_eq "session: the branch stamp follows" "tmpx" "$(sj .branch)"
+git -C "$P" checkout -q main
+
+# ------------------------------------------------------------------ writes the analysis cannot name (review r1)
+reset; rm -f "$ST/site-tree-digest"; mkdir -p "$P/site"
+dg_run "$P" "$H" "$(shell_post 'ls -la')"
+assert_no_session "session: a read-only command starts nothing"
+dg_run "$P" "$H" "$(shell_post 'make build')"
+assert_no_session "session: the first non-read-only look only records the baseline"
+echo changed >"$P/site/gen.html"
+dg_run "$P" "$H" "$(shell_post 'bash gen.sh')"
+assert_eq "session: a script that wrote the site is seen through the tree content (R9-05)" "true" "$(sj .active)"
+assert_contains "session: the reason says the tree changed" "$(sj .touch_reason)" "site tree changed"
+reset; echo more >>"$P/site/gen.html"
+dg_run "$P" "$H" "$(shell_post "git apply p.diff")"
+assert_eq "session: git apply into the site starts a session" "true" "$(sj .active)"
+reset; echo more >>"$P/site/gen.html"
+dg_run "$P" "$H" "$(shell_post "find . -name '*.html' -exec sed -i s/a/b/ {} +")"
+assert_eq "session: find -exec sed into the site starts a session" "true" "$(sj .active)"
+reset
+dg_run "$P" "$H" "$(shell_post 'git status')"
+assert_no_session "session: an unchanged site tree starts nothing"
+reset; dg_run "$P" "$H" "$(post_input NotebookEdit '{"notebook_path":"site/a.ipynb","new_source":"x"}')"
+assert_eq "session: a NotebookEdit under the site starts a session" "true" "$(sj .active)"
+reset; dg_run "$P" "$H" "$(post_input mcp__filesystem__write_file '{"path":"site/q.html","content":"x"}')"
+assert_eq "session: an MCP filesystem write under the site starts a session" "true" "$(sj .active)"
+reset; dg_run "$P" "$H" "$(post_input mcp__filesystem__write_file '{"path":"src/q.html","content":"x"}')"
+assert_no_session "session: an MCP write elsewhere starts nothing"
+git -C "$P" checkout -q -- . 2>/dev/null || true
+rm -rf "$P/site"; mkdir -p "$P/site"
+
 # ------------------------------------------------------------------ project / branch scope (R9-08)
-jq '.scope="/elsewhere|main" | .edit_seq=7 | .push_intent=true' "$SS" >"$ST/s.t" && mv "$ST/s.t" "$SS"
+jq '.scope="/elsewhere" | .edit_seq=7 | .push_intent=true' "$SS" >"$ST/s.t" && mv "$ST/s.t" "$SS"
 dg_run "$P" "$H" "$(post_input Edit '{"file_path":"site/index.html"}')"
 assert_eq "session: a session left by another project starts afresh" "1" "$(sj .edit_seq)"
-assert_eq "session: the fresh session is in this scope" "$P_REAL|main" "$(sj .scope)"
+assert_eq "session: the fresh session is in this scope" "$P_REAL" "$(sj .scope)"
 assert_eq "session: the fresh session carries no stale push intent" "false" "$(sj .push_intent)"
 
 # ------------------------------------------------------------------ prompts (R9-02, R9-12)
