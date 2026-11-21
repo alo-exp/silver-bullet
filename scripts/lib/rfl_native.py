@@ -18,6 +18,7 @@ result is captured from the host's tool response by the PostToolUse hook, never 
 from __future__ import annotations
 
 import contextlib
+import errno
 import fcntl
 import functools
 import hashlib
@@ -27,6 +28,7 @@ import os
 import re
 import secrets
 import shutil
+import stat
 import subprocess
 import sys
 import threading
@@ -712,41 +714,128 @@ def _agent_scan_dirs(project_root: Path) -> list[Path]:
     return [d for d in dirs if not (str(d) in seen or seen.add(str(d))) and not _own_plugin_agents(d)]
 
 
-def _scan_agent_dir(directory: Path) -> list[str]:
-    """Matches in one agents folder. Any symbolic link (file or folder, dangling or not) is a match: it is never followed."""
-    if os.path.islink(directory) or os.path.islink(directory.parent):
-        return [f"{directory} (symbolic link)"]
-    found: list[str] = []
-    files: list[Path] = []
-    for base, dirnames, filenames in os.walk(directory, followlinks=False):
-        for name in dirnames + filenames:
-            full = Path(base) / name
-            if os.path.islink(full):
-                found.append(f"{full} (symbolic link)")
-            elif name.lower().endswith(".md") and name in filenames:
-                files.append(full)
-    if len(files) > MAX_AGENT_FILES:
-        return found + [f"{directory} ({len(files)} agent files; the limit is {MAX_AGENT_FILES})"]
-    for path in sorted(files):
+MAX_LINK_DEPTH = 16
+MAX_AGENT_FILES_TOTAL = 20000
+UNSCANNABLE = "[cannot be scanned: "
+
+
+def _describe(path: Path) -> str:
+    """The path, and for a link its immediate target."""
+    return f"{path} -> {os.readlink(path)}" if os.path.islink(path) else str(path)
+
+
+def _stat_reason(exc: OSError) -> str:
+    if exc.errno == errno.ELOOP:
+        return "loop: the links lead back to themselves"
+    if exc.errno == errno.ENOENT:
+        return "dangling link (its target does not exist)"
+    return f"unreadable ({exc.strerror})"
+
+
+def _problem(path: Path, reason: str) -> str:
+    return f"{_describe(path)} {UNSCANNABLE}{reason}]"
+
+
+class _AgentScan:
+    """Scan agent folders by resolving links and reading the targets: only regular files are ever opened, every
+    folder is entered once (by device and inode), and anything that cannot be scanned fully is reported."""
+
+    def __init__(self) -> None:
+        self.found: list[str] = []
+        self.done: set[tuple[int, int]] = set()
+        self.total = 0
+
+    def folder(self, directory: Path) -> None:
+        real = Path(os.path.realpath(directory))
         try:
-            size = path.stat().st_size
-            text = path.read_bytes().decode("utf-8") if size <= MAX_AGENT_FILE_BYTES else None
-        except (OSError, UnicodeDecodeError):
-            text = None
-        if text is None or mentions_reserved_agent(path.stem) or mentions_reserved_agent(text):
-            found.append(str(path))
-    return found
+            st = os.stat(real)
+        except OSError as exc:
+            self.found.append(_problem(directory, _stat_reason(exc)))
+            return
+        if not stat.S_ISDIR(st.st_mode):
+            self.found.append(_problem(directory, "not a folder"))
+            return
+        count = [0]
+        self.walk(directory, real, (), 0, count)
+        if count[0] > MAX_AGENT_FILES:
+            self.found.append(_problem(directory, f"{count[0]} agent files; the limit is {MAX_AGENT_FILES}"))
+
+    def walk(self, shown: Path, real: Path, chain: tuple[tuple[int, int], ...], depth: int, count: list[int]) -> None:
+        key = (os.stat(real).st_dev, os.stat(real).st_ino)
+        if key in chain:
+            self.found.append(_problem(shown, "loop: the link leads back to a folder being scanned"))
+            return
+        if key in self.done:
+            return
+        if depth > MAX_LINK_DEPTH:
+            self.found.append(_problem(shown, f"too deep (more than {MAX_LINK_DEPTH} levels)"))
+            return
+        self.done.add(key)
+        try:
+            entries = sorted(os.scandir(real), key=lambda e: e.name)
+        except OSError as exc:
+            self.found.append(_problem(shown, f"unreadable ({exc.strerror})"))
+            return
+        for entry in entries:
+            self.entry(entry, shown / entry.name, chain + (key,), depth, count)
+
+    def entry(self, entry: os.DirEntry, shown: Path, chain: tuple[tuple[int, int], ...], depth: int, count: list[int]) -> None:
+        try:
+            st = entry.stat(follow_symlinks=True)
+        except OSError as exc:
+            self.found.append(_problem(shown, _stat_reason(exc)))
+            return
+        if stat.S_ISDIR(st.st_mode):
+            self.walk(shown, Path(os.path.realpath(entry.path)), chain, depth + 1, count)
+            return
+        if not entry.name.lower().endswith(".md"):
+            return
+        if not stat.S_ISREG(st.st_mode):
+            self.found.append(_problem(shown, "not a regular file"))
+            return
+        count[0] += 1
+        self.total += 1
+        if self.total > MAX_AGENT_FILES_TOTAL:
+            if self.total == MAX_AGENT_FILES_TOTAL + 1:
+                self.found.append(_problem(shown, f"more than {MAX_AGENT_FILES_TOTAL} agent files in total"))
+            return
+        if count[0] > MAX_AGENT_FILES:
+            return
+        if st.st_size > MAX_AGENT_FILE_BYTES:
+            self.found.append(_problem(shown, f"larger than {MAX_AGENT_FILE_BYTES} bytes"))
+            return
+        try:
+            text = Path(entry.path).read_bytes().decode("utf-8")
+        except UnicodeDecodeError:
+            self.found.append(_problem(shown, "not UTF-8"))
+            return
+        except OSError as exc:
+            self.found.append(_problem(shown, f"unreadable ({exc.strerror})"))
+            return
+        if mentions_reserved_agent(Path(entry.name).stem) or mentions_reserved_agent(Path(os.path.realpath(entry.path)).stem) \
+                or mentions_reserved_agent(text):
+            self.found.append(str(shown))
 
 
 def shadow_agent_files(project_root: Path, role: str = "") -> list[str]:
-    """Agent files (any depth; project, ancestors, user, other plugins) that could carry a reserved sb-rfl-* name, and
-    anything that cannot be scanned safely: a symbolic link, a file that is unreadable, oversized or not UTF-8, a folder
-    with too many files (fail closed)."""
-    found: list[str] = []
+    """Agent files (any depth; project, ancestors, user, other plugins; links are resolved and their targets scanned)
+    that could carry a reserved sb-rfl-* name, plus anything that cannot be scanned fully (a dangling or looping link,
+    too deep or too many files, not a regular file, unreadable, oversized or not UTF-8): those entries carry
+    ``[cannot be scanned: reason]`` and the run is refused (fail closed)."""
+    scan = _AgentScan()
     for directory in _agent_scan_dirs(project_root):
         if os.path.lexists(directory):
-            found += _scan_agent_dir(directory)
-    return found
+            scan.folder(directory)
+    return scan.found
+
+
+def shadow_refusal(found: list[str]) -> str:
+    """The refusal text: a real reserved-name match says so; scan problems name the entry and the reason."""
+    reserved = [f for f in found if UNSCANNABLE not in f]
+    if reserved:
+        return f"an agent file ({reserved[0]}) could carry a reserved sb-rfl-* name: {SHADOW_NOTE}"
+    return (f"the agent folders contain an entry that cannot be scanned safely ({found[0]}); the review-fix ladder will not run "
+            "next to something it cannot check: fix or remove that entry")
 
 
 def load_status(project_root: Path, run_dir: Path) -> dict[str, Any]:
@@ -1026,7 +1115,7 @@ def issue_ticket(project_root: Path, run_dir: Path, phase: str) -> dict[str, Any
             f"`RFL APPROVE {status['run_id']}`, then run --approve")
     shadow = shadow_agent_files(root)
     if shadow:
-        raise RflError(f"an agent file ({shadow[0]}) could carry a reserved sb-rfl-* name: {SHADOW_NOTE}")
+        raise RflError(shadow_refusal(shadow))
     key = _attempt_key(status, phase)
     attempt = status["attempts"].get(key, 0) + 1
     if attempt > MAX_ATTEMPTS:

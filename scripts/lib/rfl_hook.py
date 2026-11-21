@@ -147,7 +147,7 @@ def check_spawn(root: Path, run_dir: Path, status: dict[str, Any], payload: dict
         return f"RFL ticket {ticket['ticket']} requires subagent_type {ticket['role']} (got {kind or 'none'}); only the plugin's own agent is accepted"
     shadow = native.shadow_agent_files(root)
     if shadow:
-        return f"an agent file ({shadow[0]}) could carry a reserved name: {native.SHADOW_NOTE}"
+        return native.shadow_refusal(shadow)
     if str(spec.get("model") or "").lower() != ticket["model"] or str(spec.get("effort") or "").lower() != ticket["effort"]:
         return f"RFL ticket {ticket['ticket']} requires model {ticket['model']} with effort {ticket['effort']}"
     if "run_in_background" in spec and spec["run_in_background"] is not False:

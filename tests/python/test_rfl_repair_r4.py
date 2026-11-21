@@ -18,25 +18,26 @@ class SymlinksAndAncestors(Fire):
         self.elsewhere = self.tmp / "elsewhere"
         self.elsewhere.mkdir()
 
-    def test_a_symlinked_folder_is_a_match_and_blocks_the_ticket(self):
+    def test_a_symlinked_folder_holding_the_name_is_a_match_and_blocks_the_ticket(self):
         self.start()
         (self.elsewhere / "x.md").write_text(FORGED)
         (self.agents / "sub").mkdir()
         (self.agents / "sub" / "deep").symlink_to(self.elsewhere)
         found = native.shadow_agent_files(self.root)
         self.assertTrue(found and "deep" in found[0])
-        with self.assertRaisesRegex(native.RflError, "symbolic link"):
+        with self.assertRaisesRegex(native.RflError, "over-broad"):
             self.ticket("review")
 
-    def test_a_symlinked_file_dangling_or_not_is_a_match(self):
+    def test_symlinked_files_are_scanned_dangling_ones_are_refused(self):
         (self.elsewhere / "ok.md").write_text("harmless")
         (self.agents / "good.md").symlink_to(self.elsewhere / "ok.md")
-        self.assertEqual(len(native.shadow_agent_files(self.root)), 1)
+        self.assertEqual(native.shadow_agent_files(self.root), [])
         (self.agents / "good.md").unlink()
-        (self.agents / "dangling").symlink_to(self.tmp / "nowhere")
+        (self.agents / "dangling.md").symlink_to(self.tmp / "nowhere")
         self.assertEqual(len(native.shadow_agent_files(self.root)), 1)
 
-    def test_a_symlink_in_the_user_and_plugin_agent_dirs_is_a_match(self):
+    def test_links_in_the_user_and_plugin_agent_dirs_are_followed(self):
+        (self.elsewhere / "x.md").write_text(FORGED)
         user = native.home_root() / "agents"
         user.mkdir(parents=True)
         (user / "l").symlink_to(self.elsewhere)
@@ -65,16 +66,18 @@ class SymlinksAndAncestors(Fire):
         self.assertEqual(native.shadow_agent_files(self.root), [])
 
 
-    def test_the_agents_folder_itself_or_its_parent_being_a_link_is_a_match(self):
+    def test_the_agents_folder_itself_or_its_parent_being_a_link_is_resolved(self):
         (self.elsewhere / "a").mkdir()
+        (self.elsewhere / "a" / "x.md").write_text(FORGED)
         self.agents.rmdir()
         (self.root / ".claude" / "agents").symlink_to(self.elsewhere / "a")
-        self.assertIn("symbolic link", native.shadow_agent_files(self.root)[0])
+        self.assertEqual(len(native.shadow_agent_files(self.root)), 1)
         (self.root / ".claude" / "agents").unlink()
         (self.root / ".claude").rmdir()
         (self.root / ".claude").symlink_to(self.elsewhere)
         (self.elsewhere / "agents").mkdir()
-        self.assertIn("symbolic link", native.shadow_agent_files(self.root)[0])
+        (self.elsewhere / "agents" / "y.md").write_text(FORGED)
+        self.assertEqual(len(native.shadow_agent_files(self.root)), 1)
 
 
 class ContentCheckScope(Fire):
