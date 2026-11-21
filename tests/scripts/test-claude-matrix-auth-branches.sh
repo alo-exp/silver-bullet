@@ -100,6 +100,47 @@ claude_matrix_auth_restore
 assert_eq "restore: lost backup leaves settings" '{"changed":true}' "$(jq -c . "$SETTINGS")"
 assert_eq "restore: lost backup resets state" 0 "$_claude_matrix_auth_prepared"
 
+# --- R14-04: the operator's settings keep their mode and survive an interrupted run ---------------------------------
+put "$ORIG"; chmod 600 "$SETTINGS"
+before_sum="$(cksum <"$SETTINGS")"
+CLAUDE_BIN="$TL_TMP/claude-conflict" claude_matrix_auth_prepare
+assert_eq "mode: stripped copy keeps the 0600 mode" 600 "$(stat -c %a "$SETTINGS")"
+assert_eq "mode: stripped settings really lack the keys" '{"env":{"CUSTOM":"keep"},"theme":"dark"}' "$(jq -c . "$SETTINGS")"
+assert_eq "mode: no temp file left beside the settings" 0 "$(ls "$HOME/.claude" | grep -c 'matrix-auth\.' || true)"
+claude_matrix_auth_restore
+assert_eq "mode: restore keeps the 0600 mode" 600 "$(stat -c %a "$SETTINGS")"
+assert_eq "mode: restore is byte-identical" "$before_sum" "$(cksum <"$SETTINGS")"
+assert_file_absent "mode: backup consumed by the restore" "$SETTINGS.sb-matrix-backup"
+
+# a killed run (SIGKILL cannot be trapped) leaves the backup beside the settings; the next prepare puts it back
+put "$ORIG"; chmod 600 "$SETTINGS"
+CLAUDE_BIN="$TL_TMP/claude-conflict" claude_matrix_auth_prepare
+_claude_matrix_auth_prepared=0; _claude_matrix_auth_backup=""   # simulate a fresh process after the kill
+CLAUDE_BIN="$TL_TMP/claude-oauth" claude_matrix_auth_prepare
+assert_eq "stale backup: restored by the next prepare" "$(jq -c . <<<"$ORIG")" "$(jq -c . "$SETTINGS")"
+assert_file_absent "stale backup: consumed" "$SETTINGS.sb-matrix-backup"
+
+# SIGTERM/SIGINT inside the stripped window restore the file before the process dies
+for sig in TERM INT; do
+  put "$ORIG"; chmod 600 "$SETTINGS"
+  (
+    source "$TL_REPO_ROOT/scripts/lib/claude-matrix-auth.sh"
+    CLAUDE_BIN="$TL_TMP/claude-conflict" claude_matrix_auth_prepare
+    kill -s "$sig" "$BASHPID"
+    sleep 5
+  ) >/dev/null 2>&1
+  assert_eq "signal $sig: settings restored" "$(jq -c . <<<"$ORIG")" "$(jq -c . "$SETTINGS")"
+  assert_eq "signal $sig: mode restored" 600 "$(stat -c %a "$SETTINGS")"
+done
+
+# BSD stat fallback and the 600 default when no stat answers
+put "$ORIG"; chmod 640 "$SETTINGS"
+tl_stub stat 'if [[ "$1" == "-c" ]]; then exit 1; fi; if [[ "$1" == "-f" ]]; then echo 640; exit 0; fi; exit 1'
+assert_eq "file mode: BSD stat -f %Lp fallback" 640 "$(_claude_matrix_file_mode "$SETTINGS")"
+tl_stub stat 'exit 1'
+assert_eq "file mode: default 600 when stat is unusable" 600 "$(_claude_matrix_file_mode "$SETTINGS")"
+rm -f "$TL_BIN/stat"
+
 # --- should_export / env lines / export --------------------------------------------------------------------------------
 put '{"env":{"ANTHROPIC_API_KEY":"k1","CUSTOM_FLAG":"on"}}'
 export CLAUDE_BIN="$TL_TMP/claude-oauth"
