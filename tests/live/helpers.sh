@@ -61,8 +61,12 @@ else
   REAL_MCP_AUTH_CACHE="${SB_RUNTIME_HOME_ROOT}/mcp-needs-auth-cache.json"
   REAL_MCP_AUTH_CACHE_BACKUP="${SB_RUNTIME_HOME_ROOT}/mcp-needs-auth-cache.live-test-backup-${TEST_RUN_ID}"
 fi
-REAL_STATE="${SB_TEST_DIR}/state"
-REAL_STATE_BACKUP="${SB_TEST_DIR}/state.live-test-backup-${TEST_RUN_ID}"
+# The nested agent's hooks are pointed at per-run files through the documented override variables
+# (SILVER_BULLET_STATE_FILE / SILVER_BULLET_BRANCH_FILE, both must live under the state dir), so the
+# operator's own `state` and `branch` files are never read, truncated or overwritten (R14-03). The
+# name keeps the historical REAL_STATE for the many assertions that read it.
+REAL_STATE="${SB_TEST_DIR}/state-live-test-${TEST_RUN_ID}"
+LIVE_BRANCH_FILE="${SB_TEST_DIR}/branch-live-test-${TEST_RUN_ID}"
 REAL_TRIVIAL="${SB_TEST_DIR}/trivial"
 REAL_TRIVIAL_BACKUP="${SB_TEST_DIR}/trivial.live-test-backup-${TEST_RUN_ID}"
 
@@ -88,9 +92,6 @@ live_setup() {
   # an abort anywhere after this point (a failing git, jq or agent call) still restores the
   # operator's real state, trivial marker and MCP auth cache (R14-07).
   mkdir -p "$SB_TEST_DIR"
-  if [[ -f "$REAL_STATE" ]]; then
-    cp "$REAL_STATE" "$REAL_STATE_BACKUP"
-  fi
   if [[ -f "$REAL_TRIVIAL" ]]; then
     cp "$REAL_TRIVIAL" "$REAL_TRIVIAL_BACKUP"
   fi
@@ -103,6 +104,9 @@ live_setup() {
   trap live_exit_cleanup EXIT
 
   : > "$REAL_STATE"
+  printf 'feature/live-test\n' > "$LIVE_BRANCH_FILE"
+  export SILVER_BULLET_STATE_FILE="$REAL_STATE"
+  export SILVER_BULLET_BRANCH_FILE="$LIVE_BRANCH_FILE"
   if [[ "${SB_LIVE_DEBUG_DUMP:-0}" == "1" ]]; then
     : > "${SB_TEST_DIR}/debug-dump"
     : > "${SB_TEST_DIR}/hook-dump.jsonl"
@@ -269,12 +273,9 @@ live_teardown() {
   rm -rf "$WORK_DIR"
   live_hook_audit_disable
 
-  # Restore backed-up state file (or remove if it didn't exist before)
-  if [[ -f "$REAL_STATE_BACKUP" ]]; then
-    mv "$REAL_STATE_BACKUP" "$REAL_STATE"
-  else
-    rm -f "$REAL_STATE"
-  fi
+  # The per-run state and branch files are ours; the operator's own are untouched.
+  rm -f "$REAL_STATE" "$LIVE_BRANCH_FILE"
+  unset SILVER_BULLET_STATE_FILE SILVER_BULLET_BRANCH_FILE
 
   if [[ -f "$REAL_TRIVIAL_BACKUP" ]]; then
     mv "$REAL_TRIVIAL_BACKUP" "$REAL_TRIVIAL"
