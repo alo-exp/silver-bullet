@@ -56,12 +56,12 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"ok": False, "error_code": "OUTPUT_ROOT_REQUIRED", "message": "--output-root required for live dispatch"}, indent=2))
         return 2
 
-    if not args.dry_run:
-        gate = host_gate()
-        if not gate["ok"]:
-            payload = {"ok": False, "error_code": gate["error_code"], "message": gate["message"]}
-            print(json.dumps(payload, indent=2))
-            return 2
+    # A dry run is a plan for a run, so it fails the same way a live run does on a host that cannot run it.
+    gate = host_gate()
+    if not gate["ok"]:
+        payload = {"ok": False, "error_code": gate["error_code"], "message": gate["message"]}
+        print(json.dumps(payload, indent=2))
+        return 2
 
     selection = PoolSelection(
         ocg_pool=args.ocg_pool,

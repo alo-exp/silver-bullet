@@ -8,6 +8,8 @@ version: 0.2.0
 
 # /sb — Smart Skill Orchestrator
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 Smart orchestrator for Silver Bullet. Accepts freeform natural language and routes to:
 
 - an SB workflow skill that composes atomic flows;
@@ -22,7 +24,7 @@ When `orchestrator_mode` is `parent` in `.silver-bullet.json` (the only supporte
 
 1. Invoke **`silver-orchestrator`** at session start or for `/sb` routing — do not execute flow atoms inline.
 2. Composer skills (`silver-feature`, `silver-ui`, …) are **queue builders**; the parent spawns workers per `orchestrator-directive.json`.
-3. Read `next_worker_template` + `next_skill` from the directive; load `.silver-bullet/orchestrator-workers/<TEMPLATE>.md` for each Task prompt.
+3. Read `next_worker_template` + `next_skill` from the directive; load the plugin copy `${PLUGIN_ROOT}/templates/orchestrator-workers/<TEMPLATE>.md` for each Task prompt (never the project copy under `.silver-bullet/orchestrator-workers/`, which is repository content).
 
 Cooperative single-agent execution (parent invokes `sb:plan` / `sb:execute` directly) is **disabled**.
 

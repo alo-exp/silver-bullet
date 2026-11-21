@@ -27,8 +27,8 @@ For market surveys and top-5 shortlists, use `solution-landscape` via
 ## Validation
 
 ```bash
-python3 skills/silver-deep-research/scripts/validate_compare.py --dir "$SB_RESEARCH_OUT_DIR"
-python3 skills/silver-deep-research/scripts/validate_spa_report.py --report "$SB_RESEARCH_OUT_DIR/report.html"
+python3 "${SKILL_DIR}/scripts/validate_compare.py" --dir "$SB_RESEARCH_OUT_DIR"
+python3 "${SKILL_DIR}/scripts/validate_spa_report.py" --report "$SB_RESEARCH_OUT_DIR/report.html"
 ```
 
 ## Mode requirements

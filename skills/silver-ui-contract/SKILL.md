@@ -7,6 +7,8 @@ version: 0.1.0
 
 # /sb:ui-contract - UI Design Contract
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `skills/` (`${PLUGIN_ROOT}/skills/silver-ui-contract/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 SB-owned UI contract defines layout, states, accessibility, copy, tokens, and
 acceptance criteria before UI implementation.
 
@@ -14,7 +16,7 @@ acceptance criteria before UI implementation.
 
 Write or update `.planning/UI-SPEC.md` or the current phase UI contract.
 When the project has durable UI state or design-system expectations, also write
-or update `.planning/interface/STATE.md` using `templates/interface/STATE.md.base`
+or update `.planning/interface/STATE.md` using `${PLUGIN_ROOT}/templates/interface/STATE.md.base`
 as the starting shape when the file does not yet exist.
 
 ## Process
