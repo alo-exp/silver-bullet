@@ -105,6 +105,10 @@ class AgentNameForgery(Fire):
 
 
 class SessionFallback(Fire):
+    def setUp(self):
+        super().setUp()
+        del os.environ["CLAUDE_CODE_SESSION_ID"]
+
     def sessions(self, *ids):
         for sid in ids:
             native.record_session(self.root, sid)
@@ -231,7 +235,7 @@ class AbortValve(Fire):
         self.assertIsNone(native.live_run_id(self.root, "s1"))
         self.assertEqual(self.fire({"hook_event_name": "Stop"}), hook.NOOP)
         self.assertEqual(native.load_record(self.root, "demo")["status"], "aborted")
-        self.assertIn("without a verified token", (self.run_dir / "ABORTED.md").read_text() if (self.run_dir / "ABORTED.md").exists() else "without a verified token")
+        self.assertIn("no token was verified", (self.run_dir / "ABORTED.md").read_text())
 
     def test_q7_missing_key_still_aborts(self):
         native._key_path(self.root).unlink()
@@ -317,7 +321,7 @@ class RejectedSpawn(Fire):
     def test_a_quota_failure_pauses_the_run(self):
         self.start()
         self.fire(self.spawn_payload(self.ticket("review")))
-        self.failure("You've hit your limit. Resets 5pm")
+        self.failure("5-hour usage limit reached")
         self.assertEqual(self.status()["status"], "paused_quota")
 
     def test_no_open_ticket_and_subagent_failures_are_ignored(self):
@@ -357,7 +361,7 @@ class TokenOrigin(Fire):
     def test_q5_a_plain_library_call_cannot_mint_a_token(self):
         self.start(approve=False)
         for kind in ("abort", "approve"):
-            with self.assertRaisesRegex(native.RflError, "only the UserPromptSubmit hook"):
+            with self.assertRaisesRegex(native.RflError, "written only by the UserPromptSubmit hook"):
                 native.write_user_token(self.root, kind, "demo", session_id="s1", prompt_sha256="a" * 64)
         self.assertFalse(list(native.state_dir().glob("rfl-abort-*")))
         with self.assertRaises(native.RflError):
@@ -388,3 +392,32 @@ class TokenOrigin(Fire):
             pass
         with self.assertRaises(native.RflError):
             native.write_user_token(self.root, "abort", "demo", session_id="s1", prompt_sha256="a" * 64)
+
+
+class Corners(Fire):
+    def test_no_session_means_no_live_run(self):
+        self.assertIsNone(native.live_run_id(self.root, ""))
+
+    def test_the_token_proof_mixes_in_the_install_seal_key_when_present(self):
+        plain = native._token_proof(self.root, "x")
+        (native.state_dir() / "seal.key").parent.mkdir(parents=True, exist_ok=True)
+        (native.state_dir() / "seal.key").write_bytes(b"k" * 64)
+        self.assertNotEqual(native._token_proof(self.root, "x"), plain)
+
+    def test_a_token_needs_a_session_and_a_sha256(self):
+        with native.hook_token_context():
+            for sid, digest in (("", "a" * 64), ("s1", "xyz")):
+                with self.assertRaisesRegex(native.RflError, "needs the session id"):
+                    native.write_user_token(self.root, "abort", "demo", session_id=sid, prompt_sha256=digest)
+
+    def test_frontmatter_without_a_closing_fence_and_non_agent_text(self):
+        self.assertEqual(native.declared_agent_names("---\nname: a\n"), ["a"])
+        self.assertEqual(native.declared_agent_names("no front matter"), [])
+
+    def test_force_abort_without_a_run_directory(self):
+        os.environ["CLAUDE_CODE_SESSION_ID"] = "s1"
+        self.start()
+        import shutil
+        shutil.move(str(self.run_dir), str(self.tmp / "moved"))
+        out = native.force_abort(self.root, "demo", session_id="s1", prompt_sha256="a" * 64, why="x")
+        self.assertTrue(out["fallback"])

@@ -36,7 +36,7 @@ case "$hook_event" in
       exit 0
     fi
     ;;
-  PreToolUse | PostToolUse | Stop) has_live || exit 0 ;;
+  PreToolUse | PostToolUse | PostToolUseFailure | Stop) has_live || exit 0 ;;
   *) exit 0 ;;
 esac
 

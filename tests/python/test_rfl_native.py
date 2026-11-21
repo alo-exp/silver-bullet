@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from rflhelp import CLEAN_POLICY, RflCase, accept_policy, native, pc, qw, rjson
+from rflhelp import CLEAN_POLICY, RflCase, accept_policy, mint_token, native, pc, qw, rjson
 
 NOW = "2030-01-01T12:00:00Z"
 FINDING = {"id": "F1", "severity": "HIGH", "file": "src/a.py", "line": 1, "summary": "bad"}
@@ -279,7 +279,7 @@ class StartAndApproveTest(RflCase):
         self.start()
         self.assertEqual(native.live_run_id(self.root), "demo")
         self.assertIsNone(native.live_run_id(self.tmp))  # another project
-        pointer = native.pointer_path(self.root, "")
+        pointer = native.pointer_path(self.root, "s1")
         for bad in ("not json", json.dumps({"project_root": str(self.root), "run_id": 5}),
                     json.dumps({"project_root": str(self.root), "run_id": "../x"}),
                     json.dumps({"project_root": str(self.root), "run_id": "ghost"}),
@@ -304,9 +304,9 @@ class StartAndApproveTest(RflCase):
         native.prune_pointers(self.root, "s9")  # nothing left: still fine
         native.record_session(self.root, "bad session!")  # unsafe ids are never recorded
         native.record_session(self.root, "s5")
-        del os.environ["SB_RFL_SESSION_ID"]
+        del os.environ["SB_RFL_SESSION_ID"], os.environ["CLAUDE_CODE_SESSION_ID"]
         self.assertEqual(native.current_session(self.root), "s5")
-        (native.state_dir() / "rfl-sessions" / f"{native._h(str(self.root))}.json").write_text(json.dumps({"session_id": 7}))
+        native.record_session(self.root, "s6")  # two recent sessions: no sound answer
         self.assertEqual(native.current_session(self.root), "")
 
     def test_clear_live_with_a_run_id_drops_every_session_pointer_to_it(self):
@@ -788,7 +788,7 @@ class AbortTest(RflCase):
         self.start()
         with self.assertRaisesRegex(native.RflError, "RFL ABORT demo"):
             native.abort_run(self.root, "demo")
-        native.write_abort_token(self.root, "demo")
+        mint_token(self.root, "abort", "demo")
         out = native.abort_run(self.root, "demo")
         self.assertEqual(out["status"], "aborted")
         self.assertEqual(self.status()["status"], "aborted")
@@ -799,7 +799,7 @@ class AbortTest(RflCase):
     def test_expired_forged_or_other_run_token_is_refused(self):
         self.start()
         os.environ["SB_RFL_NOW"] = NOW
-        native.write_abort_token(self.root, "demo")
+        mint_token(self.root, "abort", "demo")
         os.environ["SB_RFL_NOW"] = "2030-01-01T13:00:00Z"
         with self.assertRaisesRegex(native.RflError, "expired"):
             native.abort_run(self.root, "demo")
@@ -819,7 +819,7 @@ class AbortTest(RflCase):
         self.run_dir = native.run_path(self.root, "second")
         native.start_run(self.root, self.write_charter(), run_id="second")
         native.set_live(self.root, "demo")  # the first run is the live one in this session again
-        native.write_abort_token(self.root, "second")
+        mint_token(self.root, "abort", "second")
         native.abort_run(self.root, "second")
         self.assertEqual(native.live_run_id(self.root), "demo")
 

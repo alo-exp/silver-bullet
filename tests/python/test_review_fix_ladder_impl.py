@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from rflhelp import CLEAN_POLICY, RflCase, native
+from rflhelp import CLEAN_POLICY, RflCase, mint_token, native
 from sbtest import load_module
 
 impl = load_module("scripts/_review_fix_ladder_impl.py", name="rfl_impl_under_test")
@@ -135,7 +135,7 @@ class LifecycleCliTest(CliCase):
         self.assertEqual((code, "Policy E" in err), (3, True))
         code, _, err = self.cli("--approve", "--run-dir", str(run_dir))
         self.assertEqual((code, "RFL APPROVE demo" in err), (3, True))  # the agent cannot approve for the user
-        native.write_user_token(self.root, "approve", "demo", prompt_sha256="test")
+        mint_token(self.root, "approve", "demo")
         self.assertEqual(self.jcli("--approve", "--run-dir", str(run_dir))[0], 0)
         for cycle in range(2):
             code, out, _ = self.jcli("--issue-ticket", "review", "--run-dir", str(run_dir))
@@ -181,7 +181,7 @@ class LifecycleCliTest(CliCase):
         self.assertEqual((code, out["run_id"]), (0, "demo"))
         code, out, err = self.jcli("--abort", "demo")
         self.assertEqual((code, "RFL ABORT demo" in err), (3, True))
-        native.write_abort_token(self.root, "demo")
+        mint_token(self.root, "abort", "demo")
         self.assertEqual(self.jcli("--abort", "demo")[1]["status"], "aborted")
         code, out, _ = self.jcli("--cleanup-legacy-timers", "--dry-run")
         self.assertEqual((code, out["dry_run"], out["found"]), (0, True, []))

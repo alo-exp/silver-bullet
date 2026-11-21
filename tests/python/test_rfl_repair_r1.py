@@ -157,6 +157,8 @@ class StopGate(Fire):
         out = self.fire({"hook_event_name": "Stop"})
         self.assertEqual(out["output"]["decision"], "block")
         self.assertIn("RFL ABORT demo", self.reason(out))
+        for _ in range(native.STOP_BLOCK_LIMIT - 1):  # the agent can still clear an open ticket: it keeps being told
+            self.assertEqual(self.fire({"hook_event_name": "Stop", "stop_hook_active": True})["output"]["decision"], "block")
         rel = self.fire({"hook_event_name": "Stop", "stop_hook_active": True})
         self.assertIn("released", self.reason(rel))
         self.assertNotEqual((rel["output"] or {}).get("decision"), "block")

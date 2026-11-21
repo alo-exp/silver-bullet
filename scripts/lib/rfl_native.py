@@ -18,6 +18,8 @@ result is captured from the host's tool response by the PostToolUse hook, never 
 from __future__ import annotations
 
 import contextlib
+import fcntl
+import functools
 import hashlib
 import hmac
 import json
@@ -27,6 +29,7 @@ import secrets
 import shutil
 import subprocess
 import sys
+import threading
 import time
 from datetime import timedelta
 from pathlib import Path
@@ -79,6 +82,8 @@ SESSION_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 STALE_POINTER_SECONDS = 24 * 3600
 USER_RUNGS_TTL_SECONDS = 6 * 3600
 MAX_CANCELS = 3
+STOP_BLOCK_LIMIT = 5
+LOCK_TIMEOUT_SECONDS = 5.0
 SPAWN_STALE_SECONDS = 1800
 TOKEN_KINDS = ("abort", "approve")
 USER_RUNGS_RE = re.compile(r"\brungs\s*:\s*((?:[+-]?[a-z]{3,8}:[a-z]{3,6}[\s,]*){1,12})", re.I)
@@ -366,38 +371,51 @@ def _h(text: str, n: int = 16) -> str:
 
 
 def current_session(project_root: Path) -> str:
-    """The host session this process belongs to: the hook's payload, a host env var, or the last session the
-    SessionStart hook saw in this project (a CLI run from Bash has no payload)."""
+    """The host session this process belongs to: the hook's payload or a host env var. A CLI run from Bash with
+    neither falls back to the one session the SessionStart hook recorded for this project, and only while at most
+    one live pointer exists; with two sessions in play there is no sound answer, so it is empty (never a guess)."""
     for key in ("SB_RFL_SESSION_ID", "CLAUDE_SESSION_ID", "CLAUDE_CODE_SESSION_ID"):
         value = os.environ.get(key, "")
         if SESSION_RE.match(value):
             return value
-    try:
-        data = rfl_json.read_bounded(state_dir() / "rfl-sessions" / f"{_h(str(Path(project_root).resolve()))}.json", max_bytes=2048, max_depth=3)
-    except rfl_json.BadJson:
-        return ""
-    sid = data.get("session_id")
-    return sid if isinstance(sid, str) and SESSION_RE.match(sid) else ""
+    root = Path(project_root).resolve()
+    cutoff = time.time() - STALE_POINTER_SECONDS
+    recent = []
+    for path in sorted((state_dir() / "rfl-sessions" / _h(str(root))).glob("*.json")):
+        with contextlib.suppress(OSError):  # pruned between the glob and the stat
+            if SESSION_RE.match(path.stem) and path.stat().st_mtime >= cutoff:
+                recent.append(path.stem)
+    pointers = list((state_dir() / "rfl-live").glob(f"{_h(str(root))}-*.json"))
+    return recent[0] if len(recent) == 1 and len(pointers) <= 1 else ""
+
+
+def need_session(project_root: Path) -> str:
+    sid = current_session(project_root)
+    if not sid:
+        raise RflError("cannot tell which session this is (several sessions are active in this project, or none was recorded); "
+                       "run this from the session that owns the run with CLAUDE_CODE_SESSION_ID set to its id")
+    return sid
 
 
 def record_session(project_root: Path, session_id: str) -> None:
     if SESSION_RE.match(session_id or ""):
-        write_atomic(state_dir() / "rfl-sessions" / f"{_h(str(Path(project_root).resolve()))}.json", json.dumps({"session_id": session_id}) + "\n")
+        write_atomic(state_dir() / "rfl-sessions" / _h(str(Path(project_root).resolve())) / f"{session_id}.json", "{}\n")
 
 
 def pointer_path(project_root: Path, session_id: str) -> Path:
-    return state_dir() / "rfl-live" / f"{_h(str(Path(project_root).resolve()))}-{session_id or 'none'}.json"
+    return state_dir() / "rfl-live" / f"{_h(str(Path(project_root).resolve()))}-{session_id}.json"
 
 
 def set_live(project_root: Path, run_id: str) -> None:
-    root, sid = Path(project_root).resolve(), current_session(project_root)
+    root, sid = Path(project_root).resolve(), need_session(project_root)
     write_atomic(pointer_path(root, sid), json.dumps({"project_root": str(root), "run_id": run_id, "session_id": sid}) + "\n")
 
 
 def clear_live(project_root: Path, run_id: str = "") -> None:
     """Drop this session's pointer for the project; with ``run_id`` also every pointer to that run."""
     root = Path(project_root).resolve()
-    paths = sorted((state_dir() / "rfl-live").glob(f"{_h(str(root))}-*.json")) if run_id else [pointer_path(root, current_session(root))]
+    sid = current_session(root)
+    paths = sorted((state_dir() / "rfl-live").glob(f"{_h(str(root))}-*.json")) if run_id else ([pointer_path(root, sid)] if sid else [])
     for path in paths:
         try:
             if not run_id or rfl_json.read_bounded(path, max_bytes=4096, max_depth=4).get("run_id") == run_id:
@@ -408,9 +426,10 @@ def clear_live(project_root: Path, run_id: str = "") -> None:
 
 def prune_pointers(project_root: Path, session_id: str) -> None:
     """SessionStart startup/clear: remove this session's own pointer and pointers nobody has touched for a day."""
-    pointer_path(project_root, session_id).unlink(missing_ok=True)
+    if session_id:
+        pointer_path(project_root, session_id).unlink(missing_ok=True)
     cutoff = time.time() - STALE_POINTER_SECONDS
-    for path in (state_dir() / "rfl-live").glob("*.json"):
+    for path in list((state_dir() / "rfl-live").glob("*.json")) + list((state_dir() / "rfl-sessions").glob("*/*.json")):
         with contextlib.suppress(OSError):  # a concurrent prune may have removed it already
             if path.stat().st_mtime < cutoff:
                 path.unlink()
@@ -420,15 +439,86 @@ def live_run_id(project_root: Path, session_id: str | None = None) -> str | None
     """The run this session started or resumed in this project (its sealed record exists), else None."""
     root = Path(project_root).resolve()
     sid = current_session(root) if session_id is None else session_id
-    for candidate in ([sid] if sid else []) + [""]:
-        try:
-            pointer = rfl_json.read_bounded(pointer_path(root, candidate), max_bytes=4096, max_depth=4)
-        except rfl_json.BadJson:
-            continue
-        run_id = pointer.get("run_id")
-        if pointer.get("project_root") == str(root) and isinstance(run_id, str) and RUN_ID_RE.match(run_id) and record_path(root, run_id).is_file():
-            return run_id
+    if not sid:
+        return None
+    try:
+        pointer = rfl_json.read_bounded(pointer_path(root, sid), max_bytes=4096, max_depth=4)
+    except rfl_json.BadJson:
+        return None
+    run_id = pointer.get("run_id")
+    if pointer.get("project_root") == str(root) and isinstance(run_id, str) and RUN_ID_RE.match(run_id) and record_path(root, run_id).is_file():
+        return run_id
     return None
+
+
+def stop_blocks(project_root: Path, run_id: str, problem: str | None) -> int:
+    """How many Stop blocks this session has already issued for the same problem (reset when it clears)."""
+    root = Path(project_root).resolve()
+    path = state_dir() / "rfl-stops" / f"{_h(str(root), 12)}-{current_session(root) or 'none'}-{run_id}.json"
+    if problem is None:
+        path.unlink(missing_ok=True)
+        return 0
+    try:
+        data = rfl_json.read_bounded(path, max_bytes=2048, max_depth=3)
+    except rfl_json.BadJson:
+        data = {}
+    count = data.get("count") if data.get("problem") == sha256_text(problem) and isinstance(data.get("count"), int) else 0
+    write_atomic(path, json.dumps({"problem": sha256_text(problem), "count": count + 1}) + "\n")
+    return count
+
+
+# -- one writer at a time per run: hook events and CLI calls can overlap (parallel tool calls), so every ticket
+#    issue, spawn check, capture, cancel and state advance runs under an exclusive lock
+_LOCKS = threading.local()
+
+
+class run_lock:
+    """Exclusive, re-entrant per-run lock (flock on a file in the runtime state dir) with a timeout."""
+
+    def __init__(self, project_root: Path, run_id: str, timeout: float = LOCK_TIMEOUT_SECONDS):
+        root = Path(project_root).resolve()
+        name = run_id if RUN_ID_RE.match(run_id or "") else _h(str(run_id))
+        self.key, self.timeout = (str(root), name), timeout
+        self.path = state_dir() / "rfl-locks" / f"{_h(str(root), 12)}-{name}.lock"
+        self.fd = -1
+
+    def __enter__(self) -> "run_lock":
+        held = _LOCKS.__dict__.setdefault("held", {})
+        if self.key in held:
+            held[self.key][1] += 1
+            return self
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.fd = os.open(self.path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+        deadline = time.monotonic() + self.timeout
+        while True:
+            try:
+                fcntl.flock(self.fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if time.monotonic() >= deadline:
+                    os.close(self.fd)
+                    raise RflError(f"run {self.key[1]} is busy (another hook or command is writing it); retry in a moment") from None
+                time.sleep(0.02)
+        held[self.key] = [self.fd, 1]
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        held = _LOCKS.__dict__["held"]
+        held[self.key][1] -= 1
+        if held[self.key][1] == 0:
+            fd = held.pop(self.key)[0]
+            fcntl.flock(fd, fcntl.LOCK_UN)
+            os.close(fd)
+
+
+def _locked(fn):
+    """Run a mutator (first arguments: project root, then a run directory or a run id) under the run lock."""
+    @functools.wraps(fn)
+    def wrapper(project_root, target, *args, **kwargs):
+        run_id = target if isinstance(target, str) else _run_id_of(Path(target))
+        with run_lock(project_root, run_id):
+            return fn(project_root, target, *args, **kwargs)
+    return wrapper
 
 
 # -- the sealed run record: the authority for liveness, Stop, approval and abort (kept in the runtime state dir,
@@ -471,16 +561,50 @@ def abort_token_path(run_id: str) -> Path:
     return token_path("abort", run_id)
 
 
-def write_user_token(project_root: Path, kind: str, run_id: str, *, session_id: str = "", prompt_sha256: str = "") -> Path:
+_TOKEN_CONTEXT = threading.local()
+
+
+@contextlib.contextmanager
+def hook_token_context():
+    """Entered only by the UserPromptSubmit hook around the message the user typed: a token is minted nowhere else.
+    Residual (documented): a same-user process that reads this source and the per-project key can still forge one."""
+    _TOKEN_CONTEXT.on = True
+    try:
+        yield
+    finally:
+        _TOKEN_CONTEXT.on = False
+
+
+def _token_proof(project_root: Path, fields: str) -> str:
+    key = project_key(project_root, create=True) or b""
+    seal = state_dir() / "seal.key"
+    if seal.is_file() and not seal.is_symlink():
+        key += seal.read_bytes()[:64]
+    return hmac.new(key, fields.encode(), hashlib.sha256).hexdigest()
+
+
+def _next_token_counter() -> int:
+    path = state_dir() / "rfl-token-counter"
+    try:
+        current = int(path.read_text().strip())
+    except (OSError, ValueError):
+        current = 0
+    write_atomic(path, f"{current + 1}\n")
+    return current + 1
+
+
+def write_user_token(project_root: Path, kind: str, run_id: str, *, session_id: str, prompt_sha256: str) -> Path:
+    if not getattr(_TOKEN_CONTEXT, "on", False):
+        raise RflError("tokens are written only by the UserPromptSubmit hook, from a message the user typed")
+    if not SESSION_RE.match(session_id or "") or not re.match(r"^[0-9a-f]{64}$", prompt_sha256 or ""):
+        raise RflError("a token needs the session id and the sha256 of the user's message")
     expires = quota_window.isoformat_z(quota_window.utcnow() + timedelta(seconds=ABORT_TTL_SECONDS))
+    counter = _next_token_counter()
     path = token_path(kind, run_id)
-    write_json(path, {"kind": kind, "run_id": run_id, "expires_at": expires, "source": "UserPromptSubmit",
-                      "session_id": session_id, "prompt_sha256": prompt_sha256}, project_root)
+    write_json(path, {"kind": kind, "run_id": run_id, "expires_at": expires, "source": "UserPromptSubmit", "session_id": session_id,
+                      "prompt_sha256": prompt_sha256, "counter": counter,
+                      "proof": _token_proof(project_root, f"{kind}|{run_id}|{session_id}|{prompt_sha256}|{counter}")}, project_root)
     return path
-
-
-def write_abort_token(project_root: Path, run_id: str) -> Path:
-    return write_user_token(project_root, "abort", run_id, prompt_sha256="direct-call")
 
 
 def consume_user_token(project_root: Path, kind: str, run_id: str) -> dict[str, Any]:
@@ -490,14 +614,19 @@ def consume_user_token(project_root: Path, kind: str, run_id: str) -> dict[str, 
         raise RflError(f"this needs the user's own message: {ask}")
     token = read_signed(path, project_root, f"{kind} token")
     expires = quota_window.parse_iso_datetime(str(token.get("expires_at")))
-    if token.get("kind") != kind or token.get("run_id") != run_id or token.get("source") != "UserPromptSubmit" or expires is None or expires < quota_window.utcnow():
+    counter = token.get("counter")
+    fields = f"{kind}|{run_id}|{token.get('session_id')}|{token.get('prompt_sha256')}|{counter}"
+    genuine = (isinstance(counter, int) and counter >= 1 and SESSION_RE.match(str(token.get("session_id"))) is not None
+               and isinstance(token.get("proof"), str) and hmac.compare_digest(token["proof"], _token_proof(project_root, fields)))
+    if (token.get("kind") != kind or token.get("run_id") != run_id or token.get("source") != "UserPromptSubmit"
+            or expires is None or expires < quota_window.utcnow() or not genuine):
         raise RflError(f"the {kind} token for {run_id} is expired or does not match; {ask}")
     path.unlink()
     return token
 
 
 def _user_rungs_path(project_root: Path) -> Path:
-    return state_dir() / "rfl-user-rungs" / f"{_h(str(Path(project_root).resolve()))}-{current_session(project_root) or 'none'}.json"
+    return state_dir() / "rfl-user-rungs" / f"{_h(str(Path(project_root).resolve()))}-{need_session(project_root)}.json"
 
 
 def record_user_rungs(project_root: Path, spec: str, *, prompt_sha256: str = "") -> str:
@@ -659,6 +788,7 @@ def start_run(project_root: Path, charter_file: Path | None, *, run_id: str = ""
         raise RflError(CODEX_MESSAGE)
     if charter_file is None:
         raise RflError("--start requires --charter-file (JSON: goal, scope, key_tasks, signals)")
+    need_session(root)
     try:
         charter = normalize_charter(rfl_json.read_bounded(charter_file))
     except rfl_json.BadJson as exc:
@@ -699,6 +829,7 @@ def load_charter(run_dir: Path) -> dict[str, Any]:
     return charter
 
 
+@_locked
 def approve(project_root: Path, run_dir: Path) -> dict[str, Any]:
     root = Path(project_root).resolve()
     require_live(root, run_dir)
@@ -719,6 +850,7 @@ def _approved(run_dir: Path) -> bool:
     return load_record(_run_root(run_dir), _run_id_of(run_dir)).get("approved_sha256") == digest
 
 
+@_locked
 def abort_run(project_root: Path, run_id: str) -> dict[str, Any]:
     """End a run. The sealed record is the authority, so this works even when the status file no longer verifies."""
     root = Path(project_root).resolve()
@@ -736,10 +868,34 @@ def abort_run(project_root: Path, run_id: str) -> dict[str, Any]:
     if run_dir.is_dir():
         write_atomic(run_dir / "ABORTED.md", (
             f"# Aborted\n\nrun: {run_id}\naborted_at: {now_iso()}\n"
-            f"authorised_by: token written by the UserPromptSubmit hook (session {token.get('session_id') or 'unknown'}, "
-            f"prompt_sha256 {token.get('prompt_sha256') or 'unknown'}) for the message `RFL ABORT {run_id}`\n"))
+            f"authorised_by: signed token written by the UserPromptSubmit hook (session {token['session_id']}, token counter "
+            f"{token['counter']}, prompt_sha256 {token['prompt_sha256']}) for the message `RFL ABORT {run_id}`\n"))
     clear_live(root, run_id)
     return {"ok": True, "status": "aborted", "run_id": run_id}
+
+
+def force_abort(project_root: Path, run_id: str, *, session_id: str, prompt_sha256: str, why: str) -> dict[str, Any]:
+    """The user's ``RFL ABORT`` when the sealed record is corrupt or the key is gone: the hook (which saw the typed
+    message) clears the run this session owns and seals a fresh aborted record. Audited by the caller."""
+    root = Path(project_root).resolve()
+    try:
+        owned = rfl_json.read_bounded(pointer_path(root, session_id), max_bytes=4096, max_depth=4).get("run_id") == run_id
+    except rfl_json.BadJson:
+        owned = False
+    if not owned:
+        raise RflError(f"run {run_id} is not a run of this session")
+    with run_lock(root, run_id):
+        project_key(root, create=True)
+        save_record(root, {"run_id": run_id, "project_root": str(root), "session_id": session_id, "status": "aborted", "charter_sha256": "",
+                           "approved_sha256": None, "started_at": now_iso(), "aborted_by": "corrupt-record fallback"})
+        run_dir = run_path(root, run_id)
+        if run_dir.is_dir():
+            write_atomic(run_dir / "ABORTED.md", (
+                f"# Aborted\n\nrun: {run_id}\naborted_at: {now_iso()}\n"
+                f"authorised_by: the user's message `RFL ABORT {run_id}` (session {session_id}, prompt_sha256 {prompt_sha256}), applied by the "
+                f"fallback because the sealed run record was corrupt or its key was missing ({why}); no token was verified\n"))
+        clear_live(root, run_id)
+    return {"ok": True, "status": "aborted", "run_id": run_id, "fallback": True}
 
 
 # --------------------------------------------------------------------------- briefs and tickets
@@ -811,6 +967,7 @@ def save_ticket(project_root: Path, run_dir: Path, ticket: dict[str, Any]) -> No
     write_json(_ticket_dir(run_dir) / f"{ticket['ticket']}.json", ticket, project_root)
 
 
+@_locked
 def issue_ticket(project_root: Path, run_dir: Path, phase: str) -> dict[str, Any]:
     root = Path(project_root).resolve()
     if phase not in TICKET_PHASES:
@@ -889,15 +1046,9 @@ def _fail_attempt(root: Path, run_dir: Path, status: dict[str, Any], ticket: dic
     return result
 
 
-def cancel_ticket(project_root: Path, run_dir: Path) -> dict[str, Any]:
-    """Return a ticket to its pre-spawn state. A cancel is never a failed launch: it cannot skip a rung, only the
-    hook's own observation of a spawn that produced no verdict can (R4-15). It is rate limited and recorded."""
-    root = Path(project_root).resolve()
-    require_live(root, run_dir)
-    status = load_status(root, run_dir)
-    if not status["open_ticket"]:
-        raise RflError("no open ticket")
-    ticket = read_ticket(root, run_dir, status["open_ticket"])
+def _release_ticket(root: Path, run_dir: Path, status: dict[str, Any], ticket: dict[str, Any], outcome: str) -> int:
+    """Return an open ticket to its pre-spawn state (never a failed attempt). Refused while its subagent may still
+    be running, and rate limited per phase; returns the number of cancels used on this phase."""
     issued = quota_window.parse_iso_datetime(ticket["issued_at"])
     stale = issued is not None and (quota_window.utcnow() - issued).total_seconds() > SPAWN_STALE_SECONDS
     if ticket["spawned"] and not stale:
@@ -907,12 +1058,25 @@ def cancel_ticket(project_root: Path, run_dir: Path) -> dict[str, Any]:
     if count >= MAX_CANCELS:
         raise RflError(f"{count} cancels on this phase already; a cancel never skips a rung, so ask the user what to do (they can end the run with `RFL ABORT {status['run_id']}`)")
     status["cancels"][key] = count + 1
-    ticket["open"], ticket["outcome"] = False, "cancelled"
+    ticket["open"], ticket["outcome"] = False, outcome
     ticket["cancelled_at"] = now_iso()
     save_ticket(root, run_dir, ticket)
     status["open_ticket"] = None
+    return count + 1
+
+
+@_locked
+def cancel_ticket(project_root: Path, run_dir: Path) -> dict[str, Any]:
+    """Return a ticket to its pre-spawn state. A cancel is never a failed launch: it cannot skip a rung, only the
+    hook's own observation of a spawn that produced no verdict can (R4-15). It is rate limited and recorded."""
+    root = Path(project_root).resolve()
+    require_live(root, run_dir)
+    status = load_status(root, run_dir)
+    if not status["open_ticket"]:
+        raise RflError("no open ticket")
+    used = _release_ticket(root, run_dir, status, read_ticket(root, run_dir, status["open_ticket"]), "cancelled")
     save_status(root, run_dir, status)
-    return {"ok": True, "outcome": "cancelled", "cancels": count + 1}
+    return {"ok": True, "outcome": "cancelled", "cancels": used}
 
 
 def _next_rung(root: Path, run_dir: Path, status: dict[str, Any], *, skipped: bool) -> None:
@@ -1020,6 +1184,7 @@ def render_result_md(phase: str, ticket: dict[str, Any], result: dict[str, Any])
     return head + "\n".join(rows) + f"\n\nGaps:\n{gaps}\n"
 
 
+@_locked
 def capture_response(project_root: Path, run_dir: Path, tool_name: str, tool_response: Any) -> dict[str, Any]:
     """PostToolUse: turn the host's tool response into a recorded result for the open ticket."""
     root = Path(project_root).resolve()
@@ -1043,6 +1208,24 @@ def capture_response(project_root: Path, run_dir: Path, tool_name: str, tool_res
     if window["quota_class"] in ("five_hour", "weekly", "monthly", "billing"):
         return _pause_for_quota(root, run_dir, status, ticket, window, text)
     return {"captured": False, **_fail_attempt(root, run_dir, status, ticket, "no_verdict", text)}
+
+
+@_locked
+def capture_failure(project_root: Path, run_dir: Path, tool_name: str, error: Any) -> dict[str, Any]:
+    """PostToolUseFailure: the host rejected or failed the spawn. Observed by the hook, so it counts as a failed
+    attempt (two skip the rung); a quota message pauses the run instead."""
+    root = Path(project_root).resolve()
+    status = load_status(root, run_dir)
+    if status["status"] != "active" or not status["open_ticket"]:
+        return {"captured": False, "reason": "no open ticket"}
+    ticket = read_ticket(root, run_dir, status["open_ticket"])
+    if not ticket["spawned"]:
+        return {"captured": False, "reason": "the ticket's spawn was never allowed"}
+    text = flatten_text(error)
+    window = quota_window.classify_quota_window(text)
+    if window["quota_class"] in ("five_hour", "weekly", "monthly", "billing"):
+        return _pause_for_quota(root, run_dir, status, ticket, window, text)
+    return {"captured": False, **_fail_attempt(root, run_dir, status, ticket, "launch_failed", text)}
 
 
 def _pause_for_quota(root: Path, run_dir: Path, status: dict[str, Any], ticket: dict[str, Any], window: dict[str, Any], text: str) -> dict[str, Any]:
@@ -1098,6 +1281,7 @@ def _record_result(root: Path, run_dir: Path, status: dict[str, Any], ticket: di
 
 
 # --------------------------------------------------------------------------- the parent's commands
+@_locked
 def complete_triage(project_root: Path, run_dir: Path) -> dict[str, Any]:
     root = Path(project_root).resolve()
     require_live(root, run_dir)
@@ -1124,6 +1308,7 @@ def complete_triage(project_root: Path, run_dir: Path) -> dict[str, Any]:
     return {"ok": True, "accepts": accepts, "next": status["phase"]}
 
 
+@_locked
 def record_apply(project_root: Path, run_dir: Path) -> dict[str, Any]:
     root = Path(project_root).resolve()
     require_live(root, run_dir)
@@ -1148,6 +1333,7 @@ def record_apply(project_root: Path, run_dir: Path) -> dict[str, Any]:
     return {"ok": True, "next": "verify_1"}
 
 
+@_locked
 def run_signals(project_root: Path, run_dir: Path) -> dict[str, Any]:
     root = Path(project_root).resolve()
     require_live(root, run_dir)
@@ -1187,6 +1373,7 @@ def run_signals(project_root: Path, run_dir: Path) -> dict[str, Any]:
     return {"ok": ok, "signals": [{k: r[k] for k in ("id", "exit", "passed")} for r in records], "next": status["phase"]}
 
 
+@_locked
 def advance(project_root: Path, run_dir: Path) -> dict[str, Any]:
     root = Path(project_root).resolve()
     require_live(root, run_dir)
@@ -1206,10 +1393,12 @@ def advance(project_root: Path, run_dir: Path) -> dict[str, Any]:
 LEGACY_STATUSES = frozenset({"active", "paused_quota", "completed", "aborted", "paused"})
 
 
+@_locked
 def resume_run(project_root: Path, run_id: str, charter_file: Path | None = None) -> dict[str, Any]:
     root = Path(project_root).resolve()
     if detect_host() == "codex":
         raise RflError(CODEX_MESSAGE)
+    need_session(root)
     run_dir = run_path(root, run_id)
     if not run_dir.is_dir():
         raise RflError(f"no run {run_id}")
@@ -1240,14 +1429,16 @@ def resume_run(project_root: Path, run_id: str, charter_file: Path | None = None
     if status["status"] == "paused_quota":
         status["status"], status["resume_after"] = "active", None
         note = "resumed after a quota pause"
+    dropped = ""
     if status["open_ticket"]:
-        status["open_ticket"] = None
+        dropped = status["open_ticket"]
+        _release_ticket(root, run_dir, status, read_ticket(root, run_dir, dropped), "cancelled_by_resume")
     charter = load_charter(run_dir)
     if fingerprint(root, charter["scope"])["digest"] != (status["cycle"] or {}).get("digest", fingerprint(root, charter["scope"])["digest"]):
         status["streak"] = []
     save_status(root, run_dir, status)
     set_live(root, run_id)
-    return {"ok": True, "run_id": run_id, "legacy_migrated": legacy, "note": note, "phase": status["phase"],
+    return {"ok": True, "run_id": run_id, "legacy_migrated": legacy, "note": note, "dropped_ticket": dropped, "phase": status["phase"],
             "rung": status["rung_index"], "legacy_timers_removed": cleanup_legacy_timers()}
 
 

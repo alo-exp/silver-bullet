@@ -4,7 +4,7 @@
 > Do not edit by hand: change those files, then run `python3 scripts/generate-hook-reference.py`.
 > `tests/docs/test-hook-reference.sh` fails when this file is stale.
 
-`hooks/hooks.json` registers **94 hook commands** backed by **61 scripts** across 7 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
+`hooks/hooks.json` registers **95 hook commands** backed by **61 scripts** across 8 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
 
 ## How hooks are wired
 
@@ -109,6 +109,12 @@ After a tool runs; a hook can report, record state, or ask the agent to stop.
 | 25 | `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | `record-leanctx-usage.sh` | 10 |
 | 26 | `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | `record-recommended-mcp.sh` | 10 |
 
+### PostToolUseFailure
+
+| # | Matcher | Script | Timeout |
+|---|---------|--------|---------|
+| 1 | `Task\|Subagent\|Agent` | `review-fix-ladder-guard.sh` | 10 |
+
 ### SubagentStart
 
 When a subagent starts.
@@ -202,7 +208,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `record-site-visual-evidence.sh` | PostToolUse `Bash\|exec_command` | Records browser screenshot paths as site visual evidence. |
 | `record-skill.sh` | PostToolUse `Skill\|Bash\|exec_command` | Records completed skill invocations (host Skill tool, or `silver-bullet invoke-skill` receipts on Codex) in the state file. |
 | `record-token-compression-usage.sh` | PostToolUse `Bash\|exec_command` | Records token-compression CLI usage (RTK) for the opt-in usage-freshness gate. |
-| `review-fix-ladder-guard.sh` | SessionStart `startup\|clear\|compact`; PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|apply_patch\|NotebookEdit`; PostToolUse `Task\|Subagent\|Agent`; Stop `.*`; UserPromptSubmit `.*` | Review-fix-ladder guard, inert unless this session started or resumed a run: validates each ladder subagent spawn against its ticket, captures its result, protects encoder-owned artifacts, blocks Stop while a run is active, records a user-typed `RFL ABORT <run-id>`, and prints a fixed resume notice at session start. |
+| `review-fix-ladder-guard.sh` | SessionStart `startup\|clear\|compact`; PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|apply_patch\|NotebookEdit`; PostToolUse `Task\|Subagent\|Agent`; PostToolUseFailure `Task\|Subagent\|Agent`; Stop `.*`; UserPromptSubmit `.*` | Review-fix-ladder guard, inert unless this session started or resumed a run: validates each ladder subagent spawn against its ticket, captures its result, protects encoder-owned artifacts, blocks Stop while a run is active, records a user-typed `RFL ABORT <run-id>`, and prints a fixed resume notice at session start. |
 | `roadmap-freshness.sh` | PreToolUse `Bash\|exec_command` | Blocks a `git commit` (any form: `git -C`, `git add … && git commit`, `commit -a`, pathspecs) that brings in a phase `SUMMARY.md` whose `ROADMAP.md` checkbox is not ticked. |
 | `rtk-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.rtk`): checks RTK install, version and host hook wiring (it does not rewrite commands itself). |
 | `semantic-compress.sh` | PostToolUse `Skill` | After phase skills, assembles a ranked context summary for the current phase goal (`semantic_compression` config). |

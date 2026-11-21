@@ -35,7 +35,7 @@ guard() { # <payload-json> [dir]: run the wrapper from the project (or dir); the
 user_says() { guard "$(jq -cn --arg p "$1" '{hook_event_name:"UserPromptSubmit", prompt:$p}')"; }
 drop_pointers() { find "$SB_RUNTIME_STATE_DIR/rfl-live" -name '*.json' -delete 2>/dev/null || true; }
 pointers() { find "$SB_RUNTIME_STATE_DIR/rfl-live" -name '*.json' 2>/dev/null | wc -l | tr -d ' '; }
-cli() { (cd "$P" && python3 "$CLI" "$@"); }
+cli() { (cd "$P" && CLAUDE_CODE_SESSION_ID="${CLI_SID-sess-1}" python3 "$CLI" "$@"); }
 denied() { [[ "$1" == *'"permissionDecision":"deny"'* || "$1" == *'"decision":"block"'* ]]; }
 
 # --- inert until this session starts a run ------------------------------------------------------
@@ -100,9 +100,11 @@ assert_eq "in-scope edits are fine again after the capture" "" "$(guard "$(edit_
 # --- Stop gate -------------------------------------------------------------------------------------
 out="$(guard '{"hook_event_name":"Stop"}')"
 denied "$out" && assert_contains "Stop is blocked while the review is captured but untriaged" "$out" "RFL ABORT demo" || tl_fail "Stop is blocked while the review is untriaged"
+for _n in 1 2 3 4; do out="$(guard '{"hook_event_name":"Stop","stop_hook_active":true}')"; done
+assert_contains "a state the agent can clear keeps blocking on stop_hook_active (until the reminder limit)" "$out" '"decision":"block"'
 out="$(guard '{"hook_event_name":"Stop","stop_hook_active":true}')"
-assert_contains "stop_hook_active releases the gate visibly" "$out" "released after one block"
-assert_not_contains "and does not block" "$out" '"decision":"block"' 
+assert_contains "after the reminder limit the gate is released visibly" "$out" "gate released"
+assert_not_contains "and does not block" "$out" '"decision":"block"'
 
 # --- finish the rung through the CLI with captured replies ------------------------------------------
 cat >"$TL_TMP/pc.json" <<'EOF'
@@ -130,6 +132,8 @@ assert_not_contains "no repo text is ever injected" "$out" "HOSTILE"
 assert_eq "compact keeps the live pointer" 1 "$(pointers)"
 guard '{"hook_event_name":"SessionStart","source":"startup","session_id":"sess-2"}' >/dev/null
 assert_eq "another session's startup leaves this session's pointer alone" 1 "$(pointers)"
+rc=0; CLI_SID="" cli --start --charter-file "$TL_TMP/charter.json" --run-id nosess >/dev/null 2>&1 || rc=$?
+assert_eq "with two recorded sessions and no session id the CLI refuses to guess" 3 "$rc"
 guard '{"hook_event_name":"SessionStart","source":"startup"}' >/dev/null
 assert_eq "this session's own startup drops its pointer" 0 "$(pointers)"
 assert_eq "without a live run Stop is not blocked" "" "$(guard '{"hook_event_name":"Stop"}')"
@@ -148,6 +152,19 @@ assert_contains "the abort is audited" "$(cat "$AUDIT")" "RFL ABORT second token
 cli --abort second >/dev/null
 assert_eq "the run is aborted" "aborted" "$(cli --status --run-dir "$P/.planning/rfl-second" | jq -r .status)"
 assert_eq "an abort for an unknown run does nothing" "" "$(guard "$(abort_json 'RFL ABORT nothere')")"
+
+# --- a spawn the host rejects (PostToolUseFailure) is observed as a failed attempt ---------------------
+cli --start --charter-file "$TL_TMP/charter.json" --run-id failrun >/dev/null
+user_says 'RFL APPROVE failrun' >/dev/null; cli --approve --run-dir "$P/.planning/rfl-failrun" >/dev/null
+RD="$P/.planning/rfl-failrun"; issue review
+fail_json='{"hook_event_name":"PostToolUseFailure","tool_name":"Agent","tool_input":{},"error":"model unavailable"}'
+assert_eq "a failure event for a spawn that was never allowed changes nothing" "" "$(guard "$fail_json")"
+assert_eq "no attempt is counted yet" "{}" "$(cli --status --run-dir "$RD" | jq -c '.attempts // {}')"
+guard "$(spawn_json)" >/dev/null
+guard "$fail_json" >/dev/null
+assert_contains "the failure is audited" "$(cat "$AUDIT")" "launch_failed"
+assert_eq "the rejected spawn left the ticket closed" "null" "$(cli --status --run-dir "$RD" | jq -r .open_ticket)"
+user_says 'RFL ABORT failrun' >/dev/null; cli --abort failrun >/dev/null
 
 # --- tamper and every fail-closed path ----------------------------------------------------------------
 cli --start --charter-file "$TL_TMP/charter.json" --run-id third >/dev/null
@@ -207,6 +224,7 @@ assert_eq "without python3 and no live run nothing happens" "" "$(drop_pointers;
 rfl_assert_registered PreToolUse Agent review-fix-ladder-guard.sh
 rfl_assert_registered PreToolUse Task review-fix-ladder-guard.sh
 rfl_assert_registered PostToolUse Agent review-fix-ladder-guard.sh
+rfl_assert_registered PostToolUseFailure Agent review-fix-ladder-guard.sh
 rfl_assert_registered PreToolUse Edit review-fix-ladder-guard.sh
 rfl_assert_registered PreToolUse apply_patch review-fix-ladder-guard.sh
 rfl_assert_registered Stop '' review-fix-ladder-guard.sh
