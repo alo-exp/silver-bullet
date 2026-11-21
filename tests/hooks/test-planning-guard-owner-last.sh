@@ -36,6 +36,31 @@ allowed_case "ingest invoked last may write too"
 rec silver-quality-gates
 denied_case "another skill invoked last: denied"
 
+echo "--- helpers, near-names and subagents ---"
+reset; rec silver-plan; rec silver-spec; rec artifact-reviewer
+allowed_case "spec -> artifact-reviewer (untracked helper) -> Write allowed"
+rec review-spec
+allowed_case "spec -> artifact-reviewer -> review-spec -> Write allowed"
+rec silver-plan
+denied_case "spec -> silver-plan (tracked) -> Write denied"
+rec silver-spec-evil
+denied_case "a near-name (silver-spec-evil) does not count as spec"
+rec x:silver-spec
+denied_case "a foreign-namespace x:silver-spec does not count as spec"
+rec silver-spec
+rec silver-spec-evil; rec x:silver-spec; rec silver-bullet-evil:silver-plan
+allowed_case "near-names do not displace spec"
+rec silver-bullet:sb:spec
+allowed_case "the plugin namespace prefix still resolves to spec"
+echo "subagent calls carry a top-level agent_id"
+sub_rec() { rs "$(jq -c '. + {agent_id:"sub-1"}' <<<"$(skill_input "$1")")"; }
+reset; rec silver-plan; rec silver-spec; sub_rec silver-plan
+allowed_case "a subagent's tracked skill does not displace the parent's spec"
+reset; rec silver-plan; sub_rec silver-spec
+denied_case "a subagent's spec does not grant the parent the allowance"
+reset; rec silver-spec; rs "$(jq -c '. + {agentId:"sub-2"}' <<<"$(skill_input silver-plan)")"
+allowed_case "the agentId spelling is a subagent too"
+
 echo "--- forgery and staleness ---"
 reset; rec silver-plan; rec silver-spec
 cp "$STATE.last" "$TL_TMP/last.spec"; cp "$STATE.lasthwm" "$TL_TMP/lasthwm.spec"
@@ -58,6 +83,14 @@ rm -f "$STATE.last"; ln -s "$TL_TMP/forged-last" "$STATE.last"
 printf 'v1\nsilver-spec\n1\n-\nx\n' >"$TL_TMP/forged-last"
 denied_case "a symlinked .last is refused"
 rm -f "$STATE.last"
+
+reset; rec silver-spec
+allowed_case "baseline before the counter file is deleted"
+rm -f "$STATE.lasthwm"
+denied_case "deleting .lasthwm does not re-enable the record"
+reset; rec silver-plan; rec silver-spec; cp "$STATE.last" "$TL_TMP/old.last"; cp "$STATE.lasthwm" "$TL_TMP/old.hwm"
+rec silver-plan; rm -f "$STATE.lasthwm"; cp "$TL_TMP/old.last" "$STATE.last"
+denied_case "an older valid .last with the counter file deleted is refused"
 
 echo "--- branch scope ---"
 reset; rec silver-spec

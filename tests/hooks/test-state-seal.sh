@@ -326,6 +326,9 @@ sb_state_last_write "$S" silver-spec
 assert_file_absent "and on write" "$TL_TMP/elsewhere2"
 rm -f "$S.lasthwm"
 sb_state_last_write "$S" silver-spec
+rm -f "$S.lasthwm"
+assert_eq "a record whose counter file was deleted is refused" "" "$(sb_state_last_read "$S")"
+sb_state_last_write "$S" silver-spec
 printf 'v1' >"$S.last"
 assert_eq "a record cut short (no newline, missing lines) is refused" "" "$(sb_state_last_read "$S")"
 sb_state_last_write "$S" silver-spec

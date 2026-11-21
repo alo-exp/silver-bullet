@@ -344,6 +344,7 @@ debug_record_skill
 
 recorded_any=false
 last_invoked=""
+payload_agent_id="$(jq -r 'if type == "object" then ((.agent_id // .agentId // "") | if type == "string" then . else "" end) else "" end' <<<"$input")"
 completed_skills_to_mark=()
 sb_state_seal_lock "$STATE_FILE"
 trap 'sb_state_seal_unlock' EXIT
@@ -370,9 +371,6 @@ for raw in "${skills_to_record[@]}"; do
     silver-tdd|test-driven-development) skill="tdd" ;;
   esac
 
-  # The skill invoked last, re-invocations included (the state lists a skill only once); sealed after the loop.
-  if [[ "$loaded_only" == false ]]; then last_invoked="$skill"; fi
-
   # --- Check if skill is tracked ---
   is_tracked=false
   for t in $tracked_list; do
@@ -398,6 +396,11 @@ for raw in "${skills_to_record[@]}"; do
   fi
 
   completed_skills_to_mark+=("$skill")
+  # The skill invoked last, re-invocations included (the state lists a skill only once), sealed after the loop.
+  # Only a skill this recorder tracks counts (exact canonical name: an untracked helper such as
+  # artifact-reviewer neither becomes nor displaces it), and only from the main session: a call made inside
+  # a subagent carries a top-level agent_id and can neither grant nor displace the parent's allowance.
+  if [[ -z "$payload_agent_id" ]]; then last_invoked="$skill"; fi
   if sb_contract_is_writer "$skill"; then
     # A contract-writing skill starts: an unlock entry of the verified record (nothing is written
     # when the project has no valid record), and a hint that wakes dev-cycle-check's PostToolUse up.

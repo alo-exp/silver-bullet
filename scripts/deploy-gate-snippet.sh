@@ -161,5 +161,5 @@ fi
 
 # 5. All clear
 echo "[deploy-gate] ✅ All required workflow skills completed. Proceeding with deploy."
-rm -f -- "$STATE_FILE" "${STATE_FILE}.seal" "${STATE_FILE}.hwm" "$TRIVIAL_FILE"
+rm -f -- "$STATE_FILE" "${STATE_FILE}.seal" "${STATE_FILE}.hwm" "${STATE_FILE}.last" "${STATE_FILE}.lasthwm" "$TRIVIAL_FILE"
 return 0 2>/dev/null || exit 0
