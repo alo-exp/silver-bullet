@@ -7,7 +7,7 @@ version: 0.5.0
 
 # sb:migrate
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-migrate/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-migrate/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 Migrates an older mid-milestone project to the current Silver Bullet contract:
 
@@ -41,7 +41,7 @@ Per-host install paths, hook manifests, and skill invocation channels are docume
 
 - `.planning/STATE.md` must exist.
 - `scripts/workflows.sh` must be available from the project root or plugin install.
-- Resolve `PLUGIN_ROOT` from this skill file's location (`skills/silver-migrate/SKILL.md` → two directories up from the skill directory, or the installed plugin root).
+- `PLUGIN_ROOT` is defined at the top of this skill (the installed plugin root).
 - If `.planning/workflows/*.md` already contains an active workflow, report the active id and skip only the workflow-tracker migration (Step 5). Still run Steps 0–4.
 
 ## Steps

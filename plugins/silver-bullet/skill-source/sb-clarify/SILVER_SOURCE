@@ -8,7 +8,7 @@ version: 0.2.0
 
 # /sb:clarify — Clarify, Compare, and Hand Off
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-clarify/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-clarify/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 SB orchestrator for the front end of planning. It merges product framing, one-question-at-a-time interviewing, brainstorming discipline, and SB lifecycle handoff into one coherent workflow. It does not implement work or write plans; it reduces uncertainty until the next step is obvious.
 

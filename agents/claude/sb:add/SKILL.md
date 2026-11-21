@@ -6,7 +6,7 @@ version: 0.1.0
 
 # /sb:add — Classify and File Work Items
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-add/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `agents/claude/` (`${PLUGIN_ROOT}/agents/claude/sb:add/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 Use this skill any time a deferred item, skipped work, technical debt, bug, open question, or enhancement is identified and must be tracked. It classifies the item as an issue or backlog entry, routes it to the correct PM destination based on the project's `issue_tracker` setting, and returns a stable, referenceable ID.
 

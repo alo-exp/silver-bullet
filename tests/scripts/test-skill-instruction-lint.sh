@@ -82,6 +82,57 @@ if check == "anchored":
         for var, marker in (("${PLUGIN_ROOT}", "**Plugin root**"), ("${SKILL_DIR}", "**Skill directory**"), ("${SB_ROOT}", "SB_ROOT")):
             if var in text and marker not in main:
                 problems.append(f"skills/{skill}/SKILL.md: uses {var} but never defines it ({marker})")
+elif check == "rendered":
+    import tempfile
+    pkg_marker = "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
+    ref = re.compile(r'\$\{(PLUGIN_ROOT|SB_ROOT|SKILL_DIR)\}/([\w./:@-]+)')
+    with tempfile.TemporaryDirectory() as tmp:
+        # Claude Code: the plugin cache holds the repo layout; skills load from <root>/agents/claude/<dir>/.
+        croot = os.path.join(tmp, "claude", "plugins", "cache", "alo-labs", "silver-bullet", "1.0")
+        os.makedirs(croot)
+        for part in ("agents", "scripts", "templates", "hooks", "skills", "docs"):
+            if os.path.exists(os.path.join(ROOT, part)):
+                os.symlink(os.path.join(ROOT, part), os.path.join(croot, part))
+        # Codex: the installed package is plugins/silver-bullet (scripts/, templates/, hooks/, skill-source/).
+        home = os.path.join(tmp, "home")
+        pkg = os.path.join(home, ".codex", "plugins", "cache", "alo-labs-codex", "silver-bullet", "current")
+        os.makedirs(os.path.dirname(pkg))
+        os.symlink(os.path.join(ROOT, "plugins", "silver-bullet"), pkg)
+        surfaces = []
+        for d in sorted(os.listdir(os.path.join(croot, "agents", "claude"))):
+            surfaces.append(("claude", os.path.join(croot, "agents", "claude", d), croot))
+        for d in sorted(os.listdir(os.path.join(pkg, "skill-source"))):
+            surfaces.append(("codex", os.path.join(pkg, "skill-source", d), pkg))
+        for host, skill_dir, plugin_root in surfaces:
+            files = [os.path.join(dp, f) for dp, _, fs in os.walk(skill_dir) for f in fs if f.endswith(".md") or f == "SILVER_SOURCE"]
+            for path in sorted(files):
+                rel = os.path.relpath(path, tmp)
+                if "/skills/silver-review-fix-ladder/" in path or os.path.basename(skill_dir) in ("sb:review-fix-ladder", "sb-review-fix-ladder"):
+                    continue
+                if os.path.basename(skill_dir) in ("sb:create-release", "sb-create-release", "sb:new-workflow", "sb-new-workflow"):
+                    continue
+                text = open(path, encoding="utf-8", errors="replace").read()
+                if host == "claude" and "the directory above `agents/claude/`" in text:
+                    above = os.path.dirname(os.path.dirname(os.path.dirname(skill_dir)))
+                    if os.path.realpath(above) != os.path.realpath(plugin_root):
+                        problems.append(f"{rel}: the directory above agents/claude/ is {above}, not the plugin root")
+                if "the directory above `skills/`" in text:
+                    problems.append(f"{rel}: still defines the plugin root by the source layout (skills/)")
+                for n, line in enumerate(text.split("\n"), 1):
+                    if "does not exist" in line:
+                        continue
+                    for m in ref.finditer(line):
+                        var, tail = m.group(1), m.group(2).rstrip(".,):")
+                        if any(c in tail for c in "<>*${}") or line[m.end():m.end() + 1] in ("$", "<"):
+                            continue
+                        base = skill_dir if var == "SKILL_DIR" else plugin_root
+                        if not os.path.exists(os.path.join(base, tail)):
+                            problems.append(f"{rel}:{n}: ${{{var}}}/{tail} does not exist in the {host} install layout")
+        # Every Codex definition names the real package path.
+        for d in sorted(os.listdir(os.path.join(pkg, "skill-source"))):
+            src = os.path.join(pkg, "skill-source", d, "SILVER_SOURCE")
+            if os.path.isfile(src) and "**Plugin root**" in open(src, encoding="utf-8").read() and pkg_marker not in open(src, encoding="utf-8").read():
+                problems.append(f"skill-source/{d}: plugin root definition lacks the installed Codex package path")
 elif check == "untrusted":
     flag = re.compile(r'--(?:finding|scope|domain|title|body|description|comment)\s+"[^"]*<[^<>"]+>[^"]*"')
     for rel in skill_files():
@@ -179,6 +230,7 @@ PY
 }
 
 run_check "R10-02 plugin scripts and templates are plugin-root anchored" anchored
+run_check "R10-02 rendered Claude and Codex bundles resolve every anchored path in their install layout" rendered
 run_check "R10-03 no untrusted free text inside double-quoted shell arguments" untrusted
 run_check "R10-04 every worker template has the data-boundary line" boundary
 run_check "R10-06 every sb:<route> resolves to a packaged skill" routes

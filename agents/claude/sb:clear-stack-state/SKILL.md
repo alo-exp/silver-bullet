@@ -6,7 +6,7 @@ version: 0.1.0
 
 # /sb:clear-stack-state — Stack compression mutex recovery
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-clear-stack-state/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `agents/claude/` (`${PLUGIN_ROOT}/agents/claude/sb:clear-stack-state/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 Clears global five-tool stack compression mutex violations so PreToolUse stops denying routed surfaces after a double-compression wedge.
 

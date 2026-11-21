@@ -17,7 +17,7 @@ This skill initializes Silver Bullet enforcement for a project. Follow each phas
 - **Never run `git clean`, `git checkout --`, `git reset --hard`**, or any command that discards uncommitted work
 - **Config is preserved** — in update mode, `.silver-bullet.json` customizations are read first and carried forward
 
-**Plugin root**: Determine `PLUGIN_ROOT` from this skill file's own path. This file lives at `${PLUGIN_ROOT}/skills/silver-init/SKILL.md`, so the plugin root is two directories up from this file's location.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `skills/` (`${PLUGIN_ROOT}/skills/silver-init/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory.
 
 ---
 

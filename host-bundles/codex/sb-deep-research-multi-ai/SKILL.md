@@ -10,7 +10,7 @@ version: 1.0.0
 
 # /sb:deep-research-multi-ai — Multi-Model Deep Research
 
-**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, two directories above this file (`${PLUGIN_ROOT}/skills/silver-deep-research-multi-ai/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-deep-research-multi-ai/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 **Catalog:** workflow `WF-SILVER-DEEP-RESEARCH-MULTI-AI` · flow step
 `FS-SILVER_DEEP_RESEARCH_MULTI_AI` · composes `AF-MULTI-AI-TASK` per eligible phase.
@@ -44,7 +44,7 @@ auto-starts multi-AI research.
 ## Usage
 
 ```bash
-python3 "${PLUGIN_ROOT}/skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py" \
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research-multi-ai/scripts/dr_multi_ai_cli.py" \
   "Which event streaming platform for our scale?" \
   --mode deep \
   --research-type default \
@@ -79,7 +79,7 @@ Migrates from strict-v3 or host-v3 copy-on-write only.
 ## Consolidation
 
 ```bash
-python3 "${PLUGIN_ROOT}/skills/silver-deep-research-multi-ai/scripts/consolidate.py" \
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research-multi-ai/scripts/consolidate.py" \
   --envelopes contributions.json \
   --index result-index.json \
   --resolved-pool 11 \
@@ -162,7 +162,7 @@ is built in or special-cased.
 After consolidation and SCR `features.json` artifacts exist:
 
 ```bash
-python3 "${PLUGIN_ROOT}/skills/silver-deep-research-multi-ai/scripts/package_solution_outputs.py" \
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research-multi-ai/scripts/package_solution_outputs.py" \
   --dir "$SB_RESEARCH_OUT_DIR"
 ```
 
@@ -209,9 +209,9 @@ Subscription-gated: Cursor pool if subscribed; OCG pool otherwise. `unknown` blo
 ## Validation
 
 ```bash
-python3 "${PLUGIN_ROOT}/skills/silver-deep-research/scripts/validate_spa_report.py" \
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research/scripts/validate_spa_report.py" \
   --report "$SB_RESEARCH_OUT_DIR/report.html" --profile general
-python3 "${PLUGIN_ROOT}/skills/silver-deep-research/scripts/validate_spa_report.py" \
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research/scripts/validate_spa_report.py" \
   --report "$SB_RESEARCH_OUT_DIR/landscape-report.html" --profile landscape
 ```
 
