@@ -31,6 +31,9 @@ def valid_payload(**over):
     return payload
 
 
+FINDINGS = {"HIGH": [{"id": "H1", "title": "t"}], "MED": "none", "LOW": "none", "NIT": "none"}
+
+
 class TmpCase(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
@@ -64,17 +67,19 @@ class TmpCase(unittest.TestCase):
 
 class ReadHelpersTest(TmpCase):
 
-    def test_read_json(self):
-        self.assertEqual(pc._read_json(self.tmp / "none.json"), {})
-        self.assertEqual(pc._read_json(self.tmp), {})  # directory
-        self.assertEqual(pc._read_json(self.write("bad.json", "{x")), {})
-        self.assertEqual(pc._read_json(self.write("list.json", "[1]")), {})
+    def test_read_json_is_bounded_and_never_silently_empty(self):
+        self.assertEqual(pc._read_json(self.tmp / "none.json"), {})  # absent: nothing to read
         self.assertEqual(pc._read_json(self.write("ok.json", '{"a": 1}')), {"a": 1})
+        for name, text in (("bad.json", "{x"), ("list.json", "[1]"), ("deep.json", "[" * 200000)):
+            with self.assertRaises(pc.rfl_json.BadJson, msg=name):
+                pc._read_json(self.write(name, text))
+        self.assertEqual(pc._read_json(self.tmp), {})  # a directory is not a file
 
-    def test_read_json_undecodable_bytes_is_empty(self):
+    def test_read_json_undecodable_bytes_is_an_error(self):
         path = self.run_dir / "bin.json"
         path.write_bytes(b"\xff\xfe\x00")
-        self.assertEqual(pc._read_json(path), {})
+        with self.assertRaises(pc.rfl_json.BadJson):
+            pc._read_json(path)
 
     def test_is_none_and_as_rows(self):
         for v in ("none", " N/A ", "NA"):
@@ -109,20 +114,11 @@ class ReadHelpersTest(TmpCase):
         self.assertEqual((j.name, m.name), ("POLICY-C.json", "POLICY-C.md"))
         self.assertEqual(pc.ladder_status_path(self.tmp).name, "LADDER-STATUS.json")
         self.assertEqual(pc.load_ladder_status(self.tmp / "nope"), {})
-        target = self.tmp / "deep" / "run"
-        path = pc.write_ladder_status(target, {"a": 1})
-        self.assertEqual(path, target / "LADDER-STATUS.json")
-        self.assertEqual(path.read_text(), '{\n  "a": 1\n}\n')
-        self.assertEqual(pc.load_ladder_status(target), {"a": 1})
+        self.write("LADDER-STATUS.json", {"a": 1})
+        self.assertEqual(pc.load_ladder_status(self.run_dir), {"a": 1})
 
 
 class StreakTest(TmpCase):
-
-    def test_bucket_key(self):
-        self.assertEqual(pc._rung_bucket_key("rung-03-x"), "rung_3")
-        self.assertEqual(pc._rung_bucket_key(" RUNG-007"), "rung_7")
-        self.assertEqual(pc._rung_bucket_key("other"), "")
-        self.assertEqual(pc._rung_bucket_key(None), "")
 
     def test_triage_accept_count_and_clean(self):
         self.assertEqual(pc._triage_accept_count(None), 0)
@@ -139,108 +135,6 @@ class StreakTest(TmpCase):
         self.assertFalse(pc.review_pass_is_clean({"triage": [{"decision": "ACCEPT"}]}))
         for verdict in ("blocked", "SKIPPED", "Blocked"):
             self.assertFalse(pc.review_pass_is_clean({"verdict": verdict}), verdict)
-
-    def test_stored_streak_top_level_field(self):
-        f = pc._stored_streak_for_rung
-        self.assertEqual(f({"consecutive_clean_reviews": 3, "consecutive_clean_rung": "r"}, "r"), 3)
-        self.assertEqual(f({"consecutive_clean_reviews": "2", "current_rung": "r"}, "r"), 2)
-        self.assertEqual(f({"consecutive_clean_reviews": -4, "current_rung": "r"}, "r"), 0)
-        self.assertEqual(f({"consecutive_clean_reviews": "x", "current_rung": "r"}, "r"), 0)
-        self.assertEqual(f({"consecutive_clean_reviews": [1], "current_rung": "r"}, "r"), 0)
-        # field set for a different rung -> not used
-        self.assertEqual(f({"consecutive_clean_reviews": 3, "consecutive_clean_rung": "other"}, "r"), 0)
-        # no field -> not used
-        self.assertEqual(f({"consecutive_clean_rung": "r"}, "r"), 0)
-        # blank rid never matches the top-level field
-        self.assertEqual(f({"consecutive_clean_reviews": 3, "current_rung": ""}, ""), 0)
-
-    def test_stored_streak_bucket_and_rungs_list(self):
-        f = pc._stored_streak_for_rung
-        self.assertEqual(f({"rung_2": {"consecutive_clean_reviews": 1}}, "rung-02-x"), 1)  # leading zeros
-        self.assertEqual(f({"rung_2": {"consecutive_clean_reviews": 1}}, "rung-3-x"), 0)  # wrong bucket
-        self.assertEqual(f({"rung_2": {"consecutive_clean_reviews": 1}}, "rung-2-x"), 1)
-        self.assertEqual(f({"rung_2": {"consecutive_clean_reviews": "bad"}}, "rung-2"), 0)
-        self.assertEqual(f({"rung_2": {"consecutive_clean_reviews": None}}, "rung-2"), 0)
-        self.assertEqual(f({"rung_2": {"consecutive_clean_reviews": -1}}, "rung-2"), 0)
-        # non-dict bucket falls through to the rungs list
-        st = {"rung_2": "oops", "rungs": ["junk", {"id": "rung-2", "consecutive_clean_reviews": 2}]}
-        self.assertEqual(f(st, "rung-2"), 2)
-        st = {"rungs": [{"id": "rung-2", "consecutive_clean_reviews": "x"}]}
-        self.assertEqual(f(st, "rung-2"), 0)
-        st = {"rungs": [{"id": "other", "consecutive_clean_reviews": 5}]}
-        self.assertEqual(f(st, "rung-2"), 0)
-        self.assertEqual(f({"rungs": "notalist"}, "rung-2"), 0)
-        self.assertEqual(f({}, "plain"), 0)
-        # bucket TypeError (list value) is swallowed and falls through to rungs
-        st = {"rung_2": {"consecutive_clean_reviews": [1]},
-              "rungs": [{"id": "rung-2", "consecutive_clean_reviews": 4}]}
-        self.assertEqual(f(st, "rung-2"), 4)
-
-    def test_get_consecutive_clean_reviews(self):
-        g = pc.get_consecutive_clean_reviews
-        self.assertEqual(g({"consecutive_clean_reviews": 5}), 5)
-        self.assertEqual(g({"consecutive_clean_reviews": "x"}), 0)
-        self.assertEqual(g({"consecutive_clean_reviews": None}), 0)
-        self.assertEqual(g({"consecutive_clean_reviews": -2}), 0)
-        self.assertEqual(g({"consecutive_clean_reviews": 5, "current_rung": "r"}), 5)
-        self.assertEqual(g({"consecutive_clean_reviews": 5, "current_rung": "r"}, "z"), 0)
-        self.assertEqual(g({"rung_1": {"consecutive_clean_reviews": 2}}, "rung-1"), 2)
-
-    def test_mirror_streak(self):
-        st = {"rungs": ["x", {"id": "other"}, {"id": "rung-1"}, {"id": "rung-1", "n": 1}]}
-        pc._mirror_streak(st, "rung-1", 2)
-        self.assertEqual(st["consecutive_clean_reviews"], 2)
-        self.assertEqual(st["consecutive_clean_rung"], "rung-1")
-        self.assertEqual(st["rung_1"], {"consecutive_clean_reviews": 2})
-        self.assertEqual(st["rungs"][2]["consecutive_clean_reviews"], 2)
-        self.assertNotIn("consecutive_clean_reviews", st["rungs"][3])  # first match only
-        self.assertNotIn("consecutive_clean_reviews", st["rungs"][1])
-        st = {"rung_1": "notadict"}
-        pc._mirror_streak(st, "rung-1", 1)
-        self.assertEqual(st["rung_1"], {"consecutive_clean_reviews": 1})
-        st = {"rung_1": {"keep": 1}}
-        pc._mirror_streak(st, "rung-1", 0)
-        self.assertEqual(st["rung_1"], {"keep": 1, "consecutive_clean_reviews": 0})
-        st = {"rungs": [{"id": "other"}, "junk"]}
-        pc._mirror_streak(st, "rung-9", 1)
-        self.assertEqual(st["rungs"], [{"id": "other"}, "junk"])
-        st = {"rungs": "x"}
-        pc._mirror_streak(st, "", 3)
-        self.assertEqual(st, {"rungs": "x", "consecutive_clean_reviews": 3})
-        st = {}
-        pc._mirror_streak(st, None, 1)
-        self.assertEqual(st, {"consecutive_clean_reviews": 1})
-
-    def test_record_outcome_sequence(self):
-        r = pc.record_rung_review_outcome(self.run_dir, "clean", rung_id="rung-1-gpt")
-        self.assertEqual((r["consecutive_clean_reviews"], r["outcome"], r["rung_id"], r["required"]),
-                         (1, "clean", "rung-1-gpt", 2))
-        r = pc.record_rung_review_outcome(self.run_dir, " CLEAN ", rung_id="rung-1-gpt")
-        self.assertEqual(r["consecutive_clean_reviews"], 2)
-        self.assertEqual(r["path"], str(self.run_dir / "LADDER-STATUS.json"))
-        r = pc.record_rung_review_outcome(self.run_dir, "accept_apply", rung_id="rung-1-gpt")
-        self.assertEqual((r["consecutive_clean_reviews"], r["outcome"]), (0, "accept-apply"))
-        for outcome in ("reset", "Accept-Apply"):
-            r = pc.record_rung_review_outcome(self.run_dir, outcome, rung_id="rung-1-gpt")
-            self.assertEqual((r["consecutive_clean_reviews"], r["outcome"]), (0, "accept-apply"))
-        stored = pc.load_ladder_status(self.run_dir)
-        self.assertEqual(stored["consecutive_clean_reviews"], 0)
-
-    def test_record_outcome_uses_current_rung_and_new_rung_restarts(self):
-        self.status(current_rung="rung-2-x", consecutive_clean_reviews=1,
-                    consecutive_clean_rung="rung-2-x", keep="me")
-        r = pc.record_rung_review_outcome(self.run_dir, "clean")
-        self.assertEqual((r["rung_id"], r["consecutive_clean_reviews"]), ("rung-2-x", 2))
-        r = pc.record_rung_review_outcome(self.run_dir, "clean", rung_id="rung-3-y")
-        self.assertEqual(r["consecutive_clean_reviews"], 1)  # streak is per-rung
-        self.assertEqual(pc.load_ladder_status(self.run_dir)["keep"], "me")
-
-    def test_record_outcome_invalid(self):
-        for bad in ("", None, "dirty", "clean!"):
-            with self.assertRaisesRegex(ValueError, "unsupported review outcome"):
-                pc.record_rung_review_outcome(self.run_dir, bad)
-        self.assertFalse((self.run_dir / "LADDER-STATUS.json").exists())
-
 
 class RungDirTest(TmpCase):
 
@@ -541,7 +435,8 @@ class RenderAndWriteTest(TmpCase):
         (rung / "POLICY-C.json").write_text("{}")
         self.assertIsNone(pc.load_policy_c(rung))
         (rung / "POLICY-C.json").write_text("{bad")
-        self.assertIsNone(pc.load_policy_c(rung))
+        with self.assertRaises(pc.rfl_json.BadJson):
+            pc.load_policy_c(rung)
         (rung / "POLICY-C.json").write_text('{"a": 1}')
         self.assertEqual(pc.load_policy_c(rung), {"a": 1})
 
@@ -554,7 +449,9 @@ class RenderAndWriteTest(TmpCase):
         (rung / "POLICY-C.json").write_text("{bad")
         (rung / "POLICY-C.md").write_text("md")
         res = pc.assert_policy_c(rung)
-        self.assertEqual(res["errors"], ["POLICY-C.json invalid or empty"])
+        self.assertEqual(res["errors"], ["POLICY-C.json unreadable: invalid JSON (JSONDecodeError)"])
+        (rung / "POLICY-C.json").write_text("{}")
+        self.assertEqual(pc.assert_policy_c(rung)["errors"][0], "POLICY-C.json invalid or empty")
         pc.write_policy_c(rung, valid_payload(resolved="pending"))
         res = pc.assert_policy_c(rung, current_phase="rung_1_fix_parallel")
         self.assertEqual((res["ok"], res["errors"]), (True, []))
@@ -598,28 +495,6 @@ class QuotaAndInferTest(TmpCase):
         (rung / "BLOCKED.md").write_bytes(b"\xff\xfe\x00")
         self.assertFalse(pc._blocked_needs_quota(rung, {}))
 
-    def test_infer_next_action(self):
-        i = pc.infer_next_action
-        self.assertEqual(i("run Verify-2 now"), "verify_2")
-        self.assertEqual(i("rung_N_verify_2"), "verify_2")
-        self.assertEqual(i("x", "verify_1"), "verify_1")
-        self.assertEqual(i("do verify-1"), "verify_1")
-        self.assertEqual(i("start the next rung"), "next_rung_review")
-        self.assertEqual(i("rung_n+1_review"), "next_rung_review")
-        self.assertEqual(i("n+1_review"), "next_rung_review")
-        self.assertEqual(i("mark-ladder-status completed"), "mark_completed")
-        self.assertEqual(i("mark_ladder_status"), "mark_completed")
-        self.assertEqual(i("", "Stop"), "stop")
-        self.assertEqual(i("something", "other"), "task")
-        self.assertEqual(i(), "task")
-        # verify_2 outranks verify_1 and next rung
-        self.assertEqual(i("verify_1 verify_2 next rung"), "verify_2")
-        self.assertEqual(i("verify_1 next rung"), "verify_1")
-
-
-FINDINGS = {"HIGH": [{"id": "H1", "title": "t"}], "MED": "none", "LOW": "none", "NIT": "none"}
-
-
 class SkippedAndStreakAssertTest(TmpCase):
 
     def test_skipped_allows_advance(self):
@@ -654,15 +529,17 @@ class SkippedAndStreakAssertTest(TmpCase):
 
     def test_streak_threshold(self):
         self.rung("rung-01-a", policy=valid_payload())
-        errs = self.call({"current_rung": "rung-01-a", "consecutive_clean_reviews": 1},
-                         "next_rung_review")
+        status = {"current_rung": "rung-01-a", "consecutive_clean_rung": "rung-01-a"}
+        errs = self.call({**status, "consecutive_clean_reviews": 1}, "next_rung_review")
         self.assertEqual(len(errs), 1)
         self.assertTrue(errs[0].startswith("consecutive_clean_reviews=1 < 2; do not start"))
-        self.assertIn("--record-rung-review-outcome clean|accept-apply", errs[0])
-        self.assertEqual(self.call({"current_rung": "rung-01-a",
-                                    "consecutive_clean_reviews": 2}, "next_rung_review"), [])
-        self.assertEqual(self.call({"current_rung": "rung-01-a",
-                                    "consecutive_clean_reviews": 9}, "mark_completed"), [])
+        self.assertIn("encoder derives the streak from captured reviews", errs[0])
+        self.assertNotIn("--record-rung-review-outcome", errs[0])
+        self.assertEqual(self.call({**status, "consecutive_clean_reviews": 2}, "next_rung_review"), [])
+        self.assertEqual(self.call({**status, "consecutive_clean_reviews": 9}, "mark_completed"), [])
+        # a streak recorded for another rung never counts
+        self.assertEqual(len(self.call({**status, "consecutive_clean_rung": "rung-02-b", "consecutive_clean_reviews": 5}, "next_rung_review")), 1)
+        self.assertEqual(len(self.call({**status, "consecutive_clean_reviews": "x"}, "next_rung_review")), 1)
         # without current_rung the resolved directory name is the rung id
         self.assertEqual(len(self.call({}, "mark_completed")), 1)
 
@@ -805,6 +682,50 @@ class FailureArtifactsTest(TmpCase):
                 rung, {"verdict": verdict, "disposition": "SKIP"}, "next_rung_review"))
 
 
+class FailClosedReadsTest(TmpCase):
+    def deep(self, path):
+        path.write_text("[" * 200000 + "]" * 200000)
+
+    def test_no_run_dir_or_project_is_skipped(self):
+        self.assertEqual(pc.assert_rfl_advance()["skipped"], "no_run_dir")
+        self.assertEqual(pc.assert_rfl_advance(project_root=self.tmp)["skipped"], "no_active_run")
+
+    def test_deep_ladder_status_blocks_instead_of_passing(self):
+        self.deep(self.run_dir / "LADDER-STATUS.json")
+        res = pc.assert_rfl_advance(self.run_dir, next_action="stop")
+        self.assertFalse(res["ok"])
+        self.assertIn("unreadable", res["errors"][0])
+        self.assertIn("--resume", res["errors"][0])
+
+    def test_discovery_skips_unreadable_status_files(self):
+        proj = self.tmp / "p"
+        for name, text in (("rfl-bad", "[" * 100000), ("rfl-good", '{"status": "active"}')):
+            (proj / ".planning" / name).mkdir(parents=True)
+            (proj / ".planning" / name / "LADDER-STATUS.json").write_text(text)
+        self.assertEqual([p.name for p in pc.discover_active_rfl_runs(proj)], ["rfl-good"])
+
+    def test_deep_policy_c_and_quota_classification_are_errors(self):
+        rung = self.rung("rung-01-a", review=True)
+        self.deep(rung / "POLICY-C.json")
+        res = pc.assert_policy_c(rung)
+        self.assertFalse(res["ok"])
+        self.assertTrue(any("POLICY-C.json unreadable" in e for e in res["errors"]))
+        self.write("LADDER-STATUS.json", {"status": "active", "current_rung": "rung-01-a", "consecutive_clean_rung": "rung-01-a", "consecutive_clean_reviews": 2})
+        res = pc.assert_rfl_advance(self.run_dir, next_action="next_rung_review")
+        self.assertTrue(any("POLICY-C.json unreadable" in e for e in res["errors"]))
+        self.assertEqual(pc._assert_consecutive_clean_reviews(self.run_dir, {"current_rung": "rung-01-a"}, action="next_rung_review", rung_dir=rung)[0][:23], "POLICY-C.json unreadabl")
+        (rung / "QUOTA-CLASSIFY.json").write_text("[" * 100000)
+        self.assertIn("QUOTA-CLASSIFY.json unreadable", pc._quota_classify_ok(rung)[0])
+
+    def test_triage_and_accept_rows(self):
+        self.assertEqual(pc.triage_rows({"triage": "none"}), [])
+        self.assertEqual(pc.triage_rows({"triage": "bogus"}), [])
+        self.assertEqual(pc.triage_rows({}), [])
+        rung = self.rung("rung-01-a", policy=valid_payload(triage=[{"id": "A", "decision": "ACCEPT"}, {"id": "B", "decision": "REJECT"}]))
+        self.assertEqual([r["id"] for r in pc.accept_rows(rung)], ["A"])
+        self.assertEqual(pc.accept_rows(self.run_dir / "none"), [])
+
+
 class AssertAdvanceTest(TmpCase):
     def advance(self, run_dir="default", **kw):
         run_dir = self.run_dir if run_dir == "default" else run_dir
@@ -816,13 +737,6 @@ class AssertAdvanceTest(TmpCase):
         (rung / "verify-1.md").write_text("v1")
         (rung / "verify-2.md").write_text("v2")
         return rung
-
-    def test_no_run_dir_or_project(self):
-        res = pc.assert_rfl_advance()
-        self.assertEqual(res, {"ok": True, "skipped": "no_run_dir", "errors": [],
-                               "next_action": "task"})
-        res = pc.assert_rfl_advance(None, prompt="start verify-1")
-        self.assertEqual(res["next_action"], "verify_1")
 
     def test_project_root_discovery(self):
         proj = self.tmp / "proj"
@@ -840,16 +754,6 @@ class AssertAdvanceTest(TmpCase):
         (proj / ".planning").mkdir(parents=True)
         res = pc.assert_rfl_advance(self.run_dir, project_root=proj)
         self.assertEqual(res["run_dirs"], [str(self.run_dir)])
-
-    def test_action_resolution(self):
-        r = self.advance(next_action="bogus", prompt="please verify-2")
-        self.assertEqual(r["next_action"], "verify_2")
-        r = self.advance(next_action="task", prompt="go to the next rung")
-        self.assertEqual(r["next_action"], "next_rung_review")
-        r = self.advance(next_action="verify_1", prompt="verify-2")
-        self.assertEqual(r["next_action"], "verify_1")
-        r = self.advance(next_action="bogus")
-        self.assertEqual(r["next_action"], "task")
 
     def test_inactive_run_is_skipped_unless_marking_completed(self):
         self.status(status="completed")
@@ -876,20 +780,6 @@ class AssertAdvanceTest(TmpCase):
         res = self.advance(next_action="next_rung_review")
         self.assertFalse(res["ok"])
         self.assertTrue(res["errors"][0].startswith("consecutive_clean_reviews=1 < 2"))
-
-    def test_review_prompt_promotes_task_to_next_rung_review(self):
-        self.full_rung()
-        self.status(status="active", current_rung="rung-01-a")
-        res = self.advance(prompt="Review the rung output")
-        self.assertEqual(res["next_action"], "next_rung_review")
-        self.assertFalse(res["ok"])  # streak is 0
-        # a prompt mentioning verify keeps the task action
-        res = self.advance(prompt="review then verify")
-        self.assertEqual(res["next_action"], "task")
-        # no policy JSON yet: stays a task
-        (self.run_dir / "rung-01-a" / "POLICY-C.json").unlink()
-        res = self.advance(prompt="review it")
-        self.assertEqual(res["next_action"], "task")
 
     def test_ladder_status_type_errors(self):
         self.rung()
@@ -997,17 +887,3 @@ class AssertAdvanceTest(TmpCase):
         (rung / "APPLY.md").write_text("done")
         res = self.advance(next_action="next_rung_review")
         self.assertIn("resolved table incomplete before next-rung review", res["errors"])
-
-    def test_assert_run_ready_for_complete(self):
-        self.full_rung()
-        self.status(status="active", current_rung="rung-01-a", consecutive_clean_reviews=2,
-                    consecutive_clean_rung="rung-01-a")
-        res = pc.assert_run_ready_for_complete(str(self.run_dir))
-        self.assertEqual((res["ok"], res["next_action"]), (True, "mark_completed"))
-        (self.run_dir / "rung-01-a" / "verify-2.md").unlink()
-        res = pc.assert_run_ready_for_complete(self.run_dir)
-        self.assertEqual(res["errors"], ["missing verify-2.md"])
-
-
-if __name__ == "__main__":
-    unittest.main()

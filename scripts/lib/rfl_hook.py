@@ -198,7 +198,7 @@ def stop(root: Path, run_dir: Path) -> dict[str, Any]:
         return NOOP
     rung = status["rungs"][status["rung_index"] - 1]
     checked = rfl_policy_c.assert_rfl_advance(run_dir, next_action="stop")
-    detail = " " + "; ".join(checked["errors"]) if checked["errors"] else ""
+    detail = " " + "; ".join(checked["errors"]) + "." if checked["errors"] else ""
     return _deny("Stop", (
         f"Review-fix ladder run {status['run_id']} is active (rung {rung['index']} {rung['model']}:{rung['effort']}, "
         f"next step {status['phase']}).{detail} Continue the ladder; only the user can end it early by typing "

@@ -191,24 +191,23 @@ def apply_rung_spec(base: list[tuple[str, str]], spec: Any) -> list[tuple[str, s
         tokens = [str(item) for item in spec]
     else:
         tokens = [t for t in re.split(r"[\s,]+", re.sub(r"^\s*rungs\s*:\s*", "", str(spec))) if t]
-    rungs = list(base)
     explicit: list[tuple[str, str]] = []
-    plus = False
+    ops: list[tuple[str, tuple[str, str]]] = []
     for token in tokens:
         sign_char = token[0] if token[0] in "+-" else ""
         rung = parse_rung(token[len(sign_char):])
-        if sign_char == "-":
-            rungs = [r for r in rungs if r != rung]
-        elif sign_char == "+":
-            plus = True
-            if rung not in rungs:
-                rungs.append(rung)
+        if sign_char:
+            ops.append((sign_char, rung))
         elif rung not in explicit:
             explicit.append(rung)
-    if explicit:
-        rungs = explicit + [r for r in rungs if plus and r not in explicit] if plus else explicit
-    if plus or not explicit:
-        rungs = sorted(rungs, key=_rung_sort_key) if plus else rungs
+    rungs = explicit if explicit else list(base)
+    for sign_char, rung in ops:
+        if sign_char == "-":
+            rungs = [r for r in rungs if r != rung]
+        elif rung not in rungs:
+            rungs.append(rung)
+    if not explicit and any(sign_char == "+" for sign_char, _ in ops):
+        rungs.sort(key=_rung_sort_key)
     if not rungs:
         raise RflError("the rung list is empty after the exclusions")
     return rungs

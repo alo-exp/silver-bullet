@@ -257,7 +257,7 @@ def main(argv: list[str] | None = None) -> int:
     except native.Tamper as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return EXIT_TAMPER
-    except (native.RflError, rfl_json.BadJson, ValueError) as exc:
+    except (native.RflError, rfl_json.BadJson, ValueError, OSError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return EXIT_REFUSED
 
