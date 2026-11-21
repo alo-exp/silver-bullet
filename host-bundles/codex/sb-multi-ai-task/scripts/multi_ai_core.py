@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import secrets
+import tempfile
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -203,6 +204,32 @@ def _active_delegation() -> tuple[list[Path], str, str]:
     return [], "", ""
 
 
+# System directories: never an output root. /var and /opt are refused too unless the root is below the project (the
+# working directory, strictly below /var or /opt) or the system temp directory. The macOS /private/... spellings are
+# listed beside the plain ones; roots are compared after symlinks are resolved (/bin -> /usr/bin).
+_SYSTEM_DIRS = ("/etc", "/usr", "/bin", "/sbin", "/lib", "/lib32", "/lib64", "/libx32", "/sys", "/proc", "/dev", "/boot", "/private/etc")
+_SYSTEM_DIRS_UNLESS_PROJECT = ("/var", "/opt", "/private/var")
+
+
+def _system_dir_refusal(root: Path) -> str | None:
+    for name in _SYSTEM_DIRS:
+        for base in {Path(name), _real(name)}:
+            if _inside(root, base):
+                return f"output root {root} is inside a system directory ({base}); use a project directory such as .planning/multi-ai/<run-id>/"
+    project = _real(Path.cwd())
+    temp_roots = [_real(tempfile.gettempdir()), _real(os.environ.get("TMPDIR") or tempfile.gettempdir())]
+    for name in _SYSTEM_DIRS_UNLESS_PROJECT:
+        for base in {Path(name), _real(name)}:
+            if not _inside(root, base):
+                continue
+            if len(project.parts) > len(base.parts) and _inside(project, base) and _inside(root, project):
+                continue
+            if any(len(t.parts) > len(base.parts) and _inside(root, t) for t in temp_roots):
+                continue
+            return f"output root {root} is inside a system directory ({base}) and not below the project; use a project directory such as .planning/multi-ai/<run-id>/"
+    return None
+
+
 def output_root_refusal(output_root: Path) -> str | None:
     """Why a run may not write below ``output_root`` (None when it may).
 
@@ -217,6 +244,9 @@ def output_root_refusal(output_root: Path) -> str | None:
         return f"output root {root} is the home directory or one of its parents; use a project directory such as .planning/multi-ai/<run-id>/"
     if ".git" in _fold(root):
         return f"output root {root} is inside a .git directory"
+    system = _system_dir_refusal(root)
+    if system:
+        return system
     protected = [_real(d) for d in _state_dirs()]
     protected += [_real(h) for h in _runtime_homes()]
     if os.environ.get("SB_RUNTIME_PLUGIN_CACHE_ROOT"):
