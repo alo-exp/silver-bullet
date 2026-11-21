@@ -313,7 +313,8 @@ assert_eq "exempt: deep research dry run without a root writes nothing" "yes|" "
 assert_eq "exempt: any other script is not exempt" "no" "$(exempt "$P" python3 "$P/tools/other.py" --output-root out)"
 assert_eq "exempt: an invalid analysis is not exempt" "no" "$(SB_TI_STATUS=ok SB_SA_WRITE_PATHS="" SB_SA_RTK_UNWRAPPED="" SB_SA_UNSEEN_REASONS="" SB_SA_JSON="{not json" sb_pf_multi_ai_cli_exempt "$P" && echo yes || echo no)"
 assert_eq "exempt: a payload cwd that is not an absolute directory is refused" "no|no" "$(exempt rel python3 "$TASK_CLI" --dry-run)|$(exempt "$P/missing" python3 "$TASK_CLI" --dry-run)"
-for root in 's"rc"' '$X' '`x`' 's*' '../x' '~/x' 'a\b' "a'b" 'a!b' 'a{b}'; do
+tilde='~'
+for root in 's"rc"' '$X' '`x`' 's*' '../x' "$tilde/x" 'a\b' "a'b" 'a!b' 'a{b}'; do
   assert_eq "exempt: no exemption for the root $root" "no" "$(exempt "$P" python3 "$TASK_CLI" --output-root "$root")"
 done
 assert_eq "exempt: repeated roots" "no" "$(exempt "$P" python3 "$TASK_CLI" --output-root a --output-root b)"
