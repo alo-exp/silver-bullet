@@ -17,6 +17,7 @@ mkdir -p "$PROJ"
 PROJ_KEY="$(cd -P "$PROJ" && pwd -P)"
 
 reset_store() { rm -rf "$HOME/.config/silver-bullet"; }
+age() { touch -d '10 minutes ago' "$@" 2>/dev/null || touch -t 200001010000 "$@"; }
 
 echo "=== store location ==="
 assert_eq "default store path" "$STORE" "$(sb_consent_store_path)"
@@ -320,6 +321,53 @@ assert_eq "8 revoke-vs-grant rounds: never two writers at once" "0" "$revoke_vio
 assert_eq "8 revoke-vs-grant rounds: every writer succeeded" "0" "$revoke_failed"
 rm -f "$TL_BIN/mktemp" "$TL_BIN/mv"; hash -r
 
+echo "=== lock: reclaim touches only claim files, never follows a symlink ==="
+reset_store; mkdir -p "$(dirname "$STORE")"
+LOCK="$(dirname "$STORE")/.consent.lock"
+VICTIM="$TL_TMP/victim"; mkdir -p "$VICTIM"
+printf 'important' >"$VICTIM/notes.txt"; printf '12345678 x' >"$VICTIM/pidlike.txt"; printf '999999' >"$VICTIM/claim.1.1"
+age "$VICTIM"/*
+ln -s "$VICTIM" "$LOCK"
+tl_run env SB_CONSENT_LOCK_TRIES=3 bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "a lock path that is a symlink is refused with status 2" "2" "$TL_STATUS"
+assert_contains "and the message names the lock" "$TL_ERR" ".consent.lock"
+assert_eq "nothing was recorded" "unset" "$(sb_consent_decision graphify enforce)"
+assert_eq "every file in the linked directory is untouched" "claim.1.1 notes.txt pidlike.txt" "$(cd "$VICTIM" && echo *)"
+[[ -L "$LOCK" ]] && tl_pass "and the link itself is left alone" || tl_fail "and the link itself is left alone"
+rm -f "$LOCK"
+printf 'x' >"$LOCK"
+tl_run env SB_CONSENT_LOCK_TRIES=3 bash "$CLI" revoke graphify --all-projects --capabilities enforce
+assert_eq "a lock path that is a plain file is refused with status 2" "2" "$TL_STATUS"
+[[ -f "$LOCK" ]] && tl_pass "and is left alone" || tl_fail "and is left alone"
+rm -f "$LOCK"
+mkdir -p "$LOCK"; printf 'keep' >"$LOCK/notes.txt"; printf '999999' >"$LOCK/pid.bak"; printf '999999' >"$LOCK/claim.x.y"; age "$LOCK"/*
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "a lock directory holding unrelated old files is not reclaimed: status 2" "2" "$TL_STATUS"
+assert_eq "and none of them is removed" "claim.x.y notes.txt pid.bak" "$(cd "$LOCK" && echo *)"
+rm -rf "$LOCK"; mkdir -p "$LOCK"; ln -s "$VICTIM/notes.txt" "$LOCK/claim.5.5"
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "a claim that is a symlink is not reclaimed: status 2" "2" "$TL_STATUS"
+[[ -L "$LOCK/claim.5.5" && "$(cat "$VICTIM/notes.txt")" == important ]] && tl_pass "and neither it nor its target is touched" || tl_fail "and neither it nor its target is touched"
+rm -rf "$LOCK"
+# a symlink planted after the writer's first look (here: instead of the lock directory) is not followed either
+printf '999999' >"$VICTIM/claim.1.1"; age "$VICTIM"/*
+tl_stub mkdir 'for a in "$@"; do case "$a" in *.consent.lock) [ -L "$a" ] || ln -s "$TL_VICTIM" "$a"; exit 1;; esac; done; exec "$(command -v -p mkdir)" "$@"'; hash -r
+export TL_VICTIM="$VICTIM"
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "a lock directory swapped for a symlink mid-run: status 2" "2" "$TL_STATUS"
+assert_eq "and the linked directory is untouched" "claim.1.1 notes.txt pidlike.txt" "$(cd "$VICTIM" && echo *)"
+rm -f "$TL_BIN/mkdir" "$LOCK"; hash -r
+# a claim whose pid cannot be signalled (another user's writer) is alive: only a missing process is dead
+mkdir -p "$LOCK"; printf '999999' >"$LOCK/claim.3.3"
+tl_stub ps 'exit 0'; hash -r
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "a pid that kill cannot signal but ps still lists is alive: status 2" "2" "$TL_STATUS"
+[[ -f "$LOCK/claim.3.3" ]] && tl_pass "and its claim stays" || tl_fail "and its claim stays"
+rm -f "$TL_BIN/ps"; hash -r
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "once ps no longer lists it the claim is dead and reclaimed" "0" "$TL_STATUS"
+rm -rf "$LOCK"
+
 echo "=== lock: a stray entry that appears while the lock is held does not fail the write ==="
 reset_store
 LOCK="$(dirname "$STORE")/.consent.lock"
@@ -417,7 +465,6 @@ tl_run bash "$CLI" grant graphify --project "$PROJ" --capabilities enforce
 assert_eq "a directory outside any SB project is recorded as given" "granted" "$(sb_consent_decision graphify enforce "$PROJ")"
 
 echo "=== lock: abandoned claims, ownerless lock, bad tries ==="
-age() { touch -d '10 minutes ago' "$@" 2>/dev/null || touch -t 200001010000 "$@"; }
 reset_store
 LOCK="$(dirname "$STORE")/.consent.lock"
 mkdir -p "$LOCK"; age "$LOCK"

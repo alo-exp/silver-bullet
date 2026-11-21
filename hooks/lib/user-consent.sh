@@ -183,13 +183,29 @@ _sb_consent_clean_source() {
 # (the lost-update race of the earlier mkdir/pid-file/.takeover design). rmdir only removes an
 # empty directory; a writer whose fresh directory was removed under it, or replaced by another
 # writer's, sees its claim missing or not alone, withdraws it and retries.
+# Only entries named claim.<pid>.<nonce> (and the legacy "pid") are ever removed, only when they are
+# regular files, and a lock path that is a symlink, not a directory or not owned by the caller is
+# refused untouched. Old-version sb-consent processes (the earlier mkdir/pid/.takeover lock) are
+# outside this guarantee: one still running can remove a lock of this protocol.
 # SB_CONSENT_LOCK_TRIES (default 200, 0.1 s apart; a value that is not an integer from 1 to
 # 1000 means the default) bounds the wait.
+_sb_consent_lock_sane() { # LOCK: status 0 unless LOCK exists as something other than our own plain directory
+  local lock="$1"
+  [[ ! -e "$lock" && ! -L "$lock" ]] && return 0
+  [[ -d "$lock" && ! -L "$lock" && -O "$lock" ]]
+}
+
+_sb_consent_claim_name() { # NAME: status 0 for a claim file name this protocol writes (or the legacy "pid")
+  [[ "$1" =~ ^claim\.[0-9]+\.[0-9]+$ || "$1" == pid ]]
+}
+
 _sb_consent_claim_stale() { # CLAIM: status 0 when the process that wrote CLAIM is gone or it is far too old
   local claim="$1" pid=""
   read -r pid _ <"$claim" 2>/dev/null || true
   if [[ "$pid" =~ ^[0-9]+$ ]]; then
-    kill -0 "$pid" 2>/dev/null || return 0
+    # kill -0 also fails for a live process of another user (EPERM): only a pid ps does not list is dead
+    if ! kill -0 "$pid" 2>/dev/null && ! ps -p "$pid" >/dev/null 2>&1; then return 0; fi
+    # Alive: stale only when far older than any write (a reused pid). A future mtime is never old.
     [[ -n "$(find "$claim" -maxdepth 0 -mmin +10 2>/dev/null)" ]]
   else
     [[ -n "$(find "$claim" -maxdepth 0 -mmin +1 2>/dev/null)" ]]
@@ -198,10 +214,17 @@ _sb_consent_claim_stale() { # CLAIM: status 0 when the process that wrote CLAIM 
 
 _sb_consent_lock_reclaim() { # LOCK: drop abandoned claims; status 0 when LOCK was left gone
   local lock="$1" entry seen=0 live=0
+  _sb_consent_lock_sane "$lock" || return 1
   for entry in "$lock"/*; do
-    [[ -e "$entry" ]] || continue
+    [[ -e "$entry" || -L "$entry" ]] || continue
     seen=1
-    if [[ -f "$entry" ]] && _sb_consent_claim_stale "$entry"; then rm -f -- "$entry"; else live=1; fi
+    # Only regular files named like a claim are ever removed; anything else keeps the lock held.
+    if [[ -f "$entry" && ! -L "$entry" ]] && _sb_consent_claim_name "${entry##*/}" \
+      && _sb_consent_claim_stale "$entry"; then
+      rm -f -- "$entry"
+    else
+      live=1
+    fi
   done
   ((live == 0)) || return 1
   if ((seen == 0)) && [[ -z "$(find "$lock" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then
@@ -213,8 +236,9 @@ _sb_consent_lock_reclaim() { # LOCK: drop abandoned claims; status 0 when LOCK w
 _sb_consent_lock_try() { # LOCK: one attempt; status 0 holding it (the claim is in _SB_CONSENT_CLAIM)
   local lock="$1" claim entry names=""
   mkdir "$lock" 2>/dev/null || return 1
-  claim="${lock}/claim.$$.${RANDOM}${RANDOM}"
-  if printf '%s' "$$" >"$claim" 2>/dev/null; then
+  # BASHPID is this (sub)shell; $$ is the top-level shell and the only choice before Bash 4
+  claim="${lock}/claim.${BASHPID:-$$}.${RANDOM}${RANDOM}"
+  if printf '%s' "${BASHPID:-$$}" >"$claim" 2>/dev/null; then
     for entry in "$lock"/*; do
       [[ -e "$entry" ]] && names="${names}${entry##*/} "
     done
@@ -237,6 +261,10 @@ sb_consent_set() {
     return $?
   fi
   lock="${dir}/.consent.lock"
+  if ! _sb_consent_lock_sane "$lock"; then
+    _sb_consent_err "${lock} is not a plain directory of yours (a symlink or another file?), so nothing was recorded; remove it"
+    return 2
+  fi
   until _sb_consent_lock_try "$lock"; do
     if _sb_consent_lock_reclaim "$lock" && ((spins++ < 1000)); then continue; fi
     tries=$((tries - 1))
