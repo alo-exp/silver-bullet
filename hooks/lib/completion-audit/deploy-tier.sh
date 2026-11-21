@@ -10,6 +10,24 @@
 # on stdout. Called as the condition of an `if`, so a failing helper makes the gate deny instead of tripping
 # the ERR trap. Prints the sha; status 1 when the release cannot be read (the reason is printed instead of a sha)
 # or --target names nothing that resolves (nothing is printed) (R13-08, R1-19).
+# ca_marker_commit_ok FILE ROOT RELEASE_SHA: the live-matrix marker FILE was earned at the commit being
+# released. Its `commit=` line must be a full sha (missing or malformed fails closed) and must equal
+# RELEASE_SHA, or be an ancestor of it with every path changed since limited to the changelog
+# (CHANGELOG.md, docs/CHANGELOG.md): the release-notes commit that normally follows a matrix run (R14-16).
+ca_marker_commit_ok() {
+  local file="$1" root="$2" release_sha="$3" commit changed
+  commit="$(grep -m1 -E '^commit=' "$file" 2>/dev/null | cut -d= -f2-)"
+  [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || return 1
+  [[ "$commit" == "$release_sha" ]] && return 0
+  git -C "$root" merge-base --is-ancestor "$commit" "$release_sha" 2>/dev/null || return 1
+  changed="$(git -C "$root" diff --name-only "$commit" "$release_sha" 2>/dev/null)" || return 1
+  # Any changed path other than the changelog rejects the marker (a commit with no file changes is fine).
+  if [[ -n "$changed" ]] && printf '%s\n' "$changed" | grep -qvxE 'CHANGELOG\.md|docs/CHANGELOG\.md'; then
+    return 1
+  fi
+  return 0
+}
+
 ca_release_commit_sha() {
   local root="$1" parsed ok="" reason="" tag="" target="" sha="" ref
   parsed="$(printf '%s' "${SB_SA_JSON:-}" | jq -rR 'try (fromjson | (.release // {}) | [(.ok // false | tostring), (.reason // ""), (.tag // ""), (.target // "")] | join("\u001f")) catch ""' 2>/dev/null)"
@@ -95,14 +113,20 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
       inline_matrix_value=$(grep -E '^matrix=' "$inline_e2e_matrix_file" 2>/dev/null || true)
     fi
 
-    if [[ "$release_matrix_value" == 'matrix=full-claude-codex' && "$e2e_matrix_value" == 'matrix=full-claude-codex' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
+    # The inline marker is written by the enterprise-grade-test-app journey or by the Claude supervised
+    # enterprise matrix (full 22-row pass); either way it must carry the commit it was earned at.
+    inline_commit_ok=false
+    if ca_marker_commit_ok "$inline_e2e_matrix_file" "$project_root" "$release_commit_sha"; then
+      inline_commit_ok=true
+    fi
+    if [[ "$inline_commit_ok" == true && "$release_matrix_value" == 'matrix=full-claude-codex' && "$e2e_matrix_value" == 'matrix=full-claude-codex' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
-    elif [[ "$release_matrix_value" == 'matrix=claude-only' && "$e2e_matrix_value" == 'matrix=claude-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
+    elif [[ "$inline_commit_ok" == true && "$release_matrix_value" == 'matrix=claude-only' && "$e2e_matrix_value" == 'matrix=claude-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
-    elif [[ "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
+    elif [[ "$inline_commit_ok" == true && "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
     else
-      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh in the standard Claude direct-OAuth configuration (or Kay/OpenCode Go/DeepSeek V4 Flash low when isolated Codex-compatible runs are required), ensure the enterprise-grade-test-app journey records matrix=inline-full-surface in the host runtime inline-e2e-matrix (run tests/e2e-live/run-e2e-live-tests.sh with SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1; a Claude supervised enterprise-e2e-matrix run does not write a marker this gate accepts), then retry. A full Claude/Codex matrix is still accepted when explicitly run, but it is no longer required for the release gate.' )"
+      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh in the standard Claude direct-OAuth configuration (or Kay/OpenCode Go/DeepSeek V4 Flash low when isolated Codex-compatible runs are required), and record matrix=inline-full-surface in the host runtime inline-e2e-matrix by completing the enterprise-grade-test-app journey: the Claude supervised enterprise-e2e-matrix (all 22 rows, per .planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md) or the inline journey (tests/e2e-live/run-e2e-live-tests.sh with SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1). The inline marker must carry commit= naming the commit being released (or an ancestor whose only later changes are to the changelog); a marker without it, or from another commit, is rejected. Then retry. A full Claude/Codex matrix is still accepted when explicitly run, but it is no longer required for the release gate.' )"
       exit 0
     fi
   fi

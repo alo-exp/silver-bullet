@@ -74,7 +74,7 @@ message() { jq -r '.reason // .hookSpecificOutput.permissionDecisionReason // .h
 release_ready() {
   printf 'matrix=claude-only\n' >"$SB_RUNTIME_STATE_DIR/release-live-matrix"
   printf 'matrix=claude-only\n' >"$SB_RUNTIME_STATE_DIR/e2e-live-matrix"
-  printf 'matrix=inline-full-surface\n' >"$SB_RUNTIME_STATE_DIR/inline-e2e-matrix"
+  printf 'matrix=inline-full-surface\ncommit=%s\n' "$(git -C "$PROJ" rev-parse HEAD)" >"$SB_RUNTIME_STATE_DIR/inline-e2e-matrix"
   printf '%s\n' adversarial-review-clean sentinel-skills-clean quality-gate-stage-3 full-test-suite-rerun >"$QG"
 }
 # write_exec <file> <exit-code>: install an executable validator atomically (write, chmod, rename)

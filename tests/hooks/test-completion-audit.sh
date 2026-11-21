@@ -667,9 +667,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
-cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+printf 'matrix=inline-full-surface
+commit=%s
+' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 write_verify_tests_state
 rm -f "$QUALITY_GATE_FILE"
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
@@ -703,9 +703,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=codex-only
 EOF
-cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+printf 'matrix=inline-full-surface
+commit=%s
+' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 write_verify_tests_state
 cat > "$QUALITY_GATE_FILE" <<'EOF'
 adversarial-review-clean
@@ -741,9 +741,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
-cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+printf 'matrix=inline-full-surface
+commit=%s
+' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 cat > "$QUALITY_GATE_FILE" <<'EOF'
 adversarial-review-clean
 sentinel-skills-clean
@@ -781,9 +781,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
-cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+printf 'matrix=inline-full-surface
+commit=%s
+' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 cat > "$QUALITY_GATE_FILE" <<'EOF'
 adversarial-review-clean
 sentinel-skills-clean
@@ -819,9 +819,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=codex-only
 EOF
-cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+printf 'matrix=inline-full-surface
+commit=%s
+' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 cat > "$QUALITY_GATE_FILE" <<'EOF'
 adversarial-review-clean
 sentinel-skills-clean
@@ -857,9 +857,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=claude-only
 EOF
-cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+printf 'matrix=inline-full-surface
+commit=%s
+' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 cat > "$QUALITY_GATE_FILE" <<'EOF'
 adversarial-review-clean
 sentinel-skills-clean
@@ -895,9 +895,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=codex-only
 EOF
-cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+printf 'matrix=inline-full-surface
+commit=%s
+' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 cat > "$QUALITY_GATE_FILE" <<'EOF'
 adversarial-review-clean
 sentinel-skills-clean
@@ -935,9 +935,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=codex-only
 EOF
-cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+printf 'matrix=inline-full-surface
+commit=%s
+' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 cat > "$QUALITY_GATE_FILE" <<'EOF'
 adversarial-review-clean
 sentinel-skills-clean
@@ -973,9 +973,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
-cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+printf 'matrix=inline-full-surface
+commit=%s
+' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 cat > "$QUALITY_GATE_FILE" <<'EOF'
 adversarial-review-clean
 sentinel-skills-clean
@@ -1508,9 +1508,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
-cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+printf 'matrix=inline-full-surface
+commit=%s
+' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 write_quality_gate_state
 write_verify_tests_state
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
@@ -1548,9 +1548,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
-cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+printf 'matrix=inline-full-surface
+commit=%s
+' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 write_quality_gate_state
 write_verify_tests_state
 unset SB_WORKFLOW_ID
@@ -1589,9 +1589,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
-cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+printf 'matrix=inline-full-surface
+commit=%s
+' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 write_quality_gate_state
 write_verify_tests_state
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
@@ -1619,9 +1619,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
-cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
+printf 'matrix=inline-full-surface
+commit=%s
+' "$(git -C "$TMPDIR_TEST" rev-parse HEAD)" > "$INLINE_E2E_MATRIX_FILE"
 write_quality_gate_state
 write_verify_tests_state
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")

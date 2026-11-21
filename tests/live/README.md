@@ -135,8 +135,8 @@ matching `e2e-live-matrix` marker. By default it runs the hook-failure matrix;
 with `SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1` it also runs the inline full-surface
 journey against the standalone sibling `todo-app` repo, and only then writes the
 `inline-e2e-matrix` marker, so that marker proves the journey actually ran.
-The release gate needs all three markers; the Claude supervised enterprise matrix does not write a
-marker the gate accepts today.
+The release gate needs all three markers; the Claude supervised enterprise matrix writes the inline one after a
+full 22-row pass, and the gate requires its `commit=` to match the released commit.
 
 The init-docs bootstrap scenario and review-fix-ladder smoke are separate
 on-demand tests and are not part of the default `run-live-tests.sh` matrix.
