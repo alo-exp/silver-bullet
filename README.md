@@ -225,6 +225,7 @@ Start at [docs/README.md](docs/README.md), the index of the docs tree. The most 
 | [docs/PRD-Overview.md](docs/PRD-Overview.md) | Product overview |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture |
 | [docs/ENFORCEMENT.md](docs/ENFORCEMENT.md) | Enforcement layers and the two-tier model |
+| [docs/KNOWN-LIMITS.md](docs/KNOWN-LIMITS.md) | Known limits and residual risks |
 | [docs/HOOKS.md](docs/HOOKS.md) | Every registered hook (generated from `hooks/hooks.json`) |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | `.silver-bullet.json` reference |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common problems and fixes |
@@ -281,8 +282,10 @@ plugins/silver-bullet/            Codex package surface (mostly symlinks)
 | `jq not found` | Install `jq` with Homebrew or apt |
 | `/sb` not available | Install the plugin and restart the session |
 | Hooks not firing | Run `/sb:init`: hooks stay inert until both `.silver-bullet.json` and `silver-bullet.md` exist in the project root |
-| CI is red and you need to push a fix | Start the commit message with `fix(ci):` or `ci:` (or include `[ci-fix]`), or push changes under `.github/workflows/`, `tests/` or `package.json`; as a last resort `touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override` |
-| An orchestrator directive blocks and cannot be satisfied | Start your next message with `SB OVERRIDE: <reason>`; the override is logged to `.planning/orchestrator-override-log.jsonl` |
+| CI is red and you need to push a fix | A push is let through only when every file it changes is under `.github/workflows/` or `tests/`, or is `package.json` (a commit message does not waive the block). Otherwise a human creates `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override` from their own terminal (valid for 30 minutes by default); see [TROUBLESHOOTING](docs/TROUBLESHOOTING.md#ci-is-red) |
+| An orchestrator directive blocks and cannot be satisfied | Start your next message with `SB OVERRIDE: <reason>` as its first line (upper case; a reason of 12+ characters with at least two real words, so a short or mid-message override is not honoured); the override is logged to `.planning/orchestrator-override-log.jsonl` |
+| `ENFORCEMENT CONTRACT CHANGED`, `PROJECT NOT BASELINED` or `STATE TAMPER BLOCKED` | The integrity record no longer matches a contract file, has not been written yet for this project, or something wrote Silver Bullet's state files; see [TROUBLESHOOTING](docs/TROUBLESHOOTING.md#a-gate-blocks-your-work). Config edits need a session restart |
+| An opt-in tool gate (Graphify, RTK, ...) is off although the project recommends it | Consent is per user: `bash scripts/sb-consent.sh grant <tool> --project . --capabilities enforce` ([docs/CONSENT.md](docs/CONSENT.md)) |
 | Want to refresh templates | Re-run `/sb:init` |
 
 Run `bash scripts/sb-doctor.sh` for an install and activation audit and `bash scripts/sb-diagnostics.sh` for the capability tier. [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) covers more cases, including the hook payload debug dump.

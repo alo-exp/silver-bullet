@@ -20,7 +20,7 @@ Alumnium is **not** token compression. It complements Graphify (retrieval), agen
 | `enabled_by_user` | Behavior |
 |-------------------|----------|
 | `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
-| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project .`) |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project . --capabilities enforce`; without `--capabilities` the grant also records machine-wide install and wire consent) |
 | `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 Core workflows do **not** hard-block when Alumnium is absent; when opted in, hooks verify MCP is wired before substantive edits.
@@ -106,8 +106,7 @@ export ALUMNIUM_MODEL='openai/MiniMax-M3'
 **Verify:**
 
 ```bash
-bash tests/scripts/test-minimax-proxy.sh
-ALUMNIUM_CHECKS=1 ALUMNIUM_QUICK=1 bash /path/to/sidekick/.visual-audit/run-alumnium-pixel-pass.sh
+bash tests/scripts/test-start-minimax-openai-proxy.sh
 ```
 
 Set the MCP server's `OPENAI_CUSTOM_URL` to `http://127.0.0.1:18721/v1` and start the proxy before the host.
