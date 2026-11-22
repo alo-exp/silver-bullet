@@ -86,7 +86,7 @@ EOF
   # The phase-lock file (and its .lock sidecar) is per-checkout runtime state: a committed copy would
   # carry another machine's locks onto every clone.
   # Whole-line match (CR trimmed): a commented (# ...) or negated (!...) line is not the ignore.
-  if ! tr -d '\r' <"$GITIGNORE" 2>/dev/null | grep -qxF "$LOCKS_MARKER"; then
+  if ! grep -qxF "$LOCKS_MARKER" < <(tr -d '\r' <"$GITIGNORE" 2>/dev/null); then
     {
       echo ""
       echo "# Phase-lock runtime state — local, never committed (Silver Bullet)"

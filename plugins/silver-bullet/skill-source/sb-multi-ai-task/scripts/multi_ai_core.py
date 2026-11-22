@@ -6,7 +6,6 @@ from __future__ import annotations
 import json
 import os
 import secrets
-import subprocess
 import tempfile
 import uuid
 from dataclasses import dataclass, field
@@ -225,16 +224,13 @@ def _extra_system_tree() -> list[str]:
 
 
 def _project_root() -> Path | None:
+    """The git toplevel of the working directory (the nearest ancestor holding .git, found without starting a
+    process: a dry run starts nothing), else the nearest ancestor holding .silver-bullet.json."""
     cwd = _real(Path.cwd())
-    try:
-        top = subprocess.run(["git", "-C", str(cwd), "rev-parse", "--show-toplevel"], capture_output=True, text=True, timeout=10)
-        if top.returncode == 0 and top.stdout.strip():
-            return _real(top.stdout.strip())
-    except (OSError, subprocess.SubprocessError):
-        pass
-    for directory in (cwd, *cwd.parents):
-        if (directory / ".silver-bullet.json").is_file():
-            return directory
+    for marker in (".git", ".silver-bullet.json"):
+        for directory in (cwd, *cwd.parents):
+            if (directory / marker).exists():
+                return directory
     return None
 
 
