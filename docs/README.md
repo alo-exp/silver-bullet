@@ -16,6 +16,7 @@ An index of the docs tree. Pages are grouped by audience; the last two sections 
 | [CONFIGURATION.md](CONFIGURATION.md) | Every `.silver-bullet.json` key |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common problems: hooks not firing, gates blocking, red CI, debugging hooks |
 | [ENFORCEMENT.md](ENFORCEMENT.md) | The twelve enforcement layers, the two-tier model, release gates |
+| [KNOWN-LIMITS.md](KNOWN-LIMITS.md) | Known limits and residual risks of the gates |
 | [HOOKS.md](HOOKS.md) | Every registered hook (generated) |
 | [RUNTIME-COMPATIBILITY.md](RUNTIME-COMPATIBILITY.md) | Host capability tiers, runtime detection, install surfaces |
 | [ORCHESTRATOR.md](ORCHESTRATOR.md) | Orchestrator parent mode and `SB OVERRIDE` |

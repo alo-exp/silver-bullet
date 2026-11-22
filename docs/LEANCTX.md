@@ -25,7 +25,7 @@ Consent lives in `.silver-bullet.json`:
 | `enabled_by_user` | Behavior |
 |-----------------|----------|
 | `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
-| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project .`) |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project . --capabilities enforce`; without `--capabilities` the grant also records machine-wide install and wire consent) |
 | `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 **MCP namespace:** LeanCTX tools are registered with the `lctx_` prefix. Never register raw `ctx_*` from LeanCTX when Context Mode is opted in — SB merge scripts enforce this separation.
@@ -110,7 +110,7 @@ Codex PreToolUse is **deny-only** — no `updatedInput` rewrite. When LeanCTX is
 
 ## Deep-Research Fetch Routing
 
-For `sb:deep-research`, use **search_cli first** when configured. LeanCTX fetch is for **non-research flows only** — avoids overlap with search_cli breadth providers. See `skills/deep-research/SKILL.md`.
+For `sb:deep-research`, use **search_cli first** when configured. LeanCTX fetch is for **non-research flows only** — avoids overlap with search_cli breadth providers. See `skills/silver-deep-research/SKILL.md`.
 
 ## Verification
 

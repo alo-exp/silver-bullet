@@ -247,7 +247,7 @@ is a hard prerequisite for any release work. Do not proceed to the live matrix,
 CI wait, tag, or GitHub Release until the current session has recorded:
 
 - `adversarial-review-clean` (ENHANCED adversarial — 2× DISCOVERY clean)
-- `sentinel-skills-clean` (85/85 per-skill SENTINEL passes)
+- `sentinel-skills-clean` (every per-skill SENTINEL row clean; `scripts/validate-sentinel-skills-manifest.sh` states the expected count)
 - `quality-gate-stage-3` (public content refresh)
 - `full-test-suite-rerun` (post-fix test bundle)
 

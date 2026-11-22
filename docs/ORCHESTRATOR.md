@@ -2,7 +2,7 @@
 
 **Status:** Parent-only orchestration (2026-06-14)
 
-Silver Bullet's orchestrator sequences lifecycle work through **directives**, **Task workers**, and **hooks**. The parent session NEVER implements directly — cooperative single-agent mode is removed.
+Silver Bullet's orchestrator sequences lifecycle work through **directives**, **Task workers**, and **hooks**. On Claude Code the parent session NEVER implements directly — cooperative single-agent mode is removed. Parent-mode blocks need the host to identify workers in hook payloads; Codex does not yet, so there they are inactive unless `SB_ORCHESTRATOR_PARENT=1` forces them (see [Worker identity](#worker-identity)).
 
 ## Execution model
 

@@ -69,8 +69,10 @@ entry point.
 4. **Non-destructive file operations.** Hooks write only SB state and SB-owned artifacts
    (session logs, phase archives, the PR traceability block). Setup commands create new files;
    update mode overwrites only `silver-bullet.md`.
-5. **Flat-file state.** No process, no daemon, no server. State is a text file. Any tool that
-   writes to it or reads from it can be independently audited.
+5. **Flat-file state, sealed by the hooks.** No process, no daemon, no server. State is a text file
+   plus a keyed seal and an integrity record, both written only by the hooks, so a change made
+   outside them is detected rather than trusted (Invariant I in [ENFORCEMENT.md](ENFORCEMENT.md)).
+   Any tool can still read the files and audit them.
 6. **Template parity.** `templates/workflows/` must remain byte-identical to `docs/workflows/`
    so new projects get the same enforcement rules as the current project.
 7. **Packaging boundaries.** SB-owned plugin bundles never vendor optional extension plugins or
