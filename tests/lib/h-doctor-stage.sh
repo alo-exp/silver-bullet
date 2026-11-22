@@ -9,6 +9,8 @@
 
 # shellcheck source=consent-helpers.sh
 source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
+# shellcheck source=pty-helpers.sh
+source "$TL_REPO_ROOT/tests/lib/pty-helpers.sh"
 
 HD_ST="$TL_TMP/hd-stage"
 HD_PROJ="$TL_TMP/hd-proj"
@@ -108,5 +110,14 @@ hd_run() {
   shift
   : >"$HD_LOG"
   tl_run env "${envs[@]}" bash "$HD_ST/scripts/sb-doctor.sh" "$@"
+}
+# hd_run_yes VAR=val ... -- doctor args...: like hd_run, but on a pseudo-terminal where the
+# user types "y" at the --fix confirmation (the doctor has no environment override for it)
+hd_run_yes() {
+  local envs=()
+  while [[ "${1:-}" != "--" ]]; do envs+=("$1"); shift; done
+  shift
+  : >"$HD_LOG"
+  tl_run_pty 'y\n' env "${envs[@]}" bash "$HD_ST/scripts/sb-doctor.sh" "$@"
 }
 hd_logs() { cat "$HD_LOG"; }

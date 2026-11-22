@@ -365,7 +365,6 @@ doctor_fix_needs_confirm() {
 
 doctor_confirm_fix_if_needed() {
   doctor_fix_needs_confirm || return 0
-  [[ "${SB_DOCTOR_ASSUME_YES:-0}" == "1" ]] && return 0
   if [[ ! -t 0 ]]; then
     printf 'sb-doctor: --fix=%s changes global tools or host configuration and needs the user'"'"'s own confirmation; nothing was changed. Ask the user to run it themselves in an interactive terminal.\n' "${DOCTOR_FIX_SCOPE:-all}" >&2
     return 1
