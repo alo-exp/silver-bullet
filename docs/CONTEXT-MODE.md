@@ -23,7 +23,7 @@ Context Mode is **ELv2** — not OSI-open. Acceptable for personal/internal use.
 | `enabled_by_user` | Behavior |
 |-----------------|----------|
 | `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
-| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project .`) |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project . --capabilities enforce`; without `--capabilities` the grant also records machine-wide install and wire consent) |
 | `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 **Usage enforcement:** When to use `ctx_*` vs `Read` is mandatory in `silver-bullet.md` §2g-ii. When Context Mode is opted in and enforced, SB **`context-mode-read-deny.sh`** (PreToolUse on `Read|Grep`) returns **deny** if the target file exceeds `recommended_tools.context_mode.read_deny_bytes` (default **5120**). Exempt: trivial bypass, SB state/config paths, files at or below the threshold.

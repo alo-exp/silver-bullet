@@ -2,6 +2,8 @@
 
 Every Silver Bullet project has a `.silver-bullet.json` at its root. `/sb:init` creates it from [`templates/silver-bullet.config.json.default`](../templates/silver-bullet.config.json.default), and `/sb:update` or `bash scripts/sb-migrate-config.sh [PROJECT_ROOT]` merges an existing file forward (keeping project values and unioning skill lists). Hooks stay inert until both `.silver-bullet.json` and `silver-bullet.md` exist at the project root.
 
+Edits to `.silver-bullet.json` (and to `silver-bullet.md`) take effect after a session restart: the gates read the values Silver Bullet recorded at session start, and a mid-session change is reported as `ENFORCEMENT CONTRACT CHANGED` until you revert it or restart ([TROUBLESHOOTING.md](TROUBLESHOOTING.md#a-gate-blocks-your-work)). Skills such as `sb:init`, `sb:update` and `sb:migrate` write the files with the contract unlock and need no restart.
+
 This page lists every key in the template, which code reads it, and the keys the code reads that the template does not contain. "Reader" names the main consumer; search the tree for the key to find every use.
 
 ## Versions and activation
@@ -12,7 +14,7 @@ This page lists every key in the template, which code reads it, and the keys the
 | `version` | `0.46.0` | Legacy predecessor of `config_version`, read only as a fallback when `config_version` is absent. `sb-migrate-config.sh` sets both to the plugin version | same |
 | `sb_initiated` | `false` | `true` once `/sb:init` (or `scripts/sb-migrate-initiated.sh`) has run; several gates (jq-missing blocks, prerequisite probes) apply only to initiated projects | `hooks/lib/project-active.sh`, `session-start` |
 | `sb_enforcement_tier` | `null` | Persisted capability tier (0–3) of the host; probed and written by the hooks. Delivery is blocked when the effective tier says hooks are inactive | `hooks/lib/enforcement-tier-gate.sh` |
-| `orchestrator_mode` | `"parent"` | Orchestration mode; `parent` (the parent session delegates each atomic flow to Task workers) is the only supported value | `hooks/lib/orchestrator-parent.sh` |
+| `orchestrator_mode` | `"parent"` | Orchestration mode; `parent` (the parent session delegates each atomic flow to Task workers) is the only supported value; it is enforced on Claude Code only (Codex does not identify workers in hook payloads, so parent blocks are inactive there; see [ORCHESTRATOR.md](ORCHESTRATOR.md#worker-identity)) | `hooks/lib/orchestrator-parent.sh` |
 
 ## `project`
 
@@ -60,7 +62,7 @@ Read by `completion-audit.sh` on `gh release create` ([ENFORCEMENT.md](ENFORCEME
 | `release.profile` | `"generic"` | Release profile label; carried forward by migration, not read by the hooks |
 | `release.require_plugin_runtime_matrix` | `false` | Require the live runtime matrix markers (`release-live-matrix`, `e2e-live-matrix`, `inline-e2e-matrix`) |
 | `release.require_pre_release_quality_gate` | `false` | Require the quality-gate markers `adversarial-review-clean`, `sentinel-skills-clean`, `quality-gate-stage-3`, `full-test-suite-rerun` |
-| `release.require_rc_matrix` | `false` | Require six operator-local live RC `pass` markers for the commit being released |
+| `release.require_rc_matrix` | `false` | Require four operator-local live RC `pass` markers for the commit being released |
 | `release.quality_gate_state_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` | Where the quality-gate markers are read; cleared at session start |
 | `release._comment_quality_gate_markers` | — | Comment only |
 
@@ -87,7 +89,7 @@ Common fields:
 | `install_status`, `install_failure_reason` | Written by the installers and reconciler |
 | `required_when_enabled` | Whether an opted-in tool is mandatory (all but `search_cli`) |
 | `install_commands`, `platform_install_commands` | Ignored (repository content is never run or shown as an instruction); install steps come from the built-in tables in `hooks/lib/recommended-tools.sh` |
-| `benefits_summary` | Text shown when asking for consent |
+| `benefits_summary` | Ignored (repository content; see [CONSENT.md](CONSENT.md)). The consent text comes from built-in tables |
 
 Tool-specific fields:
 
@@ -97,8 +99,8 @@ Tool-specific fields:
 | `agentmemory` | `health_url`, `usage_ttl_seconds`, `usage_state_file`, `export_root` (`.agentmemory`), `optimization` |
 | `alumnium` | `mcp_server_name` |
 | `rtk` | `min_version`, `optimize_on_init`, `optimize_script` |
-| `context_mode` | `read_deny_bytes` (Read/Grep above this size are denied when enforced), `read_deny_bypass_env`, `min_node_version`, `optimize_on_init`, `optimize_script`, `license_note` |
-| `leanctx` | `min_version`, `cli_command`, `usage_ttl_seconds`, `usage_state_file`, `stack_mode`, `optimization_profile`, `primary_fts`, `mcp_server_name`, `mcp_tool_prefix`, `exclusive_surfaces` |
+| `context_mode` | `read_deny_bytes` (Read/Grep above this size are denied when enforced), `read_deny_bypass_env`, `min_node_version`, `optimize_on_init`, `optimize_script`; `license_note` is ignored (repository content; see [CONSENT.md](CONSENT.md)) |
+| `leanctx` | `min_version`, `cli_command` (ignored; the CLI name is built in, see [CONSENT.md](CONSENT.md)), `usage_ttl_seconds`, `usage_state_file`, `stack_mode`, `optimization_profile`, `primary_fts`, `mcp_server_name`, `mcp_tool_prefix`, `exclusive_surfaces` |
 | `search_cli` | `binary`, `provider_classes` (used by `sb:deep-research` when configured) |
 
 A legacy top-level `graphify.required` boolean is migrated into `recommended_tools.graphify.enabled_by_user` by `hooks/lib/recommended-tools.sh`.

@@ -43,7 +43,7 @@ make sync-check                        # runtime mirrors and the plugin mirror
 
 ## When CI is red
 
-`hooks/ci-status-check.sh` blocks `git push`, `gh pr create/merge` and `gh release create` while the latest run on the branch failed. Commit the fix with a `fix(ci):` or `ci:` prefix (or `[ci-fix]` in the message) so the push is let through; see [TROUBLESHOOTING.md](TROUBLESHOOTING.md#ci-is-red).
+`hooks/ci-status-check.sh` blocks `git push`, `gh pr create/merge` and `gh release create` while the latest run on the branch failed. A push whose every changed file is under `.github/workflows/` or `tests/` (or is `package.json`) is let through; a commit-message prefix does not waive the block, and otherwise a human creates the `ci-red-override` flag from their own terminal. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#ci-is-red).
 
 ## Breaking-change policy for required skills
 

@@ -233,7 +233,7 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
       exit 0
     fi
     if ! "$_qg_validate_sentinel" --manifest "${project_root}/docs/audits/sentinel-skills/manifest.json" >/dev/null 2>&1; then
-      emit_block "$(printf '🛑 RELEASE BLOCKED — SENTINEL per-skill manifest is incomplete (docs/audits/sentinel-skills/manifest.json must show 85/85 clean rows).\n\nRun bash scripts/validate-sentinel-skills-manifest.sh for details, complete per-skill SENTINEL audits, record sentinel-skills-clean, then retry.' )"
+      emit_block "$(printf '🛑 RELEASE BLOCKED — SENTINEL per-skill manifest is incomplete (docs/audits/sentinel-skills/manifest.json must show every row clean; the validator prints the expected row count).\n\nRun bash scripts/validate-sentinel-skills-manifest.sh for details, complete per-skill SENTINEL audits, record sentinel-skills-clean, then retry.' )"
       exit 0
     fi
   fi
