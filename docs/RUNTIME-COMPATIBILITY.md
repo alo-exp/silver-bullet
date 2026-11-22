@@ -32,7 +32,7 @@ orientation (jq check, diagnostics, init next steps) or
 |------|------|------------|--------------|
 | 0 | Guidance-only | Skills, workflows, artifact templates; no hook enforcement | SDK/web sessions without hook config |
 | 1 | State-tracked | Skill markers and state file under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` | Partial hook delivery or manual skill invocation |
-| 2 | Hook-enforced | PreToolUse/PostToolUse/Stop gates, completion audit, planning guards, **orchestrator parent blocks** | Claude Code CLI, Codex CLI |
+| 2 | Hook-enforced | PreToolUse/PostToolUse/Stop gates, completion audit, planning guards; **orchestrator parent blocks on Claude Code only** (Codex: inactive until the host identifies workers in hook payloads) | Claude Code CLI, Codex CLI |
 | 3 | Live-tested | Release live matrix, e2e-live scenarios, installed-runtime receipts | CI release gates and local live harness |
 
 Tiers are cumulative: tier 2 includes tier 1 behavior; tier 3 assumes tier 2
@@ -49,11 +49,11 @@ When hooks are absent or tier &lt; 2, Silver Bullet still applies the **same ski
 5. Run `verify-tests` before `gh pr create` / release even without hook blocks.
 6. Parent-only orchestrator directive blocks (`orchestrator-directive-guard`) are **inactive** below tier 2 — you may implement inline, but still invoke skills for traceability.
 
-Tier 2+ restores parent-only mode: parent spawns Task workers; cooperative single-agent inline implementation is disabled when directive guard is active.
+On Claude Code, tier 2 restores parent-only mode: the parent spawns Task workers and cooperative single-agent inline implementation is disabled while the directive guard is active. Codex has no worker identity in its hook payloads, so there the parent cannot be told from a worker and parent mode is inactive (the planning floor and delivery gates still apply); `SB_ORCHESTRATOR_PARENT=1` forces it on.
 
-### Orchestrator parent mode (default)
+### Orchestrator parent mode (default on Claude Code)
 
-SB uses **parent-only** orchestration: the parent agent delegates each atomic flow to a **Task worker** (subagent). At tier 2, `orchestrator-directive-guard.sh` blocks parent Edit/Write/Bash; workers implement after recording the assigned skill.
+On Claude Code SB uses **parent-only** orchestration: the parent agent delegates each atomic flow to a **Task worker** (subagent). At tier 2, `orchestrator-directive-guard.sh` blocks parent Edit/Write/Bash; workers implement after recording the assigned skill. On Codex this is inactive because the host does not identify workers (see [ORCHESTRATOR.md](ORCHESTRATOR.md#worker-identity)).
 
 ### Diagnostics
 

@@ -21,7 +21,7 @@ agentmemory is a **recommended tool**, not a hard prerequisite like `jq`. SB ask
 | `enabled_by_user` | Behavior |
 |-------------------|----------|
 | `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
-| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project .`) |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project . --capabilities enforce`; without `--capabilities` the grant also records machine-wide install and wire consent) |
 | `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 **Install failure after opt-in:** SB sets `enforcement_suspended: true` and preserves `enabled_by_user: true`. Hooks treat suspended agentmemory like opted-out until the next `/sb:init` or `/sb:update` retry succeeds.

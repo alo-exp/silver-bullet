@@ -20,7 +20,7 @@ Consent lives in `.silver-bullet.json`:
 | `enabled_by_user` | Behavior |
 |-----------------|----------|
 | `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
-| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project .`) |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project . --capabilities enforce`; without `--capabilities` the grant also records machine-wide install and wire consent) |
 | `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 **Wrong binary trap:** `reachingforthejack/rtk` (Rust Type Kit) shares the `rtk` command name. SB verifies `rtk gain --help` succeeds and rejects the wrong binary.
