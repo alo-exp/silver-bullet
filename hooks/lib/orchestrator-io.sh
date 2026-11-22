@@ -117,7 +117,7 @@ _sb_orch_lock_try() { # LOCK: one attempt; status 0 holding it (the claim is in 
 
 # _sb_orch_lock_acquire LOCK: status 0 holding the lock (claim in _SB_ORCH_LOCK_CLAIM); status 1
 # when the lock path is refused or the budget ran out (a diagnostic goes to stderr).
-_SB_ORCH_LOCK_WAITED=0 # tenths of a second this process has spent waiting, across calls
+_SB_ORCH_LOCK_WAITED="${_SB_ORCH_LOCK_WAITED:-0}" # tenths of a second this process has spent waiting, across calls
 _sb_orch_lock_acquire() {
   local lock="$1" max="${SB_ORCHESTRATOR_LOCK_WAIT_TENTHS:-40}" spins=0 start=$SECONDS limit
   [[ "$max" =~ ^[0-9]+$ ]] || max=40
