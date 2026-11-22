@@ -176,6 +176,12 @@ echo "=== clear / read / next_skill / blocking ==="
 sb_orchestrator_directive_clear
 assert_file_absent "clear removes the directive" "$DIR"
 sb_orchestrator_directive_clear
+# a directive path that cannot be removed (a directory sits there) does not abort the caller (set -e) and is left alone
+mkdir -p "$DIR/keep"
+( set -e; sb_orchestrator_directive_clear ) && rc=0 || rc=$?
+assert_eq "clear tolerates a directive path rm cannot remove" 0 "$rc"
+assert_file_exists "the unremovable path is left in place" "$DIR/keep"
+rm -rf "$DIR"
 sb_orchestrator_directive_read && rc=0 || rc=$?
 assert_eq "read without file fails" 1 "$rc"
 sb_orchestrator_directive_next_skill && rc=0 || rc=$?

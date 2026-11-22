@@ -267,6 +267,17 @@ class ProgramMechanismTable(unittest.TestCase):
             self.assertIn("core.editor", run.stdout)
             self.assertIn("made.up.key", run.stdout)
             self.assertIn("::warning title=git config key drift::", run.stdout)
+            # only a key gone from the installed git (none new): the annotation counts zero new keys instead of failing
+            gone = os.path.join(tmp, "gone.txt")
+            with open(gone, "w") as handle:
+                handle.write("\n".join(real + ["made.up.key"]) + "\n")
+            only_removed = subprocess.run(["bash", str(DRIFT_SCRIPT)], capture_output=True, text=True,
+                                          env=dict(os.environ, SB_GIT_KEY_SNAPSHOT=gone, GITHUB_ACTIONS="true"))
+            self.assertEqual(only_removed.returncode, 0)
+            self.assertIn("keys in the snapshot but gone from the installed git:\nmade.up.key", only_removed.stdout)
+            self.assertNotIn("but not in the snapshot", only_removed.stdout)
+            self.assertIn("::warning title=git config key drift::git ", only_removed.stdout)
+            self.assertIn(" has 0 key(s) the snapshot", only_removed.stdout)
             clean = os.path.join(tmp, "clean.txt")
             update = subprocess.run(["bash", str(DRIFT_SCRIPT), "--update"], capture_output=True, text=True,
                                     env=dict(os.environ, SB_GIT_KEY_SNAPSHOT=clean))

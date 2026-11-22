@@ -11,7 +11,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from unittest import mock
 
-from sbtest import load_module
+from sbtest import REPO_ROOT, load_module
 
 fti = load_module("scripts/lib/global-toolstack/five_tool_instances.py")
 
@@ -21,6 +21,24 @@ BASE_ENV_KEYS = (
     "FIVE_TOOL_TOOLSTACK_HOME",
     "XDG_DATA_HOME",
 )
+
+
+class ImportPathTest(unittest.TestCase):
+    LIB = str(REPO_ROOT / "scripts" / "lib")
+    REL = "scripts/lib/global-toolstack/five_tool_instances.py"
+
+    def test_lib_root_is_added_to_sys_path_when_absent(self):
+        trimmed = [p for p in sys.path if p != self.LIB]
+        with mock.patch.object(sys, "path", trimmed):
+            load_module(self.REL, name="fti_fresh_a")
+            self.assertEqual(trimmed[0], self.LIB)
+            self.assertEqual(trimmed.count(self.LIB), 1)
+
+    def test_lib_root_is_not_duplicated_when_present(self):
+        path = [self.LIB] + [p for p in sys.path if p != self.LIB]
+        with mock.patch.object(sys, "path", path):
+            load_module(self.REL, name="fti_fresh_b")
+            self.assertEqual(path.count(self.LIB), 1)
 
 
 class IsolatedHome(unittest.TestCase):

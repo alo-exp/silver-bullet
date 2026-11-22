@@ -170,6 +170,13 @@ assert_file_absent "enforce: a complete checklist at an out-of-scope granularity
 setup_repo; low_gran_empty; printf 'silver-fast\n' >"$ST/state"
 (unset -f sb_integrity_state_contents; ER=0; sb_doc_scheme_gate_enforce task "$R" "$ST" emit) || true
 assert_contains "enforce: without the verified-state accessor nothing counts as recorded" "$(cat "$EMITTED")" "Missing checklist entry"
+# an accessor that is present but fails (an unreadable or unverifiable state) credits nothing and does not abort the
+# gate: the failure is tolerated, the recorded skill is not counted, and the delivery check still blocks
+setup_repo; low_gran_empty; printf 'silver-fast\n' >"$ST/state"
+(sb_integrity_state_contents() { return 1; }; ER=0; sb_doc_scheme_gate_enforce task "$R" "$ST" emit) || true
+assert_contains "enforce: a failing verified-state accessor credits no recorded skill" "$(cat "$EMITTED")" "Missing checklist entry"
+(set -e; sb_integrity_state_contents() { return 1; }; sb_doc_scheme__state_has_skill "$ST" silver-fast) && r=0 || r=$?
+assert_eq "state_has_skill: a failing accessor reports the skill as not recorded" 1 "$r"
 rm -f "$ST/state"
 setup_repo; jq '.task_granularity="two"' "$R/docs/task-doc-checklist.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/task-doc-checklist.json"; run_enforce
 assert_contains "enforce: non-numeric granularity" "$(cat "$EMITTED")" "Missing numeric task granularity"

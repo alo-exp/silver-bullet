@@ -131,6 +131,19 @@ assert_eq "rtk: ready (doctor passes)" "ready|full||false" "$(prtk)"
 hr_bin rtk 'case "$*" in "gain --help") exit 0;; --version) echo "rtk 0.42.5";; help) echo "  doctor";; "doctor --help") echo usage;; doctor*) exit 1;; *) exit 0;; esac'
 assert_eq "rtk: doctor failing" "repairable|none|vendor_doctor_failed|true" "$(prtk)"
 export RT_SKIP_VENDOR_DOCTOR=1
+# plugin hosts whose shell wiring exists but is the wrong shape: each failing follow-up probe is its own evidence
+H opencode
+echo 'rtk plugin that also calls lean-ctx rewrite' >"$HOME/.config/opencode/plugins/rtk.ts"
+assert_eq "rtk: opencode plugin that carries a lean-ctx rewrite" "repairable|none|leanctx_rewrite_present|true" "$(prtk)"
+echo 'rtk only' >"$HOME/.config/opencode/plugins/rtk.ts"
+H pi
+echo '{"rtk":true}' >"$PI_DIR/extensions/silver-bullet-five-tool-stack/config.json"
+rm -f "$PI_DIR/extensions/pi-lean-ctx/config.json"
+assert_eq "rtk: pi without lean-ctx shell routing disabled (hook order)" "repairable|none|hook_order_wrong|true" "$(prtk)"
+echo '{"routeShell":false,"disableTools":["ctx_shell"]}' >"$PI_DIR/extensions/pi-lean-ctx/config.json"
+assert_eq "rtk: pi with lean-ctx shell routing disabled is ready" "ready|full|vendor_skip|false" "$(prtk)"
+rm -f "$PI_DIR/extensions/pi-lean-ctx/config.json"
+H claude
 
 # repair
 hr_bin rtk 'exit 0'
