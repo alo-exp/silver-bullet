@@ -34,6 +34,28 @@ class ImportPathTest(unittest.TestCase):
             self.assertEqual(path.count(self.LIB), 1)
 
 
+class DeliveryFloorTest(unittest.TestCase):
+    FULL = ["silver-plan", "silver-execute", "silver-review-triage", "silver-verify", "silver-ship"]
+
+    def test_queue_without_ship_or_triage_is_returned_unchanged(self):
+        no_ship = ["silver-plan", "silver-execute", "silver-review-triage"]
+        no_triage = ["silver-plan", "silver-execute", "silver-ship"]
+        self.assertIs(g.apply_delivery_floor(no_ship), no_ship)
+        self.assertIs(g.apply_delivery_floor(no_triage), no_triage)
+        self.assertEqual(g.apply_delivery_floor([]), [])
+
+    def test_floor_adds_tdd_triage_and_verify_tests_after_their_anchors(self):
+        self.assertEqual(
+            g.apply_delivery_floor(self.FULL),
+            ["silver-plan", "tdd", "silver-execute", "silver-review-triage", "silver-triage",
+             "silver-verify", "verify-tests", "silver-ship"])
+
+    def test_tdd_is_optional_and_nothing_is_duplicated(self):
+        self.assertNotIn("tdd", g.apply_delivery_floor(self.FULL, tdd=False))
+        full = ["tdd", "silver-execute", "silver-review-triage", "silver-triage", "silver-verify", "verify-tests", "silver-ship"]
+        self.assertEqual(g.apply_delivery_floor(full), full)
+
+
 class ClassifySkillTest(unittest.TestCase):
     def test_classes(self):
         self.assertEqual(g.classify_skill("silver-feature"), "precomposed-workflow")

@@ -211,8 +211,27 @@ variant "a new script added under site/ is rejected" deny 'echo x >site/x/new.sh
 variant "a deleted manifest is rejected" deny 'git rm -q package.json'
 variant "an added unlisted JSON file is rejected" deny 'echo {} >site/x/hooks.json'
 variant "a hook change after the matrix is rejected" deny 'echo x >>hooks/gate.sh'
-# fail closed: when git cannot produce the diff since the marker's commit, the marker is rejected
+# a new symlink or submodule entry is never release surface, even at a path the prose allowlist (site/*.html) would
+# accept: an add has no old mode, so only the symlink/gitlink check rejects it
+variant "a symlink added at an allowlisted prose path is rejected" deny 'ln -s ../../hooks/gate.sh site/x/evil.html'
+git -C "$PROJ" config advice.addEmbeddedRepo false
+variant "a submodule (gitlink) added at an allowlisted prose path is rejected" deny 'git init -q site/sub.html && git -C site/sub.html -c user.email=t@e.x -c user.name=t commit -q --allow-empty -m sub'
+rm -rf "$PROJ/site/sub.html"   # the nested repository the variant created is untracked on the base branch: keep it out of later variants
+# fail closed: the diff file cannot be created (mktemp fails for it only), the marker is rejected
 GIT_REAL="$(command -v git)"
+MKTEMP_REAL="$(command -v mktemp)"
+tl_stub mktemp "case \"\$*\" in *sb-surface-diff*) exit 1 ;; esac; exec $MKTEMP_REAL \"\$@\""
+variant "an uncreatable surface-diff temp file rejects the marker (fail closed)" deny 'echo more >>CHANGELOG.md'
+rm -f "$TL_BIN/mktemp"
+# fail closed: the allowlisted JSON cannot be read at the marker's commit, or at the released commit
+variant_json_bump='jq ".version=\"1.1.0\"" package.json >p.tmp && mv p.tmp package.json'
+tl_stub git "if [[ \"\$*\" == *' show ${OLD_SHA}:package.json'* ]]; then exit 1; fi; exec $GIT_REAL \"\$@\""
+variant "an allowlisted JSON unreadable at the marker's commit rejects the marker (fail closed)" deny "$variant_json_bump"
+tl_stub git "if [[ \"\$*\" == *' show '*':package.json'* && \"\$*\" != *' show ${OLD_SHA}:package.json'* ]]; then exit 1; fi; exec $GIT_REAL \"\$@\""
+variant "an allowlisted JSON unreadable at the released commit rejects the marker (fail closed)" deny "$variant_json_bump"
+rm -f "$TL_BIN/git"
+variant "the same JSON bump with working git is still accepted" allow "$variant_json_bump"
+# fail closed: when git cannot produce the diff since the marker's commit, the marker is rejected
 tl_stub git "if [[ \"\$*\" == *'diff '* ]]; then exit 1; fi; exec $GIT_REAL \"\$@\""
 printf 'matrix=inline-full-surface\ncommit=%s\n' "$OLD_SHA" >"$INL"
 "${GC[@]}" commit -q --allow-empty -m "next"

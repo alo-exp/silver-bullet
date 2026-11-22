@@ -174,7 +174,7 @@ survived "failing state removal"
 assert_file_exists "failing state removal: the state file is kept" "$SD/state"
 
 # ---- every cleanup rm of a branch reset may fail without ending the hook ---------------------------------
-for victim in trivial release-live-matrix e2e-live-matrix quality-gate-state verify-tests-state; do
+for victim in trivial release-live-matrix e2e-live-matrix inline-e2e-matrix quality-gate-state verify-tests-state; do
   fresh
   printf 'old-branch\n' >"$SD/branch"
   printf 'x' >"$SD/$victim"
@@ -184,6 +184,24 @@ for victim in trivial release-live-matrix e2e-live-matrix quality-gate-state ver
   survived "failing removal of $victim"
   assert_file_exists "failing removal of $victim: the file is kept" "$SD/$victim"
 done
+
+# ---- a resumed session whose doc-scheme baseline cannot be sealed ----------------------------------------
+# (a repository with no commit has nothing to seal): the best-effort seal fails, the hook still runs to its end,
+# no baseline record is written, and the same resume in a repository that has a commit seals one
+fresh
+UNBORN="$TL_TMP/unborn"; rm -rf "$UNBORN"; mkdir -p "$UNBORN"; git -C "$UNBORN" init -q
+printf '# Silver Bullet\n' >"$UNBORN/silver-bullet.md"; cp "$EC_CFG" "$UNBORN/.silver-bullet.json"
+rm -f "$SD"/doc-scheme-baseline-*
+EC_RUN_DIR="$UNBORN"
+SILVER_BULLET_SESSION_SOURCE=resume run_ss
+survived "resume with an unsealable doc-scheme baseline"
+assert_eq "resume with an unsealable baseline: no baseline record is written" "0" "$(find "$SD" -maxdepth 1 -name 'doc-scheme-baseline-*' | wc -l | tr -d ' ')"
+fresh
+rm -f "$SD"/doc-scheme-baseline-*
+SILVER_BULLET_SESSION_SOURCE=resume run_ss
+survived "resume in a repository with a commit"
+assert_eq "resume in a repository with a commit: the baseline is sealed once" "1" "$(find "$SD" -maxdepth 1 -name 'doc-scheme-baseline-*' | wc -l | tr -d ' ')"
+rm -f "$SD"/doc-scheme-baseline-*
 
 # ---- workflow archive / trivial / overrides --------------------------------------
 fresh

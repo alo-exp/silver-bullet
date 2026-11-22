@@ -46,4 +46,20 @@ assert_file_exists "convergence: receipt written" "$RECEIPT_FILE"
 assert_eq "convergence: receipt lists the affected servers" '["graphify","leanctx","agentmemory"]' "$(jq -c .affected_servers "$RECEIPT_FILE")"
 assert_eq "convergence: batch env cleaned up" "" "${RT_PRE_CONFIG_HASHES:-}${RT_CHANGE_SET_ID:-}"
 
+# hosts whose hook patchers report back: their actions and failures reach the combined result, a changed hook
+# batch needs a restart, and only context-mode is named as affected by it (the MCP batch has nothing to patch here)
+RT_HOST=opencode; hr_consent "${ALL_ENABLED[@]}"
+assert_eq "convergence (opencode): plugins installed, context-mode affected" '{"actions":["opencode_rtk_plugin","opencode_context_mode_plugin"],"failures":[],"restart_required":true,"changed":true,"affected_servers":["context-mode"]}' "$(rt_apply_host_convergence_batches false | j)"
+assert_eq "convergence (opencode): patcher failures are reported, nothing restarts" '{"actions":[],"failures":["opencode_rtk_plugin_failed","opencode_context_mode_plugin_failed"],"restart_required":false,"changed":false,"affected_servers":[]}' "$(HR_PY_RC_merge_token=1 rt_apply_host_convergence_batches false | j)"
+# a hook batch that changed a host which consented only to rtk: restart needed, no server affected, and the reload
+# receipt is created with an empty server list
+RT_HOST=pi; hr_consent rtk=enabled
+rm -rf "$SB_RUNTIME_STATE_DIR/recommended-tools"
+assert_eq "convergence (pi, rtk only): restart with no affected server, receipt created" '{"actions":["pi_host_adapter","reload_receipt_created"],"failures":[],"restart_required":true,"changed":true,"affected_servers":[]}' "$(rt_apply_host_convergence_batches true | j)"
+PID="$(rt_project_id)"; WID="$(rt_worktree_id "$HR_PROJ")"
+RECEIPT_FILE="$(rt_receipt_list_paths pi "$PID" "$WID" | head -1)"
+assert_file_exists "convergence (pi, rtk only): receipt written" "$RECEIPT_FILE"
+assert_eq "convergence (pi, rtk only): receipt lists no affected server" '[]' "$(jq -c .affected_servers "$RECEIPT_FILE")"
+RT_HOST=claude
+
 tl_results

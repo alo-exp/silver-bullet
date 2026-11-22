@@ -32,6 +32,7 @@ printf '\nseeded drift\n' >>"$REF"                               # source edited
 mkdir -p "$FX/agents/claude/sb:stale-route"
 printf -- '---\nname: sb:stale-route\n---\n' >"$FX/agents/claude/sb:stale-route/SKILL.md"   # stray skill
 printf 'stale\n' >>"$PKG/templates/silver-bullet.md.base"       # hand-edited template mirror
+printf '\n' >>"$PKG/.codex-plugin/plugin.json"                  # hand-edited generated manifest (a single-file surface)
 rm "$PKG/hooks" && cp -R "$FX/hooks" "$PKG/hooks"               # link replaced by a stale copy
 mkdir -p "$PKG/skills/x"                                          # entry the sync would prune
 touch "$FX/skills/silver-feature/bad:name.md"                    # Windows-unsafe generated path
@@ -44,6 +45,7 @@ for drifted in \
   "plugins/silver-bullet/skill-source/sb-init/references/scaffold-steps.md" \
   "agents/claude/sb:stale-route/SKILL.md" \
   "plugins/silver-bullet/templates/silver-bullet.md.base" \
+  "plugins/silver-bullet/.codex-plugin/plugin.json" \
   "plugins/silver-bullet/hooks must be a symlink to ../../hooks" \
   "plugins/silver-bullet/skills (the sync would remove or create it)" \
   "agents/claude/sb:init/evil-link" \
