@@ -135,7 +135,7 @@ Set `orchestrator_mode` to `"parent"` in `.silver-bullet.json` (only supported m
 LOCKS_IGNORE='.planning/.phase-locks.json*'
 if [ -L .gitignore ]; then
   echo "Skipped .gitignore: it is a symlink. Add $LOCKS_IGNORE to it yourself."
-elif ! tr -d '\r' <.gitignore 2>/dev/null | grep -qxF "$LOCKS_IGNORE"; then
+elif ! grep -qxF "$LOCKS_IGNORE" < <(tr -d '\r' <.gitignore 2>/dev/null); then
   {
     [ -s .gitignore ] && echo ""
     echo "# Phase-lock runtime state — local, never committed (Silver Bullet)"

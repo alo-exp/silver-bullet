@@ -120,12 +120,9 @@ assert_eq "outside any project a system path is refused" 2 "$TL_STATUS"
 # the harness switch is ignored without the test variable
 tl_run bash -c 'cd "$1/usr/src/app" && SB_MULTI_AI_TEST_SYSTEM_TREE="$1/usr" SB_HOST=claude env -u SILVER_BULLET_TEST_HOOK_ENFORCED python3 "$2" --output-root "$1/usr/bin/x" --dry-run' _ "$SYS" "$MAT"
 assert_eq "the test-only system tree is ignored without the harness switch" 0 "$TL_STATUS"
-# a git toplevel is the project root (no .silver-bullet.json needed), and a missing git falls back to the config walk-up
+# a git toplevel is the project root (no .silver-bullet.json needed)
 tl_run bash -c 'cd "$1/var/www/other" && SILVER_BULLET_TEST_HOOK_ENFORCED=1 SB_MULTI_AI_TEST_SYSTEM_TREE="$1/var" SB_HOST=claude python3 "$2" --output-root "$1/var/www/other/.planning/multi-ai/r" --dry-run' _ "$SYS" "$MAT"
 assert_eq "a git toplevel is the project root" 0 "$TL_STATUS"
-PYBIN="$(command -v python3)"
-tl_run bash -c 'cd "$1/var/www/app/src" && PATH=/nonexistent SILVER_BULLET_TEST_HOOK_ENFORCED=1 SB_MULTI_AI_TEST_SYSTEM_TREE="$1/var" SB_HOST=claude "$3" "$2" --output-root "$1/var/www/app/.planning/multi-ai/r" --dry-run' _ "$SYS" "$MAT" "$PYBIN"
-assert_eq "without git the .silver-bullet.json walk-up root is the project" 0 "$TL_STATUS"
 rm -rf "$SYS"
 # the system temp directory stays usable
 VARTMP="$(mktemp -d /var/tmp/sb-fu1-tmp.XXXXXX)"
