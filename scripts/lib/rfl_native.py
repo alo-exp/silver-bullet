@@ -736,6 +736,31 @@ def _problem(path: Path, reason: str) -> str:
     return f"{_describe(path)} {UNSCANNABLE}{reason}]"
 
 
+class _NotRegular(Exception):
+    """The resolved target is not a regular file when it is opened."""
+
+
+def _read_agent_file(path: str, limit: int) -> bytes:
+    """Read at most limit + 1 bytes of the resolved file. It is opened without following a final link and without
+    blocking, and the opened descriptor must be a regular file: a path swapped for a FIFO or a device between the
+    stat and the read is refused instead of hanging the scan."""
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | getattr(os, "O_CLOEXEC", 0))
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise _NotRegular()
+        chunks: list[bytes] = []
+        left = limit + 1
+        while left > 0:
+            chunk = os.read(fd, min(left, 65536))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            left -= len(chunk)
+        return b"".join(chunks)
+    finally:
+        os.close(fd)
+
+
 class _AgentScan:
     """Scan agent folders by resolving links and reading the targets: only regular files are ever opened, every
     folder is entered once (by device and inode), and anything that cannot be scanned fully is reported."""
@@ -805,7 +830,14 @@ class _AgentScan:
             self.found.append(_problem(shown, f"larger than {MAX_AGENT_FILE_BYTES} bytes"))
             return
         try:
-            text = Path(entry.path).read_bytes().decode("utf-8")
+            data = _read_agent_file(os.path.realpath(entry.path), MAX_AGENT_FILE_BYTES)
+            if len(data) > MAX_AGENT_FILE_BYTES:
+                self.found.append(_problem(shown, f"larger than {MAX_AGENT_FILE_BYTES} bytes"))
+                return
+            text = data.decode("utf-8")
+        except _NotRegular:
+            self.found.append(_problem(shown, "not a regular file"))
+            return
         except UnicodeDecodeError:
             self.found.append(_problem(shown, "not UTF-8"))
             return

@@ -547,7 +547,8 @@ for g in live-publish-evidence-gate site-visual-evidence-gate; do
   dg_run "$P" "hooks/$g.sh" "$active_stop"
   assert_eq "loop: $g blocks the repeat Stop too (the agent can still clear it)" "block" "$(decision)"
   dg_run "$P" "hooks/$g.sh" "$active_stop"
-  assert_eq "loop: $g releases a condition that did not change after the limit" "" "$TL_OUT"
+  assert_contains "loop: $g releases a condition that did not change after the limit, and says so" "$(jq -r '.systemMessage // empty' <<<"$TL_OUT")" "released this Stop"
+  assert_eq "loop: the release notice is not a block" "none" "$(decision)"
   assert_contains "loop: the release is logged" "$(cat "$ST/stop-loop-release.log")" "$g released: unchanged after 2 consecutive blocks"
 done
 # a changed condition (another counted edit) starts the count again
@@ -570,13 +571,13 @@ dg_run "$P" hooks/site-regression-gate.sh "$stop_json"
 dg_run "$P" hooks/site-regression-gate.sh "$active_stop"
 assert_eq "loop: a failing suite is blocked on the repeat" "block" "$(decision)"
 dg_run "$P" hooks/site-regression-gate.sh "$active_stop"
-assert_eq "loop: and released only once it did not change after the limit" "" "$TL_OUT"
+assert_contains "loop: and released only once it did not change after the limit, visibly" "$(jq -r '.systemMessage // empty' <<<"$TL_OUT")" "site-regression-gate released this Stop"
 site_session
 rm -f "$P/tests/scripts/test-site-content-freshness.sh"
 dg_run "$P" hooks/site-regression-gate.sh "$stop_json"
 assert_eq "loop: a setup problem blocks the first Stop" "block" "$(decision)"
 dg_run "$P" hooks/site-regression-gate.sh "$active_stop"
-assert_eq "loop: a setup problem the agent cannot clear is released on the host's repeat" "" "$TL_OUT"
+assert_contains "loop: a setup problem the agent cannot clear is released on the host's repeat, visibly" "$(jq -r '.systemMessage // empty' <<<"$TL_OUT")" "gate setup problem"
 assert_contains "loop: and logged as a setup problem" "$(cat "$ST/stop-loop-release.log")" "gate setup problem (rc=90) (stop_hook_active)"
 git -C "$P" checkout -q -- tests/scripts
 # the v-loop gate
@@ -586,7 +587,7 @@ dg_run "$P" hooks/v-loop-rollup-gate.sh "$stop_json"
 dg_run "$P" hooks/v-loop-rollup-gate.sh "$stop_json"
 assert_eq "loop: the V-loop gate blocks twice" "block" "$(decision)"
 dg_run "$P" hooks/v-loop-rollup-gate.sh "$stop_json"
-assert_eq "loop: and then releases" "" "$TL_OUT"
+assert_contains "loop: and then releases, visibly" "$(jq -r ".systemMessage // empty" <<<"$TL_OUT")" "v-loop-rollup-gate released this Stop"
 dg_project "$P" "$PROFILE"
 
 tl_results

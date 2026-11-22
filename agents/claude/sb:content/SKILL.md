@@ -95,6 +95,6 @@ The state directory is protected: never write `site-visual-evidence.json` or `li
 - `live-publish-evidence-gate` — blocks Stop after a site push or a LIVE claim until fresh evidence for the current HEAD exists.
 - `subagent-stop-enforcement` — parent Stop requires `silver-completion-audit` after Task workers.
 
-A Stop gate is not a one-time warning: it keeps blocking until the condition is cleared, and releases only one that stayed unchanged for `site_profile.stop_block_limit` consecutive blocks (default 3) or that you cannot clear (a setup problem); releases are logged to `stop-loop-release.log`.
+A Stop gate is not a one-time warning: it keeps blocking while the condition changes or you can still clear it. It releases a Stop only for a condition that stayed unchanged for `site_profile.stop_block_limit` consecutive blocks (default 3) or that you cannot clear (a setup problem). A release is never silent: the user sees a notice naming the gate (the condition is still unresolved) and it is logged to `stop-loop-release.log`.
 
 See `silver-bullet.md` §8.2 and `AGENTS.md` publish policy.

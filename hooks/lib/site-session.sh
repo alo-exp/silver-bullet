@@ -204,12 +204,19 @@ _sb_site_stop_loop_log() { # GATE WHY
     >>"${SB_RUNTIME_STATE_DIR:-/tmp}/stop-loop-release.log" 2>/dev/null || true
 }
 
+# A release is shown to the user, not only logged: a systemMessage on stdout (the gate then exits 0).
+_sb_site_stop_loop_notice() { # GATE WHY
+  jq -cn --arg g "$1" --arg w "$2" \
+    '{systemMessage: ("Silver Bullet: \($g) released this Stop (\($w)). The condition it reported is still unresolved; it is logged in stop-loop-release.log. Clear it before you finish or deliver.")}'
+}
+
 # sb_site_stop_loop_release GATE INPUT FINGERPRINT [UNCLEARABLE]: status 0 = release (do not block this Stop).
 sb_site_stop_loop_release() {
   local gate="$1" input="${2:-}" fp="${3:-}" unclearable="${4:-}" f prior
   f="$(_sb_site_stop_loop_file)"
   if [[ -n "$unclearable" && "$(printf '%s' "$input" | jq -r '.stop_hook_active // false' 2>/dev/null)" == "true" ]]; then
     _sb_site_stop_loop_log "$gate" "$unclearable (stop_hook_active)"
+    _sb_site_stop_loop_notice "$gate" "$unclearable"
     return 0
   fi
   prior=0
@@ -219,6 +226,7 @@ sb_site_stop_loop_release() {
   [[ "$prior" =~ ^[0-9]+$ ]] || prior=0
   if ((prior >= SB_SITE_STOP_LIMIT)); then
     _sb_site_stop_loop_log "$gate" "unchanged after $prior consecutive blocks ($fp)"
+    _sb_site_stop_loop_notice "$gate" "after $prior identical blocks"
     sb_site_stop_loop_reset "$gate"
     return 0
   fi

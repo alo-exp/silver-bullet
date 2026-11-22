@@ -157,7 +157,72 @@ class ResolvedLinks(Fire):
         self.assertIn("rename or move it", self.reason(self.fire(self.spawn_payload(issued))))
 
 
-class Corners(ResolvedLinks):
+class SafeRead(ResolvedLinks):
+    """The scan opens the resolved file O_NOFOLLOW|O_NONBLOCK, requires a regular file by fstat and reads at most limit+1."""
+
+    def test_the_file_is_opened_without_following_links_and_without_blocking(self):
+        self.agent_file("ok.md", HARMLESS)
+        flags = []
+        real_open = os.open
+
+        def spy(path, fl, *a, **k):
+            flags.append(fl)
+            return real_open(path, fl, *a, **k)
+        from unittest import mock
+        with mock.patch.object(native.os, "open", side_effect=spy):
+            self.assertEqual(native.shadow_agent_files(self.root), [])
+        self.assertTrue(flags)
+        self.assertTrue(all(f & os.O_NOFOLLOW and f & os.O_NONBLOCK for f in flags))
+
+    def test_a_file_swapped_for_a_fifo_after_the_stat_is_refused_not_hung(self):
+        from unittest import mock
+        import stat as st
+        self.agent_file("swap.md", HARMLESS)
+        fake = os.stat_result((st.S_IFIFO | 0o644, 0, 0, 1, 0, 0, 0, 0, 0, 0))
+        with mock.patch.object(native.os, "fstat", return_value=fake):
+            found = native.shadow_agent_files(self.root)
+        self.assertEqual(len(found), 1)
+        self.assertIn("not a regular file", found[0])
+
+    def test_a_real_fifo_is_never_blocked_on_even_when_it_replaces_the_file_after_the_stat(self):
+        from unittest import mock
+        self.agent_file("race.md", HARMLESS)
+        victim = self.agents / "race.md"
+        real_open = os.open
+
+        def swap_then_open(path, fl, *a, **k):
+            os.unlink(path)
+            os.mkfifo(path)
+            return real_open(path, fl, *a, **k)
+        with mock.patch.object(native.os, "open", side_effect=swap_then_open):
+            found = native.shadow_agent_files(self.root)
+        self.assertTrue(victim.exists())
+        self.assertIn("not a regular file", found[0])
+
+    def test_a_file_that_grows_after_the_stat_is_cut_at_the_limit(self):
+        from unittest import mock
+        self.agent_file("grow.md", HARMLESS)
+        real_open = os.open
+        reads = []
+        real_read = os.read
+
+        def grow_then_open(path, fl, *a, **k):
+            with open(path, "ab") as fh:
+                fh.write(b"x" * (native.MAX_AGENT_FILE_BYTES + 4096))
+            return real_open(path, fl, *a, **k)
+
+        def spy_read(fd, n):
+            data = real_read(fd, n)
+            reads.append(len(data))
+            return data
+        with mock.patch.object(native.os, "open", side_effect=grow_then_open), mock.patch.object(native.os, "read", side_effect=spy_read):
+            found = native.shadow_agent_files(self.root)
+        self.assertEqual(len(found), 1)
+        self.assertIn("larger than", found[0])
+        self.assertLessEqual(sum(reads), native.MAX_AGENT_FILE_BYTES + 1)
+
+
+class Corners(SafeRead):
     def test_other_stat_errors_are_reported_as_unreadable(self):
         import errno
         self.assertIn("unreadable", native._stat_reason(OSError(errno.EACCES, "Permission denied")))
@@ -176,7 +241,7 @@ class Corners(ResolvedLinks):
         (self.agents / "a.md").write_text(HARMLESS)
         with mock.patch.object(native.os, "scandir", side_effect=PermissionError(13, "denied")):
             self.assertIn("unreadable", native.shadow_agent_files(self.root)[0])
-        with mock.patch("pathlib.Path.read_bytes", side_effect=PermissionError(13, "denied")):
+        with mock.patch.object(native.os, "open", side_effect=PermissionError(13, "denied")):
             self.assertIn("unreadable", native.shadow_agent_files(self.root)[0])
 
     def test_the_total_cap_is_reported_once(self):
