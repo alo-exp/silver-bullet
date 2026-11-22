@@ -154,11 +154,12 @@ sb-consent.sh grant|decline|revoke TOOL (--project DIR | --all-projects)
 ```
 
 `TOOL` is a tool id or `all`. `--project DIR` records `enforce` for that project (and
-`install`/`wire` for the machine, since they are machine-wide); `--all-projects` records every
+`install`/`wire` for the machine when they are in the capability list, which is the default, since they are machine-wide); `--all-projects` records every
 listed capability for the machine. Exit status: 0 success, 1 `check` not granted, 2 error, 64
 usage error.
 
-Example: `bash scripts/sb-consent.sh grant graphify --project "$PWD" --source "user said yes"`.
+Example, enforcement for one project only: `bash scripts/sb-consent.sh grant graphify --project "$PWD" --capabilities enforce --source "user said yes"`.
+Leaving out `--capabilities` records all three capabilities, so `grant graphify --project "$PWD"` also grants machine-wide `install` and `wire` consent: the installers and `reconcile-recommended-tools.sh` then proceed with package installs and `~/.claude.json` wiring on this machine. Grant that only when you mean it.
 
 Scripts that install or wire a tool should call `sb-consent.sh check TOOL install` (or `wire`)
 and print the `grant` command when it fails instead of proceeding.
