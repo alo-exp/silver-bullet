@@ -148,7 +148,7 @@ Every target wraps a script you can also run directly. `make lint` fails on any 
 
 ## Commit Conventions
 
-Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`, with an optional scope (`fix(ci):`, `chore(release):`). Keep the subject imperative and under about 72 characters, and explain the why in the body. A commit that fixes red CI should start with `fix(ci):` or `ci:` (or contain `[ci-fix]`) so `hooks/ci-status-check.sh` lets the push through.
+Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`, with an optional scope (`fix(ci):`, `chore(release):`). Keep the subject imperative and under about 72 characters, and explain the why in the body. A commit that fixes red CI is conventionally `fix(ci):`; the prefix is only a label, since `hooks/ci-status-check.sh` lets a push through red CI only when every changed file is under `.github/workflows/` or `tests/` (or is `package.json`).
 
 ## Pull Request Process
 
