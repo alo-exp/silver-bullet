@@ -431,7 +431,8 @@ class BudgetTest(Base):
     def test_a_huge_command_is_judged_within_the_budget(self):
         res = self.timed("true;" * 200000 + " sed -i s/x/y/ src/app.py", 20)   # over the input cap: not parsed at all
         self.assertEqual((res["possible_actions"], res["opaque_reasons"]), (["unseen"], ["command too large to analyze"]))
-        res = self.timed("true;" * 80000 + " sed -i s/x/y/ src/app.py", 20)    # under the cap: the parse budget ends it
+        with mock.patch.object(sa, "MAX_PARSE_SECONDS", 0.01):  # a fast machine parses 400 KB inside 1 s: shrink the budget so the budget, not the speed, ends it
+            res = self.timed("true;" * 80000 + " sed -i s/x/y/ src/app.py", 20)    # under the cap: the parse budget ends it
         self.assertEqual((res["status"], effective(res)), ("parse_failed", "completion"))
         with mock.patch.object(sa, "MAX_INPUT_CHARS", 1000):
             res = self.timed("true;" * 500 + " gh pr create", 12)
