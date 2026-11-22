@@ -135,7 +135,7 @@ Skill invocations are recorded to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`
 
 ### SB OVERRIDE (audited escape hatch)
 
-When a blocking orchestrator directive cannot be satisfied, include in your next user message:
+When a blocking orchestrator directive cannot be satisfied, start your next user message with this on its first line (upper case; a reason of 12+ characters with at least two real words, otherwise it is not honoured):
 
 `SB OVERRIDE: <reason>`
 
@@ -147,7 +147,7 @@ The hook logs the override to `.planning/orchestrator-override-log.jsonl` and cl
 
 ### Shared Libraries (`hooks/lib/`)
 
-`hooks/lib/` holds about sixty sourced helpers; none is registered as a hook. [docs/HOOKS.md](docs/HOOKS.md#shared-libraries-hookslib) lists every file by group. The ones most hooks depend on:
+`hooks/lib/` holds some seventy sourced helpers; none is registered as a hook. [docs/HOOKS.md](docs/HOOKS.md#shared-libraries-hookslib) lists every file by group. The ones most hooks depend on:
 
 | Group | Files | Role |
 |-------|-------|------|
@@ -162,7 +162,7 @@ The hook logs the override to `.planning/orchestrator-override-log.jsonl` and cl
 
 Every skill is a single `SKILL.md` file with YAML frontmatter (`name`, `description`, optional `argument-hint`). The **composable flow skills** are orchestrators that sequence other skills:
 
-- `silver-feature` — 20-step app development workflow
+- `silver-feature` — feature workflow (composes the catalog flows)
 - `silver-ui` — UI variant of silver-feature, adds UI phase and review steps
 - `silver-bugfix` — diagnosis-first bug fix workflow
 - `silver-release` — cross-artifact review → deploy-checklist → ship ordering

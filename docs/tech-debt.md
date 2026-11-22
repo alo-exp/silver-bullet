@@ -9,7 +9,6 @@ Format: `| Item | Severity | Effort | Status |`. Priority score = (Impact + Risk
 | Item | Severity | Effort | Status |
 |------|----------|--------|--------|
 | Without `jq`, `hooks/completion-audit.sh` blocks `git commit`, `git push`, `gh pr create`, `gh release create` and deploy commands even outside an SB project (its jq fallback runs before the project-activation check), contradicting "enforcement engages only in initiated projects" | Medium | Low | Open (found 2026-10-17) |
-| The release-gate message for an incomplete SENTINEL manifest in `hooks/lib/completion-audit/deploy-tier.sh` hard-codes "85/85 clean rows"; the canonical skill count is now derived from `skills/*/SKILL.md` | Low | Low | Open (found 2026-10-17) |
 | `scripts/install-claude.sh` falls back to a maintainer-specific absolute path for the `claude` binary when it is not on `PATH` | Low | Low | Open (found 2026-10-17) |
 | `multi_agent.delegation_timeout_seconds` is in the config template and described in `docs/multi-agent-coordination.md`, but no script reads it | Low | Low | Open (found 2026-10-17) |
 | `skills/silver-create-release` generates release notes with `##` section headings and inserts them under the `## [X.Y.Z]` heading of `CHANGELOG.md`, so each release reintroduces same-level subsections (normalized to `###` on 2026-10-17) | Low | Low | Open (found 2026-10-17) |
