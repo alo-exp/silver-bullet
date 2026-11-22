@@ -51,7 +51,7 @@ Autonomous mode is not "no rules." It is **process-autonomous with evidence-auto
 | Capability | Evidence |
 |------------|----------|
 | **APO catalog as sole composition authority** | `docs/apo-catalog.json`; generated [`docs/composable-flows-contracts.md`](composable-flows-contracts.md) ([`silver-bullet.md`](../silver-bullet.md) §APO catalog authority) |
-| **Parent-only orchestrator mode** | Default `orchestrator_mode: parent`; parent blocked from Edit/Write/Bash on source at tier ≥ 2 ([`docs/ORCHESTRATOR.md`](ORCHESTRATOR.md)) |
+| **Parent-only orchestrator mode** | Default `orchestrator_mode: parent`; parent blocked from Edit/Write/Bash on source at tier ≥ 2 on Claude Code; inactive on Codex until it identifies workers ([`docs/ORCHESTRATOR.md`](ORCHESTRATOR.md)) |
 | **Eight composer workflows + 27 `AF-*` atomic flows** | Feature, bugfix, UI, devops, research, release, fast, clarify ([`silver-bullet.md`](../silver-bullet.md) §2h; [`docs/composable-flows-contracts.md`](composable-flows-contracts.md)) |
 | **Hook-enforced lifecycle** | Planning floor, completion audit, outcomes-check, stop hook ([`silver-bullet.md`](../silver-bullet.md) §1) |
 | **Autonomous session mode** | Mode file, anti-stall, structured commentary ([`silver-bullet.md`](../silver-bullet.md) §2f, §4) |
