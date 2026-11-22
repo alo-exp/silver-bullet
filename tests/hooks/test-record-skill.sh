@@ -304,6 +304,23 @@ cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" >/dev/null 2>/dev/null 
 assert_not_in_state "Edit tool event does not record anything" "Edit"
 teardown
 
+# Test 12a: only a PostToolUse event records. The same Skill payload under another event name, or with no event name
+# at all, exits 0 without recording anything (a PreToolUse event is not a completed skill).
+setup
+for ev in PreToolUse UserPromptSubmit ""; do
+  input=$(jq -n --arg e "$ev" '{hook_event_name: $e, tool_name: "Skill", tool_input: {skill: "silver-quality-gates"}}')
+  rc=0; (cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" >/dev/null 2>&1) || rc=$?
+  if [[ "$rc" == 0 ]]; then echo "  ✅ event '${ev:-<none>}' exits 0"; PASS=$((PASS + 1)); else echo "  ❌ event '${ev:-<none>}' exited $rc"; FAIL=$((FAIL + 1)); fi
+  assert_not_in_state "event '${ev:-<none>}' records no skill" "silver-quality-gates"
+done
+input=$(jq -n '{tool_name: "Skill", tool_input: {skill: "silver-quality-gates"}}')
+rc=0; (cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" >/dev/null 2>&1) || rc=$?
+if [[ "$rc" == 0 ]]; then echo "  ✅ a payload without hook_event_name exits 0"; PASS=$((PASS + 1)); else echo "  ❌ missing event exited $rc"; FAIL=$((FAIL + 1)); fi
+assert_not_in_state "a payload without hook_event_name records no skill" "silver-quality-gates"
+run_hook "silver-quality-gates" >/dev/null
+assert_in_state "the same skill under PostToolUse is recorded" "silver-quality-gates"
+teardown
+
 # Test 12b: Codex shell reads of SKILL.md are loaded-only, not completed skills
 setup
 run_hook_bash "cat \"$REPO_ROOT/skills/silver-quality-gates/SKILL.md\"" >/dev/null

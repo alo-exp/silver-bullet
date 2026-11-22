@@ -10,7 +10,9 @@ source "${SCRIPT_DIR}/pre-release-host-isolation.sh"
 # shellcheck source=scripts/lib/agent-bundle-paths.sh
 source "${SCRIPT_DIR}/agent-bundle-paths.sh"
 
-HOST="" MODE="" SCOPE="default"
+HOST=""
+MODE=""
+SCOPE="default"
 RUN_CLAIMS=0
 
 while [[ $# -gt 0 ]]; do

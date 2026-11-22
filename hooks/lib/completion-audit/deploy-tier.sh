@@ -39,8 +39,7 @@ ca_surface_change_ok() {
   read -r omode nmode _ _ status <<<"${meta#:}"
   # Symlinks, submodules and mode/type changes are never release surface.
   [[ "$omode" == "$nmode" || "$omode" == 000000 || "$nmode" == 000000 ]] || return 1
-  [[ "$omode" != 120000 && "$nmode" != 120000 && "$omode" != 160000 && "$nmode" != 160000 ]] || return 1
-  [[ "$status" != T ]] || return 1
+  [[ "$status" != T && "$omode" != 120000 && "$nmode" != 120000 && "$omode" != 160000 && "$nmode" != 160000 ]] || return 1
   while IFS= read -r line; do
     case "$line" in ''|'#'*) continue ;; esac
     kind="${line%% *}"

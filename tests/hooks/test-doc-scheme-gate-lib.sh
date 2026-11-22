@@ -170,6 +170,19 @@ assert_file_absent "enforce: a complete checklist at an out-of-scope granularity
 setup_repo; low_gran_empty; printf 'silver-fast\n' >"$ST/state"
 (unset -f sb_integrity_state_contents; ER=0; sb_doc_scheme_gate_enforce task "$R" "$ST" emit) || true
 assert_contains "enforce: without the verified-state accessor nothing counts as recorded" "$(cat "$EMITTED")" "Missing checklist entry"
+# an accessor that is present but fails (an unreadable or unverifiable state) credits nothing and does not abort the
+# gate: the failure is tolerated, the recorded skill is not counted, and the delivery check still blocks
+setup_repo; low_gran_empty; printf 'silver-fast\n' >"$ST/state"
+(sb_integrity_state_contents() { return 1; }; ER=0; sb_doc_scheme_gate_enforce task "$R" "$ST" emit) || true
+assert_contains "enforce: a failing verified-state accessor credits no recorded skill" "$(cat "$EMITTED")" "Missing checklist entry"
+(sb_integrity_state_contents() { return 1; }; sb_doc_scheme__state_has_skill "$ST" silver-fast) && r=0 || r=$?
+assert_eq "state_has_skill: a failing accessor that printed nothing reports the skill as not recorded" 1 "$r"
+# under errexit (how a hook runs) a failing accessor must not abort the caller: what it printed before failing is
+# still read, so the call completes and the script goes on (a standalone shell: set -e is ignored inside `||` lists)
+r=0
+out="$(bash -c 'set -e; source "$1"; sb_integrity_state_contents() { printf "silver-fast\n"; return 1; }
+  sb_doc_scheme__state_has_skill "$2" silver-fast; echo reached' _ "$TL_REPO_ROOT/hooks/lib/doc-scheme-gate.sh" "$ST" 2>&1)" || r=$?
+assert_eq "state_has_skill: a failing accessor does not abort an errexit caller" "0:reached" "$r:$out"
 rm -f "$ST/state"
 setup_repo; jq '.task_granularity="two"' "$R/docs/task-doc-checklist.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/task-doc-checklist.json"; run_enforce
 assert_contains "enforce: non-numeric granularity" "$(cat "$EMITTED")" "Missing numeric task granularity"
