@@ -110,7 +110,7 @@ auto-create it. The trivial file is a legacy compatibility escape hatch only.
 **Subagent commits**: Every git commit MUST use HEREDOC format and end with:
 Co-Authored-By: host-appropriate co-author line
 
-> **Stop hook false-positive audit**: For a full catalogue of known bail-out scenarios, reproduction steps, and dispositions, see `docs/internal/stop-hook-audit.md` in the Silver Bullet source repository (not shipped with the plugin).
+> **Stop hook false-positive audit**: For a full catalogue of known bail-out scenarios, reproduction steps, and dispositions, see `docs/internal/stop-hook-audit.md` in the Silver Bullet source repository.
 
 ---
 
