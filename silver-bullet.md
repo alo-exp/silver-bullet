@@ -70,7 +70,7 @@ Twelve enforcement layers enforce compliance:
 
 Further gates run beside these layers: spec floor and UAT gates, phase archive and phase locks,
 orchestrator parent-mode guards, site-session gates, and the opt-in tool gates (§2g-i to §2g-iii). Silver
-Bullet's hook reference (`docs/HOOKS.md` in the plugin) lists every registered hook.
+Bullet's hook reference (`docs/HOOKS.md` in the plugin) lists every registered hook. The Silver Bullet reference docs named in this file (`docs/HOOKS.md`, `docs/RUNTIME-COMPATIBILITY.md`, `docs/CONSENT.md` and the tool guides) ship with the installed plugin, not with your project: open them from the plugin's own `docs/` folder.
 
 **Enforcement model**: Hooks combine **invocation tracking** with **outcome checks**.
 `record-skill.sh` records that a skill was *called*. Delivery gates and
@@ -410,7 +410,7 @@ Install and wiring: `docs/LEANCTX.md`. Stack optimizer (Phase 2): `bash scripts/
 
 **Recovery when wedged (`sb_stack_double_compression`):** The stack compression mutex is global (`${SB_RUNTIME_STATE_DIR}/stack-compression-mutex`) — subagents share it and cannot bypass a dirty mutex. When wedged, prior tool self-reports from the host model may be unreliable; verify with fresh tool calls after recovery. Escape hatches: complete one compliant routed-owner tool call (e.g. `ctx_search`, `lctx_read_ast`, RTK Bash without LeanCTX shell rewrite), run `/sb:clear-stack-state`, or `bash scripts/sb-doctor.sh --fix` (check **D20**). See `docs/LEANCTX.md` Recovery section.
 
-**Operating guide:** Read [`docs/LEANCTX-OPERATING-GUIDE.md`](docs/LEANCTX-OPERATING-GUIDE.md) for practical routing, timeout, allowlist, output, and edit-safety guidance before using LeanCTX.
+**Operating guide:** Read `docs/LEANCTX-OPERATING-GUIDE.md` (in the installed plugin) for practical routing, timeout, allowlist, output, and edit-safety guidance before using LeanCTX.
 
 <!-- BEGIN context-mode hint (do not edit) -->
 ## Context Mode usage
@@ -432,7 +432,7 @@ For everything else, use your normal tools. RTK handles shell command output aut
 
 Silver Bullet workflows are composed from the APO catalog in `docs/apo-catalog.json`: canonical `AF-*` atomic flows, reusable workflow components, flow-step V-loops, evidence records, and runtime token mappings. Legacy FLOW 1-18 labels are migration aliases only. The `/sb` orchestrator classifies context and composes an ordered chain of catalog-backed atoms tailored to the task.
 
-**Parent orchestrator mode (default, only mode):** The parent session NEVER implements directly. It reads `orchestrator-directive.json`, spawns **Task workers** using `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`, and advances the queue via hooks. Composer skills (`sb:feature`, `sb:ui`, …) are queue builders — not inline execution instructions. See `docs/ORCHESTRATOR.md`.
+**Parent orchestrator mode (default, only mode on Claude Code):** The parent session NEVER implements directly. Codex does not identify workers in hook payloads, so there parent-mode blocks are inactive (`SB_ORCHESTRATOR_PARENT=1` forces them). It reads `orchestrator-directive.json`, spawns **Task workers** using `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`, and advances the queue via hooks. Composer skills (`sb:feature`, `sb:ui`, …) are queue builders — not inline execution instructions. See `docs/ORCHESTRATOR.md`.
 
 **SB OVERRIDE (audited escape hatch):** When a blocking orchestrator directive cannot be satisfied, start your next user message with `SB OVERRIDE: <reason>` (first line, upper case, a real reason of 12+ characters and at least two words). The UserPromptSubmit hook checks the host's prompt payload (it needs the host `session_id` from a parent session, never a worker or delegate, and, when the host sends one, a transcript path under the host's runtime root with symlinks resolved; while a Task worker marker is still fresh the prompt must also be the recorded parent session's own and must carry the host's `transcript_path`, so on a host that sends none the override is refused until the marker is deleted or lapses after 2 hours), writes a hash-chained record with the session id and prompt hash to `.planning/orchestrator-override-log.jsonl` first, and only then clears the pending directive and abandons the flow queue, so the orchestrator no longer holds Stop. The override message is itself a prompt: when it reads as work it seeds its own outcome checklist (route, plan, verify), and that checklist can still hold Stop. It does not lift parent-mode tool restrictions or any other PreToolUse gate. A mention later in a message, a pasted denial text, or a log that cannot be written leaves everything in force. Use sparingly — overrides are audited, not silent bypasses.
 
@@ -863,7 +863,7 @@ and log "Mode fallback: defaulted to interactive" in the session log.
 
 Silver Bullet does not provide a generic automatic model-routing layer. The historical `ensure-model-routing.sh` hook is disabled and is not part of the active model-selection contract. Use the model selected by the current host session unless the host runtime or an external tool explicitly configures a different model.
 
-See [`docs/RUNTIME-COMPATIBILITY.md`](docs/RUNTIME-COMPATIBILITY.md) for the boundary between SB-owned workflow composition and host/tool-owned model choice.
+See `docs/RUNTIME-COMPATIBILITY.md` (in the installed plugin) for the boundary between SB-owned workflow composition and host/tool-owned model choice.
 
 **Session model:** Use the active host session model for inline work, interactive skills, and user-facing conversation.
 
