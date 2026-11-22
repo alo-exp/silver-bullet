@@ -660,7 +660,7 @@ rt_apply_host_hooks_batch() {
       '{actions:$actions,failures:$failures,changed:$changed}'
     return 0
   fi
-  # claude and codex: their installers own the hook files, so this batch never changes anything here
+  # every host but opencode and pi (claude, codex, ...): their installers own the hook files, so this batch changes nothing here
   jq -n \
     --argjson actions "$(rt_json_string_array ${actions[@]+"${actions[@]}"})" \
     --argjson failures "$(rt_json_string_array ${failures[@]+"${failures[@]}"})" \
