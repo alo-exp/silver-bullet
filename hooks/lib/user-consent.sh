@@ -201,7 +201,7 @@ _sb_consent_claim_name() { # NAME: status 0 for a claim file name this protocol 
 
 _sb_consent_claim_stale() { # CLAIM: status 0 when the process that wrote CLAIM is gone or it is far too old
   local claim="$1" pid=""
-  read -r pid _ <"$claim" 2>/dev/null || true
+  { read -r pid _ <"$claim"; } 2>/dev/null || true
   if [[ "$pid" =~ ^[0-9]+$ ]]; then
     # kill -0 also fails for a live process of another user (EPERM): only a pid ps does not list is dead
     if ! kill -0 "$pid" 2>/dev/null && ! ps -p "$pid" >/dev/null 2>&1; then return 0; fi
@@ -239,7 +239,7 @@ _sb_consent_lock_try() { # LOCK: one attempt; status 0 holding it (the claim is 
   # BASHPID is this (sub)shell; $$ is the top-level shell and the only choice before Bash 4
   _sb_cl_pid="$$"; [[ "${BASHPID:-}" =~ ^[0-9]+$ ]] && _sb_cl_pid="$BASHPID"
   claim="${lock}/claim.${_sb_cl_pid}.${RANDOM}${RANDOM}"
-  if printf '%s' "$_sb_cl_pid" >"$claim" 2>/dev/null; then
+  if { printf '%s' "$_sb_cl_pid" >"$claim"; } 2>/dev/null; then
     for entry in "$lock"/*; do
       [[ -e "$entry" ]] && names="${names}${entry##*/} "
     done
