@@ -135,11 +135,8 @@ run_fresh_install() {
   while IFS= read -r arg; do
     [[ -n "$arg" ]] && extra+=("$arg")
   done < <(host_install_args "$host")
-  if ((${#extra[@]} > 0)); then
-    RTK_DISABLED=1 bash "$script" "${extra[@]}"
-  else
-    RTK_DISABLED=1 bash "$script"
-  fi
+  # codex and claude always get at least their purge flag; the expansion stays safe for an empty list on Bash 3.2
+  RTK_DISABLED=1 bash "$script" ${extra[@]+"${extra[@]}"}
 }
 
 run_install_smoke() {

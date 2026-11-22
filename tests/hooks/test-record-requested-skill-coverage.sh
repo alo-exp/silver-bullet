@@ -51,6 +51,13 @@ reset; tg2_run "$HOOK" ""
 assert_noop "empty stdin is a no-op"
 reset; TG2_STDIN_UNREADABLE=1 tg2_run "$HOOK" ""
 assert_noop "unreadable stdin is a no-op"
+# a stdin the hook cannot read at all (cat itself fails, whatever the descriptor): the `|| true` keeps the hook alive
+# and it answers with the no-op payload instead of recording a route from a prompt it never saw
+reset; tl_stub cat 'exit 1'
+run 'run `sb:feature` now'
+rm -f "$TL_BIN/cat"
+assert_noop "a failing cat on stdin is a no-op"
+assert_file_absent "a failing cat on stdin records no route" "$REQ"
 reset; tg2_run "$HOOK" "not json"
 assert_noop "unparsable stdin is a no-op"
 assert_file_absent "unparsable stdin creates no requested file" "$REQ"

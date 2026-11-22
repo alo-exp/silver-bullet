@@ -56,6 +56,12 @@ class ShimDelegationTests(unittest.TestCase):
         run_path, _ = exec_shim(CLAUDE_SHIM, [], glob_result=fake)
         run_path.assert_called_once_with("/x/install-a/merge-hooks.py", run_name="__main__")
 
+    def test_shim_without_an_installer_lib_stops_with_a_clear_message(self) -> None:
+        with self.assertRaises(SystemExit) as caught:
+            exec_shim(CLAUDE_SHIM, ["/some/install"], glob_result=[])
+        self.assertEqual(str(caught.exception), "merge-hooks shim: no installer merge-hooks.py found")
+
+
 class ShimEndToEndTests(unittest.TestCase):
     def setUp(self) -> None:
         tmp = tempfile.TemporaryDirectory()

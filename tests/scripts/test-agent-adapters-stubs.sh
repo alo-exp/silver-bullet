@@ -351,6 +351,11 @@ stub_cli expect "$TL_TMP/bins/expect" "printf 'expect-ran mode=%s model=%s clean
 ad claude 'agent_invoke permissive "/silver go"' CLAUDE_BIN="$KB/claude" PATH="$TL_TMP/bins/expect:$PATH" SB_ROOT="$TL_REPO_ROOT" CLAUDE_INTERACTIVE_LOG_FILE="$TL_TMP/cl.log" SB_E2E_MATRIX_EVIDENCE_PATH=/ev SB_E2E_ENTERPRISE_MATRIX=1 SB_E2E_MATRIX_ROUTING_ROW=r1 SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1
 assert_contains "claude: interactive path runs expect with the mapped permission mode" "$TL_OUT" "expect-ran mode=bypassPermissions"
 assert_contains "claude: interactive log file passed" "$TL_OUT" "log=$TL_TMP/cl.log"
+# the caller's gateway variables are handed to the spawned TUI one by one (settings export skipped): a value that
+# itself contains '=' and a query string survives intact, and an unset variable is not passed
+stub_cli expect "$TL_TMP/bins/expect-gw" "printf 'gw=%s auth=%s\n' \"\${ANTHROPIC_BASE_URL:-unset}\" \"\${ANTHROPIC_AUTH_TOKEN:-unset}\""
+ad claude 'agent_invoke strict "/silver go"' CLAUDE_BIN="$KB/claude" PATH="$TL_TMP/bins/expect-gw:$PATH" SB_ROOT="$TL_REPO_ROOT" SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 ANTHROPIC_BASE_URL='https://gw.example.test/v1?x=1&y=2'
+assert_contains "claude: a gateway URL with '=' reaches the interactive spawn intact" "$TL_OUT" "gw=https://gw.example.test/v1?x=1&y=2 auth=unset"
 ad claude 'agent_invoke strict "/silver go"' CLAUDE_BIN="$KB/claude" PATH="$TL_TMP/bins/expect:$PATH" SB_ROOT="$TL_REPO_ROOT"
 assert_contains "claude: strict interactive uses acceptEdits" "$TL_OUT" "mode=acceptEdits"
 ad claude 'agent_invoke strict "/silver go"' CLAUDE_BIN="$KB/claude" PATH="$TL_TMP/bins/expect:$PATH" SB_ROOT="$TL_REPO_ROOT" SB_E2E_MATRIX_CLEAN_ENV=1

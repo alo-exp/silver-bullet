@@ -411,22 +411,27 @@ def build_atomic_flows(flow_steps: list[dict], flow_to_steps: dict[str, list[str
     return atomic_flows, evidence_records
 
 
+def apply_delivery_floor(queue: list[str], tdd: bool = True) -> list[str]:
+    """Delivery floor (mirrors sb_orchestrator_apply_deploy_floor): required_deploy skills with no queue token.
+
+    A queue that does not reach the review-triage and ship steps is returned unchanged."""
+    if "silver-ship" not in queue or "silver-review-triage" not in queue:
+        return queue
+    out = []
+    for token in queue:
+        if tdd and token == "silver-execute" and "tdd" not in queue:
+            out.append("tdd")
+        out.append(token)
+        if token == "silver-review-triage" and "silver-triage" not in queue:
+            out.append("silver-triage")
+        if token == "silver-verify" and "verify-tests" not in queue:
+            out.append("verify-tests")
+    return out
+
+
 def build_workflows() -> list[dict]:
     n = composition_node
-    def df(queue, tdd=True):
-        """Delivery floor (mirrors sb_orchestrator_apply_deploy_floor): required_deploy skills with no queue token."""
-        if "silver-ship" not in queue or "silver-review-triage" not in queue:
-            return queue
-        out = []
-        for token in queue:
-            if tdd and token == "silver-execute" and "tdd" not in queue:
-                out.append("tdd")
-            out.append(token)
-            if token == "silver-review-triage" and "silver-triage" not in queue:
-                out.append("silver-triage")
-            if token == "silver-verify" and "verify-tests" not in queue:
-                out.append("verify-tests")
-        return out
+    df = apply_delivery_floor
 
     feature_queue = [
         "FLOW-QUALITY-GATE", "silver-context", "silver-plan", "silver-validate",

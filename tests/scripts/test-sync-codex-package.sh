@@ -362,6 +362,15 @@ else
   fail "sync-codex-package preflight destroyed templates ($_templates_before -> $_templates_after)"
 fi
 
+# codex-sanitize-package.sh: with no package root it prints its usage on stderr, exits 2 and touches nothing
+_san_rc=0
+_san_err="$(bash "$SOURCE_REPO_ROOT/scripts/codex-sanitize-package.sh" 2>&1 >/dev/null)" || _san_rc=$?
+if [[ "$_san_rc" -eq 2 && "$_san_err" == "Usage: codex-sanitize-package.sh <package-root> [<package-root> ...]" ]]; then
+  pass "codex-sanitize-package without a package root prints its usage and exits 2"
+else
+  fail "codex-sanitize-package without a package root prints its usage and exits 2 (rc=$_san_rc err=$_san_err)"
+fi
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]

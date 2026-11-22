@@ -52,6 +52,16 @@ assert_eq "cross: route drift" "repairable|none|route_ownership_drift|true" "$(p
 cfg_with null "${ALL_ENABLED[@]}"
 rm -f "$HOME/.claude/settings.json"
 assert_eq "cross: shell owner is not rtk" "repairable|none|shell_owner_not_rtk|true" "$(pct)"
+# plugin hosts whose rtk shell wiring exists but is the wrong shape: each follow-up probe names its own evidence
+mkdir -p "$HOME/.config/opencode/plugins" "$HOME/.pi/agent/extensions/silver-bullet-five-tool-stack" "$HOME/.pi/agent/extensions/pi-lean-ctx"
+RT_HOST=opencode
+echo 'rtk plugin that also calls lean-ctx rewrite' >"$HOME/.config/opencode/plugins/rtk.ts"
+assert_eq "cross: opencode rtk plugin carrying a lean-ctx rewrite" "repairable|none|leanctx_shell_rewrite|true" "$(pct)"
+RT_HOST=pi
+echo '{"rtk":true}' >"$HOME/.pi/agent/extensions/silver-bullet-five-tool-stack/config.json"
+rm -f "$HOME/.pi/agent/extensions/pi-lean-ctx/config.json"
+assert_eq "cross: pi with lean-ctx still routing the shell (rtk after context-mode)" "repairable|none|hook_order_rtk_after_cm|true" "$(pct)"
+RT_HOST=claude
 echo '{"hooks":{"preToolUse":[{"command":"rtk hook claude"},{"command":"context-mode hook claude pretooluse"}]}}' >"$HOME/.claude/settings.json"
 assert_eq "cross: heartbeat absent" "repairable|none|heartbeat_absent_or_invalid|true" "$(pct)"
 RT_MODE=verify rt_heartbeat_write "$HR_PROJ" claude
