@@ -10,6 +10,12 @@ FX="$TL_REPO_ROOT/tests/fixtures/integrity-audit.json"
 out="$(python3 "$AUDIT" --check "$FX" 2>&1)" && rc=0 || rc=$?
 assert_eq "the tree reads protected values only through the record (no N, no unknown, no stale row)" "0" "$rc"
 assert_eq "and says nothing" "" "$out"
+# --check without a fixture argument uses the repository fixture (it used to crash with IndexError)
+out="$(python3 "$AUDIT" --check 2>&1)" && rc=0 || rc=$?
+assert_eq "--check with no fixture argument passes on the tree" "0" "$rc"
+assert_eq "--check with no fixture argument says nothing" "" "$out"
+out="$(python3 "$AUDIT" --check --rev HEAD 2>&1)" && rc=0 || rc=$?
+assert_not_contains "--check followed by another flag takes no flag as the fixture" "$out" "Traceback"
 assert_eq "the fixture has no N row" "0" "$(jq '[.rows[] | select(.record == "N")] | length' "$FX")"
 assert_eq "the fixture counts agree with its rows" "$(jq '.rows | length' "$FX")" "$(jq '[.counts[]] | add' "$FX")"
 assert_eq "the rows the previous head had are recorded (and were fixed)" "yes" "$(jq -r 'if .before.counts.N >= 1 then "yes" else "no" end' "$FX")"

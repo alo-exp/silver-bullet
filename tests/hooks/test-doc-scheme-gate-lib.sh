@@ -96,7 +96,7 @@ assert_file_exists "gap report: legacy cleanup failure tolerated" "$SB_DOC_SCHEM
 EMITTED="$TL_TMP/emitted"
 emit() { printf '%s' "$1" >"$EMITTED"; }
 setup_repo() {
-  rm -rf "$R" "$EMITTED" "$ST/doc-scheme-gaps"
+  rm -rf "$R" "$EMITTED" "$ST/doc-scheme-gaps" "$ST"/doc-scheme-baseline-*
   mkdir -p "$R/docs/knowledge"
   echo "# scheme" >"$R/docs/doc-scheme.md"
   cat >"$R/docs/doc-scheme.json" <<'JSON'
@@ -248,12 +248,12 @@ assert_file_absent "enforce: a contract the comparison cannot read is not report
 reset_docs
 printf '{ not json' >"$R/docs/doc-scheme.json"; git -C "$R" add docs/doc-scheme.json; git -C "$R" -c user.email=a@b -c user.name=n commit -q -m "break HEAD contract"
 git -C "$R" show HEAD:docs/doc-scheme.json >/dev/null
-printf '%s' '{"enforcement":{"enabled":false},"required_docs":[{"key":"docs/CHANGELOG.md","required_sections":[]}]}' >"$R/docs/doc-scheme.json"; rm -f "$EMITTED"; run_enforce
+printf '%s' '{"enforcement":{"enabled":false},"required_docs":[{"key":"docs/CHANGELOG.md","required_sections":[]}]}' >"$R/docs/doc-scheme.json"; rm -f "$EMITTED" "$ST"/doc-scheme-baseline-*; run_enforce
 assert_file_absent "enforce: a HEAD contract that is not JSON gives nothing to compare with" "$EMITTED"
 git -C "$R" checkout -q HEAD~1 -- docs
 git -C "$R" -c user.email=a@b -c user.name=n commit -q -m "restore HEAD contract"
 git -C "$R" rm -q --cached docs/doc-scheme.md docs/doc-scheme.json; git -C "$R" -c user.email=a@b -c user.name=n commit -q -m untrack
-rm -f "$EMITTED" "$R/docs/doc-scheme.md" "$R/docs/doc-scheme.json"; run_enforce
+rm -f "$EMITTED" "$R/docs/doc-scheme.md" "$R/docs/doc-scheme.json" "$ST"/doc-scheme-baseline-*; run_enforce
 assert_file_absent "enforce: a repo whose scheme git does not track is not governed once the files are gone" "$EMITTED"
 
 # R9-09 (review r1): the baseline is the default branch, so a commit on this branch cannot redefine the contract
@@ -283,9 +283,70 @@ for edit in '.required_docs[0].key="docs/OTHER.md"|a governed doc was dropped or
   dirty_log; rm -f "$EMITTED"; run_enforce delivery
   assert_contains "enforce: ${edit#*|} (committed) is weakening" "$(cat "$EMITTED")" "${edit#*|}"
 done
+# Sealed baseline (H6 r2): the session-start hook seals the baseline commit (sb_doc_scheme_seal_session) before the
+# agent can move a ref; moving the default branch onto a later commit in ONE turn (delete, commit, git branch -f main
+# HEAD, git update-ref refs/remotes/origin/main HEAD, then the very first gate call) cannot move it.
+rm -f "$ST"/doc-scheme-baseline-*
+fresh_branch_repo
+SEALED="$(git -C "$R" rev-parse origin/main)"
+sb_doc_scheme_seal_session "$R" replace
+assert_eq "sealed baseline: session start records the merge-base with the default branch" "$SEALED" "$(cat "$ST"/doc-scheme-baseline-* | tr -d '\n')"
+git -C "$R" rm -q docs/doc-scheme.md docs/doc-scheme.json; gitq commit -q -m "delete the scheme"
+git -C "$R" branch -f main HEAD; git -C "$R" update-ref refs/remotes/origin/main HEAD
+assert_eq "sealed baseline: the first gate call after the refs moved still sees the sealed commit" "$SEALED" "$(sb_doc_scheme__baseline "$R")"
+assert_eq "sealed baseline: the repo still counts as governed" "0" "$(sb_doc_scheme__head_tracks "$R" && echo 0 || echo 1)"
+dirty_log; rm -f "$EMITTED"; run_enforce delivery
+assert_contains "sealed baseline: the deletion BLOCKS delivery after the branch was moved (reviewer probe)" "$(cat "$EMITTED")" "Missing required policy file: docs/doc-scheme.md"
+# keep mode never replaces a seal; replace mode does
+git -C "$R" checkout -q -b later; sb_doc_scheme_seal_session "$R" keep
+assert_eq "sealed baseline: keep mode leaves the seal alone" "$SEALED" "$(cat "$ST"/doc-scheme-baseline-* | tr -d '\n')"
+sb_doc_scheme_seal_session "$R" replace
+assert_eq "sealed baseline: replace mode (a genuine new session) seals the current default branch" "$(git -C "$R" merge-base HEAD main)" "$(cat "$ST"/doc-scheme-baseline-* | tr -d '\n')"
+# keep mode writes a seal when there is none (a project initialised mid-session)
+rm -f "$ST"/doc-scheme-baseline-*; sb_doc_scheme_seal_session "$R" keep
+assert_eq "sealed baseline: keep mode seals a project that has no seal yet" "1" "$(ls "$ST"/doc-scheme-baseline-* | wc -l | tr -d ' ')"
+# a repository without any default branch seals HEAD; a non-repository seals nothing
+fresh_branch_repo; git -C "$R" update-ref -d refs/remotes/origin/main; git -C "$R" branch -q -m main trunk; rm -f "$ST"/doc-scheme-baseline-*
+sb_doc_scheme_seal_session "$R" replace
+assert_eq "sealed baseline: with no default branch the seal is HEAD" "$(git -C "$R" rev-parse HEAD)" "$(cat "$ST"/doc-scheme-baseline-* | tr -d '\n')"
+mkdir -p "$TL_TMP/not-a-repo"; rm -f "$ST"/doc-scheme-baseline-*
+assert_eq "sealed baseline: a directory that is not a repository is not sealed" "1" "$(sb_doc_scheme_seal_session "$TL_TMP/not-a-repo" replace && echo 0 || echo 1)"
+fresh_branch_repo; SEALED="$(git -C "$R" rev-parse origin/main)"; sb_doc_scheme_seal_session "$R" replace
+assert_eq "sealed baseline: no state dir, nothing to seal" "1" "$(SB_RUNTIME_STATE_DIR="" sb_doc_scheme_seal_session "$R" replace && echo 0 || echo 1)"
+# a seal whose commit no longer exists (history rewritten and garbage collected) fails CLOSED for delivery
+SEALFILE="$(ls "$ST"/doc-scheme-baseline-* | head -1)"
+printf '%s' "0000000000000000000000000000000000000000" >"$SEALFILE"
+assert_eq "sealed baseline: a seal whose commit is gone is reported, not replaced by HEAD" "SB_SEAL_LOST" "$(sb_doc_scheme__baseline "$R")"
+assert_eq "sealed baseline: and the repo counts as governed" "0" "$(sb_doc_scheme__head_tracks "$R" && echo 0 || echo 1)"
+dirty_log; rm -f "$EMITTED"; run_enforce delivery
+assert_contains "sealed baseline: delivery is blocked with a clear message" "$(cat "$EMITTED")" "sealed baseline commit no longer exists"
+# a seal whose commit still exists but is no longer an ancestor of HEAD (history rewritten) is still the baseline
+printf '%s' "$SEALED" >"$SEALFILE"
+git -C "$R" checkout -q --orphan other; gitq commit -q --allow-empty -m other
+assert_eq "sealed baseline: an orphaned (rewritten) history keeps the sealed commit" "$SEALED" "$(sb_doc_scheme__baseline "$R")"
+# a malformed record is treated as no seal: computed from the default branch and sealed again
+git -C "$R" checkout -q -f work; printf 'garbage' >"$SEALFILE"
+assert_eq "sealed baseline: a malformed record is recomputed" "$(git -C "$R" merge-base HEAD main)" "$(sb_doc_scheme__baseline "$R")"
+# a symlinked record is never followed or written through
+rm -f "$ST"/doc-scheme-baseline-*; fresh_branch_repo
+KEY="$(printf '%s' "$(cd "$R" && pwd -P)" | cksum | cut -d' ' -f1)"
+ln -s "$TL_TMP/elsewhere" "$ST/doc-scheme-baseline-$KEY"
+sb_doc_scheme__baseline "$R" >/dev/null
+assert_file_absent "sealed baseline: nothing is written through a symlinked record" "$TL_TMP/elsewhere"
+rm -f "$ST"/doc-scheme-baseline-*
+# no usable state dir / a repo path that does not exist: nothing is sealed, the baseline is still computed
+fresh_branch_repo
+assert_eq "sealed baseline: without a state dir it is computed, not sealed" "$(git -C "$R" rev-parse origin/main)" "$(SB_RUNTIME_STATE_DIR="" sb_doc_scheme__baseline "$R")"
+assert_eq "sealed baseline: a repo path that does not exist falls back to HEAD" HEAD "$(sb_doc_scheme__baseline "$TL_TMP/no-such-repo")"
+# a record that cannot be written (its temp name is taken by a directory) is not an error
+KEY="$(printf '%s' "$(cd "$R" && pwd -P)" | cksum | cut -d' ' -f1)"
+rm -f "$ST"/doc-scheme-baseline-*; mkdir "$ST/doc-scheme-baseline-$KEY.$$"
+assert_eq "sealed baseline: an unwritable record still yields the baseline" "$(git -C "$R" rev-parse origin/main)" "$(sb_doc_scheme__baseline "$R")"
+rmdir "$ST/doc-scheme-baseline-$KEY.$$"; rm -f "$ST"/doc-scheme-baseline-*
 # without origin: the local main is the baseline; with no default branch at all it is HEAD
 fresh_branch_repo; git -C "$R" update-ref -d refs/remotes/origin/main
 assert_eq "baseline: the local main when there is no origin" "$(git -C "$R" rev-parse main)" "$(sb_doc_scheme__baseline "$R")"
+rm -f "$ST"/doc-scheme-baseline-*
 git -C "$R" branch -q -m main trunk
 assert_eq "baseline: no default branch at all falls back to HEAD" HEAD "$(sb_doc_scheme__baseline "$R")"
 

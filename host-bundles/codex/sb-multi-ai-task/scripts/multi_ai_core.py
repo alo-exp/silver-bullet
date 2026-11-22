@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import secrets
+import tempfile
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -203,6 +204,55 @@ def _active_delegation() -> tuple[list[Path], str, str]:
     return [], "", ""
 
 
+# System directories. These roots can never hold a project and are always refused (with their children): /etc, /proc,
+# /sys, /dev, /boot (and macOS /private/etc). Every other system tree (/usr /bin /sbin /lib* /var /opt, macOS /System
+# /Library /private/var) is refused only OUTSIDE the project: a project that lives there (a Docker WORKDIR
+# /usr/src/app, /var/www/app, /opt/app) keeps its own .planning/ and any directory below its root. The project root is
+# the git toplevel of the working directory, else the nearest ancestor holding .silver-bullet.json. The system temp
+# directory stays usable. Roots are compared after symlinks are resolved (/bin -> /usr/bin).
+_NEVER_PROJECT_DIRS = ("/etc", "/proc", "/sys", "/dev", "/boot", "/private/etc")
+_SYSTEM_TREES = ("/usr", "/bin", "/sbin", "/lib", "/lib32", "/lib64", "/libx32", "/var", "/opt", "/System", "/Library", "/private/var")
+
+
+def _extra_system_tree() -> list[str]:
+    """One more system tree, for tests only: honoured when the test harness switch SILVER_BULLET_TEST_HOOK_ENFORCED=1
+    is set, so a test can stand a temp directory in for /usr or /var (a real one cannot be created without root)."""
+    extra = os.environ.get("SB_MULTI_AI_TEST_SYSTEM_TREE", "")
+    if extra and os.environ.get("SILVER_BULLET_TEST_HOOK_ENFORCED") == "1":
+        return [extra]
+    return []
+
+
+def _project_root() -> Path | None:
+    """The git toplevel of the working directory (the nearest ancestor holding .git, found without starting a
+    process: a dry run starts nothing), else the nearest ancestor holding .silver-bullet.json."""
+    cwd = _real(Path.cwd())
+    for marker in (".git", ".silver-bullet.json"):
+        for directory in (cwd, *cwd.parents):
+            if (directory / marker).exists():
+                return directory
+    return None
+
+
+def _system_dir_refusal(root: Path) -> str | None:
+    for name in _NEVER_PROJECT_DIRS:
+        for base in {Path(name), _real(name)}:
+            if _inside(root, base):
+                return f"output root {root} is inside a system directory ({base}); use a project directory such as .planning/multi-ai/<run-id>/"
+    project = _project_root()
+    if project is not None and _inside(root, project):
+        return None
+    temp_roots = [_real(tempfile.gettempdir()), _real(os.environ.get("TMPDIR") or tempfile.gettempdir())]
+    for name in (*_SYSTEM_TREES, *_extra_system_tree()):
+        for base in {Path(name), _real(name)}:
+            if not _inside(root, base):
+                continue
+            if any(len(t.parts) > len(base.parts) and _inside(root, t) for t in temp_roots):
+                continue
+            return f"output root {root} is inside a system directory ({base}) and outside the project; use the project's own directory such as .planning/multi-ai/<run-id>/"
+    return None
+
+
 def output_root_refusal(output_root: Path) -> str | None:
     """Why a run may not write below ``output_root`` (None when it may).
 
@@ -217,6 +267,9 @@ def output_root_refusal(output_root: Path) -> str | None:
         return f"output root {root} is the home directory or one of its parents; use a project directory such as .planning/multi-ai/<run-id>/"
     if ".git" in _fold(root):
         return f"output root {root} is inside a .git directory"
+    system = _system_dir_refusal(root)
+    if system:
+        return system
     protected = [_real(d) for d in _state_dirs()]
     protected += [_real(h) for h in _runtime_homes()]
     if os.environ.get("SB_RUNTIME_PLUGIN_CACHE_ROOT"):

@@ -11,6 +11,9 @@ FORMAT="${SB_DIAG_FORMAT:-text}"
 # directory, walking up to the nearest .silver-bullet.json (R8-21).
 PROJECT_ROOT="${1:-${SB_DIAG_PROJECT_ROOT:-$PWD}}"
 PROJECT_ROOT="$(cd "$PROJECT_ROOT" 2>/dev/null && pwd -P || printf '%s' "$PROJECT_ROOT")"
+# A relative path that does not exist stays relative above; anchor it so the walk below
+# ends at "/" (dirname of "." is "." and would loop forever).
+[[ "$PROJECT_ROOT" == /* ]] || PROJECT_ROOT="${PWD}/${PROJECT_ROOT}"
 _sb_diag_dir="$PROJECT_ROOT"
 # The walk stops at the enclosing repository (.git), like the hooks: a repository
 # nested inside an opted-in project is its own project.

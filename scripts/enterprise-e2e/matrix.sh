@@ -450,7 +450,9 @@ enterprise_e2e_matrix_tree_dirty() {
   for out in "${ENTERPRISE_E2E_HARNESS_OUTPUTS[@]}"; do
     spec+=(":(exclude,glob)${out}")
   done
-  [[ -n "$(git -C "$SB_ROOT" status --porcelain -- "${spec[@]}" 2>/dev/null)" ]]
+  # A failing `git status` (corrupt index, not a repository, git missing) is not a clean tree: fail closed.
+  out="$(git -C "$SB_ROOT" status --porcelain -- "${spec[@]}" 2>/dev/null)" || return 0
+  [[ -n "$out" ]]
 }
 
 # At run start: bind the run to the checkout's HEAD and cleanliness, and snapshot the gate's evidence files so the

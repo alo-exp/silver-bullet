@@ -5,7 +5,7 @@ Protected values: the state file, the trivial marker (and any config-given trivi
 silver-bullet.md, the unlock. A gate must read them only through the verified record (hooks/lib/integrity.sh:
 sb_integrity_gate + sb_iv_jq / SB_IV_* / sb_integrity_state_contents / sb_integrity_trivial_ok).
 
-  audit-protected-reads.py [--rev REV] [--json] [--markdown] [--check FIXTURE]
+  audit-protected-reads.py [--rev REV] [--json] [--markdown] [--check [FIXTURE]]  (FIXTURE defaults to tests/fixtures/integrity-audit.json)
 
 Every line outside the allowlist that reads a protected value directly is a row. A row is Y (reads the verified record),
 A (the integrity machinery itself, allowlisted), X (not an enforcement decision, with the reason) or N (a bug). The test
@@ -144,6 +144,17 @@ def scan(rev=None):
     return rows
 
 
+DEFAULT_FIXTURE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tests", "fixtures", "integrity-audit.json")
+
+
+def check_fixture(args):
+    """The fixture named after --check, else the repository's own fixture."""
+    i = args.index("--check") + 1
+    if i < len(args) and not args[i].startswith("--"):
+        return args[i]
+    return DEFAULT_FIXTURE
+
+
 def main():
     rev = None
     args = sys.argv[1:]
@@ -151,7 +162,7 @@ def main():
         rev = args[args.index("--rev") + 1]
     rows = scan(rev)
     if "--check" in args:
-        fx = json.load(open(args[args.index("--check") + 1]))
+        fx = json.load(open(check_fixture(args)))
         known = {(r["file"], r["snippet"]) for r in fx["rows"]}
         bad = [r for r in rows if r["record"] == "N"]
         unknown = [r for r in rows if (r["file"], r["snippet"]) not in known]

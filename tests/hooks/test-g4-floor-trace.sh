@@ -295,6 +295,13 @@ assert_eq "...under the current epoch" 1 "$([[ -f "$(cur_trace)" ]] && echo 1 ||
 assert_eq "...with every entry" 2 "$(grep -c . "$(cur_trace)")"
 sleep 1; sb_session_epoch_restamp "$SD/session-start-time" "$SD"
 assert_eq "back-to-back rotations (a second later) merge instead of orphaning" 2 "$(grep -c . "$(cur_trace)")"
+# another rotation's in-flight temp file (files-written.<epoch>.XXXXXX, made by _sb_se_write) is never a trace:
+# merging it would delete the file the writer is about to rename and fail that rotation's write
+printf 'f/c/inflight\n' >"$SD/files-written.9.AbC123"
+sb_session_epoch_restamp "$SD/session-start-time" "$SD"
+assert_file_exists "an in-flight temp file is left alone by a rotation" "$SD/files-written.9.AbC123"
+assert_eq "...and its entries are not merged into the trace" 2 "$(grep -c . "$(cur_trace)")"
+rm -f "$SD/files-written.9.AbC123"
 assert_eq "the epoch is a bare number" 1 "$(grep -cE '^[0-9]+$' "$SD/session-start-time")"
 # a failing temp file leaves the epoch as it was
 printf '42\n' >"$SD/session-start-time"

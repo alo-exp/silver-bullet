@@ -122,6 +122,18 @@ EOS
 run env SB_E2E_MATRIX_FORCE_ALL=1 bash "$MATRIX"
 assert_file_absent "a tree dirtied during the run writes no marker" "$MARKER"
 rm -f "$R/dirty.txt"
+# a failing `git status` (corrupt index) is not a clean tree: fail closed, nothing is written
+reset; rm -f "$MARKER"
+agent <<'EOS'
+mkdir -p "$WORK_DIR/$(dirname "$SB_E2E_MATRIX_EVIDENCE_PATH")"
+[[ "$SB_E2E_MATRIX_EVIDENCE_PATH" == */ ]] && mkdir -p "$WORK_DIR/$SB_E2E_MATRIX_EVIDENCE_PATH" || echo ev >"$WORK_DIR/$SB_E2E_MATRIX_EVIDENCE_PATH"
+printf 'not an index' >"$SB_ROOT/.git/index"
+echo "SILVER BULLET ▸ ROUTING silver-feature"
+EOS
+run env SB_E2E_MATRIX_FORCE_ALL=1 bash "$MATRIX"
+assert_file_absent "git status failing at the end: no marker (fail closed)" "$MARKER"
+assert_contains "the failed check is reported as an unclean tree" "$TL_OUT" "has uncommitted or untracked changes"
+rm -f "$R/.git/index"; git -C "$R" reset -q
 # HEAD moving during the run writes nothing
 reset; rm -f "$MARKER"
 agent <<'EOS'

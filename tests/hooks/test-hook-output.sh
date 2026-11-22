@@ -70,7 +70,7 @@ lead_out="$(PATH="$NOJQPY" LC_ALL=C.UTF-8 bash -c 'source "$1"; sb_emit_hook_mes
 lead_ref="$(printf '{"systemMessage":"a\\\\\xc3\\\\b"}' | od -An -c | tr -s ' ' | tr -d '\n')"
 if [[ "$lead_out" == "$lead_ref" ]]; then tl_pass "message via bash: lead byte next to a backslash is exact in a UTF-8 locale"; else tl_fail "message via bash: lead byte garbled: $lead_out"; fi
 # Control characters survive the encoder without printf -v into an array element (Bash >= 4.1 only).
-if grep -nE 'printf -v +.?[A-Za-z_]+\[' "$TL_REPO_ROOT"/hooks/*.sh "$TL_REPO_ROOT"/hooks/lib/*.sh >/dev/null 2>&1; then tl_fail "hooks/ assigns printf -v into an array element (breaks Bash 3.2)"; else tl_pass "hooks/ has no printf -v array-element assignment"; fi
+if grep -nE 'printf -v +.?[A-Za-z_]+\[' "$TL_REPO_ROOT"/hooks/*.sh "$TL_REPO_ROOT"/hooks/lib/*.sh "$TL_REPO_ROOT"/hooks/lib/completion-audit/*.sh "$TL_REPO_ROOT"/hooks/session-start >/dev/null 2>&1; then tl_fail "hooks/ assigns printf -v into an array element (breaks Bash 3.2)"; else tl_pass "hooks/ has no printf -v array-element assignment"; fi
 check "message: very long value" "$(sb_emit_hook_message PostToolUse "$long")" "len(d['systemMessage']) == 300000"
 check "message via python3: very long value" "$(PATH="$NOJQ" bash -c 'source "$1"; sb_emit_hook_message PostToolUse "$(cat "$2")"' _ "$LIB" "$LONG_FILE")" "len(d['systemMessage']) == 300000"
 bad=$'bad \xff\xfe utf8'
