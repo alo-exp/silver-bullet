@@ -70,7 +70,7 @@ Twelve enforcement layers enforce compliance:
 
 Further gates run beside these layers: spec floor and UAT gates, phase archive and phase locks,
 orchestrator parent-mode guards, site-session gates, and the opt-in tool gates (§2g-i to §2g-iii). Silver
-Bullet's hook reference (`docs/HOOKS.md` in the plugin) lists every registered hook. The Silver Bullet reference docs named in this file (`docs/HOOKS.md`, `docs/RUNTIME-COMPATIBILITY.md`, `docs/CONSENT.md` and the tool guides) ship with the installed plugin, not with your project: open them from the plugin's own `docs/` folder.
+Bullet's hook reference (`docs/HOOKS.md` in the plugin) lists every registered hook. The Silver Bullet reference docs named in this file (`docs/HOOKS.md`, `docs/RUNTIME-COMPATIBILITY.md`, `docs/CONSENT.md` and the tool guides) are part of the Silver Bullet plugin, not of your project: find them in the plugin's own `docs/` folder (a marketplace install has the full set; the offline fallback copies only part of it) or in the Silver Bullet source repository.
 
 **Enforcement model**: Hooks combine **invocation tracking** with **outcome checks**.
 `record-skill.sh` records that a skill was *called*. Delivery gates and
@@ -110,7 +110,7 @@ auto-create it. The trivial file is a legacy compatibility escape hatch only.
 **Subagent commits**: Every git commit MUST use HEREDOC format and end with:
 Co-Authored-By: host-appropriate co-author line
 
-> **Stop hook false-positive audit**: For a full catalogue of known bail-out scenarios, reproduction steps, and dispositions, see [`docs/internal/stop-hook-audit.md`](docs/internal/stop-hook-audit.md).
+> **Stop hook false-positive audit**: For a full catalogue of known bail-out scenarios, reproduction steps, and dispositions, see `docs/internal/stop-hook-audit.md` in the Silver Bullet source repository (not shipped with the plugin).
 
 ---
 
@@ -130,8 +130,8 @@ degraded path.
 > **Anti-Skip:** You are violating this rule if you start a non-trivial task without a Read call to the active workflow file. The compliance-status hook will show your progress — if it shows 0 steps, you have not read the workflow.
 
 > **Design documents**: For architectural notes on future workflow enhancements, see:
-> - [`docs/internal/vfy-01-enforcement-design.md`](docs/internal/vfy-01-enforcement-design.md) — intermediate verification enforcement boundary design (VFY-01)
-> - [`docs/internal/flow-01-parallelism-design.md`](docs/internal/flow-01-parallelism-design.md) — FLOW layer parallelism design for the /sb composer (FLOW-01)
+> - `docs/internal/vfy-01-enforcement-design.md` (Silver Bullet source repository) — intermediate verification enforcement boundary design (VFY-01)
+> - `docs/internal/flow-01-parallelism-design.md` (Silver Bullet source repository) — FLOW layer parallelism design for the /sb composer (FLOW-01)
 
 ### Hand-Holding at Transitions
 
