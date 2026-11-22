@@ -269,8 +269,10 @@ class ProgramMechanismTable(unittest.TestCase):
             self.assertIn("::warning title=git config key drift::", run.stdout)
             # only a key gone from the installed git (none new): the annotation counts zero new keys instead of failing
             gone = os.path.join(tmp, "gone.txt")
+            installed = subprocess.run(["git", "help", "-c"], capture_output=True, text=True, check=True).stdout.splitlines()
             with open(gone, "w") as handle:
-                handle.write("\n".join(real + ["made.up.key"]) + "\n")
+                # the installed git's own keys (any version, so a newer git never adds a key) plus one it lacks
+                handle.write("\n".join(installed + ["made.up.key"]) + "\n")
             only_removed = subprocess.run(["bash", str(DRIFT_SCRIPT)], capture_output=True, text=True,
                                           env=dict(os.environ, SB_GIT_KEY_SNAPSHOT=gone, GITHUB_ACTIONS="true"))
             self.assertEqual(only_removed.returncode, 0)
