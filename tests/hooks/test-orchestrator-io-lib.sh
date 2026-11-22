@@ -226,7 +226,9 @@ assert_eq "six concurrent cycles behind a planted stale lock all land (30 rounds
 
 echo "=== lock: no lost update under CPU load ==="
 burners=()
-for _ in 1 2 3; do ( while :; do :; done ) & burners+=($!); done
+# The burners never hold the test's output open, and an early exit still stops them.
+for _ in 1 2 3; do ( while :; do :; done ) </dev/null >/dev/null 2>&1 & burners+=($!); done
+trap 'kill "$TL_LIVE" "${burners[@]}" 2>/dev/null || true' EXIT
 t0=$SECONDS
 assert_eq "plain rounds under load" 0 "$(cycles 10 plain)"
 assert_eq "stale-lock rounds under load" 0 "$(cycles 30 plant)"

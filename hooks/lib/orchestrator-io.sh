@@ -32,7 +32,7 @@ sb_orchestrator_atomic_write() {
 # both judged one stale lock stale, one retook it and the other removed the fresh lock).
 # A lock path that is a symlink, not a directory or not owned by the caller is never touched.
 #
-# Wait budget: SB_ORCHESTRATOR_LOCK_WAIT_TENTHS (default 40 = 4 s, jittered 0.05-0.09 s polls)
+# Wait budget: SB_ORCHESTRATOR_LOCK_WAIT_TENTHS (default 40 = 4 s, polls of 0.10-0.14 s so a counted tenth is a real tenth)
 # is shared by every lock call of one process and is also capped in wall-clock seconds. The
 # smallest timeout of a hook that takes the lock is 10 s (hooks/hooks.json), so the budget is
 # 40% of it and a hook that waited out its budget still has time to do its work.
@@ -139,7 +139,7 @@ _sb_orch_lock_acquire() {
         "$lock" "$((_SB_ORCH_LOCK_WAITED / 10))" "$((_SB_ORCH_LOCK_WAITED % 10))" >&2
       return 1
     fi
-    sleep "0.0$((5 + RANDOM % 5))"
+    sleep "0.1$((RANDOM % 5))" # one tenth of a second (plus jitter) per counted tenth, so the budget is real time
     _SB_ORCH_LOCK_WAITED=$((_SB_ORCH_LOCK_WAITED + 1))
   done
 }

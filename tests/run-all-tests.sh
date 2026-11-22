@@ -398,6 +398,13 @@ while [[ $next_to_print -lt $n ]]; do
         if [[ -z "${TIMED_OUT[$idx]:-}" && $((SECONDS - STARTED[$idx])) -ge $FILE_TIMEOUT ]]; then
           TIMED_OUT[$idx]=1 TERM_AT[$idx]=$SECONDS
           echo "run-all-tests: ${ALL_FILES[$idx]#"$REPO_ROOT"/} exceeded ${FILE_TIMEOUT}s; stopping process group $pid" >&2
+          # Where it stuck: the end of its output so far and what its group is still running.
+          {
+            echo "run-all-tests: last output of ${ALL_FILES[$idx]#"$REPO_ROOT"/}:"
+            tail -n 15 "$RUN_TMP/log.$idx" 2>/dev/null | sed 's/^/    /'
+            echo "run-all-tests: processes left in group $pid:"
+            ps -eo pid=,ppid=,pgid=,stat=,etime=,args= 2>/dev/null | awk -v g="$pid" '$3 == g' | cut -c1-200 | sed 's/^/    /'
+          } >&2 || true
           stop_group "$pid" TERM
         elif [[ -n "${TIMED_OUT[$idx]:-}" && $((SECONDS - TERM_AT[$idx])) -ge $KILL_GRACE ]]; then
           stop_group "$pid" KILL
