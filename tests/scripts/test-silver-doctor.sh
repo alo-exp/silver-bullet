@@ -20,6 +20,17 @@ sb_offline_tools_install "${DOCTOR_TEST_TMP}/offline-bin"
 source "${REPO_ROOT}/tests/lib/consent-helpers.sh"
 sb_test_consent_sandbox
 
+# pty_yes <cmd...>: run the doctor the way a user does, on a pseudo-terminal where "y" is typed at the
+# --fix confirmation (the doctor has no environment override for it). Prints stdout, passes stderr on.
+pty_yes() {
+  local o e
+  o="$(mktemp "${DOCTOR_TEST_TMP}/pty-out.XXXXXX")"
+  e="$(mktemp "${DOCTOR_TEST_TMP}/pty-err.XXXXXX")"
+  python3 -I -B "${REPO_ROOT}/tests/lib/pty-run.py" --reply 'y\n' --stdout "$o" --stderr "$e" -- "$@" || true
+  cat "$o"
+  cat "$e" >&2
+}
+
 # last_byte_hex <file>: hex of the file's final byte (od is POSIX; xxd is not
 # installed everywhere).
 last_byte_hex() {
@@ -673,9 +684,9 @@ exit 1
 EOF
 chmod +x "$SC_FAKE"
 sc_empty_out="$(
-  env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=claude \
+  pty_yes env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=claude \
     PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
-    SB_DOCTOR_RECONCILER="$SC_FAKE" SB_DOCTOR_FORMAT=json SB_DOCTOR_ASSUME_YES=1 \
+    SB_DOCTOR_RECONCILER="$SC_FAKE" SB_DOCTOR_FORMAT=json \
     bash "$DOCTOR" --fix=packages "$SC_PROJ" 2>${DOCTOR_TEST_TMP}/sc-empty-err.txt || true
 )"
 sc_empty_err="$(cat ${DOCTOR_TEST_TMP}/sc-empty-err.txt 2>/dev/null || true)"
@@ -696,9 +707,9 @@ echo 'not-json'
 exit 0
 EOF
 sc_mal_out="$(
-  env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=claude \
+  pty_yes env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=claude \
     PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
-    SB_DOCTOR_RECONCILER="$SC_FAKE" SB_DOCTOR_FORMAT=json SB_DOCTOR_ASSUME_YES=1 \
+    SB_DOCTOR_RECONCILER="$SC_FAKE" SB_DOCTOR_FORMAT=json \
     bash "$DOCTOR" --fix=packages "$SC_PROJ" 2>/dev/null || true
 )"
 if printf '%s' "$sc_mal_out" | jq -e '.fix_applied == false' >/dev/null 2>&1; then
@@ -968,8 +979,8 @@ fi
 EOF
 chmod +x "$FIX_RECON"
 fix_out1="$(
-  env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=claude \
-    PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
+  pty_yes env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=claude \
+    PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
     SB_DOCTOR_RECONCILER="$FIX_RECON" SB_DOCTOR_FORMAT=json \
     SB_DOCTOR_STUB_HOST_INSTALL="${FIX_HOME}/host-install.stamp" \
     bash "$DOCTOR" --fix=host "$FIX_PROJ" 2>/dev/null || true
@@ -983,8 +994,8 @@ else
   FAIL=$((FAIL + 1))
 fi
 hooks_before="$(cksum "$FIX_HOME/.claude/settings.json")"
-env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=claude \
-  PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
+pty_yes env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=claude \
+  PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
   SB_DOCTOR_RECONCILER="$FIX_RECON" SB_DOCTOR_FORMAT=json \
   SB_DOCTOR_STUB_HOST_INSTALL="${FIX_HOME}/host-install.stamp" \
   bash "$DOCTOR" --fix=host "$FIX_PROJ" >/dev/null 2>&1 || true
@@ -1021,8 +1032,8 @@ jq '.recommended_tools.leanctx.enabled_by_user = true
   "$FIX_PROJ/.silver-bullet.json" >"${FIX_PROJ}/.silver-bullet.json.tmp"
 mv "${FIX_PROJ}/.silver-bullet.json.tmp" "$FIX_PROJ/.silver-bullet.json"
 sb_test_consent_reset_mirror "$FIX_PROJ/.silver-bullet.json" install,wire,enforce
-env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=claude \
-  PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
+pty_yes env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=claude \
+  PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
   SB_DOCTOR_RECONCILER="$FIX_RECON_NOWWRITE" \
   SB_DOCTOR_STUB_HOST_INSTALL="${FIX_HOME}/host-install-local.stamp" \
   bash "$DOCTOR" --fix=local "$FIX_PROJ" >/dev/null 2>&1 || true
@@ -1051,8 +1062,8 @@ printf '{"violations":[{"route":"sb_shell"}]}\n' >"$FIX_MUTEX"
 FIX_STAMP="$FIX_HOME/host-install.stamp"
 rm -f "$FIX_STAMP"
 all_out="$(
-  env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=claude \
-    PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
+  pty_yes env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=claude \
+    PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
     SB_DOCTOR_RECONCILER="$FIX_RECON_NOWWRITE" SB_DOCTOR_FORMAT=json \
     SB_DOCTOR_STUB_HOST_INSTALL="$FIX_STAMP" \
     bash "$DOCTOR" --fix=all "$FIX_PROJ" 2>/dev/null || true

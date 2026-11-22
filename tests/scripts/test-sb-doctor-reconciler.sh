@@ -15,6 +15,8 @@ hd_happy claude
 C='SILVER_BULLET_RUNTIME=claude'
 J='SB_DOCTOR_FORMAT=json'
 run() { hd_run "$C" "$@"; }
+# the user typing "y" at a real terminal: the doctor has no environment override for the confirmation
+yes_run() { hd_run_yes "$C" "$@"; }
 
 comp() {  # id state consent [activation] [evidence-json]
   jq -nc --arg id "$1" --arg st "$2" --arg consent "$3" --arg act "${4:-none}" --argjson ev "${5:-[]}" \
@@ -55,7 +57,7 @@ run -- "$HD_PROJ"
 assert_contains "unreadable manifest" "$TL_OUT" "FAIL: D10-generic — generic manifest malformed or partial"
 
 # --fix repairs the manifest through the runtime CLI, then the re-run sees a valid one
-run SB_DOCTOR_ASSUME_YES=1 -- --fix=host "$HD_PROJ"
+yes_run -- --fix=host "$HD_PROJ"
 assert_contains "repair output reaches stderr" "$TL_ERR" "}"
 assert_contains "manifest valid after repair" "$TL_OUT" "PASS: D10-generic — generic manifest valid ($SB_GLOBAL_TOOLSTACK_MANIFEST)"
 assert_eq "repaired manifest has the schema" "true" "$(jq -r '.schema | type == "string"' "$SB_GLOBAL_TOOLSTACK_MANIFEST")"
@@ -70,9 +72,9 @@ hd_stage
 printf 'x\n' >"$SB_GLOBAL_TOOLSTACK_MANIFEST"
 run STUB_GENERIC=invalid -- "$HD_PROJ"
 assert_contains "validation errors are listed" "$TL_OUT" "FAIL: D10-generic — generic manifest malformed or partial ($SB_GLOBAL_TOOLSTACK_MANIFEST) — broken"
-run SB_DOCTOR_ASSUME_YES=1 STUB_RC_GENERIC=1 -- --fix=host "$HD_PROJ"
+yes_run STUB_RC_GENERIC=1 -- --fix=host "$HD_PROJ"
 assert_contains "failed generic repair is reported" "$TL_OUT" "FAIL: D10-generic — generic repair failed: repair ran"
-run SB_DOCTOR_ASSUME_YES=1 -- --fix=packages "$HD_PROJ"
+yes_run -- --fix=packages "$HD_PROJ"
 assert_contains "repair is invoked with the manifest paths" "$(hd_logs)" "generic-repair repair --manifest $SB_GLOBAL_TOOLSTACK_MANIFEST --legacy-manifest $HOME/.silver-bullet/five-tool-stack/instances.json"
 rm -f -- "${HD_ST:?}/scripts/lib/five_tool_runtime/runtime.py"
 run -- "$HD_PROJ"
@@ -182,6 +184,18 @@ assert_contains "confirmation needs the user" "$TL_ERR" "sb-doctor: --fix=all ch
 assert_not_contains "the refusal never advertises the override" "$TL_ERR" "SB_DOCTOR_ASSUME_YES"
 assert_contains "fix denied is recorded" "$TL_OUT" "FAIL: D10 — confirmation unobtainable; --fix not applied"
 assert_not_contains "no apply without confirmation" "$(hd_logs)" "--mode apply"
+# the old override is gone: with the variable set (to 1, true or yes) a run without a terminal still refuses and changes nothing
+for v in 1 true yes; do
+  run STUB_RECON_JSON="$NEEDS" SB_DOCTOR_ASSUME_YES="$v" -- --fix "$HD_PROJ"
+  assert_eq "SB_DOCTOR_ASSUME_YES=$v no longer confirms: exit 1" "1" "$TL_STATUS"
+  assert_contains "SB_DOCTOR_ASSUME_YES=$v: the same refusal message" "$TL_ERR" "sb-doctor: --fix=all changes global tools or host configuration and needs the user's own confirmation; nothing was changed. Ask the user to run it themselves in an interactive terminal."
+  assert_not_contains "SB_DOCTOR_ASSUME_YES=$v applies nothing" "$(hd_logs)" "--mode apply"
+done
+# the variable does not help on a terminal either: the user is still asked, and "n" refuses
+: >"$HD_LOG"
+tl_run_pty 'n\n' env STUB_RECON_JSON="$NEEDS" SB_DOCTOR_ASSUME_YES=1 SILVER_BULLET_RUNTIME=claude bash "$HD_ST/scripts/sb-doctor.sh" --fix "$HD_PROJ"
+assert_contains "the terminal prompt is shown despite the variable" "$TL_ERR" "sb-doctor: apply --fix=all? [y/N]"
+assert_not_contains "n applies nothing despite the variable" "$(hd_logs)" "--mode apply"
 run STUB_RECON_JSON= -- --fix=packages "$HD_PROJ"
 assert_contains "an unreadable verdict needs confirmation" "$TL_ERR" "--fix=packages changes global tools"
 run STUB_RECON_JSON="$(recon "[$(comp rtk repairable disabled), $(comp rtk2 repairable enabled), $CROSS_OK]")" -- --fix=packages "$HD_PROJ"
@@ -195,91 +209,49 @@ assert_contains "host scope asks too (it rewrites global host config)" "$TL_ERR"
 assert_not_contains "host fix without consent installs nothing" "$(hd_logs)" "install-claude"
 run STUB_RECON_JSON="$NEEDS" -- --fix "$HD_PROJ"
 assert_contains "all scope asks" "$TL_ERR" "--fix=all changes global tools"
-run STUB_RECON_JSON="$NEEDS" SB_DOCTOR_ASSUME_YES=1 -- --fix "$HD_PROJ"
-assert_not_contains "assume-yes skips the prompt" "$TL_ERR" "needs the user's own confirmation"
+yes_run STUB_RECON_JSON="$NEEDS" -- --fix "$HD_PROJ"
+assert_not_contains "a confirmed fix is not refused" "$TL_ERR" "needs the user's own confirmation"
 assert_contains "apply announced" "$TL_ERR" "sb-doctor: --fix=all running reconciler doctor-fix apply"
 assert_contains "apply request" "$(hd_logs)" "reconcile --project-root $HD_PROJ --host claude --mode apply --scope all --format json --entry-point doctor-fix"
 
 # scope mapping for the apply call
 for pair in "local:project" "host:host" "packages:packages" "all:all"; do
-  run SB_DOCTOR_ASSUME_YES=1 -- "--fix=${pair%%:*}" "$HD_PROJ"
+  yes_run -- "--fix=${pair%%:*}" "$HD_PROJ"
   assert_contains "fix=${pair%%:*} applies scope ${pair##*:}" "$(hd_logs)" "--mode apply --scope ${pair##*:} --format json --entry-point doctor-fix"
 done
 
 # apply outcomes
-run SB_DOCTOR_ASSUME_YES=1 -- --fix "$HD_PROJ"
+yes_run -- --fix "$HD_PROJ"
 assert_contains "successful apply re-runs the audit" "$TL_OUT" "sb-doctor: re-running checks after --fix"
 assert_eq "successful apply exits 0" "0" "$TL_STATUS"
 assert_eq "the fix is applied once, the re-run only verifies" "1" "$(grep -c -- '--mode apply' "$HD_LOG")"
 assert_eq "the generic repair also runs once" "1" "$(grep -c '^generic-repair' "$HD_LOG")"
 assert_eq "the re-run verifies after the apply" "verify" "$(grep -- '--mode' "$HD_LOG" | tail -1 | sed 's/.*--mode \([a-z]*\).*/\1/')"
-hd_run "$C" "$J" SB_DOCTOR_ASSUME_YES=1 -- --fix "$HD_PROJ"
+hd_run_yes "$C" "$J" -- --fix "$HD_PROJ"
 assert_eq "the json summary reports the applied fix" "true" "$(jq -r '.fix_applied' <<<"$TL_OUT")"
-run SB_DOCTOR_ASSUME_YES=1 STUB_RECON_RC=1 -- --fix "$HD_PROJ"
+yes_run STUB_RECON_RC=1 -- --fix "$HD_PROJ"
 assert_contains "failed apply" "$TL_OUT" "FAIL: D10 — reconciler apply failed (receipt not success)"
 assert_not_contains "no re-run after a failed apply" "$TL_OUT" "re-running checks"
-run SB_DOCTOR_ASSUME_YES=1 STUB_RECON_JSON='{"ok":false,"components":[],"unknown_keys":[]}' -- --fix "$HD_PROJ"
+yes_run STUB_RECON_JSON='{"ok":false,"components":[],"unknown_keys":[]}' -- --fix "$HD_PROJ"
 assert_contains "apply reporting ok=false" "$TL_OUT" "FAIL: D10 — reconciler apply failed (receipt not success)"
-run SB_DOCTOR_ASSUME_YES=1 STUB_RECON_JSON= -- --fix "$HD_PROJ"
+yes_run STUB_RECON_JSON= -- --fix "$HD_PROJ"
 assert_contains "apply with empty output" "$TL_OUT" "FAIL: D10 — reconciler apply returned empty or malformed JSON"
-run SB_DOCTOR_ASSUME_YES=1 STUB_RECON_JSON='nope' -- --fix "$HD_PROJ"
+yes_run STUB_RECON_JSON='nope' -- --fix "$HD_PROJ"
 assert_contains "apply with malformed output" "$TL_OUT" "FAIL: D10 — reconciler apply returned empty or malformed JSON"
-run SB_DOCTOR_ASSUME_YES=1 SB_DOCTOR_RECONCILER="$TL_TMP/none.sh" -- --fix "$HD_PROJ"
+yes_run SB_DOCTOR_RECONCILER="$TL_TMP/none.sh" -- --fix "$HD_PROJ"
 assert_not_contains "no stub reconciler means no apply announcement" "$TL_ERR" "running reconciler doctor-fix apply"
-run SB_DOCTOR_ASSUME_YES=1 -- --fix --dry-run "$HD_PROJ"
+yes_run -- --fix --dry-run "$HD_PROJ"
 assert_not_contains "dry-run never applies" "$(hd_logs)" "--mode apply"
 
 # ---------- --fix: interactive confirmation on a real terminal ----------
-PTY="$TL_TMP/pty-run.py"
-cat >"$PTY" <<'PY'
-import os, pty, select, signal, sys, time
-
-reply = sys.argv[1].encode().decode("unicode_escape").encode("latin-1")
-argv = sys.argv[2:]
-pid, fd = pty.fork()
-if pid == 0:
-    os.execvp(argv[0], argv)
-buf = b""
-sent = False
-deadline = time.time() + 45
-while time.time() < deadline:
-    r, _, _ = select.select([fd], [], [], 1)
-    if r:
-        try:
-            chunk = os.read(fd, 4096)
-        except OSError:
-            break
-        if not chunk:
-            break
-        buf += chunk
-        if not sent and b"[y/N]" in buf:
-            os.write(fd, reply)
-            sent = True
-timed_out = False
-# the terminal closes slightly before the process is reapable: poll briefly
-grace = time.time() + 10
-done, status = os.waitpid(pid, os.WNOHANG)
-while done == 0 and time.time() < grace:
-    time.sleep(0.05)
-    done, status = os.waitpid(pid, os.WNOHANG)
-if done == 0:
-    # still running after the deadline (for example a second prompt): never hang CI
-    timed_out = True
-    os.kill(pid, signal.SIGKILL)
-    _, status = os.waitpid(pid, 0)
-sys.stdout.write(buf.decode("utf-8", "replace"))
-if timed_out:
-    sys.stdout.write("\nPTY-TIMEOUT\n")
-sys.stdout.write("\nPTY-EXIT=%d\n" % os.waitstatus_to_exitcode(status))
-PY
-pty_doctor() {  # reply -> output with PTY-EXIT=
+pty_doctor() {  # reply doctor-args...: the doctor on a pseudo-terminal, the reply typed at the prompt
   local reply="$1"; shift
   : >"$HD_LOG"
-  TL_OUT="$(env STUB_RECON_JSON="$NEEDS" SILVER_BULLET_RUNTIME=claude python3 "$PTY" "$reply" bash "$HD_ST/scripts/sb-doctor.sh" "$@" 2>&1)"
+  tl_run_pty "$reply" env STUB_RECON_JSON="$NEEDS" SILVER_BULLET_RUNTIME=claude bash "$HD_ST/scripts/sb-doctor.sh" "$@"
 }
 pty_doctor 'y\n' --fix "$HD_PROJ"
-assert_not_contains "no terminal run hits the deadline" "$TL_OUT" "PTY-TIMEOUT"
-assert_contains "terminal prompt shown" "$TL_OUT" "sb-doctor: apply --fix=all? [y/N]"
+assert_not_contains "no terminal run hits the deadline" "$TL_STATUS" "124"
+assert_contains "terminal prompt shown" "$TL_ERR" "sb-doctor: apply --fix=all? [y/N]"
 assert_contains "answering y applies the fix" "$(hd_logs)" "--mode apply --scope all"
 assert_contains "answering y re-runs the audit" "$TL_OUT" "sb-doctor: re-running checks after --fix"
 assert_eq "the apply was asked once" "1" "$(grep -c -- '--mode apply' "$HD_LOG")"
@@ -288,7 +260,7 @@ assert_contains "answering YES applies the fix" "$(hd_logs)" "--mode apply"
 pty_doctor 'n\n' --fix "$HD_PROJ"
 assert_not_contains "answering n applies nothing" "$(hd_logs)" "--mode apply"
 assert_contains "answering n is a denied fix" "$TL_OUT" "FAIL: D10 — confirmation unobtainable; --fix not applied"
-assert_contains "answering n exits 1" "$TL_OUT" "PTY-EXIT=1"
+assert_eq "answering n exits 1" "1" "$TL_STATUS"
 pty_doctor '\n' --fix "$HD_PROJ"
 assert_contains "an empty answer is a no" "$TL_OUT" "confirmation unobtainable"
 pty_doctor '\x04' --fix "$HD_PROJ"
