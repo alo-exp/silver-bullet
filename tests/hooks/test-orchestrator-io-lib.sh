@@ -75,7 +75,8 @@ rewait() { _SB_ORCH_LOCK_WAITED=0; }
 live_pid() { sleep 300 & TL_LIVE=$!; }
 live_pid # a live process of ours that owns claims below; killed by its exact pid at the end
 trap 'kill "$TL_LIVE" 2>/dev/null || true' EXIT
-dead_pid="$( (exit 0) & echo $!; wait )"
+# a pid that existed and is gone (an exited child; a bare `wait` after a background (exit 0) spun forever on CI)
+dead_pid="$(sh -c 'echo $$')"
 mkdir "$LOCK"
 touch -t 200001010000 "$LOCK" 2>/dev/null || true
 assert_eq "an old lock directory without a claim is reclaimed" held "$(sb_orchestrator_with_lock witness 2>/dev/null)"
