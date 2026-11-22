@@ -211,11 +211,12 @@ variant "a new script added under site/ is rejected" deny 'echo x >site/x/new.sh
 variant "a deleted manifest is rejected" deny 'git rm -q package.json'
 variant "an added unlisted JSON file is rejected" deny 'echo {} >site/x/hooks.json'
 variant "a hook change after the matrix is rejected" deny 'echo x >>hooks/gate.sh'
-# a new symlink or submodule entry is never release surface, even where its own mode did not "change" (an add)
-variant "a symlink added beside an allowlisted prose file is rejected" deny 'ln -s CHANGELOG.md CHANGELOG-link.md'
+# a new symlink or submodule entry is never release surface, even at a path the prose allowlist (site/*.html) would
+# accept: an add has no old mode, so only the symlink/gitlink check rejects it
+variant "a symlink added at an allowlisted prose path is rejected" deny 'ln -s ../../hooks/gate.sh site/x/evil.html'
 git -C "$PROJ" config advice.addEmbeddedRepo false
-variant "a submodule (gitlink) added is rejected" deny 'git init -q vendor/sub && git -C vendor/sub -c user.email=t@e.x -c user.name=t commit -q --allow-empty -m sub'
-rm -rf "$PROJ/vendor"   # the nested repository the variant created is untracked on the base branch: keep it out of later variants
+variant "a submodule (gitlink) added at an allowlisted prose path is rejected" deny 'git init -q site/sub.html && git -C site/sub.html -c user.email=t@e.x -c user.name=t commit -q --allow-empty -m sub'
+rm -rf "$PROJ/site/sub.html"   # the nested repository the variant created is untracked on the base branch: keep it out of later variants
 # fail closed: the diff file cannot be created (mktemp fails for it only), the marker is rejected
 GIT_REAL="$(command -v git)"
 MKTEMP_REAL="$(command -v mktemp)"
