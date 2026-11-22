@@ -81,11 +81,11 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | scripts/sb-consent.sh:95 | config | `if [[ -f "$_sb_probe/.silver-bullet.json" ]]; then` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-diagnostics.sh:20 | config | `while [[ "$_sb_diag_dir" != "/" && ! -f "${_sb_diag_dir}/.silver-bullet.json" && ! -e "${_` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-diagnostics.sh:23 | config | `[[ -f "${_sb_diag_dir}/.silver-bullet.json" ]] && PROJECT_ROOT="$_sb_diag_dir"` | X | user-run or skill-run script, not a hook gate |
-| scripts/sb-doctor.sh:637 | md | `if [[ -f "$sb_config" && -f "${PROJ_ROOT}/silver-bullet.md" ]]; then` | X | user-run or skill-run script, not a hook gate |
-| scripts/sb-doctor.sh:638 | config | `if jq -e '.sb_initiated == true' "$sb_config" >/dev/null 2>&1; then` | X | user-run or skill-run script, not a hook gate |
-| scripts/sb-doctor.sh:649 | config | `if ! proj_ver="$(jq -r '.config_version // .version // "0.0.0"' "$sb_config" 2>/dev/null)"` | X | user-run or skill-run script, not a hook gate |
-| scripts/sb-doctor.sh:666 | md | `elif [[ ! -f "${PROJ_ROOT}/silver-bullet.md" ]]; then` | X | user-run or skill-run script, not a hook gate |
-| scripts/sb-doctor.sh:670 | md | `grep -q "^## ${d7_sec}\\. " "${PROJ_ROOT}/silver-bullet.md" 2>/dev/null \|\| d7_missing="$` | X | user-run or skill-run script, not a hook gate |
+| scripts/sb-doctor.sh:636 | md | `if [[ -f "$sb_config" && -f "${PROJ_ROOT}/silver-bullet.md" ]]; then` | X | user-run or skill-run script, not a hook gate |
+| scripts/sb-doctor.sh:637 | config | `if jq -e '.sb_initiated == true' "$sb_config" >/dev/null 2>&1; then` | X | user-run or skill-run script, not a hook gate |
+| scripts/sb-doctor.sh:648 | config | `if ! proj_ver="$(jq -r '.config_version // .version // "0.0.0"' "$sb_config" 2>/dev/null)"` | X | user-run or skill-run script, not a hook gate |
+| scripts/sb-doctor.sh:665 | md | `elif [[ ! -f "${PROJ_ROOT}/silver-bullet.md" ]]; then` | X | user-run or skill-run script, not a hook gate |
+| scripts/sb-doctor.sh:669 | md | `grep -q "^## ${d7_sec}\\. " "${PROJ_ROOT}/silver-bullet.md" 2>/dev/null \|\| d7_missing="$` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-migrate-orchestrator-parent.sh:13 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-migrate-orchestrator-parent.sh:14 | config | `config_file="$search_dir/.silver-bullet.json"` | X | user-run or skill-run script, not a hook gate |
 | scripts/sb-migrate-orchestrator-parent.sh:31 | config | `mode="$(jq -r '.orchestrator_mode // "absent"' "$config_file")"` | X | user-run or skill-run script, not a hook gate |

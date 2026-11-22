@@ -79,7 +79,7 @@
   },
   {
    "file": "hooks/lib/agentmemory-gate.sh",
-   "line": 166,
+   "line": 165,
    "kind": "config",
    "snippet": "ttl=\"$(jq -r '.recommended_tools.agentmemory.usage_ttl_seconds // \"\" | tostring' \"$config_file\" 2>/dev/null || true)\"",
    "record": "X",
@@ -87,7 +87,7 @@
   },
   {
    "file": "hooks/lib/agentmemory-gate.sh",
-   "line": 175,
+   "line": 174,
    "kind": "config",
    "snippet": "configured=\"$(jq -r '.recommended_tools.agentmemory.usage_state_file // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
    "record": "X",
@@ -231,7 +231,7 @@
   },
   {
    "file": "hooks/lib/leanctx-gate.sh",
-   "line": 73,
+   "line": 72,
    "kind": "config",
    "snippet": "ttl=\"$(jq -r '.recommended_tools.leanctx.usage_ttl_seconds // \"\" | tostring' \"$config_file\" 2>/dev/null || true)\"",
    "record": "X",
@@ -239,7 +239,7 @@
   },
   {
    "file": "hooks/lib/leanctx-gate.sh",
-   "line": 82,
+   "line": 81,
    "kind": "config",
    "snippet": "configured=\"$(jq -r '.recommended_tools.leanctx.usage_state_file // \"\" | strings' \"$config_file\" 2>/dev/null || true)\"",
    "record": "X",
@@ -359,7 +359,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 280,
+   "line": 281,
    "kind": "config",
    "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]] && [[ -f \"$search_dir/silver-bullet.md\" ]]; then",
    "record": "A",
@@ -367,7 +367,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 281,
+   "line": 282,
    "kind": "config",
    "snippet": "config_file=\"$search_dir/.silver-bullet.json\"",
    "record": "A",
@@ -375,7 +375,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 304,
+   "line": 305,
    "kind": "config",
    "snippet": "STATE_FILE=$(jq -r '.state.state_file // \"\"' \"$config_file\")",
    "record": "A",
@@ -383,7 +383,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 333,
+   "line": 334,
    "kind": "config",
    "snippet": "custom_tracked=$(jq -r '(.skills.all_tracked // []) | join(\" \")' \"$config_file\")",
    "record": "A",
@@ -391,7 +391,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 409,
+   "line": 418,
    "kind": "state",
    "snippet": "if ! grep -Fqx -- \"$skill\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "A",
@@ -399,7 +399,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 424,
+   "line": 433,
    "kind": "state",
    "snippet": "if ! grep -Fqx -- \"$mode_marker\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "A",
@@ -407,7 +407,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 438,
+   "line": 447,
    "kind": "state",
    "snippet": "if ! grep -Fqx -- \"$mode_marker\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "A",
@@ -415,7 +415,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 465,
+   "line": 476,
    "kind": "state",
    "snippet": "[[ -f \"$STATE_FILE\" ]] && state_contents=\"$(cat \"$STATE_FILE\" 2>/dev/null || true)\"",
    "record": "A",
@@ -559,7 +559,7 @@
   },
   {
    "file": "scripts/monitor-enterprise-e2e-matrix.sh",
-   "line": 170,
+   "line": 142,
    "kind": "state",
    "snippet": "if grep -q \"^${key}=\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "X",
@@ -567,7 +567,7 @@
   },
   {
    "file": "scripts/optimize-five-tool-stack.sh",
-   "line": 108,
+   "line": 103,
    "kind": "config",
    "snippet": "if [[ -n \"$PROJECT_ROOT\" && -f \"${PROJECT_ROOT}/.silver-bullet.json\" ]]; then",
    "record": "X",
@@ -575,7 +575,7 @@
   },
   {
    "file": "scripts/optimize-five-tool-stack.sh",
-   "line": 118,
+   "line": 113,
    "kind": "config",
    "snippet": "[[ -z \"$cfg\" ]] || [[ \"$(jq -r '.recommended_tools.leanctx.enabled_by_user' \"$cfg\" 2>/dev/null)\" != \"false\" ]]",
    "record": "X",
@@ -583,7 +583,7 @@
   },
   {
    "file": "scripts/optimize-five-tool-stack.sh",
-   "line": 126,
+   "line": 121,
    "kind": "config",
    "snippet": "profile=\"$(jq -r '.recommended_tools.leanctx.optimization_profile // \"five_tool_routed\"' \"$cfg\" 2>/dev/null || echo five_tool_routed)\"",
    "record": "X",
@@ -623,7 +623,7 @@
   },
   {
    "file": "scripts/sb-diagnostics.sh",
-   "line": 17,
+   "line": 20,
    "kind": "config",
    "snippet": "while [[ \"$_sb_diag_dir\" != \"/\" && ! -f \"${_sb_diag_dir}/.silver-bullet.json\" && ! -e \"${_sb_diag_dir}/.git\" ]]; do",
    "record": "X",
@@ -631,7 +631,7 @@
   },
   {
    "file": "scripts/sb-diagnostics.sh",
-   "line": 20,
+   "line": 23,
    "kind": "config",
    "snippet": "[[ -f \"${_sb_diag_dir}/.silver-bullet.json\" ]] && PROJECT_ROOT=\"$_sb_diag_dir\"",
    "record": "X",
@@ -639,7 +639,7 @@
   },
   {
    "file": "scripts/sb-doctor.sh",
-   "line": 673,
+   "line": 636,
    "kind": "md",
    "snippet": "if [[ -f \"$sb_config\" && -f \"${PROJ_ROOT}/silver-bullet.md\" ]]; then",
    "record": "X",
@@ -647,7 +647,7 @@
   },
   {
    "file": "scripts/sb-doctor.sh",
-   "line": 674,
+   "line": 637,
    "kind": "config",
    "snippet": "if jq -e '.sb_initiated == true' \"$sb_config\" >/dev/null 2>&1; then",
    "record": "X",
@@ -655,7 +655,7 @@
   },
   {
    "file": "scripts/sb-doctor.sh",
-   "line": 685,
+   "line": 648,
    "kind": "config",
    "snippet": "if ! proj_ver=\"$(jq -r '.config_version // .version // \"0.0.0\"' \"$sb_config\" 2>/dev/null)\"; then",
    "record": "X",
@@ -663,7 +663,7 @@
   },
   {
    "file": "scripts/sb-doctor.sh",
-   "line": 702,
+   "line": 665,
    "kind": "md",
    "snippet": "elif [[ ! -f \"${PROJ_ROOT}/silver-bullet.md\" ]]; then",
    "record": "X",
@@ -671,9 +671,9 @@
   },
   {
    "file": "scripts/sb-doctor.sh",
-   "line": 706,
+   "line": 669,
    "kind": "md",
-   "snippet": "grep -q \"^## ${d7_sec}\\\\. \" \"${PROJ_ROOT}/silver-bullet.md\" 2>/dev/null || d7_missing=\"${d7_missing:+${d7_missing}, }§${d7_sec}\"",
+   "snippet": "grep -q \"^## ${d7_sec}\\\\. \" \"${PROJ_ROOT}/silver-bullet.md\" 2>/dev/null || d7_missing=\"${d7_missing:+${d7_missing}, }\u00a7${d7_sec}\"",
    "record": "X",
    "reason": "user-run or skill-run script, not a hook gate"
   },
@@ -799,7 +799,7 @@
   },
   {
    "file": "skills/silver-add/SKILL.md",
-   "line": 48,
+   "line": 50,
    "kind": "config",
    "snippet": "TRACKER=$(jq -r '.issue_tracker // \"local\"' .silver-bullet.json)",
    "record": "X",
@@ -807,7 +807,7 @@
   },
   {
    "file": "skills/silver-add/SKILL.md",
-   "line": 49,
+   "line": 51,
    "kind": "config",
    "snippet": "ADAPTER_TYPE=$(jq -r '.issue_tracker_adapter.type // \"local\"' .silver-bullet.json)",
    "record": "X",
@@ -815,7 +815,7 @@
   },
   {
    "file": "skills/silver-add/SKILL.md",
-   "line": 50,
+   "line": 52,
    "kind": "config",
    "snippet": "CACHE=$(jq -r '._github_project // empty' .silver-bullet.json)",
    "record": "X",
@@ -823,7 +823,7 @@
   },
   {
    "file": "skills/silver-add/SKILL.md",
-   "line": 266,
+   "line": 310,
    "kind": "config",
    "snippet": "CACHE_OWNER=$(jq -r '._github_project.owner // empty' .silver-bullet.json)",
    "record": "X",
@@ -831,7 +831,7 @@
   },
   {
    "file": "skills/silver-add/SKILL.md",
-   "line": 271,
+   "line": 315,
    "kind": "config",
    "snippet": "PROJ_NUM=$(jq -r '._github_project.number' .silver-bullet.json)",
    "record": "X",
@@ -839,7 +839,7 @@
   },
   {
    "file": "skills/silver-add/SKILL.md",
-   "line": 272,
+   "line": 316,
    "kind": "config",
    "snippet": "NODE_ID=$(jq -r '._github_project.node_id' .silver-bullet.json)",
    "record": "X",
@@ -847,7 +847,7 @@
   },
   {
    "file": "skills/silver-add/SKILL.md",
-   "line": 273,
+   "line": 317,
    "kind": "config",
    "snippet": "STATUS_FIELD_ID=$(jq -r '._github_project.status_field_id' .silver-bullet.json)",
    "record": "X",
@@ -855,7 +855,7 @@
   },
   {
    "file": "skills/silver-add/SKILL.md",
-   "line": 274,
+   "line": 318,
    "kind": "config",
    "snippet": "BACKLOG_OPT_ID=$(jq -r '._github_project.backlog_option_id' .silver-bullet.json)",
    "record": "X",
@@ -863,7 +863,7 @@
   },
   {
    "file": "skills/silver-add/SKILL.md",
-   "line": 275,
+   "line": 319,
    "kind": "config",
    "snippet": "OWNER=$(jq -r '._github_project.owner' .silver-bullet.json)",
    "record": "X",
@@ -871,7 +871,7 @@
   },
   {
    "file": "skills/silver-add/SKILL.md",
-   "line": 334,
+   "line": 378,
    "kind": "config",
    "snippet": "CREATE_CMD=$(jq -r '.issue_tracker_adapter.create_issue_command // empty' .silver-bullet.json)",
    "record": "X",
@@ -879,7 +879,7 @@
   },
   {
    "file": "skills/silver-add/SKILL.md",
-   "line": 335,
+   "line": 379,
    "kind": "config",
    "snippet": "DEDUPE_CMD=$(jq -r '.issue_tracker_adapter.dedupe_command // empty' .silver-bullet.json)",
    "record": "X",
@@ -889,7 +889,7 @@
    "file": "skills/silver-create-release/SKILL.md",
    "line": 34,
    "kind": "config",
-   "snippet": "- `jq` (read `.silver-bullet.json` config — verify_commands only)",
+   "snippet": "- `jq` (read `.silver-bullet.json` config \u2014 verify_commands only)",
    "record": "X",
    "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
   },
@@ -903,7 +903,7 @@
   },
   {
    "file": "skills/silver-ingest/SKILL.md",
-   "line": 20,
+   "line": 22,
    "kind": "md",
    "snippet": "grep -A 50 \"^## [0-9]\\+\\. User Workflow Preferences\" silver-bullet.md | head -60",
    "record": "X",
@@ -983,7 +983,7 @@
   },
   {
    "file": "skills/silver-migrate/SKILL.md",
-   "line": 94,
+   "line": 96,
    "kind": "md",
    "snippet": "test -f silver-bullet.md && cp silver-bullet.md silver-bullet.md.backup",
    "record": "X",
@@ -1007,7 +1007,7 @@
   },
   {
    "file": "skills/silver-spec/SKILL.md",
-   "line": 22,
+   "line": 24,
    "kind": "md",
    "snippet": "grep -A 50 \"^## [0-9]\\+\\. User Workflow Preferences\" silver-bullet.md | head -60",
    "record": "X",
@@ -1015,7 +1015,7 @@
   },
   {
    "file": "skills/silver-update/SKILL.md",
-   "line": 196,
+   "line": 198,
    "kind": "config",
    "snippet": "test -f .silver-bullet.json && jq -r '.recommended_tools.graphify.enabled_by_user // \"null\"' .silver-bullet.json",
    "record": "X",
@@ -1023,7 +1023,7 @@
   },
   {
    "file": "skills/silver-update/SKILL.md",
-   "line": 197,
+   "line": 199,
    "kind": "config",
    "snippet": "test -f .silver-bullet.json && jq -r '.recommended_tools.graphify.enforcement_suspended // false' .silver-bullet.json",
    "record": "X",
@@ -1031,7 +1031,7 @@
   },
   {
    "file": "skills/silver-update/SKILL.md",
-   "line": 236,
+   "line": 238,
    "kind": "config",
    "snippet": "test -f .silver-bullet.json && jq -r '.recommended_tools.agentmemory.enabled_by_user // \"null\"' .silver-bullet.json",
    "record": "X",
@@ -1039,7 +1039,7 @@
   },
   {
    "file": "skills/silver-update/SKILL.md",
-   "line": 237,
+   "line": 239,
    "kind": "config",
    "snippet": "test -f .silver-bullet.json && jq -r '.recommended_tools.agentmemory.enforcement_suspended // false' .silver-bullet.json",
    "record": "X",
@@ -1047,7 +1047,7 @@
   },
   {
    "file": "skills/silver-update/SKILL.md",
-   "line": 263,
+   "line": 265,
    "kind": "config",
    "snippet": "jq -r '.recommended_tools.rtk.enabled_by_user // \"null\"' .silver-bullet.json",
    "record": "X",
@@ -1055,7 +1055,7 @@
   },
   {
    "file": "skills/silver-update/SKILL.md",
-   "line": 264,
+   "line": 266,
    "kind": "config",
    "snippet": "jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.json",
    "record": "X",
@@ -1063,7 +1063,7 @@
   },
   {
    "file": "skills/silver-update/SKILL.md",
-   "line": 296,
+   "line": 298,
    "kind": "config",
    "snippet": "jq -r '.recommended_tools.context_mode.enabled_by_user // \"null\"' .silver-bullet.json",
    "record": "X",
@@ -1071,7 +1071,7 @@
   },
   {
    "file": "skills/silver-update/SKILL.md",
-   "line": 297,
+   "line": 299,
    "kind": "config",
    "snippet": "jq -r '.recommended_tools.context_mode.enforcement_suspended // false' .silver-bullet.json",
    "record": "X",
@@ -1079,7 +1079,7 @@
   },
   {
    "file": "skills/silver-update/SKILL.md",
-   "line": 321,
+   "line": 323,
    "kind": "config",
    "snippet": "jq -r '.recommended_tools.leanctx.enabled_by_user // \"null\"' .silver-bullet.json",
    "record": "X",
@@ -1087,7 +1087,7 @@
   },
   {
    "file": "skills/silver-update/SKILL.md",
-   "line": 322,
+   "line": 324,
    "kind": "config",
    "snippet": "jq -r '.recommended_tools.leanctx.enforcement_suspended // false' .silver-bullet.json",
    "record": "X",
