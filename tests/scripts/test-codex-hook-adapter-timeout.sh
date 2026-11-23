@@ -11,12 +11,44 @@ pass() { echo "PASS: $1"; ((PASS++)) || true; }
 fail() { echo "FAIL: $1"; ((FAIL++)) || true; }
 
 
+# A hook that records that it really started (SB_TEST_STUB_MARK) and then hangs.
+# The timeout verdict is only judged once the hang was actually reached: a hook
+# that never started (spawn failure under heavy load or tracing) proves nothing
+# about the timeout path and is retried, while every other outcome is reported
+# with the adapter's exit status and stderr so a failure explains itself.
+mk_slow_stub() {
+  printf '#!/usr/bin/env bash\n[[ -z "${SB_TEST_STUB_MARK:-}" ]] || : >"$SB_TEST_STUB_MARK"\nsleep 30\n' >"$1"
+  chmod +x "$1"
+}
 slow_stub="$(mktemp)"
-printf '#!/usr/bin/env bash\nsleep 30\n' >"$slow_stub"
-chmod +x "$slow_stub"
+mk_slow_stub "$slow_stub"
+
+# run_slow STUB EVENT [VAR=VAL ...] -> OUT (stdout), RC (adapter exit status), ERR (stderr head), STARTED (yes/no)
+run_slow() {
+  local stub="$1" ev="$2" mark errf attempt
+  shift 2
+  mark="$(mktemp -u)"
+  errf="$(mktemp)"
+  STARTED=no
+  for attempt in 1 2 3; do
+    rm -f "$mark"
+    RC=0
+    OUT=$(printf '{}' | env SB_CODEX_HOOK_SUBPROC_TIMEOUT=1 SB_TEST_STUB_MARK="$mark" "$@" "$ADAPTER" "$ev" "$stub" 2>"$errf") || RC=$?
+    if [[ -e "$mark" ]]; then
+      STARTED=yes
+      break
+    fi
+    echo "NOTE: $ev hook never started on attempt $attempt (adapter rc=$RC, stderr: $(head -c 300 "$errf")); the timeout path was not reached, retrying"
+  done
+  ERR="$(head -c 500 "$errf")"
+  rm -f "$mark" "$errf"
+}
+# diag: what the adapter did, appended to every FAIL line of a run_slow check.
+diag() { printf 'got: [%s] (adapter rc=%s, hook started=%s, stderr=[%s])' "$OUT" "$RC" "$STARTED" "$ERR"; }
 
 start_ms=$(python3 -c 'import time; print(int(time.time()*1000))')
-out=$(printf '{}' | env SB_CODEX_HOOK_SUBPROC_TIMEOUT=1 "$ADAPTER" PreToolUse "$slow_stub" 2>/dev/null || true)
+run_slow "$slow_stub" PreToolUse
+out="$OUT"
 end_ms=$(python3 -c 'import time; print(int(time.time()*1000))')
 elapsed=$((end_ms - start_ms))
 
@@ -29,34 +61,38 @@ fi
 if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny" and (.hookSpecificOutput.permissionDecisionReason | test("timed out"))' >/dev/null 2>&1; then
   pass "PreToolUse timeout fails closed (deny, not allow)"
 else
-  fail "PreToolUse timeout must emit a deny, got: $out"
+  fail "PreToolUse timeout must emit a deny, $(diag)"
 fi
 
-out=$(printf '{}' | env SB_CODEX_HOOK_SUBPROC_TIMEOUT=1 "$ADAPTER" Stop "$slow_stub" 2>/dev/null || true)
+run_slow "$slow_stub" Stop
+out="$OUT"
 if printf '%s' "$out" | jq -e '.decision == "block" and (.reason | test("timed out"))' >/dev/null 2>&1; then
   pass "Stop timeout fails closed (block)"
 else
-  fail "Stop timeout must emit a block, got: $out"
+  fail "Stop timeout must emit a block, $(diag)"
 fi
-out=$(printf '{}' | env SB_CODEX_HOOK_SUBPROC_TIMEOUT=1 "$ADAPTER" SubagentStop "$slow_stub" 2>/dev/null || true)
+run_slow "$slow_stub" SubagentStop
+out="$OUT"
 if printf '%s' "$out" | jq -e '.decision == "block"' >/dev/null 2>&1; then
   pass "SubagentStop timeout fails closed (block)"
 else
-  fail "SubagentStop timeout must emit a block, got: $out"
+  fail "SubagentStop timeout must emit a block, $(diag)"
 fi
 
-out=$(printf '{}' | env SB_CODEX_HOOK_SUBPROC_TIMEOUT=1 "$ADAPTER" PostToolUse "$slow_stub" 2>/dev/null || true)
+run_slow "$slow_stub" PostToolUse
+out="$OUT"
 if printf '%s' "$out" | jq -e '.systemMessage | test("timed out")' >/dev/null 2>&1; then
   pass "PostToolUse timeout only emits the timeout systemMessage"
 else
-  fail "PostToolUse timeout should emit a systemMessage, got: $out"
+  fail "PostToolUse timeout should emit a systemMessage, $(diag)"
 fi
 
-out=$(printf '{}' | env SB_CODEX_HOOK_SUBPROC_TIMEOUT=1 SB_CODEX_HOOK_ON_TIMEOUT=allow "$ADAPTER" PreToolUse "$slow_stub" 2>/dev/null || true)
+run_slow "$slow_stub" PreToolUse SB_CODEX_HOOK_ON_TIMEOUT=allow
+out="$OUT"
 if printf '%s' "$out" | jq -e '.systemMessage | test("timed out")' >/dev/null 2>&1; then
   pass "SB_CODEX_HOOK_ON_TIMEOUT=allow is the explicit opt-out"
 else
-  fail "opt-out should emit only the notice, got: $out"
+  fail "opt-out should emit only the notice, $(diag)"
 fi
 
 # R7-01: the hook's own hooks.json budget (--timeout) is honoured: a hook that
@@ -135,13 +171,14 @@ for bad_cap in abc 0 00 0.000 0e0 -1 -5 NaN nan inf 1e3 . 5. .5 "1;2" " "; do
   fi
 done
 # Only exactly "allow" opts out of fail-closed.
-slow2="$(mktemp)"; printf '#!/usr/bin/env bash\nsleep 30\n' >"$slow2"; chmod +x "$slow2"
+slow2="$(mktemp)"; mk_slow_stub "$slow2"
 for odd in block deny DENY Allow yes ""; do
-  out=$(printf '{}' | SB_CODEX_HOOK_SUBPROC_TIMEOUT=1 SB_CODEX_HOOK_ON_TIMEOUT="$odd" "$ADAPTER" PreToolUse "$slow2" 2>/dev/null || true)
+  run_slow "$slow2" PreToolUse SB_CODEX_HOOK_ON_TIMEOUT="$odd"
+  out="$OUT"
   if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
     pass "SB_CODEX_HOOK_ON_TIMEOUT=[$odd] still fails closed"
   else
-    fail "SB_CODEX_HOOK_ON_TIMEOUT=[$odd] must fail closed, got: $out"
+    fail "SB_CODEX_HOOK_ON_TIMEOUT=[$odd] must fail closed, $(diag)"
   fi
 done
 rm -f "$slow2"
@@ -162,8 +199,7 @@ rm -f "$slow_stub"
 # shellcheck source=../../hooks/lib/hook-subproc-timeout.sh
 source "$REPO_ROOT/hooks/lib/hook-subproc-timeout.sh"
 lib_stub="$(mktemp)"
-printf '#!/usr/bin/env bash\nsleep 30\n' >"$lib_stub"
-chmod +x "$lib_stub"
+mk_slow_stub "$lib_stub"
 lib_in="$(mktemp)"; lib_out="$(mktemp)"; lib_err="$(mktemp)"
 printf '{}' >"$lib_in"
 lib_start=$(python3 -c 'import time; print(int(time.time()*1000))')
