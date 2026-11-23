@@ -327,6 +327,41 @@ mkdir -p "$FINDLOCK"
 assert_eq "find failing with 1 while the lock exists: refused as unverifiable (status 2)" "2" "$(_sb_consent_lock_sane "$FINDLOCK"; echo $?)"
 rmdir "$FINDLOCK"
 assert_eq "find failing with 1 and no lock: absent, usable" "0" "$(_sb_consent_lock_sane "$FINDLOCK" && echo 0 || echo 1)"
+# A lock path that flickers (other writers remove and recreate it all the time) makes find exit 1 ("gone") while the
+# path exists again by the next look. That must converge: find answers 1 for K looks, then answers truthfully.
+export FIND_CNT="$TL_TMP/find-count" FIND_K=0 MKDIR_LOCK="$FINDLOCK"
+tl_stub find 'c=0; [ -s "$FIND_CNT" ] && c="$(cat "$FIND_CNT")"; if [ "$c" -lt "$FIND_K" ]; then echo $((c + 1)) >"$FIND_CNT"; exit 1; fi; echo $((c + 1)) >"$FIND_CNT"; if [ -n "${FIND_RMDIR:-}" ]; then rmdir "$MKDIR_LOCK" 2>/dev/null; fi; exec "$(command -v -p find)" "$@"'; hash -r
+for FIND_K in 1 2 5 24; do
+  rm -f "$FIND_CNT"; mkdir -p "$FINDLOCK"
+  assert_eq "find says gone $FIND_K times while the lock exists, then the truth: usable (status 0)" "0" "$(_sb_consent_lock_sane "$FINDLOCK"; echo $?)"
+  assert_eq "and find was asked $((FIND_K + 1)) times" "$((FIND_K + 1))" "$(cat "$FIND_CNT")"
+  rmdir "$FINDLOCK"
+  # the same through a writer: the lock is released after the flicker, the grant lands
+  rm -f "$FIND_CNT"; mkdir -p "$FINDLOCK"; export FIND_RMDIR=1
+  tl_run bash "$CLI" grant graphify --all-projects --capabilities enforce
+  unset FIND_RMDIR
+  assert_eq "a writer facing a path that flickers $FIND_K times is not refused" "0" "$TL_STATUS"
+  assert_eq "and its grant is recorded" "granted" "$(sb_consent_decision graphify enforce)"
+  reset_store; mkdir -p "$(dirname "$STORE")"
+done
+# the looks are spaced by a short, uneven pause (10 to 30 ms), one per flicker
+export SLEEP_LOG="$TL_TMP/sleep-log"; : >"$SLEEP_LOG"; FIND_K=4; rm -f "$FIND_CNT"; mkdir -p "$FINDLOCK"
+tl_stub sleep 'echo "$1" >>"$SLEEP_LOG"'; hash -r
+_sb_consent_lock_sane "$FINDLOCK"
+rm -f "$TL_BIN/sleep"; hash -r; rmdir "$FINDLOCK"
+assert_eq "one short pause per flicker" "4" "$(grep -c '^0\.0[123]$' "$SLEEP_LOG")"
+assert_eq "and no other pause" "4" "$(grep -c . "$SLEEP_LOG")"
+FIND_K=100000; rm -f "$FIND_CNT"; mkdir -p "$FINDLOCK"; SECONDS=0
+assert_eq "a path that never settles: status 2 (cannot verify)" "2" "$(_sb_consent_lock_sane "$FINDLOCK"; echo $?)"
+assert_eq "after a bounded number of looks (25)" "25" "$(cat "$FIND_CNT")"
+assert_eq "in bounded time" "ok" "$([[ $SECONDS -le 5 ]] && echo ok || echo slow)"
+rm -f "$FIND_CNT"
+tl_run bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "a writer facing a path that never settles exits 2" "2" "$TL_STATUS"
+assert_contains "with the cannot-verify message" "$TL_ERR" "cannot verify"
+assert_eq "and records nothing" "unset" "$(sb_consent_decision graphify enforce)"
+rmdir "$FINDLOCK"
+unset FIND_K
 rm -f "$TL_BIN/find"; hash -r
 assert_eq "the real find reports an absent lock as usable (status 0)" "0" "$(_sb_consent_lock_sane "$FINDLOCK"; echo $?)"
 reset_store

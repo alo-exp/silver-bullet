@@ -190,22 +190,26 @@ _sb_consent_clean_source() {
 # SB_CONSENT_LOCK_TRIES (default 200, 0.1 s apart; a value that is not an integer from 1 to
 # 1000 means the default) bounds the wait.
 _sb_consent_lock_sane() { # LOCK: status 0 usable, 1 something other than our own plain directory, 2 cannot be verified
-  local lock="$1" out rc
+  local lock="$1" out rc looks=0
   # A symlink is never ours and is never looked through, whatever find does below.
   [[ -L "$lock" ]] && return 1
   # One look decides: find makes a single lstat of the path (it never follows a symlink). Other writers
   # create and remove this directory all the time, and separate tests (exists? directory? mine?) can
   # see it, then not see it, so a writer descheduled between them refused a lock that was only released
   # and exited 2 without recording. find prints only for a path that is not a directory or not ours.
-  for _ in 1 2; do
+  while ((looks++ < 25)); do
     rc=0
     out="$(find "$lock" -maxdepth 0 \( ! -type d -o ! -user "$EUID" \) 2>/dev/null)" || rc=$?
     [[ -z "$out" ]] || return 1
     ((rc == 0)) && return 0
     # find exits 1 for a path that is gone; any other status means it could not run: refuse, never "usable"
     ((rc == 1)) || return 2
-    # gone (usable) unless it appeared since: then look once more
+    # Gone is usable: the mkdir and claim steps decide who holds the lock, and every later look at the path
+    # (the reclaim) asks this again, so a symlink or file put there afterwards is refused then.
     [[ -e "$lock" || -L "$lock" ]] || return 0
+    # It is gone for find and back for us: other writers are creating and removing it. Look again, shortly
+    # and unevenly (the writers should not stay in step); a path find keeps failing on is refused after 25 looks.
+    sleep "0.0$((RANDOM % 3 + 1))"
   done
   return 2
 }
