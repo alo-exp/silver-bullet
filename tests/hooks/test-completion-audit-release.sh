@@ -4,6 +4,9 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/cov-a-ca.sh"
+# A failing command must never end the file silently (a runner shows only "(exit N)"): name it, with its line.
+set -E
+trap 'printf "FAIL: unexpected exit %s at line %s: %s\n" "$?" "$LINENO" "$BASH_COMMAND" >&2' ERR
 
 # ── release gates ────────────────────────────────────────────────────────────
 REL='gh release create v1.0.0'
@@ -178,15 +181,20 @@ printf 'matrix=inline-full-surface\ncommit=%s\n' "$OLD_SHA" >"$INL"
 green() { printf '[{"workflowName":"CI","status":"completed","conclusion":"success","headSha":"%s","createdAt":"1"}]' "$(git -C "$PROJ" rev-parse HEAD)"; }
 run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"; assert_eq "commit= equal to the released commit is accepted" "allow" "$(decision)"
 # variant NAME EXPECT SETUP: a release commit on a throw-away branch from the matrix commit, judged by the real gate
+# The branch name is a counter, never $RANDOM: 15 random bits collide among 20 variants about once in 170 runs
+# ("fatal: a branch named ... already exists", exit 128), and each variant branch is deleted when it is judged.
+VARIANT_N=0
 variant() {
-  local name="$1" expect="$2" setup="$3"
-  git -C "$PROJ" checkout -q -b "variant-$$-$RANDOM" "$OLD_SHA"
+  local name="$1" expect="$2" setup="$3" vb
+  VARIANT_N=$((VARIANT_N + 1)); vb="variant-$$-$VARIANT_N"
+  git -C "$PROJ" checkout -q -b "$vb" "$OLD_SHA"
   ( cd "$PROJ" && eval "$setup" )
   "${GC[@]}" add -A; "${GC[@]}" commit -q -m "variant" --allow-empty
   printf 'matrix=inline-full-surface\ncommit=%s\n' "$OLD_SHA" >"$INL"
   run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="$(green)"
   assert_eq "$name" "$expect" "$(decision)"
   git -C "$PROJ" checkout -q -f "$BASE_BRANCH"
+  git -C "$PROJ" branch -q -D "$vb"
 }
 # accepted: what the release process itself rewrites
 variant "a version-only bump of every manifest, the changelog, a site page and the ledger is accepted" allow '
