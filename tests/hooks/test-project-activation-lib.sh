@@ -329,6 +329,26 @@ assert_eq "a symlinked lock is left alone" "yes" "$([[ -L "$REG.lock" && -f "$CC
 assert_eq "without waiting for it" "ok" "$([[ $SECONDS -le 2 ]] && echo ok || echo slow)"
 assert_eq "the registration still landed" "yes" "$([[ "$(<"$REG")" == *under-symlinked-lock* ]] && echo yes || echo no)"
 rm -f "$REG.lock"
+# a lock released between a failed mkdir and the look at its path is retaken, not given up (the rewrite would be
+# skipped for the whole session): the first mkdir fails as if another holder had the lock, which is gone by the next look
+cp "$REG" "$TL_TMP/reg.before-rel"; rm -f "$REG"; mkdir -p "$CC/rel-a" "$CC/rel-b"
+sb_integrity_register_root "$CC/rel-a"; sb_integrity_register_root "$CC/rel-b"
+export MKDIR_FLAG="$TL_TMP/mkdir-once" MKDIR_LOCK="$REG.lock"; rm -f "$MKDIR_FLAG"
+tl_stub mkdir 'if [ "${1:-}" = "$MKDIR_LOCK" ] && [ ! -e "$MKDIR_FLAG" ]; then : >"$MKDIR_FLAG"; exit 1; fi; exec "$(command -v -p mkdir)" "$@"'; hash -r
+sb_integrity_unregister_root "$CC/rel-a"
+rm -f "$TL_BIN/mkdir"; hash -r
+assert_eq "the first mkdir really failed (the stub ran)" "yes" "$([[ -e "$MKDIR_FLAG" ]] && echo yes || echo no)"
+assert_eq "a lock released in that instant is retaken: the unregister is not skipped" "no" "$([[ "$(<"$REG")" == *rel-a* ]] && echo yes || echo no)"
+assert_eq "and the other line stays" "yes" "$([[ "$(<"$REG")" == *rel-b* ]] && echo yes || echo no)"
+assert_eq "and the lock is released again" "no" "$([[ -e "$REG.lock" ]] && echo yes || echo no)"
+# a lock path that is a plain file is never replaced or waited for: give up at once, rewrite skipped
+: >"$REG.lock"; SECONDS=0
+sb_integrity_unregister_root "$CC/rel-b"
+assert_eq "a plain file at the lock path: the rewrite is skipped" "yes" "$([[ "$(<"$REG")" == *rel-b* ]] && echo yes || echo no)"
+assert_eq "without waiting for it" "ok" "$([[ $SECONDS -le 2 ]] && echo ok || echo slow)"
+assert_eq "and the file is left alone" "yes" "$([[ -f "$REG.lock" ]] && echo yes || echo no)"
+rm -f "$REG.lock"
+cp "$TL_TMP/reg.before-rel" "$REG"
 # a live owner is never robbed: the rewrite is skipped, the registration still lands (one append)
 sleep 30 &
 LIVE=$!

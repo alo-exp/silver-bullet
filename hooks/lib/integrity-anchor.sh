@@ -360,7 +360,12 @@ _sb_iv_reg_lock() { # 0 = held, 1 = not obtained
     n=$((n + 1))
     if mkdir "$lock" 2>/dev/null; then
       if _sb_iv_lock_claim "$lock"; then return 0; fi
-    elif [[ ! -d "$lock" || -L "$lock" ]]; then
+    elif [[ -L "$lock" ]]; then
+      return 1
+    elif [[ ! -e "$lock" ]]; then
+      # released since the mkdir failed: take it again (a state directory that cannot hold a lock runs out the counter)
+      continue
+    elif [[ ! -d "$lock" ]]; then
       return 1
     elif _sb_iv_lock_reclaim "$lock"; then
       continue

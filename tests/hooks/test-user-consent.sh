@@ -258,6 +258,79 @@ done
 for pid in "${pids[@]}"; do wait "$pid" || true; done
 assert_eq "all four parallel revokes are recorded" "0" "$(jq '[.machine // {} | .[] | .enforce // empty] | length' "$STORE")"
 
+echo "=== lock: a lock released while a writer decides whether it is usable is not refused ==="
+# The failure the stress rounds below hit twice on a loaded CI runner: exactly one writer of seven exited 2
+# ("is not a plain directory of yours") and its grant was lost. The check ran as separate tests (exists? directory?
+# mine?), so a writer descheduled between them while another writer released the lock directory saw a path that
+# was a directory a moment ago and is gone now, and refused it. Here the DEBUG trap stands in for the scheduler:
+# it removes the lock directory right before the Nth command of the check runs, for every position in it
+# (command 1 is the call itself, command 3 is the first test of the old three-test check, command 4 its directory test).
+LOCK="$(dirname "$STORE")/.consent.lock"
+FORCE_N=0; FORCE_SEEN=0; FORCE_FIRED=0
+_force_release() {
+  [[ "${FUNCNAME[1]:-}" == _sb_consent_lock_sane ]] || return 0
+  FORCE_SEEN=$((FORCE_SEEN + 1))
+  if ((FORCE_SEEN == FORCE_N)); then FORCE_FIRED=1; rmdir "$LOCK" 2>/dev/null || true; fi
+  return 0
+}
+for FORCE_N in 1 2 3 4 5; do
+  reset_store; mkdir -p "$LOCK"; FORCE_SEEN=0; FORCE_FIRED=0
+  set -T; trap _force_release DEBUG
+  rc=0; sb_consent_set granted rtk enforce machine test 2>"$TL_TMP/force.err" || rc=$?
+  trap - DEBUG; set +T
+  assert_eq "release before command $FORCE_N of the check: the writer is not refused" "0" "$rc"
+  assert_eq "release before command $FORCE_N of the check: the grant is recorded" "granted" "$(sb_consent_decision rtk enforce)"
+  [[ -z "$(cat "$TL_TMP/force.err")" ]] && tl_pass "release before command $FORCE_N of the check: nothing on stderr" || tl_fail "release before command $FORCE_N of the check: nothing on stderr: $(cat "$TL_TMP/force.err")"
+  if ((FORCE_N <= 3)); then assert_eq "the release really happened inside the check (command $FORCE_N)" "1" "$FORCE_FIRED"; fi
+done
+reset_store
+# What the check still refuses: a symlink (dangling or not), a plain file, a directory that is not ours.
+assert_eq "an absent lock path is usable" "0" "$(_sb_consent_lock_sane "$LOCK" && echo 0 || echo 1)"
+mkdir -p "$LOCK"
+assert_eq "a directory of ours is usable" "0" "$(_sb_consent_lock_sane "$LOCK" && echo 0 || echo 1)"
+rmdir "$LOCK"; ln -s "$TL_TMP/nowhere" "$LOCK"
+assert_eq "a dangling symlink is refused" "1" "$(_sb_consent_lock_sane "$LOCK" && echo 0 || echo 1)"
+rm -f "$LOCK"; ln -s "$TL_TMP" "$LOCK"
+assert_eq "a symlink to a directory is refused" "1" "$(_sb_consent_lock_sane "$LOCK" && echo 0 || echo 1)"
+rm -f "$LOCK"; : >"$LOCK"
+assert_eq "a plain file is refused" "1" "$(_sb_consent_lock_sane "$LOCK" && echo 0 || echo 1)"
+rm -f "$LOCK"
+if [[ "$(id -u)" == 0 ]]; then
+  mkdir "$TL_TMP/foreign"; chown 12345 "$TL_TMP/foreign"; foreign="$TL_TMP/foreign"
+else
+  foreign=/
+fi
+assert_eq "a directory owned by someone else is refused" "1" "$(_sb_consent_lock_sane "$foreign" && echo 0 || echo 1)"
+reset_store
+# When find cannot be run (missing, or failing) the lock path cannot be judged: refuse, never treat it as usable.
+# A symlinked lock stays untouched (reclaiming through it would delete claim files in the link's target).
+FINDLOCK="$(dirname "$STORE")/.consent.lock"
+FVICTIM="$TL_TMP/find-victim"; mkdir -p "$FVICTIM"; printf '5000000' >"$FVICTIM/claim.5000000.1"; age "$FVICTIM"/*
+mkdir -p "$(dirname "$STORE")"; ln -s "$FVICTIM" "$FINDLOCK"
+tl_stub find 'exit 127'; hash -r
+assert_eq "find missing: a symlinked lock is refused as not ours (status 1), without asking find" "1" "$(_sb_consent_lock_sane "$FINDLOCK"; echo $?)"
+tl_run bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "find missing: a symlinked lock makes the writer exit 2" "2" "$TL_STATUS"
+assert_eq "find missing: and nothing was recorded" "unset" "$(sb_consent_decision graphify enforce)"
+assert_eq "find missing: the dead claim in the link's target is untouched" "claim.5000000.1" "$(cd "$FVICTIM" && echo *)"
+[[ -L "$FINDLOCK" ]] && tl_pass "find missing: and the link itself is left alone" || tl_fail "find missing: and the link itself is left alone"
+rm -f "$FINDLOCK"
+assert_eq "find missing: an absent lock cannot be verified, so it is refused (status 2)" "2" "$(_sb_consent_lock_sane "$FINDLOCK"; echo $?)"
+tl_run bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "find missing: an absent lock makes the writer exit 2" "2" "$TL_STATUS"
+assert_contains "find missing: the message says the lock could not be verified" "$TL_ERR" "cannot verify"
+assert_eq "find missing: and nothing was recorded" "unset" "$(sb_consent_decision graphify enforce)"
+[[ ! -e "$FINDLOCK" && ! -L "$FINDLOCK" ]] && tl_pass "find missing: and no lock was created" || tl_fail "find missing: and no lock was created"
+# a find that fails without a status of its own (1) for a lock that exists is not "the path is absent" either
+tl_stub find 'exit 1'; hash -r
+mkdir -p "$FINDLOCK"
+assert_eq "find failing with 1 while the lock exists: refused as unverifiable (status 2)" "2" "$(_sb_consent_lock_sane "$FINDLOCK"; echo $?)"
+rmdir "$FINDLOCK"
+assert_eq "find failing with 1 and no lock: absent, usable" "0" "$(_sb_consent_lock_sane "$FINDLOCK" && echo 0 || echo 1)"
+rm -f "$TL_BIN/find"; hash -r
+assert_eq "the real find reports an absent lock as usable (status 0)" "0" "$(_sb_consent_lock_sane "$FINDLOCK"; echo $?)"
+reset_store
+
 echo "=== lock: mutual exclusion and no lost update under stale-lock contention (stress) ==="
 # Probes: mktemp is the first command inside the critical section and mv the last, so a stub on
 # each brackets it. A second writer entering while the sentinel directory exists is a violation
@@ -266,32 +339,51 @@ PROBE="$TL_TMP/probe"; mkdir -p "$PROBE"; export PROBE
 tl_stub mktemp 'real="$(command -v -p mktemp)"; mkdir "$PROBE/in" 2>/dev/null || echo v >>"$PROBE/violations"; sleep 0.02; exec "$real" "$@"'
 tl_stub mv 'real="$(command -v -p mv)"; "$real" "$@"; rc=$?; rmdir "$PROBE/in" 2>/dev/null; exit $rc'
 hash -r
-stress_round() { # KIND: grant seven tools in parallel (maximum wait budget), return how many were recorded
-  local kind="$1" t pids=() lock
-  reset_store; rm -rf "$PROBE/in" "$PROBE/violations" "$PROBE/failed"
+# A pid no process can have: above the largest the kernel hands out (Linux 2^22 = 4194304, macOS and the BSDs
+# 99999). A literal like 999999 is a live pid on a runner that has forked a million processes since boot.
+DEAD_PID=5000000
+# Every writer is a background job whose own exit status and stderr go to files, so a failure names its cause (which
+# writer, which status, which message) instead of only counting. `wait` is only used to block: a bare `wait` once
+# reported "not a child of this shell" on a CI image, so the status file, polled until it exists, says how each ended.
+writers=()
+start_writer() { # ACTION TOOL: one background writer (maximum wait budget); status and stderr in $PROBE/w.<action>.<tool>.{rc,err}
+  local w="$PROBE/w.$1.$2"
+  # the wait budget is the maximum allowed (1000 tries): the writers run serially behind each other's process start-up,
+  # which a CI runner under heavy load stretches past the default (200 tries); this test proves mutual exclusion
+  # and no lost update, not the default budget (the budget rows below prove that)
+  ( rc=0; SB_CONSENT_LOCK_TRIES=1000 bash "$CLI" "$1" "$2" --all-projects --capabilities enforce >/dev/null 2>"$w.err" || rc=$?; echo "$rc" >"$w.rc" ) &
+  writers+=("$!:$w")
+}
+join_writers() { # wait for every started writer; list each one that did not exit 0, with its stderr, in $PROBE/failed
+  local entry w i
+  for entry in "${writers[@]}"; do wait "${entry%%:*}" 2>/dev/null || true; done
+  for entry in "${writers[@]}"; do
+    w="${entry#*:}"; i=0
+    while [[ ! -s "$w.rc" ]] && ((i++ < 2000)); do sleep 0.05; done
+    [[ "$(cat "$w.rc" 2>/dev/null)" == 0 ]] || echo "${w##*/w.}: status '$(cat "$w.rc" 2>/dev/null)', stderr: $(cat "$w.err" 2>/dev/null)" >>"$PROBE/failed"
+  done
+  writers=()
+}
+stress_round() { # KIND: grant seven tools in parallel, print how many were recorded
+  local kind="$1" t lock
+  reset_store; rm -rf "$PROBE/in" "$PROBE/violations" "$PROBE/failed" "$PROBE"/w.*
   lock="$(dirname "$STORE")/.consent.lock"
   mkdir -p "$lock"
   case "$kind" in
-    stale) printf '999999' >"$lock/pid" ;;
+    stale) printf '%s' "$DEAD_PID" >"$lock/pid" ;;
     ownerless) touch -d '10 minutes ago' "$lock" 2>/dev/null || touch -t 200001010000 "$lock" ;;
   esac
-  for t in graphify agentmemory alumnium rtk context_mode leanctx search_cli; do
-    # the wait budget is the maximum allowed (1000 tries = 100 s): the writers run serially behind each other's
-    # process start-up, which a CI runner under heavy load stretches past the default (200 tries); this test
-    # proves mutual exclusion and no lost grant, not the default budget (the budget rows below prove that)
-    SB_CONSENT_LOCK_TRIES=1000 bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
-    pids+=("$!")
-  done
-  for pid in "${pids[@]}"; do wait "$pid" || echo f >>"$PROBE/failed"; done
+  for t in graphify agentmemory alumnium rtk context_mode leanctx search_cli; do start_writer grant "$t"; done
+  join_writers
   jq '[.machine[] | select(.enforce.decision == "granted")] | length' "$STORE"
 }
 lost=0; viol=0; failed=0; ROUNDS="${SB_CONSENT_STRESS_ROUNDS:-30}"
 for ((round = 1; round <= ROUNDS; round++)); do
   kind=stale; ((round % 3 == 0)) && kind=ownerless
   n="$(stress_round "$kind")" || n=0
-  [[ "$n" == 7 ]] || { lost=$((lost + 1)); echo "  round $round ($kind): recorded $n of 7"; }
+  [[ "$n" == 7 ]] || { lost=$((lost + 1)); echo "  round $round ($kind): recorded $n of 7: $(jq -c '[.machine // {} | keys[]]' "$STORE" 2>&1)"; }
   [[ ! -e "$PROBE/violations" ]] || { viol=$((viol + 1)); echo "  round $round ($kind): two writers inside the critical section"; }
-  [[ ! -e "$PROBE/failed" ]] || { failed=$((failed + 1)); echo "  round $round ($kind): a writer exited non-zero"; }
+  [[ ! -e "$PROBE/failed" ]] || { failed=$((failed + 1)); echo "  round $round ($kind): a writer did not exit 0"; sed 's/^/    /' "$PROBE/failed"; }
 done
 assert_eq "$ROUNDS stress rounds: no grant lost" "0" "$lost"
 assert_eq "$ROUNDS stress rounds: never two writers at once" "0" "$viol"
@@ -300,27 +392,17 @@ assert_eq "$ROUNDS stress rounds: every writer succeeded within the (maximum) wa
 # survives is worse than a lost grant), and the grants around it all land.
 revoke_lost=0; revoke_viol=0; revoke_failed=0
 for ((round = 1; round <= 8; round++)); do
-  reset_store; rm -rf "$PROBE/in" "$PROBE/violations" "$PROBE/failed"
+  reset_store; rm -rf "$PROBE/in" "$PROBE/violations" "$PROBE/failed" "$PROBE"/w.*
   bash "$CLI" grant rtk --all-projects --capabilities enforce >/dev/null 2>&1
   bash "$CLI" grant agentmemory --all-projects --capabilities enforce >/dev/null 2>&1
-  mkdir -p "$(dirname "$STORE")/.consent.lock"; printf '999999' >"$(dirname "$STORE")/.consent.lock/pid"
-  pids=()
-  for t in rtk agentmemory; do
-    bash "$CLI" revoke "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
-    pids+=("$!")
-  done
-  for t in graphify alumnium context_mode leanctx search_cli; do
-    # the wait budget is the maximum allowed (1000 tries = 100 s): the writers run serially behind each other's
-    # process start-up, which a CI runner under heavy load stretches past the default (200 tries); this test
-    # proves mutual exclusion and no lost grant, not the default budget (the budget rows below prove that)
-    SB_CONSENT_LOCK_TRIES=1000 bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
-    pids+=("$!")
-  done
-  for pid in "${pids[@]}"; do wait "$pid" || echo f >>"$PROBE/failed"; done
+  mkdir -p "$(dirname "$STORE")/.consent.lock"; printf '%s' "$DEAD_PID" >"$(dirname "$STORE")/.consent.lock/pid"
+  for t in rtk agentmemory; do start_writer revoke "$t"; done
+  for t in graphify alumnium context_mode leanctx search_cli; do start_writer grant "$t"; done
+  join_writers
   state="$(jq -r '[(.machine // {}) | to_entries[] | select(.value.enforce.decision == "granted") | .key] | sort | join(",")' "$STORE")"
   [[ "$state" == "alumnium,context_mode,graphify,leanctx,search_cli" ]] || { revoke_lost=$((revoke_lost + 1)); echo "  revoke round $round: granted set is '$state'"; }
   [[ ! -e "$PROBE/violations" ]] || revoke_viol=$((revoke_viol + 1))
-  [[ ! -e "$PROBE/failed" ]] || revoke_failed=$((revoke_failed + 1))
+  [[ ! -e "$PROBE/failed" ]] || { revoke_failed=$((revoke_failed + 1)); echo "  revoke round $round: a writer did not exit 0"; sed 's/^/    /' "$PROBE/failed"; }
 done
 assert_eq "8 revoke-vs-grant rounds: both revokes and all five grants recorded" "0" "$revoke_lost"
 assert_eq "8 revoke-vs-grant rounds: never two writers at once" "0" "$revoke_viol"
