@@ -211,6 +211,12 @@ hook debug-dump.sh "$EC_PROJ" '{"d":3}'
 assert_eq "dump: an unwritable sink is tolerated, silently" "0:" "$TL_STATUS:$TL_OUT"
 assert_eq "dump: an unwritable sink produces no diagnostics" "" "$TL_ERR"
 if [[ -d "$SD/hook-dump.jsonl" ]]; then tl_pass "dump: the unwritable sink was left alone"; else tl_fail "dump: the unwritable sink was left alone"; fi
+# a payload larger than the pipe buffer, with the redactor gone before the writer finishes: the writer's broken-pipe
+# diagnostic must not reach stderr (this raced on loaded CI runners: the redactor exits when its sink cannot open)
+big="$(head -c 300000 /dev/zero | tr '\0' 'x')"
+# (SIGPIPE ignored, as under some hook runners and CI shells, so the writer sees EPIPE and prints its diagnostic)
+tl_run_stdin "$big" bash -c 'trap "" PIPE; cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$R/debug-dump.sh"
+assert_eq "dump: a payload bigger than the pipe buffer into an unwritable sink: exit 0, no diagnostics" "0::" "$TL_STATUS:$TL_OUT:$TL_ERR"
 rmdir "$SD/hook-dump.jsonl"
 hook debug-dump.sh "$EC_PROJ" '{"d":4}'
 assert_eq "dump: once the sink is writable again the next payload is dumped" '{"d":4}' "$(tail -1 "$SD/hook-dump.jsonl")"

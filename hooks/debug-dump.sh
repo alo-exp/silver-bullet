@@ -59,7 +59,7 @@ if [[ "$out_size" =~ ^[0-9]+$ ]] && (( out_size > 5242880 )); then
   mv -f -- "$DBG_OUT" "${DBG_OUT}.1"
 fi
 # Redact token-like values before they reach the file.
-printf '%s\n' "$payload" \
+printf '%s\n' "$payload" 2>/dev/null \
   | sed -E \
     -e 's/gh[pousr]_[A-Za-z0-9]{20,}/[REDACTED]/g' \
     -e 's/github_pat_[A-Za-z0-9_]{20,}/[REDACTED]/g' \
