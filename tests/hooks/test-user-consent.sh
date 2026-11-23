@@ -302,6 +302,34 @@ else
 fi
 assert_eq "a directory owned by someone else is refused" "1" "$(_sb_consent_lock_sane "$foreign" && echo 0 || echo 1)"
 reset_store
+# When find cannot be run (missing, or failing) the lock path cannot be judged: refuse, never treat it as usable.
+# A symlinked lock stays untouched (reclaiming through it would delete claim files in the link's target).
+FINDLOCK="$(dirname "$STORE")/.consent.lock"
+FVICTIM="$TL_TMP/find-victim"; mkdir -p "$FVICTIM"; printf '5000000' >"$FVICTIM/claim.5000000.1"; age "$FVICTIM"/*
+mkdir -p "$(dirname "$STORE")"; ln -s "$FVICTIM" "$FINDLOCK"
+tl_stub find 'exit 127'; hash -r
+assert_eq "find missing: a symlinked lock is refused as not ours (status 1), without asking find" "1" "$(_sb_consent_lock_sane "$FINDLOCK"; echo $?)"
+tl_run bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "find missing: a symlinked lock makes the writer exit 2" "2" "$TL_STATUS"
+assert_eq "find missing: and nothing was recorded" "unset" "$(sb_consent_decision graphify enforce)"
+assert_eq "find missing: the dead claim in the link's target is untouched" "claim.5000000.1" "$(cd "$FVICTIM" && echo *)"
+[[ -L "$FINDLOCK" ]] && tl_pass "find missing: and the link itself is left alone" || tl_fail "find missing: and the link itself is left alone"
+rm -f "$FINDLOCK"
+assert_eq "find missing: an absent lock cannot be verified, so it is refused (status 2)" "2" "$(_sb_consent_lock_sane "$FINDLOCK"; echo $?)"
+tl_run bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "find missing: an absent lock makes the writer exit 2" "2" "$TL_STATUS"
+assert_contains "find missing: the message says the lock could not be verified" "$TL_ERR" "cannot verify"
+assert_eq "find missing: and nothing was recorded" "unset" "$(sb_consent_decision graphify enforce)"
+[[ ! -e "$FINDLOCK" && ! -L "$FINDLOCK" ]] && tl_pass "find missing: and no lock was created" || tl_fail "find missing: and no lock was created"
+# a find that fails without a status of its own (1) for a lock that exists is not "the path is absent" either
+tl_stub find 'exit 1'; hash -r
+mkdir -p "$FINDLOCK"
+assert_eq "find failing with 1 while the lock exists: refused as unverifiable (status 2)" "2" "$(_sb_consent_lock_sane "$FINDLOCK"; echo $?)"
+rmdir "$FINDLOCK"
+assert_eq "find failing with 1 and no lock: absent, usable" "0" "$(_sb_consent_lock_sane "$FINDLOCK" && echo 0 || echo 1)"
+rm -f "$TL_BIN/find"; hash -r
+assert_eq "the real find reports an absent lock as usable (status 0)" "0" "$(_sb_consent_lock_sane "$FINDLOCK"; echo $?)"
+reset_store
 
 echo "=== lock: mutual exclusion and no lost update under stale-lock contention (stress) ==="
 # Probes: mktemp is the first command inside the critical section and mv the last, so a stub on
