@@ -193,7 +193,7 @@ _sb_consent_lock_sane() { # LOCK: status 0 usable, 1 something other than our ow
   local lock="$1" out rc looks=0
   # A symlink is never ours and is never looked through, whatever find does below.
   [[ -L "$lock" ]] && return 1
-  # One look decides: find makes a single lstat of the path (it never follows a symlink). Other writers
+  # find makes a single lstat of the path per look (it never follows a symlink). Other writers
   # create and remove this directory all the time, and separate tests (exists? directory? mine?) can
   # see it, then not see it, so a writer descheduled between them refused a lock that was only released
   # and exited 2 without recording. find prints only for a path that is not a directory or not ours.
