@@ -290,45 +290,94 @@ sb_integrity_record_root() { # DIR
 _SB_IV_REGISTRY_CAP=200
 
 # Registry rewriters (unregister, prune, cap) take an atomic mkdir lock next to the file, so two concurrent session
-# starts cannot lose each other's line; the gates only read and never take it. The wait is bounded by an
-# iteration counter whatever the failure (about 3 s), and a live owner's lock is never taken over. Only a lock whose
-# owner is dead, or has left no owner file for the first 2 s, is taken over, by renaming it away first (atomic: one
-# taker wins). When the lock cannot be had the rewrite is skipped and retried at the next session; registration
-# still appends its line with a single write, which needs no lock.
+# starts cannot lose each other's line; the gates only read and never take it. The lock is a directory holding one
+# claim file per holder, the protocol of hooks/lib/orchestrator-io.sh: the winner of the mkdir writes a claim
+# (claim.PID.RANDOM, "PID STAMP") and holds the lock only while its claim is the sole entry, so two holders cannot
+# both believe they hold it. A lock is taken over only by removing a claim that is provably abandoned (its process
+# is gone, or it is older than 30 s: a reused PID keeps a lock "alive"; the critical sections last milliseconds) and
+# then removing the empty directory; a directory with no claim yet is a holder between its mkdir and its claim (a
+# loaded machine stretches that) and is left alone for a minute. A holder releases only a lock that still holds its
+# own claim. The wait is bounded by an iteration counter whatever the failure (about 3 s). When the lock cannot be
+# had the rewrite is skipped and retried at the next session; registration still appends its line with a single
+# write, which needs no lock (its marker anchors the root either way).
+_SB_IV_LOCK_CLAIM=""
+_sb_iv_claim_name() { # NAME: status 0 for an entry name this protocol writes (the first protocol's "pid" file too)
+  [[ "$1" == pid || "$1" =~ ^claim\.[0-9]+\.[0-9]+$ ]]
+}
+_sb_iv_claim_stale() { # CLAIM: status 0 when the process that wrote it is gone, or it is older than 30 s
+  local pid="" stamp="" now
+  # only ever called as a condition (set -e is off there); a claim that vanished reads as empty
+  read -r pid stamp 2>/dev/null <"$1"
+  if [[ "$pid" =~ ^[0-9]+$ ]]; then
+    if ! kill -0 "$pid" 2>/dev/null; then return 0; fi
+    now="$(date +%s)"
+    [[ "$stamp" =~ ^[0-9]+$ ]] && [[ $((now - stamp)) -gt 30 ]]
+  else
+    # an owner that never wrote its pid: the file is being written, or its writer died mid-write
+    [[ -n "$(find "$1" -maxdepth 0 -mmin +1 2>/dev/null)" ]]
+  fi
+}
+_sb_iv_lock_claim() { # LOCK (just made by this process): 0 = held, the claim is in _SB_IV_LOCK_CLAIM
+  local lock="$1" pid="$$" claim entry names="" now
+  if [[ "${BASHPID:-}" =~ ^[0-9]+$ ]]; then pid="$BASHPID"; fi
+  now="$(date +%s)"
+  claim="$lock/claim.$pid.$RANDOM$RANDOM"
+  if printf '%s %s\n' "$pid" "$now" 2>/dev/null >"$claim"; then
+    for entry in "$lock"/*; do
+      if [[ -e "$entry" ]]; then names="$names${entry##*/} "; fi
+    done
+    if [[ "$names" == "${claim##*/} " ]]; then
+      _SB_IV_LOCK_CLAIM="$claim"
+      return 0
+    fi
+  fi
+  rm -f -- "$claim"
+  rmdir "$lock" 2>/dev/null || :
+  return 1
+}
+_sb_iv_lock_reclaim() { # LOCK: drop abandoned claims; status 0 when the lock was left gone
+  local entry seen="" live=""
+  for entry in "$1"/*; do
+    if [[ -e "$entry" || -L "$entry" ]]; then
+      seen=1
+      # only a regular file named like a claim is ever removed; anything else keeps the lock held
+      if [[ -f "$entry" && ! -L "$entry" ]] && _sb_iv_claim_name "${entry##*/}" && _sb_iv_claim_stale "$entry"; then
+        rm -f -- "$entry"
+      else
+        live=1
+      fi
+    fi
+  done
+  if [[ -n "$live" ]]; then return 1; fi
+  if [[ -z "$seen" && -z "$(find "$1" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then return 1; fi
+  rmdir "$1" 2>/dev/null
+}
 _sb_iv_reg_lock() { # 0 = held, 1 = not obtained
-  local lock pid stamp now dead n=0
+  local lock n=0
   lock="$(_sb_iv_registry_file).lock"
+  _SB_IV_LOCK_CLAIM=""
   while [[ $n -lt 60 ]]; do
     n=$((n + 1))
     if mkdir "$lock" 2>/dev/null; then
-      now="$(date +%s)"
-      if printf '%s %s\n' "$$" "$now" 2>/dev/null >"$lock/pid"; then
-        :
-      fi
-      return 0
-    fi
-    if [[ ! -d "$lock" ]]; then
+      if _sb_iv_lock_claim "$lock"; then return 0; fi
+    elif [[ ! -d "$lock" || -L "$lock" ]]; then
       return 1
+    elif _sb_iv_lock_reclaim "$lock"; then
+      continue
     fi
-    pid=""
-    stamp=""
-    read -r pid stamp 2>/dev/null <"$lock/pid" || :
-    now="$(date +%s)"
-    # a dead owner, an owner file that never appeared, or a lock older than 30 s (a reused PID keeps a lock
-    # "alive"; the critical sections last milliseconds) is stale; a young live owner is never robbed
-    if { [[ -n "$pid" ]] && ! kill -0 "$pid" 2>/dev/null; } || { [[ -z "$pid" && $n -ge 40 ]]; } || { [[ "$stamp" =~ ^[0-9]+$ ]] && [[ $((now - stamp)) -gt 30 ]]; }; then
-      dead="$lock.dead.$$"
-      if mv "$lock" "$dead" 2>/dev/null; then
-        rm -rf -- "$dead"
-      fi
-    else
-      sleep 0.05
-    fi
+    sleep 0.05
   done
   return 1
 }
+# Release the lock only while it still holds our claim: a holder whose claim was taken over (its process judged
+# dead, or the claim older than 30 s) leaves the directory to its new owner.
 _sb_iv_reg_unlock() {
-  rm -rf -- "$(_sb_iv_registry_file).lock"
+  local claim="$_SB_IV_LOCK_CLAIM"
+  _SB_IV_LOCK_CLAIM=""
+  if [[ -n "$claim" && -f "$claim" ]]; then
+    rm -f -- "$claim"
+    rmdir "${claim%/*}" 2>/dev/null || :
+  fi
 }
 
 # Register ROOT as a baselined project root (idempotent); the line carries the root's current path and identity,
@@ -364,9 +413,9 @@ _sb_iv_registry_cap() { # FILE
   if [[ ${#n} -lt $_SB_IV_REGISTRY_CAP ]]; then
     return 0
   fi
-  tmp="$f.$$"
+  tmp="$f.$$.${_SB_IV_LOCK_CLAIM##*/}"
   if printf '%s\n' "$content" | tail -n "$_SB_IV_REGISTRY_CAP" 2>/dev/null >"$tmp"; then
-    mv -f -- "$tmp" "$f"
+    mv -f -- "$tmp" "$f" || :
   fi
   rm -f -- "$tmp"
 }
@@ -385,7 +434,7 @@ _sb_iv_unregister_unlocked() { # ROOT
   regf="$(_sb_iv_registry_file)"
   [[ -f "$regf" && ! -L "$regf" ]] || return 0
   id="$(_sb_iv_dir_id "$1")"
-  tmp="$regf.$$"
+  tmp="$regf.$$.${_SB_IV_LOCK_CLAIM##*/}"
   while IFS= read -r line || [[ -n "$line" ]]; do
     lid="${line#*$'\t'}"
     if [[ "$line" == "$1" || "$line" == "$1"$'\t'* ]]; then
@@ -397,7 +446,7 @@ _sb_iv_unregister_unlocked() { # ROOT
     kept="$kept$line"$'\n'
   done <"$regf"
   if printf '%s' "$kept" 2>/dev/null >"$tmp"; then
-    mv -f -- "$tmp" "$regf"
+    mv -f -- "$tmp" "$regf" || :
   fi
   rm -f -- "$tmp"
 }
@@ -517,9 +566,9 @@ _sb_iv_prune_unlocked() {
       kept="$kept${lines[$i]}"$'\n'
     fi
   done
-  tmp="$regf.$$"
+  tmp="$regf.$$.${_SB_IV_LOCK_CLAIM##*/}"
   if printf '%s' "$kept" 2>/dev/null >"$tmp"; then
-    mv -f -- "$tmp" "$regf"
+    mv -f -- "$tmp" "$regf" || :
   fi
   rm -f -- "$tmp"
   _sb_iv_registry_cap "$regf"

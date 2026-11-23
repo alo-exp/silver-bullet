@@ -240,27 +240,51 @@ sb_integrity_prune_registry
 assert_eq "the cap keeps at most 200 lines" "ok" "$([[ "$(grep -c . "$REG")" -le 200 ]] && echo ok || echo big)"
 assert_eq "the cap keeps the newest" "yes" "$([[ "$(<"$REG")" == *cap230* ]] && echo yes || echo no)"
 rm -f "$REG"
-# concurrent writers: parallel registrations and prunes lose no line, every worker exits 0, nothing hangs
+# concurrent writers: parallel registrations and prunes keep every root anchored, every worker exits 0, nothing
+# hangs, and no two workers are ever inside a rewrite at once. Each worker records its own exit status in a file
+# (an EXIT trap), so a death is seen without relying on `wait` (Bash 5.2 answers 127, "not a child of this shell",
+# for a job it has already reaped). `date` is slowed a little inside the workers: it runs between a holder's
+# mkdir and its claim, the window a loaded machine stretches. The rewrite is wrapped in a probe that takes a
+# second, independent mkdir mutex; a second holder inside the rewrite is a violation, whatever the timing luck.
 rm -f "$REG"; rm -rf "$REG.lock"
-CC="$TL_TMP/conc"; mkdir -p "$CC"
+CC="$TL_TMP/conc"; rm -rf "$CC"; mkdir -p "$CC/probe-parent"
+CW="$TL_TMP/conc-worker.sh"
+cat >"$CW" <<'CWEOF'
+set -euo pipefail
+source "$1"
+CC="$2"; w="$3"; rounds="$4"
+status="$CC/status.$w"
+trap 'printf "%s\n" "$?" >"$status"' EXIT
+date() { sleep "0.0$((RANDOM % 4))"; command date "$@"; }
+eval "_probed_register$(declare -f _sb_iv_register_unlocked | sed '1s/^_sb_iv_register_unlocked//')"
+eval "_probed_prune$(declare -f _sb_iv_prune_unlocked | sed '1s/^_sb_iv_prune_unlocked//')"
+_probe_enter() { if ! mkdir "$CC/probe" 2>/dev/null; then : >"$CC/violation.$w"; fi; sleep 0.01; }
+_probe_leave() { rmdir "$CC/probe" 2>/dev/null || :; }
+_sb_iv_register_unlocked() { if [[ -n "${2:-}" ]]; then _probe_enter; fi; _probed_register "$@"; if [[ -n "${2:-}" ]]; then _probe_leave; fi; }
+_sb_iv_prune_unlocked() { _probe_enter; _probed_prune "$@"; _probe_leave; }
+for n in $(seq 1 "$rounds"); do
+  mkdir -p "$CC/w$w-r$n"
+  sb_integrity_register_root "$CC/w$w-r$n"
+  if [[ $((n % 3)) -eq 0 ]]; then sb_integrity_prune_registry; fi
+done
+CWEOF
 WP=()
-for w in 1 2 3 4 5 6; do
-  (
-    for n in 1 2 3 4 5; do
-      mkdir -p "$CC/w$w-r$n"
-      sb_integrity_register_root "$CC/w$w-r$n"
-      if [[ $n -eq 3 ]]; then sb_integrity_prune_registry; fi
-    done
-  ) &
+for w in 1 2 3 4 5 6 7 8; do
+  bash "$CW" "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh" "$CC" "$w" 6 &
   WP+=($!)
 done
+for pid in "${WP[@]}"; do wait "$pid" || :; done
+spins=0
+while [[ $(find "$CC" -maxdepth 1 -name 'status.*' | grep -c .) -lt 8 && $spins -lt 600 ]]; do sleep 0.1; spins=$((spins + 1)); done
 bad=0
-for pid in "${WP[@]}"; do wait "$pid" || bad=$((bad + 1)); done
+for w in 1 2 3 4 5 6 7 8; do if [[ "$(cat "$CC/status.$w" 2>/dev/null)" != 0 ]]; then bad=$((bad + 1)); fi; done
 assert_eq "no parallel worker died" "0" "$bad"
+assert_eq "no two workers were inside a registry rewrite at once" "0" "$(find "$CC" -maxdepth 1 -name 'violation.*' | grep -c . || true)"
 anchored=0
-for w in 1 2 3 4 5 6; do for n in 1 2 3 4 5; do if [[ "$(sb_integrity_record_root "$CC/w$w-r$n")" == "$CC/w$w-r$n" ]]; then anchored=$((anchored + 1)); fi; done; done
-assert_eq "30 parallel registrations: every root is anchored (line, marker or record)" "30" "$anchored"
+for w in 1 2 3 4 5 6 7 8; do for n in 1 2 3 4 5 6; do if [[ "$(sb_integrity_record_root "$CC/w$w-r$n")" == "$CC/w$w-r$n" ]]; then anchored=$((anchored + 1)); fi; done; done
+assert_eq "48 parallel registrations: every root is anchored (line, marker or record)" "48" "$anchored"
 assert_eq "the lock is released" "no" "$([[ -e "$REG.lock" ]] && echo yes || echo no)"
+assert_eq "no temporary file is left behind" "0" "$(find "$SB_RUNTIME_STATE_DIR" -maxdepth 1 -name 'baselined-roots.*' | grep -c . || true)"
 # with the lock obtainable (no contention) every line survives, prunes in between included
 rm -f "$REG"
 for n in $(seq 1 30); do
@@ -269,14 +293,42 @@ for n in $(seq 1 30); do
   if [[ $((n % 10)) -eq 0 ]]; then sb_integrity_prune_registry; fi
 done
 assert_eq "30 sequential registrations with prunes in between: all 30 lines" "30" "$(grep -c "$CC/seq" "$REG")"
-# a lock whose owner is dead is taken over; one without an owner file only after the wait
+# a lock whose owner is dead is taken over (the first protocol's pid file and the claim file alike); a lock with
+# no claim yet is a holder between its mkdir and its claim: never taken over young, taken over once a minute old
 mkdir "$REG.lock"; printf '%s' 999999 >"$REG.lock/pid"
 sb_integrity_register_root "$CC/after-dead-owner"
 assert_eq "a lock whose owner is dead is taken over" "yes" "$([[ "$(<"$REG")" == *after-dead-owner* ]] && echo yes || echo no)"
 assert_eq "and is released again" "no" "$([[ -e "$REG.lock" ]] && echo yes || echo no)"
+mkdir "$REG.lock"; printf '%s %s\n' 999999 "$(date +%s)" >"$REG.lock/claim.999999.12"
+sb_integrity_register_root "$CC/after-dead-claim"
+assert_eq "a claim of a dead process is taken over too" "no" "$([[ -e "$REG.lock" ]] && echo yes || echo no)"
+assert_eq "and its registration landed" "yes" "$([[ "$(<"$REG")" == *after-dead-claim* ]] && echo yes || echo no)"
 mkdir "$REG.lock"
+SECONDS=0
 sb_integrity_register_root "$CC/after-pidless-lock"
-assert_eq "a lock with no owner file is taken over after the wait" "yes" "$([[ "$(<"$REG")" == *after-pidless-lock* ]] && echo yes || echo no)"
+assert_eq "a young lock with no claim yet is not taken over (its holder is between mkdir and claim)" "yes" "$([[ -d "$REG.lock" ]] && echo yes || echo no)"
+assert_eq "its wait is bounded" "ok" "$([[ $SECONDS -le 20 ]] && echo ok || echo slow)"
+assert_eq "and the registration still landed (one append)" "yes" "$([[ "$(<"$REG")" == *after-pidless-lock* ]] && echo yes || echo no)"
+touch -t 200001010000 "$REG.lock"
+sb_integrity_register_root "$CC/after-aged-lock"
+assert_eq "a lock with no claim that is a minute old is taken over" "no" "$([[ -e "$REG.lock" ]] && echo yes || echo no)"
+# a foreign (non-claim) file in the lock directory keeps the lock held (documented in KNOWN-LIMITS.md): the rewrite is
+# skipped, the registration still lands, and removing the directory recovers
+mkdir "$REG.lock"; printf '999999 1\n' >"$REG.lock/foreign.txt"
+sb_integrity_register_root "$CC/under-foreign-file-lock"
+assert_eq "a foreign file keeps the lock held (never removed)" "yes" "$([[ -f "$REG.lock/foreign.txt" ]] && echo yes || echo no)"
+assert_eq "and the registration still landed" "yes" "$([[ "$(<"$REG")" == *under-foreign-file-lock* ]] && echo yes || echo no)"
+rm -rf "$REG.lock"
+sb_integrity_register_root "$CC/after-recovery"
+assert_eq "removing the lock directory recovers: the next registration takes and releases the lock" "no" "$([[ -e "$REG.lock" ]] && echo yes || echo no)"
+# a lock path that is a symlink is never entered: give up at once, nothing behind the link is touched
+mkdir "$CC/linked-lock"; printf x >"$CC/linked-lock/claim.999999.1"; ln -s "$CC/linked-lock" "$REG.lock"
+SECONDS=0
+sb_integrity_register_root "$CC/under-symlinked-lock"
+assert_eq "a symlinked lock is left alone" "yes" "$([[ -L "$REG.lock" && -f "$CC/linked-lock/claim.999999.1" ]] && echo yes || echo no)"
+assert_eq "without waiting for it" "ok" "$([[ $SECONDS -le 2 ]] && echo ok || echo slow)"
+assert_eq "the registration still landed" "yes" "$([[ "$(<"$REG")" == *under-symlinked-lock* ]] && echo yes || echo no)"
+rm -f "$REG.lock"
 # a live owner is never robbed: the rewrite is skipped, the registration still lands (one append)
 sleep 30 &
 LIVE=$!
@@ -291,7 +343,7 @@ assert_eq "a live owner's lock is not taken over" "yes" "$([[ -d "$REG.lock" ]] 
 assert_eq "its rewrites (unregister) were skipped" "yes" "$([[ "$(<"$REG")" == *after-pidless-lock* ]] && echo yes || echo no)"
 assert_eq "but the registration was appended without the lock" "yes" "$([[ "$(<"$REG")" == *under-live-lock* ]] && echo yes || echo no)"
 # ... but a lock older than 30 s is taken over even when its owner's PID is alive (a reused PID)
-rm -rf "$REG.lock"; mkdir "$REG.lock"; printf '%s %s\n' "$LIVE" 1 >"$REG.lock/pid"
+rm -rf "$REG.lock"; mkdir "$REG.lock"; printf '%s %s\n' "$LIVE" 1 >"$REG.lock/claim.$LIVE.5"
 sb_integrity_unregister_root "$CC/after-pidless-lock"
 assert_eq "a lock older than 30 s is taken over although its owner is alive" "no" "$([[ "$(<"$REG")" == *after-pidless-lock* ]] && echo yes || echo no)"
 kill "$LIVE" 2>/dev/null; wait "$LIVE" 2>/dev/null || true
@@ -301,27 +353,90 @@ SECONDS=0
 out="$(SB_RUNTIME_STATE_DIR="$TL_TMP/no-such-state-dir" bash -c 'set -u; source "$1"; sb_integrity_prune_registry; sb_integrity_unregister_root /x; sb_integrity_register_root /x; echo done' _ "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh")"
 assert_eq "a missing state directory: the writers return at once" "done" "$out"
 assert_eq "and quickly" "ok" "$([[ $SECONDS -le 3 ]] && echo ok || echo slow)"
-# the owner file vanishing between the liveness test and the read must not end the shell (set -e), proven with a
-# DEBUG trap that removes it right before the read; the same run with the guard removed does end the shell
-VAN="$TL_TMP/vanish.sh"
-cat >"$VAN" <<'VEOF'
-set -eu -T
+# the claim protocol, piece by piece (a lock directory standing alone)
+LK="$TL_TMP/lk"; rm -rf "$LK"; mkdir "$LK"
+stale_of() { if _sb_iv_claim_stale "$1"; then echo stale; else echo live; fi; }
+printf '%s %s\n' 999999 "$(date +%s)" >"$LK/claim.999999.1"
+assert_eq "a claim of a dead process is stale" "stale" "$(stale_of "$LK/claim.999999.1")"
+printf '%s %s\n' "$$" "$(date +%s)" >"$LK/claim.$$.1"
+assert_eq "a young claim of a live process is not stale" "live" "$(stale_of "$LK/claim.$$.1")"
+printf '%s %s\n' "$$" 1 >"$LK/claim.$$.2"
+assert_eq "a claim older than 30 s is stale although its process lives (PID reuse)" "stale" "$(stale_of "$LK/claim.$$.2")"
+printf '%s %s\n' "$$" "not-a-time" >"$LK/claim.$$.3"
+assert_eq "a live claim whose time is unreadable is not stale" "live" "$(stale_of "$LK/claim.$$.3")"
+: >"$LK/claim.$$.4"
+assert_eq "a claim being written (no pid yet) is not stale" "live" "$(stale_of "$LK/claim.$$.4")"
+touch -t 200001010000 "$LK/claim.$$.4"
+assert_eq "but one that never got its pid in a minute is" "stale" "$(stale_of "$LK/claim.$$.4")"
+assert_eq "a claim that is gone is not stale (nothing to take over)" "live" "$(stale_of "$LK/claim.$$.gone")"
+rm -f "$LK"/claim.*
+# reclaim: only stale claim-named regular files are removed; anything else keeps the lock held
+printf '%s %s\n' 999999 "$(date +%s)" >"$LK/claim.999999.1"
+printf '999999 1\n' >"$LK/keep.txt"
+ln -s "$LK/keep.txt" "$LK/claim.999999.2"
+if _sb_iv_lock_reclaim "$LK"; then r=gone; else r=held; fi
+assert_eq "reclaim leaves a lock with a foreign file or a linked claim held" "held" "$r"
+assert_eq "it removed the stale claim file only" "yes" "$([[ ! -e "$LK/claim.999999.1" && -f "$LK/keep.txt" && -L "$LK/claim.999999.2" ]] && echo yes || echo no)"
+rm -f "$LK/keep.txt" "$LK/claim.999999.2"
+printf '%s %s\n' 999999 "$(date +%s)" >"$LK/claim.999999.3"
+if _sb_iv_lock_reclaim "$LK"; then r=gone; else r=held; fi
+assert_eq "reclaim removes a lock whose claims are all stale" "gone" "$r"
+assert_eq "directory and all" "no" "$([[ -e "$LK" ]] && echo yes || echo no)"
+mkdir "$LK"
+if _sb_iv_lock_reclaim "$LK"; then r=gone; else r=held; fi
+assert_eq "reclaim leaves a young lock with no claim to its holder" "held" "$r"
+# two holders cannot both win: a claim that lands between this holder's mkdir and its own claim makes it lose
+out="$(bash -c 'set -u; source "$1"; lock="$2"; date() { printf "%s %s\n" "$$" 1 >"$lock/claim.$$.1"; command date "$@"; }; if _sb_iv_lock_claim "$lock"; then echo won; else echo lost; fi; ls "$lock"' _ "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh" "$LK" | tr '\n' ' ')"
+assert_eq "a foreign claim in the directory makes this holder lose, and it removes only its own claim" "lost claim.$$.1 " "$(printf '%s' "$out" | sed "s/claim\.[0-9]*\.1 /claim.$$.1 /;s/^lost claim\.[0-9]*\.1/lost claim.$$.1/")"
+rm -rf "$LK"; mkdir "$LK"
+out="$(bash -c 'set -u; source "$1"; if _sb_iv_lock_claim "$2"; then echo won; else echo lost; fi' _ "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh" "$LK")"
+assert_eq "alone in the directory, a holder wins" "won" "$out"
+rm -rf "$LK"
+out="$(bash -c 'set -u; source "$1"; if _sb_iv_lock_claim "$2"; then echo won; else echo lost; fi' _ "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh" "$LK")"
+assert_eq "a claim that cannot be written (no lock directory) loses without error" "lost" "$out"
+# unlock removes only a lock that still holds our claim
+UNL="$TL_TMP/unlock.sh"
+cat >"$UNL" <<'UEOF'
+set -eu
 source "$1"
 export SB_RUNTIME_STATE_DIR="$2"; rm -rf "$SB_RUNTIME_STATE_DIR"; mkdir -p "$SB_RUNTIME_STATE_DIR"
 lock="$(_sb_iv_registry_file).lock"
-sleep 5 & LIVE=$!
-mkdir "$lock"; printf '%s %s\n' "$LIVE" "$(date +%s)" >"$lock/pid"
-trap 'case "$BASH_COMMAND" in "read -r pid"*) rm -f "$lock/pid" ;; esac' DEBUG
 _sb_iv_reg_lock
-trap - DEBUG
-kill "$LIVE" 2>/dev/null || true
-echo "alive"
-VEOF
-out="$(bash "$VAN" "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh" "$TL_TMP/vanish-state" 2>&1 | tail -1)"
-assert_eq "the owner file vanishing before the read does not end a set -e shell" "alive" "$out"
-sed 's/ || :$//' "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh" >"$TL_TMP/anchor-noguard.sh"
-out="$(bash "$VAN" "$TL_TMP/anchor-noguard.sh" "$TL_TMP/vanish-state" 2>&1 | tail -1)" || true
-assert_eq "without the guard the same run ends the shell (the row is not vacuous)" "no" "$([[ "$out" == alive ]] && echo yes || echo no)"
+mine="$_SB_IV_LOCK_CLAIM"
+# our claim is taken over and a new owner holds the lock
+rm -rf "$lock"; mkdir "$lock"; printf '%s %s\n' "$$" "$(date +%s)" >"$lock/claim.$$.77"
+_sb_iv_reg_unlock
+if [[ -f "$lock/claim.$$.77" ]]; then echo kept; else echo robbed; fi
+rm -rf "$lock"
+_sb_iv_reg_lock
+_sb_iv_reg_unlock
+if [[ -e "$lock" ]]; then echo left; else echo released; fi
+_sb_iv_reg_lock
+mine="$_SB_IV_LOCK_CLAIM"; printf x >"$lock/foreign"
+_sb_iv_reg_unlock
+if [[ -d "$lock" && ! -e "$mine" && -f "$lock/foreign" ]]; then echo own-claim-only; else echo wrong; fi
+_sb_iv_reg_unlock
+echo twice
+UEOF
+out="$(bash "$UNL" "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh" "$TL_TMP/unlock-state" 2>&1 | tr '\n' ' ')" || true
+assert_eq "unlock leaves a lock whose claim was taken over to its new owner, releases its own, and is idempotent" "kept released own-claim-only twice " "$out"
+# a failing rename of the rewritten registry must not end a set -e caller (prune, unregister and the cap)
+MVF="$TL_TMP/mvfail.sh"
+cat >"$MVF" <<'MEOF'
+set -euo pipefail
+source "$1"
+export SB_RUNTIME_STATE_DIR="$2"; rm -rf "$SB_RUNTIME_STATE_DIR"; mkdir -p "$SB_RUNTIME_STATE_DIR"
+mv() { return 1; }
+REG="$(_sb_iv_registry_file)"
+printf '%s\t%s\n' /a 1:1:1 /b 1:2:1 >"$REG"
+sb_integrity_prune_registry; echo prune
+sb_integrity_unregister_root /a; echo unregister
+for n in $(seq 1 205); do printf '/cap%s\t8:%s:1\n' "$n" "$n"; done >"$REG"
+sb_integrity_register_root /new; echo cap
+ls "$SB_RUNTIME_STATE_DIR" | grep -c 'baselined-roots\.' || :
+MEOF
+out="$(bash "$MVF" "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh" "$TL_TMP/mvfail-state" 2>&1 | tr '\n' ' ')" || true
+assert_eq "a failing rename ends no caller, leaves no temporary file" "prune unregister cap 0 " "$out"
 rm -f "$REG"
 # a relative directory is judged from the working directory
 sb_integrity_register_root "$P2"
