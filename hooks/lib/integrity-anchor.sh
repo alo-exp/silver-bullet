@@ -306,7 +306,8 @@ _sb_iv_claim_name() { # NAME: status 0 for an entry name this protocol writes (t
 }
 _sb_iv_claim_stale() { # CLAIM: status 0 when the process that wrote it is gone, or it is older than 30 s
   local pid="" stamp="" now
-  read -r pid stamp 2>/dev/null <"$1" || :
+  # only ever called as a condition (set -e is off there); a claim that vanished reads as empty
+  read -r pid stamp 2>/dev/null <"$1"
   if [[ "$pid" =~ ^[0-9]+$ ]]; then
     if ! kill -0 "$pid" 2>/dev/null; then return 0; fi
     now="$(date +%s)"

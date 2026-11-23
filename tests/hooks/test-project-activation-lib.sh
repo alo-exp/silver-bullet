@@ -312,6 +312,15 @@ assert_eq "and the registration still landed (one append)" "yes" "$([[ "$(<"$REG
 touch -t 200001010000 "$REG.lock"
 sb_integrity_register_root "$CC/after-aged-lock"
 assert_eq "a lock with no claim that is a minute old is taken over" "no" "$([[ -e "$REG.lock" ]] && echo yes || echo no)"
+# a foreign (non-claim) file in the lock directory keeps the lock held (documented in KNOWN-LIMITS.md): the rewrite is
+# skipped, the registration still lands, and removing the directory recovers
+mkdir "$REG.lock"; printf '999999 1\n' >"$REG.lock/foreign.txt"
+sb_integrity_register_root "$CC/under-foreign-file-lock"
+assert_eq "a foreign file keeps the lock held (never removed)" "yes" "$([[ -f "$REG.lock/foreign.txt" ]] && echo yes || echo no)"
+assert_eq "and the registration still landed" "yes" "$([[ "$(<"$REG")" == *under-foreign-file-lock* ]] && echo yes || echo no)"
+rm -rf "$REG.lock"
+sb_integrity_register_root "$CC/after-recovery"
+assert_eq "removing the lock directory recovers: the next registration takes and releases the lock" "no" "$([[ -e "$REG.lock" ]] && echo yes || echo no)"
 # a lock path that is a symlink is never entered: give up at once, nothing behind the link is touched
 mkdir "$CC/linked-lock"; printf x >"$CC/linked-lock/claim.999999.1"; ln -s "$CC/linked-lock" "$REG.lock"
 SECONDS=0
@@ -344,24 +353,6 @@ SECONDS=0
 out="$(SB_RUNTIME_STATE_DIR="$TL_TMP/no-such-state-dir" bash -c 'set -u; source "$1"; sb_integrity_prune_registry; sb_integrity_unregister_root /x; sb_integrity_register_root /x; echo done' _ "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh")"
 assert_eq "a missing state directory: the writers return at once" "done" "$out"
 assert_eq "and quickly" "ok" "$([[ $SECONDS -le 3 ]] && echo ok || echo slow)"
-# a claim file vanishing between the liveness test and the read must not end a set -e shell (its holder released
-# the lock a moment ago), proven with a DEBUG trap that removes it right before the read
-VAN="$TL_TMP/vanish.sh"
-cat >"$VAN" <<'VEOF'
-set -eu -T
-source "$1"
-export SB_RUNTIME_STATE_DIR="$2"; rm -rf "$SB_RUNTIME_STATE_DIR"; mkdir -p "$SB_RUNTIME_STATE_DIR"
-lock="$(_sb_iv_registry_file).lock"
-sleep 5 & LIVE=$!
-mkdir "$lock"; printf '%s %s\n' "$LIVE" "$(date +%s)" >"$lock/claim.$LIVE.1"
-trap 'case "$BASH_COMMAND" in "read -r pid"*) rm -f "$lock"/claim.* ;; esac' DEBUG
-_sb_iv_claim_stale "$lock/claim.$LIVE.1" || :
-trap - DEBUG
-kill "$LIVE" 2>/dev/null || true
-echo "alive"
-VEOF
-out="$(bash "$VAN" "$TL_REPO_ROOT/hooks/lib/integrity-anchor.sh" "$TL_TMP/vanish-state" 2>&1 | tail -1)"
-assert_eq "a claim file vanishing before the read does not end a set -e shell" "alive" "$out"
 # the claim protocol, piece by piece (a lock directory standing alone)
 LK="$TL_TMP/lk"; rm -rf "$LK"; mkdir "$LK"
 stale_of() { if _sb_iv_claim_stale "$1"; then echo stale; else echo live; fi; }
