@@ -189,13 +189,25 @@ _sb_consent_clean_source() {
 # outside this guarantee: one still running can remove a lock of this protocol.
 # SB_CONSENT_LOCK_TRIES (default 200, 0.1 s apart; a value that is not an integer from 1 to
 # 1000 means the default) bounds the wait.
-_sb_consent_lock_sane() { # LOCK: status 0 unless LOCK exists as something other than our own plain directory
-  local lock="$1"
+_sb_consent_lock_sane() { # LOCK: status 0 usable, 1 something other than our own plain directory, 2 cannot be verified
+  local lock="$1" out rc
+  # A symlink is never ours and is never looked through, whatever find does below.
+  [[ -L "$lock" ]] && return 1
   # One look decides: find makes a single lstat of the path (it never follows a symlink). Other writers
   # create and remove this directory all the time, and separate tests (exists? directory? mine?) can
   # see it, then not see it, so a writer descheduled between them refused a lock that was only released
-  # and exited 2 without recording. A path that is gone prints nothing: usable.
-  [[ -z "$(find "$lock" -maxdepth 0 \( ! -type d -o ! -user "$EUID" \) 2>/dev/null)" ]]
+  # and exited 2 without recording. find prints only for a path that is not a directory or not ours.
+  for _ in 1 2; do
+    rc=0
+    out="$(find "$lock" -maxdepth 0 \( ! -type d -o ! -user "$EUID" \) 2>/dev/null)" || rc=$?
+    [[ -z "$out" ]] || return 1
+    ((rc == 0)) && return 0
+    # find exits 1 for a path that is gone; any other status means it could not run: refuse, never "usable"
+    ((rc == 1)) || return 2
+    # gone (usable) unless it appeared since: then look once more
+    [[ -e "$lock" || -L "$lock" ]] || return 0
+  done
+  return 2
 }
 
 _sb_consent_claim_name() { # NAME: status 0 for a claim file name this protocol writes (or the legacy "pid")
@@ -257,7 +269,7 @@ _sb_consent_lock_try() { # LOCK: one attempt; status 0 holding it (the claim is 
 }
 
 sb_consent_set() {
-  local lock dir tries="${SB_CONSENT_LOCK_TRIES:-200}" rc=0 spins=0
+  local lock dir tries="${SB_CONSENT_LOCK_TRIES:-200}" rc=0 spins=0 sane=0
   [[ "$tries" =~ ^[1-9][0-9]{0,2}$|^1000$ ]] || tries=200
   dir="$(dirname "$(sb_consent_store_path)")"
   if ! (umask 077 && mkdir -p "$dir") 2>/dev/null; then
@@ -265,7 +277,11 @@ sb_consent_set() {
     return $?
   fi
   lock="${dir}/.consent.lock"
-  if ! _sb_consent_lock_sane "$lock"; then
+  _sb_consent_lock_sane "$lock" || sane=$?
+  if ((sane == 2)); then
+    _sb_consent_err "cannot verify ${lock} (find did not run), so nothing was recorded; try again"
+    return 2
+  elif ((sane != 0)); then
     _sb_consent_err "${lock} is not a plain directory of yours (a symlink or another file?), so nothing was recorded; remove it"
     return 2
   fi
