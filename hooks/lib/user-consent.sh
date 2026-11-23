@@ -191,8 +191,11 @@ _sb_consent_clean_source() {
 # 1000 means the default) bounds the wait.
 _sb_consent_lock_sane() { # LOCK: status 0 unless LOCK exists as something other than our own plain directory
   local lock="$1"
-  [[ ! -e "$lock" && ! -L "$lock" ]] && return 0
-  [[ -d "$lock" && ! -L "$lock" && -O "$lock" ]]
+  # One look decides: find makes a single lstat of the path (it never follows a symlink). Other writers
+  # create and remove this directory all the time, and separate tests (exists? directory? mine?) can
+  # see it, then not see it, so a writer descheduled between them refused a lock that was only released
+  # and exited 2 without recording. A path that is gone prints nothing: usable.
+  [[ -z "$(find "$lock" -maxdepth 0 \( ! -type d -o ! -user "$EUID" \) 2>/dev/null)" ]]
 }
 
 _sb_consent_claim_name() { # NAME: status 0 for a claim file name this protocol writes (or the legacy "pid")
