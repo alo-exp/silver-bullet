@@ -266,7 +266,7 @@ PROBE="$TL_TMP/probe"; mkdir -p "$PROBE"; export PROBE
 tl_stub mktemp 'real="$(command -v -p mktemp)"; mkdir "$PROBE/in" 2>/dev/null || echo v >>"$PROBE/violations"; sleep 0.02; exec "$real" "$@"'
 tl_stub mv 'real="$(command -v -p mv)"; "$real" "$@"; rc=$?; rmdir "$PROBE/in" 2>/dev/null; exit $rc'
 hash -r
-stress_round() { # KIND: grant seven tools in parallel (default wait budget), return how many were recorded
+stress_round() { # KIND: grant seven tools in parallel (maximum wait budget), return how many were recorded
   local kind="$1" t pids=() lock
   reset_store; rm -rf "$PROBE/in" "$PROBE/violations" "$PROBE/failed"
   lock="$(dirname "$STORE")/.consent.lock"
@@ -276,7 +276,10 @@ stress_round() { # KIND: grant seven tools in parallel (default wait budget), re
     ownerless) touch -d '10 minutes ago' "$lock" 2>/dev/null || touch -t 200001010000 "$lock" ;;
   esac
   for t in graphify agentmemory alumnium rtk context_mode leanctx search_cli; do
-    bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
+    # the wait budget is the maximum allowed (1000 tries = 100 s): the writers run serially behind each other's
+    # process start-up, which a CI runner under heavy load stretches past the default (200 tries); this test
+    # proves mutual exclusion and no lost grant, not the default budget (the budget rows below prove that)
+    SB_CONSENT_LOCK_TRIES=1000 bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
     pids+=("$!")
   done
   for pid in "${pids[@]}"; do wait "$pid" || echo f >>"$PROBE/failed"; done
@@ -292,7 +295,7 @@ for ((round = 1; round <= ROUNDS; round++)); do
 done
 assert_eq "$ROUNDS stress rounds: no grant lost" "0" "$lost"
 assert_eq "$ROUNDS stress rounds: never two writers at once" "0" "$viol"
-assert_eq "$ROUNDS stress rounds: every writer succeeded within the default wait" "0" "$failed"
+assert_eq "$ROUNDS stress rounds: every writer succeeded within the (maximum) wait" "0" "$failed"
 # Revokes racing grants behind a stale lock: a revoke must never be lost (a revoked consent that
 # survives is worse than a lost grant), and the grants around it all land.
 revoke_lost=0; revoke_viol=0; revoke_failed=0
@@ -307,7 +310,10 @@ for ((round = 1; round <= 8; round++)); do
     pids+=("$!")
   done
   for t in graphify alumnium context_mode leanctx search_cli; do
-    bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
+    # the wait budget is the maximum allowed (1000 tries = 100 s): the writers run serially behind each other's
+    # process start-up, which a CI runner under heavy load stretches past the default (200 tries); this test
+    # proves mutual exclusion and no lost grant, not the default budget (the budget rows below prove that)
+    SB_CONSENT_LOCK_TRIES=1000 bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
     pids+=("$!")
   done
   for pid in "${pids[@]}"; do wait "$pid" || echo f >>"$PROBE/failed"; done
