@@ -16,8 +16,8 @@ fail() { echo "FAIL: $1"; ((FAIL++)) || true; }
 # that never started (spawn failure under heavy load or tracing) proves nothing
 # about the timeout path and is retried, while every other outcome is reported
 # with the adapter's exit status and stderr so a failure explains itself.
-mk_slow_stub() {
-  printf '#!/usr/bin/env bash\n[[ -z "${SB_TEST_STUB_MARK:-}" ]] || : >"$SB_TEST_STUB_MARK"\nsleep 30\n' >"$1"
+mk_slow_stub() { # path [body] (default: hang)
+  printf '#!/usr/bin/env bash\n[[ -z "${SB_TEST_STUB_MARK:-}" ]] || : >"$SB_TEST_STUB_MARK"\n%s\n' "${2:-sleep 30}" >"$1"
   chmod +x "$1"
 }
 slow_stub="$(mktemp)"
@@ -193,6 +193,82 @@ else
 fi
 rm -rf "$nopy" "$deny_stub" "$block_stub" "$text_stub"
 
+
+# A hook ended by a signal produced no verdict: GNU timeout (and the python3 fallback)
+# report it as 128 + signal, not 124, and a Codex host treats an empty exit-143 as a
+# non-blocking error, i.e. an allow. The adapter treats it like a timeout: deny/block on
+# the events that can deny, a notice elsewhere, the same opt-out.
+sig_dir="$(mktemp -d)"
+for sig in TERM KILL HUP; do
+  mk_slow_stub "$sig_dir/die-$sig" "kill -$sig \$\$"
+done
+for sig in TERM:15:SIGTERM KILL:9:SIGKILL HUP:1:SIGHUP; do
+  IFS=: read -r sname snum slabel <<<"$sig"
+  want="terminated by signal $snum ($slabel) and produced no verdict"
+  run_slow "$sig_dir/die-$sname" PreToolUse
+  if printf '%s' "$OUT" | jq -e --arg w "$want" '.hookSpecificOutput.permissionDecision == "deny" and .hookSpecificOutput.hookEventName == "PreToolUse" and (.hookSpecificOutput.permissionDecisionReason | contains($w))' >/dev/null 2>&1 && [[ "$RC" -eq 0 ]]; then
+    pass "PreToolUse hook killed by $sname fails closed (deny, adapter exit 0)"
+  else
+    fail "PreToolUse hook killed by $sname must deny, $(diag)"
+  fi
+  for ev in Stop SubagentStop; do
+    run_slow "$sig_dir/die-$sname" "$ev"
+    if printf '%s' "$OUT" | jq -e --arg w "$want" '.decision == "block" and (.reason | contains($w))' >/dev/null 2>&1; then
+      pass "$ev hook killed by $sname fails closed (block)"
+    else
+      fail "$ev hook killed by $sname must block, $(diag)"
+    fi
+  done
+  run_slow "$sig_dir/die-$sname" PostToolUse
+  if printf '%s' "$OUT" | jq -e --arg w "$want" '.systemMessage | contains($w)' >/dev/null 2>&1 && ! printf '%s' "$OUT" | jq -e 'has("decision") or has("hookSpecificOutput")' >/dev/null 2>&1; then
+    pass "PostToolUse hook killed by $sname only emits the notice"
+  else
+    fail "PostToolUse hook killed by $sname must emit only a notice, $(diag)"
+  fi
+done
+run_slow "$sig_dir/die-TERM" PreToolUse SB_CODEX_HOOK_ON_TIMEOUT=allow
+if printf '%s' "$OUT" | jq -e '.systemMessage | test("terminated by signal 15")' >/dev/null 2>&1 && ! printf '%s' "$OUT" | jq -e 'has("hookSpecificOutput")' >/dev/null 2>&1; then
+  pass "SB_CODEX_HOOK_ON_TIMEOUT=allow also opts out for a killed hook"
+else
+  fail "opt-out for a killed hook should emit only the notice, $(diag)"
+fi
+# Ordinary exit codes are the hook's own and are not rewritten.
+for code in 1 2 127; do
+  mk_slow_stub "$sig_dir/exit-$code" "echo 'plain output'; exit $code"
+  run_slow "$sig_dir/exit-$code" PreToolUse
+  if [[ "$OUT" == "plain output" && "$RC" -eq "$code" ]]; then
+    pass "hook exit $code passes through unchanged (output kept, exit $code)"
+  else
+    fail "hook exit $code must pass through, $(diag)"
+  fi
+done
+# The python3 fallback (no GNU timeout on PATH) reports the same three outcomes.
+pyonly="$(mktemp -d)"
+for tool in bash cat mktemp rm sleep env dirname jq python3; do
+  src="$(command -v "$tool" 2>/dev/null || true)"
+  [[ -z "$src" ]] || ln -s "$src" "$pyonly/$tool"
+done
+[[ ! -e "$pyonly/timeout" ]] || fail "python-only PATH must not hold GNU timeout"
+out=$(printf '{}' | PATH="$pyonly" "$BASH" "$ADAPTER" PreToolUse "$sig_dir/die-TERM" 2>/dev/null || true)
+if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny" and (.hookSpecificOutput.permissionDecisionReason | contains("signal 15"))' >/dev/null 2>&1; then
+  pass "python3 fallback: a killed hook is denied"
+else
+  fail "python3 fallback: killed hook must deny, got: $out"
+fi
+out=$(printf '{}' | SB_CODEX_HOOK_SUBPROC_TIMEOUT=1 PATH="$pyonly" "$BASH" "$ADAPTER" Stop "$slow_stub" 2>/dev/null || true)
+if printf '%s' "$out" | jq -e '.decision == "block" and (.reason | contains("timed out"))' >/dev/null 2>&1; then
+  pass "python3 fallback: a timeout still blocks"
+else
+  fail "python3 fallback: timeout must block, got: $out"
+fi
+rc=0
+out=$(printf '{}' | PATH="$pyonly" "$BASH" "$ADAPTER" PreToolUse "$sig_dir/exit-2" 2>/dev/null) || rc=$?
+if [[ "$out" == "plain output" && "$rc" -eq 2 ]]; then
+  pass "python3 fallback: exit 2 passes through"
+else
+  fail "python3 fallback: exit 2 must pass through, got rc=$rc out=$out"
+fi
+rm -rf "$sig_dir" "$pyonly"
 rm -f "$slow_stub"
 
 # Direct lib check (macOS python3 fallback when GNU timeout absent)
