@@ -2,6 +2,8 @@
 # Portable subprocess timeout for Silver Bullet hook bridges (GNU timeout, python3, or direct).
 
 # sb_run_hooked_command timeout_seconds stdin_file stdout_file stderr_file command...
+# Returns the command's exit status, 124 when the time ran out, or 128 + N when the
+# command died from signal N (GNU timeout and the python3 fallback agree on this).
 sb_run_hooked_command() {
   local timeout_seconds="$1"
   local stdin_file="$2"
@@ -63,7 +65,10 @@ def main() -> None:
             proc.wait()
         sys.exit(124)
 
-    sys.exit(rc if rc is not None else 1)
+    if rc < 0:
+        # Killed by a signal: report it the way a shell does (128 + signal).
+        rc = 128 - rc
+    sys.exit(rc)
 
 
 if __name__ == "__main__":
