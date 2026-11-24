@@ -8,6 +8,7 @@ import re
 import random
 import string
 import stat
+import sys
 import tempfile
 import time
 import unittest
@@ -833,15 +834,19 @@ class LinearityTests(unittest.TestCase):
             with self.subTest(shape=name):
                 # CPU time, not wall time (a loaded machine stretches wall time, not the work done), measured up
                 # to three times: the bound itself (10 s for 1 MiB) is unchanged.
+                # Line tracing (the coverage job runs every Python test under coverage.py) multiplies CPU time several
+                # times over; a quadratic regression on 1 MiB takes minutes, so a traced run gets a wider ceiling
+                # (CI saw 11.4 s traced on a loaded runner against 1-3 s untraced).
+                limit = 60 if ("coverage" in sys.modules or sys.gettrace() is not None) else 10
                 best = 1e9
                 for _ in range(3):
                     start = time.process_time()
                     agent_redact.scan(text)
                     agent_redact.redact(text)
                     best = min(best, time.process_time() - start)
-                    if best < 10:
+                    if best < limit:
                         break
-                self.assertLess(best, 10)
+                self.assertLess(best, limit)
 
     @unittest.skipUnless(os.environ.get("SB_REDACT_LINEARITY_FULL"), "set SB_REDACT_LINEARITY_FULL=1 for the 1 MiB / 64 KiB variant")
     def test_full_ratio_variant(self):
