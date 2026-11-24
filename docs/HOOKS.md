@@ -238,7 +238,7 @@ These files are not registered in `hooks/hooks.json`.
 
 | File | Role |
 |------|------|
-| `codex-hook-adapter.sh` | Codex adapter: `scripts/install-codex.sh` rewrites installed hook commands to run through it (`codex-hook-adapter.sh <event> --timeout <seconds> <hook>`); it buffers stdin/stdout, applies a budget just below the hook's own `hooks.json` timeout (override `SB_CODEX_HOOK_SUBPROC_TIMEOUT`), blocks on a PreToolUse/Stop timeout (fail closed) and never drops a hook's deny. |
+| `codex-hook-adapter.sh` | Codex adapter: `scripts/install-codex.sh` rewrites installed hook commands to run through it (`codex-hook-adapter.sh <event> --timeout <seconds> <hook>`); it buffers stdin/stdout, applies a budget just below the hook's own `hooks.json` timeout (override `SB_CODEX_HOOK_SUBPROC_TIMEOUT`), blocks a PreToolUse/Stop/SubagentStop hook that times out or dies from a signal (fail closed) and never drops a hook's deny. |
 | `core-rules.md` | Core enforcement rules that `session-start` injects into context. |
 | `core-rules.sha256` | Integrity pin for `core-rules.md`, checked by `hooks/lib/core-rules-integrity.sh` before injection. |
 | `hooks.json` | The registration manifest itself (Claude Code plugin format; Codex reads the same file from the plugin package). |

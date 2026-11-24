@@ -61,23 +61,36 @@ sb_run_hooked_command "$SB_HOOK_SUBPROC_TIMEOUT" "$input_file" "$stdout_file" "$
 rc=$?
 set -e
 trap 'exit 0' ERR
+# The hook produced no verdict when it ran out of time (124) or was ended by a signal
+# (128 + signal: GNU timeout re-raises the signal that killed the hook, so a TERM from
+# outside the timer surfaces as 143, never 124). Ordinary exit codes (0..127) are the
+# hook's own and pass through unchanged.
+verdictless_msg=""
+verdictless_notice=""
 if [[ "$rc" -eq 124 ]]; then
-  # A hook that ran out of time produced no verdict. On the events that can
-  # deny, that is a deny (fail closed) so a slow gate cannot become an allow;
-  # other events only get a notice. SB_CODEX_HOOK_ON_TIMEOUT=allow opts out.
-  timeout_msg="Silver Bullet hook timed out after ${SB_HOOK_SUBPROC_TIMEOUT}s and was blocked (fail closed). Retry, or raise the hook timeout in hooks.json."
+  verdictless_msg="Silver Bullet hook timed out after ${SB_HOOK_SUBPROC_TIMEOUT}s and was blocked (fail closed). Retry, or raise the hook timeout in hooks.json."
+  verdictless_notice="Silver Bullet hook subprocess timed out."
+elif [[ "$rc" -ge 129 && "$rc" -le 159 ]]; then
+  sig_label="signal $((rc - 128)) (SIG$(kill -l "$((rc - 128))"))"
+  verdictless_msg="Silver Bullet hook was terminated by ${sig_label} and produced no verdict, so it was blocked (fail closed). Retry."
+  verdictless_notice="Silver Bullet hook subprocess was terminated by ${sig_label} and produced no verdict."
+fi
+if [[ -n "$verdictless_msg" ]]; then
+  # On the events that can deny, no verdict is a deny (fail closed) so a slow or
+  # killed gate cannot become an allow; other events only get a notice.
+  # SB_CODEX_HOOK_ON_TIMEOUT=allow opts out.
   on_timeout="deny"
   [[ "${SB_CODEX_HOOK_ON_TIMEOUT:-}" != "allow" ]] || on_timeout="allow"
   case "$event_name:$on_timeout" in
     PreToolUse:deny)
-      jq -cn --arg r "$timeout_msg" \
+      jq -cn --arg r "$verdictless_msg" \
         '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}' >"$stdout_file"
       ;;
     Stop:deny | SubagentStop:deny)
-      jq -cn --arg r "$timeout_msg" '{decision:"block",reason:$r}' >"$stdout_file"
+      jq -cn --arg r "$verdictless_msg" '{decision:"block",reason:$r}' >"$stdout_file"
       ;;
     *)
-      printf '{"systemMessage":"Silver Bullet hook subprocess timed out."}\n' >"$stdout_file"
+      printf '{"systemMessage":"%s"}\n' "$verdictless_notice" >"$stdout_file"
       ;;
   esac
   rc=0
