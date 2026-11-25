@@ -33,9 +33,10 @@ Shell execution is limited to:
 - `git push` (push tag or commits)
 - `git remote get-url origin` (detect GitHub repo — piped to `grep` for GitHub detection)
 - `jq` (read `.silver-bullet.json` config — verify_commands only)
-- `bash scripts/sync-release-marketplace-versions.sh` (sync host marketplace manifests manifests before tagging — Step 5b.1)
+- `bash scripts/sync-release-marketplace-versions.sh` (align the in-repo marketplace manifests before tagging — Step 5b.1; publish the upstream marketplace with `--publish` only after the tag and green CI — Step 7c)
+- `bash scripts/verify-release-commit-ci.sh` (wait for the release commit's CI before tagging — Steps 5c and 6b; derives owner/repo from `origin` when `GITHUB_REPOSITORY` is unset)
 - `bash scripts/run-release-live-matrix.sh` (run the repo-configured live matrix wrapper before tagging — Step 6)
-- `bash scripts/validate-github-release-notes.sh` (validate GitHub Release body after creation — Step 7b)
+- `bash scripts/validate-github-release-notes.sh` (validate the release notes file before `gh release create`, and the published body afterwards — Step 7b)
 - `gh release create` (create GitHub release — use full path `/opt/homebrew/bin/gh`
   if available, fall back to bare `gh`)
 - `bash scripts/post-release-host-verify.sh` (mandatory tri-host uninstall + fresh install + smoke after release — Step 7.6)
@@ -53,9 +54,14 @@ Before determining version, verify the working tree is releasable:
 
 0. **CI green + RC matrix (mandatory):** run `bash scripts/pre-release-gate.sh` (site freshness,
    five-tool pre-release when leanctx opted in, `run-all-tests.sh`, `run-rc-validation-matrix.sh`).
-   Six cells: cursor/codex/claude × fresh/upgrade — **operator-local** with host CLIs + your API keys.
+   Four cells: codex/claude × fresh/upgrade — **operator-local** with host CLIs + your API keys.
    Codex/Claude live cells do not run in GitHub CI (no first-party keys). CI `rc-validation.yml` is
    optional diagnostic only. **STOP** if any test fails — never tag or `gh release create` on red CI.
+   Under the default `supervised` enterprise profile `gh release create` is also blocked
+   (`ENTERPRISE POLICY BLOCK`) until a human creates
+   `$HOME/.codex/.silver-bullet/enterprise-human-deploy-approved` from their own terminal;
+   ask the user to approve, never create the marker yourself. The release gates check CI
+   for the commit `gh release create` will release (the tag's commit, else `--target`).
 
 1. Check for uncommitted changes: `git status --porcelain`
    - If non-empty: **STOP**. "Uncommitted changes detected. Commit or stash before release."
@@ -208,7 +214,7 @@ If `README.md` has no version badge, skip this step silently.
 
 ## Step 5b.1 — Sync marketplace.json Version
 
-Run the release marketplace sync wrapper so the primary host and Codex marketplace version surfaces, the in-repo marketplace manifest, and both upstream marketplace repos all match the new plugin version before tagging the release:
+Run the release marketplace sync wrapper in its default (prepare) mode so the in-repo host marketplace manifests match the new plugin version before tagging. This publishes nothing and clones nothing; the upstream marketplace repository is updated only in Step 7c, after the tag exists and CI is green:
 
 ```bash
 bash scripts/sync-release-marketplace-versions.sh "$VERSION"
@@ -216,7 +222,7 @@ bash scripts/sync-release-marketplace-versions.sh "$VERSION"
 
 This step is required even if the marketplace version already appears to match. It makes the release process self-correcting and keeps both marketplace surfaces aligned with the tagged release.
 
-After the wrapper runs, the version in `host plugin manifest/marketplace.json` must match `host plugin manifest/plugin.json`, the version in `plugins/silver-bullet/host plugin manifest/plugin.json` must match `$VERSION`, and both upstream marketplace repos must have the same version committed and pushed.
+After the wrapper runs, the version in `host plugin manifest/marketplace.json` must match `host plugin manifest/plugin.json`, and the version in `plugins/silver-bullet/host plugin manifest/plugin.json` must match `$VERSION`. The upstream marketplace is not touched yet.
 
 ---
 
@@ -232,7 +238,7 @@ git push
 
 If none of the files changed (e.g. CHANGELOG already had this entry and no badge exists), skip the commit silently.
 
-If the release marketplace sync wrapper reports that either upstream marketplace repo was updated, those pushes are part of the release gate and must succeed before the release tag is created.
+Push the release commit and wait for green CI (`bash scripts/verify-release-commit-ci.sh`) before creating the tag. Never tag a red commit.
 
 > **Why before the tag?** All commits must be on the branch before the tag is placed. If CHANGELOG and README are committed after the tag, an immediate patch release is required. This step eliminates that need.
 
@@ -241,7 +247,7 @@ is a hard prerequisite for any release work. Do not proceed to the live matrix,
 CI wait, tag, or GitHub Release until the current session has recorded:
 
 - `adversarial-review-clean` (ENHANCED adversarial — 2× DISCOVERY clean)
-- `sentinel-skills-clean` (85/85 per-skill SENTINEL passes)
+- `sentinel-skills-clean` (every per-skill SENTINEL row clean; `scripts/validate-sentinel-skills-manifest.sh` states the expected count)
 - `quality-gate-stage-3` (public content refresh)
 - `full-test-suite-rerun` (post-fix test bundle)
 
@@ -267,10 +273,9 @@ bash scripts/run-rc-validation-matrix.sh
 ```
 
 Included in `pre-release-gate.sh`. Replaces legacy live matrix when `release.require_rc_matrix`.
-**Operator-local mandatory:** all six cells (cursor/codex/claude × fresh/upgrade) with host CLIs and
+**Operator-local mandatory:** all four cells (codex/claude × fresh/upgrade) with host CLIs and
 your API keys on the release machine. Codex/Claude live TUI delegates are not CI-blockers — GitHub
-Actions has no first-party Anthropic/Codex keys (`rc-validation.yml` is optional diagnostic; cursor
-live only when `CURSOR_API_KEY` present). Claude requires `claude` CLI plus `ANTHROPIC_API_KEY` or OAuth.
+Actions has no first-party Anthropic/Codex keys (`rc-validation.yml` is optional diagnostic). Claude requires `claude` CLI plus `ANTHROPIC_API_KEY` or OAuth.
 Bypass (audited): `SB_SKIP_RC_MATRIX=1`. See `docs/testing/RC-VALIDATION-MATRIX.md`.
 
 Optional legacy diagnostics:
@@ -330,8 +335,11 @@ until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
    _notes_tmp=$(mktemp)
    printf '%s' "$RELEASE_NOTES_BODY" > "$_notes_tmp"
    if [ -x /opt/homebrew/bin/gh ]; then GH=/opt/homebrew/bin/gh; else GH=gh; fi
+   # Validate the notes before anything is published or announced (a failure stops here).
+   bash scripts/validate-github-release-notes.sh --file "$_notes_tmp" || { rm -f -- "$_notes_tmp"; exit 1; }
    release_url=$("$GH" release create "$VERSION" \
      --title "$VERSION" \
+     --verify-tag \
      --notes-file "$_notes_tmp")
    rm -f -- "$_notes_tmp"
    ```
@@ -343,17 +351,25 @@ until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
    from backtick-wrapped content in the release notes body (security: WR-04).
    `$release_url` is used in the notification sub-step below (sub-item 6 of this step).
 
-   **Step 7b — Validate published release body (#217):** Immediately after
-   `gh release create`, validate the published body. A generic fallback such as
-   `See CHANGELOG.md for details.` must fail the release gate.
+   **Step 7b — Validate release body (#217):** the notes file is validated before
+   `gh release create` (above); after publication validate the published body again.
+   A generic fallback such as `See CHANGELOG.md for details.` must fail the release gate.
 
    ```bash
    bash scripts/validate-github-release-notes.sh --tag "$VERSION"
    ```
 
-   If validation fails, delete or edit the release before announcing it. Detailed
+   If the published-body validation fails, delete or edit the release immediately; the announcement workflow starts when the release is created. Detailed
    categorized release notes must live in the GitHub Release itself; CHANGELOG.md
    is supplemental only.
+
+   **Step 7c — Publish the unified marketplace:** only now, with the tag pushed, CI green
+   for the tagged commit and the GitHub Release created, publish the upstream marketplace
+   (one verified push; it refuses a missing tag, a tag not on origin or red CI):
+
+   ```bash
+   bash scripts/sync-release-marketplace-versions.sh --publish "$VERSION"
+   ```
 
 5. **If not GitHub:** Output the release notes and suggest:
    > "Release notes generated. Publish manually to your release platform."
@@ -365,8 +381,8 @@ until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
    the `silver-bullet-updates` Google Chat thread. If that workflow does not
    succeed, the release is not complete.
 
-   Immediately after publication, run mandatory tri-host post-release verification
-   on the operator machine (all three hosts: Cursor, Claude, Codex):
+   Immediately after publication, run mandatory post-release verification
+   on the operator machine (both hosts: Claude, Codex):
 
    ```bash
    bash scripts/post-release-host-verify.sh --version <version>
@@ -379,7 +395,7 @@ until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
    2. **Fresh install** — from the released tag checkout (`RTK_DISABLED=1 install-*.sh`)
    3. **Smoke** — `sb-diagnostics.sh` on operator home + RC fresh cell
       (`run-rc-validation-matrix.sh --host <host> --mode fresh` with isolated delegate)
-   4. **Marker** — `~/.{cursor,codex,claude}/.silver-bullet/post-release-verify/{host}`
+   4. **Marker** — `~/.{codex,claude}/.silver-bullet/post-release-verify/{host}`
 
    Do not mark the release complete until the announcement workflow succeeds and
    all three host markers show `status=pass` (or documented audited `skip` when a

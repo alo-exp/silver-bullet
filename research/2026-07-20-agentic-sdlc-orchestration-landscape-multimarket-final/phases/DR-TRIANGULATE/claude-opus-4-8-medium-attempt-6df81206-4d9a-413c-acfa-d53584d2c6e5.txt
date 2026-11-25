@@ -164,7 +164,7 @@ Code-intel preflight OK.
   ]
 }
 ```
-[agent-claude] seeded folder trust for /Users/shafqat/.cursor/worktrees/repo/r41j in /var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T//agent-claude-config-XVa1wK/.claude.json
-[agent-claude] seeded folder trust for /Users/shafqat/.cursor/worktrees/repo/r41j in /Users/shafqat/.codex.json
+[agent-claude] seeded folder trust for /Users/<user>/.cursor/worktrees/repo/r41j in /var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T//agent-claude-config-XVa1wK/.claude.json
+[agent-claude] seeded folder trust for /Users/<user>/.cursor/worktrees/repo/r41j in /Users/<user>/.codex.json
 [agent-claude] lightweight CLAUDE_CONFIG_DIR: /var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T//agent-claude-config-XVa1wK
-[agent-claude] log: /Users/shafqat/.cursor/worktrees/repo/r41j/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/claude-delegate-attempt-6df81206-4d9a-413c-acfa-d53584d2c6e5.log (10985 B)
+[agent-claude] log: /Users/<user>/.cursor/worktrees/repo/r41j/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/claude-delegate-attempt-6df81206-4d9a-413c-acfa-d53584d2c6e5.log (10985 B)

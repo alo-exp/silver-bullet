@@ -8,6 +8,8 @@ version: 0.2.0
 
 # /sb:clarify — Clarify, Compare, and Hand Off
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-clarify/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 SB orchestrator for the front end of planning. It merges product framing, one-question-at-a-time interviewing, brainstorming discipline, and SB lifecycle handoff into one coherent workflow. It does not implement work or write plans; it reduces uncertainty until the next step is obvious.
 
 **Document-authoring split:** interviewing that used to live in `/sb:spec` (context gathering, Turns 1–9, assumption protocol) belongs here when `next=spec`. Spec is a compiler: it reads this brief and writes `SPEC.md` / `REQUIREMENTS.md`. This skill **never** writes `.planning/SPEC.md` or `.planning/REQUIREMENTS.md`.
@@ -184,7 +186,7 @@ Write the brief to a **timestamped, plan-scoped** path — not a fixed `.plannin
 Resolve the path with:
 
 ```bash
-source scripts/lib/planning-clarify-path.sh
+source "${PLUGIN_ROOT}/scripts/lib/planning-clarify-path.sh"
 sb_planning_clarify_output_path "$REPO_ROOT" "$PLAN_FILE_PATH"
 ```
 
@@ -306,7 +308,7 @@ If `--chain` is set in `next=spec` mode, hand off to `/sb:spec` after the brief 
 
 ## Multi-host `--auto` ladders (Pi / OpenCode)
 
-When `/sb:clarify --auto` launches OpenCode or Pi rungs (including `PI_PROVIDER=omniroute` + `PI_MODEL=opencode-go/*` via `scripts/agent-pi/invoke.sh`): if launch fails with OmniRoute/OpenCode `401` `Missing API key` (or `cannot_launch` / timeout) after **attempt + one retry**, substitute **Grok 4.6 High** (`sb-grok-4-6-high`). Never Fast. Never Extra High as the unspecified default. Do not skip-failed. Encoder: `python3 scripts/review-fix-ladder.py --launch-policy --host pi --attempts 2 --outcome cannot_launch`.
+When `/sb:clarify --auto` launches OpenCode or Pi rungs (including `PI_PROVIDER=omniroute` + `PI_MODEL=opencode-go/*` via `scripts/agent-pi/invoke.sh`): if launch fails (`cannot_launch`, timeout, or OmniRoute/OpenCode `401` `Missing API key`) after **attempt + one retry**, skip that rung and continue; skipped rungs are retried once after the ladder. Never substitute another model or vendor. Never Fast. Encoder: `python3 scripts/review-fix-ladder.py --launch-policy --attempts 2 --outcome cannot_launch`.
 
 ## Exit Condition
 

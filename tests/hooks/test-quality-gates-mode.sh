@@ -112,6 +112,18 @@ else
   FAIL=$((FAIL + 1))
 fi
 
+# A marker on the first line of a state larger than a pipe buffer: grep -q stops
+# reading early, and the writer must not turn that into a failure under pipefail.
+big_state="silver-quality-gates-design
+$(printf 'skill-%06d\n' $(seq 1 20000))"
+if sb_qg_preplan_marker_recorded "$big_state"; then
+  echo "  ok: marker found in a large state under pipefail"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: marker in a large state should satisfy pre-plan under pipefail"
+  FAIL=$((FAIL + 1))
+fi
+
 state="silver-quality-gates-adversarial"
 if sb_dqg_pre_ship_marker_recorded "$state"; then
   echo "  FAIL: product adversarial should not satisfy devops pre-ship"

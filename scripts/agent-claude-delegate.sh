@@ -17,8 +17,7 @@ Usage: agent-claude-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file PA
        [--log PATH] [--mode permissive|strict] [--interaction-mode auto|interactive|non-interactive]
        [--sb-root PATH] [--use-print] [--attach] [--no-escalate] [--allow-mode-fallback]
 
-Delegates a single task to Claude via tests/live/agents/claude/agent.sh (NI: claude --print; interactive: expect PTY).
-Requires full SB checkout (agent adapter). Parent supervisors: see /sb:agent-claude.
+Delegates a single task to Claude via scripts/lib/agent-adapters/claude.sh (NI: claude --print; interactive: expect PTY).
 EOF
 }
 
@@ -27,11 +26,16 @@ PROMPT_TEXT=""
 PROMPT_FILE=""
 BRIEF_FILE=""
 LOG_FILE=""
-MODE="permissive"
+MODE=""
 SB_ROOT="${SB_ROOT:-$REPO_ROOT}"
 USE_PRINT=0
 
 while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --work-dir|--prompt|--prompt-file|--brief-file|--log|--mode|--sb-root|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id)
+      [[ $# -ge 2 ]] || { printf 'ERROR: %s requires a value\n' "$1" >&2; exit 2; }
+      ;;
+  esac
   case "$1" in
     --work-dir) WORK_DIR="$2"; shift 2 ;;
     --prompt) PROMPT_TEXT="$2"; shift 2 ;;
@@ -54,8 +58,12 @@ done
 
 agent_delegate_validate_work_dir "$WORK_DIR" || exit 2
 agent_delegate_clear_matrix_env
+if [[ -z "$MODE" ]]; then
+  MODE="$(agent_delegate_default_mode "$WORK_DIR")"
+  agent_mode_note_permission_mode "$MODE"
+fi
 
-if [[ "${SB_AGENT_CERT_RUN:-0}" == "1" && -z "${CLAUDE_PERMISSION_MODE:-}" ]]; then
+if [[ "${SB_AGENT_CERT_RUN:-}" == "1" || "${SB_AGENT_CERT_RUN:-}" == "true" ]] && [[ -z "${CLAUDE_PERMISSION_MODE:-}" ]]; then
   export CLAUDE_PERMISSION_MODE=bypassPermissions
 fi
 
@@ -68,6 +76,7 @@ fi
 if [[ -n "$LOG_FILE" ]]; then
   LOG_FILE="$(agent_delegate_canonicalize_path "$LOG_FILE")"
 fi
+agent_delegate_guard_log "$LOG_FILE"
 
 PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
 agent_mode_run_delegate_resolver "claude" "$WORK_DIR" "$PROMPT_TEXT" || exit $?
@@ -85,9 +94,9 @@ if ! agent_delegate_preflight_recommended_tools "$WORK_DIR" "$SB_ROOT" "claude";
   exit 2
 fi
 
-AGENT_SH="${SB_ROOT}/tests/live/agents/claude/agent.sh"
+AGENT_SH="${SB_ROOT}/scripts/lib/agent-adapters/claude.sh"
 [[ -f "$AGENT_SH" ]] || {
-  printf 'ERROR: missing Claude live adapter at %s (full SB checkout required)\n' "$AGENT_SH" >&2
+  printf 'ERROR: missing Claude live adapter at %s\n' "$AGENT_SH" >&2
   exit 1
 }
 
@@ -95,6 +104,7 @@ quota_retry_interval="${AGENT_CLAUDE_QUOTA_RETRY_INTERVAL:-60}"
 quota_retry_max="$(agent_delegate_quota_retry_max AGENT_CLAUDE_QUOTA_RETRY_MAX 5)"
 log_floor="${SB_AGENT_CLAUDE_LOG_FLOOR:-512}"
 attempt=0
+fp_before="unknown"
 
 agent_claude_apply_lightweight_env() {
   [[ "${SB_AGENT_CLAUDE_LIGHTWEIGHT:-1}" == "1" ]] || return 0
@@ -126,15 +136,22 @@ agent_claude_apply_lightweight_env() {
 agent_claude_invoke_once() {
   agent_claude_apply_runtime_env
   agent_claude_apply_lightweight_env
-  trap agent_claude_cleanup_lightweight_config_dir RETURN
+  # This runs in a command-substitution subshell: the EXIT trap also fires when the adapter
+  # is terminated (SIGTERM/SIGINT) or calls exit, so the ephemeral config dir never leaks.
+  trap agent_claude_cleanup_lightweight_config_dir EXIT
   export SB_ROOT
   export WORK_DIR="$WORK_DIR"
   export CLAUDE_WORK_DIR="$WORK_DIR"
   export CLAUDE_INTERACTIVE_LOG_FILE="${LOG_FILE:-}"
-  # shellcheck source=tests/live/agents/claude/agent.sh
+  # shellcheck source=scripts/lib/agent-adapters/claude.sh
   source "$AGENT_SH"
   agent_preflight
-  agent_invoke "$MODE" "$PROMPT_TEXT"
+  # Clean up explicitly after the invoke: a RETURN trap would also fire when the sourced
+  # adapter finishes loading, removing the ephemeral config dir before the CLI starts.
+  local invoke_rc=0
+  agent_invoke "$MODE" "$PROMPT_TEXT" || invoke_rc=$?
+  agent_claude_cleanup_lightweight_config_dir
+  return "$invoke_rc"
 }
 
 final_output=""
@@ -156,7 +173,9 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
     fi
   fi
 
-  final_output="$(agent_claude_invoke_once)" && final_exit=0 || final_exit=$?
+  final_exit=0
+  fp_before="$(agent_delegate_workdir_fingerprint "$WORK_DIR")"
+  final_output="$(agent_claude_invoke_once)" || final_exit=$?
 
   if [[ -n "$LOG_FILE" && "$USE_PRINT" -eq 1 ]]; then
     agent_delegate_append_invoke_output "$LOG_FILE" "$final_output"
@@ -179,17 +198,7 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
   if [[ "$final_exit" -eq 0 ]]; then
     break
   fi
-  if ! agent_delegate_is_quota_error "$final_output"; then
-    break
-  fi
-  if agent_delegate_quota_blocks_short_retry "$final_output"; then
-    printf '[agent-claude] quota window exhausted — skip short retry (RFL schedule)\n' >&2
-    break
-  fi
-  if [[ "$attempt" -gt "$quota_retry_max" ]]; then
-    printf '[agent-claude] quota retries exhausted\n' >&2
-    break
-  fi
+  agent_delegate_quota_retry_decision "agent-claude" "$final_output" "$attempt" "$quota_retry_max" "$WORK_DIR" "$fp_before" || break
 done
 
 if [[ "$final_exit" -ne 0 ]]; then
@@ -199,9 +208,10 @@ if [[ "$final_exit" -ne 0 ]]; then
   if agent_mode_maybe_escalate "claude" "$SB_AM_TASK_DIR" "${LOG_FILE:-}"; then
     agent_mode_apply_host_launch_env "claude"
     USE_PRINT=0
-    final_output="$(agent_claude_invoke_once)" && final_exit=0 || final_exit=$?
+    final_exit=0
+    final_output="$(agent_claude_invoke_once)" || final_exit=$?
   fi
 fi
 
-printf '%s' "$final_output"
+agent_delegate_redact_output "$final_output"
 exit "$final_exit"

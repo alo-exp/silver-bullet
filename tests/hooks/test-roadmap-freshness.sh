@@ -53,7 +53,7 @@ run_hook() {
 is_blocked() {
   local output="$1"
   [[ -z "$output" ]] && return 1
-  printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"'
+  grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"' <<<"$output"
 }
 
 
@@ -79,7 +79,7 @@ assert_decoded_message_real_newlines() {
     FAIL=$((FAIL + 1))
     return
   fi
-  if printf '%s' "$decoded" | grep -qF '\n'; then
+  if grep -qF '\n' <<<"$decoded"; then
     echo "  FAIL: $label — decoded text still contains literal backslash-n"
     FAIL=$((FAIL + 1))
     return
@@ -204,13 +204,14 @@ assert_blocks "one unticked among multiple stages: blocks" "$out"
 assert_decoded_message_real_newlines "NEWLINE: roadmap unticked phases use real newlines not literal \\n" "$out"
 teardown
 
-# 8. ROADMAP.md missing — passes silently (no roadmap to check against)
+# 8. ROADMAP.md missing while a phase SUMMARY.md is staged — fails closed (deleting the roadmap is no way past the gate)
 echo "  group: ROADMAP.md missing"
 setup
 # Don't write a ROADMAP.md — only stage a SUMMARY.md
 stage_summary "27-silver-fast-redesign" "27-01"
 out=$(run_hook "PreToolUse" "git commit -m 'Phase 27: complete'")
-assert_passes "no ROADMAP.md: silent pass" "$out"
+assert_blocks "no ROADMAP.md: the staged summary is refused" "$out"
+if [[ "$out" == *"is missing"* ]]; then echo "  PASS no ROADMAP.md: the message says it is missing"; PASS=$((PASS + 1)); else echo "  FAIL no ROADMAP.md: the message says it is missing"; FAIL=$((FAIL + 1)); fi
 teardown
 
 # 9. PostToolUse event — hook emits PreToolUse deny format unconditionally regardless of

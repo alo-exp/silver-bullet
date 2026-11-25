@@ -128,13 +128,13 @@ teardown() {
 run_hook() {
   local input='{"hook_event_name":"Stop"}'
   # Use subshell to set PWD to temp project dir (hook walks up from PWD)
-  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | SB_ORCHESTRATOR_PARENT=1 bash "$HOOK" 2>/dev/null )
 }
 
 is_blocked() {
   local output="$1"
   [[ -z "$output" ]] && return 1
-  printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"'
+  grep -qE '"decision"\s*:\s*"block"' <<<"$output"
 }
 
 assert_blocks() {
@@ -161,11 +161,17 @@ assert_passes() {
   fi
 }
 
+# A repository file these scenarios exercise is not optional: its absence is a failure, never a skip.
+fail_missing() {
+  FAIL=$((FAIL + 1))
+  printf 'FAIL: %s\n' "$1"
+}
+
 assert_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  PASS: $label"
     PASS=$((PASS + 1))
   else
@@ -197,7 +203,7 @@ assert_decoded_message_real_newlines() {
     FAIL=$((FAIL + 1))
     return
   fi
-  if printf '%s' "$decoded" | grep -qF '\n'; then
+  if grep -qF '\n' <<<"$decoded"; then
     echo "  FAIL: $label — decoded text still contains literal backslash-n"
     FAIL=$((FAIL + 1))
     return
@@ -401,7 +407,22 @@ rm -f "$TMPSTATE"
 # Create trivial file (not a symlink)
 touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 out=$(run_hook)
-assert_passes "trivial file present -> no block" "$out"
+# R3-02: a config that names any other existing file as the trivial file does not bypass the planning floor
+echo "code-review" >"$TMPSTATE"
+printf 'work-in-progress\n' >"$TMPDIR_TEST/wip.txt"
+git -C "$TMPDIR_TEST" add wip.txt
+out=$(run_hook)
+assert_blocks "config trivial_file naming another file -> still blocks" "$out"
+rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+touch "${SB_TEST_DIR}/trivial"
+out=$(run_hook)
+assert_passes "state directory's own trivial file present -> no block" "$out"
+rm -f "${SB_TEST_DIR}/trivial"
+mkdir -p "${SB_TEST_DIR}/custom"; touch "${SB_TEST_DIR}/custom/trivial"
+jq --arg t "${SB_TEST_DIR}/custom/trivial" '.state.trivial_file = $t' "$TMPCFG" >"$TMPCFG.new" && mv "$TMPCFG.new" "$TMPCFG"
+out=$(run_hook)
+assert_passes "a state-scoped file named trivial named in config -> no block" "$out"
+rm -rf "${SB_TEST_DIR}/custom"
 teardown
 
 # Test 5: On main branch -> finishing-a-development-branch not required
@@ -847,11 +868,11 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" ]]; then
   out=$(run_hook)
   assert_blocks "ORCH-3b: without routing marker orchestrator queue still blocks Stop" "$out"
 else
-  echo "  SKIP: e2e-matrix-routing.sh missing"
+  fail_missing "ORCH-3: hooks/lib/e2e-matrix-routing.sh is missing"
 fi
 teardown
 
-echo "--- ORCH-4: routing row marker alone exempts Stop (no SB_E2E_ENTERPRISE_MATRIX in hook env) ---"
+echo "--- ORCH-4: routing row marker alone does NOT exempt Stop (R5-06: harness env is required) ---"
 setup
 write_current_planning_state
 jq -n \
@@ -867,10 +888,10 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" ]]; then
   unset SB_E2E_MATRIX_ROUTING_ROW
   sb_e2e_matrix_set_routing_row_marker
   out=$(run_hook)
-  assert_passes "ORCH-4: marker alone allows Stop with pending orchestrator queue" "$out"
+  assert_blocks "ORCH-4: marker alone (no SB_E2E_ENTERPRISE_MATRIX in hook env) still blocks the queue" "$out"
   sb_e2e_matrix_clear_routing_row_marker
 else
-  echo "  SKIP: e2e-matrix-routing.sh missing"
+  fail_missing "ORCH-4: hooks/lib/e2e-matrix-routing.sh is missing"
 fi
 teardown
 
@@ -886,14 +907,16 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$SUBAGENT_HOOK" ]];
     source "$REPO_ROOT/hooks/lib/site-session.sh"
     sb_site_session_record_subagent_spawn '{"subagent_type":"generalPurpose"}' 2>/dev/null || true
   fi
+  export SB_E2E_ENTERPRISE_MATRIX=1
   sb_e2e_matrix_set_routing_row_marker
   sub_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SUBAGENT_HOOK" 2>/dev/null || true )
   assert_passes "ORCH-5: subagent-stop allows Stop during routing row" "$sub_out"
   sb_e2e_matrix_clear_routing_row_marker
+  unset SB_E2E_ENTERPRISE_MATRIX
   sub_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SUBAGENT_HOOK" 2>/dev/null || true )
   assert_blocks "ORCH-5b: subagent-stop blocks without routing marker when workers ran" "$sub_out"
 else
-  echo "  SKIP: subagent-stop or e2e-matrix-routing missing"
+  fail_missing "ORCH-5: hooks/subagent-stop-enforcement.sh or hooks/lib/e2e-matrix-routing.sh is missing or not executable"
 fi
 teardown
 
@@ -907,12 +930,14 @@ if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$LEDGER_HOOK" ]]; t
     >"${SB_TEST_DIR}/instruction-ledger.json"
   ledger_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$LEDGER_HOOK" 2>/dev/null || true )
   assert_blocks "ORCH-6a: instruction-ledger blocks Stop with unresolved items" "$ledger_out"
+  export SB_E2E_ENTERPRISE_MATRIX=1
   sb_e2e_matrix_set_routing_row_marker
   ledger_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$LEDGER_HOOK" 2>/dev/null || true )
   assert_passes "ORCH-6b: instruction-ledger allows Stop during routing row marker" "$ledger_out"
   sb_e2e_matrix_clear_routing_row_marker
+  unset SB_E2E_ENTERPRISE_MATRIX
 else
-  echo "  SKIP: instruction-ledger-gate or e2e-matrix-routing missing"
+  fail_missing "ORCH-6: hooks/instruction-ledger-gate.sh or hooks/lib/e2e-matrix-routing.sh is missing or not executable"
 fi
 teardown
 
@@ -922,16 +947,24 @@ SITE_REG_HOOK="$REPO_ROOT/hooks/site-regression-gate.sh"
 if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$SITE_REG_HOOK" ]]; then
   # shellcheck source=hooks/lib/e2e-matrix-routing.sh
   source "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh"
-  jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",touch_reason:"site-intent",regression_passed_at:null,push_intent:false}' \
+  # The site gates run only for a project with a site_profile (R9-02): a failing committed regression script.
+  jq '.site_profile={enabled:true,regression_scripts:["tests/site-fail.sh"]}' "$TMPDIR_TEST/.silver-bullet.json" >"$TMPDIR_TEST/.cfg.t" && mv "$TMPDIR_TEST/.cfg.t" "$TMPDIR_TEST/.silver-bullet.json"
+  mkdir -p "$TMPDIR_TEST/tests"
+  printf '#!/usr/bin/env bash\nexit 1\n' >"$TMPDIR_TEST/tests/site-fail.sh"
+  git -C "$TMPDIR_TEST" add -A >/dev/null 2>&1
+  git -C "$TMPDIR_TEST" -c user.name=t -c user.email=t@t commit -q -m site-profile
+  jq -n --arg sc "$(cd "$TMPDIR_TEST" && pwd -P)" '{active:true,scope:$sc,edit_seq:1,regression_passed_seq:0,touch_reason:"edit:site/index.html",push_intent:false}' \
     >"${SB_TEST_DIR}/site-session.json"
   site_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SITE_REG_HOOK" 2>/dev/null || true )
   assert_blocks "ORCH-7a: site-regression blocks Stop with active session" "$site_out"
+  export SB_E2E_ENTERPRISE_MATRIX=1
   sb_e2e_matrix_set_routing_row_marker
   site_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SITE_REG_HOOK" 2>/dev/null || true )
   assert_passes "ORCH-7b: site-regression allows Stop during routing row marker" "$site_out"
   sb_e2e_matrix_clear_routing_row_marker
+  unset SB_E2E_ENTERPRISE_MATRIX
 else
-  echo "  SKIP: site-regression-gate or e2e-matrix-routing missing"
+  fail_missing "ORCH-7: hooks/site-regression-gate.sh or hooks/lib/e2e-matrix-routing.sh is missing or not executable"
 fi
 teardown
 
@@ -1004,8 +1037,8 @@ assert_skillnorm_rc "SKILLNORM-E: hyphen-on-disk matches colon require" 0 "$_rc"
 
 if declare -F sb_skill_name_variants >/dev/null 2>&1; then
   variant_list=$(sb_skill_name_variants "silver-quality-gates" | tr '\n' ' ')
-  if printf '%s' "$variant_list" | grep -Fq 'silver-quality-gates' \
-    && printf '%s' "$variant_list" | grep -Fq 'sb:quality-gates'; then
+  if grep -Fq 'silver-quality-gates' <<<"$variant_list" \
+    && grep -Fq 'sb:quality-gates' <<<"$variant_list"; then
     echo "  PASS: SKILLNORM-F: sb_skill_name_variants emits hyphen and colon forms"
     PASS=$((PASS + 1))
   else

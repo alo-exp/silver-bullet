@@ -60,7 +60,6 @@ assert_contains "documents gitignore workflows entry" "planning/workflows/" "$SK
 assert_contains "documents instruction file reconciliation" "CLAUDE\\.md|AGENTS\\.md" "$SKILL"
 assert_contains "documents RUNTIME-COMPATIBILITY pointers" "RUNTIME-COMPATIBILITY" "$SKILL"
 assert_contains "documents merge-hooks for all hosts" "merge-hooks\\.py" "$SKILL"
-assert_contains "documents merge-cursor-hooks for Cursor" "merge-cursor-hooks" "$SKILL"
 assert_contains "documents sb-diagnostics probe" "sb-diagnostics" "$SKILL"
 assert_contains "documents sb-bootstrap probe" "sb-bootstrap" "$SKILL"
 assert_contains "documents evidence-schema awareness" "evidence-schema" "$SKILL"

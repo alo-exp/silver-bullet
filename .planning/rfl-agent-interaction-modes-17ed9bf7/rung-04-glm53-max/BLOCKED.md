@@ -8,7 +8,7 @@
 
 ## Plan
 
-[`/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+[`/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 - SHA256: `6e33742a3f462edc50d1eb9ed3add2c2665c007edc87e896cea32476b92907ba`
 - 410 lines; I-32–I-40 already in text (rung-3 Qwen accept).
@@ -35,4 +35,4 @@ None from this GLM Max run. Do not treat `.planning/rfl-agent-interaction-modes-
 
 ## Unblock
 
-Retry after the OpenCode Go 5-hour window resets (log said ~2h from 18:58Z), or enable billed Go usage on workspace `wrk_01KS4QW3V1S4F7Q545S66WNAXV`. Same argv: native `opencode run -m opencode-go/glm-5.3 --variant max --auto` with `HOME=/Users/shafqat`. Still no Grok/Fast remap.
+Retry after the OpenCode Go 5-hour window resets (log said ~2h from 18:58Z), or enable billed Go usage on workspace `wrk_01KS4QW3V1S4F7Q545S66WNAXV`. Same argv: native `opencode run -m opencode-go/glm-5.3 --variant max --auto` with `HOME=/Users/<user>`. Still no Grok/Fast remap.

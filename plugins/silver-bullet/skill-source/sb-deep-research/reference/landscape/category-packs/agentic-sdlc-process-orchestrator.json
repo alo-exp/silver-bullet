@@ -128,7 +128,7 @@
     {
       "slug": "silver-bullet",
       "name": "Silver Bullet",
-      "license": "oss",
+      "license": "mixed",
       "must_research": true,
       "tier": 0,
       "notes": "Always include — subject solution."
@@ -528,7 +528,7 @@
         {
           "slug": "silver-bullet",
           "name": "Silver Bullet",
-          "license": "oss",
+          "license": "mixed",
           "must_research": true,
           "tier": 0,
           "notes": "Always include — subject solution."
@@ -747,7 +747,7 @@
         {
           "slug": "silver-bullet",
           "name": "Silver Bullet",
-          "license": "oss",
+          "license": "mixed",
           "must_research": true,
           "tier": 0,
           "notes": "Multi-market core: APO process orchestrator that also ships as host plugin/skill/hook packs — legitimate sdlc-plugins competitor (not exclusive to APO)."

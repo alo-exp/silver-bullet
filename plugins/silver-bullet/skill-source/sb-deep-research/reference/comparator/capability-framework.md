@@ -49,6 +49,6 @@ Evidence priority: SCR `features.json` → landscape narrative → envelope clai
 ## Scripts
 
 ```bash
-python3 skills/silver-deep-research/scripts/compare_solutions.py --dir "$SB_RESEARCH_OUT_DIR"
-python3 skills/silver-deep-research/scripts/matrix_ops.py info --src comparison/comparison-matrix.xlsx
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research/scripts/compare_solutions.py" --dir "$SB_RESEARCH_OUT_DIR"
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research/scripts/matrix_ops.py" info --src comparison/comparison-matrix.xlsx
 ```

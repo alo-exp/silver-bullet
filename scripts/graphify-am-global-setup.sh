@@ -51,6 +51,7 @@ while [[ $# -gt 0 ]]; do
     --apply) MODE="apply" ;;
     --verify) MODE="verify" ;;
     --repo)
+      [[ $# -ge 2 ]] || { echo "Error: --repo requires a path" >&2; usage >&2; exit 2; }
       shift
       REPO_PATH="${1:-}"
       REPO_PATH="$(cd "$REPO_PATH" 2>/dev/null && pwd || printf '%s' "$REPO_PATH")"
@@ -60,7 +61,9 @@ while [[ $# -gt 0 ]]; do
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
-  shift
+  # A trailing value-taking flag (--host / --repo) has already consumed its
+  # missing argument; do not let this shift abort silently under set -e.
+  shift || true
 done
 
 # shellcheck source=../hooks/lib/graphify-am-global.sh
@@ -72,12 +75,29 @@ if [[ -z "$HOST" && "$APPLY_ALL" -eq 0 ]]; then
   exit 2
 fi
 
+# Applying changes machine-wide host configuration for both tools: only with the user's consent
+# (docs/CONSENT.md). Verify and dry-run never write.
+require_wire_consent() {
+  [[ "$MODE" == "apply" && -z "${GA_GLOBAL_DRY_RUN:-}" ]] || return 0
+  local tool
+  # shellcheck source=../hooks/lib/user-consent.sh
+  source "${SCRIPT_DIR}/../hooks/lib/user-consent.sh"
+  for tool in graphify agentmemory; do
+    if ! sb_consent_granted "$tool" wire; then
+      echo "SKIP: ${tool} has no 'wire' consent. To allow it:" >&2
+      echo "  bash ${SCRIPT_DIR}/sb-consent.sh grant ${tool} --all-projects --capabilities wire" >&2
+      return 1
+    fi
+  done
+}
+
 run_for_host() {
   local h="${1:-}"
   ga_validate_host "$h" || {
     echo "Unsupported host: $h" >&2
     return 2
   }
+  require_wire_consent || return 3
   case "$MODE" in
     apply) ga_apply_host "$h" "$REPO_PATH" ;;
     verify) ga_verify_host "$h" "$REPO_PATH" ;;
@@ -86,26 +106,14 @@ run_for_host() {
 
 if [[ "$APPLY_ALL" -eq 1 ]]; then
   rc=0
-  mapfile -t detected < <(ga_detect_configured_hosts)
+  detected=()
+  while IFS= read -r _host; do
+    [[ -n "$_host" ]] && detected+=("$_host")
+  done < <(ga_detect_configured_hosts)
   if [[ "${#detected[@]}" -eq 0 ]]; then
     echo "No configured hosts detected (checked global config paths)." >&2
     exit 1
   fi
-  for h in "${detected[@]}"; do
-    run_for_host "$h" || rc=1
-    echo ""
-  done
-  exit "$rc"
-fi
-
-if [[ "$HOST" == "all" ]]; then
-  APPLY_ALL=1
-  mapfile -t detected < <(ga_detect_configured_hosts)
-  if [[ "${#detected[@]}" -eq 0 ]]; then
-    echo "No configured hosts detected." >&2
-    exit 1
-  fi
-  rc=0
   for h in "${detected[@]}"; do
     run_for_host "$h" || rc=1
     echo ""

@@ -62,8 +62,8 @@ cross-artifact review when release artifacts exist, fresh `verify-tests`, `sb:ve
 
 ## Step-skip protocol
 
-On skip request: explain → offer A/B/C → record permanent skips in `silver-bullet.md` +
-`templates/silver-bullet.md.base`.
+On skip request: explain → offer A/B/C → record permanent skips in the project's `silver-bullet.md` §9b (in the Silver Bullet
+source repo, mirror it into `templates/silver-bullet.md.base` §9b).
 
 ## Release execution summary
 
@@ -79,7 +79,7 @@ On skip request: explain → offer A/B/C → record permanent skips in `silver-b
 | Ship | 14 | PR/CI via `sb:ship` |
 | Archive + publish | 18 | Archive dir, tag, `sb:create-release` |
 
-Before tag: run `scripts/sync-release-marketplace-versions.sh` per `sb:create-release`.
+Before tag: run `scripts/sync-release-marketplace-versions.sh <version>` (in-repo manifests only). After the tag and green CI: `scripts/sync-release-marketplace-versions.sh --publish <version>`, both per `sb:create-release`.
 
 ## Workflow tracking (fallback)
 

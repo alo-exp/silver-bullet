@@ -97,13 +97,13 @@ append_ledger_ux() {
   if [[ "${SB_E2E_LEDGER_NO_UX_APPEND:-}" == "1" ]]; then
     return 0
   fi
-  local marker="tui-watch|row${row}|${component}|${quote:0:40}"
+  local marker="tui-watch row${row} ${component}: ${quote:0:40}"
   if grep -qF "$marker" "$LEDGER" 2>/dev/null; then
     return 0
   fi
   {
-    printf '| %s | %s | %s | %s | tui-watch %s |\n' \
-      "$row" "$severity" "$component" "${quote:0:80}" "$(utc_now)"
+    printf '| %s | %s | %s | %s | %s %s |\n' \
+      "$row" "$severity" "$component" "${quote:0:80}" "$marker" "$(utc_now)"
   } >>"$LEDGER"
   log "ledger UX: row=$row $severity $component"
 }
@@ -227,7 +227,7 @@ if not logs:
     print("0")
     sys.exit(0)
 best = max(logs, key=lambda p: (os.path.getmtime(p), os.path.getsize(p)))
-m = __import__('re').search(r'row(\d+)(?:-(?:codex|cursor))?-attempt', os.path.basename(best))
+m = __import__('re').search(r'row(\d+)(?:-codex)?-attempt', os.path.basename(best))
 print(m.group(1) if m else "0")
 PY
 }

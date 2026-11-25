@@ -1,6 +1,6 @@
 ---
 name: sb:agent-opencode
-description: On-demand parent-supervised delegation of a single real task to OpenCode CLI as a subagent — briefings, checkpoints, failure escalation, and completion evidence. Use when the host agent (Cursor, Codex, or Claude parent) should supervise while OpenCode executes via opencode run in a target project CWD. Not for enterprise E2E matrix runs.
+description: On-demand parent-supervised delegation of a single real task to OpenCode CLI as a subagent — briefings, checkpoints, failure escalation, and completion evidence. Use when the host agent (Codex or Claude parent) should supervise while OpenCode executes via opencode run in a target project CWD. Not for enterprise E2E matrix runs.
 argument-hint: "<task brief> [--work-dir <path>] [--log <path>] [--interaction-mode auto|interactive|non-interactive] [--checkpoint <n>]"
 user-invocable: true
 version: 0.1.0
@@ -8,18 +8,20 @@ version: 0.1.0
 
 **Interaction modes:** `--interaction-mode auto|interactive|non-interactive` (default `auto`). Permission `--mode` remains `permissive|strict`. Spec: [`docs/specs/AGENT-DELEGATION-INTERACTION-MODES.md`](../../docs/specs/AGENT-DELEGATION-INTERACTION-MODES.md).
 
-**Pinned NI fast path:** `--interaction-mode non-interactive` (or `--non-interactive` / `--use-print` / `--use-exec`) writes `mode.json` `{requested, classified:null, resolved:non-interactive, reason:[pin]}` and execs the native one-shot CLI with no classifier, D3/TUI probe, D4, recommended-tools preflight, quota-retry, or tail-idle watcher. Re-enable wrappers with `--quota-retry` / `AGENT_*_QUOTA_RETRY_MAX` and existing idle env. `auto` still runs the full resolver. Interactive is one native CLI or PTY (`pi` without `-p`; `cursor-agent` without `--print` when the CLI exists).
+**Pinned NI fast path:** `--interaction-mode non-interactive` (or `--non-interactive` / `--use-print` / `--use-exec`) writes `mode.json` `{requested, classified:null, resolved:non-interactive, reason:[pin]}` and execs the native one-shot CLI with no classifier, D3/TUI probe, D4, recommended-tools preflight, quota-retry, or tail-idle watcher. Re-enable wrappers with `--quota-retry` / `AGENT_*_QUOTA_RETRY_MAX` and existing idle env. `auto` still runs the full resolver. Interactive is one native CLI or PTY (`pi` without `-p`).
 
 
 # /sb:agent-opencode — OpenCode CLI Subagent Delegation
+
+**Plugin root**: `SB_ROOT` is the Silver Bullet plugin root, the installed plugin unless a fixture overrides it, the directory above `agents/claude/` (`${SB_ROOT}/agents/claude/sb:agent-opencode/SKILL.md`). Run Silver Bullet scripts and read its templates through `${SB_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **OpenCode CLI** executes in the target project working directory via **`opencode run`** (primary non-interactive path).
 
 **Contrast with Sidekick:** Sidekick is session-persistent (quality gates, cross-session advisor). This skill activates **per task** and tears down when the task completes or escalates.
 
-**Contrast with `/sb:agent-codex`, `/sb:agent-cursor`, `/sb:agent-claude`, and `/sb:agent-pi`:** Multi-host on-demand delegation siblings. Use **agent-opencode** when OpenCode CLI (`opencode run`) is the intended executor with MiMo V2.5 via opencode-go; use **agent-pi** for Pi CLI (`pi -p`); use **agent-claude** for Claude Code TUI; use **agent-codex** for Codex CLI; use **agent-cursor** for Cursor CLI.
+**Contrast with `/sb:agent-codex`, `/sb:agent-claude`, and `/sb:agent-pi`:** Multi-host on-demand delegation siblings. Use **agent-opencode** when OpenCode CLI (`opencode run`) is the intended executor with MiMo V2.5 via opencode-go; use **agent-pi** for Pi CLI (`pi -p`); use **agent-claude** for Claude Code TUI; use **agent-codex** for Codex CLI.
 
-**Contrast with enterprise E2E matrix:** Reuses proven OpenCode live adapter (`tests/live/agents/opencode/agent.sh`, `opencode run` with tail-idle completion, quota retry, model pin). Does **not** load matrix ledger, §5b product gates, fixture branch locks, or row outcome writers.
+**Contrast with enterprise E2E matrix:** Reuses proven OpenCode live adapter (`scripts/lib/agent-adapters/opencode.sh`, `opencode run` with tail-idle completion, quota retry, model pin). Does **not** load matrix ledger, §5b product gates, fixture branch locks, or row outcome writers.
 
 ---
 
@@ -27,7 +29,7 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 | Use `/sb:agent-opencode` | Delegate inline or via host Task instead |
 |------------------------------|------------------------------------------|
-| Host is Cursor/Codex/Claude and OpenCode is the preferred executor for the target repo | Host can edit directly with lower latency |
+| Host is Codex/Claude and OpenCode is the preferred executor for the target repo | Host can edit directly with lower latency |
 | Task needs OpenCode-native SB hooks/skills in **real** project CWD | Pure SB-repo work on the host checkout |
 | Parent wants Sidekick-like supervision (brief → checkpoint → escalate) for one bounded task | Full SB composer queue (`sb:feature`, orchestrator workers) |
 | Cross-host handoff: "run this in OpenCode while I supervise" | Enterprise E2E matrix certification (use matrix harness) |
@@ -38,7 +40,7 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 | Role | Agent | Responsibilities |
 |------|-------|------------------|
-| **Parent (supervisor)** | Cursor / Codex / Claude parent session | Task brief, acceptance criteria, checkpoints, failure ladder, mentor notes, graphify retrieval, agentmemory capture |
+| **Parent (supervisor)** | Codex / Claude parent session | Task brief, acceptance criteria, checkpoints, failure ladder, mentor notes, graphify retrieval, agentmemory capture |
 | **Worker (executor)** | OpenCode CLI in `OPENCODE_WORK_DIR` | Implement, test, commit per brief; report blockers in final message |
 
 Parent **must not** implement the delegated task in parallel in the same files. Parent may fix harness blockers in SB repo only.
@@ -49,7 +51,7 @@ Parent **must not** implement the delegated task in parallel in the same files. 
 
 1. Parent receives a delegatable task (user request or orchestrator handoff).
 2. Parent invokes **`/sb:agent-opencode`** with a structured brief (below).
-3. Parent runs `bash scripts/agent-opencode/invoke.sh` (preflight + env + delegate) **once per delegation wave**.
+3. Parent runs `bash "${SB_ROOT}/scripts/agent-opencode/invoke.sh"` (preflight + env + delegate) **once per delegation wave**.
 4. On completion or escalation, parent records evidence and clears delegation state.
 
 No session-persistent marker is written. Each invocation is independent.
@@ -78,7 +80,7 @@ Use the canonical delegation atomic flow instead of direct wrapper supervision:
 
 1. Complete **FS-DELEGATE-BRIEF** (brief + `ownership_scope` path prefixes).
 2. Call **`sb_orchestrator_seed_delegation_directive`** (`host=opencode`, `task_id`, `brief_path`, ownership JSON).
-3. Spawn native worker **`.silver-bullet/orchestrator-workers/AGENT-DELEGATE.md`** (Task subagent).
+3. Spawn native worker from the plugin template **`${SB_ROOT}/templates/orchestrator-workers/AGENT-DELEGATE.md`** (Task subagent; never the project copy).
 4. Worker launches `agent-opencode-delegate.sh`; external agent loads **`silver-agent-worker`** contract.
 5. Host runs **FS-DELEGATE-MENTOR** — verify evidence vs brief before user report.
 
@@ -129,7 +131,7 @@ Set explicitly — **fixture vs real project**:
 | Variable | Real product project | SB fixture / live-test |
 |----------|---------------------|-------------------------|
 | `OPENCODE_WORK_DIR` | Target repo root (e.g. `enterprise-grade-test-app`) | Fixture clone path |
-| `SB_ROOT` | SB install path (for harness scripts) | SB repo checkout |
+| `SB_ROOT` | Plugin root (default: the installed plugin; the host adapter ships in `scripts/lib/agent-adapters/`, no SB clone needed) | SB repo checkout |
 | `SB_AGENT_OPENCODE_FIXTURE` | `0` (default) | `1` — enables live-test guard patterns |
 | `SB_AGENT_OPENCODE_LIGHTWEIGHT` | `1` (delegate default) | `0` — keep full MCP boot in child |
 | `SB_LIVE_OPENCODE_ISOLATION_ACTIVE` | `0` unless isolating config | `1` for hermetic live tests |
@@ -182,7 +184,7 @@ Optional: `AGENT_OPENCODE_MONITOR_INTERVAL` (default 30) — parent `monitor.sh`
 
 ```bash
 export SB_ROOT=/path/to/silver-bullet/repo
-bash scripts/agent-opencode/preflight.sh --sb-root "$SB_ROOT"
+bash "${SB_ROOT}/scripts/agent-opencode/preflight.sh" --sb-root "$SB_ROOT"
 ```
 
 **Launch (recommended path — `opencode run` primary):**
@@ -190,7 +192,7 @@ bash scripts/agent-opencode/preflight.sh --sb-root "$SB_ROOT"
 ```bash
 export OPENCODE_WORK_DIR=/path/to/target/project
 
-bash scripts/agent-opencode/invoke.sh \
+bash "${SB_ROOT}/scripts/agent-opencode/invoke.sh" \
   --work-dir "$OPENCODE_WORK_DIR" \
   --brief-file .planning/agent-opencode/<task-id>/brief.md \
   --log .planning/agent-opencode/<task-id>/opencode-run.log
@@ -199,7 +201,7 @@ bash scripts/agent-opencode/invoke.sh \
 Inline prompt (small tasks):
 
 ```bash
-bash scripts/agent-opencode/invoke.sh \
+bash "${SB_ROOT}/scripts/agent-opencode/invoke.sh" \
   --work-dir "$OPENCODE_WORK_DIR" \
   --prompt "Add GET /api/health returning {status: ok}. Run tests. Commit on branch feature/..." \
   --log .planning/agent-opencode/smoke/opencode-run.log
@@ -208,7 +210,7 @@ bash scripts/agent-opencode/invoke.sh \
 **Parent monitor (channel timeline)** — run in a second terminal while OpenCode works:
 
 ```bash
-bash scripts/agent-opencode/monitor.sh --log .planning/agent-opencode/<task-id>/opencode-run.log
+bash "${SB_ROOT}/scripts/agent-opencode/monitor.sh" --log .planning/agent-opencode/<task-id>/opencode-run.log
 ```
 
 Monitor emits checkpoint bullets: prompt submitted, byte growth, log-floor status, stall/auth/quota signals. Do **not** claim PASS on 0-byte or sub-floor logs.
@@ -216,7 +218,7 @@ Monitor emits checkpoint bullets: prompt submitted, byte growth, log-floor statu
 **Interactive TUI fallback** when `opencode run` is insufficient (PTY supervision, banner blocks):
 
 ```bash
-bash scripts/agent-opencode/invoke.sh --use-interactive --work-dir "$OPENCODE_WORK_DIR" --brief-file ...
+bash "${SB_ROOT}/scripts/agent-opencode/invoke.sh" --use-interactive --work-dir "$OPENCODE_WORK_DIR" --brief-file ...
 ```
 
 Parent should prefer **`opencode run`** for automation; use `--use-interactive` only after a `stuck`/`harness` timeout or when operator supervision requires the OpenCode TUI.
@@ -243,7 +245,7 @@ Sidekick-inspired **single-task** lifecycle:
 | Class | Signals | Parent action |
 |-------|---------|---------------|
 | **Stuck** | Idle timeout, no post-submit output | Re-brief with narrower scope; retry once; try `--use-interactive` |
-| **Quota (429)** | `rate limit`, `429`, `token plan` in log | delegate.sh retries automatically; if exhausted, schedule resume |
+| **Quota (429)** | provider error lines only (`Error:`/`API Error:` lines, HTTP status lines, JSON error objects, provider quota sentences); a bare `429` or `quota` in test output or file names is not one; the unchanged-tree check sees tracked and untracked files but not git-ignored files, writes outside the work dir, or changes past the first 4 MiB of a large untracked file | delegate re-runs only if the work dir is unchanged since the attempt (git) or `--quota-retry` was passed; 5-hour/weekly windows are never short-retried; if exhausted, schedule resume |
 | **Auth** | `auth`, `login`, `not logged in` | Stop — user must refresh OpenCode credentials; do not rotate keys in prompt |
 | **Model policy** | `OPENCODE_MODEL must be mimo-v2.5` | Fix env — harness enforces pin; do not override in brief |
 | **Harness** | `ERROR:` from adapter harness | Fix SB harness; file issue if reproducible |
@@ -294,7 +296,8 @@ Honest outcomes: do not claim PASS on timeout-only logs, inherited baseline arti
 
 | Risk | Mitigation |
 |------|------------|
-| **Secrets in brief/log** | `agent-delegate-common.sh` rejects briefs with `api_key`/`sk-` patterns; logs redacted before persist |
+| **Secrets in brief/log** | Best effort, not a guarantee. One linear-time scanner (`scripts/lib/agent_redact.py`) serves the brief check and the log redactor. `agent-delegate-common.sh` refuses a brief that holds a literal credential and names the rule and line; logs and Codex transcripts are redacted (names, schemes and prefixes kept, JSONL lines re-serialized so a transcript stays valid JSONL). Guarantee: every value the scan refuses is also redacted in logs, and the scan runs in time linear in the input (checked by ratio tests, not by wall-clock claims). What it checks is the rule tables in the module, one row per form: vendor-prefix tokens, secret-named assignments (tiered by the last word of the name), `Authorization`/Bearer headers, CLI credentials (`--password`, `--token`, `mysql -p`, `docker login`, `sshpass`, `redis-cli -a`, `aws configure set`, `curl -u`, ...), URL userinfo, XML, `.netrc` and private-key blocks. Logs are created 0600 and redacted after the run and on interrupt (a SIGKILL leaves the raw 0600 log); the brief itself is still passed to the host CLI as an argument, so it is visible to local `ps`; the pinned non-interactive path (`--interaction-mode non-interactive`) execs the host CLI directly, so its stdout is not passed through the redactor. Only literal values are refused: references (`${VAR}`, `process.env.X`, `vault:`/`op://`/ARN references, YAML tags such as `!Ref`, Key Vault and `%env()%` references), code expressions (calls, subscripts and method chains whose arguments are identifiers, numbers or harmless literals, type annotations), placeholders (`(sensitive value)`, `<redacted>`, `***`, `known after apply`), file paths and UUID request/session ids are accepted; a credential name given as a string subscript or as the first literal argument of a call (`define('DB_PASSWORD', '...')`, `app.config['SECRET_KEY'] = '...'`) is paired with its value; Python string prefixes in any case (`b'..'`, `rb'..'`, `f".."`, triple quotes), template literals, C# `@".."`, Rust `r#".."#` and Ruby `%q()` are read as one literal; a literal fallback behind a reference (`process.env.X || 'lit'`, `${VAR:-lit}`, `x | default('lit')`, `os.getenv('X') or 'lit'`) is judged like any literal (empty, trivial and placeholder defaults stay honest), (identifiers inside calls are not secrets: UUIDs, ARNs, resource names, digests, SHAs, URLs without userinfo and paths, unless the parameter itself is named like a credential, e.g. `client_secret=`), and so are the literal arguments of `SecretStr(...)`/`set_password(...)`/`login(user, '...')`. Limits: one call handles at most 16 MiB (`SB_REDACT_MAX_BYTES`, bytes) and 60 s (`SB_REDACT_BUDGET_SEC`, clamped to 0-600; junk, zero, negative, `nan` or `inf` mean 60). Past a limit, or on any internal error, the scan refuses the brief ("too large or too complex to scan"), the redactor withholds the log with a marker, and a transcript whose redaction fails is removed (fail closed). Accepted residuals: (1) unknown formats: a secret with no known vendor prefix under a name that is not credential-like (`MY_THING=<random>`, a bare random token in prose, session cookies under `sessionid=`); (2) weak values: passphrases, dictionary or low-entropy passwords (`correct-horse-battery-staple`, `Spring#2025`), passwords under 8 characters and keys under 16 characters under non-password names are masked in logs when under a credential name but do not block a brief; (3) split secrets: values split across lines, a backslash-newline continuation or string concatenation; (4) encoded or encrypted secrets: base64-wrapped env text, Ansible vault blobs, hex-encoded or doubly URL-encoded values; (5) separator forms outside the grammars: name/value pairs separated only by tabs or spaces outside the netrc, CLI, Dockerfile `ENV`, Markdown-table and name/value (`name:`/`value:`) grammars, YAML folded or literal block scalars (`api_token: >-` with the value on the next line), `.pgpass` colon lines, Terraform maps keyed by a plain name, JSON map values keyed by a host, and CLI tools that are not in the table when they use a non-generic flag whose name carries no credential word, a positional literal argument of a call whose name is not a credential name (`login("user", "pw")`), a bare Heroku CLI uuid and a Rails `master.key` file body; (6) mimicry: values that imitate a reference, placeholder or dummy (a password containing `example`, `test-` or `...`, or one that starts with `${` or `$(`); (7) prose false positives: a prose label such as `pass:` or `token:` followed by a random-looking single token ("this pass: `<sha>`") is refused; (8) inputs over the limits are refused or withheld, not scanned; (9) unchanged: the pinned non-interactive path's stdout is not redacted, the brief is visible in `ps`, and a SIGKILL leaves the raw 0600 log (and, for a Codex TUI capture, a raw `.capture.*` temp file in the private 0700 transcript directory: a named `CODEX_TRANSCRIPT_DIR` is swept of stale ones (older than ten minutes) at the next capture, while a default per-run directory is only removed by the 24-hour sweep of old `sb-codex-transcripts.*` directories); (10) representation: a JSON line that holds a secret is re-serialized (escapes, number spelling and key order may change, duplicate keys collapse), and a JSON object quoted inside a sentence is scanned as text, not decoded; (13) cost: the time is linear, but an input made only of credential-name anchors (a flood of `with_token(` or `define('PASSWORD', `) costs about 4 s per MiB per call, so such a crafted input over roughly 15 MiB exceeds the 60 s budget and is refused or withheld; (12) code shapes that hide a literal (also: nested quotes inside a fallback literal, and a UUID or identifier passed positionally to a call): string concatenation or `join`/`format` of literals, a literal after a placeholder or tag on the same line, YAML anchors (`password: &pw value` masks only the anchor), positional arguments of calls other than `login(...)` and the named setters, heredocs (`<<~EOS`, `<<<EOT`), `ENV.fetch('X') { 'lit' }` and `.unwrap_or(...)` blocks, and lambda or comprehension wrappers; (11) in logs a value under a credential name is masked even when the scan would not refuse it (a dictionary-word passphrase, a prose label such as `pass: merge`, a PEM header mentioned in prose), and an `Authorization` header keeps its scheme word and masks the next word (or everything after it when it holds `name=value` pairs); A refusal can be overridden with `SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1` set in the user's own shell (announced on stderr; read from the delegate's environment, never from the brief) |
+| **Permission mode** | `--mode` defaults to `permissive` only when `--work-dir` has the same git toplevel as the current project (`CLAUDE_PROJECT_DIR`, else the cwd; for a non-git project only that exact directory); a nested clone, another worktree, a fresh clone or a scratch dir defaults to `strict` (the choice is printed). `strict` never adds bypass flags: no `--auto` on OpenCode. Override with `--mode` or `SB_AGENT_DELEGATE_DEFAULT_MODE` |
 | **Matrix env bleed** | `agent-opencode/env.sh` clears `SB_E2E_*` ledger/lock vars |
 | **Model drift** | `agent_opencode_pin_mimo_model_env` rejects non-MiMo overrides in harness, delegate, adapter |
 | **Credential rotation in prompt** | Forbidden — auth failures escalate to user |
@@ -319,8 +322,7 @@ Run `security` / SENTINEL lens on harness changes under `scripts/agent-opencode/
 - Sibling hosts: [`docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md`](../../docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md)
 - Claude sibling: [`skills/silver-agent-claude/SKILL.md`](../silver-agent-claude/SKILL.md)
 - Codex sibling: [`skills/silver-agent-codex/SKILL.md`](../silver-agent-codex/SKILL.md)
-- Cursor sibling: [`skills/silver-agent-cursor/SKILL.md`](../silver-agent-cursor/SKILL.md)
 - Pi sibling: [`skills/silver-agent-pi/SKILL.md`](../silver-agent-pi/SKILL.md)
 - Harness: `scripts/agent-opencode/` (`invoke.sh`, `preflight.sh`, `monitor.sh`, `env.sh`), `scripts/agent-opencode-delegate.sh`
-- Live adapter: `tests/live/agents/opencode/agent.sh`
+- Live adapter: `scripts/lib/agent-adapters/opencode.sh`
 - CLI lib: `scripts/lib/opencode-cli.sh` (`agent_opencode_pin_mimo_model_env`)

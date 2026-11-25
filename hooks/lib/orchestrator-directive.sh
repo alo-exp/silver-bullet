@@ -1,6 +1,12 @@
 # shellcheck shell=bash
 # Orchestrator directive — mechanical next-skill contract (P0/P3/P6).
 
+_sb_orch_directive_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${_sb_orch_directive_lib_dir}/orchestrator-io.sh" ]]; then
+  # shellcheck source=lib/orchestrator-io.sh
+  source "${_sb_orch_directive_lib_dir}/orchestrator-io.sh"
+fi
+
 sb_orchestrator_directive_file() {
   printf '%s/orchestrator-directive.json' "${SB_RUNTIME_STATE_DIR:-/tmp}"
 }
@@ -89,6 +95,9 @@ sb_orchestrator_flow_to_skill() {
     security|SECURITY)
       printf 'security'
       ;;
+    tdd|verify-tests)
+      printf '%s' "$flow"
+      ;;
     silver-*)
       printf '%s' "$flow"
       ;;
@@ -137,7 +146,10 @@ sb_orchestrator_directive_write() {
     next_worker_template="$(sb_orchestrator_worker_template_for_skill "$next_skill")"
   fi
 
-  local now file dir json
+  local now file dir json template_path=""
+  if [[ -n "$next_worker_template" ]] && declare -f sb_orchestrator_worker_template_path >/dev/null 2>&1; then
+    template_path="$(sb_orchestrator_worker_template_path "" "$next_worker_template" 2>/dev/null || true)"
+  fi
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   file="$(sb_orchestrator_directive_file)"
   dir="$(dirname "$file")"
@@ -148,6 +160,7 @@ sb_orchestrator_directive_write() {
     --arg args "$args" \
     --arg reason "$reason" \
     --arg next_worker_template "$next_worker_template" \
+    --arg template_path "$template_path" \
     --argjson blocking "$([[ "$blocking" == true || "$blocking" == 1 ]] && echo true || echo false)" \
     --arg updated_at "$now" \
     '{
@@ -155,11 +168,12 @@ sb_orchestrator_directive_write() {
       args: $args,
       reason: $reason,
       next_worker_template: (if $next_worker_template != "" then $next_worker_template else null end),
+      next_worker_template_path: (if $template_path != "" then $template_path else null end),
       blocking: $blocking,
       updated_at: $updated_at
     }' 2>/dev/null || true)"
   [[ -n "$json" ]] || return 1
-  printf '%s\n' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
+  sb_orchestrator_atomic_write "$file" "$json"
 }
 
 # Write directive including scheduler batch_dispatch handoff metadata (parent Task contract).
@@ -178,7 +192,10 @@ sb_orchestrator_directive_write_batch() {
     next_worker_template="$(sb_orchestrator_worker_template_for_skill "$next_skill")"
   fi
 
-  local now file dir json batch_parsed
+  local now file dir json batch_parsed template_path=""
+  if [[ -n "$next_worker_template" ]] && declare -f sb_orchestrator_worker_template_path >/dev/null 2>&1; then
+    template_path="$(sb_orchestrator_worker_template_path "" "$next_worker_template" 2>/dev/null || true)"
+  fi
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   file="$(sb_orchestrator_directive_file)"
   dir="$(dirname "$file")"
@@ -191,6 +208,7 @@ sb_orchestrator_directive_write_batch() {
     --arg args "$args" \
     --arg reason "$reason" \
     --arg next_worker_template "$next_worker_template" \
+    --arg template_path "$template_path" \
     --argjson blocking "$([[ "$blocking" == true || "$blocking" == 1 ]] && echo true || echo false)" \
     --argjson batch_dispatch "$batch_parsed" \
     --arg updated_at "$now" \
@@ -199,12 +217,13 @@ sb_orchestrator_directive_write_batch() {
       args: $args,
       reason: $reason,
       next_worker_template: (if $next_worker_template != "" then $next_worker_template else null end),
+      next_worker_template_path: (if $template_path != "" then $template_path else null end),
       blocking: $blocking,
       batch_dispatch: $batch_dispatch,
       updated_at: $updated_at
     }' 2>/dev/null || true)"
   [[ -n "$json" ]] || return 1
-  printf '%s\n' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
+  sb_orchestrator_atomic_write "$file" "$json"
 }
 
 sb_orchestrator_directive_clear() {
@@ -242,7 +261,7 @@ sb_orchestrator_directive_skill_recorded() {
     sb_required_skill_is_recorded "$state_contents" "$expected"
     return $?
   fi
-  printf '%s\n' "$state_contents" | grep -Fqx -- "$expected" 2>/dev/null
+  grep -Fqx -- "$expected" <<<"$state_contents" 2>/dev/null
 }
 
 sb_orchestrator_directive_context_block() {
@@ -265,7 +284,7 @@ sb_orchestrator_directive_context_block() {
       (if (.args // "") != "" then "  args: " + .args + "\n" else "" end) +
       "  reason: " + (.reason // "queued flow") + "\n" +
       (if .blocking == true then
-        "  blocking: true — parent: spawn Task worker with template; worker: invoke /" + .next_skill + " before Edit/Write/Bash. SB OVERRIDE: <reason> for audited bypass."
+        "  blocking: true — parent: spawn Task worker with template; worker: invoke /" + .next_skill + " before Edit/Write/Bash. Start a user message with the words SB OVERRIDE, a colon and a reason for an audited bypass."
       else
         "  blocking: false — recommended next skill."
       end)
@@ -279,32 +298,204 @@ sb_orchestrator_directive_context_block() {
   printf '%s\n' "$block"
 }
 
+# sha256 of stdin as hex (GNU, BSD/macOS and OpenSSL fallbacks). Status 1 when none exists.
+sb_orchestrator_sha256() {
+  local out
+  if command -v sha256sum >/dev/null 2>&1; then
+    out="$(sha256sum 2>/dev/null)" || return 1
+  elif command -v shasum >/dev/null 2>&1; then
+    out="$(shasum -a 256 2>/dev/null)" || return 1
+  elif command -v openssl >/dev/null 2>&1; then
+    out="$(openssl dgst -sha256 -r 2>/dev/null)" || return 1
+  else
+    return 1
+  fi
+  printf '%s' "${out%% *}"
+}
+
+# sb_orchestrator_log_override REPO_ROOT REASON [SKILL] [PROVENANCE_JSON] [KIND]
+# Append one audited override record. Fail closed (status 1, nothing cleared by the caller) when
+# the record cannot be written: no project root, no jq, a symlinked .planning/ or log (R4-14), an
+# unwritable log, or no sha256 tool. Each line carries the caller's provenance (session_id, host,
+# hook event, transcript path, prompt hash) and `prev`, the sha256 of the previous line, so a line
+# removed or edited afterwards breaks the chain. The record is mirrored into the runtime state dir.
 sb_orchestrator_log_override() {
-  local repo_root="$1"
-  local reason="$2"
-  local skill="${3:-}"
-  [[ -n "$repo_root" && -d "$repo_root/.planning" ]] || return 0
-  command -v jq >/dev/null 2>&1 || return 0
-  local logfile now
+  local repo_root="${1:-}" reason="${2:-}" skill="${3:-}" prov="${4:-}" kind="${5:-directive-override}"
+  [[ -n "$prov" ]] || prov='{}'
+  [[ -n "$repo_root" && -d "$repo_root" ]] || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+  local logfile now prev line last
   logfile="$(sb_orchestrator_override_log "$repo_root")"
+  [[ ! -L "$repo_root/.planning" && ! -L "$logfile" ]] || return 1
+  mkdir -p "$repo_root/.planning" 2>/dev/null || return 1
+  prev="genesis"
+  if last="$(tail -n 1 "$logfile" 2>/dev/null)" && [[ -n "$last" ]]; then
+    prev="$(printf '%s\n' "$last" | sb_orchestrator_sha256)" || return 1
+  fi
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-  mkdir -p "$(dirname "$logfile")" 2>/dev/null || true
-  jq -nc \
+  line="$(jq -nc \
     --arg at "$now" \
     --arg reason "$reason" \
     --arg skill "$skill" \
-    '{at:$at, kind:"directive-override", reason:$reason, expected_skill:$skill}' \
-    >>"$logfile" 2>/dev/null || true
+    --arg prev "$prev" \
+    --arg kind "$kind" \
+    --argjson prov "$prov" \
+    '{at:$at, kind:$kind, reason:$reason, expected_skill:$skill, prev:$prev} + $prov' 2>/dev/null)" || return 1
+  printf '%s\n' "$line" >>"$logfile" 2>/dev/null || return 1
+  sb_orchestrator_mirror_override "$line"
+}
+
+# Advisory copy of an audit line in the runtime state dir. Always succeeds.
+sb_orchestrator_mirror_override() {
+  local mirror="${SB_RUNTIME_STATE_DIR:-}/orchestrator-override-log.jsonl"
+  [[ -d "${SB_RUNTIME_STATE_DIR:-}" && ! -L "$mirror" ]] && printf '%s\n' "$1" >>"$mirror" 2>/dev/null
+  return 0
+}
+
+# SB OVERRIDE is the user's own words (R4-12): the FIRST non-blank line of the message must be
+# `SB OVERRIDE: <reason>`, upper case, with a real reason on that line (12+ characters, two words,
+# not a `<placeholder>`). A mention later in the text, inside a quoted/pasted block, in lower case or
+# with no reason (the guard's own denial text says `SB OVERRIDE: <reason>`) is not an override.
+sb_orchestrator_extract_override_reason() {
+  local prompt="${1:-}" first reason
+  first="$(printf '%s\n' "$prompt" | awk 'NF { print; exit }')"
+  local marker_re='^[[:space:]]*SB OVERRIDE:[[:space:]]*(.*)$'
+  [[ "$first" =~ $marker_re ]] || return 0
+  reason="${BASH_REMATCH[1]}"
+  reason="${reason%"${reason##*[![:space:]]}"}"
+  # A real reason (R4-12): 12+ characters, no <placeholder>, and at least two words of 3+ letters.
+  [[ ${#reason} -ge 12 ]] || return 0
+  [[ "$reason" == *"<"*">"* ]] && return 0
+  local word words=0
+  for word in $reason; do
+    [[ "$word" =~ [A-Za-z]{3,} ]] && words=$((words + 1))
+  done
+  [[ $words -ge 2 ]] || return 0
+  printf '%s' "$reason"
 }
 
 sb_orchestrator_prompt_has_override() {
-  local prompt="$1"
-  printf '%s' "$prompt" | grep -qiE 'SB[[:space:]]+OVERRIDE:' 
+  [[ -n "$(sb_orchestrator_extract_override_reason "${1:-}")" ]]
 }
 
-sb_orchestrator_extract_override_reason() {
-  local prompt="$1"
-  printf '%s' "$prompt" | sed -n 's/.*[Ss][Bb][[:space:]]*OVERRIDE:[[:space:]]*//p' | head -1
+# sb_orchestrator_transcript_ok PATH
+# A transcript_path is acceptable when it is a regular file (not a symlink) whose REAL location (every
+# directory component resolved) is under the host's real runtime root, with no `..` in the given path.
+sb_orchestrator_transcript_ok() {
+  local path="${1:-}" root dir real
+  [[ -n "${SB_RUNTIME_HOME_ROOT:-}" && "$path" != *".."* && ! -L "$path" && -f "$path" ]] || return 1
+  root="$(cd "$SB_RUNTIME_HOME_ROOT" 2>/dev/null && pwd -P)" || return 1
+  dir="$(cd "${path%/*}" 2>/dev/null && pwd -P)" || return 1
+  real="$dir/${path##*/}"
+  [[ "$real" == "$root/"* ]]
+}
+
+# The recorded parent session (written at honest top-level prompts, see sb_orchestrator_note_parent_prompt).
+sb_orchestrator_parent_session_file() {
+  printf '%s/orchestrator-parent-session.json' "${SB_RUNTIME_STATE_DIR:-/tmp}"
+}
+
+# sb_orchestrator_prompt_provenance_ok INPUT_JSON
+# A prompt event is only acted on (override, queue clear) when it looks like the host's own
+# UserPromptSubmit for a PARENT session (R4-07, R4-08):
+#   - not a worker/delegate session (SB_ORCHESTRATOR_WORKER, SB_ORCHESTRATOR_PARENT=0 or an agent_id);
+#   - the host's session_id is present;
+#   - a transcript_path, WHEN THE HOST SENDS ONE (Codex may not), is a regular file under the host's
+#     runtime root after symlinks are resolved (so /etc/hostname, or a symlinked directory, does not count);
+#   - while a Task worker marker is fresh (TTL 2 h, it outlives an interrupted subagent) the prompt must
+#     also be provably the recorded parent's: the same session_id and a valid transcript_path.
+# Status 0 ok; 1 refused (SB_PROVENANCE_REFUSAL says why).
+sb_orchestrator_prompt_provenance_ok() {
+  local input="${1:-}" sid transcript agent recorded spawned
+  SB_PROVENANCE_REFUSAL=""
+  if [[ "${SB_ORCHESTRATOR_WORKER:-}" == "1" || "${SB_ORCHESTRATOR_WORKER:-}" == "true" || "${SB_ORCHESTRATOR_PARENT:-}" == "0" ]]; then
+    SB_PROVENANCE_REFUSAL="this is a worker or delegate session; only the parent session's own user prompts count"
+    return 1
+  fi
+  agent="$(printf '%s' "$input" | jq -r '.agent_id // ""' 2>/dev/null)"
+  if [[ -n "$agent" ]]; then
+    SB_PROVENANCE_REFUSAL="the payload comes from a worker agent (agent_id), not from the user"
+    return 1
+  fi
+  sid="$(printf '%s' "$input" | jq -r '.session_id // ""' 2>/dev/null)"
+  if [[ -z "$sid" ]]; then
+    SB_PROVENANCE_REFUSAL="the prompt payload has no host session_id, so it cannot be verified as your own message"
+    return 1
+  fi
+  transcript="$(printf '%s' "$input" | jq -r '.transcript_path // ""' 2>/dev/null)"
+  if [[ -n "$transcript" ]] && ! sb_orchestrator_transcript_ok "$transcript"; then
+    SB_PROVENANCE_REFUSAL="the payload's transcript_path is not a regular file under ${SB_RUNTIME_HOME_ROOT:-the host runtime root}"
+    return 1
+  fi
+  if sb_orchestrator_worker_marker_fresh; then
+    recorded="$(jq -r '.session_id // ""' "$(sb_orchestrator_parent_session_file)" 2>/dev/null)"
+    if [[ -z "$transcript" || -z "$recorded" || "$recorded" != "$sid" ]]; then
+      spawned="$(jq -r '.spawned_at // "unknown time"' "$(sb_orchestrator_worker_marker_file)" 2>/dev/null)"
+      SB_PROVENANCE_REFUSAL="a Task worker marker is active (spawned ${spawned}; it lapses after its 2 hour TTL; a finished worker does not clear it) and this prompt cannot be tied to the recorded parent session; if no subagent is running, the user can delete $(sb_orchestrator_worker_marker_file) and retry, or send the prompt from the recorded parent session"
+      return 1
+    fi
+  fi
+  return 0
+}
+
+# sb_orchestrator_note_parent_prompt INPUT_JSON
+# Record the session of an honest top-level prompt so that a stale worker marker cannot lock the parent out of
+# its own override. Nothing is recorded for a worker/delegate payload, an unsafe session id, a transcript that
+# fails the check, or while a worker marker is fresh (a forged payload cannot register itself as the parent).
+sb_orchestrator_note_parent_prompt() {
+  local input="${1:-}" sid tmp file
+  sb_orchestrator_prompt_provenance_ok "$input" || return 0
+  sb_orchestrator_worker_marker_fresh && return 0
+  sid="$(printf '%s' "$input" | jq -r '.session_id // ""' 2>/dev/null)"
+  [[ "$sid" =~ ^[A-Za-z0-9_-]{1,64}$ ]] || return 0
+  file="$(sb_orchestrator_parent_session_file)"
+  tmp="${file}.$$"
+  if jq -n --arg sid "$sid" --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '{session_id:$sid, noted_at:$at}' >"$tmp" 2>/dev/null; then
+    mv -f -- "$tmp" "$file" 2>/dev/null || rm -f -- "$tmp"
+  fi
+  return 0
+}
+
+# sb_orchestrator_provenance_json INPUT_JSON PROMPT: the audit provenance object.
+sb_orchestrator_provenance_json() {
+  local input="${1:-}" prompt="${2:-}" sid transcript host phash
+  sid="$(printf '%s' "$input" | jq -r '.session_id // ""' 2>/dev/null)"
+  transcript="$(printf '%s' "$input" | jq -r '.transcript_path // ""' 2>/dev/null)"
+  host="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-unknown}}"
+  phash="$(printf '%s' "$prompt" | sb_orchestrator_sha256)" || phash=""
+  jq -nc --arg sid "$sid" --arg host "$host" --arg tp "$transcript" --arg ph "$phash" \
+    '{session_id:$sid, host:$host, hook_event:"UserPromptSubmit", transcript_path:$tp, prompt_sha256:$ph}' 2>/dev/null || printf '{}'
+}
+
+# sb_orchestrator_override_apply INPUT_JSON PROMPT REPO_ROOT
+# Honour an SB OVERRIDE found in a real UserPromptSubmit payload (R4-07/R4-13/R4-14):
+#   - the payload must pass sb_orchestrator_prompt_provenance_ok (parent session, host session_id,
+#     transcript under the host root);
+#   - the audit record (with provenance) must be written before anything is cleared;
+#   - it then clears the pending directive AND abandons the flow queue, so the parent Stop gate
+#     no longer holds the session. It does NOT lift parent-mode tool restrictions or other
+#     PreToolUse gates (docs/ORCHESTRATOR.md).
+# Status 0 honoured; 1 not an override; 2 override refused (SB_OVERRIDE_REFUSAL says why).
+# shellcheck disable=SC2034  # SB_OVERRIDE_REFUSAL is an output read by the caller
+sb_orchestrator_override_apply() {
+  local input="${1:-}" prompt="${2:-}" repo_root="${3:-}" reason prov
+  SB_OVERRIDE_REFUSAL=""
+  reason="$(sb_orchestrator_extract_override_reason "$prompt")"
+  [[ -n "$reason" ]] || return 1
+  if ! sb_orchestrator_prompt_provenance_ok "$input"; then
+    SB_OVERRIDE_REFUSAL="$SB_PROVENANCE_REFUSAL"
+    return 2
+  fi
+  prov="$(sb_orchestrator_provenance_json "$input" "$prompt")"
+  if ! sb_orchestrator_log_override "$repo_root" "$reason" "$(sb_orchestrator_directive_next_skill 2>/dev/null || true)" "$prov"; then
+    SB_OVERRIDE_REFUSAL="the audit record could not be written to .planning/orchestrator-override-log.jsonl"
+    return 2
+  fi
+  sb_orchestrator_directive_clear
+  if declare -f sb_orchestrator_clear_queue >/dev/null 2>&1; then
+    sb_orchestrator_clear_queue
+  fi
+  return 0
 }
 
 # Write directive from orchestrator.json current_flow when present.
@@ -316,6 +507,21 @@ sb_orchestrator_sync_directive_from_state() {
 
   skill="$(jq -r '.current_flow // ""' "$orch_file" 2>/dev/null || true)"
   [[ -n "$skill" && "$skill" != "null" ]] || return 0
+
+  # A scheduler batch with handoffs still waiting is the authoritative "what next": rebuild
+  # the batch directive (it carries the handoff metadata) instead of guessing from current_flow.
+  if jq -e '(.scheduler.batch_dispatch.handoffs // []) | any(.join_status != "joined")' "$orch_file" >/dev/null 2>&1; then
+    local _sched_lib
+    _sched_lib="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/orchestrator-scheduler.sh"
+    if ! declare -f sb_scheduler_write_batch_directive >/dev/null 2>&1 && [[ -f "$_sched_lib" ]]; then
+      # shellcheck source=lib/orchestrator-scheduler.sh
+      source "$_sched_lib"
+    fi
+    if declare -f sb_scheduler_write_batch_directive >/dev/null 2>&1 \
+       && sb_scheduler_write_batch_directive "" 2>/dev/null; then
+      return 0
+    fi
+  fi
 
   skill="$(sb_orchestrator_flow_to_skill "$skill")"
   args="$(jq -r '.active_intent // ""' "$orch_file" 2>/dev/null | head -c 200 || true)"
@@ -344,7 +550,7 @@ sb_orchestrator_directive_from_pending_outcome() {
 # Standalone on-demand delegation bootstrap (outside composer flow_queue).
 sb_orchestrator_seed_delegation_directive() {
   local host="$1" task_id="$2" brief_path="$3" ownership_scope_json="${4:-[]}"
-  [[ "$host" == "codex" || "$host" == "cursor" || "$host" == "claude" || "$host" == "opencode" || "$host" == "pi" ]] || return 1
+  [[ "$host" == "codex" || "$host" == "claude" || "$host" == "opencode" || "$host" == "pi" ]] || return 1
   [[ -n "$task_id" && -n "$brief_path" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
 

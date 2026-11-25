@@ -41,24 +41,23 @@
 **Trigger:** Any ladder execution
 
 **Workflow:**
-1. One review/verify `Task` per turn — never batch review and verify in one subagent call; launcher reports, triages, and applies ACCEPT in-session
+1. One ticketed `Agent` spawn at a time — never batch review and verify in one subagent call; launcher reports, triages, and applies ACCEPT in-session
 2. Review → launcher Policy C user update → launcher triage (Policy A) → apply ACCEPT → verify sequence per rung
 3. Launcher/parent posts Blockers / Highs / Mediums (or none) after every rung, then triages and applies ACCEPT; review and verify use rung model. The rung model does not implement
-4. Verify subagents use `readonly: true` (Cursor) or explicit verify-only directive
-5. Orchestrator runs charter verification signals between verify passes
-6. Stay on rung until orchestrator confirms two consecutive clean verify passes
-7. State machine: `rung_N_review` → `rung_N_triage` → `rung_N_file_valid_issues` → `rung_N_fix_parallel` → `rung_N_verify_1` → grep → `rung_N_verify_2` → grep → advance
+4. Reviewers and verifiers are the read-only `sb-rfl-reviewer` / `sb-rfl-verifier` agents (tools Read, Grep, Glob); the spawn hook checks role, model, effort and the exact brief hash against the open ticket
+5. The encoder runs the charter verification signals (`--run-signals`) after each verify pass and records exit codes
+6. Stay on rung until two consecutive captured CLEAN reviews at an unchanged worktree (the encoder derives the streak)
+7. State machine: `rung_N_review` → `rung_N_triage` → `rung_N_file_valid_issues` → `rung_N_fix_parallel` → `rung_N_verify_1` → signals → `rung_N_verify_2` → signals → advance
 
-### Scenario: Subscription-First GPT and Claude Launch
+### Scenario: Native Claude ladder resolution
 
-**Trigger:** Cursor RFL is about to launch a GPT or Claude/Opus review or verify rung (including re-verify and Max)
+**Trigger:** `/sb:review-fix-ladder` starts a run
 
 **Workflow:**
-1. Run `python3 scripts/review-fix-ladder.py --decide-launch --model {model} --reasoning {reasoning}` before every launch — not once per family
-2. GPT rungs invoke `/sb:agent-codex` (`scripts/agent-codex/invoke.sh`) first; Claude/Opus rungs invoke `/sb:agent-claude` (`scripts/agent-claude/invoke.sh`) first
-3. Quota exhaustion (`429`, `rate limit`, `token plan`, `out of quota`, `quota retries exhausted`, `usage cap`/`usage limit`, `billed-quota`) → log host+signal, `--mark-quota-fallback`, then Cursor `Task`
-4. Non-quota failure (missing CLI, HASH MISMATCH, network blip, brief bug, NOT CLEAN) → **no** Cursor fallback
-5. Grok and Composer default to `/sb:agent-cursor`. Gemini defaults to Gemini CLI (if the user did not name an agent), else Pi, else OpenCode, else Cursor. Other models default to Pi or OpenCode, or the agent the user named. User override wins. Do not smash host `--mode`. Do not remap GPT/Claude onto Grok High. Grok, Composer, GLM, Gemini, Kimi, OpenCode rungs skip the GPT/Claude subscription-first quota gate
+1. `review-fix-ladder.py --json` resolves the rungs from aliases at run time: `haiku:xhigh`, `sonnet:high`, `sonnet:xhigh`, `opus:low`, `opus:medium`, `opus:high`; Fable is never used
+2. The user may include or exclude rungs in the prompt (`rungs: +opus:xhigh -haiku:xhigh`) or in `.silver-bullet.json` (`review_fix_ladder.rungs`)
+3. Every review and verify is one foreground `Agent` spawn with the `subagent_type`, `model`, `effort` and exact `prompt` printed by `--issue-ticket`; no other host, CLI or vendor is used
+4. On Codex the ladder stops with a clear "not yet verified on Codex" message; documented defaults only (Luna xhigh; Terra high/xhigh; Sol low..high unverified; Astra excluded)
 
 ### Scenario: Review-Triage-Fix Separation
 
@@ -100,39 +99,37 @@
 **Workflow:**
 1. The parent/launcher MUST present a concise bullet list of only the key tasks and instructions that will go into the rung prompt(s), and get user approval. Do not dump the entire prompt
 2. 5–12 bullets: artifact under review, KEEP REJECT, findings format, verify/APPLY out of scope for the reviewer, model/access constraints that matter to the review (e.g. plan vs template). No full Template A paste, no SHA dump of the whole freeze, no 200-line brief
-3. Persist `.planning/rfl-<id>/RUNG-PROMPT-APPROVAL.md` with the bullets plus `approved: pending|yes` and a timestamp. Write pending before asking; set yes only after the user approves
-4. Until approved: do not spawn reviewer Tasks / Pi invoke
+3. `--start` writes `RUNG-PROMPT-APPROVAL.md` with `approved: no`; `--approve` sets `approved: yes` with the charter hash only after the user approves
+4. Until approved: do not issue a ticket or spawn a reviewer
 5. Re-run the gate if key tasks materially change (e.g. user retargets "review the plan" → "review SPEC template + kinds")
 
 ### Scenario: Anti-Stall leftover loop (Policy B)
 
-**Trigger:** Verify FAIL leftovers, empty/Let Tasks, or OpenCode/Codex/Claude quota during an RFL
+**Trigger:** Verify FAIL leftovers, a failed launch, or a usage limit during an RFL
 
 **Workflow:**
-1. Do not idle. After verify FAIL, Policy B leftovers in the same follow-up turn, then re-verify. After CLEAN verify_1, immediately grep then verify_2. After two CLEAN verifies + greps, immediately start the next rung
-2. Corpus sweep, not one-line cycles: if the same defect class fails verify more than twice, the next Policy B scans all in-scope plan/spec artifacts for that class and patches every live hit in one pass
-3. Empty/Let nested Tasks: parent re-spawns immediately with explicit model so the child does not inherit the wrong wrapper. Nested GLM under Grok dies after Let; parent re-spawns with explicit GLM model. Do not wait for the user. Never Fast
-4. Quota windows (any model): 5-hour usage cap → `--schedule-quota-retry` same named model after the window (arms `at`/launchd plus SessionStart/`rfl-quota-retry-due.sh` `--quota-retry-wake`); weekly/monthly/unknown schedule only if parsed reset ≤ 5 hours; 401 insufficient balance is not a 5-hour schedule. When the scheduled worker fires, if the ladder is already over, ASK the user (QUOTA-RETRY-ASK.md + hook context) and do not execute; if still active, retry the same model. Codex/Claude usage-limit still Cursor-fallback. OpenCode billed quota/weekly with reset > 5h → wait for the user; do not spin short retries. Timeout / Endpoint is unavailable / empty Let / hung invoke with no review.md: retry once immediately, then skip the rung (SKIPPED.md) and start the next rung. After the whole ladder, retry skipped rungs once more. Do not skip because of CLEAN/NOT CLEAN
-5. Cap residual loops: after 5 leftover cycles on the same rung verify, escalate remaining file:line instead of a sixth one-line patch
+1. Do not idle. After verify FAIL, Policy B leftovers in the same follow-up turn (`--record-apply`), then a new verify ticket. After a clean cycle, the next review ticket or `verify_2`
+2. Corpus sweep, not one-line cycles: if the same defect class fails verify more than twice, the next Policy B scans all in-scope artifacts for that class and patches every live hit in one pass
+3. A usage limit stops the parent too: the capture hook classifies it (`BLOCKED.md`, `QUOTA-CLASSIFY.json`), pauses the run and arms nothing; the user resumes with `--resume <run-id>` after the window. The attempt does not count toward a skip
+4. Cap residual loops: after 5 leftover cycles on the same rung verify, escalate remaining file:line instead of a sixth one-line patch
 
-### Scenario: Skip after launch/timeout retry-once-then-skip
+### Scenario: Skip after two failed attempts
 
-**Trigger:** Same ladder rung cannot be launched or times out (timeout, empty/Let after re-spawn, OpenCode Endpoint is unavailable, hung invoke with no review.md)
+**Trigger:** A rung's subagent cannot be launched, times out, or returns no valid result block
 
 **Workflow:**
-1. Retry once immediately. If that fails and the host is OpenCode or Pi (including OmniRoute 401 Missing API key), substitute Cursor Grok 4.6 High (`cursor-grok-4.6-high`); never Fast; never Extra High as unspecified default. Other hosts: skip that rung and immediately start the next rung. After the entire ladder finishes, retry skipped rungs once more
-2. Record SKIP/retry in the rung dir (SKIPPED.md: reason, attempt count, timestamps, next rung, post_ladder_retry_pending)
-3. Do not skip because of a CLEAN/NOT CLEAN review — only when the rung failed to produce a verdict
-4. Mixed-host: skip does not change the next rung's required model. Never Fast. Skipping is not permission to use Fast or a different family as a silent substitute on that skipped rung
-5. Quota STOP once still applies for billed quota / weekly limit with no reset within 5 hours — report STOP and wait unless the failure is an unavailable/timeout class that already retried once; 5-hour caps schedule a same-model retry instead
-6. Sequential rung advance is allowed if the previous rung has SKIPPED.md (incomplete, not a CLEAN advance). Empty/"Let" after re-spawn counts toward the launch/timeout retry-once-then-skip policy
+1. The encoder counts the attempt (`cannot_launch`, `timeout`, `no_verdict`); a ticket whose subagent never launched is cancelled with `--cancel-ticket`. The first failure retries immediately
+2. After the second failure the encoder writes `SKIPPED.md` (reason, attempts, captured error text) and starts the next rung. After the entire ladder finishes, each skipped rung is retried once more
+3. Never substitute another model or vendor for the skipped rung; never Fast
+4. A skip is not a CLEAN advance and is not caused by a CLEAN/NOT CLEAN review
+5. Only the user can end an unfinished run, by typing `RFL ABORT <run-id>`; `--abort` is refused without that token
 
 ### Scenario: Compliance Gate — Stop on Violation
 
 **Trigger:** Orchestrator about to advance from rung N to rung N+1, or after any verify pass
 
 **Workflow:**
-1. Orchestrator self-checks: sequential states, separate verify invocations, orchestrator grep ran, scope held, no parallel rungs
+1. Orchestrator self-checks: sequential states, separate verify tickets, encoder signals ran, scope held, no parallel rungs
 2. If **any** check fails → **STOP immediately** — do not start next rung
 3. Report violation, fix process/skill/prompt, re-run failed phase on **same** rung
 4. Resume only after compliance gate passes on re-run
@@ -153,6 +150,6 @@
 
 **Workflow:**
 1. Lock scope, derive charter, resolve ladder
-2. Execute rung 1 only: `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator grep → `verify_2` → orchestrator grep
+2. Execute rung 1 only: `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → signals → `verify_2` → signals
 3. Run compliance gate before any rung 2 work
 4. **STOP** — report compliance log; do not continue to higher rungs unless user explicitly requests and compliance passes

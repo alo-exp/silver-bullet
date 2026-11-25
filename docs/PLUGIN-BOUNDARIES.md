@@ -58,13 +58,12 @@ Optional plugins remain useful when they add capability outside SB's lifecycle s
 - `/.planning/` and `/.claude/` are project-instance artifacts, not plugin artifacts.
 - `silver-bullet.md` is the project-side instance copy; `templates/silver-bullet.md.base` is the source template.
 - `plugins/silver-bullet/` is the curated SB-only Codex bundle, synchronized from the repo root.
-- `plugins/silver-bullet/commands/` is the Cursor command surface. It exposes `/sb:*` entry points; the Codex manifest omits `commands` and uses the native `skill-source/` mirror to avoid command-to-skill migration artifacts.
 - Third-party Codex wrappers belong in their own packages or marketplaces and should not copy upstream skills into this repository.
 
 ## Codex Marketplace Packaging
 
 For the Codex packaging pattern used with Alo Labs plugins, see
-[docs/internal/codex-marketplace-packaging-guide.md](docs/internal/codex-marketplace-packaging-guide.md).
+[docs/internal/codex-marketplace-packaging-guide.md](internal/codex-marketplace-packaging-guide.md).
 SB's own Codex package stays SB-only. Optional extension plugins are installed
 from their own sources when needed, and SB's slash-command layer ships inside the
 main SB bundle so the default install exposes one Silver Bullet plugin with

@@ -3,7 +3,7 @@
 **Canonical view mode:** `file://` (macOS `open` of the HTML SPA). No localhost/http.server required.
 
 - Report: [`../landscape-report.html`](../../landscape-report.html)
-- file URL: `file:///Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html`
+- file URL: `file:///Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html`
 - Automation: Playwright `page.goto(fileURL)` (same file:// path; not a product requirement)
 - Fresh evidence JSON: [`vloop-recheck.json`](vloop-recheck.json)
 - Script: [`vloop-fileurl.mjs`](vloop-fileurl.mjs)

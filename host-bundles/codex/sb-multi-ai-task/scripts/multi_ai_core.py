@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import secrets
+import tempfile
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -80,23 +81,44 @@ def family_for_logical(logical_id: str, registry: dict[str, Any] | None = None) 
     return mapping[canonical]
 
 
+_CLAUDE_MARKERS = ("CLAUDECODE", "CLAUDE_CODE")
+_CODEX_MARKERS = (
+    "CODEX_SANDBOX",
+    "SB_AGENT_CODEX_DELEGATE",
+    "CODEX_CI",
+    "CODEX_THREAD_ID",
+    "CODEX_INTERNAL_ORIGINATOR_OVERRIDE",
+)
+_CURSOR_MARKERS = ("CURSOR_AGENT", "CURSOR_TRACE_ID")
+_EXPLICIT_HOSTS = {"claude": "claude-code", "claude-code": "claude-code", "codex": "codex"}
+_SUPPORTED_HOSTS_TEXT = "Claude Code or Codex"
+
+
+def _any_set(names: tuple[str, ...]) -> bool:
+    return any(os.environ.get(name) for name in names)
+
+
 def detect_host() -> str:
+    """Name the host this process runs under: ``claude-code``, ``codex``, ``cursor``, ``unknown`` or another name.
+
+    An explicit ``SB_HOST`` that is not Claude Code or Codex (``cursor``, or anything unrecognised) is
+    returned as is, whatever else is in the environment, so no override can hide an unsupported host
+    or name a different one. Real process markers (``CLAUDECODE``, ``CODEX_*``) beat a supported
+    ``SB_HOST``. A supported ``SB_HOST`` is the user's own statement and outranks the ``CURSOR_*``
+    markers, which are weak (a Claude Code or Codex session started from a Cursor terminal inherits
+    them); those markers alone are refused.
+    """
     explicit = os.environ.get("SB_HOST", "").strip().lower()
-    # Ambient fail-closed hosts win over a more permissive SB_HOST override.
-    if os.environ.get("CLAUDECODE") or os.environ.get("CLAUDE_CODE"):
-        return "claude-code"
-    if os.environ.get("CODEX_SANDBOX") or os.environ.get("SB_AGENT_CODEX_DELEGATE"):
-        return "codex"
-    if explicit in {"claude", "claude-code"}:
-        return "claude-code"
-    if explicit == "codex":
-        return "codex"
-    if explicit == "cursor":
-        return "cursor"
-    if os.environ.get("CURSOR_AGENT") or os.environ.get("CURSOR_TRACE_ID"):
-        return "cursor"
-    if explicit:
+    if explicit and explicit not in _EXPLICIT_HOSTS:
         return explicit
+    if _any_set(_CLAUDE_MARKERS):
+        return "claude-code"
+    if _any_set(_CODEX_MARKERS):
+        return "codex"
+    if explicit:
+        return _EXPLICIT_HOSTS[explicit]
+    if _any_set(_CURSOR_MARKERS):
+        return "cursor"
     return "unknown"
 
 
@@ -109,16 +131,168 @@ def host_gate() -> dict[str, Any]:
             "ok": False,
             "host": host,
             "error_code": UNSUPPORTED_HOST_ERROR,
-            "message": f"Host {host!r} is unsupported for multi-ai-task v1",
+            "message": f"Host {host!r} is unsupported for multi-ai-task: run it from {_SUPPORTED_HOSTS_TEXT}",
         }
     if entry["status"] != "supported":
         return {
             "ok": False,
             "host": host,
-            "error_code": entry.get("error_code", UNSUPPORTED_HOST_ERROR),
-            "message": f"Host {host!r} is packaged-fail-closed for multi-ai-task v1",
+            "error_code": entry.get("error_code") or UNSUPPORTED_HOST_ERROR,
+            "message": entry.get("message") or f"Host {host!r} is not supported for multi-ai-task: run it from {_SUPPORTED_HOSTS_TEXT}",
         }
     return {"ok": True, "host": host}
+
+
+def _real(path: str | Path) -> Path:
+    return Path(os.path.realpath(os.path.expanduser(str(path))))
+
+
+def resolve_output_root(raw: str | Path) -> Path:
+    """The one physical path of an output root: ``~`` expanded, symlinks and ``..`` resolved.
+
+    Callers check this value and write below this same value, so a literal ``~`` that the shell
+    did not expand (``--output-root=~/x``) cannot be checked as one place and written as another.
+    """
+    return _real(raw)
+
+
+def _fold(path: Path) -> tuple[str, ...]:
+    # Case-folded: a case-insensitive filesystem (macOS) reaches ~/.Claude through ~/.CLAUDE.
+    return tuple(part.casefold() for part in path.parts)
+
+
+def _inside(path: Path, root: Path) -> bool:
+    inner, outer = _fold(path), _fold(root)
+    return inner[: len(outer)] == outer
+
+
+def _runtime_homes() -> list[Path]:
+    home = Path(os.path.expanduser("~"))
+    homes = [home / ".claude", home / ".codex"]
+    if os.environ.get("CODEX_HOME"):
+        homes.append(Path(os.environ["CODEX_HOME"]))
+    return homes
+
+
+def _state_dirs() -> list[Path]:
+    dirs = [h / ".silver-bullet" for h in _runtime_homes()]
+    if os.environ.get("SB_RUNTIME_STATE_DIR"):
+        dirs.append(Path(os.environ["SB_RUNTIME_STATE_DIR"]))
+    return dirs
+
+
+def _active_delegation() -> tuple[list[Path], str, str]:
+    """The ownership scope of the active agent delegation, as the delegation guard keeps it.
+
+    Returns ``(scopes, host, task_id)``; nothing is active when the guard is switched
+    off (SB_AGENT_DELEGATE_GUARD=0, SB_AGENT_DELEGATE_V2=0) or the state file is absent or unreadable.
+    """
+    if os.environ.get("SB_AGENT_DELEGATE_GUARD") == "0" or os.environ.get("SB_AGENT_DELEGATE_V2") == "0":
+        return [], "", ""
+    for state_dir in _state_dirs():
+        state_file = state_dir / "agent-delegation-active.json"
+        try:
+            state = json.loads(state_file.read_text(encoding="utf-8"))
+        except (OSError, ValueError, RecursionError):
+            continue
+        if not isinstance(state, dict) or state.get("active") is not True:
+            continue
+        raw = state.get("ownership_scope")
+        scopes = [_real(item) for item in raw if isinstance(item, str) and item] if isinstance(raw, list) else []
+        host, task = state.get("host"), state.get("task_id")
+        return scopes, host if isinstance(host, str) else "", task if isinstance(task, str) else ""
+    return [], "", ""
+
+
+# System directories. These roots can never hold a project and are always refused (with their children): /etc, /proc,
+# /sys, /dev, /boot (and macOS /private/etc). Every other system tree (/usr /bin /sbin /lib* /var /opt, macOS /System
+# /Library /private/var) is refused only OUTSIDE the project: a project that lives there (a Docker WORKDIR
+# /usr/src/app, /var/www/app, /opt/app) keeps its own .planning/ and any directory below its root. The project root is
+# the git toplevel of the working directory, else the nearest ancestor holding .silver-bullet.json. The system temp
+# directory stays usable. Roots are compared after symlinks are resolved (/bin -> /usr/bin).
+_NEVER_PROJECT_DIRS = ("/etc", "/proc", "/sys", "/dev", "/boot", "/private/etc")
+_SYSTEM_TREES = ("/usr", "/bin", "/sbin", "/lib", "/lib32", "/lib64", "/libx32", "/var", "/opt", "/System", "/Library", "/private/var")
+
+
+def _extra_system_tree() -> list[str]:
+    """One more system tree, for tests only: honoured when the test harness switch SILVER_BULLET_TEST_HOOK_ENFORCED=1
+    is set, so a test can stand a temp directory in for /usr or /var (a real one cannot be created without root)."""
+    extra = os.environ.get("SB_MULTI_AI_TEST_SYSTEM_TREE", "")
+    if extra and os.environ.get("SILVER_BULLET_TEST_HOOK_ENFORCED") == "1":
+        return [extra]
+    return []
+
+
+def _project_root() -> Path | None:
+    """The git toplevel of the working directory (the nearest ancestor holding .git, found without starting a
+    process: a dry run starts nothing), else the nearest ancestor holding .silver-bullet.json."""
+    cwd = _real(Path.cwd())
+    for marker in (".git", ".silver-bullet.json"):
+        for directory in (cwd, *cwd.parents):
+            if (directory / marker).exists():
+                return directory
+    return None
+
+
+def _system_dir_refusal(root: Path) -> str | None:
+    for name in _NEVER_PROJECT_DIRS:
+        for base in {Path(name), _real(name)}:
+            if _inside(root, base):
+                return f"output root {root} is inside a system directory ({base}); use a project directory such as .planning/multi-ai/<run-id>/"
+    project = _project_root()
+    if project is not None and _inside(root, project):
+        return None
+    temp_roots = [_real(tempfile.gettempdir()), _real(os.environ.get("TMPDIR") or tempfile.gettempdir())]
+    for name in (*_SYSTEM_TREES, *_extra_system_tree()):
+        for base in {Path(name), _real(name)}:
+            if not _inside(root, base):
+                continue
+            if any(len(t.parts) > len(base.parts) and _inside(root, t) for t in temp_roots):
+                continue
+            return f"output root {root} is inside a system directory ({base}) and outside the project; use the project's own directory such as .planning/multi-ai/<run-id>/"
+    return None
+
+
+def output_root_refusal(output_root: Path) -> str | None:
+    """Why a run may not write below ``output_root`` (None when it may).
+
+    The hooks cannot see what this script writes, so the script keeps the hooks' boundaries itself: a run
+    never writes into Silver Bullet's runtime state or plugin cache, a ``.git`` directory, the home
+    directory (or a parent of it), or the ownership scope of an active agent delegation. That scope's own
+    evidence directory (``.planning/agent-<host>/<task>/``) stays open, as it does for the delegation guard.
+    """
+    root = _real(output_root)
+    home = _real("~")
+    if _inside(home, root):
+        return f"output root {root} is the home directory or one of its parents; use a project directory such as .planning/multi-ai/<run-id>/"
+    if ".git" in _fold(root):
+        return f"output root {root} is inside a .git directory"
+    system = _system_dir_refusal(root)
+    if system:
+        return system
+    protected = [_real(d) for d in _state_dirs()]
+    protected += [_real(h) for h in _runtime_homes()]
+    if os.environ.get("SB_RUNTIME_PLUGIN_CACHE_ROOT"):
+        protected.append(_real(os.environ["SB_RUNTIME_PLUGIN_CACHE_ROOT"]))
+    for base in protected:
+        if _inside(root, base):
+            return f"output root {root} is inside Silver Bullet's runtime state or plugin cache ({base}); use a project directory such as .planning/multi-ai/<run-id>/"
+    # Hidden directories directly under the home directory hold credentials and host configuration
+    # (~/.ssh, ~/.aws, ~/.claude, ~/.codex ...): never an output root.
+    if _inside(root, home) and len(root.parts) > len(home.parts) and root.parts[len(home.parts)].startswith("."):
+        return f"output root {root} is inside a hidden directory of the home directory (credentials or host configuration); use a project directory such as .planning/multi-ai/<run-id>/"
+    scopes, host, task = _active_delegation()
+    for scope in scopes:
+        if _inside(root, scope):
+            marker = (".planning", f"agent-{host}", task)
+            parts = root.parts[len(scope.parts):]
+            if any(parts[i : i + 3] == marker for i in range(len(parts))):
+                continue
+            return (
+                f"output root {root} is inside the ownership scope of the active agent delegation ({scope}); "
+                f"use .planning/agent-{host or '<host>'}/{task or '<task>'}/ or a directory outside that scope"
+            )
+    return None
 
 
 @dataclass
@@ -132,11 +306,13 @@ class PoolSelection:
 
 @dataclass
 class BudgetPolicy:
+    """Run caps. max_agents and concurrency are enforced at dispatch; the CLIs report no usage,
+    so the USD and token caps are recorded in the manifest but cannot be metered in v1."""
+
     max_cost_micro_usd: int = field(default_factory=lambda: usd_to_micro_usd(DEFAULT_MAX_COST_USD))
     max_total_tokens: int = DEFAULT_MAX_TOTAL_TOKENS
     max_agents: int = DEFAULT_MAX_AGENTS
     concurrency: int = DEFAULT_CONCURRENCY
-    allow_unknown_cost: bool = False
 
 
 def resolve_pool(selection: PoolSelection, subscription: str | None = None) -> list[dict[str, Any]]:
@@ -254,6 +430,16 @@ def empty_ledger(run_id: str) -> dict[str, Any]:
     return body
 
 
+def append_ledger_entry(ledger: dict[str, Any], entry: dict[str, Any]) -> dict[str, Any]:
+    """Append one dispatch event, bumping the generation and re-hashing the entry chain."""
+    generation = int(ledger.get("generation", 0)) + 1
+    full = {"entry_id": f"entry-{generation:06d}", "timestamp": utc_now_iso(), **entry}
+    ledger["entries"].append(full)
+    ledger["generation"] = generation
+    ledger["head_hash"] = sha256_json(ledger["entries"])
+    return full
+
+
 def build_work_item_manifest(
     run_id: str,
     work_item_id: str,
@@ -273,10 +459,12 @@ def build_work_item_manifest(
         "budget": {
             "currency_micro_usd_cap": budget.max_cost_micro_usd,
             "total_tokens_cap": budget.max_total_tokens,
-            "currency_micro_usd_actual": 0,
-            "total_tokens_actual": 0,
-            "price_known": not budget.allow_unknown_cost,
-            "usage_metered": True,
+            "max_agents": budget.max_agents,
+            "concurrency": budget.concurrency,
+            # The worker CLIs report no token or price data, so nothing is metered and no
+            # actuals are claimed; only the agent cap and concurrency are enforced.
+            "price_known": False,
+            "usage_metered": False,
             "budget_stop_reason": None,
         },
         "outputs": [],

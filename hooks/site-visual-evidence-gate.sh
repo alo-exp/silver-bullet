@@ -14,31 +14,27 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib
 command -v jq >/dev/null 2>&1 || exit 0
 
 input="$(cat 2>/dev/null || true)"
+# shellcheck disable=SC2034  # read by sb_orchestrator_is_worker_session (subagent identity)
+SB_ORCH_HOOK_INPUT="$input"
 hook_event="$(printf '%s' "$input" | jq -r '.hook_event_name // "Stop"' 2>/dev/null || echo Stop)"
 case "$hook_event" in
   Stop|SubagentStop) ;;
   *) exit 0 ;;
 esac
 
+# On Claude every SubagentStop carries agent_id, so a worker's SubagentStop is always skipped here.
 if [[ "$hook_event" == "SubagentStop" && -f "$_lib_dir/orchestrator-parent.sh" ]]; then
   source "$_lib_dir/orchestrator-parent.sh"
   sb_orchestrator_is_worker_session 2>/dev/null && exit 0
 fi
 
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" && -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir="$(dirname "$search_dir")"
-done
+# The project: the nearest root with a record, else the nearest directory with both contract files.
+config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity-anchor.sh" && sb_integrity_activation_config "$PWD") 2>/dev/null; true)"
+search_dir="${config_file:+${config_file%/*}}"
+search_dir="${search_dir:-$PWD}"
 [[ -n "$config_file" ]] || exit 0
-sb_project_gate_or_exit 2>/dev/null || exit 0
+if declare -f sb_project_gate_or_exit >/dev/null 2>&1; then sb_project_gate_or_exit 2>/dev/null; fi
+sb_site_profile_load || exit 0
 
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 trivial_file="${SB_STATE_DIR}/trivial"
@@ -47,11 +43,15 @@ if declare -f sb_trivial_bypass >/dev/null 2>&1; then
 fi
 
 sb_site_session_gates_apply || exit 0
-sb_site_session_visual_evidence_valid && exit 0
+if sb_site_session_visual_evidence_valid; then
+  sb_site_stop_loop_reset site-visual-evidence-gate
+  exit 0
+fi
 
-reason="Site visual evidence gate — active site session requires 1280px light+dark screenshots before Stop.
+if sb_site_stop_loop_release site-visual-evidence-gate "$input" "$(jq -r '.edit_seq // 0' "$(sb_site_session_file)")"; then exit 0; fi
+reason="Site visual evidence gate — an active site session needs a screenshot taken after the latest site edit.
 
-Capture via Alumnium or host browser MCP (browser_take_screenshot), then record paths in site-visual-evidence.json.
+Take it with the host browser MCP (browser_take_screenshot; for example the Playwright MCP) at 1280px, light and dark. The hook records the screenshot file by itself when the tool returns: do not write the evidence file by hand (the state directory is protected).
 See sb:content site batch protocol step 4 (Visual)."
 json_reason=$(printf '%s' "$reason" | jq -Rs '.')
 printf '{"decision":"block","reason":%s}' "$json_reason"

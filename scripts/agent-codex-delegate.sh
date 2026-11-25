@@ -17,8 +17,7 @@ Usage: agent-codex-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file PAT
        [--log PATH] [--mode permissive|strict] [--interaction-mode auto|interactive|non-interactive]
        [--sb-root PATH] [--use-exec] [--attach] [--no-escalate] [--allow-mode-fallback]
 
-Delegates a single task to Codex via tests/live/agents/codex/agent.sh (TUI or --use-exec).
-Requires full SB checkout (agent adapter). Parent supervisors: see /sb:agent-codex.
+Delegates a single task to Codex via scripts/lib/agent-adapters/codex.sh (TUI or --use-exec).
 EOF
 }
 
@@ -27,11 +26,20 @@ PROMPT_TEXT=""
 PROMPT_FILE=""
 BRIEF_FILE=""
 LOG_FILE=""
-MODE="permissive"
+MODE=""
 SB_ROOT="${SB_ROOT:-$REPO_ROOT}"
 USE_EXEC=0
 
 while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --work-dir|--prompt|--prompt-file|--brief-file|--log|--mode|--sb-root)
+      if [[ $# -lt 2 ]]; then
+        printf 'ERROR: %s requires a value\n' "$1" >&2
+        usage >&2
+        exit 2
+      fi
+      ;;
+  esac
   case "$1" in
     --work-dir) WORK_DIR="$2"; shift 2 ;;
     --prompt) PROMPT_TEXT="$2"; shift 2 ;;
@@ -45,6 +53,11 @@ while [[ $# -gt 0 ]]; do
     --sb-root) SB_ROOT="$2"; shift 2 ;;
     --interaction-mode|--interactive|--non-interactive|--attach|--no-escalate|--allow-mode-fallback|--auto-policy|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id|--use-print|--use-exec|--use-interactive|--quota-retry|--skip-preflight)
       agent_mode_handle_flag "$1" "${2:-}" || exit 2
+      if [[ "$SB_AM_SHIFT" -gt $# ]]; then
+        printf 'ERROR: %s requires a value\n' "$1" >&2
+        usage >&2
+        exit 2
+      fi
       shift "$SB_AM_SHIFT"
       ;;
     -h|--help) usage; exit 0 ;;
@@ -54,6 +67,10 @@ done
 
 WORK_DIR="$(agent_delegate_resolve_work_dir "$WORK_DIR")" || exit 2
 agent_delegate_clear_matrix_env
+if [[ -z "$MODE" ]]; then
+  MODE="$(agent_delegate_default_mode "$WORK_DIR")"
+  agent_mode_note_permission_mode "$MODE"
+fi
 
 if [[ -n "$BRIEF_FILE" ]]; then
   BRIEF_FILE="$(agent_delegate_canonicalize_path "$BRIEF_FILE")"
@@ -64,6 +81,7 @@ fi
 if [[ -n "$LOG_FILE" ]]; then
   LOG_FILE="$(agent_delegate_canonicalize_path "$LOG_FILE")"
 fi
+agent_delegate_guard_log "$LOG_FILE"
 
 PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
 agent_mode_run_delegate_resolver "codex" "$WORK_DIR" "$PROMPT_TEXT" || exit $?
@@ -81,9 +99,9 @@ if ! agent_delegate_preflight_recommended_tools "$WORK_DIR" "$SB_ROOT" "codex"; 
   exit 2
 fi
 
-AGENT_SH="${SB_ROOT}/tests/live/agents/codex/agent.sh"
+AGENT_SH="${SB_ROOT}/scripts/lib/agent-adapters/codex.sh"
 [[ -f "$AGENT_SH" ]] || {
-  printf 'ERROR: missing Codex live adapter at %s (full SB checkout required)\n' "$AGENT_SH" >&2
+  printf 'ERROR: missing Codex live adapter at %s\n' "$AGENT_SH" >&2
   exit 1
 }
 
@@ -97,6 +115,24 @@ quota_retry_interval="${AGENT_CODEX_QUOTA_RETRY_INTERVAL:-60}"
 quota_retry_max="$(agent_delegate_quota_retry_max AGENT_CODEX_QUOTA_RETRY_MAX 5)"
 log_floor="${SB_AGENT_CODEX_LOG_FLOOR:-512}"
 attempt=0
+fp_before="unknown"
+
+# The lightweight home holds a copy of auth.json; an abnormally killed run (SIGKILL/OOM) skips the
+# EXIT trap. Sweep this user's leftovers on start, but never a home whose owner delegate is still
+# alive (it records its PID); a home without a PID file is swept once it is over two hours old (R4-31).
+agent_codex_sweep_stale_homes() {
+  local d pid
+  for d in "${TMPDIR:-/tmp}"/agent-codex-codex-home-*; do
+    [[ -d "$d" && ! -L "$d" && -O "$d" ]] || continue
+    pid="$(cat "${d}/.sb-owner-pid" 2>/dev/null || true)"
+    if [[ -n "$pid" ]]; then
+      ! kill -0 "$pid" 2>/dev/null || continue
+    elif [[ -z "$(find "$d" -maxdepth 0 -mmin +120 2>/dev/null)" ]]; then
+      continue
+    fi
+    rm -rf -- "$d" 2>/dev/null || true
+  done
+}
 
 agent_codex_apply_lightweight_env() {
   [[ "${SB_AGENT_CODEX_LIGHTWEIGHT:-1}" == "1" ]] || return 0
@@ -104,12 +140,14 @@ agent_codex_apply_lightweight_env() {
   export SB_AGENT_CODEX_DELEGATE=1
   export SB_ORCHESTRATOR_WORKER="${SB_ORCHESTRATOR_WORKER:-1}"
   export SB_ORCHESTRATOR_PARENT="${SB_ORCHESTRATOR_PARENT:-0}"
-  export CODEX_AUTO_TRUST_HOOKS="${CODEX_AUTO_TRUST_HOOKS:-1}"
-  export CODEX_BYPASS_HOOK_TRUST="${CODEX_BYPASS_HOOK_TRUST:-1}"
+  export CODEX_AUTO_TRUST_HOOKS="${CODEX_AUTO_TRUST_HOOKS:-0}"
+  export CODEX_BYPASS_HOOK_TRUST="${CODEX_BYPASS_HOOK_TRUST:-0}"
 
   if [[ "${SB_AGENT_CODEX_SKIP_MCP:-1}" == "1" && -z "${SB_AGENT_CODEX_CODEX_HOME_RESTORE:-}" ]]; then
     local lightweight_home
+    agent_codex_sweep_stale_homes
     lightweight_home="$(mktemp -d "${TMPDIR:-/tmp}/agent-codex-codex-home-XXXXXX")"
+    printf '%s' "$$" >"${lightweight_home}/.sb-owner-pid"
     agent_codex_prepare_lightweight_codex_home "${CODEX_HOME:-${HOME}/.codex}" "$lightweight_home"
     SB_AGENT_CODEX_CODEX_HOME_RESTORE="${CODEX_HOME:-}"
     export CODEX_HOME="$lightweight_home"
@@ -135,13 +173,18 @@ agent_codex_cleanup_lightweight_env() {
 agent_codex_invoke_once() {
   agent_codex_apply_runtime_env
   agent_codex_apply_lightweight_env
-  trap agent_codex_cleanup_lightweight_env RETURN
+  # EXIT, not RETURN: a RETURN trap also fires when `source "$AGENT_SH"` finishes,
+  # which would delete the lightweight CODEX_HOME before the adapter runs.
+  trap agent_codex_cleanup_lightweight_env EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  trap 'exit 129' HUP
   export SB_ROOT
   export WORK_DIR="$WORK_DIR"
   export CODEX_BIN="$CLI"
   export SB_LIVE_CODEX_USE_EXEC="$USE_EXEC"
   export CLAUDE_INTERACTIVE_LOG_FILE="${LOG_FILE:-}"
-  # shellcheck source=tests/live/agents/codex/agent.sh
+  # shellcheck source=scripts/lib/agent-adapters/codex.sh
   source "$AGENT_SH"
   agent_preflight
   agent_invoke "$MODE" "$PROMPT_TEXT"
@@ -162,7 +205,16 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
     agent_delegate_write_log_header "$LOG_FILE" "agent-codex-delegate" "$WORK_DIR" "$SB_ROOT" "$attempt"
   fi
 
-  final_output="$(agent_codex_invoke_once)" && final_exit=0 || final_exit=$?
+  fp_before="$(agent_delegate_workdir_fingerprint "$WORK_DIR")"
+  if final_output="$(agent_codex_invoke_once)"; then
+
+    final_exit=0
+
+  else
+
+    final_exit=$?
+
+  fi
 
   if [[ -n "$LOG_FILE" && "$USE_EXEC" == "1" ]]; then
     agent_delegate_append_invoke_output "$LOG_FILE" "$final_output"
@@ -182,17 +234,7 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
   if [[ "$final_exit" -eq 0 ]]; then
     break
   fi
-  if ! agent_delegate_is_quota_error "$final_output"; then
-    break
-  fi
-  if agent_delegate_quota_blocks_short_retry "$final_output"; then
-    printf '[agent-codex] quota window exhausted — skip short retry (RFL schedule)\n' >&2
-    break
-  fi
-  if [[ "$attempt" -gt "$quota_retry_max" ]]; then
-    printf '[agent-codex] quota retries exhausted\n' >&2
-    break
-  fi
+  agent_delegate_quota_retry_decision "agent-codex" "$final_output" "$attempt" "$quota_retry_max" "$WORK_DIR" "$fp_before" || break
 done
 
 if [[ "$final_exit" -ne 0 ]]; then
@@ -202,9 +244,13 @@ if [[ "$final_exit" -ne 0 ]]; then
   if agent_mode_maybe_escalate "codex" "$SB_AM_TASK_DIR" "${LOG_FILE:-}"; then
     agent_mode_apply_host_launch_env "codex"
     USE_EXEC=0
-    final_output="$(agent_codex_invoke_once)" && final_exit=0 || final_exit=$?
+    if final_output="$(agent_codex_invoke_once)"; then
+      final_exit=0
+    else
+      final_exit=$?
+    fi
   fi
 fi
 
-printf '%s' "$final_output"
+agent_delegate_redact_output "$final_output"
 exit "$final_exit"

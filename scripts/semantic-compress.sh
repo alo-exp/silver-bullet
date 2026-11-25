@@ -25,8 +25,12 @@ CONFIG="$REPO_ROOT/.silver-bullet.json"
 [[ -f "$CONFIG" ]] || exit 0
 command -v jq >/dev/null 2>&1 || exit 0
 
+SCRIPTS_DIR="${SCRIPTS_DIR_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+
 # Conflict #11: skip SB semantic compression when five-tool coordinator owns surfaces.
-_lib_hooks="${REPO_ROOT}/hooks/lib"
+# Libraries come from Silver Bullet's own tree (this script's plugin), never from the opened
+# project, so a repository cannot supply code that this hook sources (R3-03).
+_lib_hooks="$(dirname "$SCRIPTS_DIR")/hooks/lib"
 if [[ -f "${_lib_hooks}/runtime-paths.sh" ]]; then
   # shellcheck source=/dev/null
   source "${_lib_hooks}/runtime-paths.sh"
@@ -47,9 +51,16 @@ fi
 enabled=$(jq -r 'if .semantic_compression.enabled == false then "false" else "true" end' "$CONFIG")
 if [[ "$enabled" == "false" ]]; then exit 0; fi
 
-budget_kb=$(jq -r '.semantic_compression.context_budget_kb // 50' "$CONFIG")
-min_bytes=$(jq -r '.semantic_compression.min_file_size_bytes // 3072' "$CONFIG")
-top_n=$(jq -r '.semantic_compression.top_chunks_per_file // 3' "$CONFIG")
+# Every number from the config is validated before bash arithmetic sees it: arithmetic evaluates
+# names and command substitutions, so a data-only config could otherwise run code (R3-04).
+cfg_uint() { # jq-path default max
+  local v
+  v=$(jq -r "($1) // \"$2\" | tostring" "$CONFIG" 2>/dev/null)
+  if [[ "$v" =~ ^[0-9]{1,9}$ ]] && (( 10#$v <= $3 )); then printf '%s' "$((10#$v))"; else printf '%s' "$2"; fi
+}
+budget_kb=$(cfg_uint '.semantic_compression.context_budget_kb' 50 100000)
+min_bytes=$(cfg_uint '.semantic_compression.min_file_size_bytes' 3072 100000000)
+top_n=$(cfg_uint '.semantic_compression.top_chunks_per_file' 3 10000)
 debug=$(jq -r '.semantic_compression.debug // false' "$CONFIG")
 src_pattern=$(jq -r '.project.src_pattern // "/src/"' "$CONFIG")
 exclude_pattern=$(jq -r '.project.src_exclude_pattern // "__tests__|\\.test\\."' "$CONFIG")
@@ -60,24 +71,24 @@ fi
 # Security: always exclude credential-like files regardless of src_exclude_pattern
 # to prevent .env, .netrc, and private key files from being injected into context.
 # This guard is mandatory and cannot be overridden by project config.
-readonly _SB_CREDENTIAL_EXCLUDE='(^|/)\.env($|[^a-zA-Z])|\.pem$|\.key$|\.p12$|\.pfx$|\.jks$|/\.netrc$'
+readonly _SB_CREDENTIAL_EXCLUDE='(^|/)\.env($|[^a-zA-Z])|\.pem$|\.key$|\.p12$|\.pfx$|\.jks$|/\.netrc$|/id_[a-z0-9_]+$|/\.(npmrc|pypirc|git-credentials|envrc)$|credentials|kubeconfig|secret'
 if [[ "${#exclude_pattern}" -gt 0 ]]; then
   exclude_pattern="${exclude_pattern}|${_SB_CREDENTIAL_EXCLUDE}"
 else
   exclude_pattern="${_SB_CREDENTIAL_EXCLUDE}"
 fi
-export SB_CHUNK_BYTES; SB_CHUNK_BYTES=$(jq -r '.semantic_compression.chunk_size_bytes // 1024' "$CONFIG")
+export SB_CHUNK_BYTES
+SB_CHUNK_BYTES=$(cfg_uint '.semantic_compression.chunk_size_bytes' 1024 1000000)
 
 budget_bytes=$(( budget_kb * 1024 ))
 cache_dir="$REPO_ROOT/.planning/.context-cache"
 debug_log="$cache_dir/debug.log"
 
-SCRIPTS_DIR="${SCRIPTS_DIR_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
-
 # Portable md5
 md5_str() {
   local input="$1"
-  local tmp; tmp=$(mktemp)
+  local tmp
+  tmp=$(mktemp)
   printf '%s' "$input" > "$tmp"
   if command -v md5 >/dev/null 2>&1; then
     md5 -q "$tmp" 2>/dev/null || md5 "$tmp" 2>/dev/null | awk '{print $NF}'
@@ -121,33 +132,63 @@ fi
 
 # If goal is empty AND no planning files exist (dir exists but empty), exit cleanly
 if [[ -z "${phase_goal:-}" ]]; then
-  planning_files=$(find "$REPO_ROOT/.planning" -maxdepth 1 \( -name '*-CONTEXT.md' -o -name '*-RESEARCH.md' -o -name '*-PLAN.md' \) 2>/dev/null | head -1 || true)
+  planning_files=$(find "$REPO_ROOT/.planning" -maxdepth 3 \( -name '*-CONTEXT.md' -o -name '*-RESEARCH.md' -o -name '*-PLAN.md' \) 2>/dev/null | head -1 || true)
   [[ -z "$planning_files" ]] && exit 0
 fi
 
 # Build file lists (no mapfile — bash 3.2 compatible)
-src_root="$REPO_ROOT${src_pattern%/}"
+# project.src_pattern is joined to the repo root; it must stay inside the repo (R3-06). A pattern
+# with `..` or one that resolves outside (symlinked directory) selects nothing.
+src_root=""
+_repo_real="$(cd -P -- "$REPO_ROOT" 2>/dev/null && pwd)" || _repo_real=""
+case "$src_pattern" in
+  *..*) ;;
+  *)
+    _src_candidate="$REPO_ROOT${src_pattern%/}"
+    if [[ -d "$_src_candidate" ]]; then
+      _src_real="$(cd -P -- "$_src_candidate" 2>/dev/null && pwd)" || _src_real=""
+      if [[ -n "$_src_real" && -n "$_repo_real" && ( "$_src_real" == "$_repo_real" || "$_src_real" == "$_repo_real"/* ) ]]; then
+        src_root="$_src_real"
+      fi
+    fi
+    ;;
+esac
+# One pipeline lists the text files: find -type f never follows symlinks, large files are skipped,
+# and a single grep -I pass drops binaries (one process, not one `file` per file; R3-19).
+list_text_files() { # dir [extra find args]
+  find -P "$1" "${@:2}" -type f ! -size +2048k -print 2>/dev/null \
+    | SB_P="$_repo_real" SB_RE="$exclude_pattern" awk 'BEGIN { p = ENVIRON["SB_P"]; re = ENVIRON["SB_RE"]; n = length(p) }
+        { if (substr($0, n + 1) !~ re) print }' \
+    | env LC_ALL=C sort | head -n 2000 \
+    | tr '\n' '\0' | { xargs -0 grep -Il '' 2>/dev/null || true; } | env LC_ALL=C sort
+}
 TEXT_SRC=()
-if [[ -d "$src_root" ]]; then
+if [[ -n "$src_root" ]]; then
   while IFS= read -r f; do
-    [[ -n "$f" ]] || continue
-    mime=$(file --mime-type -b "$f" 2>/dev/null || echo "application/octet-stream")
-    [[ "$mime" == text/* ]] && TEXT_SRC+=("$f")
-  done < <(find "$src_root" -type f 2>/dev/null | grep -Ev "$exclude_pattern" || true)
+    [[ -n "$f" ]] && TEXT_SRC+=("$f")
+  done < <(list_text_files "$src_root")
 fi
 
 TEXT_DOC=()
 if [[ -d "$REPO_ROOT/docs" ]]; then
   while IFS= read -r f; do
-    [[ -n "$f" ]] || continue
-    mime=$(file --mime-type -b "$f" 2>/dev/null || echo "application/octet-stream")
-    [[ "$mime" == text/* ]] && TEXT_DOC+=("$f")
-  done < <(find "$REPO_ROOT/docs" -name '*.md' -type f 2>/dev/null || true)
+    [[ -n "$f" ]] && TEXT_DOC+=("$f")
+  done < <(list_text_files "$_repo_real/docs" -name '*.md')
 fi
 
 [[ ${#TEXT_SRC[@]} -eq 0 && ${#TEXT_DOC[@]} -eq 0 ]] && exit 0
 
-mkdir -p "$cache_dir"
+# The cache holds copies of project text, so it is only used when it really lives inside the repo:
+# a symlinked .planning/, cache dir or .gitignore (SEC-02) turns caching off for this run instead of
+# being followed. A usable cache dir ignores itself whatever the project's ignore rules say.
+use_cache=1
+if [[ -L "$REPO_ROOT/.planning" || -L "$cache_dir" || -L "$cache_dir/.gitignore" ]]; then
+  use_cache=0
+  debug_log=/dev/null
+else
+  mkdir -p "$cache_dir"
+  [[ -e "$cache_dir/.gitignore" ]] || printf '*\n' >"$cache_dir/.gitignore"
+fi
 
 # Cache key from file mtimes + phase goal
 mtime_str=""
@@ -158,7 +199,7 @@ cache_key=$(md5_str "${mtime_str}${phase_goal}")
 phase_slug=$(printf '%s' "${phase_goal:-nogoal}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | cut -c1-40)
 cache_file="$cache_dir/${phase_slug}-${cache_key}.json"
 
-if [[ -f "$cache_file" ]]; then
+if [[ $use_cache -eq 1 && -f "$cache_file" && ! -L "$cache_file" ]]; then
   cat "$cache_file"
   exit 0
 fi
@@ -186,11 +227,14 @@ used_bytes=0
 add_block() {
   local rel="$1" content="$2" label="${3:-}"
   local block
-  block=$(printf $'### %s%s\n```\n%s\n```\n' "$rel" "${label:+ ($label)}" "$content")
-  local block_bytes=${#block}
+  local fence='```'
+  block=$(printf '### %s%s\n%s\n%s\n%s\n' "$rel" "${label:+ ($label)}" "$fence" "$content" "$fence")
+  local block_bytes=$(( ${#block} + 1 ))   # +1: the newline that separates blocks
   if (( used_bytes + block_bytes <= budget_bytes )); then
-    output+="$block"
-    (( used_bytes += block_bytes )) || true
+    # $(...) strips the trailing newline of the block; restore it so the closing
+    # fence does not run into the next block's heading.
+    output+="$block"$'\n'
+    (( used_bytes += block_bytes ))
     return 0
   fi
   return 1
@@ -214,9 +258,9 @@ done
 score_and_add() {
   local query="$1"; shift
   local files=("$@")
-  [[ ${#files[@]} -eq 0 ]] && return
 
-  local TMP_COUNTS; TMP_COUNTS=$(mktemp)
+  local TMP_COUNTS
+  TMP_COUNTS=$(mktemp)
   # Use double-quoted trap string so $TMP_COUNTS is expanded NOW (path embedded
   # as a literal). This ensures the correct path is available even in the EXIT
   # trap context, where function-local variables are no longer in scope.
@@ -235,19 +279,24 @@ score_and_add() {
     chunk_text=$(printf '%s' "$scored_line" | cut -f5-)
     chunk_text="${chunk_text//\\n/$'\n'}"  # unescape \n sequences → real newlines
     local rel="${file#"$REPO_ROOT"/}"
-    local key; key=$(printf '%s' "$file" | tr '/: ' '___')
+    local key
+    key=$(printf '%s' "$file" | tr '/: ' '___')
     local cnt=0
-    cnt=$(grep -Fm1 "^${key}=" "$TMP_COUNTS" 2>/dev/null | cut -d= -f2 || echo 0)
+    # Exact key match (the line is "<key>=<count>"; the key may itself contain "=" or
+    # backslashes, so read it via ENVIRON, which awk -v would escape-process).
+    cnt=$(SB_KEY="$key" awk 'BEGIN { k = ENVIRON["SB_KEY"] }
+      match($0, /=[0-9]+$/) && substr($0, 1, RSTART - 1) == k { print substr($0, RSTART + 1); exit }' "$TMP_COUNTS")
+    cnt="${cnt:-0}"
     if [[ $cnt -ge $top_n ]]; then continue; fi
     if add_block "$rel" "$chunk_text" "lines ${start}-${end}"; then
-      if grep -Fv "^${key}=" "$TMP_COUNTS" > "${TMP_COUNTS}.tmp" 2>/dev/null; then
-        mv "${TMP_COUNTS}.tmp" "$TMP_COUNTS"
-      fi
+      SB_KEY="$key" awk 'BEGIN { k = ENVIRON["SB_KEY"] }
+        !(match($0, /=[0-9]+$/) && substr($0, 1, RSTART - 1) == k)' "$TMP_COUNTS" > "${TMP_COUNTS}.tmp"
+      mv -f "${TMP_COUNTS}.tmp" "$TMP_COUNTS"
       printf '%s=%s\n' "$key" "$(( cnt + 1 ))" >> "$TMP_COUNTS"
       if [[ "$debug" == "true" ]]; then printf '  chunk: %s lines %s-%s score=%s\n' "$rel" "$start" "$end" "$score" >> "$debug_log"; fi
     fi
     true
-  done < <(printf '%s\n' "${files[@]}" | "$SCRIPTS_DIR/tfidf-rank.sh" "${query}")
+  done < <(printf '%s\n' "${files[@]}" | bash "$SCRIPTS_DIR/tfidf-rank.sh" "${query}")
   rm -f -- "$TMP_COUNTS"  # explicit cleanup for bash 3.2 where RETURN trap is ignored
   trap - EXIT           # disarm EXIT trap so a subsequent call can install its own
 }
@@ -284,7 +333,9 @@ header="## Semantic Context (auto-compressed — phase: ${phase_goal:-no active 
 full_output="${SENTINEL_BOUNDARY}${header}
 
 ${output}"
-json_output=$(printf '%s' "$full_output" | jq -Rs '{"hookSpecificOutput":{"additionalContext":.}}')
+json_output=$(printf '%s' "$full_output" | jq -Rs '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":.}}')
 
-printf '%s' "$json_output" > "$cache_file"
+if [[ $use_cache -eq 1 && ! -L "$cache_file" ]]; then
+  printf '%s' "$json_output" > "$cache_file"
+fi
 printf '%s' "$json_output"

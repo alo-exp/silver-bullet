@@ -1,9 +1,8 @@
 # Silver Bullet Live AI E2E Tests
 
-These tests invoke the **real Kay-backed agent** with the Silver Bullet plugin
-loaded and stored credentials. The standard path uses Kay's MiniMax.io
-provider credentials with `MiniMax-M3` and low reasoning for isolated
-live testing. They verify that SB enforcement hooks
+These tests invoke the **real agent** (Claude by default; `SB_LIVE_RUNTIMES` selects `claude`,
+`codex` or `kay`) with the Silver Bullet plugin loaded and stored credentials. The Kay path uses
+Kay's MiniMax.io provider credentials with `MiniMax-M3` and low reasoning for isolated live testing. They verify that SB enforcement hooks
 (dev-cycle-check, record-skill, stop-check, compliance-status, forbidden-skill-check)
 actually work when the live agent triggers them via real tool usage.
 
@@ -23,7 +22,7 @@ actually work when the live agent triggers them via real tool usage.
 
 ## Running the Tests
 
-Run the default Kay-only suite:
+Run the default suite (Claude runtime):
 ```bash
 bash tests/live/run-live-tests.sh
 ```
@@ -43,79 +42,38 @@ Run individual scenario files:
 bash tests/live/test-live-enforcement.sh
 bash tests/live/test-live-skill-recording.sh
 bash tests/live/test-live-full-scenario.sh
-bash tests/live/test-live-review-fix-ladder-smoke.sh
-```
-
-Review fix ladder smoke (automated, no API cost — default):
-```bash
-bash tests/live/test-live-review-fix-ladder-smoke.sh
-```
-
-Optional one-turn live agent smoke:
-```bash
-SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_RUNTIME=codex bash tests/live/test-live-review-fix-ladder-smoke.sh
-SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_RUNTIME=claude bash tests/live/test-live-review-fix-ladder-smoke.sh
-```
-
-Full model ladder live smoke (every resolver rung; real API cost per host):
-```bash
-# Codex native (/Applications/Codex.app/.../codex) — uses codex exec by default
-SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1 SB_LIVE_RUNTIME=codex \
-  bash tests/live/test-live-review-fix-ladder-full-ladder.sh
-
-# Claude Code CLI
-SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1 SB_LIVE_RUNTIME=claude \
-  bash tests/live/test-live-review-fix-ladder-full-ladder.sh
-
-# Cursor — in Cursor IDE Composer (auto-detects CURSOR_AGENT=1; no cursor-agent login needed)
-SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1 SB_LIVE_RUNTIME=cursor \
-  bash tests/live/test-live-review-fix-ladder-full-ladder.sh
-
-# Cursor headless via cursor-agent CLI (requires `cursor-agent login` or CURSOR_API_KEY)
-SB_LIVE_CURSOR_IN_SESSION=0 SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1 SB_LIVE_RUNTIME=cursor \
-  bash tests/live/test-live-review-fix-ladder-full-ladder.sh
-
-# All hosts sequentially (Cursor falls back to resolver-only slug validation when not logged in and not in IDE)
-SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1 SB_LIVE_RUNTIME=all \
-  bash tests/live/test-live-review-fix-ladder-full-ladder.sh
 ```
 
 Useful tuning flags:
-- `SB_LIVE_REVIEW_FIX_LADDER_MAX_RUNGS=2` — cap rungs for a cheaper escalation check
-- `SB_LIVE_REVIEW_FIX_LADDER_CLEAN_PASSES=2` — require two consecutive clean passes per rung
-- `SB_LIVE_REVIEW_FIX_LADDER_LITE_PROMPT=0` — use full skill/invoke-skill prompt (slower on Codex)
 - `SB_LIVE_CODEX_USE_EXEC=0` — force interactive Codex path instead of `codex exec`
-- `CODEX_INTERACTIVE_TIMEOUT=180` / `CLAUDE_INTERACTIVE_TIMEOUT=180` / `CURSOR_AGENT_TIMEOUT=180` — per-turn timeout
-- `SB_LIVE_CURSOR_IN_SESSION=1` — force IDE in-session file protocol (auto when `CURSOR_AGENT=1`)
-- `SB_LIVE_CURSOR_IN_SESSION=0` — force headless `cursor-agent` CLI path
-- `SB_LIVE_CURSOR_SESSION_DIR=<path>` — override request/response directory (default: `<workspace>/.cursor-live-session`)
-
-When running the full Cursor ladder inside Cursor IDE Composer, the harness writes
-`request-*.json` prompts under the session directory and waits for matching
-`response-*.json` files. The active agent (or `tests/live/lib/cursor-in-session-driver.sh`
-for smoke validation) writes responses via `tests/live/lib/cursor-in-session-respond.sh`.
+- `CODEX_INTERACTIVE_TIMEOUT=180` / `CLAUDE_INTERACTIVE_TIMEOUT=180` — per-turn timeout
 
 ## Test Scenarios
 
 | File | Scenarios | What it tests |
 |------|-----------|---------------|
-| test-live-enforcement.sh | S1-S4 | HARD STOP blocking, planning gate, forbidden skills, stop-check |
+| test-live-enforcement.sh | S1-S3 | HARD STOP blocking (hook audit entry from the live turn), planning gate allow, forbidden-skill deny |
 | test-live-skill-recording.sh | S5-S6 | Skill recording to state file, compliance-status output |
-| test-live-full-scenario.sh | S7-S8 | Session initialization, abbreviated SDLC lifecycle |
+| test-live-full-scenario.sh | S7-S8 | Session initialization (SessionStart stamp), abbreviated SDLC lifecycle |
 | test-live-doc-scheme.sh | Doc scheme | Doc scaffolding, monthly knowledge/learnings updates, filename conventions |
 | test-silver-init-migration.sh | Init docs bootstrap | `sb:init` Step 3.5.5 delegation to `sb:ensure-docs`, brownfield preserve-vs-switch, archive move/recovery paths |
-| test-live-review-fix-ladder-smoke.sh | Review fix ladder | Resolver + invoke-skill + charter fixture (automated); optional one-turn live agent with `SB_LIVE_REVIEW_FIX_LADDER_LIVE=1` |
-| test-live-review-fix-ladder-full-ladder.sh | Review fix ladder full ladder | Every resolver rung per host with `SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1`; Cursor in-session mode in IDE Composer; resolver-only fallback when headless and not authenticated |
 
 ## Isolation
 
-Each agent run uses:
+Each scenario run uses:
 - An isolated temp workspace directory (`mktemp -d`)
-- Isolated state files: `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/live-test-state-{PID}`
-- Isolated trivial files: `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/live-test-trivial-{PID}`
+- Per-run state and branch files (`state-live-test-<pid>`, `branch-live-test-<pid>` under the runtime
+  state dir), handed to the nested agent through `SILVER_BULLET_STATE_FILE` / `SILVER_BULLET_BRANCH_FILE`,
+  so the operator's own `state` and `branch` files are never touched. The `trivial` marker and
+  `mcp-needs-auth-cache.json` are still the operator's real files: `live_setup` backs them up and arms an
+  `EXIT` trap that restores them even when a scenario aborts.
+- Release evidence (`release-live-matrix`, `e2e-live-matrix`, `inline-e2e-matrix`, `quality-gate-state`,
+  `verify-tests-state`) is snapshotted by the runner (`tests/live/lib/evidence-guard.sh`); on every exit a file
+  that a live session's SessionStart reset removed is put back, while evidence that exists then is never
+  overwritten or deleted. A snapshot left by a killed runner is recovered by the next start.
 - For Kay-agent runs, an isolated temporary `KAY_HOME` root backed by Kay's
   MiniMax.io provider path so the test installer never rewrites the user's
-  real `~/.codex` hook cache.
+  real `~/.codex` hook cache. Isolated homes are torn down on every exit.
 - Native Codex isolated runs use Codex's supported
   `--dangerously-bypass-hook-trust` flag and auto-accept the one-time hook
   review inside the temporary isolated home only, so the live harness tests
@@ -125,29 +83,31 @@ Each agent run uses:
   isolated home only, so the persisted trust state stays local to that temp
   tree and never touches the user's real config.
 
-The matrix can run multiple adapters sequentially for ad hoc diagnostics, but
-the standard release/reliability path is Kay only. All temp files are cleaned
-up after each scenario.
-When the Kay-only matrix passes, `run-live-tests.sh` writes the
-session-scoped `release-live-matrix` marker (`matrix=codex-only`) that
-`completion-audit.sh` requires before `gh release create`.
-Those `matrix=codex-only` markers are now the standard release prerequisite
-because the release gate is defined on the Kay Codex-compatible path.
+Passes are earned: a scenario passes on a hook audit entry written during the agent's turn, or on the
+well-formed JSON a shipped hook returns for a real payload. A regex over the agent's reply, an empty
+hook output or an unchanged file is not evidence.
 
-The live harness keeps a small local archive of captured Kay transcripts under
-`tests/live/agents/kay/transcripts/` for rotation and debugging. The Kay live
-state itself lives under `${KAY_HOME}/.kay/.silver-bullet/` inside the
-isolated temp tree. That archive is separate from the official agent session
-stores that `silver-scan` reads.
+The matrix can run multiple adapters sequentially for ad hoc diagnostics. The default runtime is
+`claude`; when it passes, `run-live-tests.sh` writes the session-scoped `release-live-matrix` marker
+(`matrix=claude-only`) that `completion-audit.sh` requires before `gh release create`
+(`matrix=codex-only` for `codex`/`kay` alone, `matrix=full-claude-codex` for both families). The marker
+is written only after every suite passed, from the runner's exit trap.
+
+Captured Kay/Codex transcripts are written (mode 0600, redacted) to the isolated home's `.sb-transcripts/`
+directory, or to `$CODEX_TRANSCRIPT_DIR` when set, never to the checkout. `tests/live/agents/*/transcripts/`
+is gitignored as a safety net. They are separate from the official agent session stores that `silver-scan`
+reads.
 
 The separate todo-app suite at `tests/e2e-live/run-e2e-live-tests.sh` writes a
-matching `e2e-live-matrix` marker. That suite now runs one inline full-surface
-journey against the standalone sibling `todo-app` repo and also writes an `inline-e2e-matrix` marker so the release gate can
-prove the end-user experience actually ran in this session. Both markers must
-be present before a release can proceed.
+matching `e2e-live-matrix` marker. By default it runs the hook-failure matrix;
+with `SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1` it also runs the inline full-surface
+journey against the standalone sibling `todo-app` repo, and only then writes the
+`inline-e2e-matrix` marker, so that marker proves the journey actually ran.
+The release gate needs all three markers; the Claude supervised enterprise matrix writes the inline one after a
+full 22-row pass, and the gate requires the released tree to differ from its `commit=` only in release-surface files; a dirty tree writes nothing.
 
-The init-docs bootstrap scenario and review-fix-ladder smoke are separate
-on-demand tests and are not part of the default `run-live-tests.sh` matrix.
+The init-docs bootstrap scenario is a separate
+on-demand test and is not part of the default `run-live-tests.sh` matrix.
 
 ## Not Included in Unit/Integration Suites
 

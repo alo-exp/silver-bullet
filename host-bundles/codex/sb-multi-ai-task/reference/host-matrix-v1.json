@@ -1,19 +1,21 @@
 {
   "schema_id": "host-matrix-v1",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "hosts": {
-    "cursor": {
+    "claude-code": {
       "status": "supported",
       "error_code": null
     },
-    "claude-code": {
-      "status": "packaged-fail-closed",
-      "error_code": "SB_MULTI_AI_UNSUPPORTED_HOST"
-    },
     "codex": {
-      "status": "packaged-fail-closed",
-      "error_code": "SB_MULTI_AI_UNSUPPORTED_HOST"
+      "status": "supported",
+      "error_code": null
+    },
+    "cursor": {
+      "status": "unsupported",
+      "error_code": "SB_MULTI_AI_UNSUPPORTED_HOST",
+      "message": "Cursor is no longer a supported host for multi-ai-task: run it from Claude Code or Codex (Cursor stays available only as a backend CLI)"
     }
   },
-  "v1_execution_host": "cursor"
+  "execution_hosts": ["claude-code", "codex"],
+  "backends": ["cursor", "ocg", "codex", "claude"]
 }

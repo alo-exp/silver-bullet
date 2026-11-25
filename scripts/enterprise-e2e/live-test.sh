@@ -34,7 +34,7 @@ REQUESTED_ROWS=()
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--host claude|codex|cursor] [--preflight-only] [--resume] [--skip-code-intel-preflight] [row_numbers...]
+Usage: $(basename "$0") [--host claude|codex] [--preflight-only] [--resume] [--skip-code-intel-preflight] [row_numbers...]
 
 Enterprise E2E live test — interactive agent TUI against enterprise-grade-test-app.
 
@@ -58,7 +58,7 @@ Environment:
   SB_E2E_TEST_APP_BRANCH_ENFORCE  0 to skip branch preflight (default: 1)
   SB_E2E_LEDGER_FILE           Ledger path (default: host-specific ROUND-*-LEDGER.md)
   SB_E2E_MATRIX_LOG            Matrix batch log (default: host-isolated)
-  SB_E2E_LIVE_RUNTIME          claude | codex | cursor (see --host)
+  SB_E2E_LIVE_RUNTIME          claude | codex (see --host)
   SB_E2E_VALIDATION_OVERLAY    Pre-matrix validation gate (default: 1 on live runs; 0 to skip)
   SB_E2E_VALIDATION_PRE_GATE   Force validation overlay dry-run before matrix (=1)
 
@@ -167,15 +167,6 @@ if ((_hook_delivery_rc)); then
 fi
 (cd "$FIXTURE_DIR" && git status --short && npm test)
 
-# Session-start from test app (cursor-hook-bridge / branch scope — cursor runtime only).
-if [[ -f "${SB_ROOT}/tests/e2e-live/lib/session-start-preflight.sh" ]]; then
-  (
-    export SILVER_BULLET_RUNTIME=cursor
-    # shellcheck source=tests/e2e-live/lib/session-start-preflight.sh
-    source "${SB_ROOT}/tests/e2e-live/lib/session-start-preflight.sh" || true
-  )
-fi
-
 enterprise_e2e_run_install_host "$SB_ROOT"
 enterprise_e2e_preflight_host "$SB_ROOT"
 
@@ -193,9 +184,11 @@ if ((${#REQUESTED_ROWS[@]} > 0)); then
   MATRIX_ARGS=("${REQUESTED_ROWS[@]}")
 else
   enterprise_e2e_ensure_matrix_log "$MATRIX_LOG"
-  if [[ "$RESUME" == "1" ]] || enterprise_e2e_incomplete_rows "$MATRIX_LOG" "$LEDGER_FILE" | grep -q .; then
-    inc=()
-    enterprise_e2e_read_lines_to_array inc enterprise_e2e_incomplete_rows "$MATRIX_LOG" "$LEDGER_FILE"
+  # Read all rows first: `incomplete_rows | grep -q .` lets grep exit early and the producer die
+  # of SIGPIPE under pipefail, which silently skipped the resume.
+  inc=()
+  enterprise_e2e_read_lines_to_array inc enterprise_e2e_incomplete_rows "$MATRIX_LOG" "$LEDGER_FILE"
+  if [[ "$RESUME" == "1" ]] || ((${#inc[@]} > 0)); then
     if ((${#inc[@]} == 0)); then
       echo "All rows Pass in ledger — nothing to resume."
       echo "Set SB_E2E_MATRIX_FORCE=1 or pass explicit row numbers to re-run."
@@ -223,11 +216,23 @@ fi
 # --- Dual-role monitor + watch (driver-owned; replace stale harness children) ---
 start_harness_background() {
   local name="$1" pattern="$2" script="$3" pid_file="$4"
-  local pid
-  if pgrep -f "$pattern" >/dev/null 2>&1; then
-    echo "${name}: replacing existing instance (driver-owned harness)"
-    pkill -f "$pattern" 2>/dev/null || true
-    sleep 1
+  local pid old_pid old_cmd old_pgid
+  # Only the instance this driver started earlier (the PID in its own pid file, still running and
+  # still a $pattern process) is replaced, as its own process group. Another operator's or
+  # checkout's monitor that merely matches the pattern is never signalled (R14-10).
+  old_pid="$(tr -d '[:space:]' <"$pid_file" 2>/dev/null || true)"
+  if [[ "$old_pid" =~ ^[0-9]+$ ]] && kill -0 "$old_pid" 2>/dev/null; then
+    old_cmd="$(ps -p "$old_pid" -o command= 2>/dev/null || true)"
+    if [[ "$old_cmd" == *"$pattern"* ]]; then
+      echo "${name}: replacing existing instance (driver-owned harness)"
+      old_pgid="$(ps -p "$old_pid" -o pgid= 2>/dev/null | tr -d '[:space:]' || true)"
+      if [[ "$old_pgid" == "$old_pid" ]]; then
+        kill -TERM -- "-${old_pgid}" 2>/dev/null || true
+      else
+        kill -TERM "$old_pid" 2>/dev/null || true
+      fi
+      sleep 1
+    fi
   fi
   echo "${name}: starting in background..."
   pid="$(sb_run_detached -- bash "$script")"
@@ -307,5 +312,5 @@ cat <<'GATES'
   [ ] bash tests/run-all-tests.sh → 0 failures
   [ ] graphify update . in SB repo post-fixes
   [ ] 2 consecutive clean rounds before release tag
-  [ ] After SB hook fixes: re-run host install (install-claude.sh | install-codex.sh | install-cursor.sh) then re-run failed rows only
+  [ ] After SB hook fixes: re-run host install (install-claude.sh | install-codex.sh) then re-run failed rows only
 GATES

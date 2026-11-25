@@ -203,6 +203,27 @@ assert_not_in_requested "explanatory question does not trigger Silver router" "s
 assert_not_in_state "explanatory question does not complete Silver router" "silver"
 teardown
 
+# R10b-01: requested markers use the same canonical names as record-skill (sb:security -> security),
+# so the completed marker and the ledger tick match them.
+setup
+out="$(run_hook 'run `sb:security` then `sb:request-review` and `sb:tdd` and `sb:receive-review` and `sb:feature`')"
+assert_noop_json "canonical-route prompt returns valid no-op JSON" "$out"
+assert_in_requested "sb:security records the canonical marker security" "security"
+assert_in_requested "sb:tdd records the canonical marker tdd" "tdd"
+assert_in_requested "sb:request-review records silver-review-request" "silver-review-request"
+assert_in_requested "sb:receive-review records silver-review-triage" "silver-review-triage"
+assert_in_requested "sb:feature still records silver-feature" "silver-feature"
+assert_not_in_requested "no silver-security marker that no tool tracks" "silver-security"
+assert_not_in_requested "no silver-request-review marker that no tool tracks" "silver-request-review"
+assert_not_in_requested "no silver-tdd marker that no tool tracks" "silver-tdd"
+assert_in_session_log "ledger lists the canonical security item" "  - [ ] security"
+# Completing the skill ticks the same item.
+# shellcheck source=hooks/lib/session-ledger.sh
+source "$REPO_ROOT/hooks/lib/session-ledger.sh"
+( cd "$TMPDIR_TEST" && source "$REPO_ROOT/hooks/lib/runtime-paths.sh" 2>/dev/null; sb_session_ledger_mark_completed "$(source "$REPO_ROOT/hooks/lib/skill-discovery.sh"; sb_skill_canonical_name sb:security)" ) >/dev/null 2>&1 || true
+assert_in_session_log "completing security ticks the ledger item" "  - [x] security"
+teardown
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1

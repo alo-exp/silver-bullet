@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Tests for hooks/lib/agentmemory-gate.sh helpers
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -43,20 +47,26 @@ mkdir -p "$TMP/.agentmemory/memory"
 sb_agentmemory_export_exists "$TMP" "$TMP/.silver-bullet.json" && pass "export root detect" || fail "export root detect"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"agentmemory\":{\"enabled_by_user\":true,\"export_root\":\"../../tmp/am-traversal-$$\"}}}"
-! sb_agentmemory_scaffold_export_root "$TMP" "$TMP/.silver-bullet.json" 2>/dev/null \
-  && pass "export scaffold blocks traversal" || fail "export scaffold blocks traversal"
-[[ ! -d "/tmp/am-traversal-$$" ]] && pass "traversal target not created" || fail "traversal target not created"
+# A traversing export_root is repository data: the safe default root is used instead.
+assert_default="$(sb_agentmemory_export_rel_path "$TMP/.silver-bullet.json")"
+[[ "$assert_default" == ".agentmemory" ]] && pass "traversing export_root falls back to the default" || fail "traversing export_root falls back to the default"
+sb_agentmemory_scaffold_export_root "$TMP" "$TMP/.silver-bullet.json" 2>/dev/null \
+  && [[ -d "$TMP/.agentmemory/snapshots" ]] && pass "export scaffold uses the default root" || fail "export scaffold uses the default root"
+# Where the traversal would land: relative to the project dir, not a fixed /tmp
+# path (which only matched when TMPDIR was /tmp, so the check was vacuous otherwise).
+traversal_target="$(python3 -c 'import os, sys; print(os.path.normpath(sys.argv[1]))' "$TMP/../../tmp/am-traversal-$$")"
+[[ ! -d "$traversal_target" ]] && pass "traversal target not created" || fail "traversal target not created"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"agentmemory\":{\"enabled_by_user\":true,\"export_root\":\".agentmemory\"}}}"
 
 sb_agentmemory_edit_path_is_exempt ".agentmemory/memory/foo.md" "$TMP/.silver-bullet.json" && pass "edit path exempt under export" || fail "edit path exempt"
 
 benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" agentmemory)"
-printf '%s' "$benefits" | grep -q 'Graphify' && pass "agentmemory benefits mention Graphify" || fail "agentmemory benefits"
+grep -q 'Graphify' <<<"$benefits" && pass "agentmemory benefits mention Graphify" || fail "agentmemory benefits"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"agentmemory\":{\"enabled_by_user\":null}}}"
-block="$(sb_recommended_tool_consent_prompt_block "$TMP/.silver-bullet.json" agentmemory 2>/dev/null || true)"
-printf '%s' "$block" | grep -q 'CONSENT PENDING' && pass "agentmemory pending prompt" || fail "agentmemory pending prompt"
+block="$(XDG_CONFIG_HOME="$TMP/no-consent" sb_recommended_tool_consent_prompt_block "$TMP/.silver-bullet.json" agentmemory 2>/dev/null || true)"
+grep -q 'CONSENT PENDING' <<<"$block" && pass "agentmemory pending prompt" || fail "agentmemory pending prompt"
 
 # #276: usage_state_file with ${SB_RUNTIME_HOME_ROOT} must expand to an absolute path
 export SB_RUNTIME_HOME_ROOT="${TMP}/runtime-home"

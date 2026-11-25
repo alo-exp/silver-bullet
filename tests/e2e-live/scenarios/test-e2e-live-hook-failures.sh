@@ -57,15 +57,9 @@ printf 'silver-quality-gates\n' > "$STATE_FILE"
 printf '1\n' > "${SB_TEST_DIR}/session-start-time"
 mkdir -p "${WORK_DIR}/docs"
 : > "${WORK_DIR}/docs/CHANGELOG.md"
-head_before="$(capture_git_head "$WORK_DIR")"
 run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"gh release create v0.0.0-hook-probe --notes hook-probe\"\` and do not do anything else." >/dev/null
-assert_git_head_unchanged "completion-audit blocks release before release gate state exists" "$WORK_DIR" "$head_before"
+# A release never moves git HEAD, so the deny itself is the only honest evidence here (R14-11).
 wait_for_hook_audit_entry "completion-audit release deny recorded" "completion-audit" "deny" 'RELEASE BLOCKED|plugin-runtime release matrix|DOC-SCHEME GATE|WORKFLOW GATE' 60 2
-if [[ "${HOOK_AUDIT_LAST_WAIT_PASSED:-0}" != "1" ]]; then
-  if probe_completion_audit_bash_command "bash -lc \"gh release create v0.0.0-hook-probe --notes hook-probe\""; then
-    wait_for_hook_audit_entry "completion-audit release deny recorded via deterministic bash probe" "completion-audit" "deny" 'RELEASE BLOCKED|plugin-runtime release matrix|DOC-SCHEME GATE|WORKFLOW GATE' 8 1
-  fi
-fi
 
 echo "--- Case 4: dev-cycle-check denies state tampering through Bash ---"
 clear_hook_audit_log
@@ -101,14 +95,8 @@ printf 'silver-quality-gates\nsilver-context\nsilver-plan\n' > "$STATE_FILE"
 target_digest="$(capture_digest "$target_file")"
 run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\\n// planning gate open probe: this comment is intentionally long so the runtime performs a real source mutation.\\n' >> ${E2E_PROBE_SOURCE_FILE}\"\` and do not do anything else." >/dev/null
 wait_for_hook_audit_entry "dev-cycle-check allow recorded" "dev-cycle-check" "allow" 'Planning verified|Implementation edits allowed'
-if [[ "$(capture_digest "$target_file")" != "$target_digest" ]]; then
-  echo "PASS: dev-cycle-check allows source edit after planning"
-  PASS=$((PASS + 1))
-else
-  echo "WARN: dev-cycle-check allow recorded but Kay did not mutate the file; allow audit is sufficient for this probe"
-  echo "PASS: dev-cycle-check allows source edit after planning"
-  PASS=$((PASS + 1))
-fi
+# The allow decision must lead to a real mutation: an unchanged file is a FAIL (R14-11).
+assert_file_modified "dev-cycle-check allows source edit after planning" "$target_file" "$target_digest"
 
 disable_hook_audit
 print_results

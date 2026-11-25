@@ -2,7 +2,7 @@
 
 You are **RFL rung 3 of 8** on `.planning/rfl-spec-template-world-class/`. Cursor **Gemini 3.7 Flash High**. Review-only. Do not implement. Do not switch branches. Do not commit.
 
-Workspace: `/Users/shafqat/projects/silver-bullet/repo`
+Workspace: `/Users/<user>/projects/silver-bullet/repo`
 
 ## Freeze (post rung-02 APPLY)
 `.planning/spec_template_world_class.plan.md`

@@ -1,6 +1,6 @@
 # Rung 4 verify pass 2 — GLM 5.3 Max (OpenCode)
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 **Method:** VERIFY-ONLY pass 2, independent. Fresh full-plan re-read (407 lines) with per-line re-derivation of both verdicts; conclusions reached before consulting `verify_1.md`, then cross-checked against it (agreement; no reliance). Both rung-04 patches (`patch_i32.py`, `patch_i33.py`) confirmed still landed on disk. No plan edits.
 

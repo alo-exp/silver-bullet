@@ -2,9 +2,23 @@
 # Multi-AI OpenCode worker-v1 policy (sourced by multi-AI paths / lazy from opencode-cli).
 # Keep shared scripts/lib/opencode-cli.sh focused on CLI resolve + default mimo pin.
 
+# The multi-AI skill directory under an SB root: the repository layout
+# (skills/silver-multi-ai-task) or the packaged plugin layout (skill-source/sb-multi-ai-task).
+# Falls back to the repository path so callers report a missing registry at the canonical place.
+agent_opencode_multi_ai_skill_dir() {
+  local sb_root="${1:-.}" candidate
+  for candidate in "$sb_root/skills/silver-multi-ai-task" "$sb_root/skill-source/sb-multi-ai-task"; do
+    if [[ -f "$candidate/reference/model-family-registry-v1.json" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  printf '%s\n' "$sb_root/skills/silver-multi-ai-task"
+}
+
 agent_opencode_registry_path() {
   local sb_root="${1:-.}"
-  printf '%s/skills/silver-multi-ai-task/reference/model-family-registry-v1.json\n' "$sb_root"
+  printf '%s/reference/model-family-registry-v1.json\n' "$(agent_opencode_multi_ai_skill_dir "$sb_root")"
 }
 
 agent_opencode_profile_to_run_model() {

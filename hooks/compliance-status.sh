@@ -11,22 +11,14 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/workflow-utils.sh" ]]; then
   source "$_lib_dir/workflow-utils.sh"
 fi
 if ! declare -f count_flow_log_rows >/dev/null 2>&1; then
-  count_flow_log_rows() { grep -cE '^\| [0-9]+ \|' "$1" 2>/dev/null || echo 0; }
-  count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' "$1" 2>/dev/null || echo 0; }
+  count_flow_log_rows() { grep -cE '^\| [0-9]+ \|' "$1" 2>/dev/null || true; }
+  count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' "$1" 2>/dev/null || true; }
 fi
 
 # PostToolUse hook (matcher: .*)
 # Shows a compact compliance progress score on every tool use.
 # PERFORMANCE CRITICAL: must complete in <100ms. Minimal I/O.
 
-# Source symlink-write guard (SEC-02)
-if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
-  # shellcheck source=lib/nofollow-guard.sh
-  source "$_lib_dir/nofollow-guard.sh"
-else
-  sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
-  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
-fi
 if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
@@ -51,7 +43,6 @@ DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-q
 command -v jq >/dev/null 2>&1 || exit 0
 
 debug_hook_events() {
-  [[ "${SILVER_BULLET_DEBUG_HOOK_EVENTS:-0}" == "1" ]] || return 0
   local payload="$1"
   local dbg_dir="${SB_RUNTIME_STATE_DIR}"
   mkdir -p "$dbg_dir" 2>/dev/null || true
@@ -64,7 +55,7 @@ debug_hook_events() {
     printf 'pwd=%s\n' "$PWD"
     printf 'hook_event=%s\n' "$hook_event"
     printf 'tool_name=%s\n' "$tool_name"
-  } >>"$dbg_file" 2>/dev/null || true
+  } 2>/dev/null >>"$dbg_file" || true
 }
 
 # Consume stdin (required by hook protocol). Keep the fast path fast: only
@@ -112,17 +103,7 @@ fi
 
 # Walk up to find config if not cached
 if [[ -z "$config_file" ]]; then
-  search_dir="$PWD"
-  while true; do
-    if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-      config_file="$search_dir/.silver-bullet.json"
-      break
-    fi
-    if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-      break
-    fi
-    search_dir=$(dirname "$search_dir")
-  done
+  config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity-anchor.sh" && sb_integrity_activation_config "$PWD") 2>/dev/null; true)"
 
   # Cache result (only when config was actually found)
   if [[ -n "${pwd_hash:-}" && -n "$config_file" ]]; then
@@ -151,7 +132,11 @@ config_vals=$(jq -r '[
   (.state.state_file // env.SB_RUNTIME_STATE_DIR + "/state"),
   ((.skills.required_planning // []) | join(" ")),
   (.project.active_workflow // "full-dev-cycle"),
-  ((.skills.required_planning_devops // []) | join(" "))
+  ((.skills.required_planning_devops // []) | join(" ")),
+  ((.skills.required_deploy // []) | join(" ")),
+  ((.skills.required_deploy_devops // []) | join(" ")),
+  ((.skills.required_release // []) | join(" ")),
+  ((.skills.required_release_devops // []) | join(" "))
 ] | join("\n")' "$config_file")
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
@@ -162,17 +147,38 @@ required_planning=$(printf '%s' "$config_vals" | sed -n '2p')
 # shellcheck disable=SC2034
 active_workflow=$(printf '%s' "$config_vals" | sed -n '3p')
 required_planning_devops=$(printf '%s' "$config_vals" | sed -n '4p')
+configured_deploy=$(printf '%s' "$config_vals" | sed -n '5p')
+configured_deploy_devops=$(printf '%s' "$config_vals" | sed -n '6p')
+configured_release=$(printf '%s' "$config_vals" | sed -n '7p')
+configured_release_devops=$(printf '%s' "$config_vals" | sed -n '8p')
 
 default_planning="$DEFAULT_PLANNING"
 configured_planning="$required_planning"
+# The delivery and release lists the gates enforce, so the status can never show a phase complete
+# while a configured required skill is still missing (R3-23).
+default_deploy="${DEFAULT_REQUIRED:-}"
+configured_deploy_list="$configured_deploy"
+default_release="${DEFAULT_RELEASE_REQUIRED:-silver-create-release}"
+configured_release_list="$configured_release"
 if [[ "$active_workflow" == "devops-cycle" ]]; then
   default_planning="$DEVOPS_DEFAULT_PLANNING"
   configured_planning="${required_planning_devops:-$required_planning}"
+  default_deploy="${DEVOPS_DEFAULT_REQUIRED:-}"
+  configured_deploy_list="${configured_deploy_devops:-$configured_deploy}"
+  default_release="${DEVOPS_DEFAULT_RELEASE_REQUIRED:-$default_release}"
+  configured_release_list="${configured_release_devops:-$configured_release}"
 fi
 if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
   required_planning="$(sb_required_skills_normalize_configured_list "$config_file" "$configured_planning" "$default_planning")"
 else
   required_planning="${configured_planning:-$default_planning}"
+fi
+if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+  required_deploy="$(sb_required_skills_normalize_configured_list "$config_file" "$configured_deploy_list" "$default_deploy")"
+  required_release="$(sb_required_skills_normalize_configured_list "$config_file" "$configured_release_list" "$default_release")"
+else
+  required_deploy="${configured_deploy_list:-$default_deploy}"
+  required_release="${configured_release_list:-$default_release}"
 fi
 
 # Env var override
@@ -244,7 +250,7 @@ has_skill() {
     sb_required_skill_is_recorded "$state_contents" "$1"
     return $?
   fi
-  printf '%s\n' "$state_contents" | grep -Fqx -- "$1" 2>/dev/null
+  grep -Fqx -- "$1" <<<"$state_contents" 2>/dev/null
 }
 
 # --- PLANNING phase ---
@@ -323,6 +329,12 @@ elif [[ -n "$first_missing_final" ]]; then
   next_skill="$first_missing_final"
 elif [[ -n "$first_missing_release" ]]; then
   next_skill="$first_missing_release"
+else
+  # The display groups are fixed, but the gates enforce the configured lists: name the first
+  # configured delivery or release skill still missing instead of showing nothing left (R3-23).
+  for skill in $required_deploy $required_release; do
+    if ! has_skill "$skill"; then next_skill="$skill"; break; fi
+  done
 fi
 
 # --- Build output ---

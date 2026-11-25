@@ -1,9 +1,9 @@
 # SENTINEL Per-Skill Audit Manifest
 
-Machine-readable source of truth: `manifest.json` (85 canonical `skills/*/SKILL.md` files).
+Machine-readable source of truth: `manifest.json` (95 audited `skills/*/SKILL.md` files).
 
 **Release target:** v0.45.0  
-**Aggregate status:** 85/85 clean (`sentinel-skills-clean` eligible)  
+**Aggregate status:** 95/95 clean (`sentinel-skills-clean` eligible)  
 **SENTINEL version:** 2.3.0
 
 ## Policy

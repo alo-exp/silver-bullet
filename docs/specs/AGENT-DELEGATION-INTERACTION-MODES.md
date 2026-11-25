@@ -1,27 +1,17 @@
 # Dual interaction modes for `/sb:agent-*`
 
-Canonical spec for plan [`agent_interaction_modes_17ed9bf7`](../../.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md). Implementation library: [`scripts/lib/agent-mode.sh`](../../scripts/lib/agent-mode.sh). Interactive ctl: [`scripts/agent-mode/ctl.sh`](../../scripts/agent-mode/ctl.sh).
+Canonical spec for the interaction-modes plan (`agent_interaction_modes_17ed9bf7`). Implementation library: [`scripts/lib/agent-mode.sh`](../../scripts/lib/agent-mode.sh). Interactive ctl: [`scripts/agent-mode/ctl.sh`](../../scripts/agent-mode/ctl.sh).
 
 ## Modes
 
 1. **Interactive** — parent drives the child TUI/session like a user (live follow-ups, `control/` fifos, `events.jsonl`).
-2. **Non-interactive (NI)** — prompt in, result out; native one-shot (`claude --print`, `codex exec`, Cursor print/stream-json, `opencode run`, `pi -p --provider opencode-go --model mimo-v2.5`).
+2. **Non-interactive (NI)** — prompt in, result out; native one-shot (`claude --print`, `codex exec`, `opencode run`, `pi -p --provider opencode-go --model mimo-v2.5`).
 
 Permission `--mode permissive|strict` is orthogonal. `--delegation-mode` is orthogonal. Do not smash host `--mode` with interaction values (`mode-conflict`).
 
-## Default `/sb:agent-*` host routing
+## Host choice for `/sb:agent-*`
 
-When the user env has Pi, OpenCode, Cursor, Codex, and Claude, default routing unless the user names an agent:
-
-| Model family | Default host |
-|---|---|
-| Grok, Composer | Cursor (`/sb:agent-cursor`) |
-| Gemini | If the user did **not** specify an agent: Gemini CLI, else Pi, else OpenCode, else Cursor |
-| GPT | Codex (`/sb:agent-codex`) |
-| Claude | Claude (`/sb:agent-claude`) |
-| Other models | Pi or OpenCode, or any other external agent the user named |
-
-User override always wins. Do not smash host `--mode` permission flags. Do not remap RFL GPT/Claude rungs onto Grok High. Encoder: `python3 scripts/review-fix-ladder.py --default-host-route --model {model}`.
+The caller names the host (`/sb:agent-codex`, `/sb:agent-claude`, `/sb:agent-pi`, `/sb:agent-opencode`); there is no model-family router any more. It was a review-fix-ladder encoder feature (`--default-host-route`), removed when the ladder moved to native read-only Claude subagents (`skills/silver-review-fix-ladder/SKILL.md`). Do not smash host `--mode` permission flags.
 
 ## Resolver (locked)
 
@@ -53,7 +43,6 @@ Env: `SB_AGENT_INTERACTION_MODE`. Concrete leftover env without argv pin → `mo
 |------|----|-------------|
 | Claude | `claude --print` | expect PTY (`scripts/claude-interactive-invoke.expect`) |
 | Codex | `codex exec` | Python PTY (`scripts/codex-interactive-invoke.py`) |
-| Cursor | print/stream-json | session-id follow-up (new process, same conversation id) |
 | OpenCode | `opencode run` | host TUI (one PTY) |
 | Pi | `pi -p --provider opencode-go --model mimo-v2.5` | 2s TUI probe; else `tui-unavailable` / `mode-unavailable` |
 

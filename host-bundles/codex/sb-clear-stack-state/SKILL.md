@@ -7,6 +7,8 @@ version: 0.1.0
 
 # /sb:clear-stack-state — Stack compression mutex recovery
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-clear-stack-state/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 Clears global five-tool stack compression mutex violations so PreToolUse stops denying routed surfaces after a double-compression wedge.
 
 ## When to use
@@ -26,7 +28,7 @@ Complete one **compliant routed-owner** tool call on the owned surface (see [doc
 From project root:
 
 ```bash
-bash scripts/sb-doctor.sh --fix
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" --fix
 ```
 
 This runs check **D20** and invokes `sb_stack_clear_mutex_violations` when the five-tool coordinator is active. When agentmemory is opted in, `--fix` also scaffolds `.agentmemory/memory`.
@@ -34,7 +36,7 @@ This runs check **D20** and invokes `sb_stack_clear_mutex_violations` when the f
 ### Step 3: Verify
 
 ```bash
-bash scripts/sb-doctor.sh
+bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh"
 ```
 
 Confirm **D20** passes (`stack compression mutex clean`).

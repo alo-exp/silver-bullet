@@ -1,0 +1,4 @@
+# Coverage tooling for tests/coverage/run-coverage.sh (pinned for reproducible numbers).
+coverage==7.16.2
+tree-sitter==0.25.2
+tree-sitter-bash==0.25.1

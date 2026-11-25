@@ -69,7 +69,9 @@
     "silver-ui-contract": "AF-DESIGN-CONTRACT",
     "silver-ui-review": "AF-UI-QUALITY",
     "silver-validate": "AF-VALIDATE",
-    "silver-verify": "AF-VERIFY"
+    "silver-verify": "AF-VERIFY",
+    "tdd": "AF-EXECUTE",
+    "verify-tests": "AF-VERIFY"
   },
   "skill_worker_templates": {
     "AF-DOCUMENT": {
@@ -107,15 +109,6 @@
       "AF-AGENT-DELEGATE"
     ],
     "FS-DELEGATE-CODEX-ROUTE": [
-      "AF-AGENT-DELEGATE"
-    ],
-    "FS-DELEGATE-CURSOR-LAUNCH": [
-      "AF-AGENT-DELEGATE"
-    ],
-    "FS-DELEGATE-CURSOR-ROUTE": [
-      "AF-AGENT-DELEGATE"
-    ],
-    "FS-DELEGATE-CURSOR-SUBAGENT-POLICY": [
       "AF-AGENT-DELEGATE"
     ],
     "FS-DELEGATE-GUARD_OFF": [
@@ -221,9 +214,6 @@
       "AF-AGENT-DELEGATE"
     ],
     "FS-SILVER_AGENT_CODEX": [
-      "AF-AGENT-DELEGATE"
-    ],
-    "FS-SILVER_AGENT_CURSOR": [
       "AF-AGENT-DELEGATE"
     ],
     "FS-SILVER_AGENT_OPENCODE": [
@@ -481,12 +471,17 @@
     ],
     "silver-bugfix": [
       "silver-debug",
+      "silver-quality-gates",
+      "silver-context",
       "silver-plan",
+      "tdd",
       "silver-execute",
       "silver-review-request",
       "silver-review",
       "silver-review-triage",
+      "silver-triage",
       "silver-verify",
+      "verify-tests",
       "security",
       "silver-secure",
       "silver-validate",
@@ -543,7 +538,9 @@
       "silver-review-request",
       "silver-review",
       "silver-review-triage",
+      "silver-triage",
       "silver-verify",
+      "verify-tests",
       "security",
       "silver-secure",
       "silver-validate",
@@ -554,6 +551,7 @@
     ],
     "silver-fast": [
       "FLOW-QUALITY-GATE",
+      "silver-context",
       "silver-plan",
       "silver-validate",
       "silver-execute",
@@ -564,11 +562,14 @@
       "silver-context",
       "silver-plan",
       "silver-validate",
+      "tdd",
       "silver-execute",
       "silver-review-request",
       "silver-review",
       "silver-review-triage",
+      "silver-triage",
       "silver-verify",
+      "verify-tests",
       "security",
       "silver-secure",
       "silver-validate",
@@ -610,11 +611,14 @@
     "silver-refactor": [
       "silver-plan",
       "silver-validate",
+      "tdd",
       "silver-execute",
       "silver-review-request",
       "silver-review",
       "silver-review-triage",
+      "silver-triage",
       "silver-verify",
+      "verify-tests",
       "security",
       "silver-secure",
       "silver-validate",
@@ -628,7 +632,9 @@
       "silver-review-request",
       "silver-review",
       "silver-review-triage",
+      "silver-triage",
       "silver-verify",
+      "verify-tests",
       "security",
       "silver-secure",
       "silver-validate",
@@ -654,12 +660,15 @@
       "silver-plan",
       "silver-ui-contract",
       "silver-validate",
+      "tdd",
       "silver-execute",
       "silver-ui-review",
       "silver-review-request",
       "silver-review",
       "silver-review-triage",
+      "silver-triage",
       "silver-verify",
+      "verify-tests",
       "security",
       "silver-secure",
       "silver-validate",

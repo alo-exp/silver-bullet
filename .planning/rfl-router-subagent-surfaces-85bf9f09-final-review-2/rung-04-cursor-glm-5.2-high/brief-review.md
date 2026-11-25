@@ -11,8 +11,8 @@ Both copies re-hashed; byte-identical and matching the known SHA.
 
 | Copy | Path | SHA-256 | Bytes |
 |---|---|---|---|
-| Repo | `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `28713951db2720a81da75e64d4c69f530f5032b94c10719e1ee1fd4f1dc5368a` | 641355 |
-| Cursor plans | `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `28713951db2720a81da75e64d4c69f530f5032b94c10719e1ee1fd4f1dc5368a` | 641355 |
+| Repo | `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `28713951db2720a81da75e64d4c69f530f5032b94c10719e1ee1fd4f1dc5368a` | 641355 |
+| Cursor plans | `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `28713951db2720a81da75e64d4c69f530f5032b94c10719e1ee1fd4f1dc5368a` | 641355 |
 
 Live SHA matches the brief's known SHA `28713951db2720a81da75e64d4c69f530f5032b94c10719e1ee1fd4f1dc5368a` / 641355. Freeze not edited.
 

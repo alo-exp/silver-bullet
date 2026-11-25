@@ -19,9 +19,9 @@ Alumnium is **not** token compression. It complements Graphify (retrieval), agen
 
 | `enabled_by_user` | Behavior |
 |-------------------|----------|
-| `null` | Consent pending — no hook enforcement |
-| `true` | Hooks verify npm package reachability and MCP wiring |
-| `false` | Advisory only — host browser MCP fallback per §8.1 |
+| `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project . --capabilities enforce`; without `--capabilities` the grant also records machine-wide install and wire consent) |
+| `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 Core workflows do **not** hard-block when Alumnium is absent; when opted in, hooks verify MCP is wired before substantive edits.
 
@@ -44,22 +44,6 @@ npm install -g alumnium
 
 ```bash
 claude mcp add alumnium --env OPENAI_API_KEY="$OPENAI_API_KEY" -- npx -y alumnium mcp
-```
-
-**Cursor** — merge into `~/.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "alumnium": {
-      "command": "npx",
-      "args": ["-y", "alumnium", "mcp"],
-      "env": {
-        "OPENAI_API_KEY": "<your-key>"
-      }
-    }
-  }
-}
 ```
 
 **Codex** — merge into `~/.codex/config.toml`:
@@ -85,24 +69,6 @@ Alumnium v0.21.0 routes OpenAI-compatible providers via `OPENAI_CUSTOM_URL` — 
 | Base URL (China) | `https://api.minimaxi.com/v1` |
 | Model | `MiniMax-M3` |
 | `ALUMNIUM_MODEL` | `openai/MiniMax-M3` |
-
-**Cursor** — merge into `~/.cursor/mcp.json` (redact your key; never commit real keys):
-
-```json
-{
-  "mcpServers": {
-    "alumnium": {
-      "command": "npx",
-      "args": ["-y", "alumnium", "mcp"],
-      "env": {
-        "OPENAI_CUSTOM_URL": "https://api.minimax.io/v1",
-        "OPENAI_API_KEY": "sk-cp-...pCmA",
-        "ALUMNIUM_MODEL": "openai/MiniMax-M3"
-      }
-    }
-  }
-}
-```
 
 **Codex** — merge into `~/.codex/config.toml`:
 
@@ -136,16 +102,14 @@ export ALUMNIUM_MODEL='openai/MiniMax-M3'
 |----------|------|
 | [`scripts/minimax-openai-proxy.mjs`](../scripts/minimax-openai-proxy.mjs) | Rewrites `parsed: true` → `parsed: {}`, fixes missing `logprobs` |
 | [`scripts/start-minimax-openai-proxy.sh`](../scripts/start-minimax-openai-proxy.sh) | Start proxy on `127.0.0.1:18721` |
-| [`scripts/patch-alumnium-minimax.mjs`](../scripts/patch-alumnium-minimax.mjs) | Post-`npm install` — coerce MiniMax plain-text retriever output |
 
 **Verify:**
 
 ```bash
-bash tests/scripts/test-minimax-proxy.sh
-ALUMNIUM_CHECKS=1 ALUMNIUM_QUICK=1 bash /path/to/sidekick/.visual-audit/run-alumnium-pixel-pass.sh
+bash tests/scripts/test-start-minimax-openai-proxy.sh
 ```
 
-**Cursor MCP** — set `OPENAI_CUSTOM_URL` to `http://127.0.0.1:18721/v1`; start proxy before Cursor.
+Set the MCP server's `OPENAI_CUSTOM_URL` to `http://127.0.0.1:18721/v1` and start the proxy before the host.
 
 ### Verified behavior (v0.21.0)
 
@@ -166,7 +130,7 @@ Fallback: host browser MCP → text-only (see `silver-bullet.md` §8.1).
 ## Verification
 
 ```bash
-SILVER_BULLET_RUNTIME=cursor bash scripts/enable-alumnium.sh
+SILVER_BULLET_RUNTIME=claude bash scripts/enable-alumnium.sh
 ```
 
 Manual: confirm `alumnium` appears in host MCP config and `npx -y alumnium mcp` starts without error.

@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_ISOLATION_HELPER="${SCRIPT_DIR}/../live/lib/codex-cli-isolation.sh"
 KAY_ISOLATION_HELPER="${SCRIPT_DIR}/../live/lib/kay-codex-isolation.sh"
+EVIDENCE_GUARD_HELPER="${SCRIPT_DIR}/../live/lib/evidence-guard.sh"
 CODEX_HOOK_TRANSPLANT_HELPER="${SCRIPT_DIR}/../live/lib/codex-hook-transplant.sh"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
@@ -18,13 +19,10 @@ SCENARIO_DIR="${SCRIPT_DIR}/scenarios"
 DEPENDENCY_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/dependency-access-preflight.sh"
 HOOK_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/hook-delivery-preflight.sh"
 RECOMMENDED_TOOLS_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/recommended-tools-preflight.sh"
-E2E_LIVE_MATRIX_FILE=""
-INLINE_E2E_MATRIX_FILE=""
 HOST_E2E_LIVE_MATRIX_FILE="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
 HOST_INLINE_E2E_MATRIX_FILE="${SB_RUNTIME_STATE_DIR}/inline-e2e-matrix"
-HOST_VERIFY_TESTS_STATE_FILE="${SB_RUNTIME_STATE_DIR}/verify-tests-state"
-HOST_VERIFY_TESTS_BACKUP_FILE=""
-HOST_VERIFY_TESTS_HAD_FILE=false
+# shellcheck source=tests/live/lib/evidence-guard.sh
+source "$EVIDENCE_GUARD_HELPER"
 SCENARIOS=(
   "${SCENARIO_DIR}/test-e2e-live-hook-failures.sh"
 )
@@ -39,6 +37,9 @@ if [[ "${SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY:-0}" == "1" ]]; then
 fi
 RUNTIMES=()
 full_matrix_requested=false
+# matrix=inline-full-surface is release evidence for the inline full-surface journey: it is
+# written only when that journey ran (and, as every scenario, passed) in this run.
+inline_journey_ran=false
 export CODEX_INTERACTIVE_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-300}"
 
 if [[ -n "${SB_E2E_LIVE_RUNTIMES:-}" ]]; then
@@ -99,27 +100,38 @@ echo "WARNING: These tests default to Claude CLI against the enterprise-grade-te
 echo "Default provider/model: runtime-aware (Claude: native config; Codex/Kay: isolated Codex-compatible)."
 echo ""
 
-rm -f "$HOST_E2E_LIVE_MATRIX_FILE"
-rm -f "$HOST_INLINE_E2E_MATRIX_FILE"
+# Every release-evidence file in the operator's state dir is snapshotted now. The EXIT trap
+# restores the ones this runner does not own (release-live-matrix, quality-gate-state,
+# verify-tests-state), tears down any isolated Codex/Kay home, and writes the two matrix markers
+# this runner owns only after a complete pass (R14-03, R14-06, R14-15). A scenario never writes
+# release evidence.
+PENDING_E2E_MARKER=""
+PENDING_INLINE_MARKER=false
+sb_evidence_snapshot "$SB_RUNTIME_STATE_DIR" "$REPO_ROOT"
+sb_evidence_restore e2e-live-matrix inline-e2e-matrix
 
-if [[ -f "$HOST_VERIFY_TESTS_STATE_FILE" ]]; then
-  HOST_VERIFY_TESTS_HAD_FILE=true
-  HOST_VERIFY_TESTS_BACKUP_FILE="$(mktemp "${TMPDIR:-/tmp}/sb-e2e-live-verify-tests-state.XXXXXX")"
-  cp "$HOST_VERIFY_TESTS_STATE_FILE" "$HOST_VERIFY_TESTS_BACKUP_FILE"
-fi
-
-restore_host_verify_tests_state() {
+runner_exit() {
   local rc=$?
-  if [[ "$HOST_VERIFY_TESTS_HAD_FILE" == true && -n "$HOST_VERIFY_TESTS_BACKUP_FILE" && -f "$HOST_VERIFY_TESTS_BACKUP_FILE" ]]; then
-    mkdir -p "$(dirname "$HOST_VERIFY_TESTS_STATE_FILE")"
-    cp "$HOST_VERIFY_TESTS_BACKUP_FILE" "$HOST_VERIFY_TESTS_STATE_FILE"
-    rm -f "$HOST_VERIFY_TESTS_BACKUP_FILE"
-  elif [[ "$HOST_VERIFY_TESTS_HAD_FILE" == false ]]; then
-    rm -f "$HOST_VERIFY_TESTS_STATE_FILE"
+  trap - EXIT INT TERM
+  if declare -F teardown_codex_cli_isolation >/dev/null 2>&1; then
+    teardown_codex_cli_isolation || true
   fi
-  return "$rc"
+  if declare -F teardown_kay_codex_isolation >/dev/null 2>&1; then
+    teardown_kay_codex_isolation || true
+  fi
+  sb_evidence_restore e2e-live-matrix inline-e2e-matrix
+  if [[ "$rc" -eq 0 && -n "$PENDING_E2E_MARKER" ]]; then
+    sb_evidence_write_marker "$HOST_E2E_LIVE_MATRIX_FILE" "$PENDING_E2E_MARKER" "$REPO_ROOT"
+    if [[ "$PENDING_INLINE_MARKER" == true ]]; then
+      sb_evidence_write_marker "$HOST_INLINE_E2E_MATRIX_FILE" "inline-full-surface" "$REPO_ROOT"
+    fi
+  fi
+  sb_evidence_discard
+  exit "$rc"
 }
-trap restore_host_verify_tests_state EXIT
+trap runner_exit EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 TOTAL_FAIL=0
 TOTAL_PASS=0
@@ -143,10 +155,11 @@ run_scenario() {
     bash "$scenario"; then
     echo "SCENARIO PASSED: [$runtime] $(basename "$scenario")"
     TOTAL_PASS=$((TOTAL_PASS + 1))
-  else
-    echo "SCENARIO FAILED: [$runtime] $(basename "$scenario")"
-    TOTAL_FAIL=$((TOTAL_FAIL + 1))
+    return 0
   fi
+  echo "SCENARIO FAILED: [$runtime] $(basename "$scenario")"
+  TOTAL_FAIL=$((TOTAL_FAIL + 1))
+  return 1
 }
 
 run_dependency_preflight() {
@@ -226,18 +239,14 @@ for runtime in "${RUNTIMES[@]}"; do
   esac
 
   if [[ "$runtime" == "claude" ]]; then
-    E2E_LIVE_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/e2e-live-matrix"
-    INLINE_E2E_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/inline-e2e-matrix"
-    if ! /Users/shafqat/.local/bin/claude --version >/dev/null 2>&1; then
-      echo "ERROR: claude CLI not found or not working at /Users/shafqat/.local/bin/claude"
+    if ! "${CLAUDE_BIN:-claude}" --version >/dev/null 2>&1; then
+      echo "ERROR: claude CLI not found or not working at ${CLAUDE_BIN:-claude} (set CLAUDE_BIN or put claude on PATH)"
       exit 1
     fi
   elif [[ "$runtime" == "codex" ]]; then
     # shellcheck source=tests/live/lib/codex-cli-isolation.sh
     source "$CODEX_ISOLATION_HELPER"
     setup_codex_cli_isolation
-    E2E_LIVE_MATRIX_FILE="${CODEX_HOME}/.silver-bullet/e2e-live-matrix"
-    INLINE_E2E_MATRIX_FILE="${CODEX_HOME}/.silver-bullet/inline-e2e-matrix"
     if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
       echo "ERROR: native Codex CLI not found or not working"
       exit 1
@@ -250,8 +259,6 @@ for runtime in "${RUNTIMES[@]}"; do
     # shellcheck source=tests/live/lib/kay-codex-isolation.sh
     source "$KAY_ISOLATION_HELPER"
     setup_kay_codex_isolation
-    E2E_LIVE_MATRIX_FILE="${KAY_HOME}/.codex/.silver-bullet/e2e-live-matrix"
-    INLINE_E2E_MATRIX_FILE="${KAY_HOME}/.codex/.silver-bullet/inline-e2e-matrix"
     if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
       echo "ERROR: Kay CLI not found or not working"
       exit 1
@@ -287,8 +294,15 @@ for runtime in "${RUNTIMES[@]}"; do
   fi
 
   for scenario in "${SCENARIOS[@]}"; do
-    [[ -f "$scenario" ]] || continue
-    run_scenario "$runtime" "$scenario"
+    if [[ ! -f "$scenario" ]]; then
+      # A missing scenario is a failure, never a silent skip (R14-12).
+      echo "SCENARIO MISSING: [$runtime] $(basename "$scenario")"
+      TOTAL_FAIL=$((TOTAL_FAIL + 1))
+      continue
+    fi
+    if run_scenario "$runtime" "$scenario" && [[ "$scenario" == "${LEGACY_SCENARIOS[0]}" ]]; then
+      inline_journey_ran=true
+    fi
   done
 
   if [[ -n "${E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE:-}" ]]; then
@@ -305,38 +319,37 @@ for runtime in "${RUNTIMES[@]}"; do
   elif [[ "$runtime" == "kay" ]]; then
     teardown_kay_codex_isolation
   fi
-  E2E_LIVE_MATRIX_FILE="$HOST_E2E_LIVE_MATRIX_FILE"
-  INLINE_E2E_MATRIX_FILE="$HOST_INLINE_E2E_MATRIX_FILE"
 done
+
+expected_passes=$(( ${#SCENARIOS[@]} * ${#RUNTIMES[@]} ))
 
 echo ""
 echo "========================================"
 if [[ $TOTAL_FAIL -gt 0 ]]; then
   echo "  OVERALL: ${TOTAL_FAIL} scenario(s) FAILED"
   exit 1
-else
-  marker=""
-  if [[ "$full_matrix_requested" == true ]]; then
-    marker="full-claude-codex"
-  elif [[ ${#RUNTIMES[@]} -eq 1 && "${RUNTIMES[0]}" == "claude" ]]; then
-    marker="claude-only"
-  elif [[ ${#RUNTIMES[@]} -eq 1 && ( "${RUNTIMES[0]}" == "codex" || "${RUNTIMES[0]}" == "kay" ) ]]; then
-    marker="codex-only"
-  fi
-
-  if [[ -n "$marker" ]]; then
-    mkdir -p "$(dirname "$HOST_E2E_LIVE_MATRIX_FILE")"
-    cat > "$HOST_E2E_LIVE_MATRIX_FILE" <<EOF
-matrix=${marker}
-EOF
-    cat > "$HOST_INLINE_E2E_MATRIX_FILE" <<'EOF'
-matrix=inline-full-surface
-EOF
-  else
-    rm -f "$HOST_E2E_LIVE_MATRIX_FILE"
-    rm -f "$HOST_INLINE_E2E_MATRIX_FILE"
-    echo "  NOTE: E2E release marker not written because the full Claude/Codex matrix was not run."
-  fi
-  echo "  OVERALL: ALL SCENARIOS PASSED"
-  exit 0
 fi
+if [[ $expected_passes -eq 0 || $TOTAL_PASS -ne $expected_passes ]]; then
+  echo "  OVERALL: NOT-RUN: ${TOTAL_PASS} of ${expected_passes} expected scenario runs passed; no release marker is written"
+  exit 1
+fi
+
+if [[ "$full_matrix_requested" == true ]]; then
+  PENDING_E2E_MARKER="full-claude-codex"
+elif [[ ${#RUNTIMES[@]} -eq 1 && "${RUNTIMES[0]}" == "claude" ]]; then
+  PENDING_E2E_MARKER="claude-only"
+elif [[ ${#RUNTIMES[@]} -eq 1 && ( "${RUNTIMES[0]}" == "codex" || "${RUNTIMES[0]}" == "kay" ) ]]; then
+  PENDING_E2E_MARKER="codex-only"
+fi
+
+if [[ -n "$PENDING_E2E_MARKER" ]]; then
+  if [[ "$inline_journey_ran" == true ]]; then
+    PENDING_INLINE_MARKER=true
+  else
+    echo "  NOTE: inline-e2e-matrix not written: the inline full-surface journey did not run (SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1 runs it)."
+  fi
+else
+  echo "  NOTE: E2E release marker not written because the full Claude/Codex matrix was not run."
+fi
+echo "  OVERALL: ALL SCENARIOS PASSED"
+exit 0

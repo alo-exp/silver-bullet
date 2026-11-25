@@ -62,7 +62,7 @@ List of detected bias signals (may be empty):
 ## Automation
 
 ```bash
-python3 skills/silver-deep-research/scripts/source_evaluator.py \
+python3 "${SKILL_DIR}/scripts/source_evaluator.py" \
   --url "https://docs.python.org/3/" \
   --title "Python documentation" \
   --json

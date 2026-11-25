@@ -14,7 +14,7 @@ This is the **High** thinking rung (`--variant high` / `reasoningEffort: high`).
 
 Write the complete review to this exact path (this is the **only** file you may create/overwrite):
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/deepseek-v4-pro-high-ladder4/review.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/deepseek-v4-pro-high-ladder4/review.md`
 
 **First durable write after hashing the two plan copies must be this `review.md`.** Also put the same complete review text in your final assistant message, then stop. Do not start a workflow queue.
 
@@ -32,8 +32,8 @@ Then group findings as **Blockers**, **Highs**, **Mediums** (Lows optional; do n
 
 Freeze SHA-256 (must match both copies; do not edit either plan): `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06`
 
-Canonical: `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-Cursor mirror: `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+Canonical: `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+Cursor mirror: `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 **Hash both files yourself** (`shasum -a 256` on each). If either hash ≠ freeze SHA, write `HASH MISMATCH` plus the two hashes in `review.md` and end with `VERDICT: HASH MISMATCH` (or `VERDICT: NOT CLEAN`). Do not continue a CLEAN review on a mismatch. Do **not** use the stale freeze `1096479c…`.
 
@@ -42,14 +42,14 @@ Cursor mirror: `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.p
 **Graphify first** before any codebase exploration: `graphify query "<question>"` (not `lctx_graph`). Then:
 
 1. Overview in full:
-   `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md`
-   Then preamble: `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/REVIEW-PROMPT-PREAMBLE.md`
+   `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md`
+   Then preamble: `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/REVIEW-PROMPT-PREAMBLE.md`
 
 2. Plan (canonical repo copy):
-   `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+   `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 3. Clarify brief **through latest addendum (round-36 ACCEPT freeze)**:
-   `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md`
+   `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md`
 
 Do **not** grep the whole tree as a substitute for reading those files.
 

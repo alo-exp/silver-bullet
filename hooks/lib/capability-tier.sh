@@ -1,14 +1,17 @@
 # shellcheck shell=bash
 # Silver Bullet — runtime capability tier probe (shared by session-start, diagnostics).
 
+_sb_cap_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if ! declare -f sb_runtime_in_test_sandbox >/dev/null 2>&1 && [[ -f "$_sb_cap_lib_dir/cert-bypass.sh" ]]; then
+  # shellcheck source=cert-bypass.sh
+  source "$_sb_cap_lib_dir/cert-bypass.sh"
+fi
+
 sb_capability_hooks_present() {
   local runtime_home="${1:-${SB_RUNTIME_HOME_ROOT:-}}"
   local runtime="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-}}"
   [[ -n "$runtime_home" ]] || return 1
   case "$runtime" in
-    cursor)
-      [[ -f "${runtime_home}/hooks.json" ]] && grep -q 'silver-bullet' "${runtime_home}/hooks.json" 2>/dev/null
-      ;;
     codex)
       [[ -f "${runtime_home}/config.toml" ]] && grep -q 'silver-bullet' "${runtime_home}/config.toml" 2>/dev/null
       ;;
@@ -31,14 +34,9 @@ sb_capability_runtime_name() {
     printf 'codex'
     return 0
   fi
-  if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]]; then
-    printf 'cursor'
-    return 0
-  fi
   if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
     case "$CLAUDE_PLUGIN_ROOT" in
       */.codex/*) printf 'codex'; return 0 ;;
-      */.cursor/*) printf 'cursor'; return 0 ;;
     esac
   fi
   printf 'claude'
@@ -54,7 +52,9 @@ sb_capability_tier_number() {
 }
 
 sb_capability_tier_name() {
-  if [[ "${SILVER_BULLET_TEST_HOOK_ENFORCED:-}" == "1" ]]; then
+  # test switch, honoured only in a throw-away sandbox (R1-36)
+  if [[ "${SILVER_BULLET_TEST_HOOK_ENFORCED:-}" == "1" ]] && declare -f sb_runtime_in_test_sandbox >/dev/null 2>&1 \
+    && sb_runtime_in_test_sandbox; then
     printf 'hook-enforced'
     return 0
   fi

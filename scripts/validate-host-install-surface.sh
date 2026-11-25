@@ -6,8 +6,8 @@
 #
 # Usage:
 #   scripts/validate-host-install-surface.sh [--repo-root PATH]
-#   scripts/validate-host-install-surface.sh --cache-root PATH --host claude|codex|cursor
-#   scripts/validate-host-install-surface.sh --repo-root PATH --host all|claude|codex|cursor
+#   scripts/validate-host-install-surface.sh --cache-root PATH --host claude|codex
+#   scripts/validate-host-install-surface.sh --repo-root PATH --host all|claude|codex
 
 set -euo pipefail
 
@@ -17,21 +17,32 @@ cache_root=""
 host_filter="all"
 max_claude_tokens=14000
 
+need_value() {
+  if [[ "$1" -lt 2 ]]; then
+    printf 'validate-host-install-surface: %s requires a value\n' "$2" >&2
+    exit 2
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --repo-root)
+      need_value "$#" "$1"
       repo_root="${2:-}"
       shift 2
       ;;
     --cache-root)
+      need_value "$#" "$1"
       cache_root="${2:-}"
       shift 2
       ;;
     --host)
+      need_value "$#" "$1"
       host_filter="${2:-}"
       shift 2
       ;;
     --max-claude-tokens)
+      need_value "$#" "$1"
       max_claude_tokens="${2:-}"
       shift 2
       ;;
@@ -74,7 +85,7 @@ from pathlib import Path
 repo_root = Path(sys.argv[1])
 host_filter = sys.argv[2]
 failures: list[str] = []
-host_ok: dict[str, bool] = {"claude": True, "codex": True, "cursor": True}
+host_ok: dict[str, bool] = {"claude": True, "codex": True}
 
 
 def fail(host: str, message: str) -> None:
@@ -101,7 +112,7 @@ if should_check("claude"):
         )
         for name in foreign:
             fail("claude", f"foreign host directory agents/{name} (only agents/claude allowed)")
-    for stray in ("codex", "cursor"):
+    for stray in ("codex",):
         if (agents_root / stray).exists():
             fail("claude", f"agents/{stray} must not exist — use host-bundles/{stray}")
 
@@ -116,13 +127,13 @@ if should_check("claude"):
         if data.get("agents"):
             fail("claude", ".claude-plugin must not declare agents (skills path is sufficient; Claude schema rejects agents)")
         if "commands" in data:
-            fail("claude", ".claude-plugin must not declare commands (Cursor command surface lives in plugins/silver-bullet/commands)")
+            fail("claude", ".claude-plugin must not declare commands")
 
     if (repo_root / "commands").is_dir():
-        fail("claude", "repo-root commands/ must not exist (Cursor composer stubs live under plugins/silver-bullet/commands)")
+        fail("claude", "repo-root commands/ must not exist")
 
     # Claude plugin auto-discovers agents/<subdir>/ as silver-bullet:<subdir>: namespaces.
-    forbidden_ns = (":codex:", ":cursor:", "silver-bullet:codex", "silver-bullet:cursor")
+    forbidden_ns = (":codex:", "silver-bullet:codex")
     if claude_bundle.is_dir():
         for skill in sorted(claude_bundle.glob("**/SKILL.md")):
             text = skill.read_text(errors="ignore")
@@ -140,7 +151,7 @@ if should_check("claude"):
                 if line.startswith("name:"):
                     meta_name = line.split(":", 1)[1].strip()
                     break
-            for prefix in ("silver-bullet:codex:", "silver-bullet:cursor:"):
+            for prefix in ("silver-bullet:codex:",):
                 if meta_name.startswith(prefix):
                     fail(
                         "claude",
@@ -164,7 +175,7 @@ if should_check("codex"):
         if data.get("agents"):
             fail("codex", ".codex-plugin must not declare agents path")
         if "commands" in data:
-            fail("codex", ".codex-plugin must not declare commands (Cursor owns command stubs; Codex uses native skill-source mirror)")
+            fail("codex", ".codex-plugin must not declare commands (Codex uses the native skill-source mirror)")
 
     pkg = repo_root / "plugins" / "silver-bullet"
     if pkg.is_dir():
@@ -174,58 +185,20 @@ if should_check("codex"):
         agents_pkg = pkg / "agents"
         if agents_pkg.is_dir():
             for child in agents_pkg.iterdir():
-                if child.is_dir() and child.name not in ("cursor",):
+                if child.is_dir():
                     fail(
                         "codex",
                         f"plugins/silver-bullet/agents/{child.name} must not ship in Codex package",
                     )
         if not (pkg / "skill-source").is_dir():
             fail("codex", "plugins/silver-bullet/skill-source missing")
-        if not (pkg / "commands").is_dir():
-            fail("codex", "plugins/silver-bullet/commands missing")
-
-if should_check("cursor"):
-    cursor_bundle = host_bundles / "cursor"
-    if not cursor_bundle.is_dir():
-        fail("cursor", "missing host-bundles/cursor")
-    if (agents_root / "cursor").exists():
-        fail("cursor", "agents/cursor must not exist — use host-bundles/cursor")
-
-    cursor_manifest = repo_root / ".cursor-plugin" / "plugin.json"
-    plugin_cursor_manifest = repo_root / "plugins" / "silver-bullet" / ".cursor-plugin" / "plugin.json"
-    for label, manifest in (
-        ("root", cursor_manifest),
-        ("plugins/silver-bullet", plugin_cursor_manifest),
-    ):
-        if not manifest.is_file():
-            if label == "plugins/silver-bullet":
-                fail("cursor", f"missing {manifest.relative_to(repo_root)}")
-            continue
-        data = json.loads(manifest.read_text())
-        skills = data.get("skills")
-        if skills:
-            fail(
-                "cursor",
-                f"{manifest.relative_to(repo_root)} must not declare skills "
-                f"(registers host-bundles in / picker — use skill-source + commands only; got {skills!r})",
-            )
-        if data.get("agents"):
-            fail("cursor", f"{manifest.relative_to(repo_root)} must not declare agents path")
-        if label == "plugins/silver-bullet" and data.get("commands") != "./commands":
-            fail(
-                "cursor",
-                f"{manifest.relative_to(repo_root)} commands path must be ./commands — got {data.get('commands')!r}",
-            )
-
-    if not cursor_manifest.is_file() and not plugin_cursor_manifest.is_file():
-        fail("cursor", "missing .cursor-plugin/plugin.json")
 
 if host_bundles.is_dir() and should_check("claude"):
     if (host_bundles / "claude").exists():
         fail("claude", "host-bundles/claude must not exist — Claude bundle lives under agents/claude")
 
 print("validate-host-install-surface: repo layout summary")
-for host in ("claude", "codex", "cursor"):
+for host in ("claude", "codex"):
     if not should_check(host):
         continue
     status = "OK" if host_ok[host] else "FAIL"
@@ -273,7 +246,6 @@ def require(path: Path, label: str) -> None:
 if host == "claude":
     require(agents / "claude", "agents/claude")
     forbid(agents / "codex", "agents/codex")
-    forbid(agents / "cursor", "agents/cursor")
     forbid(cache_root / "host-bundles", "host-bundles")
     forbid(cache_root / "commands", "commands")
     if agents.is_dir():
@@ -285,61 +257,6 @@ if host == "claude":
         for name in foreign:
             failures.append(f"[claude] cache bleed: agents/{name}")
 
-elif host == "cursor":
-    # Commands-only Cursor package: public / picker is commands/*.md only.
-    forbid(agents / "claude", "agents/claude")
-    forbid(agents / "codex", "agents/codex")
-    forbid(agents / "cursor", "agents/cursor")
-    forbid(cache_root / "host-bundles", "host-bundles")
-    skills_root = cache_root / "skills"
-    if skills_root.is_dir():
-        for child in skills_root.iterdir():
-            # silver-init is an internal script-only compatibility directory;
-            # it has no SKILL.md and is not registered in Cursor's picker.
-            if child.is_dir() and child.name not in {"sb-init", "silver-init"}:
-                failures.append(
-                    f"[cursor] cache bleed: skills/{child.name} registers slash-picker skills"
-                )
-    commands_init = cache_root / "commands" / "sb.md"
-    if not commands_init.is_file():
-        failures.append("[cursor] cache missing commands/sb.md (slash menu empty)")
-    manifest = cache_root / ".cursor-plugin" / "plugin.json"
-    if manifest.is_file():
-        try:
-            data = json.loads(manifest.read_text())
-        except Exception:
-            data = {}
-        if data.get("skills"):
-            failures.append(
-                f"[cursor] cache manifest declares skills={data.get('skills')!r} (commands-only required)"
-            )
-        if data.get("commands") != "./commands":
-            failures.append(
-                f"[cursor] cache manifest commands must be ./commands — got {data.get('commands')!r}"
-            )
-    else:
-        failures.append("[cursor] cache missing .cursor-plugin/plugin.json")
-    # Cursor plugin commands use kebab-case frontmatter names and
-    # filesystem-safe filenames.
-    commands_dir = cache_root / "commands"
-    if commands_dir.is_dir():
-        for path in commands_dir.glob("*.md"):
-            if ":" in path.name:
-                failures.append(
-                    f"[cursor] malformed command filename {path.name!r} (colon is not desktop-safe)"
-                )
-            text = path.read_text(errors="ignore")
-            name = ""
-            for line in text.splitlines():
-                if line.strip() == "---" and name:
-                    break
-                if line.startswith("name:"):
-                    name = line.split(":", 1)[1].strip().strip("\"'")
-            if not name or name != path.stem or ":" in name:
-                failures.append(
-                    f"[cursor] command file {path.name!r} lacks a kebab-case name matching its filename"
-                )
-
 elif host == "codex":
     forbid(agents / "claude", "agents/claude")
     forbid(agents / "codex", "agents/codex")
@@ -348,7 +265,7 @@ elif host == "codex":
         foreign = [
             child.name
             for child in agents.iterdir()
-            if child.is_dir() and child.name != "cursor"
+            if child.is_dir()
         ]
         for name in foreign:
             failures.append(f"[codex] cache bleed: agents/{name}")
@@ -381,29 +298,37 @@ exit_code=0
 
 if [[ -n "$cache_root" ]]; then
   if [[ "$host_filter" == "all" ]]; then
-    printf 'validate-host-install-surface: --cache-root requires --host claude|codex|cursor\n' >&2
+    printf 'validate-host-install-surface: --cache-root requires --host claude|codex\n' >&2
     exit 2
   fi
   run_cache_checks "$cache_root" "$host_filter" || exit_code=1
 else
-  if [[ "$host_filter" == "all" || "$host_filter" == "claude" || "$host_filter" == "codex" || "$host_filter" == "cursor" ]]; then
+  if [[ "$host_filter" == "all" || "$host_filter" == "claude" || "$host_filter" == "codex" ]]; then
     run_repo_checks "$host_filter" || exit_code=1
   else
     printf 'validate-host-install-surface: invalid --host %s\n' "$host_filter" >&2
     exit 2
   fi
 
-  if [[ -x "$skill_surface_script" ]]; then
+  # Sub-validators run through bash, so a checkout or archive that dropped the
+  # exec bits still runs them; a missing one is a failure, never a silent skip.
+  if [[ -f "$skill_surface_script" ]]; then
     if ! bash "$skill_surface_script" --repo-root "$repo_root"; then
       exit_code=1
     fi
+  else
+    printf 'validate-host-install-surface: missing sub-validator %s\n' "$skill_surface_script" >&2
+    exit_code=1
   fi
 
   if [[ "$host_filter" == "all" || "$host_filter" == "claude" ]]; then
-    if [[ -x "$token_budget_script" ]]; then
+    if [[ -f "$token_budget_script" ]]; then
       if ! bash "$token_budget_script" --repo-root "$repo_root" --max-tokens "$max_claude_tokens"; then
         exit_code=1
       fi
+    else
+      printf 'validate-host-install-surface: missing sub-validator %s\n' "$token_budget_script" >&2
+      exit_code=1
     fi
   fi
 fi

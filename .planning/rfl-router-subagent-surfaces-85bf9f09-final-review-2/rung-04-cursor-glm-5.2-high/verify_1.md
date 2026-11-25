@@ -1,14 +1,14 @@
 # Cursor Task glm-5.2-high (no Pi) — verify_1
 
-RFL round 2, rung 4, verify_1 only. Repo: `/Users/shafqat/projects/silver-bullet/repo`. Branch: `main` (no checkout performed). Verify-only — no edits to freeze plans, skills, hooks, or product source.
+RFL round 2, rung 4, verify_1 only. Repo: `/Users/<user>/projects/silver-bullet/repo`. Branch: `main` (no checkout performed). Verify-only — no edits to freeze plans, skills, hooks, or product source.
 
 ## 1. Freeze copy integrity (hashlib-independent via `shasum -a 256` + `wc -c`)
 
 Command:
 ```
 shasum -a 256 \
-  /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md \
-  /Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md
+  /Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md \
+  /Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md
 wc -c <each>
 ```
 

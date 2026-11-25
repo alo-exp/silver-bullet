@@ -12,6 +12,10 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/lib/agent-bundle-paths.sh
 source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
+# shellcheck source=scripts/lib/pre-release-host-isolation.sh
+source "${REPO_ROOT}/scripts/lib/pre-release-host-isolation.sh"
+# shellcheck source=scripts/lib/command-timeout.sh
+source "${REPO_ROOT}/scripts/lib/command-timeout.sh"
 DOCTOR_FIX="${SB_DOCTOR_FIX:-0}"
 DOCTOR_FIX_SCOPE="${SB_DOCTOR_FIX_SCOPE:-}"
 DOCTOR_DEEP="${SB_DOCTOR_DEEP:-0}"
@@ -88,7 +92,11 @@ record() {
 version_to_int() {
   local v="${1%%-*}"
   local maj min patch
+  v="${v#v}"
   IFS='.' read -r maj min patch <<<"$v"
+  # Keep the leading digits of each part so "latest" or "3+build" never hit the
+  # arithmetic evaluator as an invalid base-10 number.
+  maj="${maj%%[!0-9]*}"; min="${min%%[!0-9]*}"; patch="${patch%%[!0-9]*}"
   maj="${maj:-0}"; min="${min:-0}"; patch="${patch:-0}"
   printf '%d' $((10#$maj * 1000000 + 10#$min * 1000 + 10#$patch))
 }
@@ -108,6 +116,7 @@ source_runtime_paths() {
   SB_RUNTIME_HOME_ROOT="${HOME}/.${SILVER_BULLET_RUNTIME}"
   SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
   SB_RUNTIME_PLUGIN_CACHE_ROOT="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
+  sb_runtime_codex_home() { printf '%s' "${SB_RUNTIME_HOME_ROOT}"; }
   return 0
 }
 
@@ -155,7 +164,7 @@ codex_skills_only_surface_present() {
 foreign_host_plugin_path_pattern() {
   local current_host="${1:-}" host
   local patterns=()
-  for host in claude codex cursor; do
+  for host in claude codex; do
     [[ "$host" == "$current_host" ]] && continue
     patterns+=("\\.${host}/plugins")
   done
@@ -163,7 +172,7 @@ foreign_host_plugin_path_pattern() {
   printf '%s' "${patterns[*]}"
 }
 
-# Claude v2 registry stores plugin entries as arrays; Cursor/Codex may use objects.
+# Claude v2 registry stores plugin entries as arrays; Codex may use objects.
 resolve_registry_plugin_field() {
   local reg="$1" plugin_id="$2" field="$3"
   jq -r --arg id "$plugin_id" --arg f "$field" '
@@ -175,11 +184,17 @@ resolve_registry_plugin_field() {
   ' "$reg" 2>/dev/null || true
 }
 
+# doctor_realpath: physical directory a path resolves to (symlinks followed), empty
+# when it does not resolve. Every caller resolves a directory (the plugin cache
+# `current` link), and `readlink -f` is missing on macOS before 12.3.
+doctor_realpath() {
+  (cd -P "$1" 2>/dev/null && pwd -P) || :
+}
+
+# The expected config version comes from Silver Bullet's own template. A template
+# under the audited project is project-controlled input and must never lower it.
 resolve_template_config_version() {
   local template="${REPO_ROOT}/templates/silver-bullet.config.json.default"
-  if [[ -f "$PROJ_ROOT/templates/silver-bullet.config.json.default" ]]; then
-    template="${PROJ_ROOT}/templates/silver-bullet.config.json.default"
-  fi
   if [[ -f "$template" ]]; then
     jq -r '.config_version // .version // "0.0.0"' "$template"
   else
@@ -200,22 +215,37 @@ resolve_hook_path() {
   return 1
 }
 
+# run_hook_smoke: exercise a hook with a SessionStart/UserPromptSubmit/Stop payload
+# in a throwaway sandbox, so the doctor stays read-only (R8-09). The hooks reset
+# branch-scoped state, delete gate evidence and write orchestrator directives, so
+# they must never see the user's HOME, runtime state dir, state/branch files or
+# project: they get a temp HOME (state dir derived inside it), a throwaway project
+# holding only the project's Silver Bullet config files, and `source:"resume"`.
 run_hook_smoke() {
   local hook_path="$1" event="$2"
-  local payload
-  payload="$(jq -n --arg e "$event" '{hook_event_name:$e, prompt:"sb-doctor smoke"}')"
+  local payload sandbox rc=0 f
+  sandbox="$(mktemp -d "${TMPDIR:-/tmp}/sb-doctor-smoke.XXXXXX")" || return 1
+  mkdir -p "${sandbox}/home" "${sandbox}/project"
+  for f in .silver-bullet.json silver-bullet.md; do
+    [[ -f "${PROJ_ROOT}/${f}" ]] && cp "${PROJ_ROOT}/${f}" "${sandbox}/project/${f}"
+  done
+  git -C "${sandbox}/project" init -q >/dev/null 2>&1 || true
+  payload="$(jq -n --arg e "$event" '{hook_event_name:$e, source:"resume", prompt:"sb-doctor smoke"}')"
   # SB_HOOK_SMOKE: session-start must not persist/mutate project config during doctor smoke (#257).
-  if ( cd "$PROJ_ROOT" && printf '%s' "$payload" | env SB_HOOK_SMOKE=1 bash "$hook_path" >/dev/null 2>&1 ); then
-    return 0
-  fi
-  return 1
+  (
+    cd "${sandbox}/project" &&
+      # the shared scrub (host tooling layer) drops every variable that redirects host config or SB state
+      sb_smoke_clear_host_env &&
+      printf '%s' "$payload" | env HOME="${sandbox}/home" SB_HOOK_SMOKE=1 bash "$hook_path" >/dev/null 2>&1
+  ) || rc=1
+  rm -rf -- "$sandbox"
+  return "$rc"
 }
 
 doctor_host_install_script() {
   case "${1:-}" in
     claude) printf '%s\n' "${REPO_ROOT}/scripts/install-claude.sh" ;;
     codex) printf '%s\n' "${REPO_ROOT}/scripts/install-codex.sh" ;;
-    cursor) printf '%s\n' "${REPO_ROOT}/scripts/install-cursor.sh" ;;
     *) return 1 ;;
   esac
 }
@@ -226,7 +256,6 @@ doctor_reconciler_scope() {
     host) printf '%s' "host" ;;
     packages) printf '%s' "packages" ;;
     all) printf '%s' "all" ;;
-    *) printf '%s' "all" ;;
   esac
 }
 
@@ -242,7 +271,8 @@ doctor_generic_manifest_path() {
 }
 
 doctor_record_generic_stack() {
-  local manifest_path="$(doctor_generic_manifest_path)"
+  local manifest_path
+  manifest_path="$(doctor_generic_manifest_path)"
   if [[ ! -f "$manifest_path" ]]; then
     record warn D10-generic "generic stack absent (${manifest_path}); SB integration remains separate"
     return 0
@@ -268,11 +298,11 @@ PY
 }
 
 doctor_repair_generic_stack() {
-  [[ "$DOCTOR_FIX" -eq 1 && "$DOCTOR_DRY_RUN" -eq 0 ]] || return 0
   case "${DOCTOR_FIX_SCOPE:-all}" in
     local) return 0 ;;
   esac
-  local manifest_path="$(doctor_generic_manifest_path)"
+  local manifest_path
+  manifest_path="$(doctor_generic_manifest_path)"
   local legacy_path="${HOME}/.silver-bullet/five-tool-stack/instances.json"
   local output rc=0
   output="$(PYTHONPATH="${REPO_ROOT}/scripts/lib" python3 "${REPO_ROOT}/scripts/lib/five_tool_runtime/cli.py" repair \
@@ -289,7 +319,7 @@ doctor_run_reconciler() {
   local mode="$1"
   local reconciler="${SB_DOCTOR_RECONCILER:-${REPO_ROOT}/scripts/reconcile-recommended-tools.sh}"
   [[ -f "$reconciler" ]] || return 1
-  local host="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-cursor}}"
+  local host="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-claude}}"
   local scope="all"
   if [[ "$mode" == "apply" ]]; then
     scope="$(doctor_reconciler_scope)"
@@ -317,7 +347,9 @@ doctor_run_reconciler() {
 
 doctor_fix_needs_confirm() {
   case "${DOCTOR_FIX_SCOPE:-all}" in
-    packages|all) ;;
+    # host re-runs install-<host>.sh, which rewrites the user's global host hook/MCP config
+    host|all) return 0 ;;
+    packages) ;;
     *) return 1 ;;
   esac
   [[ -n "${RECONCILER_JSON:-}" ]] || return 0
@@ -333,9 +365,8 @@ doctor_fix_needs_confirm() {
 
 doctor_confirm_fix_if_needed() {
   doctor_fix_needs_confirm || return 0
-  [[ "${SB_DOCTOR_ASSUME_YES:-0}" == "1" ]] && return 0
   if [[ ! -t 0 ]]; then
-    printf 'sb-doctor: confirmation required for --fix=%s (set SB_DOCTOR_ASSUME_YES=1)\n' "${DOCTOR_FIX_SCOPE:-all}" >&2
+    printf 'sb-doctor: --fix=%s changes global tools or host configuration and needs the user'"'"'s own confirmation; nothing was changed. Ask the user to run it themselves in an interactive terminal.\n' "${DOCTOR_FIX_SCOPE:-all}" >&2
     return 1
   fi
   printf 'sb-doctor: apply --fix=%s? [y/N] ' "${DOCTOR_FIX_SCOPE:-all}" >&2
@@ -373,7 +404,7 @@ doctor_record_reconciler_d10() {
       ready)
         local ev
         ev="$(printf '%s' "$RECONCILER_JSON" | jq -r --arg t "$tool" '.components[]? | select(.component==$t) | .evidence[]?' 2>/dev/null || true)"
-        if printf '%s\n' "$ev" | grep -qxE 'provider_missing|version_drift|unsupported_package_manager|vendor_skip|skill_package_skew|health_identity_unproven'; then
+        if grep -qxE 'provider_missing|version_drift|unsupported_package_manager|vendor_skip|skill_package_skew|health_identity_unproven' <<<"$ev"; then
           record warn "D10-${tool}" "${tool} ready with advisory ($(printf '%s' "$ev" | paste -sd ',' -)) (activation=${activation})"
         else
           record pass "D10-${tool}" "${tool} ready (activation=${activation})"
@@ -414,9 +445,11 @@ doctor_record_reconciler_d10() {
     # Context Mode vendor doctor runs on the default D10 probe path (FAIL when
     # opted in). --deep keeps the Graphify MCP stdio handshake as WARN only.
     if command -v graphify-mcp >/dev/null 2>&1; then
-      timeout 5 graphify-mcp --transport stdio </dev/null >/dev/null 2>&1 \
-        && record pass D10-deep-graphify "graphify-mcp stdio handshake OK" \
-        || record warn D10-deep-graphify "graphify-mcp stdio handshake failed"
+      if sb_run_with_timeout 5 graphify-mcp -- graphify-mcp --transport stdio </dev/null >/dev/null 2>&1; then
+        record pass D10-deep-graphify "graphify-mcp stdio handshake OK"
+      else
+        record warn D10-deep-graphify "graphify-mcp stdio handshake failed"
+      fi
     fi
   fi
   [[ "$any_fail" -eq 0 ]]
@@ -454,12 +487,12 @@ doctor_apply_fixes() {
   for check_id in "${FAILED_CHECK_IDS[@]}"; do
     if [[ "${DOCTOR_FIX_SCOPE:-all}" == "local" ]]; then
       case "$check_id" in
-        D4|D13|D14|D16|D18|D19|D21) continue ;;
+        D4|D13|D14|D16) continue ;;
       esac
     fi
     if [[ -n "${SB_DOCTOR_STUB_HOST_INSTALL:-}" ]]; then
       case "$check_id" in
-        D4|D13|D14|D16|D18|D19|D21)
+        D4|D13|D14|D16)
           printf '%s
 ' "$check_id" >> "${SB_DOCTOR_STUB_HOST_INSTALL}"
           fixed=1
@@ -468,7 +501,7 @@ doctor_apply_fixes() {
       esac
     fi
     case "$check_id" in
-      D13|D14|D16|D18|D19)
+      D13|D14|D16)
         install_script="$(doctor_host_install_script "$runtime" || true)"
         if [[ -n "$install_script" && -x "$install_script" ]]; then
           printf 'sb-doctor: --fix running %s for %s\n' "$install_script" "$check_id" >&2
@@ -496,32 +529,10 @@ doctor_apply_fixes() {
         printf 'sb-doctor: --fix D15 requires shortening Claude agent descriptions\n' >&2
         ;;
       D4)
-        case "$runtime" in
-          cursor) bash "${REPO_ROOT}/scripts/install-cursor.sh" --merge-hooks-only >&2 || true; fixed=1 ;;
-          *)
-            install_script="$(doctor_host_install_script "$runtime" || true)"
-            [[ -n "$install_script" && -x "$install_script" ]] && bash "$install_script" >&2 || true
-            fixed=1
-            ;;
-        esac
-        ;;
-      D21)
-        local csba_fix_scope="global"
-        if [[ -f "${PROJ_ROOT}/.silver-bullet.json" ]]; then
-          csba_fix_scope="$(jq -r '.cursor_sb_agents.agents_install_scope // "global"' "${PROJ_ROOT}/.silver-bullet.json")"
+        install_script="$(doctor_host_install_script "$runtime" || true)"
+        if [[ -n "$install_script" && -x "$install_script" ]]; then
+          bash "$install_script" >&2 || true
         fi
-        local csba_fix_flags=(--fix)
-        if [[ "$csba_fix_scope" == "project" ]]; then
-          csba_fix_flags+=(--project)
-        else
-          csba_fix_flags+=(--global)
-        fi
-        printf 'sb-doctor: --fix running install-cursor-sb-agents.sh for D21\n' >&2
-        # Target the project being doctored, not this checkout — the D21 probe
-        # above already scopes itself with CSBA_REPO_ROOT, and without the same
-        # scoping here --fix writes its config and agents into Silver Bullet.
-        CSBA_REPO_ROOT="$PROJ_ROOT" \
-          bash "${REPO_ROOT}/scripts/install-cursor-sb-agents.sh" "${csba_fix_flags[@]}" >&2 || true
         fixed=1
         ;;
     esac
@@ -535,16 +546,18 @@ run_doctor_checks() {
 
   source_runtime_paths
   runtime="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-claude}}"
-  template_ver="$(resolve_template_config_version)"
-  sb_config="${PROJ_ROOT}/.silver-bullet.json"
-  cache_root="$(plugin_cache_root)"
 
-  # D1 — jq
+  # D1 — jq (every other check parses JSON with jq, so report it and stop here)
   if command -v jq >/dev/null 2>&1; then
     record pass D1 "jq on PATH ($(jq --version 2>/dev/null | head -1))"
   else
     record fail D1 "jq missing — SB hooks fail-open without jq"
+    return 0
   fi
+
+  template_ver="$(resolve_template_config_version)"
+  sb_config="${PROJ_ROOT}/.silver-bullet.json"
+  cache_root="$(plugin_cache_root)"
 
   # D2 — plugin registry
   local reg
@@ -580,9 +593,9 @@ run_doctor_checks() {
 
   # D3 — plugin cache
   current_link="${cache_root}/current"
-  if [[ -L "$current_link" && -d "$(readlink -f "$current_link" 2>/dev/null || true)" ]]; then
+  if [[ -L "$current_link" && -d "$(doctor_realpath "$current_link")" ]]; then
     local resolved
-    resolved="$(readlink -f "$current_link")"
+    resolved="$(doctor_realpath "$current_link")"
     if [[ -f "${resolved}/hooks/hooks.json" ]]; then
       record pass D3 "current symlink → ${resolved}"
     else
@@ -592,22 +605,14 @@ run_doctor_checks() {
     record fail D3 "broken or missing current symlink at ${current_link}"
   fi
 
-  # D4 — host hooks manifest
+  # D4 — host hooks manifest (paths follow the host's own config redirects)
+  local claude_settings="${CLAUDE_CONFIG_DIR:-${SB_RUNTIME_HOME_ROOT}}/settings.json"
+  local codex_config
+  codex_config="$(sb_runtime_codex_home)/config.toml"
   case "$runtime" in
-    cursor)
-      if [[ -f "${HOME}/.cursor/hooks.json" ]] && grep -q 'silver-bullet' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
-        if grep -q 'cursor-hook-bridge.sh' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
-          record pass D4 "Cursor hooks.json references silver-bullet via cursor-hook-bridge.sh"
-        else
-          record fail D4 "Cursor hooks.json has silver-bullet entries without cursor-hook-bridge.sh"
-        fi
-      else
-        record fail D4 "Cursor hooks.json missing SB hook entries"
-      fi
-      ;;
     codex)
-      if [[ -f "${HOME}/.codex/config.toml" ]] && grep -qE \
-        '^\[(plugins|hooks\.state)\."silver-bullet@alo-labs-codex' "${HOME}/.codex/config.toml" 2>/dev/null; then
+      if [[ -f "${codex_config}" ]] && grep -qE \
+        '^\[(plugins|hooks\.state)\."silver-bullet@alo-labs-codex' "${codex_config}" 2>/dev/null; then
         record pass D4 "Codex config.toml references silver-bullet hooks"
       elif codex_skills_only_surface_present; then
         record pass D4 "Codex skills-only surface active; SB hooks intentionally absent"
@@ -616,7 +621,7 @@ run_doctor_checks() {
       fi
       ;;
     claude)
-      if [[ -f "${HOME}/.claude/settings.json" ]] && grep -q 'silver-bullet' "${HOME}/.claude/settings.json" 2>/dev/null; then
+      if [[ -f "${claude_settings}" ]] && grep -q 'silver-bullet' "${claude_settings}" 2>/dev/null; then
         record pass D4 "Claude settings.json references silver-bullet hooks"
       else
         record fail D4 "Claude settings.json missing SB hook entries"
@@ -640,8 +645,9 @@ run_doctor_checks() {
 
   # D6 — config freshness
   if [[ -f "$sb_config" ]]; then
-    proj_ver="$(jq -r '.config_version // .version // "0.0.0"' "$sb_config")"
-    if version_lt "$proj_ver" "$template_ver"; then
+    if ! proj_ver="$(jq -r '.config_version // .version // "0.0.0"' "$sb_config" 2>/dev/null)"; then
+      record fail D6 "project config is not valid JSON (${sb_config})"
+    elif version_lt "$proj_ver" "$template_ver"; then
       record fail D6 "project config_version ${proj_ver} < template ${template_ver}"
     else
       record pass D6 "config_version ${proj_ver} (template ${template_ver})"
@@ -650,27 +656,23 @@ run_doctor_checks() {
     record fail D6 "no .silver-bullet.json to compare"
   fi
 
-  # D7 — template parity
-  local parity_script="${REPO_ROOT}/tests/scripts/test-silver-bullet-template-parity.sh"
-  if [[ -x "$parity_script" ]] || [[ -f "$parity_script" ]]; then
-    if ( cd "$REPO_ROOT" && bash "$parity_script" >/dev/null 2>&1 ); then
-      record pass D7 "silver-bullet.md template parity test passed"
-    else
-      record fail D7 "template parity test failed — run: bash tests/scripts/test-silver-bullet-template-parity.sh"
-    fi
+  # D7 — the project's silver-bullet.md carries every numbered section of Silver
+  # Bullet's template (the repo's own template-parity test measures the plugin
+  # checkout, not this project).
+  local d7_template="${REPO_ROOT}/templates/silver-bullet.md.base" d7_missing="" d7_sec
+  if [[ ! -f "$d7_template" ]]; then
+    record warn D7 "plugin silver-bullet.md template not found; skipped"
+  elif [[ ! -f "${PROJ_ROOT}/silver-bullet.md" ]]; then
+    record fail D7 "no silver-bullet.md to compare under ${PROJ_ROOT} — run /sb:init"
   else
-    record warn D7 "parity test script not found; skipped"
-  fi
-
-  # D8 — Cursor orchestrator rule (Cursor host only; not required on Claude/Codex)
-  if [[ "$runtime" == "cursor" ]]; then
-    if [[ -f "${PROJ_ROOT}/.cursor/rules/silver-orchestrator.mdc" ]]; then
-      record pass D8 ".cursor/rules/silver-orchestrator.mdc present"
+    while IFS= read -r d7_sec; do
+      grep -q "^## ${d7_sec}\\. " "${PROJ_ROOT}/silver-bullet.md" 2>/dev/null || d7_missing="${d7_missing:+${d7_missing}, }§${d7_sec}"
+    done < <(sed -n 's/^## \([0-9][0-9]*[a-z]\{0,1\}\)\. .*/\1/p' "$d7_template")
+    if [[ -z "$d7_missing" ]]; then
+      record pass D7 "project silver-bullet.md has every template section"
     else
-      record fail D8 ".cursor/rules/silver-orchestrator.mdc missing (run sb:migrate or sb:init on Cursor)"
+      record fail D7 "project silver-bullet.md is missing template sections (${d7_missing}) — run /sb:init to update"
     fi
-  else
-    record pass D8 "orchestrator rule N/A (host=${runtime})"
   fi
 
   # D9 — workflow tracker
@@ -682,7 +684,7 @@ run_doctor_checks() {
 
   # D10 — five-tool reconciler (all components + routes)
   # D10-generic is deliberately separate from SB hooks/enforcement readiness.
-  doctor_record_generic_stack || true
+  doctor_record_generic_stack
   doctor_record_reconciler_d10 || true
 
 
@@ -696,7 +698,8 @@ run_doctor_checks() {
     if [[ -f "${REPO_ROOT}/hooks/session-start" ]]; then
       hook_root="${REPO_ROOT}"
     else
-      hook_root="$(readlink -f "${cache_root}/current" 2>/dev/null || echo "${REPO_ROOT}")"
+      hook_root="$(doctor_realpath "${cache_root}/current")"
+      hook_root="${hook_root:-${REPO_ROOT}}"
     fi
     hooks_manifest="${hook_root}/hooks"
     for hook_name in session-start outcomes-check stop-check; do
@@ -722,16 +725,14 @@ run_doctor_checks() {
   if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
     # shellcheck source=../hooks/lib/runtime-paths.sh
     source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
-    mkdir -p "${SB_RUNTIME_STATE_DIR}"
-    if [[ -w "${SB_RUNTIME_STATE_DIR}" ]]; then
+    if mkdir -p "${SB_RUNTIME_STATE_DIR}" 2>/dev/null && [[ -w "${SB_RUNTIME_STATE_DIR}" ]]; then
       record pass D12 "${SB_RUNTIME_STATE_DIR} writable"
     else
       record fail D12 "${SB_RUNTIME_STATE_DIR} not writable"
     fi
   else
     local fallback="${HOME}/.silver-bullet"
-    mkdir -p "$fallback"
-    if [[ -w "$fallback" ]]; then
+    if mkdir -p "$fallback" 2>/dev/null && [[ -w "$fallback" ]]; then
       record pass D12 "${fallback} writable (fallback)"
     else
       record fail D12 "state dir not writable"
@@ -741,20 +742,11 @@ run_doctor_checks() {
   # D13 — cross-host plugin path contamination (host-scoped manifest paths)
   local skill_root hooks_manifest_path agent_cache_dir install_surface_script foreign_plugin_pattern
   install_surface_script="${REPO_ROOT}/scripts/validate-host-install-surface.sh"
-  skill_root="$(readlink -f "${cache_root}/current" 2>/dev/null || true)"
+  skill_root="$(doctor_realpath "${cache_root}/current")"
   foreign_plugin_pattern="$(foreign_host_plugin_path_pattern "$runtime")"
   case "$runtime" in
-    cursor)
-      hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/hooks.json"
-      agent_cache_dir="$(sb_agent_cache_rel cursor)"
-      if [[ -f "$hooks_manifest_path" ]] && grep -qE "$foreign_plugin_pattern" "$hooks_manifest_path" 2>/dev/null; then
-        record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
-      else
-        record pass D13 "no foreign host plugin paths in Cursor hooks"
-      fi
-      ;;
     claude)
-      hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/settings.json"
+      hooks_manifest_path="${claude_settings}"
       agent_cache_dir="$(sb_agent_cache_rel claude)"
       if [[ -f "$hooks_manifest_path" ]] && grep -qE "$foreign_plugin_pattern" "$hooks_manifest_path" 2>/dev/null; then
         record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
@@ -763,7 +755,7 @@ run_doctor_checks() {
       fi
       ;;
     codex)
-      hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/config.toml"
+      hooks_manifest_path="${codex_config}"
       agent_cache_dir="$(sb_agent_cache_rel codex)"
       if [[ -f "$hooks_manifest_path" ]] && grep -qE "$foreign_plugin_pattern" "$hooks_manifest_path" 2>/dev/null; then
         record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
@@ -785,7 +777,7 @@ run_doctor_checks() {
   fi
 
   # D14 — foreign agent namespaces in active plugin cache
-  if [[ -n "$skill_root" && -d "$skill_root" && -x "$install_surface_script" ]]; then
+  if [[ -n "$skill_root" && -d "$skill_root" && -f "$install_surface_script" ]]; then
     if bash "$install_surface_script" --cache-root "$skill_root" --host "$runtime" >/dev/null 2>&1; then
       record pass D14 "plugin cache has no foreign host agent namespaces"
     else
@@ -798,9 +790,9 @@ run_doctor_checks() {
   # D15 — Claude agent description token budget
   if [[ "$runtime" == "claude" ]]; then
     local token_script="${REPO_ROOT}/scripts/validate-claude-agent-token-budget.sh"
-    if [[ -x "$token_script" ]] && bash "$token_script" --repo-root "$REPO_ROOT" >/dev/null 2>&1; then
+    if [[ -f "$token_script" ]] && bash "$token_script" --repo-root "$REPO_ROOT" >/dev/null 2>&1; then
       record pass D15 "Claude agent description token budget within limit"
-    elif [[ -x "$token_script" ]]; then
+    elif [[ -f "$token_script" ]]; then
       record fail D15 "Claude agent descriptions exceed token budget"
     else
       record warn D15 "validate-claude-agent-token-budget.sh not found; skipped"
@@ -810,9 +802,9 @@ run_doctor_checks() {
   fi
 
   # D16 — repo install surface
-  if [[ -x "$install_surface_script" ]] && bash "$install_surface_script" --repo-root "$REPO_ROOT" --host "$runtime" >/dev/null 2>&1; then
+  if [[ -f "$install_surface_script" ]] && bash "$install_surface_script" --repo-root "$REPO_ROOT" --host "$runtime" >/dev/null 2>&1; then
     record pass D16 "repo install surface clean for host=${runtime}"
-  elif [[ -x "$install_surface_script" ]]; then
+  elif [[ -f "$install_surface_script" ]]; then
     record fail D16 "repo install surface bleed — run: bash scripts/install-${runtime}.sh"
   else
     record warn D16 "validate-host-install-surface.sh not found; skipped"
@@ -820,49 +812,12 @@ run_doctor_checks() {
 
   # D17 — host-agnostic SB core (repo checkout)
   local agnostic_script="${REPO_ROOT}/scripts/validate-host-agnostic-core.sh"
-  if [[ -x "$agnostic_script" ]] && bash "$agnostic_script" --repo-root "$REPO_ROOT" >/dev/null 2>&1; then
+  if [[ -f "$agnostic_script" ]] && bash "$agnostic_script" --repo-root "$REPO_ROOT" >/dev/null 2>&1; then
     record pass D17 "SB core is host-agent agnostic"
-  elif [[ -x "$agnostic_script" ]]; then
+  elif [[ -f "$agnostic_script" ]]; then
     record fail D17 "host-specific bleed in SB core — run: bash scripts/validate-host-agnostic-core.sh"
   else
     record warn D17 "validate-host-agnostic-core.sh not found; skipped"
-  fi
-
-  # D18 — Cursor marketplace gitPath (required for /sb command discovery after restart)
-  if [[ "$runtime" == "cursor" ]]; then
-    local registry_sha backend_sha gitpath_root market_cache_link backend_cache_path resolved_current
-    registry_sha="$(resolve_registry_plugin_field "$reg" "silver-bullet@alo-labs" "gitCommitSha")"
-    resolved_current="$(readlink -f "${cache_root}/current" 2>/dev/null || true)"
-    backend_sha="$(find "${HOME}/Library/Application Support/Cursor/logs" -name 'Cursor Plugins*.log' -type f -print0 2>/dev/null \
-      | xargs -0 grep -h 'Adding enabled plugin: silver-bullet from ' 2>/dev/null \
-      | sed -n 's/.*silver-bullet from \([0-9a-f]\{40\}\).*/\1/p' | tail -1 || true)"
-    [[ -n "$backend_sha" ]] || backend_sha="$registry_sha"
-    if [[ -n "$backend_sha" && "$backend_sha" != "null" ]]; then
-      gitpath_root="${HOME}/.cursor/plugins/marketplaces/github.com/alo-exp/silver-bullet/${backend_sha}"
-      market_cache_link="${HOME}/.cursor/plugins/cache/alo-labs-cursor/silver-bullet/${backend_sha}"
-      backend_cache_path="${HOME}/.cursor/plugins/cache/alo-labs-agent-plugins/silver-bullet/${backend_sha}"
-      if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${backend_sha}^{commit}" >/dev/null 2>&1; then
-        if [[ -d "$backend_cache_path" && -f "${backend_cache_path}/.cache-complete" && -f "${backend_cache_path}/commands/sb.md" ]]; then
-          record pass D18 "Cursor backend cache + gitPath ready (${backend_sha:0:8})"
-        elif [[ -L "$market_cache_link" ]] && [[ "$(readlink -f "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]]; then
-          record fail D18 "missing alo-labs-agent-plugins materialized cache for ${backend_sha:0:8} — run: bash scripts/install-cursor.sh"
-        else
-          record fail D18 "missing alo-labs-cursor cache symlink for ${backend_sha:0:8} — run: bash scripts/install-cursor.sh"
-        fi
-      else
-        record fail D18 "missing Cursor gitPath for ${backend_sha:0:8} — /sb commands fail to load — run: bash scripts/install-cursor.sh"
-      fi
-    else
-      record warn D18 "no gitCommitSha in installed_plugins.json — run: bash scripts/install-cursor.sh"
-    fi
-    if [[ -f "${resolved_current}/commands/sb.md" ]]; then
-      record pass D19 "composer /sb:* command stubs present in plugin cache"
-    else
-      record fail D19 "commands/ missing from plugin cache — slash menu will be empty"
-    fi
-  else
-    record pass D18 "Cursor gitPath check N/A (host=${runtime})"
-    record pass D19 "Cursor command stubs N/A (host=${runtime})"
   fi
 
   # D20 — stack compression mutex (five-tool coordinator)
@@ -883,70 +838,27 @@ run_doctor_checks() {
     record warn D20 "stack-compression-coordinator lib missing; skipped"
   fi
 
-  # D21 — Cursor SB custom subagents (cursor_sb_agents; global or project scope)
-  if [[ "$runtime" == "cursor" ]]; then
-    local csba_probe="${REPO_ROOT}/scripts/lib/cursor-sb-agents/probe-global-agents.sh"
-    local csba_check=0 csba_scope="global" csba_agents_dir=""
-    if [[ -f "$sb_config" ]]; then
-      csba_check="$(jq -r '
-        if (.cursor_sb_agents.enabled // false) == true then 1
-        elif (.cursor_sb_agents.enabled_by_user // null) == true
-             and (.cursor_sb_agents.enforcement_suspended // false) != true then 1
-        else 0 end' "$sb_config" 2>/dev/null || echo 0)"
-      csba_scope="$(jq -r '.cursor_sb_agents.agents_install_scope // "global"' "$sb_config" 2>/dev/null || echo global)"
-    fi
-    if [[ "$csba_check" -eq 0 ]]; then
-      record pass D21 "cursor_sb_agents not enabled (N/A)"
-    elif [[ ! -x "$csba_probe" ]]; then
-      record warn D21 "probe-global-agents.sh missing; skipped"
-    else
-      if [[ "$csba_scope" == "project" ]]; then
-        csba_agents_dir="${PROJ_ROOT}/.cursor/agents"
-      else
-        csba_agents_dir="${HOME}/.cursor/agents"
-      fi
-      if CSBA_REPO_ROOT="$PROJ_ROOT" bash "$csba_probe" \
-        --agents-dir "$csba_agents_dir" --repo-root "$PROJ_ROOT" --quiet 2>/dev/null; then
-        record pass D21 "SB custom subagents (${csba_scope}): managed set matches config"
-      else
-        record fail D21 "SB custom subagents missing or stale — run: bash scripts/install-cursor-sb-agents.sh --fix"
-      fi
-    fi
-  else
-    record pass D21 "cursor_sb_agents N/A (host=${runtime})"
-  fi
-
-
-  # D22 — Cursor duplicate LeanCTX MCP servers (lean-ctx + leanctx)
-  if [[ "$runtime" == "cursor" ]]; then
-    local cursor_mcp="${HOME}/.cursor/mcp.json"
-    if [[ -f "$cursor_mcp" ]] \
-      && jq -e '.mcpServers["lean-ctx"] and .mcpServers.leanctx' "$cursor_mcp" >/dev/null 2>&1; then
-      record warn D22 "duplicate LeanCTX MCP servers (lean-ctx + leanctx) — remove lean-ctx, keep leanctx; run: RT_PATCH_LEANCTX=1 python3 scripts/lib/global-toolstack/patch-mcp.py"
-    else
-      record pass D22 "no duplicate LeanCTX MCP servers"
-    fi
-  else
-    record pass D22 "duplicate LeanCTX MCP check N/A (host=${runtime})"
-  fi
-
   doctor_apply_fixes "$runtime"
 }
 
 doctor_print_summary() {
-  if [[ "$FORMAT" == "json" ]]; then
+  if [[ "$FORMAT" == "json" ]] && command -v jq >/dev/null 2>&1; then
     local recon='null'
     if [[ -n "${RECONCILER_JSON:-}" ]]; then
-      recon="$(printf '%s' "$RECONCILER_JSON" | jq -c '.' 2>/dev/null || echo null)"
+      recon="$(printf '%s' "$RECONCILER_JSON" | jq -c '.' 2>/dev/null)"
     fi
+    local deep=false dry_run=false fix_applied=false
+    [[ "$DOCTOR_DEEP" -eq 1 ]] && deep=true
+    [[ "$DOCTOR_DRY_RUN" -eq 1 ]] && dry_run=true
+    [[ "$DOCTOR_FIX_APPLIED" -eq 1 ]] && fix_applied=true
     jq -n \
       --arg schema "2.0.0" \
       --argjson pass "$PASS" --argjson fail "$FAIL" --argjson warn "$WARN" \
-      --argjson deep "$([[ "$DOCTOR_DEEP" -eq 1 ]] && echo true || echo false)" \
-      --argjson dry_run "$([[ "$DOCTOR_DRY_RUN" -eq 1 ]] && echo true || echo false)" \
+      --argjson deep "$deep" \
+      --argjson dry_run "$dry_run" \
       --arg fix_scope "${DOCTOR_FIX_SCOPE:-}" \
       --argjson reconciler "$recon" \
-      --argjson fix_applied "$([[ "$DOCTOR_FIX_APPLIED" -eq 1 ]] && echo true || echo false)" \
+      --argjson fix_applied "$fix_applied" \
       --arg lines "$(printf '%s\n' "${REPORT_LINES[@]}")" \
       '{schema:$schema,pass:$pass,fail:$fail,warn:$warn,deep:$deep,dry_run:$dry_run,fix_applied:$fix_applied,fix_scope:(if $fix_scope=="" then null else $fix_scope end),reconciler:$reconciler,lines:($lines|split("\n"))}'
   else
@@ -968,6 +880,9 @@ main() {
     PASS=0; FAIL=0; WARN=0; REPORT_LINES=(); FAILED_CHECK_IDS=()
     RECONCILER_JSON=""
     DOCTOR_UNKNOWN_KEY=0
+    # The re-run only verifies: applying (and confirming) the fixes a second time
+    # would repeat every installer and reconciler apply.
+    DOCTOR_FIX=0
     run_doctor_checks
   fi
   doctor_print_summary
@@ -980,5 +895,4 @@ main() {
   [[ "$FAIL" -eq 0 ]]
 }
 
-parse_args "$@"
-main
+main "$@"

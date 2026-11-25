@@ -3,7 +3,7 @@
 ## Preflight
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo
+cd /Users/<user>/projects/silver-bullet/repo
 export SB_ROOT="$PWD"
 bash scripts/sb-tri-criteria-e2e.sh preflight --track TC-01
 ```
@@ -11,7 +11,7 @@ bash scripts/sb-tri-criteria-e2e.sh preflight --track TC-01
 ## Start
 
 ```bash
-export SB_MINIMAL_INTENT_WORK_DIR=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_MINIMAL_INTENT_WORK_DIR=/Users/<user>/projects/enterprise-grade-test-app
 bash scripts/sb-tri-criteria-e2e.sh start --track TC-01 --dry-run
 bash scripts/sb-tri-criteria-e2e.sh start --track TC-01
 ```

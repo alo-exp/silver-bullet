@@ -9,7 +9,14 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-DELEGATE="${SB_AGENT_PI_DELEGATE:-${REPO_ROOT}/scripts/agent-pi-delegate.sh}"
+# SB_AGENT_PI_DELEGATE is the "delegation active" flag (=1) that env.sh --export and the Pi
+# delegate set; it must never double as a path. The delegate override is its own variable
+# and must be an absolute path (R8-14).
+DELEGATE="${SB_AGENT_PI_DELEGATE_SCRIPT:-${REPO_ROOT}/scripts/agent-pi-delegate.sh}"
+if [[ "$DELEGATE" != /* ]]; then
+  printf 'ERROR: SB_AGENT_PI_DELEGATE_SCRIPT must be an absolute path: %s\n' "$DELEGATE" >&2
+  exit 1
+fi
 
 [[ -x "$DELEGATE" ]] || { printf 'ERROR: missing delegate: %s\n' "$DELEGATE" >&2; exit 1; }
 
@@ -101,13 +108,6 @@ agent_host_pi_maybe_schedule_quota_retry \
   "$rc" "$captured" "${SB_RFL_QUOTA_HOST:-}" "${SB_RFL_MODEL:-${PI_MODEL:-}}" || true
 
 if [[ -n "$EXPECT_FILE" ]]; then
-  if [[ "$EXPECT_FILE" != /* ]]; then
-    if [[ -n "$WORK_DIR" && -d "$WORK_DIR" ]]; then
-      EXPECT_FILE="$(cd "$WORK_DIR" && pwd)/$(basename "$EXPECT_FILE")"
-    else
-      EXPECT_FILE="$(cd "$(dirname "$EXPECT_FILE")" && pwd)/$(basename "$EXPECT_FILE")"
-    fi
-  fi
   export SB_AGENT_EXPECT_FILE="$EXPECT_FILE"
   if ! agent_host_pi_file_ok "$EXPECT_FILE"; then
     if ! agent_host_pi_should_continue "$rc" "$captured"; then

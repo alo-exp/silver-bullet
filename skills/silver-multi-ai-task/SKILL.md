@@ -2,12 +2,14 @@
 name: silver-multi-ai-task
 description: >
   Reusable SB multi-model orchestration primitive (multi-ai-task-v2 spine). Parallel workers,
-  pool algebra, manifests, dispatch ledger, cost caps, and result index. Cursor host only in v1.
-argument-hint: "<task brief> --output-root <dir> [--ocg-pool none|lite|regular] [--cursor-pool none|default] [--dry-run]"
+  pool algebra, manifests, dispatch ledger, agent and concurrency caps, and result index. Runs on Claude Code and Codex; Cursor is not a host any more and is used only as one backend CLI (cursor-agent) beside the OpenCode-Go pool and the Codex and Claude CLIs.
+argument-hint: "--task-prompt <text> --output-root <dir> [--ocg-pool none|lite|regular] [--cursor-pool none|default] [--dry-run]"
 version: 1.0.0
 ---
 
 # /sb:multi-ai-task — Multi-Model Task Primitive
+
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `skills/` (`${PLUGIN_ROOT}/skills/silver-multi-ai-task/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
 
 **Catalog:** workflow `WF-SILVER-MULTI-AI-TASK` · atomic flow `AF-MULTI-AI-TASK` ·
 flow step `FS-SILVER_MULTI_AI_TASK` · spine `multi-ai-task-v2`.
@@ -15,28 +17,101 @@ flow step `FS-SILVER_MULTI_AI_TASK` · spine `multi-ai-task-v2`.
 Backend-neutral reusable primitive for parallel model lanes. DR-multi-AI and future
 workflows compose this skill; it does **not** own DR phase state or consolidation.
 
-## Host matrix (v1)
+## Host matrix
 
 | Host | Status |
 |------|--------|
-| Cursor | **supported** |
-| Claude Code | packaged-fail-closed (`SB_MULTI_AI_UNSUPPORTED_HOST`) |
-| Codex | packaged-fail-closed (`SB_MULTI_AI_UNSUPPORTED_HOST`) |
+| Claude Code | **supported** |
+| Codex | **supported** |
+| Cursor | **not a host** (error `SB_MULTI_AI_UNSUPPORTED_HOST`: Cursor is no longer a supported host; run from Claude Code or Codex) |
+| Any other / unknown host | fail closed (`SB_MULTI_AI_UNSUPPORTED_HOST`) |
 
-Fail-closed hosts must error **before** preferences, caches, provisioning, writes, or dispatch.
+The host is the coding agent session that runs this CLI. It is detected from the process: Claude Code
+sets `CLAUDECODE`; Codex sets one of `CODEX_SANDBOX`, `CODEX_CI`, `CODEX_THREAD_ID`,
+`CODEX_INTERNAL_ORIGINATOR_OVERRIDE`. `SB_HOST` (`claude`, `codex`) can name the host when the markers are
+missing (a plain terminal). Any other name (`SB_HOST=cursor`, a typo) always fails closed, whatever else is
+set. A real Claude or Codex marker beats a different supported name. `SB_HOST=claude|codex` is your own
+statement and also outranks `CURSOR_*` variables, which are weak markers (a Cursor terminal passes them on
+to the agents started inside it); `CURSOR_*` alone is refused. Unset a stale `SB_HOST` if the gate names a host you are not on.
+
+A run on an unsupported host fails **before** preferences, caches, provisioning, writes or dispatch. A
+dry run is a plan for a run, so it fails the same way (exit 2, nothing written).
+
+## Backends
+
+Every worker is an external CLI process started the same way on every host; none needs a particular host
+tool (no Cursor Task tool, no `.cursor` directory, no host subagent API):
+
+| Backend | CLI | Logical models | If the CLI is missing |
+|---------|-----|----------------|-----------------------|
+| `cursor` | `cursor-agent` (or the `cursor` launcher's `agent`), `SB_CURSOR_BIN` to override | the Cursor pool | those workers fail with `cursor CLI not found (...)` |
+| `ocg` | OpenCode through `scripts/agent-opencode-delegate.sh`, `SB_OPENCODE_BIN` to override | the OCG pools | those workers fail with `opencode CLI not found (...)` |
+| `codex` | `codex exec`, `CODEX_BIN` to override | `gpt-5.6-luna-medium` | `codex CLI not found (...)` |
+| `claude` | `claude --print`, `CLAUDE_BIN` to override | `claude-opus-4.8-medium` | `claude CLI not found (...)` |
+
+A missing CLI is a per-backend error, never a host error: the other backends still run, `status` is
+`partial` when at least one worker succeeds, and the report lists `missing_backends` and a
+`backend_availability` map (each backend's resolved CLI and how to fix it). `--dry-run` reports the same
+availability for the planned pool without starting anything.
+
+No extra consent record is needed: running the skill is the user's explicit opt-in, and the prompt goes to
+the backends the user chose. It installs, wires and enables nothing (`consent.json` is not read or written).
+
+## Under the orchestrator and the hooks
+
+- **Parent mode.** A parent orchestrator session may not run Bash. Delegate the run to a worker
+  (`Agent` on Claude Code, `spawn_agent` on Codex) with the `MULTI-AI-TASK` worker template; the worker
+  runs the CLI. The Claude and Codex workers this skill starts carry `SB_ORCHESTRATOR_WORKER=1` (and
+  `SB_ORCHESTRATOR_PARENT=0`), so a nested session is never mistaken for a parent.
+- **Planning floor.** `dev-cycle-check` does not treat exactly `python3 /abs/path/<plugin>/skills/silver-multi-ai-task/scripts/multi_ai_cli.py ...`
+  (or the deep-research `dr_multi_ai_cli.py`) as an opaque writer, so the run works in a fresh session before the planning
+  skills are recorded and at any flow step. The exemption is narrow: an absolute script path that resolves into the
+  plugin (not a symlink), no option before the script, no `env`/`NAME=`/`PATH=` prefix, chain, pipe or redirect, and a
+  plain literal `--output-root` (once, spelled in full, no `$`, backtick, glob, `~`, quote or `..`). The floor then judges
+  that output root as a recursive write target like any other: a root in source (`src`, `.`, `s"rc"/x`) is held until
+  planning is done, and a dynamic root gets no exemption at all. Deep research without `--output-root` writes below
+  `research/` of the working directory. A task prompt that names `src/app.py` is not a write and is not scanned.
+  Exported `PYTHONPATH`/`PYTHONSTARTUP` are invisible to the hooks, so a script start re-runs the CLI with `python3 -I`
+  before it imports anything but the interpreter's own modules.
+- **Output root.** The hooks cannot see what a Python CLI writes, so the CLI keeps their boundaries
+  itself. Use a project directory such as `.planning/multi-ai/<run-id>/` or `research/<run>/`. The CLI
+  refuses (`OUTPUT_ROOT_NOT_ALLOWED`, exit 2, before any worker starts, in a dry run too) an output root
+  inside Silver Bullet's runtime state or plugin cache, a `.git` directory, the home directory or a parent of
+  it, or the ownership scope of an active agent delegation (its `.planning/agent-<host>/<task>/` evidence
+  directory is allowed). It only ever writes the files listed under *Artifacts* below the output root.
+- **Planning files.** The run never writes the protected planning files (`ROADMAP.md`, `STATE.md`, `*-PLAN.md`
+  ...); `planning-file-guard` is unaffected and still denies direct writes to them.
 
 ## CLI contract
 
+Plan a run first with `--dry-run` (no workers start and nothing is written: it resolves the pool, checks the agent cap, the host and the output root, and looks for each backend CLI):
+
 ```bash
-python3 skills/silver-multi-ai-task/scripts/multi_ai_cli.py \
-  --task-brief task.json \
-  --input-schema schemas/task-input-v1.schema.json \
-  --output-schema schemas/task-output-v1.schema.json \
+python3 "${PLUGIN_ROOT}/skills/silver-multi-ai-task/scripts/multi_ai_cli.py" \
   --output-root .planning/multi-ai/<run-id>/ \
+  --task-prompt "<task brief>" \
   --ocg-pool lite \
   --cursor-pool default \
   --dry-run
 ```
+
+Drop `--dry-run` to dispatch. Flags:
+
+| Flag | Default | Meaning |
+|------|---------|---------|
+| `--output-root DIR` | — | Required for a live run |
+| `--task-prompt TEXT` | `""` | The task; workers receive it as untrusted data (see below) |
+| `--ocg-pool none\|lite\|regular` | `lite` | OpenCode Go pool |
+| `--cursor-pool none\|default` | `default` | Cursor backend pool (the cursor-agent CLI) |
+| `--include-only ID` / `--exclude ID` | — | Repeatable pool edits |
+| `--cursor-subscription auto\|subscribed\|unsubscribed` | `auto` | GLM-5.2 routing |
+| `--max-agents N` | `11` | Unique logical agents allowed (dry-run and live) |
+| `--concurrency N` | `6` | Parallel workers |
+| `--timeout-sec N` | `600` | Per-worker timeout |
+| `--phase-id DR-RETRIEVE\|DR-TRIANGULATE\|DR-CRITIQUE` | none | Optional DR prompt preset |
+
+Without `--phase-id`, workers get neutral `TASK` instructions. A phase preset only selects
+the prompt template; manifests and the result index stay phase-neutral.
 
 ### Pool algebra
 
@@ -44,33 +119,60 @@ See [`reference/pool-algebra.md`](reference/pool-algebra.md). Valid pools:
 `{none,lite,regular} × {none,default}`. Resolution order:
 expand pools → `--include-only` (replace) → `--exclude` → GLM subscription routing.
 
-### Budget defaults
+### Budget
 
-USD 25.00 · 2,000,000 tokens · 11 unique logical agents · concurrency 6.
-Precedence: CLI > project `.silver-bullet/preferences.json` > global preferences > defaults.
+Defaults: 11 unique logical agents · concurrency 6 · USD 25.00 · 2,000,000 tokens.
+Only CLI flags are read in v1 (no preferences files). `--max-agents` is enforced before any
+worker starts, in dry runs and live runs alike (`MAX_AGENTS_EXCEEDED`), and `--concurrency`
+bounds parallel workers. The worker CLIs report no token or price data, so the USD and token
+caps are recorded in the manifest but cannot be metered: manifests say
+`usage_metered: false` and `price_known: false`.
 
-### Does **not** accept
+## Worker safety
 
-- `--mode`
-- `--research-type`
-- DR `phase_id` (neutral work-item manifests only)
+Workers read untrusted material (the task, other models' output, web pages), so they run
+with the least privilege a research task needs:
+
+- Each worker starts in a fresh, empty temporary directory that is deleted afterwards —
+  never in the Silver Bullet install root or your project.
+- The Cursor backend runs without `--force`/`--yolo`; OpenCode runs without `--auto`. Codex runs directly
+  as `codex exec --sandbox read-only` and Claude as `claude --print --permission-mode default`,
+  both with the prompt on stdin, because the agent-codex / agent-claude delegates map their
+  strict mode to `--sandbox danger-full-access` and `acceptEdits`. An inherited
+  `CLAUDE_PERMISSION_MODE` or `SB_AGENT_CERT_RUN` is dropped from the worker environment.
+- Ctrl-C or SIGTERM sent to the dispatcher cancels queued workers (none starts afterwards) and
+  terminates every live worker group.
+- A read-only or non-approving worker cannot browse by shell; web access depends on the host
+  CLI's own built-in tools and is the one capability a research worker keeps.
+- The prompt fences the task and any prior context between nonce-tagged
+  `<<<BEGIN UNTRUSTED ...>>>` / `<<<END UNTRUSTED ...>>>` markers, with a rule never to follow
+  instructions found inside them. Prompts over 100,000 bytes are refused.
+- Each worker runs in its own process group; a timeout terminates the whole group
+  (SIGTERM, then SIGKILL), so CLIs started by wrapper scripts cannot keep running.
+- Model fallback runs only when `SB_CURSOR_MODEL_ALLOW_FALLBACK=1`; otherwise only the
+  primary model (and one retry after a transient network error) runs.
+
+One failing worker never loses the others' results. A live run reports `ok: true` only when
+at least one worker produced an authoritative result; `status` is `completed`, `partial` or
+`failed`.
 
 ## Artifacts (under `--output-root`)
 
 | File | Schema |
 |------|--------|
-| `work-item-manifest.json` | `multi-ai-work-item-manifest-v1` |
-| `dispatch-ledger.json` | `multi-ai-dispatch-ledger-v1` |
+| `work-items/<work-item-id>/multi-ai-work-item-manifest-v1.json` | `multi-ai-work-item-manifest-v1` |
+| `dispatch-ledger.json` | `multi-ai-dispatch-ledger-v1` (one entry per attempt) |
 | `result-index.json` | `multi-ai-result-index-v1` |
-| `run-snapshot.json` | host/capability provenance |
+| `contributions/<work-item-id>.json` | contribution envelopes |
+| `phases/<phase-id>/` | raw worker output and logs |
 
 ## Implementation steps (`AF-MULTI-AI-TASK`)
 
 1. `FS-MULTI-AI-RESOLVE` — pool expand, alias normalize, subscription route
 2. `FS-MULTI-AI-CAPABILITY-PROBE` — backend capability spike / cache
-3. `FS-MULTI-AI-RESERVE` — identity reservation + budget reserve
-4. `FS-MULTI-AI-DISPATCH` — adapter launch (Cursor / OCG)
-5. `FS-MULTI-AI-RECONCILE` — usage reconcile, CAS authoritative attempt
+3. `FS-MULTI-AI-RESERVE` — agent-cap check before dispatch
+4. `FS-MULTI-AI-DISPATCH` — backend launch (Cursor CLI / Codex / Claude / OCG)
+5. `FS-MULTI-AI-RECONCILE` — ledger entries, authoritative attempt per agent
 6. `FS-MULTI-AI-INDEX` — stable `multi-ai-result-index-v1`
 
 ## References

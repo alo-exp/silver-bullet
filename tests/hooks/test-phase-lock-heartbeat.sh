@@ -22,7 +22,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
 fi
 HOOK="$REPO_ROOT/hooks/phase-lock-heartbeat.sh"
-HELPER_SRC="$REPO_ROOT/.planning/scripts/phase-lock.sh"
+HELPER_SRC="$REPO_ROOT/scripts/phase-lock.sh"   # the hooks run the plugin's copy (R3-03)
 
 PASS=0
 FAIL=0
@@ -44,13 +44,11 @@ trap cleanup_all EXIT
 setup() {
   TMPDIR_TEST=$(mktemp -d)
   hook_test_stamp_sb_scaffold "$TMPDIR_TEST"
-  cd "$TMPDIR_TEST"
+  cd "$TMPDIR_TEST" || exit 1
   git init -q
   git config user.email t@t
   git config user.name t
   mkdir -p .planning/scripts
-  cp "$HELPER_SRC" .planning/scripts/phase-lock.sh
-  chmod +x .planning/scripts/phase-lock.sh
   export SB_PHASE_LOCK_FILE="$TMPDIR_TEST/.planning/.phase-locks.json"
   rm -f "$MANIFEST" "$THROTTLE" "${SB_TEST_DIR}/heartbeat-${PHASE_FOREIGN}"
 }
@@ -67,8 +65,9 @@ nope() { printf '  ✗ %s — %s\n' "$1" "$2"; FAIL=$((FAIL+1)); }
 # ── T1: SB_PHASE_LOCK_INHERITED bypass ──────────────────────────────────────
 echo "--- T1: INHERITED → silent exit 0, no throttle file ---"
 setup
-out=$(SB_PHASE_LOCK_INHERITED=true printf '{"session_id":"x"}' \
-  | SB_PHASE_LOCK_INHERITED=true bash "$HOOK" 2>&1)
+# Here-string input: the hook exits before reading stdin, so a printf writer
+# could fail with EPIPE and turn rc non-zero under pipefail.
+out=$(SB_PHASE_LOCK_INHERITED=true bash "$HOOK" <<<'{"session_id":"x"}' 2>&1)
 rc=$?
 [[ "$rc" == "0" ]] && ok "T1: exit 0" || nope "T1: exit 0" "rc=$rc"
 [[ -z "$out" ]] && ok "T1: silent" || nope "T1: silent" "got: $out"
@@ -87,7 +86,7 @@ teardown
 echo "--- T3: throttle stale (missing) → helper called, throttle refreshed ---"
 setup
 # Claim 099 using the current SB runtime via helper directly
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim "$PHASE_OWNED" "$SB_RUNTIME_NAME" "test" >/dev/null 2>&1
+SB_PHASE_LOCK_SESSION="test-$TEST_RUN_ID" bash "$HELPER_SRC" claim "$PHASE_OWNED" "$SB_RUNTIME_NAME" "test" >/dev/null 2>&1
 printf "%s\n" "$PHASE_OWNED" > "$MANIFEST"
 rm -f "$THROTTLE"  # explicitly stale = absent
 hb_before=$(jq -r '."'$PHASE_OWNED'".last_heartbeat_at' "$SB_PHASE_LOCK_FILE")
@@ -102,13 +101,13 @@ hb_after=$(jq -r '."'$PHASE_OWNED'".last_heartbeat_at' "$SB_PHASE_LOCK_FILE")
   && ok "T3: lock last_heartbeat_at advanced" \
   || nope "T3: heartbeat advance" "before=$hb_before after=$hb_after"
 # release
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release "$PHASE_OWNED" "$SB_RUNTIME_NAME" >/dev/null 2>&1
+bash "$HELPER_SRC" release "$PHASE_OWNED" "$SB_RUNTIME_NAME" >/dev/null 2>&1
 teardown
 
 # ── T4: heartbeat throttled when fresh ──────────────────────────────────────
 echo "--- T4: throttle fresh (mtime within 300s) → helper NOT called ---"
 setup
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim "$PHASE_OWNED" "$SB_RUNTIME_NAME" "test" >/dev/null 2>&1
+SB_PHASE_LOCK_SESSION="test-$TEST_RUN_ID" bash "$HELPER_SRC" claim "$PHASE_OWNED" "$SB_RUNTIME_NAME" "test" >/dev/null 2>&1
 printf "%s\n" "$PHASE_OWNED" > "$MANIFEST"
 touch "$THROTTLE"  # fresh mtime
 hb_before=$(jq -r '."'$PHASE_OWNED'".last_heartbeat_at' "$SB_PHASE_LOCK_FILE")
@@ -120,21 +119,21 @@ hb_after=$(jq -r '."'$PHASE_OWNED'".last_heartbeat_at' "$SB_PHASE_LOCK_FILE")
 [[ "$hb_after" == "$hb_before" ]] \
   && ok "T4: lock last_heartbeat_at UNCHANGED (helper not called)" \
   || nope "T4: throttled call" "lock advanced — throttle didn't suppress"
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release "$PHASE_OWNED" "$SB_RUNTIME_NAME" >/dev/null 2>&1
+bash "$HELPER_SRC" release "$PHASE_OWNED" "$SB_RUNTIME_NAME" >/dev/null 2>&1
 teardown
 
 # ── T5: helper not-owned does not block ─────────────────────────────────────
 echo "--- T5: manifest entry not owned by current runtime → warn but exit 0 ---"
 setup
 # Have opencode claim 098; manifest says we want to heartbeat 098 but don't own it.
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim "$PHASE_FOREIGN" opencode "owned-by-opencode" >/dev/null 2>&1
+bash "$HELPER_SRC" claim "$PHASE_FOREIGN" opencode "owned-by-opencode" >/dev/null 2>&1
 printf "%s\n" "$PHASE_FOREIGN" > "$MANIFEST"
 rm -f "${SB_TEST_DIR}/heartbeat-${PHASE_FOREIGN}"
 out=$(printf '{"session_id":"test-%s"}' "$TEST_RUN_ID" | bash "$HOOK" 2>&1)
 rc=$?
 [[ "$rc" == "0" ]] && ok "T5: exit 0 even on non-owner" || nope "T5: exit 0" "rc=$rc"
 # Stderr may contain warning — non-blocking is the contract
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release "$PHASE_FOREIGN" opencode >/dev/null 2>&1
+bash "$HELPER_SRC" release "$PHASE_FOREIGN" opencode >/dev/null 2>&1
 teardown
 
 # ── Summary ─────────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# P1-1: Thinned composer SKILL.md must match rendered agent bundles (claude/codex/cursor).
+# P1-1: Thinned composer SKILL.md must match rendered agent bundles (claude/codex).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -10,7 +10,7 @@ PASS=0
 FAIL=0
 
 COMPOSERS=(feature ui devops bugfix deep-research release)
-AGENTS=(claude codex cursor)
+AGENTS=(claude codex)
 
 TMP_BASE="$(mktemp -d)"
 trap 'rm -rf "$TMP_BASE"' EXIT
@@ -23,10 +23,23 @@ strip_frontmatter() {
   awk 'BEGIN{f=0} /^---$/{f++; next} f>=2 {print}'
 }
 
+# The one rewrite a host render applies to a composer body: the plugin-root definition and the
+# ${PLUGIN_ROOT}/skills/... references follow the host's install layout (render-agent-bundle.py).
+# The canonical body is compared after that same substitution, so every other difference is still drift.
+apply_host_root() {
+  python3 -I -B -c '
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("rab", sys.argv[1])
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+sys.stdout.write(mod.rewrite_plugin_root_paths(sys.stdin.read(), sys.argv[2]))
+' "$RENDER" "$1"
+}
+
 assert_body_parity() {
-  local label="$1" canonical="$2" bundle="$3"
+  local label="$1" canonical="$2" bundle="$3" agent="$4"
   local c_body b_body
-  c_body="$(strip_frontmatter <"$canonical")"
+  c_body="$(strip_frontmatter <"$canonical" | apply_host_root "$agent")"
   b_body="$(strip_frontmatter <"$bundle")"
   if [[ "$c_body" == "$b_body" ]]; then
     echo "PASS: $label body parity"
@@ -62,15 +75,8 @@ for agent in "${AGENTS[@]}"; do
     skill="silver-${comp}"
     canonical="${REPO_ROOT}/skills/${skill}/SKILL.md"
     bundle_dir="sb-${comp}"
-    if [[ "$agent" == "claude" || "$agent" == "cursor" ]]; then
+    if [[ "$agent" == "claude" ]]; then
       bundle_dir="sb:${comp}"
-    fi
-    # Cursor host-bundles omit command-stub-covered composers (slash commands own the route).
-    # Cursor command stubs use plain Markdown filenames (sb-feature.md).
-    if [[ "$agent" == "cursor" && -f "${REPO_ROOT}/plugins/silver-bullet/commands/sb-${comp}.md" ]]; then
-      echo "PASS: ${skill} omitted from cursor bundle (command stub owns route)"
-      PASS=$((PASS + 1))
-      continue
     fi
     rendered="${dest}/${bundle_dir}/SKILL.md"
     bundle="$(sb_agent_bundle_root "$REPO_ROOT" "$agent")/${bundle_dir}/SKILL.md"
@@ -96,7 +102,7 @@ for agent in "${AGENTS[@]}"; do
       FAIL=$((FAIL + 1))
     fi
 
-    assert_body_parity "${skill} canonical vs ${agent}" "$canonical" "$bundle"
+    assert_body_parity "${skill} canonical vs ${agent}" "$canonical" "$bundle" "$agent"
     assert_name_alias "${skill} name line (${agent})" "$canonical" "$bundle"
   done
 done

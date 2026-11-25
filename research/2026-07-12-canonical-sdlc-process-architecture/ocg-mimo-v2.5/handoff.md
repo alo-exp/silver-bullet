@@ -38,4 +38,4 @@
 4. Should there be a "tooling recommendation matrix" alongside the process model?
 
 ### Files Location
-All artifacts written to: `/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/`
+All artifacts written to: `/Users/<user>/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/`

@@ -4,7 +4,7 @@
 # Prerequisites (operator):
 #   - Claude CLI installed; token gateway (cc-switch / MiniMax) per CLAUDE-TUI-PROTOCOL.md
 #   - agentmemory on :3111; graphify on PATH
-#   - Fixture: /Users/shafqat/projects/enterprise-grade-test-app-round9-claude @ enterprise-e2e/round-9-claude
+#   - Fixture: <sb-repo>/../../enterprise-grade-test-app-round9-claude (sibling checkout) @ enterprise-e2e/round-9-claude
 #   - tmux recommended for detached runs (TTY honest)
 #
 # Usage:
@@ -68,7 +68,7 @@ export SB_E2E_ISOLATED_CLAUDE_CONFIG="${SB_E2E_ISOLATED_CLAUDE_CONFIG:-1}"
 
 export SB_E2E_LEDGER_FILE="${SB_E2E_LEDGER_FILE:-${MAIN}/.planning/enterprise-e2e/ROUND-9-LEDGER.md}"
 export SB_E2E_ROW_PASS_REGISTRY="${SB_E2E_ROW_PASS_REGISTRY:-${MAIN}/.planning/enterprise-e2e/.row-pass-registry.json}"
-export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app-round9-claude}"
+export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-$(cd "${SB_ROOT}/../.." && pwd)/enterprise-grade-test-app-round9-claude}"
 export SB_E2E_TEST_APP_ROUND=9
 export SB_E2E_TEST_APP_BRANCH="${SB_E2E_TEST_APP_BRANCH:-enterprise-e2e/round-9-claude}"
 export SB_E2E_TEST_APP_BASELINE_SHA="${SB_E2E_TEST_APP_BASELINE_SHA:-8482e60}"
@@ -163,8 +163,11 @@ run_matrix() {
   source "${SB_ROOT}/tests/live/lib/detach-background.sh"
   printf '\n=== R9 Gate3 matrix %s rows=%s ===\n' "$(utc_now)" "${ROWS[*]}"
   if sb_detach_has_controlling_tty; then
-    exec env RTK_DISABLED=1 bash scripts/run-enterprise-e2e-live-test.sh "${ROWS[@]}" \
+    # `exec` in a pipeline only replaces the pipeline's subshell, so run in the foreground
+    # and return: otherwise control falls through to the detached launch below (double run).
+    env RTK_DISABLED=1 bash scripts/run-enterprise-e2e-live-test.sh "${ROWS[@]}" \
       2>&1 | tee -a "$SB_E2E_MATRIX_LOG"
+    return 0
   fi
   driver_log="${SB_ROOT}/.e2e-r9-gate3-driver.log"
   driver_pid="$(sb_run_detached_pty --log "$driver_log" -- \

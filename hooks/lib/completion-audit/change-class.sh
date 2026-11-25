@@ -3,7 +3,38 @@
 # Classify the pending change set and subset required_deploy for docs|site|config.
 # Full floor remains for src|mixed|release. Interim until work-spec/Validation floors land.
 
-# Collect changed paths relative to merge-base (or working tree when no base).
+# _ca_change_base ROOT: the commit the pending change set is measured from, or nothing.
+# In order: the remote default branch (origin/HEAD), the branch's upstream, a local or remote
+# main/master/develop/trunk. A base equal to HEAD means "nothing new on this branch", so on the default
+# branch itself the unpushed commits (upstream..HEAD) are the change set instead; with no usable base
+# nothing is printed and the caller falls back to the full floor (R1-10).
+_ca_change_base() {
+  local root="$1" ref base="" head
+  head="$(git -C "$root" rev-parse HEAD 2>/dev/null || true)"
+  for ref in "$(git -C "$root" symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null || true)" \
+    main master develop trunk origin/main origin/master origin/develop origin/trunk; do
+    [[ -n "$ref" ]] || continue
+    base="$(git -C "$root" merge-base HEAD "$ref" 2>/dev/null || true)"
+    [[ -n "$base" && "$base" != "$head" ]] && break
+    base=""
+  done
+  if [[ -z "$base" ]]; then
+    # on the default branch itself: what was committed and not yet pushed
+    base="$(git -C "$root" merge-base HEAD '@{upstream}' 2>/dev/null || true)"
+  fi
+  printf '%s' "$base"
+}
+
+# ca_change_base_unknown ROOT: committed work exists but cannot be measured (no remote default
+# branch, no upstream, no main/master): the caller keeps the full floor instead of trusting a
+# working-tree-only diff.
+ca_change_base_unknown() {
+  local root="${1:-$PWD}"
+  [[ -z "$(_ca_change_base "$root")" ]] &&
+    [[ "$(git -C "$root" rev-list --count HEAD 2>/dev/null || echo 0)" -gt 1 ]]
+}
+
+# Collect changed paths relative to the base (see _ca_change_base) plus the working tree.
 # Prints one path per line. Fail-soft → empty (caller treats as mixed/full).
 ca_collect_changed_paths() {
   local root="${1:-$PWD}"
@@ -11,10 +42,7 @@ ca_collect_changed_paths() {
 
   [[ -d "$root/.git" || -d "$(git -C "$root" rev-parse --git-dir 2>/dev/null)" ]] || return 0
 
-  base="$(git -C "$root" merge-base HEAD main 2>/dev/null || true)"
-  if [[ -z "$base" ]]; then
-    base="$(git -C "$root" merge-base HEAD master 2>/dev/null || true)"
-  fi
+  base="$(_ca_change_base "$root")"
   if [[ -n "$base" ]]; then
     paths="$(git -C "$root" diff --name-only "$base"...HEAD 2>/dev/null || true)"
   fi
@@ -27,54 +55,56 @@ ca_collect_changed_paths() {
 }
 
 # Classify a single path → docs|site|config|src|release|other
+# The configured src_pattern is checked first, against the path with a leading slash (git prints
+# repository-relative paths, so '/src/' must match a top-level src/ too); site and docs trees only
+# count as light for documentation-type files, so code under a docs/ or site/ directory is not
+# downgraded (R1-11).
 ca_classify_path() {
   local path="$1"
   local src_pattern="${2:-/src/}"
+  local noncode=false
 
   # Release / version / plugin packaging surfaces (host-agnostic: no host plugin literals)
-  if printf '%s' "$path" | grep -qE '(^|/)(package\.json|package-lock\.json|plugins/silver-bullet/|scripts/pre-release-gate\.sh|scripts/sync-release|scripts/verify-release)'; then
+  if grep -qE '(^|/)(package\.json|package-lock\.json|plugins/silver-bullet/|scripts/pre-release-gate\.sh|scripts/sync-release|scripts/verify-release)' <<<"$path"; then
     printf 'release'
     return 0
   fi
   # Marketplace plugin dirs: .*-plugin/ without host-specific literals
-  if printf '%s' "$path" | grep -qE '(^|/)\.[a-z0-9-]+-plugin/'; then
+  if grep -qE '(^|/)\.[a-z0-9-]+-plugin/' <<<"$path"; then
     printf 'release'
     return 0
   fi
-  if printf '%s' "$path" | grep -qE '(^|/)CHANGELOG\.md$|(^|/)plugins/.*/CHANGELOG\.md$'; then
+  if grep -qE '(^|/)CHANGELOG\.md$|(^|/)plugins/.*/CHANGELOG\.md$' <<<"$path"; then
     printf 'release'
-    return 0
-  fi
-
-  # Site
-  if printf '%s' "$path" | grep -qE '(^|/)site/'; then
-    printf 'site'
     return 0
   fi
 
   # Config (project + hook wiring; not application src)
-  if printf '%s' "$path" | grep -qE '(^|/)\.silver-bullet\.json$|(^|/)hooks\.json$|(^|/)\.[a-z0-9_-]+/hooks\.json$|(^|/)mcp\.json$|(^|/)templates/silver-bullet\.config'; then
+  if grep -qE '(^|/)\.silver-bullet\.json$|(^|/)hooks\.json$|(^|/)\.[a-z0-9_-]+/hooks\.json$|(^|/)mcp\.json$|(^|/)templates/silver-bullet\.config' <<<"$path"; then
     printf 'config'
     return 0
   fi
 
-  # Src via configured pattern / common product roots (before generic .md docs).
-  if declare -f dcc_matches_src_scope >/dev/null 2>&1; then
-    if dcc_matches_src_scope "$path" "$src_pattern"; then
-      printf 'src'
-      return 0
-    fi
-  elif printf '%s' "$path" | grep -qE "$src_pattern"; then
+  # Src via configured pattern / common product roots.
+  if grep -qE "$src_pattern" <<<"/$path"; then
     printf 'src'
     return 0
   fi
-  if printf '%s' "$path" | grep -qE '(^|/)(hooks|skills|scripts|tests|agents|host-bundles|templates|plugins)/'; then
+  if grep -qE '(^|/)(hooks|skills|scripts|tests|agents|host-bundles|templates|plugins)/' <<<"$path"; then
     printf 'src'
     return 0
   fi
 
+  grep -qiE '\.(md|markdown|txt|rst|html?|css|svg|png|jpe?g|gif|ico|webp|woff2?|ttf|pdf)$' <<<"$path" && noncode=true
+
+  # Site
+  if [[ "$noncode" == true ]] && grep -qE '(^|/)site/' <<<"$path"; then
+    printf 'site'
+    return 0
+  fi
+
   # Docs (docs tree + top-level project markdown — not skill/hook markdown)
-  if printf '%s' "$path" | grep -qE '(^|/)docs/|(^|/)README\.md$|(^|/)AGENTS\.md$|(^|/)silver-bullet\.md$|(^|/)CHANGELOG\.md$'; then
+  if [[ "$noncode" == true ]] && grep -qE '(^|/)docs/|(^|/)README\.md$|(^|/)AGENTS\.md$|(^|/)silver-bullet\.md$' <<<"$path"; then
     printf 'docs'
     return 0
   fi
@@ -92,19 +122,19 @@ ca_detect_change_class() {
 
   if [[ -n "$config_file" && -f "$config_file" ]] && command -v jq >/dev/null 2>&1; then
     src_pattern="$(jq -r '.project.src_pattern // "/src/"' "$config_file" 2>/dev/null || echo "/src/")"
-    if ! printf '%s' "$src_pattern" | grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$'; then
+    if ! grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$' <<<"$src_pattern"; then
       src_pattern="/src/"
     fi
   fi
 
   # Release delivery commands always use the full release floor.
-  if printf '%s' "${cmd_first_line:-}" | grep -qE '\bgh release create\b'; then
+  if grep -qE '\bgh release create\b' <<<"${cmd_first_line:-}"; then
     ca_change_class="release"
     return 0
   fi
 
   paths="$(ca_collect_changed_paths "$root")"
-  if [[ -z "$(printf '%s' "$paths" | sed '/^$/d')" ]]; then
+  if [[ -z "$(printf '%s' "$paths" | sed '/^$/d')" ]] || ca_change_base_unknown "$root"; then
     ca_change_class="mixed"
     return 0
   fi
@@ -136,11 +166,10 @@ ca_detect_change_class() {
     ca_change_class="site"
   elif [[ "$has_config" == true && "$has_docs" == false && "$has_site" == false ]]; then
     ca_change_class="config"
-  elif [[ "$has_docs" == true || "$has_site" == true || "$has_config" == true ]]; then
-    # Pure docs/site/config mix — keep light floor; label by dominant docs.
-    ca_change_class="docs"
   else
-    ca_change_class="mixed"
+    # Every non-empty path sets one flag, so only a pure docs/site/config mix remains here —
+    # keep the light floor; label by dominant docs.
+    ca_change_class="docs"
   fi
 }
 

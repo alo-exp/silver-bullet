@@ -1,15 +1,20 @@
 # Enterprise E2E Live Test — Operator Runbook
 
+**Path placeholders (used throughout this document):**
+
+- `<sb-repo>`: your Silver Bullet checkout (the repo that contains `scripts/` and `hooks/`).
+- `<test-app>`: your `enterprise-grade-test-app` checkout. By default the harness expects it as a sibling two levels above `<sb-repo>` (`<sb-repo>/../../enterprise-grade-test-app`); override with `SB_TEST_ENTERPRISE_APP_ROOT`.
+
 Optional live validation of Silver Bullet against the `enterprise-grade-test-app` fixture via **interactive Claude TUI**. Not run in default CI or `bash tests/run-all-tests.sh` unless explicitly opted in.
 
-**See also:** `docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md` (staged Tier A/B/C gates — **share with Codex, Cursor, Claude agents**); `docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md` (effectiveness scoring and iteration criteria).
+**See also:** `docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md` (staged Tier A/B/C gates — **share with Codex and Claude agents**); `docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md` (effectiveness scoring and iteration criteria).
 
 ---
 
 ## Opt-in
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo
+cd <sb-repo>
 export SB_ENTERPRISE_E2E_LIVE=1
 bash scripts/run-enterprise-e2e-live-test.sh
 ```
@@ -28,8 +33,8 @@ Included in `run-all-tests.sh` only when `SB_ENTERPRISE_E2E_LIVE=1`.
 
 | Resource | Path |
 |----------|------|
-| **SB repo (fixes, release)** | `/Users/shafqat/projects/silver-bullet/repo` |
-| **Test app (Claude CWD)** | `/Users/shafqat/projects/enterprise-grade-test-app` |
+| **SB repo (fixes, release)** | `<sb-repo>` |
+| **Test app (Claude CWD)** | `<test-app>` |
 | **Workflow matrix** | `enterprise-grade-test-app/docs/WORKFLOW_E2E_MATRIX.md` |
 | **TUI protocol** | `.planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md` |
 | **Round 1 ledger** | `.planning/enterprise-e2e/ROUND-1-LEDGER.md` |
@@ -48,6 +53,12 @@ Round 1/2 learnings:
 - **`SB_E2E_MATRIX_CLEAN_ENV=0`** (default) — inherit caller shell auth. Do **not** use `env -i` unless debugging OAuth conflicts.
 - **Never** run `claude auth login`, `claude auth logout`, `claude /logout`, or `setup-token` during live runs.
 - Network errors (`ENOTFOUND`, `ConnectionRefused`) are **not** auth failures — retry with backoff; do not re-diagnose auth.
+
+---
+
+## Codex smoke check: hook event keys
+
+`hooks/hooks.json` registers two event keys that are not verified live on Codex: `SubagentStart` and `PostToolUseFailure` (the review-fix ladder's observation of a rejected spawn). The installer and `hooks/codex-hook-adapter.sh` carry event names generically and offline tests pass with both keys, but whether Codex accepts them without a warning is unverified. On the Codex smoke run, confirm that hook loading shows no unknown-event error and that the install still completes; the ladder itself is disabled on Codex.
 
 ---
 
@@ -77,23 +88,10 @@ and use the fixed model mapping below:
 |------|------------------|----------------|
 | Codex | `/sb:agent-codex` | **GPT-5.6 Luna Low** |
 | Claude | `/sb:agent-claude` | **Haiku 4.5** |
-| Cursor | `/sb:agent-cursor` | **Composer 2.5** |
 
 This Claude runbook therefore uses `/sb:agent-claude` with **Haiku 4.5** for live
 Claude rows. Raw host CLI invocations or silent model substitutions do not count as live
-wrapper evidence. For the current release cycle, defer Cursor live five-tool scenarios
-until the separate Cursor five-tool repair session reports completion and its changes are
-available in the fixture under test.
-
----
-
-## Orchestrator / Cursor operator notes
-
-### Subagent model policy
-
-- Parent orchestrator and enterprise E2E workers: use **Composer 2.5** (`composer-2.5`) for all Task/subagent delegations.
-- **Do not** use Composer 2.5 Fast (`composer-2.5-fast`) for subagent work.
-- Ladder nominal model slugs in `review-fix-ladder.py` are separate (Claude TUI matrix); this policy applies to **Cursor Task subagents only**.
+wrapper evidence.
 
 ---
 
@@ -124,13 +122,13 @@ tail -f .e2e-tui-watch-findings.jsonl
 ## Preflight (each round)
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo
+cd <sb-repo>
 bash scripts/run-enterprise-e2e-live-test.sh --preflight-only
 # or manually:
 bash tests/e2e-live/hook-delivery-preflight.sh
 bash scripts/install-claude.sh
 
-cd /Users/shafqat/projects/enterprise-grade-test-app
+cd <test-app>
 git status
 npm test
 ```
@@ -150,7 +148,7 @@ Record test-app `git rev-parse HEAD` in the round ledger header.
 
 ### Session-start from test app
 
-Branch-scoped session-start runs from **test app CWD** via cursor-hook-bridge / `SILVER_BULLET_SESSION_SOURCE=startup`. Confirm `~/.claude/.silver-bullet/branch` matches the active fixture branch before matrix rows.
+Branch-scoped session-start runs from **test app CWD** via `SILVER_BULLET_SESSION_SOURCE=startup`. Confirm `~/.claude/.silver-bullet/branch` matches the active fixture branch before matrix rows.
 
 ### Recommended tools (opt in on both repos)
 
@@ -177,7 +175,7 @@ Agents needing verbatim output can still prefix `RTK_DISABLED=1 git diff main...
 ## Session 0 — `/sb:init`
 
 ```bash
-cd /Users/shafqat/projects/enterprise-grade-test-app
+cd <test-app>
 claude
 ```
 
@@ -239,11 +237,11 @@ Classify failures from log snippets: `bash scripts/lib/matrix-failure-class.sh .
 Minimum **2 consecutive clean rounds**:
 
 1. **22/22 PASS** in ledger (graphify + agentmemory refs)
-2. **`/sb:review-fix-ladder`** — 8 rungs, 2 consecutive clean verify passes each
+2. **`/sb:review-fix-ladder`** — the native Claude ladder (default 6 rungs; 2 consecutive captured clean reviews each)
 3. **`bash tests/run-all-tests.sh`** → 0 failures
 4. **`graphify update .`** in SB repo post-fixes
 5. No open MUST-FIX issues
-Harness (optional): `SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS=1 bash scripts/lib/enterprise-e2e-consecutive-rounds-check.sh --host <claude|codex|cursor>` enforces **2/2** strict-clean PASS from the host gate file pair.
+Harness (optional): `SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS=1 bash scripts/lib/enterprise-e2e-consecutive-rounds-check.sh --host <claude|codex>` enforces **2/2** strict-clean PASS from the host gate file pair.
 
 ---
 
@@ -254,8 +252,8 @@ Use this in a **new** Claude session with **CWD = test app**:
 ```
 Enterprise E2E live test — Silver Bullet validation on enterprise-grade-test-app.
 
-Working directory: /Users/shafqat/projects/enterprise-grade-test-app
-SB plugin: install from /Users/shafqat/projects/silver-bullet/repo via bash scripts/install-claude.sh (latest release).
+Working directory: <test-app>
+SB plugin: install from <sb-repo> via bash scripts/install-claude.sh (latest release).
 
 Constraints:
 - API key auth only — do NOT login or logout
@@ -269,7 +267,7 @@ If resuming matrix: tell me the next row number from ROUND-1-LEDGER.md and paste
 Operator monitors in parallel:
 - SB repo: bash scripts/monitor-enterprise-e2e-matrix.sh
 - SB repo: bash scripts/watch-enterprise-e2e-tui.sh
-- Matrix log: /Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log
+- Matrix log: <sb-repo>/.e2e-matrix-live.log
 
 On 429/Token Plan: wait 1 minute and retry. On SB hook fix: reinstall plugin before re-running failed rows.
 ```

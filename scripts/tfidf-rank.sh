@@ -12,6 +12,8 @@ trap 'exit 0' ERR
 QUERY="${1:-}"
 CHUNK_LINES=40                                 # force-split interval when no blank line found
 MAX_CHUNK_BYTES="${SB_CHUNK_BYTES:-1024}"      # passed by semantic-compress.sh; default matches spec
+# Used in arithmetic below: a non-number would be evaluated as an expression (R3-04).
+[[ "$MAX_CHUNK_BYTES" =~ ^[0-9]{1,9}$ ]] || MAX_CHUNK_BYTES=1024
 
 # Read file paths from stdin (bash 3.2 compatible — no mapfile)
 FILES=()
@@ -113,4 +115,4 @@ END {
     printf "%.6f\t%s\t%s\t%s\t%s\n", score, chunks_file[i], chunks_start[i], chunks_end[i], chunks_raw[i]
   }
 }
-' "$TMP_CHUNKS" | sort -t$'\t' -k1 -rn
+' "$TMP_CHUNKS" | LC_ALL=C sort -t$'\t' -k1,1gr -k2,2 -k3,3n

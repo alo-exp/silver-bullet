@@ -8,6 +8,8 @@ version: 0.2.0
 
 # /sb — Smart Skill Orchestrator
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 Smart orchestrator for Silver Bullet. Accepts freeform natural language and routes to:
 
 - an SB workflow skill that composes atomic flows;
@@ -22,7 +24,7 @@ When `orchestrator_mode` is `parent` in `.silver-bullet.json` (the only supporte
 
 1. Invoke **`silver-orchestrator`** at session start or for `/sb` routing — do not execute flow atoms inline.
 2. Composer skills (`silver-feature`, `silver-ui`, …) are **queue builders**; the parent spawns workers per `orchestrator-directive.json`.
-3. Read `next_worker_template` + `next_skill` from the directive; load `.silver-bullet/orchestrator-workers/<TEMPLATE>.md` for each Task prompt.
+3. Read `next_worker_template` + `next_skill` from the directive; load the plugin copy `${PLUGIN_ROOT}/templates/orchestrator-workers/<TEMPLATE>.md` for each Task prompt (never the project copy under `.silver-bullet/orchestrator-workers/`, which is repository content).
 
 Cooperative single-agent execution (parent invokes `sb:plan` / `sb:execute` directly) is **disabled**.
 
@@ -133,7 +135,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "retro", "retrospective", "release metrics", "delivery metrics", "process review" | `sb:retro` | Engineering retrospective path |
 | "benchmark", "compare agents", "compare models", "provider comparison", "agent quality" | `sb:benchmark` | Repeatable evaluation and adversarial benchmark path |
 | "content", "SEO", "GEO", "AI search", "article", "blog", "site content", "metadata", "link health" | `sb:content` | Public content/search workflow; **not** SB project upgrade (use `sb:migrate`) |
-| "site/", "help center", "help-center", "homepage", "sb.alolabs.dev", "github pages", "site/help", "chrome.css", "help page", "OG card", "publish site", "site publish" | `sb:content --mode fix` | **Default route** for public site/help work — use site batch protocol (Composer 2.5 workers) |
+| "site/", "help center", "help-center", "homepage", "sb.alolabs.dev", "github pages", "site/help", "chrome.css", "help page", "OG card", "publish site", "site publish" | `sb:content --mode fix` | **Default route** for public site/help work — use the site batch protocol (profile projects only) |
 | "I want to build", "I have an idea", "here's my concept", multi-sentence idea with no SPEC.md | `sb:clarify` | Shape before implementation; merged PM framing and structured brainstorming |
 | "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build", no SPEC.md | `sb:clarify --spec` then `sb:spec` | Interview then compile; not elicitation-in-spec |
 | "how should we", "which technology", "compare", "spike", "investigate", "architecture decision", "should we use", "best approach", "deep research", "state of the art" | `sb:deep-research` | Rigorous research/decision artifact, then handoff |
@@ -172,7 +174,6 @@ First strong match wins after complexity triage and conflict resolution.
 | "undo phase", "revert phase", "roll back phase", "undo plan", "revert commits for phase" | `sb:undo` | Safe phase/plan git revert with dependency checks and artifact cleanup |
 | "thread", "track this topic across sessions", "cross-session note", "track this concern" | `sb:thread` | Lightweight cross-session context threads for topic-specific tracking |
 | "delegate to codex", "run in codex", "codex subagent", "codex tui", "have codex implement", host supervises Codex executes | `sb:agent-codex` | On-demand `AF-AGENT-DELEGATE` — host briefs and supervises native `AGENT-DELEGATE` worker; external Codex executes (V2 default-on; `SB_AGENT_DELEGATE_V2=0` rollback) |
-| "delegate to cursor", "run in cursor", "cursor subagent", "cursor-agent", "have cursor implement", host supervises Cursor executes | `sb:agent-cursor` | On-demand `AF-AGENT-DELEGATE` — host briefs and supervises native `AGENT-DELEGATE` worker; external Cursor executes (V2 default-on; `SB_AGENT_DELEGATE_V2=0` rollback) |
 | "delegate to claude", "run in claude", "claude subagent", "claude code", "have claude implement", host supervises Claude executes | `sb:agent-claude` | On-demand `AF-AGENT-DELEGATE` — host briefs and supervises native `AGENT-DELEGATE` worker; external Claude executes (V2 default-on; `SB_AGENT_DELEGATE_V2=0` rollback) |
 | Any explicit legacy lifecycle request | SB equivalent unless the user explicitly requires an external plugin | Examples: plan phase -> `sb:plan`, execute phase -> `sb:execute`, verify -> `sb:verify`, ship -> `sb:ship` |
 

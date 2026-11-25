@@ -3,18 +3,33 @@ name: "sb:deep-research-multi-ai"
 title: "Deep Research Multi AI"
 description: >
   Opt-in multi-model deep research. Composes canonical silver-deep-research engine,
-  new /sb:multi-ai-task primitive, and Cursor/OCG backends. Dual serverless HTML reports.
+  new /sb:multi-ai-task primitive, and the Cursor-CLI/OCG/Codex/Claude backends. Dual serverless HTML reports. Runs on Claude Code and Codex; Cursor is a backend CLI only, not a host.
 argument-hint: "<research question> [--mode deep|ultradeep] [--research-type default|solution-landscape|solution-compare] [--dry-run]"
 version: 1.0.0
 ---
 
 # /sb:deep-research-multi-ai — Multi-Model Deep Research
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-deep-research-multi-ai/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 **Catalog:** workflow `WF-SILVER-DEEP-RESEARCH-MULTI-AI` · flow step
 `FS-SILVER_DEEP_RESEARCH_MULTI_AI` · composes `AF-MULTI-AI-TASK` per eligible phase.
 
 Opt-in sibling of [`silver-deep-research`](../silver-deep-research/SKILL.md). Does **not**
 replace single-agent `/sb:deep-research` or revive removed `FS-SILVER_MULTI_AI` MultAI surfaces.
+
+**Availability:** every parallel phase runs through `/sb:multi-ai-task`, so the host matrix is the same:
+Claude Code and Codex are supported hosts; Cursor is **not a host** (it is only the `cursor-agent` backend
+CLI); an unknown host fails closed. On a host that cannot run it, both `--dry-run` and a live run exit 2
+with `SB_MULTI_AI_UNSUPPORTED_HOST` and write nothing. Consolidation needs an envelope from every agent, so
+a backend CLI that is not installed (`cursor-agent`, OpenCode, `codex`, `claude`) stops a live run before
+any phase or file write with `BACKEND_CLI_MISSING` and a fix per backend (a host error it is not); narrow
+the pool (`--ocg-pool none`, `--cursor-pool none`, `--exclude`, `--include-only`) to run on the backends
+you have. `--dry-run` lists `backend_availability` for the planned pool. Under an orchestrator parent
+session, run the CLI from a worker (the parent may not run Bash: in a parent-mode project delegate the run to an `Agent`/`spawn_agent` worker first). The planning floor does not hold back exactly `python3 <plugin>/skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py ...`, so the run works at its own flow step (`AF-DECIDE`, before PLAN) in a fresh session. The CLI refuses an output root inside
+Silver Bullet's runtime state or plugin cache, a `.git` directory, the home directory or the ownership
+scope of an active agent delegation (`OUTPUT_ROOT_NOT_ALLOWED`). The details are in
+[`/sb:multi-ai-task`](../silver-multi-ai-task/SKILL.md).
 
 ## Architecture (locked)
 
@@ -37,13 +52,21 @@ auto-starts multi-AI research.
 ## Usage
 
 ```bash
-python3 skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py \
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research-multi-ai/scripts/dr_multi_ai_cli.py" \
   "Which event streaming platform for our scale?" \
   --mode deep \
   --research-type default \
   --output-root "research/$(date -u +%Y-%m-%d)-multi-ai-kafka" \
   --dry-run
 ```
+
+Without `--output-root` the run directory is `<cwd>/research/<date>-<slug>` (never inside the
+skill's install tree). An existing run is never overwritten; `--force` moves a previous run
+aside as `<name>.replaced-<UTC>` instead of deleting it, and refuses `/`, `$HOME`, the working
+directory and its parents. With `--force` your `need_profile.json` and `scope.md` carry over to the new run, except an
+auto-generated pair that names a different query. The tool writes only inside the run directory and never deletes
+user files: folders it did not generate, and `scr.md` / `features.json` / landscape files you
+or the host wrote, are left alone and listed under `preserved` / `stale_solution_dirs`.
 
 ## Parallel phases
 
@@ -64,15 +87,20 @@ Migrates from strict-v3 or host-v3 copy-on-write only.
 ## Consolidation
 
 ```bash
-python3 skills/silver-deep-research-multi-ai/scripts/consolidate.py \
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research-multi-ai/scripts/consolidate.py" \
   --envelopes contributions.json \
   --index result-index.json \
   --resolved-pool 11 \
-  --output consolidated/consensus.json
+  --output consolidated/consolidation.json
 ```
 
-Accepts **only** host-validated `DR-*` contribution envelopes + matching result index.
-Forbidden: reports, synthesis, V-loop artifacts, worker state.
+Takes `DR-*` contribution envelopes + the matching result index. The host is responsible for
+validating envelopes against the schema before this step; `consolidate.py` itself is tolerant,
+not a validator: a malformed claim item is counted in `coverage.malformed_items` and skipped.
+The consensus pool is the result index's agent count, and `--resolved-pool` is rejected when
+it disagrees. Claims are merged by wording only; a "consensus" row means that many families
+said the same claim, not that the claim is true. Forbidden inputs: reports, synthesis, V-loop
+artifacts, worker state.
 
 ## Reports (dual)
 
@@ -82,7 +110,14 @@ Forbidden: reports, synthesis, V-loop artifacts, worker state.
 | `landscape-report.html` | `--profile landscape` | `solution-landscape` / `solution-compare` only |
 | `comparison/comparison-matrix.xlsx` | — | `solution-landscape` / `solution-compare` (weighted matrix) |
 
-**Landscape viewer:** MultAI-parity SPA (`render_landscape_outputs()` in `landscape_preview_render.py` + `assets/landscape-preview.template.html`) — sidebar TOC, Chart.js 2×2/Wave/Value Curve, COMMERCIAL/OSS nav, Copy/PDF/Compare/Matrix. Self-contained (`file://`); no `http.server`. `generate_landscape_report.py` is a compatibility wrapper around that function (not the retired general SPA).
+**Landscape viewer:** MultAI-parity SPA (`render_landscape_outputs()` in `landscape_preview_render.py` + `assets/landscape-preview.template.html`) — sidebar TOC, Chart.js 2×2/Wave/Value Curve, COMMERCIAL/OSS nav, Copy/PDF/Compare/Matrix. Open it from `file://`; no `http.server`. The page text, table of contents, vendor cards and
+tables are static HTML and work offline. Charts use Chart.js, chartjs-plugin-datalabels and
+lucide from version-pinned CDN URLs carrying SRI (`integrity=sha384-…`) hashes, so offline the
+charts fall back to their data tables; Google Fonts is also fetched when online. It is
+therefore *not* fully self-contained. The PDF is rendered by `render_landscape_pdf.cjs` in a
+sandboxed, JavaScript-free, offline Chromium; where the sandbox cannot start (root in a
+container) it fails with a clear message and `SB_LANDSCAPE_PDF_NO_SANDBOX=1` is the explicit
+opt-out. `generate_landscape_report.py` is a compatibility wrapper around that function (not the retired general SPA).
 
 **General DR:** unchanged tabbed `generate_spa_report.py:general` — no MultAI chart sections.
 
@@ -96,33 +131,95 @@ For `research_type` `solution-landscape` or `solution-compare` only — **do not
 | Consolidation guide (9 sections + chart-data) | [`../silver-deep-research/reference/landscape/consolidation-guide.md`](../silver-deep-research/reference/landscape/consolidation-guide.md) | DR-TRIANGULATE → `landscape/landscape-report.md` + `landscape/chart-data.json` |
 | Comparator framework | [`../silver-deep-research/reference/comparator/capability-framework.md`](../silver-deep-research/reference/comparator/capability-framework.md) | Matrix build via `compare_solutions.py` |
 
-Host controller must pass consolidation guide to synthesis workers; `consolidate.py` remains deterministic claim merge for `consolidated/consolidation.json` only.
+Host controller passes the consolidation guide to synthesis workers. Note that packaging
+(below) regenerates `landscape/landscape-report.md` and `landscape/chart-data.json` from the
+run's data with `synthesize_landscape`; a file the host wrote is preserved and reported rather
+than overwritten. `consolidate.py` remains a deterministic claim merge for
+`consolidated/consolidation.json` only.
+
+**Matrix ticks.** Workers return `matrix_entries` (`{vendor, feature, supported, source_ref}`;
+optional in the envelope schema). A model casts one vote per (vendor, feature) (its latest row
+wins); the cell follows the majority, a tie is not a tick, and split cells are written to
+`landscape/disputed-cells.json` and listed in the report. A vendor must match a known name or
+alias exactly (a blank or partial name never matches); without a category pack an unnamed
+vendor becomes its own column, so any topic works with no built-in catalogue. Claim prose is
+parsed heuristically only for cells no worker voted on, resolving vendors from the run's own set
+(pack names plus the vendors workers named). Feature names are folded (case, spacing,
+punctuation) before voting, for worker rows and claim prose alike, and each feature is shown once: in
+the rubric spelling, the user's must-have spelling when it differs (the comparator ranks on that
+wording), else the most common one; "+" and "#" stay part of a name ("C++" is not "C#"). A run whose
+need profile names no must-have that matches the matrix gets derived priorities: the most-evidenced
+features that separate the vendors (at least two; none ticked for every vendor) are treated as
+Critical. They are recomputed on every packaging and written only to `landscape/derived-priorities.json`
+and `comparison/effective-need-profile.json`, never into the user's `need_profile.json`, and the report
+says so in its scoring methodology. A matrix with nothing to separate vendors fails the content gate
+instead. A must-have no vendor offers is still reported by the gate.
+
+**Category packs.** Category-specific prose (market overview, trends, buying guidance,
+consensus themes, vendor notes) is data in `reference/category-pack-overlays/<pack>.json` and
+applies only when the need profile selects that pack. The same holds for the feature rubric and
+aliases, Leader rules, scoring weights, key competitive factors, the inclusion ledger,
+brand-rename policies and URL rewrites: they sit under the overlay's `vocabulary` key
+(`scripts/pack_vocabulary.py`) and the code defaults are neutral. The only pack shipped is
+`agentic-sdlc-process-orchestrator` (the pack itself lives in `silver-deep-research`). For any
+other topic the report is built only from the run's own envelopes, matrix and audit; no vendor
+is built in or special-cased.
 
 ## Solution packaging (landscape / compare)
 
 After consolidation and SCR `features.json` artifacts exist:
 
 ```bash
-python3 skills/silver-deep-research-multi-ai/scripts/package_solution_outputs.py \
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research-multi-ai/scripts/package_solution_outputs.py" \
   --dir "$SB_RESEARCH_OUT_DIR"
 ```
 
 Runs `compare_solutions.py` (JSON + MD + XLSX), then both SPA reports.
 For `solution-landscape` / `solution-compare`, packaging **always** re-runs
 `materialize_solution_artifacts` and `synthesize_landscape` (force) before the landscape SPA
-and `validate_landscape_content` gate — engine fixes apply without manual fullpool edits.
+and `validate_landscape_content` gate. Host-written files are preserved, not replaced.
 Skip steps with `--skip-compare`, `--skip-xlsx`, or `--skip-spa`.
+
+## Vendor mentions in prose
+
+Precision comes first: a false vendor tick puts fabricated evidence in the comparison matrix. The detector
+therefore does not guess from the words around a name. Identity is declared (`scripts/vendor_identity.py`):
+
+- **Distinctive names count in prose.** A vendor whose display name has a distinctive token (a digit, a dot
+  between letters, an inner capital such as `GitHub`/`OpenHands`/`CrewAI`, or a coined word listed in the pack
+  vocabulary `COINED_NAMES`) is credited wherever a spelling that carries that token appears. Matrix lines
+  (`Matrix entry - <feature>: A, B`, `<feature> ✔ for A, B`, the pack's leader lists) still tick cells for these.
+- **Ambiguous names need a declaration.** A vendor whose name is also an ordinary word, phrase, surname or
+  person's name (Director, Cursor, Linear, Continue, Silver Bullet, Devin, GSD, Barkain, ...) is credited only by:
+  a `vendors` tag on the claim row (at most 12 per row, each an exact vendor slug; a category alias such as
+  `sdlc` is not one); a `source_ref` that names it (the text must also spell it in capitals); or its pack URL.
+  A pack URL counts only as the WHOLE value of a source field (`source_ref`, `source_url`, `url`, `source`, or one
+  item of `supporting_sources`): one URL starting with `http://`, `https://` or `www.`, no other text, a lower-case
+  ASCII host that is a pack domain or one of its subdomains, no userinfo, `%`, backslash, bad port or `..`/empty
+  path segment. A URL inside running prose (`text`, `claim`, links, HTML, code spans) credits nothing, and a
+  scheme-less `cursor.com/x` credits nothing: agents put the source URL alone in `source_ref` and tag vendors with
+  `vendors` (the research brief says so).
+- **Tagging is part of the research contract.** The brief asks every evidence, claim_candidates, critiques and
+  gaps row to carry `vendors` (slugs copied from the `[CATEGORY_PACK]` block); `matrix_entries.vendor` remains
+  the structured channel. Untagged prose about an ambiguous vendor credits nothing, so recall depends on tags.
+- **Audit.** `tests/fixtures/vendor_spelling_audit.json` is generated from the pack (distinctive tokens and prose
+  spellings per vendor); a pack change shows up there as a diff. `tests/test_vendor_identity_generative.py`
+  exhausts the sentence grammar for every ambiguous spelling.
+- **Trust residuals (accepted).** Declared identity is trusted. A `source_ref` that names a vendor plus a
+  capitalised use of the same word in the text credits it (a cursor.com page cited for a Windsurf claim that says
+  "Cursor ..."). A research agent that tags the wrong vendor credits it, as it would in `matrix_entries`. A person
+  or place named like a distinctive coined word would credit that product.
 
 ## GLM-5.2 routing
 
-Subscription-gated: Cursor pool if subscribed; OCG pool otherwise. `unknown` blocks dispatch.
+Subscription-gated: the Cursor backend pool if subscribed; the OCG pool otherwise. `unknown` blocks dispatch.
 
 ## Validation
 
 ```bash
-python3 skills/silver-deep-research/scripts/validate_spa_report.py \
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research/scripts/validate_spa_report.py" \
   --report "$SB_RESEARCH_OUT_DIR/report.html" --profile general
-python3 skills/silver-deep-research/scripts/validate_spa_report.py \
+python3 "${PLUGIN_ROOT}/skill-source/sb-deep-research/scripts/validate_spa_report.py" \
   --report "$SB_RESEARCH_OUT_DIR/landscape-report.html" --profile landscape
 ```
 

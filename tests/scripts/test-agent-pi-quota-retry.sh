@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Claude/Anthropic 5-hour quota: classify, schedule, invoke wrapper.
+# Claude/Anthropic 5-hour quota: classify and report (the delegate schedules nothing), invoke wrapper.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -8,8 +8,6 @@ INVOKE="${REPO_ROOT}/scripts/agent-pi/invoke.sh"
 HOST_EXEC="${REPO_ROOT}/scripts/lib/agent-host-exec.sh"
 QUOTA_SH="${REPO_ROOT}/scripts/lib/agent-pi-quota-retry.sh"
 FIXTURES="${REPO_ROOT}/tests/fixtures/quota"
-export SB_RFL_TIMER_MODE=mock
-export SB_RFL_NOTIFY=0
 unset SB_RFL_QUOTA_HOST SB_RFL_QUOTA_WAKE_AT SB_RFL_MODEL 2>/dev/null || true
 PASS=0
 FAIL=0
@@ -19,7 +17,7 @@ fail() { echo "FAIL: $1"; (( FAIL++ )) || true; }
 
 assert_jq_true() {
   local desc="$1" filter="$2" json="$3"
-  if jq -e "$filter" >/dev/null <<<"$json"; then
+  if jq -e "$filter" <<<"$json" >/dev/null; then
     pass "$desc"
   else
     fail "$desc"
@@ -65,87 +63,32 @@ assert_jq_true "weekly on Claude host stays weekly and does not use 5h default" 
   '.quota_class == "weekly" and .should_schedule == false' \
   "$weekly"
 
-# --- schedule: persist wake_at / reset_at; idempotent ---
+# --- the scheduler is gone: its flags are rejected, nothing is persisted ---
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/agent-pi-quota.XXXXXX")"
-RUN_DIR="${WORKDIR}/rfl-demo"
-mkdir -p "$RUN_DIR"
-NOW="2026-08-28T13:09:00Z"
-WAKE="2026-08-28T15:41:00Z"
-BLOB='Claude 5-hour quota has been exhausted. Resets in 2hr 32min'
-sched="$(python3 "$RESOLVER" --schedule-quota-retry --run-dir "$RUN_DIR" \
-  --run-id rfl-demo --rung-id rung-10 --model claude/claude-opus-5-high \
-  --quota-host claude --quota-now "$NOW" --subscription-output "$BLOB")"
-assert_jq_true "schedules 5h job with wake_at 15:41Z from 2h32m remaining" \
-  '.scheduled == true and .quota_class == "five_hour" and .job.fire_at == "2026-08-28T15:41:00Z" and .job.wake_at == "2026-08-28T15:41:00Z" and .job.reset_at == "2026-08-28T15:41:00Z"' \
-  "$sched"
+trap 'rm -rf "$WORKDIR"' EXIT
+rc=0; python3 "$RESOLVER" --schedule-quota-retry --run-dir "$WORKDIR" >/dev/null 2>&1 || rc=$?
+[[ "$rc" -eq 2 ]] && pass "--schedule-quota-retry is rejected" || fail "--schedule-quota-retry is rejected (rc=$rc)"
 
-dup="$(python3 "$RESOLVER" --schedule-quota-retry --run-dir "$RUN_DIR" \
-  --run-id rfl-demo --rung-id rung-10 --model claude/claude-opus-5-high \
-  --quota-host claude --quota-now "$NOW" --subscription-output "$BLOB")"
-assert_jq_true "second schedule is idempotent" \
-  '.deduped == true and .scheduled == true and .job.wake_at == "2026-08-28T15:41:00Z"' \
-  "$dup"
-
-weekly_sched="$(python3 "$RESOLVER" --schedule-quota-retry --run-dir "$RUN_DIR" \
-  --run-id rfl-demo --rung-id rung-09 --model claude/claude-opus-5-high \
-  --quota-host claude --quota-now "$NOW" \
-  --subscription-output-file "${FIXTURES}/weekly-limit.txt")"
-assert_jq_true "weekly does not write a 5h job" \
-  '.scheduled == false and .quota_class == "weekly" and .job == null' \
-  "$weekly_sched"
-
-# --- wrapper: invoke.sh schedules on fixture stderr; 124 does not ---
+# --- wrapper: classify-and-report on fixture output; 124 reports nothing ---
 # shellcheck source=scripts/lib/agent-host-exec.sh
 source "$HOST_EXEC"
 # shellcheck source=scripts/lib/agent-pi-quota-retry.sh
 source "$QUOTA_SH"
-
-WRAP_RUN="${WORKDIR}/rfl-wrap"
-WRAP_RUNG="${WRAP_RUN}/rung-10-claude-opus-5-high"
-mkdir -p "$WRAP_RUNG"
-export SB_RFL_RUN_DIR="$WRAP_RUN"
-export SB_RFL_RUN_ID="rfl-wrap"
-export SB_RFL_RUNG_ID="rung-10"
 export SB_RFL_QUOTA_HOST="claude"
 export PI_MODEL="claude/claude-opus-5-high"
-export WORK_DIR="$WRAP_RUNG"
-
 wrap_out="$(mktemp "${TMPDIR:-/tmp}/quota-wrap-XXXXXX")"
-agent_host_pi_maybe_schedule_quota_retry 1 "$(cat "${FIXTURES}/claude-5h-console.txt")" \
-  >"$wrap_out" 2>&1 || true
-if grep -qE '\[agent-pi\] quota 5h; retry at 20[0-9]{2}-' "$wrap_out"; then
-  pass "wrapper prints greppable quota 5h retry line"
+agent_host_pi_maybe_schedule_quota_retry 1 "$(cat "${FIXTURES}/claude-5h-console.txt")" >"$wrap_out" 2>&1 || true
+if grep -qE '\[agent-pi\] quota 5h; window resets in 9120s; no retry is scheduled' "$wrap_out"; then
+  pass "wrapper prints the greppable 5h window line"
 else
-  fail "wrapper prints greppable quota 5h retry line"
-  cat "$wrap_out"
+  fail "wrapper prints the greppable 5h window line"; cat "$wrap_out"
 fi
-if [[ -f "${WRAP_RUN}/quota-retry-schedule.json" ]]; then
-  pass "wrapper wrote quota-retry-schedule.json under run-dir"
-else
-  fail "wrapper wrote quota-retry-schedule.json under run-dir"
-fi
-
-hang_run="${WORKDIR}/rfl-hang"
-mkdir -p "$hang_run"
-export SB_RFL_RUN_DIR="$hang_run"
 hang_out="$(mktemp "${TMPDIR:-/tmp}/quota-hang-XXXXXX")"
-agent_host_pi_maybe_schedule_quota_retry 124 "$(cat "${FIXTURES}/idle-124.txt")" \
-  >"$hang_out" 2>&1 || true
-if grep -q 'quota 5h' "$hang_out"; then
-  fail "EXIT 124 hang does not schedule 5h retry"
-  cat "$hang_out"
-else
-  pass "EXIT 124 hang does not schedule 5h retry"
-fi
-if [[ -f "${hang_run}/quota-retry-schedule.json" ]]; then
-  fail "EXIT 124 does not write a schedule file"
-else
-  pass "EXIT 124 does not write a schedule file"
-fi
+agent_host_pi_maybe_schedule_quota_retry 124 "$(cat "${FIXTURES}/idle-124.txt")" >"$hang_out" 2>&1 || true
+if grep -q 'quota 5h' "$hang_out"; then fail "EXIT 124 hang is not quota"; cat "$hang_out"; else pass "EXIT 124 hang is not quota"; fi
 
 # invoke.sh end-to-end with a fake delegate
 FAKE="$(mktemp "${TMPDIR:-/tmp}/fake-pi-XXXXXX")"
-chmod +x "$FAKE"
 cat >"$FAKE" <<'EOF'
 #!/usr/bin/env bash
 cat >&2 <<'QUOTA'
@@ -153,40 +96,27 @@ HTTP 429 rate_limit_error: 5-hour usage limit reached. Resets in 2hr 32min
 QUOTA
 exit 1
 EOF
-INV_RUN="${WORKDIR}/rfl-invoke"
-INV_RUNG="${INV_RUN}/rung-10-claude-opus-5-high"
+chmod +x "$FAKE"
+INV_RUNG="${WORKDIR}/rung-10-claude-opus-5-high"
 mkdir -p "$INV_RUNG"
-export SB_AGENT_PI_DELEGATE="$FAKE"
-export SB_RFL_RUN_DIR="$INV_RUN"
-export SB_RFL_RUN_ID="rfl-invoke"
-export SB_RFL_RUNG_ID="rung-10"
-export SB_RFL_QUOTA_HOST="claude"
-export PI_MODEL="claude/claude-opus-5-high"
+export SB_AGENT_PI_DELEGATE_SCRIPT="$FAKE"
 inv_out="$(mktemp "${TMPDIR:-/tmp}/quota-inv-XXXXXX")"
 set +e
 bash "$INVOKE" --work-dir "$INV_RUNG" --prompt "noop" >"$inv_out" 2>&1
 inv_rc=$?
 set -e
 [[ "$inv_rc" -eq 1 ]] && pass "invoke exits 1 on quota fixture" || fail "invoke exits 1 on quota fixture (rc=$inv_rc)"
-if grep -qE '\[agent-pi\] quota 5h; retry at 20[0-9]{2}-' "$inv_out"; then
-  pass "invoke.sh prints quota 5h retry at ISO"
+if grep -qE '\[agent-pi\] quota 5h; window resets in [0-9]+s' "$inv_out"; then
+  pass "invoke.sh reports the 5h window"
 else
-  fail "invoke.sh prints quota 5h retry at ISO"
-  cat "$inv_out"
+  fail "invoke.sh reports the 5h window"; cat "$inv_out"
 fi
-if [[ -f "${INV_RUN}/quota-retry-schedule.json" ]] \
-  && jq -e '.jobs[0].quota_class == "five_hour" and .jobs[0].wake_at != null' \
-    "${INV_RUN}/quota-retry-schedule.json" >/dev/null; then
-  pass "invoke.sh persisted five_hour wake_at"
+if [[ -n "$(find "$WORKDIR" -name 'quota-retry-schedule.json')" ]]; then
+  fail "invoke.sh must not persist a schedule"
 else
-  fail "invoke.sh persisted five_hour wake_at"
-  [[ -f "${INV_RUN}/quota-retry-schedule.json" ]] && cat "${INV_RUN}/quota-retry-schedule.json"
+  pass "invoke.sh persists nothing"
 fi
-if grep -q -- '--continue' "$inv_out"; then
-  fail "quota EXIT must not --continue"
-else
-  pass "quota EXIT must not --continue"
-fi
+if grep -q -- '--continue' "$inv_out"; then fail "quota EXIT must not --continue"; else pass "quota EXIT must not --continue"; fi
 
 echo
 echo "Results: $PASS passed, $FAIL failed"

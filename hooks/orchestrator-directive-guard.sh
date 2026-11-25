@@ -6,7 +6,7 @@ trap 'exit 0' ERR
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-directive.sh orchestrator-state.sh orchestrator-parent.sh required-skills.sh hook-audit.sh cert-bypass.sh; do
+for _lib in runtime-paths.sh sb-project-gate.sh integrity.sh orchestrator-directive.sh orchestrator-state.sh orchestrator-parent.sh required-skills.sh hook-audit.sh cert-bypass.sh; do
   # shellcheck disable=SC1090
   [[ -f "$_lib_dir/$_lib" ]] && source "$_lib_dir/$_lib"
 done
@@ -34,10 +34,6 @@ sb_odg_hook_field() {
       printf '%s' "$json" | grep -oE '"tool_name"[[:space:]]*:[[:space:]]*"[^"]+"' 2>/dev/null \
         | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || printf '%s' "$default"
       ;;
-    prompt)
-      printf '%s' "$json" | grep -oE '"prompt"[[:space:]]*:[[:space:]]*"[^"]*"' 2>/dev/null \
-        | head -1 | sed -E 's/.*"([^"]*)"$/\1/' || printf '%s' "$default"
-      ;;
     tool_input.skill)
       printf '%s' "$json" | grep -oE '"skill"[[:space:]]*:[[:space:]]*"[^"]+"' 2>/dev/null \
         | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || printf '%s' "$default"
@@ -60,13 +56,14 @@ if declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_ac
 fi
 
 input="$(cat 2>/dev/null || true)"
+# shellcheck disable=SC2034  # read by sb_orchestrator_is_worker_session (subagent identity)
+SB_ORCH_HOOK_INPUT="$input"
 [[ -n "$input" ]] || exit 0
 
 hook_event="$(sb_odg_hook_field "$input" 'hook_event_name' 'PreToolUse')"
 [[ "$hook_event" == "PreToolUse" ]] || exit 0
 
 tool_name="$(sb_odg_hook_field "$input" 'tool_name' '')"
-prompt="$(sb_odg_hook_field "$input" 'prompt' '')"
 
 emit_block() {
   local reason="$1"
@@ -137,8 +134,8 @@ if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrat
         tmpl="$(jq -r '.next_worker_template // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
         args="$(jq -r '.args // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
       fi
-      # Always write the worker marker on delegation spawn (#275). Claude Agent
-      # workers never get SubagentStart; the marker is their only classification signal.
+      # Evidence record of the delegation only. Worker identity is the payload's agent_id,
+      # per call (R4-02): this file must never make the parent itself look like a worker.
       sb_orchestrator_mark_worker_spawn "${expected:-ad-hoc}" "$tmpl" "$args" 2>/dev/null || true
       exit 0
       ;;
@@ -157,6 +154,10 @@ if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrat
     fi
     if declare -f sb_orchestrator_parent_bash_allowed >/dev/null 2>&1 && \
        sb_orchestrator_parent_bash_allowed "$_odg_cmd"; then
+      exit 0
+    fi
+    if [[ -n "${SB_ORCH_PARENT_BASH_DENY_REASON:-}" ]]; then
+      emit_block "$SB_ORCH_PARENT_BASH_DENY_REASON"
       exit 0
     fi
   fi
@@ -180,18 +181,9 @@ case "$tool_name" in
   *) exit 0 ;;
 esac
 
-# User override in prompt (audited on UserPromptSubmit; here we only honor if already logged this session)
-if [[ -n "$prompt" ]] && sb_orchestrator_prompt_has_override "$prompt"; then
-  repo_root=""
-  if declare -f sb_find_project_root >/dev/null 2>&1; then
-    repo_root="$(sb_find_project_root 2>/dev/null || true)"
-  fi
-  reason="$(sb_orchestrator_extract_override_reason "$prompt")"
-  expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
-  sb_orchestrator_log_override "${repo_root:-$PWD}" "$reason" "$expected"
-  sb_orchestrator_directive_clear
-  exit 0
-fi
+# SB OVERRIDE is honoured only at UserPromptSubmit (outcomes-check.sh), where the host's own
+# prompt payload is verified and the audit record is written before the directive is cleared
+# (R4-07). A PreToolUse payload never carries the user's words, so nothing is honoured here.
 
 # Workers spawned by parent: allow Bash without skill pre-record (delivery ops).
 if declare -f sb_orchestrator_worker_allows_bash >/dev/null 2>&1 \
@@ -207,25 +199,21 @@ if [[ -f "$(sb_orchestrator_directive_file)" ]] && sb_orchestrator_directive_is_
       && ! sb_orchestrator_guard_applies_to_workspace; then
       exit 0
     fi
-    config_file="$_odg_workspace_config"
     SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
     state_file="${SILVER_BULLET_STATE_FILE:-${SB_STATE_DIR}/state}"
-    if [[ -n "$config_file" ]]; then
-      cfg_state="$(jq -r '.state.state_file // empty' "$config_file" 2>/dev/null || true)"
-      if [[ -n "$cfg_state" ]]; then
-        state_file="$cfg_state"
-        state_file="${state_file/#\~/$HOME}"
-      fi
+    # The state file is the verified project's, and only the lines the recorder sealed count.
+    if sb_integrity_gate "$PWD" && [[ -n "$SB_IV_STATE_FILE" ]]; then
+      state_file="${SB_IV_STATE_FILE/#\~/$HOME}"
     fi
     if ! sb_runtime_path_is_state_scoped "$state_file"; then
       state_file="${SB_STATE_DIR}/state"
     fi
     state_contents=""
-    [[ -f "$state_file" && ! -L "$state_file" ]] && state_contents="$(cat "$state_file" 2>/dev/null || true)"
+    state_contents="$(sb_integrity_state_contents "$state_file")"
     if ! sb_orchestrator_directive_skill_recorded "$expected" "$state_contents"; then
       directive_json="$(sb_orchestrator_directive_read 2>/dev/null || true)"
       reason="$(printf '%s' "$directive_json" | jq -r '.reason // "Orchestrator directive pending"' 2>/dev/null || true)"
-      emit_block "$(printf '🛑 ORCHESTRATOR DIRECTIVE — Invoke /%s before %s.\n\n%s\n\nTo bypass with audit log, include in your next user message: SB OVERRIDE: <reason>' "$expected" "$tool_name" "$reason")"
+      emit_block "$(printf '🛑 ORCHESTRATOR DIRECTIVE — Invoke /%s before %s.\n\n%s\n\nTo bypass with an audit log, start your next user message with the words SB OVERRIDE, a colon and your reason.' "$expected" "$tool_name" "$reason")"
       exit 0
     fi
     sb_orchestrator_directive_clear

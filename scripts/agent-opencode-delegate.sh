@@ -20,7 +20,7 @@ Usage: agent-opencode-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file 
        [--multi-ai-profile PROFILE_ID] [--multi-ai-pool lite|regular]
        [--cohort-request PATH] [--cohort-output PATH]
 
-Delegates a single task to OpenCode via tests/live/agents/opencode/agent.sh (opencode run primary).
+Delegates a single task to OpenCode via scripts/lib/agent-adapters/opencode.sh (opencode run primary).
 Model policy: default opencode-go / mimo-v2.5. multi-ai-worker-v1 selects allowlisted OCG profiles only.
 EOF
 }
@@ -30,7 +30,7 @@ PROMPT_TEXT=""
 PROMPT_FILE=""
 BRIEF_FILE=""
 LOG_FILE=""
-MODE="permissive"
+MODE=""
 SB_ROOT="${SB_ROOT:-$REPO_ROOT}"
 USE_INTERACTIVE=0
 DELEGATION_MODE="default"
@@ -40,6 +40,11 @@ COHORT_REQUEST=""
 COHORT_OUTPUT=""
 
 while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --work-dir|--prompt|--prompt-file|--brief-file|--log|--mode|--sb-root|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id|--delegation-mode|--multi-ai-profile|--multi-ai-pool|--cohort-request|--cohort-output)
+      [[ $# -ge 2 ]] || { printf 'ERROR: %s requires a value\n' "$1" >&2; exit 2; }
+      ;;
+  esac
   case "$1" in
     --work-dir) WORK_DIR="$2"; shift 2 ;;
     --prompt) PROMPT_TEXT="$2"; shift 2 ;;
@@ -66,6 +71,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 WORK_DIR="$(agent_delegate_resolve_work_dir "$WORK_DIR")" || exit 2
+if [[ -z "$MODE" ]]; then
+  MODE="$(agent_delegate_default_mode "$WORK_DIR")"
+  agent_mode_note_permission_mode "$MODE"
+fi
 agent_delegate_clear_matrix_env
 
 if [[ -n "$BRIEF_FILE" ]]; then
@@ -77,6 +86,7 @@ fi
 if [[ -n "$LOG_FILE" ]]; then
   LOG_FILE="$(agent_delegate_canonicalize_path "$LOG_FILE")"
 fi
+agent_delegate_guard_log "$LOG_FILE"
 
 if [[ "$DELEGATION_MODE" != "multi-ai-pool-v1" ]]; then
   PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
@@ -120,9 +130,9 @@ if ! agent_delegate_preflight_recommended_tools "$WORK_DIR" "$SB_ROOT" "opencode
   exit 2
 fi
 
-AGENT_SH="${SB_ROOT}/tests/live/agents/opencode/agent.sh"
+AGENT_SH="${SB_ROOT}/scripts/lib/agent-adapters/opencode.sh"
 [[ -f "$AGENT_SH" ]] || {
-  printf 'ERROR: missing OpenCode live adapter at %s (full SB checkout required)\n' "$AGENT_SH" >&2
+  printf 'ERROR: missing OpenCode live adapter at %s\n' "$AGENT_SH" >&2
   exit 1
 }
 
@@ -136,6 +146,7 @@ quota_retry_interval="${AGENT_OPENCODE_QUOTA_RETRY_INTERVAL:-60}"
 quota_retry_max="$(agent_delegate_quota_retry_max AGENT_OPENCODE_QUOTA_RETRY_MAX 5)"
 log_floor="${SB_AGENT_OPENCODE_LOG_FLOOR:-512}"
 attempt=0
+fp_before="unknown"
 
 agent_opencode_apply_delegation_mode() {
   if [[ "$DELEGATION_MODE" == "multi-ai-worker-v1" ]]; then
@@ -163,7 +174,8 @@ agent_opencode_invoke_pool_cohort() {
   agent_opencode_apply_delegation_mode || return $?
   agent_opencode_apply_lightweight_env || return $?
   agent_opencode_apply_runtime_env
-  local cohort_script="${SB_ROOT}/skills/silver-multi-ai-task/scripts/ocg_pool_cohort.py"
+  local cohort_script
+  cohort_script="$(agent_opencode_multi_ai_skill_dir "$SB_ROOT")/scripts/ocg_pool_cohort.py"
   [[ -f "$cohort_script" ]] || {
     printf 'ERROR: missing OCG cohort script at %s\n' "$cohort_script" >&2
     return 1
@@ -172,7 +184,8 @@ agent_opencode_invoke_pool_cohort() {
   if [[ -n "$COHORT_OUTPUT" ]]; then
     cohort_args+=(--output "$COHORT_OUTPUT")
   fi
-  printf '{"type":"ocg.pool.cohort.start","pool":"%s","request":"%s"}\n' "$MULTI_AI_POOL" "$COHORT_REQUEST" >&2
+  jq -nc --arg pool "$MULTI_AI_POOL" --arg request "$COHORT_REQUEST" \
+    '{type:"ocg.pool.cohort.start",pool:$pool,request:$request}' >&2
   (cd "$WORK_DIR" && "${cohort_args[@]}")
 }
 
@@ -194,7 +207,7 @@ agent_opencode_invoke_once() {
   export OPENCODE_BIN="$CLI"
   export SB_LIVE_OPENCODE_USE_INTERACTIVE="$USE_INTERACTIVE"
   export CLAUDE_INTERACTIVE_LOG_FILE="${LOG_FILE:-}"
-  # shellcheck source=tests/live/agents/opencode/agent.sh
+  # shellcheck source=scripts/lib/agent-adapters/opencode.sh
   source "$AGENT_SH"
   agent_preflight
   agent_invoke "$MODE" "$PROMPT_TEXT"
@@ -221,9 +234,12 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
   fi
 
   if [[ "$DELEGATION_MODE" == "multi-ai-pool-v1" ]]; then
-    final_output="$(agent_opencode_invoke_pool_cohort)" && final_exit=0 || final_exit=$?
+    final_exit=0
+    final_output="$(agent_opencode_invoke_pool_cohort)" || final_exit=$?
   else
-    final_output="$(agent_opencode_invoke_once)" && final_exit=0 || final_exit=$?
+    final_exit=0
+  fp_before="$(agent_delegate_workdir_fingerprint "$WORK_DIR")"
+    final_output="$(agent_opencode_invoke_once)" || final_exit=$?
   fi
 
   if [[ -n "$LOG_FILE" ]]; then
@@ -245,17 +261,7 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
   if [[ "$final_exit" -eq 0 ]]; then
     break
   fi
-  if ! agent_delegate_is_quota_error "$final_output"; then
-    break
-  fi
-  if agent_delegate_quota_blocks_short_retry "$final_output"; then
-    printf '[agent-opencode] quota window exhausted — skip short retry (RFL schedule)\n' >&2
-    break
-  fi
-  if [[ "$attempt" -gt "$quota_retry_max" ]]; then
-    printf '[agent-opencode] quota retries exhausted\n' >&2
-    break
-  fi
+  agent_delegate_quota_retry_decision "agent-opencode" "$final_output" "$attempt" "$quota_retry_max" "$WORK_DIR" "$fp_before" || break
 done
 
 if [[ "$final_exit" -ne 0 ]]; then
@@ -265,9 +271,10 @@ if [[ "$final_exit" -ne 0 ]]; then
   if agent_mode_maybe_escalate "opencode" "$SB_AM_TASK_DIR" "${LOG_FILE:-}"; then
     agent_mode_apply_host_launch_env "opencode"
     USE_INTERACTIVE=1
-    final_output="$(agent_opencode_invoke_once)" && final_exit=0 || final_exit=$?
+    final_exit=0
+    final_output="$(agent_opencode_invoke_once)" || final_exit=$?
   fi
 fi
 
-printf '%s' "$final_output"
+agent_delegate_redact_output "$final_output"
 exit "$final_exit"

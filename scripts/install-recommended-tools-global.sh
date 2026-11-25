@@ -5,6 +5,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 LIB="${REPO_ROOT}/hooks/lib/rtk-cm-global.sh"
+# One backup per run: the first write keeps the user's file as it was before this run.
+export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"
 
 HOST=""
 INSTALL_GLOBAL=0
@@ -16,7 +18,7 @@ Usage: bash scripts/install-recommended-tools-global.sh --host HOST [--global]
 Syncs global instruction artifacts (rules, AGENTS.md routing) for RTK + Context Mode.
 Does NOT require Silver Bullet. RTK/Codex hooks are applied by optimize-rtk-context-mode.sh.
 
-Hosts: claude | codex | cursor | opencode | pi | hermes | goose | all
+Hosts: claude | codex | opencode | pi | hermes | goose | all
 
 Options:
   --host HOST   Target agent (required)
@@ -27,9 +29,26 @@ EOF
 
 # shellcheck source=../hooks/lib/rtk-cm-global.sh
 source "$LIB"
+# shellcheck source=../hooks/lib/user-consent.sh
+source "${REPO_ROOT}/hooks/lib/user-consent.sh"
 
-install_cursor_global() {
-  bash "${SCRIPT_DIR}/install-recommended-tools-cursor.sh" --global
+# install_agents_file SRC DEST: DEST is the user's global instruction file (~/.codex/AGENTS.md ...).
+# Written only with Context Mode "wire" consent, atomically through a symlink, mode kept, and the
+# previous content kept in DEST.sb-backup.
+install_agents_file() {
+  local src="$1" dest="$2"
+  if ! sb_consent_granted context_mode wire; then
+    printf 'SKIP: %s - no Context Mode wire consent (bash %s/sb-consent.sh grant context_mode --all-projects --capabilities wire)\n' \
+      "$dest" "$SCRIPT_DIR" >&2
+    return 0
+  fi
+  if python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import sb_host_config as c; c.write_atomic(sys.argv[2], open(sys.argv[3], "rb").read())' \
+    "${SCRIPT_DIR}/lib" "$dest" "$src"; then
+    printf 'OK: %s\n' "$dest"
+  else
+    printf 'WARN: could not write %s\n' "$dest" >&2
+    return 1
+  fi
 }
 
 install_opencode_agents() {
@@ -39,9 +58,7 @@ install_opencode_agents() {
     cm_pkg="$(npm root -g 2>/dev/null)/context-mode/configs/opencode/AGENTS.md"
   fi
   if [[ -f "$cm_pkg" ]]; then
-    mkdir -p "$(dirname "$dest")"
-    cp "$cm_pkg" "$dest"
-    printf 'OK: %s\n' "$dest"
+    install_agents_file "$cm_pkg" "$dest"
   else
     printf 'WARN: context-mode opencode AGENTS.md not found — run npm install -g context-mode\n' >&2
   fi
@@ -54,9 +71,7 @@ install_codex_agents() {
     cm_pkg="$(npm root -g 2>/dev/null)/context-mode/configs/codex/AGENTS.md"
   fi
   if [[ -f "$cm_pkg" ]]; then
-    mkdir -p "$(dirname "$dest")"
-    cp "$cm_pkg" "$dest"
-    printf 'OK: %s\n' "$dest"
+    install_agents_file "$cm_pkg" "$dest"
   else
     printf 'WARN: context-mode codex AGENTS.md not found\n' >&2
   fi
@@ -76,7 +91,16 @@ install_pi_global() {
     printf 'ERROR: Pi five-tool installer missing: %s\n' "$installer" >&2
     return 1
   }
-  python3 "$installer" --repo-root "$REPO_ROOT"
+  # The adapter, its config and ~/.pi/agent/settings.json are host configuration: written only with
+  # wire consent, and only the consented tools are switched on (docs/CONSENT.md).
+  local -a pi_args=(--repo-root "$REPO_ROOT") enable_words=()
+  read -r -a enable_words <<<"$(sb_consent_pi_enable_words)"
+  if [[ "${#enable_words[@]}" -eq 0 ]]; then
+    printf 'SKIP: Pi adapter - no wire consent for any tool (bash %s/sb-consent.sh grant <tool> --all-projects --capabilities wire)\n' \
+      "$SCRIPT_DIR" >&2
+    return 0
+  fi
+  python3 "$installer" "${pi_args[@]}" "${enable_words[@]}"
 }
 
 install_hermes_note() {
@@ -91,7 +115,6 @@ install_goose_skip() {
 install_host() {
   local h="${1:-}"
   case "$h" in
-    cursor) install_cursor_global ;;
     opencode) install_opencode_agents ;;
     pi) install_pi_global ;;
     codex) install_codex_agents ;;

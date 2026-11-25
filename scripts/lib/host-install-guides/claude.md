@@ -14,7 +14,7 @@ Host-specific commands are loaded from `.silver-bullet.json`
 | Phase | Commands | Artifact |
 |-------|----------|----------|
 | Pre-index | `graphify install --project` | — |
-| Post-index | `graphify claude install --project` | `.codex/settings.json` hooks |
+| Post-index | `graphify claude install --project` | `.claude/settings.json` hooks |
 
 ## Agentmemory
 
@@ -25,12 +25,16 @@ Post-index: `agentmemory connect claude-code`
 - `npm install -g context-mode`
 - `bash scripts/optimize-rtk-context-mode.sh --host claude --project-root "$(pwd)"`
 - The optimizer disables the optional `context-mode@context-mode` Claude plugin
-  and registers the same global MCP executable used by Cursor and Codex.
+  and registers the same global MCP executable used by Codex.
 - Restart the host agent after changing MCP configuration.
 
 ## Hook merge
 
 `python3 scripts/lib/install-claude/merge-hooks.py "$INSTALL_PATH"`
+
+With the plugin installed, Claude Code runs `hooks/hooks.json` itself, so the merge only removes
+SB copies from `settings.json` (they would run every hook twice). It registers hooks in
+`settings.json` (`$CLAUDE_CONFIG_DIR`, default `~/.claude`) only for manual installs.
 
 ## Project instruction template
 

@@ -1,0 +1,276 @@
+#!/usr/bin/env bash
+# scripts/optimize-five-tool-stack.sh orchestration, run from a staged copy whose
+# sibling helper scripts (leanctx installer, RTK+CM optimizer, synergy optimizer,
+# MCP patcher) are logging stubs. Nothing is installed,
+# no host config is touched: every write lands in the sandboxed HOME / temp dirs.
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
+tl_init
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
+
+STAGE="$TL_TMP/repo"
+OPT="$STAGE/scripts/optimize-five-tool-stack.sh"
+LOG="$TL_TMP/calls.log"
+export LOG
+
+mkdir -p "$STAGE/scripts/lib/global-toolstack" "$STAGE/hooks" "$STAGE/templates"
+cp "$TL_REPO_ROOT/scripts/optimize-five-tool-stack.sh" "$OPT"
+cp "$TL_REPO_ROOT/scripts/lib/sb_host_config.py" "$STAGE/scripts/lib/"
+ln -s "$TL_REPO_ROOT/hooks/lib" "$STAGE/hooks/lib"
+cp "$TL_REPO_ROOT/templates/silver-bullet.config.json.default" "$STAGE/templates/"
+for s in install-leanctx-sb optimize-rtk-context-mode sb-optimize-stack; do
+  cat >"$STAGE/scripts/$s.sh" <<EOF
+#!/usr/bin/env bash
+printf '%s %s\n' "$s" "\$*" >>"\$LOG"
+printf '%s\n' "\${SB_INSTALL_RUN_START:-unset}" >>"\$LOG.start"
+exit "\${STUB_RC_${s//-/_}:-0}"
+EOF
+done
+# the MCP patcher is python: log argv plus the RT_* environment it was given
+cat >"$STAGE/scripts/lib/global-toolstack/patch-mcp.py" <<'EOF'
+import os, sys
+env = " ".join("%s=%s" % (k, os.environ[k]) for k in sorted(os.environ) if k.startswith("RT_") or k == "TOOLSTACK_REPO_ROOT")
+open(os.environ["LOG"], "a").write("patch-mcp %s %s\n" % (" ".join(sys.argv), env))
+EOF
+
+PROJ="$TL_TMP/proj"
+mkdir -p "$PROJ"
+# The project file is only a recommendation; consent is the user's own (docs/CONSENT.md), granted for every tool here.
+write_cfg() { printf '%s\n' "$1" >"$PROJ/.silver-bullet.json"; sb_test_consent_grant_all; }
+run_opt() { : >"$LOG"; tl_run bash "$OPT" "$@"; }
+calls() { cat "$LOG"; }
+
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+
+# ---- argument handling
+run_opt --help
+assert_eq "help exits 0" "0" "$TL_STATUS"
+assert_contains "help usage" "$TL_OUT" "Usage: bash scripts/optimize-five-tool-stack.sh [options]"
+run_opt -h
+assert_eq "-h exits 0" "0" "$TL_STATUS"
+run_opt --wat
+assert_eq "unknown arg exits 2" "2" "$TL_STATUS"
+assert_contains "unknown arg message" "$TL_ERR" "Unknown arg: --wat"
+run_opt --project-root "$PROJ"
+assert_eq "missing host exits 2" "2" "$TL_STATUS"
+assert_contains "missing host message" "$TL_ERR" "ERROR: --host is required"
+run_opt --host claude
+assert_eq "missing project root exits 2" "2" "$TL_STATUS"
+assert_contains "missing project root message" "$TL_ERR" "ERROR: --project-root is required"
+run_opt --host emacs --project-root "$PROJ"
+assert_eq "invalid host exits 2" "2" "$TL_STATUS"
+assert_contains "invalid host message" "$TL_ERR" "Invalid --host: emacs"
+assert_eq "invalid host runs no helper" "" "$(calls)"
+
+# ---- not consented: nothing runs unless forced
+for cfg in '{}' 'not json'; do
+  write_cfg "$cfg"
+  sb_test_consent_revoke_all
+  run_opt --host claude --project-root "$PROJ"
+  assert_eq "no consent ($cfg) exits 0" "0" "$TL_STATUS"
+  assert_contains "no consent ($cfg) message" "$TL_OUT" "LeanCTX is not consented"
+  assert_contains "no consent ($cfg) grant command" "$TL_OUT" "sb-consent.sh grant leanctx --all-projects --capabilities wire"
+  assert_eq "no consent ($cfg) runs nothing" "" "$(calls)"
+done
+# a project recommendation alone is not consent (R6-03)
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+sb_test_consent_revoke_all
+run_opt --host claude --project-root "$PROJ"
+assert_contains "a recommendation alone does not run the optimizer" "$TL_OUT" "LeanCTX is not consented"
+assert_eq "a recommendation alone runs nothing" "" "$(calls)"
+# consent, but the project turns the tool off
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":false}}}'
+run_opt --host claude --project-root "$PROJ"
+assert_contains "the project can turn a consented tool off" "$TL_OUT" "LeanCTX is not consented"
+assert_eq "a project veto runs nothing" "" "$(calls)"
+
+# R6-24: with no project config the bundled configs are never used or rewritten
+rm -f "$PROJ/.silver-bullet.json"
+sb_test_consent_grant_all
+cp "$STAGE/templates/silver-bullet.config.json.default" "$STAGE/.silver-bullet.json"
+BUNDLED_BEFORE="$(cksum <"$STAGE/.silver-bullet.json")|$(cksum <"$STAGE/templates/silver-bullet.config.json.default")"
+run_opt --host claude --project-root "$PROJ"
+assert_eq "consented, no project config: exits 0" "0" "$TL_STATUS"
+assert_contains "consented, no project config: the helpers ran" "$(calls)" "install-leanctx-sb --host claude --project-root ${PROJ}"
+assert_file_absent "no project config is invented" "$PROJ/.silver-bullet.json"
+assert_eq "the bundled configs were not rewritten" "$BUNDLED_BEFORE" "$(cksum <"$STAGE/.silver-bullet.json")|$(cksum <"$STAGE/templates/silver-bullet.config.json.default")"
+assert_not_contains "no profile metadata was stamped anywhere" "$TL_OUT" "profile metadata applied"
+rm -f "$STAGE/.silver-bullet.json"
+
+# ---- real run for one host: helpers called in order, profile stamped
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+run_opt --host claude --project-root "$PROJ"
+assert_eq "claude run exits 0" "0" "$TL_STATUS"
+expected="install-leanctx-sb --host claude --project-root ${PROJ}
+optimize-rtk-context-mode --host claude --project-root ${PROJ} --skip-cm-doctor
+patch-mcp ${STAGE}/scripts/lib/global-toolstack/patch-mcp.py RT_HOST=claude RT_LEANCTX_ALLOW_INSTALL=1 RT_PATCH_AGENTMEMORY=1 RT_PATCH_CONTEXT_MODE=1 RT_PATCH_GRAPHIFY=1 RT_PATCH_LEANCTX=1 TOOLSTACK_REPO_ROOT=${STAGE}
+sb-optimize-stack --apply --project-root ${PROJ} --host claude"
+assert_eq "claude: helper sequence and arguments" "$expected" "$(calls)"
+assert_contains "profile stamped announcement" "$TL_OUT" "OK: five_tool_routed profile metadata applied to .silver-bullet.json"
+assert_eq "profile stamped: name" "five_tool_routed" "$(jq -r '.recommended_tools.leanctx.optimization_profile' "$PROJ/.silver-bullet.json")"
+assert_eq "profile stamped: stack mode" "parallel_routed" "$(jq -r '.recommended_tools.leanctx.stack_mode' "$PROJ/.silver-bullet.json")"
+assert_eq "profile stamped: primary fts" "context_mode" "$(jq -r '.recommended_tools.leanctx.primary_fts' "$PROJ/.silver-bullet.json")"
+assert_eq "profile stamped: route table" "rtk" "$(jq -r '.optimization_profiles.five_tool_routed.routes.sb_shell' "$PROJ/.silver-bullet.json")"
+assert_eq "profile stamping keeps the opt-in" "true" "$(jq -r '.recommended_tools.leanctx.enabled_by_user' "$PROJ/.silver-bullet.json")"
+assert_contains "active profile reported" "$TL_OUT" "Profile: five_tool_routed (primary_fts=context_mode, parallel_routed)"
+assert_contains "completion banner" "$TL_OUT" "=== Five-tool optimization complete ==="
+
+# a pre-existing custom five_tool_routed profile is preserved, not overwritten
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}},"optimization_profiles":{"five_tool_routed":{"custom":1}}}'
+run_opt --host claude --project-root "$PROJ"
+assert_eq "existing profile body preserved" "1" "$(jq -r '.optimization_profiles.five_tool_routed.custom' "$PROJ/.silver-bullet.json")"
+assert_eq "existing profile has no injected routes" "null" "$(jq -r '.optimization_profiles.five_tool_routed.routes' "$PROJ/.silver-bullet.json")"
+
+# ---- skip flags
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+run_opt --host claude --project-root "$PROJ" --skip-synergy
+assert_contains "claude skip-synergy: graphify and agentmemory patches off" "$(calls)" "RT_PATCH_AGENTMEMORY=0 RT_PATCH_CONTEXT_MODE=1 RT_PATCH_GRAPHIFY=0 RT_PATCH_LEANCTX=1"
+assert_not_contains "claude skip-synergy: synergy optimizer not run" "$(calls)" "sb-optimize-stack"
+assert_contains "skip-synergy announced" "$TL_OUT" "SKIP: sb-optimize-stack.sh (Graphify + agentmemory)"
+
+run_opt --host codex --project-root "$PROJ" --skip-rtcm
+assert_contains "skip-rtcm announced" "$TL_OUT" "SKIP: optimize-rtk-context-mode.sh"
+assert_not_contains "skip-rtcm: helper not run" "$(calls)" "optimize-rtk-context-mode"
+assert_contains "skip-rtcm: context-mode and leanctx patches off" "$(calls)" "RT_PATCH_AGENTMEMORY=1 RT_PATCH_CONTEXT_MODE=0 RT_PATCH_GRAPHIFY=1 RT_PATCH_LEANCTX=0"
+
+run_opt --host pi --project-root "$PROJ" --skip-rtcm --skip-synergy
+assert_not_contains "both skips: no MCP patching" "$(calls)" "patch-mcp"
+assert_eq "both skips: only the leanctx installer runs" "install-leanctx-sb --host pi --project-root ${PROJ}" "$(calls)"
+
+# ---- patch switches follow the user's per-tool consent (R6-04): nothing is forced to 1
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+sb_test_consent_revoke_all
+sb_test_consent_grant leanctx wire
+sb_test_consent_grant graphify wire
+run_opt --host claude --project-root "$PROJ"
+assert_contains "only consented tools are patched" "$(calls)" "RT_PATCH_AGENTMEMORY=0 RT_PATCH_CONTEXT_MODE=0 RT_PATCH_GRAPHIFY=1 RT_PATCH_LEANCTX=1"
+assert_contains "wire-only leanctx: the optimizer withholds the package-install consent" "$(calls)" "RT_LEANCTX_ALLOW_INSTALL=0"
+assert_not_contains "no RTK/Context Mode optimizer without their consent" "$(calls)" "optimize-rtk-context-mode"
+sb_test_consent_grant context_mode wire
+run_opt --host claude --project-root "$PROJ"
+assert_contains "Context Mode consent brings its optimizer" "$(calls)" "optimize-rtk-context-mode --host claude"
+assert_contains "and its patch switch" "$(calls)" "RT_PATCH_CONTEXT_MODE=1"
+sb_test_consent_grant_all
+
+# ---- one install run: every helper shares one SB_INSTALL_RUN_START, so the first backup survives (R6-26)
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+rm -f "$LOG.start"
+run_opt --host claude --project-root "$PROJ"
+starts="$(sort -u "$LOG.start")"
+assert_eq "all helpers of one run share a single run start" "1" "$(printf '%s\n' "$starts" | wc -l | tr -d ' ')"
+assert_contains "the run start is epoch seconds" "$starts" "1"
+case "$starts" in *[!0-9]*|"") tl_fail "run start is numeric" ;; *) tl_pass "run start is numeric" ;; esac
+rm -f "$LOG.start"
+: >"$LOG"; tl_run env SB_INSTALL_RUN_START=1234 bash "$OPT" --host claude --project-root "$PROJ"
+assert_eq "an outer run start is kept" "1234" "$(sort -u "$LOG.start")"
+
+# ---- dry run
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+run_opt --host claude --project-root "$PROJ" --dry-run
+assert_eq "dry-run exits 0" "0" "$TL_STATUS"
+assert_eq "dry-run runs no helper" "" "$(calls)"
+assert_contains "dry-run leanctx" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/install-leanctx-sb.sh --host claude --project-root ${PROJ} --dry-run"
+assert_contains "dry-run rtcm" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/optimize-rtk-context-mode.sh --host claude --project-root ${PROJ} --skip-cm-doctor --dry-run"
+assert_contains "dry-run patch" "$TL_OUT" "DRY-RUN: env RT_HOST=claude TOOLSTACK_REPO_ROOT=${STAGE} RT_PATCH_GRAPHIFY=1"
+assert_contains "dry-run synergy" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/sb-optimize-stack.sh --apply --project-root ${PROJ} --dry-run --host claude"
+assert_contains "dry-run metadata" "$TL_OUT" "DRY-RUN: stamp optimization_profiles.five_tool_routed metadata"
+assert_eq "dry-run does not modify the config" "null" "$(jq -r '.recommended_tools.leanctx.optimization_profile' "$PROJ/.silver-bullet.json")"
+assert_contains "dry-run reports the default profile as active" "$TL_OUT" "Profile: five_tool_routed"
+
+# ---- all hosts, --force, and a config that is not opted in
+run_opt --host all --project-root "$PROJ" --skip-rtcm --skip-synergy
+for h in claude codex opencode pi; do
+  assert_contains "all: leanctx for $h" "$(calls)" "install-leanctx-sb --host $h --project-root ${PROJ}"
+done
+assert_not_contains "all: synergy host flag omitted" "$(calls)" "sb-optimize-stack"
+run_opt --host all --project-root "$PROJ" --skip-rtcm
+assert_contains "all: synergy without --host" "$(calls)" "sb-optimize-stack --apply"
+assert_not_contains "all: synergy not pinned to a host" "$(calls)" "sb-optimize-stack --apply --host"
+
+write_cfg '{}'
+sb_test_consent_revoke_all
+run_opt --host opencode --project-root "$PROJ" --force --skip-rtcm --skip-synergy
+assert_eq "--force runs even when not consented" "install-leanctx-sb --host opencode --project-root ${PROJ}" "$(calls)"
+assert_eq "--force stamps the profile into a bare config" "five_tool_routed" "$(jq -r '.recommended_tools.leanctx.optimization_profile' "$PROJ/.silver-bullet.json")"
+
+# ---- profile not active -> warning (a dry run does not stamp the profile)
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true,"optimization_profile":"synergy_max"}}}'
+run_opt --host claude --project-root "$PROJ" --dry-run --skip-rtcm --skip-synergy
+assert_eq "inactive profile does not fail the run" "0" "$TL_STATUS"
+assert_contains "inactive profile warns" "$TL_ERR" "WARN: five_tool_routed profile not active in config"
+assert_not_contains "inactive profile is not reported as active" "$TL_OUT" "Profile: five_tool_routed"
+assert_eq "dry run leaves the other profile in place" "synergy_max" "$(jq -r '.recommended_tools.leanctx.optimization_profile' "$PROJ/.silver-bullet.json")"
+
+# a failing helper aborts the run (set -e) before later stages
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+: >"$LOG"
+tl_run env STUB_RC_install_leanctx_sb=7 bash "$OPT" --host claude --project-root "$PROJ"
+assert_eq "failing leanctx installer aborts with its status" "7" "$TL_STATUS"
+assert_not_contains "no later stage after the failure" "$(calls)" "optimize-rtk-context-mode"
+
+# ---- host auto-detection and config helpers (functions-only copy: same line numbers, main flow cut off)
+FN="$TL_TMP/fn/scripts/optimize-five-tool-stack.sh"
+mkdir -p "$TL_TMP/fn/scripts" "$TL_TMP/fn/hooks"
+ln -sfn "$TL_REPO_ROOT/hooks/lib" "$TL_TMP/fn/hooks/lib"
+awk '/^while \[\[ \$# -gt 0 \]\]/ { exit } { print }' "$TL_REPO_ROOT/scripts/optimize-five-tool-stack.sh" >"$FN"
+detect() {
+  tl_run env -u CODEX_HOME -u PI_CODING_AGENT_DIR -u RT_HOST "$@" bash -c 'source "$1"; detect_host' _ "$FN"
+}
+rm -rf "$HOME/.codex" "$HOME/.claude" "$HOME/.pi" "$HOME/.config"
+detect; assert_eq "detect: nothing found is reported as none" "none" "$TL_OUT"
+detect RT_HOST=pi; assert_eq "detect: RT_HOST wins" "pi" "$TL_OUT"
+mkdir -p "$HOME/.cursor"; detect; assert_eq "detect: a leftover ~/.cursor is not a host" "none" "$TL_OUT"
+rmdir "$HOME/.cursor"
+detect CODEX_HOME=/c; assert_eq "detect: CODEX_HOME" "codex" "$TL_OUT"
+mkdir -p "$HOME/.codex"; detect; assert_eq "detect: ~/.codex" "codex" "$TL_OUT"
+rmdir "$HOME/.codex"
+mkdir -p "$HOME/.config/opencode"; detect; assert_eq "detect: opencode config dir" "opencode" "$TL_OUT"
+rm -rf "$HOME/.config"
+detect PI_CODING_AGENT_DIR=/p; assert_eq "detect: PI_CODING_AGENT_DIR" "pi" "$TL_OUT"
+mkdir -p "$HOME/.pi/agent"; detect; assert_eq "detect: ~/.pi/agent" "pi" "$TL_OUT"
+rm -rf "$HOME/.pi"
+mkdir -p "$HOME/.claude"; detect; assert_eq "detect: ~/.claude" "claude" "$TL_OUT"
+rm -rf "$HOME/.claude"
+
+# no config anywhere: the profile helpers degrade quietly
+tl_run bash -c 'source "$1"; PROJECT_ROOT=""; DRY_RUN=0; if five_tool_profile_active; then echo active=0; else echo active=1; fi; apply_profile_metadata; echo "apply=$?"' _ "$FN"
+assert_contains "profile active: no config file" "$TL_OUT" "active=1"
+assert_contains "apply metadata: no config file is a no-op" "$TL_OUT" "apply=0"
+# an unparsable config counts as the default (five_tool_routed) profile and is no veto
+printf 'garbage' >"$PROJ/.silver-bullet.json"
+sb_test_consent_grant_all
+tl_run bash -c 'source "$1"; PROJECT_ROOT="$2"; if five_tool_profile_active; then echo active=0; else echo active=1; fi; if leanctx_opted_in; then echo opted=0; else echo opted=1; fi' _ "$FN" "$PROJ"
+assert_contains "profile active: unparsable config" "$TL_OUT" "active=0"
+assert_contains "consented: an unparsable project file is no veto" "$TL_OUT" "opted=0"
+sb_test_consent_revoke_all
+tl_run bash -c 'source "$1"; PROJECT_ROOT="$2"; if leanctx_opted_in; then echo opted=0; else echo opted=1; fi' _ "$FN" "$PROJ"
+assert_contains "not consented: not opted in" "$TL_OUT" "opted=1"
+sb_test_consent_grant_all
+
+# --host auto with no detected host writes nothing and says so (even with --force)
+rm -rf "$HOME/.codex" "$HOME/.claude" "$HOME/.pi" "$HOME/.config"
+run_opt --host auto --project-root "$PROJ" --force
+assert_eq "auto with no host: exits 0" "0" "$TL_STATUS"
+assert_eq "auto with no host: no helper ran" "" "$(calls)"
+assert_contains "auto with no host: says so" "$TL_OUT" "No host detected"
+assert_eq "auto with no host: nothing written under HOME" "0" "$(find "$HOME" -type f ! -path "$HOME/.local/*" 2>/dev/null | wc -l | tr -d ' ')"
+
+# --host auto resolves through detect_host before the opt-in check
+mkdir -p "$HOME/.codex"
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+run_opt --host auto --project-root "$PROJ" --skip-rtcm --skip-synergy
+assert_contains "auto host resolves to the detected host" "$TL_OUT" "=== SB five-tool stack optimization (host=codex) ==="
+assert_contains "auto host drives the helpers" "$(calls)" "install-leanctx-sb --host codex"
+
+# sb-optimize-stack.sh --apply exits non-zero when the score has critical gaps; the
+# orchestrator reports them and still finishes its remaining steps
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+: >"$LOG"
+tl_run env STUB_RC_sb_optimize_stack=1 bash "$OPT" --host claude --project-root "$PROJ" --skip-rtcm
+assert_eq "synergy gaps do not abort the orchestrator" "0" "$TL_STATUS"
+assert_contains "synergy gaps are reported" "$TL_ERR" "WARN: sb-optimize-stack.sh --apply reported critical gaps (exit 1)"
+assert_contains "synergy gaps point at the verify report" "$TL_ERR" "sb-optimize-stack.sh --verify"
+assert_contains "the orchestrator still completes" "$TL_OUT" "=== Five-tool optimization complete ==="
+assert_contains "later steps still ran" "$(calls)" "patch-mcp"
+
+tl_results

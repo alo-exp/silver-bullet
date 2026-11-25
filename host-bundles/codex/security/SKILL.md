@@ -208,6 +208,6 @@ If existing code violates these rules:
 
 ## Backlog Capture (mandatory)
 
-After completing the security review, any low-priority or suggested findings that are not blocking must be captured through SB-owned tracking: use `/sb:add` when issue/backlog integration is configured, otherwise append them to `.planning/ROADMAP.md` or `.planning/SECURITY.md` with owner and rationale. Do NOT silently drop security suggestions — they must be captured or implemented.
+After completing the security review, any low-priority or suggested findings that are not blocking must be captured through SB-owned tracking: use `/sb:add` when issue/backlog integration is configured, otherwise append them to `.planning/SECURITY.md` with owner and rationale. Never write them into `.planning/ROADMAP.md`: planning-file-guard denies direct edits to it, and roadmap changes belong to `/sb:phase` and `/sb:add`. Do NOT silently drop security suggestions — they must be captured or implemented.
 
 If no items were deferred, output: "No backlog items from this security review."
