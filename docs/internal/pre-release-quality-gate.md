@@ -27,20 +27,10 @@ rows, and five-tool live scenarios — MUST be initiated through the correspondi
 |------|------------------|----------------|
 | Codex | `/sb:agent-codex` | **GPT-5.6 Luna Low** |
 | Claude | `/sb:agent-claude` | **Haiku 4.5** |
-| Cursor | `/sb:agent-cursor` | **Composer 2.5** |
 
 The wrapper is the live-test acceptance boundary. Do not replace it with a raw host CLI,
 silently substitute another model, or treat a raw CLI transcript as wrapper evidence.
 Offline and structural tests are exempt; their live counterparts are not.
-
-### Current-cycle hold — Cursor five-tool repair
-
-A separate session currently owns the repair of the Cursor five-tool stack. The release
-session MUST wait for that session to report completion and make its repair available in the
-checkout or fixture under test before launching or retrying any live Cursor five-tool
-scenario. Existing timeout logs remain **FAIL** evidence and must not be reused as a pass;
-after the repair handoff, rerun from a fresh isolated fixture with the wrapper/model mapping
-above.
 
 ---
 
@@ -78,9 +68,10 @@ bash scripts/validate-launch-review.sh
 
 ## Stage 2 — SENTINEL Per-Skill Audit (Prose Skills)
 
-Mandatory **1 clean SENTINEL pass per canonical** `skills/*/SKILL.md` (**85 skills**).
-Agent bundle copies (`agents/{claude,codex,cursor}/*/SKILL.md`) are covered by sync
-parity when `diff` against canonical is empty; diverged copies require their own pass.
+Mandatory **1 clean SENTINEL pass per canonical** `skills/*/SKILL.md` (one per skill;
+count them with `ls skills/*/SKILL.md | wc -l`). Rendered bundle copies (`agents/claude/`,
+`host-bundles/codex/`) are covered by sync parity when `diff` against canonical is
+empty; diverged copies require their own pass.
 
 ### Pass criteria (per skill)
 
@@ -102,7 +93,7 @@ parity when `diff` against canonical is empty; diverged copies require their own
 echo "sentinel-skills-clean" >> "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
 ```
 
-Optional per-skill lines: `sentinel-clean:<skill-name>` (85 lines when complete).
+Optional per-skill lines: `sentinel-clean:<skill-name>` (one per canonical skill when complete).
 
 ### Validation
 
@@ -202,8 +193,7 @@ After all fixes from Stages 1–4a:
 4. Run mandatory tri-host skill surface + routing smoke (isolated env per host;
    includes `validate-host-agnostic-core.sh`):
    `HOST_API_KEY=... RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh`
-   Cursor CLI uses `CURSOR_API_KEY` + `AGENT_CLI_CREDENTIAL_STORE=memory` (no Keychain).
-   Isolation: fake `HOME`, `CURSOR_CONFIG_DIR`, `--plugin-dir`, `--workspace`.
+   Isolation: a fake `HOME` per host.
 5. Run outcome validation overlay dry-run:
    `RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run`
 6. Run `bash tests/run-all-tests.sh` once — must be green
@@ -243,14 +233,13 @@ Optional automated checks at release time:
 ## RC Validation Matrix
 
 When `release.require_rc_matrix` is true, run `bash scripts/run-rc-validation-matrix.sh` **locally on the
-operator machine** before release. Six cells: cursor, codex, and **claude** × fresh/upgrade. Claude and
+operator machine** before release. Four cells: codex and **claude** × fresh/upgrade. Claude and
 Codex live TUI delegates require operator-local CLIs and user API keys — **not available in GitHub CI**
-(no first-party Anthropic/Codex keys; third-party proxy out of scope). The release gate requires six
+(no first-party Anthropic/Codex keys; third-party proxy out of scope). The release gate requires four
 operator-local markers under `${SB_RUNTIME_STATE_DIR}/rc-validation/` (`pass` or audited `skip`).
 
-CI: [`.github/workflows/rc-validation.yml`](../.github/workflows/rc-validation.yml) is optional/non-blocking
-(like `e2e-live.yml`) — cursor live when `CURSOR_API_KEY` exists; codex/claude structural install only.
-Five-tool cursor scenarios fold into RC cursor cells. See `docs/testing/RC-VALIDATION-MATRIX.md`.
+CI: [`.github/workflows/rc-validation.yml`](../../.github/workflows/rc-validation.yml) is optional/non-blocking
+(like `e2e-live.yml`) — codex/claude structural install only. See `docs/testing/RC-VALIDATION-MATRIX.md`.
 Legacy `run-release-live-matrix.sh` is optional diagnostics. Bypass: `SB_SKIP_RC_MATRIX=1`.
 
 ---
@@ -261,10 +250,12 @@ Before `gh release create` or `/silver-create-release`:
 
 1. Run `bash scripts/run-release-live-matrix.sh`
 2. Run `tests/e2e-live/run-e2e-live-tests.sh` (or documented SKIP)
-3. Confirm `matrix=codex-only` + `inline-full-surface` markers exist
+3. Confirm matching `matrix=` markers plus `inline-full-surface` exist (the accepted
+   combinations are listed in `hooks/lib/completion-audit/deploy-tier.sh`)
 4. Run `bash scripts/verify-release-commit-ci.sh` — CI + Secret Scan green on HEAD
 
-Default release path uses Kay-backed Codex-compatible markers (`matrix=codex-only`).
+The live harnesses default to the Claude runtime (`matrix=claude-only` markers);
+`scripts/run-sb-live-tests-kay.sh` produces Kay-backed `matrix=codex-only` markers instead.
 Full Claude/native-Codex parity is optional diagnostic coverage.
 
 Mandatory tri-host skill surface + routing smoke (before live matrix):
@@ -277,31 +268,13 @@ Isolated temp homes per host; host CLI auth via `HOST_API_KEY` +
 `AGENT_CLI_CREDENTIAL_STORE=memory` (never macOS Keychain). Host isolation uses
 official mechanisms only: fake `HOME`, host config dir, `--plugin-dir`, and
 `--workspace` (no undocumented host config redirects). Writes
-`${SB_RUNTIME_STATE_DIR}/pre-release-host-smoke` on success.
+`pre-release-host-smoke` on success into the runtime state dir the operator had before isolation (the isolated state dirs are removed on exit).
 
 Structural stages inside the smoke script (mandatory):
 
 - `scripts/validate-host-agnostic-core.sh` — SB core must not embed foreign host references
 - `scripts/validate-host-install-surface.sh` — per-host bundle layout
 - `scripts/validate-host-skill-surface.sh` — namespaced skill surfaces
-
-Cursor install/hook smoke (included above): `release-live-matrix-cursor-smoke.sh`
-writes `matrix=cursor-smoke` when enabled.
-
-Five-tool stack pre-release (Stage 4c — when `recommended_tools.leanctx.enabled_by_user` is true):
-
-```bash
-export CURSOR_API_KEY=...   # or cursor-agent login
-bash scripts/pre-release-gate.sh
-# or explicitly:
-SB_FIVE_TOOL_PRERELEASE=1 SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE=1 \
-  bash tests/scripts/test-five-tool-prerelease-cursor.sh
-```
-
-Live scenarios S01/S02/S04/S06/S09 via `/sb:agent-cursor` (`agent-cursor-delegate.sh`,
-**Composer 2.5** only), subject to the current-cycle Cursor repair hold above.
-Writes `${SB_RUNTIME_STATE_DIR}/pre-release-five-tool-stack` on success.
-See [`docs/testing/FIVE-TOOL-PRERELEASE.md`](../testing/FIVE-TOOL-PRERELEASE.md).
 
 ---
 
@@ -319,7 +292,7 @@ and surface to the user before proceeding.
 
 ## Stage 5 — Post-Release Host Verification (mandatory after `gh release create`)
 
-After the GitHub Release is published, verify the **just-released** build on all three
+After the GitHub Release is published, verify the **just-released** build on both
 operator-local hosts before declaring the release complete.
 
 ### Execution
@@ -330,21 +303,21 @@ bash scripts/post-release-host-verify.sh --version <version>
 
 `post-release-refresh.sh` delegates to the same orchestrator for backward compatibility.
 
-Per host (cursor, codex, claude) on the **operator machine** (not isolated for install):
+Per host (codex, claude) on the **operator machine** (not isolated for install):
 
 1. **Clean uninstall** — remove SB plugin cache dirs; strip SB-only hook entries from
-   host hook manifests (`~/.cursor/hooks.json`, `~/.codex/hooks.json`, Claude plugin scopes).
+   host hook manifests (`~/.codex/hooks.json`, Claude plugin scopes).
    **Do not** remove rtk, context-mode, or other non-SB hooks.
 2. **Fresh install** — `RTK_DISABLED=1 bash scripts/install-<host>.sh` from the released
    tag checkout (or `--public-release` when validating marketplace-only paths).
 3. **Smoke** — operator-home `sb-diagnostics.sh` + isolated RC fresh cell:
    `bash scripts/run-rc-validation-matrix.sh --host <host> --mode fresh`
-4. **Marker** — write `~/.{cursor,codex,claude}/.silver-bullet/post-release-verify/{host}`
+4. **Marker** — write `~/.{codex,claude}/.silver-bullet/post-release-verify/{host}`
    with `status=pass|fail`, `version`, and `timestamp`.
 
 ### Hook marker (aggregate)
 
-Optional session marker after all three hosts pass:
+Optional session marker after both hosts pass:
 
 ```bash
 echo "post-release-host-verify" >> "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"

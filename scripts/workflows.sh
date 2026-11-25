@@ -65,13 +65,17 @@ _compact()  { date -u +%Y%m%dT%H%M%SZ; }
 # 6-char lowercase base32-ish suffix from /dev/urandom
 _rand_suffix() {
   # Use head -c on /dev/urandom + base32 if available, fall back to hexdump.
+  # A failed pipeline (e.g. SIGPIPE under pipefail) yields an empty suffix,
+  # which the caller's id validation rejects with a message.
+  local raw=""
   if command -v base32 >/dev/null 2>&1; then
-    head -c 12 /dev/urandom 2>/dev/null | base32 2>/dev/null \
-      | tr -d '=' | tr '[:upper:]' '[:lower:]' | head -c 6
+    raw="$(head -c 12 /dev/urandom 2>/dev/null | base32 2>/dev/null \
+      | tr -d '=\n' | tr '[:upper:]' '[:lower:]')" || raw=""
   else
-    head -c 4 /dev/urandom 2>/dev/null \
-      | od -An -tx1 | tr -d ' \n' | head -c 6
+    raw="$(head -c 4 /dev/urandom 2>/dev/null \
+      | od -An -tx1 | tr -d ' \n')" || raw=""
   fi
+  printf '%s' "${raw:0:6}"
 }
 
 # Sanitize composer slug (allow lowercase alnum, dash, colon → dash)
@@ -222,11 +226,16 @@ cmd_complete_flow() {
       name = $3
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", name)
       if (!completed_match && (name == flow || norm(name) == norm(flow))) {
-        # Replace status column 4 → " complete " and completed col 6 → " <now> "
-        changed = sub(/\| pending \| - \| - \|$/, "| complete | - | " now " |", $0)
-        # Also handle cases where started has been set but completed is still "-"
-        changed += sub(/\| (pending|in-progress) \| ([^|]+) \| - \|$/, "| complete | \\2 | " now " |", $0)
-        if (changed > 0) completed_match = 1
+        # Columns: $4 status, $5 started, $6 completed. A pending / in-progress
+        # row whose completed column is still "-" becomes complete; started is kept.
+        # (Field assignment, not sub() back-references: awk has no \2 in sub().)
+        st = $4; gsub(/^[[:space:]]+|[[:space:]]+$/, "", st)
+        cp = $6; gsub(/^[[:space:]]+|[[:space:]]+$/, "", cp)
+        if (NF == 7 && $7 ~ /^[[:space:]]*$/ && (st == "pending" || st == "in-progress") && cp == "-") {
+          $4 = " complete "
+          $6 = " " now " "
+          completed_match = 1
+        }
       }
       print
       next

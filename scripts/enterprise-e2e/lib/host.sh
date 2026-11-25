@@ -37,7 +37,7 @@ else:
 PY
 }
 
-# claude | codex | cursor — honors pre-set SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME.
+# claude | codex — honors pre-set SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME.
 enterprise_e2e_matrix_host() {
   local host="${SB_E2E_LIVE_RUNTIME:-${SILVER_BULLET_RUNTIME:-}}"
   if [[ -z "$host" ]]; then
@@ -55,13 +55,13 @@ PY
     fi
   fi
   case "$host" in
-    claude|codex|cursor) printf '%s\n' "$host" ;;
+    claude|codex) printf '%s\n' "$host" ;;
     *) printf 'claude\n' ;;
   esac
 }
 
 enterprise_e2e_apply_host_path_default() {
-  local env_var="$1" field="$2" host sb_root legacy val
+  local env_var="$1" field="$2" host sb_root val
   host="$(enterprise_e2e_matrix_host)"
   sb_root="${SB_ROOT:-$(enterprise_e2e_sb_root 2>/dev/null || enterprise_e2e_harness_root)/..}"
   sb_root="$(cd "$sb_root" && pwd)"
@@ -150,12 +150,12 @@ enterprise_e2e_assert_host_git_branch() {
       sb_root="$(cd "$(enterprise_e2e_harness_root)/.." && pwd)"
     fi
   fi
-  [[ -d "${sb_root}/.git" ]] || enterprise_e2e_preflight_fail "SB harness is not a git repo: ${sb_root}"
+  git -C "$sb_root" rev-parse --git-dir >/dev/null 2>&1 || enterprise_e2e_preflight_fail "SB harness is not a git repo: ${sb_root}" || return 1
   current="$(git -C "$sb_root" branch --show-current 2>/dev/null || true)"
   echo "Harness git branch preflight: want=${expected} have=${current:-detached} host=${host}"
   if [[ "$current" != "$expected" ]]; then
     enterprise_e2e_preflight_fail \
-      "SB harness on '${current:-detached}' — expected '${expected}' for host=${host} (see hosts.json git_branch)"
+      "SB harness on '${current:-detached}' — expected '${expected}' for host=${host} (see hosts.json git_branch)" || return 1
   fi
   echo "  OK on ${expected} @ $(git -C "$sb_root" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 }
@@ -221,13 +221,6 @@ enterprise_e2e_matrix_host_route() {
       else
         printf '%s\n' "$route"
       fi
-      ;;
-    cursor)
-      case "$route" in
-        /sb) printf '/sb\n' ;;
-        /sb:*) printf '%s\n' "${route#/sb:}" ;;
-        *) printf '%s\n' "$route" ;;
-      esac
       ;;
     *)
       printf '%s\n' "$route"

@@ -8,6 +8,10 @@ version: 1.0.0
 
 # /sb:deep-research — Deep Research Workflow
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `agents/claude/` (`${PLUGIN_ROOT}/agents/claude/sb:deep-research/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
+**Skill directory**: `SKILL_DIR` is the directory that holds this `SKILL.md` (its `scripts/` and `templates/` live there). Run those scripts as `${SKILL_DIR}/scripts/<name>`, never relative to the project working directory.
+
 SB research workflow and **AF-DECIDE** flow-step implementation for decisions that
 need evidence before planning or execution. This skill absorbs the upstream
 `deep-research` methodology into Silver Bullet as `FS-SILVER_DEEP_RESEARCH`.
@@ -260,24 +264,44 @@ competitive-intelligence-report.md
 Run validation before exit:
 
 ```bash
-python3 skills/silver-deep-research/scripts/validate_report.py --report "$SB_RESEARCH_OUT_DIR/research_report.md"
-python3 skills/silver-deep-research/scripts/verify_citations.py --report "$SB_RESEARCH_OUT_DIR/research_report.md"
-python3 skills/silver-deep-research/scripts/verify_claim_support.py --report "$SB_RESEARCH_OUT_DIR/research_report.md" --dir "$SB_RESEARCH_OUT_DIR"
-python3 skills/silver-deep-research/scripts/phase_gate.py --dir "$SB_RESEARCH_OUT_DIR"
+python3 "${SKILL_DIR}/scripts/validate_report.py" --report "$SB_RESEARCH_OUT_DIR/research_report.md"
+python3 "${SKILL_DIR}/scripts/verify_citations.py" --report "$SB_RESEARCH_OUT_DIR/research_report.md"
+python3 "${SKILL_DIR}/scripts/verify_claim_support.py" verify --dir "$SB_RESEARCH_OUT_DIR" --report "$SB_RESEARCH_OUT_DIR/research_report.md" --strict
+python3 "${SKILL_DIR}/scripts/phase_gate.py" --dir "$SB_RESEARCH_OUT_DIR"
 ```
 
 For solution types, also run:
 
 ```bash
-python3 skills/silver-deep-research/scripts/generate_report_spa.py --dir "$SB_RESEARCH_OUT_DIR"
-python3 skills/silver-deep-research/scripts/validate_spa_report.py --report "$SB_RESEARCH_OUT_DIR/report.html"
+python3 "${SKILL_DIR}/scripts/generate_report_spa.py" --dir "$SB_RESEARCH_OUT_DIR"
+python3 "${SKILL_DIR}/scripts/validate_spa_report.py" --report "$SB_RESEARCH_OUT_DIR/report.html"
 RT="$(jq -r '.research_type // empty' "$SB_RESEARCH_OUT_DIR/run_manifest.json")"
 if [ "$RT" = "solution-landscape" ]; then
-  python3 skills/silver-deep-research/scripts/validate_landscape.py --dir "$SB_RESEARCH_OUT_DIR"
+  python3 "${SKILL_DIR}/scripts/validate_landscape.py" --dir "$SB_RESEARCH_OUT_DIR"
 elif [ "$RT" = "solution-compare" ]; then
-  python3 skills/silver-deep-research/scripts/validate_compare.py --dir "$SB_RESEARCH_OUT_DIR"
+  python3 "${SKILL_DIR}/scripts/validate_compare.py" --dir "$SB_RESEARCH_OUT_DIR"
 fi
 ```
+
+The claim-support gate is a strict near-quote rule. `--strict` exits 1 on a `contradicted` claim (a quote is
+the same sentence except for exactly one token: an added or removed "not"/"never"/"no", or one figure of another
+value written the same way, in every cited quote) and on
+any `unsupported` or uncited factual claim. A claim is `supported` only when it repeats a quoted source span
+word for word. Only the first word's capital, one final period, curly against straight quotes, the digit script, a
+[n] citation marker and a contraction may differ; every punctuation mark is a token (`6"` is not `6'`, `x != 0` is not
+`x = 0`) and the articles a/an/the are words like any other; case, plurals, signs, comparators, currency, `%`, `?`, `*`, accents and other scripts
+are kept, and a figure is compared exactly as written ("3" is not "3.0", "five" is not "5"). Nothing else may
+differ. With several quotes, one that supports the claim is enough, and `contradicted` needs every quote to
+contradict it. Any rewording, reordering, voice change or paraphrase is `needs_review` and is
+**listed, not failed**: the JSON summary has `review_required: true` and a `needs_review` list with the
+reason for each claim, and `verify_claim_support.py report --dir "$SB_RESEARCH_OUT_DIR"` prints a "Needs
+Review" section. Expect most paraphrased claims there. While writing, quote exactly the ONE sentence that backs each claim
+and phrase the claim to repeat it, so it is `supported` rather than `needs_review`. Before delivery, resolve every item: open the source, then
+either add the exact supporting span as evidence (`evidence_store.py add`, quoting the source verbatim)
+and keep the claim's wording, or correct the claim to what the source says, or check the paraphrase against
+the source yourself and say so in the report. Do not hand-edit a status, and do not report a run as verified
+while `review_required` is true. The workflow is in `reference/quality-gates.md` ("Resolving needs_review
+claims").
 
 Maximum repair loops: 3 inside the flow step. If still failing, write blocker
 evidence to `.planning/BLOCKERS.md` and return a blocked AF-DECIDE V-gate.

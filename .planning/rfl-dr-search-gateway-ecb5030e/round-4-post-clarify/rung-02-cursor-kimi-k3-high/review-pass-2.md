@@ -3,7 +3,7 @@
 - **Model:** Cursor Kimi K3 High (`kimi-k3-high` / `sb-kimi-k3-high`)
 - **Confirmed SHA-256:** `9b79d0144559ac6abbe360f39f7c894742295bb0f1e245124b21606559099a21` (re-hashed this pass; matches freeze)
 - **Encoder brief:** `.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/rung-02-cursor-kimi-k3-high/brief-review-pass-2.md`
-- **Method:** graphify CLI orientation query, then full plan re-read (all 783 lines, paged) of `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`; every ledger row (I-1…I-50, K1–K6) spot-checked against its encoding site; four prior-hop leftovers evaluated against the freeze.
+- **Method:** graphify CLI orientation query, then full plan re-read (all 783 lines, paged) of `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`; every ledger row (I-1…I-50, K1–K6) spot-checked against its encoding site; four prior-hop leftovers evaluated against the freeze.
 
 ## Verdict: NOT CLEAN
 

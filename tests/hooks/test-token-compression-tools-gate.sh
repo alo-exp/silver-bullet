@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export SILVER_BULLET_TEST_HOOK_ENFORCED=1
-export SILVER_BULLET_RUNTIME=cursor
+export SILVER_BULLET_RUNTIME=claude
 
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
@@ -16,6 +16,7 @@ pass() { echo "  PASS: $1"; PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+mkdir -p "$SB_RUNTIME_STATE_DIR"
 TMPDIR_TEST="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR_TEST"' EXIT
 
@@ -35,7 +36,7 @@ cat >"$TMPCFG" <<EOF
       "enabled_by_user": true,
       "install_status": "installed",
       "cli_command": "rtk",
-      "usage_state_file": "${SB_RUNTIME_STATE_DIR}/rtk-usage-test-$$"
+      "usage_state_file": "${SB_RUNTIME_STATE_DIR}/ttest-$$-rtk-usage"
     }
   },
   "state": { "state_file": "${SB_RUNTIME_STATE_DIR}/state-test-$$" }
@@ -63,7 +64,7 @@ sb_token_tool_usage_is_fresh "$TMPCFG" rtk && pass "usage fresh after record" ||
 GATE="$REPO_ROOT/hooks/token-compression-tools-gate.sh"
 input=$(jq -n --arg f "${TMPDIR_TEST}/src/app.js" \
   '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"a", new_string:"b"}}')
-out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" SILVER_BULLET_RUNTIME=cursor && printf '%s' "$input" | bash "$GATE" 2>/dev/null)"
+out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" SILVER_BULLET_RUNTIME=claude && printf '%s' "$input" | bash "$GATE" 2>/dev/null)"
 if [[ -z "$out" ]] || ! printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
   pass "gate allows edit when rtk usage fresh"
 else

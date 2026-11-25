@@ -25,7 +25,14 @@ fi
 
 REPO="${GITHUB_REPOSITORY:-}"
 if [[ -z "$REPO" ]]; then
-  echo "::error::GITHUB_REPOSITORY is required"
+  # Derive owner/repo from origin (https://github.com/o/r[.git] or git@github.com:o/r[.git]).
+  origin_url="$(git -C "$ROOT" remote get-url origin 2>/dev/null || true)"
+  if [[ "$origin_url" =~ github\.com[:/]([^/]+)/([^/]+)$ ]]; then
+    REPO="${BASH_REMATCH[1]}/${BASH_REMATCH[2]%.git}"
+  fi
+fi
+if [[ -z "$REPO" ]]; then
+  echo "::error::GITHUB_REPOSITORY is required (set it to owner/repo; origin is not a GitHub remote)"
   exit 2
 fi
 
@@ -101,7 +108,9 @@ while true; do
       echo "✓ Release commit $COMMIT_SHA is fully green"
       exit 0
       ;;
-    missing|waiting)
+    *)
+      # Anything but "ready" (missing, waiting, or any unexpected state) keeps polling
+      # until the deadline, so the loop can never spin without sleeping.
       if (( $(date +%s) >= deadline )); then
         if [[ "$state" == "missing" ]]; then
           echo "::error::Release CI timed out waiting for GitHub workflow runs for commit $COMMIT_SHA: $details"
@@ -114,10 +123,6 @@ while true; do
 
       echo "Waiting for release commit $COMMIT_SHA to become fully green before tagging..."
       sleep "$poll_interval_seconds"
-      ;;
-    *)
-      echo "::error::Unexpected release CI status state: $state"
-      exit 1
       ;;
   esac
 done

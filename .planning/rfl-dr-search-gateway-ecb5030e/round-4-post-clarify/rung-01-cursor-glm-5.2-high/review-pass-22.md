@@ -1,7 +1,7 @@
 # Review pass 22 — RFL round-4-post-clarify, rung 1 (Cursor GLM 5.2 High)
 
 - model: glm-5.2-high
-- Plan: `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+- Plan: `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 - Confirmed freeze SHA-256: `916d87f52b25688f7953c76c89b96802d9438eb8da537a8c16b927b98b2ee138` (verified via `shasum -a 256` before review; matches pinned freeze).
 - Encoder brief used: `.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/rung-01-cursor-glm-5.2-high/brief-review-22.md`, emitted by `python3 scripts/review-fix-ladder.py --write-review-brief --run-dir .planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify`.
 - Mode: **Policy G pack review** (residual-only). Filed all valid residuals at all severities (HIGH / MED / LOW / NIT). Did **not** re-report ledger rows I-1…I-44 / AH1 unless a residual defect remained in this freeze. Did **not** stop after one class or after AH1. Did **not** skip the full pack scan because pass 21 was CLEAN on this same SHA — a full end-to-end re-read was performed regardless.

@@ -54,8 +54,6 @@ assert_file_exists "$HARNESS_HOST" "harness host lib exists"
 assert_executable "$HARNESS_LIVE" "harness live-test entry executable"
 assert_executable "$HARNESS_MATRIX" "harness matrix runner executable"
 assert_executable "${REPO_ROOT}/scripts/run-enterprise-e2e-live-test.sh" "live test wrapper executable"
-assert_executable "${REPO_ROOT}/tests/enterprise-e2e-live/test-enterprise-e2e-triage-ladder-scenario.sh" "triage ladder scenario executable"
-assert_contains "triage ladder scenario sources enterprise common" "${REPO_ROOT}/tests/enterprise-e2e-live/test-enterprise-e2e-triage-ladder-scenario.sh" "enterprise-e2e-live-common.sh"
 assert_contains "live wrapper delegates to harness" "${REPO_ROOT}/scripts/run-enterprise-e2e-live-test.sh" "enterprise-e2e/live-test.sh"
 assert_file_exists "${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh" "live test common lib exists"
 assert_contains "live-common sources harness core" "${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh" "enterprise-e2e/lib/core.sh"
@@ -95,7 +93,6 @@ for needle in \
   "RTK coexistence" \
   "SB_RTK_COMPAT_MODE=verbatim" \
   "provider restart" \
-  "cursor-hook-bridge" \
   "2 consecutive clean rounds" \
   "/sb:" \
   "interactive Claude TUI"
@@ -121,7 +118,6 @@ assert_contains "live common sources test app branch module" "$COMMON_LIB" "test
 assert_contains "test app branch ensure helper" "${REPO_ROOT}/scripts/enterprise-e2e/lib/test-app-branch.sh" "enterprise_e2e_ensure_test_app_branch"
 assert_contains "live entrypoint test app branch preflight" "$LIVE" "enterprise_e2e_assert_test_app_branch"
 assert_contains "round8 driver pins test app branch" "${REPO_ROOT}/.planning/enterprise-e2e/round8-matrix-driver.sh" "SB_E2E_TEST_APP_BRANCH"
-assert_contains "test app branch policy doc" "${REPO_ROOT}/.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md" "enterprise-e2e/round-1-cursor"
 assert_contains "live entrypoint token gateway preflight" "$LIVE" "enterprise_e2e_preflight_host"
 assert_contains "live entrypoint matrix forces settings export" "$LIVE" "SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0"
 assert_contains "live entrypoint matrix arrow strategy" "$LIVE" "CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=arrow"
@@ -132,8 +128,6 @@ assert_not_contains "live entrypoint forbids logout" "$LIVE" "auth logout"
 MATRIX="$HARNESS_MATRIX"
 assert_contains "matrix runner test app branch preflight" "$MATRIX" "enterprise_e2e_assert_test_app_branch"
 assert_contains "matrix runner harness git branch assert" "$MATRIX" "enterprise_e2e_assert_host_git_branch"
-assert_contains "hosts.json cursor test app branch" "$HARNESS_CONFIG" "enterprise-e2e/round-1-cursor"
-assert_contains "hosts.json cursor harness git branch" "$HARNESS_CONFIG" "enterprise-e2e/cursor"
 assert_contains "host lib harness git branch assert" "$HARNESS_HOST" "enterprise_e2e_assert_host_git_branch"
 assert_contains "matrix exports settings env" "$MATRIX" "claude_matrix_export_settings_env"
 assert_contains "matrix forces settings export on" "$MATRIX" 'export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0'
@@ -265,7 +259,9 @@ assert_contains "runbook documents RTK coexistence" "$RUNBOOK" "RTK coexistence"
 assert_contains "runbook documents verbatim harness mode" "$RUNBOOK" "SB_RTK_COMPAT_MODE=verbatim"
 
 # Dry-run path (no tool enforcement when configs pending or debug dry_run)
-if enterprise_e2e_code_intel_preflight "$REPO_ROOT" "${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}" 1 >/dev/null 2>&1; then
+# The preflight rejects a missing fixture directory, so give it a real (empty) one.
+DRY_FIXTURE="$(mktemp -d)"
+if enterprise_e2e_code_intel_preflight "$REPO_ROOT" "$DRY_FIXTURE" 1 >/dev/null 2>&1; then
   pass "code-intel preflight dry-run exits 0"
 else
   fail "code-intel preflight dry-run should exit 0"
@@ -275,7 +271,7 @@ fi
 TMP_LOG="$(mktemp)"
 LEDGER_FIXTURE=""
 LEDGER_RESUME_FIXTURE=""
-cleanup_tmp() { rm -f "$TMP_LOG" "$LEDGER_FIXTURE" "$LEDGER_RESUME_FIXTURE"; }
+cleanup_tmp() { rm -f "$TMP_LOG" "$LEDGER_FIXTURE" "$LEDGER_RESUME_FIXTURE"; rm -rf "$DRY_FIXTURE"; }
 trap cleanup_tmp EXIT
 {
   echo "=== Row 1: silver-router (/sb) ==="
@@ -292,17 +288,17 @@ cat >"$LEDGER_RESUME_FIXTURE" <<'LEDGER'
 | 3 | `silver-feature` | | | Fail | | | | |
 LEDGER
 inc="$(enterprise_e2e_incomplete_rows "$TMP_LOG" "$LEDGER_RESUME_FIXTURE" | tr '\n' ' ' | xargs)"
-if printf '%s\n' "$inc" | grep -qw 1; then
+if grep -qw 1 <<<"$inc"; then
   fail "resume must not include row 1 when ledger Pass"
 else
   pass "resume excludes row 1 when ledger Pass"
 fi
-if printf '%s\n' "$inc" | grep -qw 2; then
+if grep -qw 2 <<<"$inc"; then
   pass "resume includes row 2 when ledger incomplete despite log SKIP"
 else
   fail "resume includes row 2 when ledger incomplete — got [$inc]"
 fi
-if printf '%s\n' "$inc" | grep -qw 3; then
+if grep -qw 3 <<<"$inc"; then
   pass "resume includes ledger Fail row 3"
 else
   fail "resume includes ledger Fail row 3 — got [$inc]"
@@ -373,7 +369,11 @@ cat >"$LEDGER_FIXTURE" <<'LEDGER'
 LEDGER
 # shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
 source "${REPO_ROOT}/scripts/lib/enterprise-e2e-ledger-reconcile.sh"
-SB_E2E_LEDGER_FILE="$LEDGER_FIXTURE" reconcile_status="$(enterprise_e2e_ledger_reconcile_status)"
+# Stays set (unexported) for the rest of the suite, so the later host-default
+# helpers keep the fixture instead of exporting the host ledger path.
+# shellcheck disable=SC2034  # read by the sourced enterprise-e2e-ledger-reconcile.sh
+SB_E2E_LEDGER_FILE="$LEDGER_FIXTURE"
+reconcile_status="$(enterprise_e2e_ledger_reconcile_status)"
 if [[ "$reconcile_status" == "STALE" ]]; then
   pass "ledger reconcile STALE when <22 rows"
 else
@@ -387,18 +387,14 @@ assert_contains "matrix host row attempt log" "$MATRIX" "enterprise_e2e_row_atte
 assert_not_contains "matrix hardcodes runtime overwrite" "$MATRIX" "export SB_E2E_LIVE_RUNTIME=claude"
 assert_contains "live entrypoint --host flag" "$LIVE" "--host"
 assert_contains "live entrypoint host install" "$LIVE" "enterprise_e2e_run_install_host"
-assert_contains "helpers cursor runtime" "${REPO_ROOT}/tests/e2e-live/helpers.sh" "cursor/agent.sh"
 assert_contains "common host lock file helper" "$HARNESS_CORE" "enterprise_e2e_live_test_lock_file"
 assert_file_exists "${HARNESS_ROOT}/lib/adapters/claude.sh" "claude host adapter exists"
 assert_file_exists "${HARNESS_ROOT}/lib/adapters/codex.sh" "codex host adapter exists"
-assert_file_exists "${HARNESS_ROOT}/lib/adapters/cursor.sh" "cursor host adapter exists"
 assert_executable "${HARNESS_ROOT}/lib/deterministic/consecutive-rounds.sh" "deterministic consecutive-rounds shim exists"
 assert_contains "monitor detects harness matrix path" "$MONITOR" "enterprise-e2e/matrix.sh"
 assert_contains "monitor detects live harness entry" "$MONITOR" "enterprise-e2e/live-test"
 assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md" "ROUND-CODEX-1-LEDGER template exists"
-assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md" "ROUND-CURSOR-1-LEDGER template exists"
 assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/CODEX-TUI-PROTOCOL.md" "CODEX-TUI-PROTOCOL exists"
-assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/CURSOR-TUI-PROTOCOL.md" "CURSOR-TUI-PROTOCOL exists"
 
 export SB_ROOT="$REPO_ROOT"
 export SB_E2E_LIVE_RUNTIME=codex
@@ -464,7 +460,7 @@ else
 fi
 rm -rf "$CONSEC_TMP"
 consec_host_out="$(RTK_DISABLED=1 bash "$CONSEC_CHECK" --host codex 2>&1 || true)"
-if printf '%s\n' "$consec_host_out" | grep -q "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-1-GATES.md"; then
+if grep -q "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-1-GATES.md" <<<"$consec_host_out"; then
   pass "consecutive rounds --host resolves repo-root gate paths"
 else
   fail "consecutive rounds --host must resolve gates under repo .planning/"
@@ -472,13 +468,6 @@ fi
 assert_contains "rcs wires consecutive rounds env" "${REPO_ROOT}/scripts/enterprise-e2e-rcs.sh" "SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS"
 assert_contains "live test wires consecutive rounds env" "$LIVE" "SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS"
 
-# E2E-092: cursor matrix must enforce ≥1800s agent timeout (not inherit legacy 900s).
-assert_contains "matrix cursor enforces 1800s minimum timeout" "$HARNESS_MATRIX" 'CLAUDE_INTERACTIVE_TIMEOUT}" -lt 1800'
-assert_contains "matrix cursor syncs CURSOR_AGENT_TIMEOUT" "$HARNESS_MATRIX" 'CURSOR_AGENT_TIMEOUT'
-assert_executable "${REPO_ROOT}/.planning/enterprise-e2e/cursor3-real-driver.sh" "cursor3 REAL live driver executable"
-assert_contains "cursor3 driver exports 1800s timeout" "${REPO_ROOT}/.planning/enterprise-e2e/cursor3-real-driver.sh" "CLAUDE_INTERACTIVE_TIMEOUT=1800"
-assert_contains "cursor3 driver resets tui offsets" "${REPO_ROOT}/.planning/enterprise-e2e/cursor3-real-driver.sh" "enterprise_e2e_reset_tui_monitor_offsets"
-assert_contains "cursor3 pipeline driver resets tui offsets" "${REPO_ROOT}/.planning/enterprise-e2e/cursor3-real-pipeline-driver.sh" "enterprise_e2e_reset_tui_monitor_offsets"
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

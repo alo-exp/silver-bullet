@@ -28,7 +28,7 @@ assert_eq() {
 
 assert_deny_reason() {
   local label="$1" haystack="$2"
-  if printf '%s' "$haystack" | grep -qE 'Planning incomplete|HARD STOP|ORCHESTRATOR PARENT|forbidden|blocked'; then
+  if grep -qE 'Planning incomplete|HARD STOP|ORCHESTRATOR PARENT|forbidden|blocked' <<<"$haystack"; then
     echo "PASS: $label"
     PASS=$((PASS + 1))
   else
@@ -132,6 +132,22 @@ assert_eq "file.before_write returns native deny status" "2" "$bridge_status"
 assert_deny_reason "file.before_write surfaces planning denial" "$bridge_output"
 digest_after="$(capture_digest "$TARGET")"
 assert_eq "file.before_write keeps target unchanged" "$digest_before" "$digest_after"
+
+# A command listed by several matching hook groups runs once per event, also
+# when more than one distinct command has already run and when both tool-name
+# aliases (exec_command and Bash) match it.
+DEDUPE_ROOT="$TMP/dedupe-plugin"
+COUNT_FILE="$TMP/dedupe-count"
+mkdir -p "$DEDUPE_ROOT/hooks"
+ln -s "$REPO_ROOT/hooks/lib" "$DEDUPE_ROOT/hooks/lib"
+jq -n --arg a "printf A >> '$COUNT_FILE'" --arg b "printf B >> '$COUNT_FILE'" \
+  '{hooks: {PreToolUse: [
+     {matcher: ".*", hooks: [{type: "command", command: $a}, {type: "command", command: $b}]},
+     {matcher: ".*", hooks: [{type: "command", command: $a}]}]}}' >"$DEDUPE_ROOT/hooks/hooks.json"
+: >"$COUNT_FILE"
+read_payload="$(jq -nc '{tool_name:"exec_command",command:["bash","-lc","ls"]}')"
+run_bridge "$WORK" "tool.before" "dedupe-probe" "$read_payload" "$HOME_ROOT" "$DEDUPE_ROOT" >/dev/null
+assert_eq "a command listed twice runs once" "AB" "$(cat "$COUNT_FILE")"
 
 echo ""
 echo "Results: ${PASS} passed, ${FAIL} failed"

@@ -7,7 +7,7 @@ Planning-only. No product code. Both plan copies stayed on `main` and byte-ident
 | Path | SHA-256 | Bytes |
 |------|---------|-------|
 | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](../router_subagent_surfaces_85bf9f09.plan.md) | `c4950cbd0a4e657ac5aee2921e3fd514f54a397c7662ab767f5194e61acfb75e` | 598581 |
-| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
+| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
 
 Pre-edit pair: `68422bc5ccd736d58898e118c59e2f5775eabd9ffddf8bbc0501d2352988aa70` / 645293 bytes.
 

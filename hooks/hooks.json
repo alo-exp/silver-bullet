@@ -18,15 +18,20 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stack-compression-lifecycle.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
             "async": false,
             "timeout": 10
-          },
+          }
+        ]
+      },
+      {
+        "matcher": "resume",
+        "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-quota-retry-due.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\"",
             "async": false,
-            "timeout": 10
+            "timeout": 15
           }
         ]
       }
@@ -44,7 +49,7 @@
         ]
       },
       {
-        "matcher": "Bash|Skill|exec_command",
+        "matcher": "Bash|Skill|exec_command|mcp__.*",
         "hooks": [
           {
             "type": "command",
@@ -57,11 +62,51 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
             "async": false,
             "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
+            "async": false,
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Skill|exec_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
+            "async": false,
+            "timeout": 10
           }
         ]
       },
       {
         "matcher": "Edit|Write|MultiEdit|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-claim.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*(write|edit|create|move|rename|patch|replace|delete|append|save|insert|copy|upload|apply|_mv|mv_|_put|put_|update|modify|set_|touch|truncate|unlink|_rm|rm_)[A-Za-z0-9_]*",
         "hooks": [
           {
             "type": "command",
@@ -78,24 +123,6 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/workflow-chain-guard.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/agent-delegation-guard.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-claim.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -121,27 +148,15 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
             "async": false,
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
-            "async": false,
-            "timeout": 10
           }
         ]
       },
       {
-        "matcher": "Skill",
+        "matcher": "Edit|Write|MultiEdit|apply_patch|NotebookEdit",
         "hooks": [
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -164,12 +179,6 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/site-chrome-guard.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/compression-marker-guard.sh\"",
             "async": false,
             "timeout": 10
@@ -182,15 +191,15 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/trivial-file-guard.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/agent-delegation-guard.sh\"",
             "async": false,
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/trivial-file-guard.sh\"",
             "async": false,
-            "timeout": 15
+            "timeout": 10
           },
           {
             "type": "command",
@@ -243,6 +252,28 @@
         ]
       },
       {
+        "matcher": "Edit|Write|MultiEdit|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/site-chrome-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*(write|edit|create|move|rename|patch|replace|delete|append|save|insert|copy|upload|apply|_mv|mv_|_put|put_|update|modify|set_|touch|truncate|unlink|_rm|rm_)[A-Za-z0-9_]*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
+            "async": false,
+            "timeout": 15
+          }
+        ]
+      },
+      {
         "matcher": "Read|Grep",
         "hooks": [
           {
@@ -271,7 +302,18 @@
         ]
       },
       {
-        "matcher": "CallMcpTool|MCP",
+        "matcher": "MCP",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stack-compression-coordinator.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*lean-?ctx.*|mcp__.*context[-_]mode.*",
         "hooks": [
           {
             "type": "command",
@@ -286,19 +328,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dependency-skill-check.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -315,12 +345,6 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/live-publish-evidence-gate.sh\"",
-            "async": false,
-            "timeout": 15
-          },
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/industry-tooling-hint.sh\"",
             "async": false,
             "timeout": 5
@@ -328,24 +352,6 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
-            "async": false,
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -371,6 +377,17 @@
         ]
       },
       {
+        "matcher": "Bash|exec_command|NotebookEdit|mcp__.*(write|edit|create|move|rename|patch|replace|delete|append|save|insert|copy|upload|apply|_mv|mv_|_put|put_|update|modify|set_|touch|truncate|unlink|_rm|rm_)[A-Za-z0-9_]*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/trivial-file-clear.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Task|Subagent|Agent",
         "hooks": [
           {
@@ -382,6 +399,17 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Skill|Bash|exec_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -412,12 +440,6 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
             "async": false,
             "timeout": 15
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
-            "async": false,
-            "timeout": 10
           }
         ]
       },
@@ -426,15 +448,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
-            "async": false,
-            "timeout": 15
-          },
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-heartbeat.sh\"",
             "async": false,
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*(write|edit|create|move|rename|patch|replace|delete|append|save|insert|copy|upload|apply|_mv|mv_|_put|put_|update|modify|set_|touch|truncate|unlink|_rm|rm_)[A-Za-z0-9_]*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
+            "async": false,
+            "timeout": 15
           }
         ]
       },
@@ -508,20 +535,25 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-site-visual-evidence.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-site-session.sh\"",
             "async": false,
             "timeout": 10
           }
         ]
       },
       {
-        "matcher": "CallMcpTool|MCP",
+        "matcher": "mcp__.*screenshot.*|browser_take_screenshot|MCP",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-site-visual-evidence.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "MCP",
         "hooks": [
           {
             "type": "command",
@@ -534,10 +566,34 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
             "async": false,
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*agentmemory.*|mcp__.*graphify.*|mcp__.*lean-?ctx.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-leanctx-usage.sh\"",
+            "async": false,
+            "timeout": 10
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-agentmemory-usage.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Task|Subagent|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -563,7 +619,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
             "async": false,
             "timeout": 10
           },
@@ -703,7 +759,7 @@
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-quota-retry-due.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
             "async": false,
             "timeout": 10
           }

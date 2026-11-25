@@ -14,12 +14,11 @@ Applies Silver Bullet's quality dimensions in sequence. Operates in **dual-mode*
 
 The standard product sweep is **8 core dimensions**. `ai-llm-safety` is included conditionally when the phase includes AI/LLM behavior, model calls, prompts, evals, agents, retrieval, or automated decisioning.
 
-**Plugin root**: Determine `PLUGIN_ROOT` from this file's path. This file lives at
-`${PLUGIN_ROOT}/skills/silver-quality-gates/SKILL.md`, so the plugin root is two directories up.
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-quality-gates/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory.
 
-**Dimension skills root**: Set `DIMENSION_SKILLS_ROOT="${PLUGIN_ROOT}/skills"` by default. Dimension helpers are hidden implementation dependencies, so their packaged files may be named `SILVER_SOURCE` instead of `SKILL.md`.
+**Dimension skills root**: Set `DIMENSION_SKILLS_ROOT="${PLUGIN_ROOT}/skill-source"` by default. Dimension helpers are hidden implementation dependencies, so their packaged files may be named `SILVER_SOURCE` instead of `SKILL.md`.
 
-If this skill is running from a native skill mirror such as `$HOME/.codex/skills/silver-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/skills/modularity/SKILL.md` does not exist, resolve the hidden packaged Codex source root in this order:
+If this skill is running from a native skill mirror such as `$HOME/.codex/skills/silver-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/skill-source/modularity/SKILL.md` does not exist, resolve the hidden packaged Codex source root in this order:
 
 ```bash
 for candidate in \
@@ -128,7 +127,7 @@ Unresolved `BLOCK` findings are hard-stop quality-gate failures. Deferred
 Validate normalized finding rows when the helper is available:
 
 ```bash
-bash scripts/validate-evidence-findings.sh
+bash "${PLUGIN_ROOT}/scripts/validate-evidence-findings.sh"
 ```
 
 ---

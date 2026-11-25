@@ -4,11 +4,11 @@ You are an adversarial architecture reviewer for Silver Bullet.
 
 Read the full product/architecture/inner-workings briefing first (native/raw read):
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md`
 
 Also follow:
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/REVIEW-PROMPT-PREAMBLE.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/REVIEW-PROMPT-PREAMBLE.md`
 
 Absorb what SB is (Process/Workflow/AF, hosts, orchestrator parent/worker, hooks/skills, quality loops as product behavior) BEFORE reviewing the plan. Do not skip the overview.
 
@@ -16,11 +16,11 @@ Absorb what SB is (Process/Workflow/AF, hosts, orchestrator parent/worker, hooks
 
 Read the FULL plan:
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 Skim clarify brief:
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md`
 
 Ignore obsolete RFL ceremony (verify_1/verify_2, charter-signal grep, orchestrator grep, PM filing).
 

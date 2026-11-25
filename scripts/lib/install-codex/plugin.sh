@@ -27,7 +27,7 @@ EOF
 ensure_silver_bullet_registry_entry() {
   local registry_file="${CODEX_HOME_ROOT}/.codex/plugins/installed_plugins.json"
 
-  python3 - "$registry_file" "$CODEX_HOME_ROOT" <<'PY'
+  python3 - "$registry_file" "$CODEX_HOME_ROOT" "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" <<'PY'
 import datetime
 import json
 import pathlib
@@ -37,6 +37,9 @@ import sys
 
 registry_path = pathlib.Path(sys.argv[1])
 home = pathlib.Path(sys.argv[2]).expanduser()
+sys.path.insert(0, sys.argv[3])
+from sb_host_config import ConfigError, read_json, write_json  # noqa: E402
+
 now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 plugin_id = "silver-bullet@alo-labs-codex"
 plugin_root = home / ".codex" / "plugins" / "cache" / "alo-labs-codex" / "silver-bullet"
@@ -44,8 +47,20 @@ plugin_root = home / ".codex" / "plugins" / "cache" / "alo-labs-codex" / "silver
 if not plugin_root.exists():
     sys.exit(0)
 
+# Refuse an unparseable or wrongly typed registry before touching anything: replacing it
+# would drop every other plugin's record (R7-14).
+try:
+    data = read_json(registry_path, default={"version": 2, "plugins": {}})
+    plugins = data.setdefault("plugins", {})
+    if not isinstance(plugins, dict):
+        raise ConfigError(f"{registry_path}: 'plugins' must be an object; left unchanged")
+except ConfigError as exc:
+    sys.exit(f"ERROR: {exc}. Repair or move the file aside, then re-run install-codex.sh.")
+
+
 def version_sort_key(path: pathlib.Path):
     return tuple(int(part) if part.isdigit() else part for part in re.split(r"([0-9]+)", path.name))
+
 
 version_dirs = sorted(
     [path for path in plugin_root.iterdir() if path.is_dir() and path.name != "current"],
@@ -71,15 +86,8 @@ if plugin_json.is_file():
     except Exception:
         pass
 
-data = {"version": 2, "plugins": {}}
-if registry_path.is_file():
-    try:
-        data = json.loads(registry_path.read_text())
-    except Exception:
-        pass
-
-plugins = data.setdefault("plugins", {})
-prior = plugins.get(plugin_id, [{}])[0] if plugins.get(plugin_id) else {}
+existing = plugins.get(plugin_id)
+prior = existing[0] if isinstance(existing, list) and existing and isinstance(existing[0], dict) else {}
 entry = {
     "scope": "user",
     "installPath": str(current_path),
@@ -87,137 +95,58 @@ entry = {
     "installedAt": prior.get("installedAt", now),
     "lastUpdated": now,
 }
-entry.pop("projectPath", None)
 
-if plugin_id in plugins and plugins[plugin_id]:
-    plugins[plugin_id][0].update(entry)
-    plugins[plugin_id][0].pop("projectPath", None)
+if prior:
+    prior.update(entry)
+    prior.pop("projectPath", None)
 else:
     plugins[plugin_id] = [entry]
 
-registry_path.parent.mkdir(parents=True, exist_ok=True)
-registry_path.write_text(json.dumps(data, indent=2) + "\n")
+write_json(registry_path, data)
+PY
+}
+
+
+# config.toml edits go through sb_host_config.TomlDocument (R7-09): tables are found by
+# their key path whatever the header spacing, comments and other keys are kept, and a
+# result that would not parse is never written.
+#   _sb_codex_edit_config <file> set <table...> <key> <toml literal>
+#   _sb_codex_edit_config <file> set-string <table...> <key> <string, escaped here>
+#   _sb_codex_edit_config <file> remove <table...>
+_sb_codex_edit_config() {
+  local config_file="$1" action="$2"
+  shift 2
+  python3 - "$config_file" "$action" "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" "$@" <<'PY'
+import sys
+
+config_path, action = sys.argv[1], sys.argv[2]
+sys.path.insert(0, sys.argv[3])
+args = sys.argv[4:]
+from sb_host_config import ConfigError, read_toml, toml_string, write_toml  # noqa: E402
+
+try:
+    doc = read_toml(config_path)
+    if action == "remove":
+        doc.remove(lambda path: path[: len(args)] == tuple(args))
+    else:
+        literal = toml_string(args[-1]) if action == "set-string" else args[-1]
+        doc.set_value(tuple(args[:-2]), args[-2], literal)
+    write_toml(config_path, doc)
+except ConfigError as exc:
+    sys.exit(f"ERROR: {exc}. Fix or move that file aside (a table declared twice: delete one copy), then run install-codex.sh again.")
 PY
 }
 
 
 ensure_plugin_enabled() {
   local plugin_spec="$1"
-  local config_file
-  config_file="$(resolve_codex_config_file)"
-  local header="[plugins.\"${plugin_spec}\"]"
-
-  python3 - "$config_file" "$header" <<'PY'
-import pathlib
-import sys
-
-config_path = pathlib.Path(sys.argv[1])
-header = sys.argv[2]
-config_path.parent.mkdir(parents=True, exist_ok=True)
-text = config_path.read_text() if config_path.exists() else ''
-lines = text.splitlines()
-output = []
-i = 0
-found = False
-
-while i < len(lines):
-    line = lines[i]
-    if line.strip() == header:
-        found = True
-        output.append(line)
-        i += 1
-
-        section_lines = []
-        enabled_seen = False
-        while i < len(lines) and not lines[i].startswith('['):
-            section_line = lines[i]
-            if section_line.strip().startswith('enabled ='):
-                section_lines.append('enabled = true')
-                enabled_seen = True
-            else:
-                section_lines.append(section_line)
-            i += 1
-
-        if not enabled_seen:
-          output.append('enabled = true')
-        output.extend(section_lines)
-        continue
-
-    output.append(line)
-    i += 1
-
-if found:
-    new_text = '\n'.join(output)
-    if text.endswith('\n'):
-        new_text += '\n'
-    config_path.write_text(new_text)
-else:
-    if text and not text.endswith('\n'):
-        text += '\n'
-    text += f'\n{header}\nenabled = true\n'
-    config_path.write_text(text)
-PY
+  _sb_codex_edit_config "$(resolve_codex_config_file)" set plugins "$plugin_spec" enabled true
 }
 
 
 ensure_feature_enabled() {
   local feature_name="$1"
-  local config_file
-  config_file="$(resolve_codex_config_file)"
-  local header="[features]"
-
-  python3 - "$config_file" "$header" "$feature_name" <<'PY'
-import pathlib
-import sys
-
-config_path = pathlib.Path(sys.argv[1])
-header = sys.argv[2]
-feature_name = sys.argv[3]
-config_path.parent.mkdir(parents=True, exist_ok=True)
-text = config_path.read_text() if config_path.exists() else ''
-lines = text.splitlines()
-output = []
-i = 0
-found = False
-
-while i < len(lines):
-    line = lines[i]
-    if line.strip() == header:
-        found = True
-        output.append(line)
-        i += 1
-
-        section_lines = []
-        feature_seen = False
-        while i < len(lines) and not lines[i].startswith('['):
-            section_line = lines[i]
-            stripped = section_line.strip()
-            if stripped.startswith(f'{feature_name} ='):
-                section_lines.append(f'{feature_name} = true')
-                feature_seen = True
-            else:
-                section_lines.append(section_line)
-            i += 1
-
-        if not feature_seen:
-            output.append(f'{feature_name} = true')
-        output.extend(section_lines)
-        continue
-
-    output.append(line)
-    i += 1
-
-if found:
-    new_text = '\n'.join(output)
-    if text.endswith('\n'):
-        new_text += '\n'
-    config_path.write_text(new_text)
-else:
-    if text and not text.endswith('\n'):
-        text += '\n'
-    text += f'\n{header}\n{feature_name} = true\n'
-    config_path.write_text(text)
-PY
+  _sb_codex_edit_config "$(resolve_codex_config_file)" set features "$feature_name" true
 }
 
 
@@ -227,37 +156,5 @@ remove_plugin_enabled() {
 
   config_file="$(resolve_codex_config_file)"
   [[ -f "$config_file" ]] || return 0
-
-  python3 - "$config_file" "$plugin_spec" <<'PY'
-import pathlib
-import sys
-
-config_path = pathlib.Path(sys.argv[1])
-plugin_spec = sys.argv[2]
-text = config_path.read_text()
-lines = text.splitlines()
-output = []
-i = 0
-removed = False
-header = f'[plugins."{plugin_spec}"]'
-
-while i < len(lines):
-    line = lines[i]
-    if line.strip() == header:
-      removed = True
-      i += 1
-      while i < len(lines) and not lines[i].startswith('['):
-        i += 1
-      continue
-    output.append(line)
-    i += 1
-
-if removed:
-    new_text = '\n'.join(output)
-    if text.endswith('\n'):
-        new_text += '\n'
-    config_path.write_text(new_text)
-PY
+  _sb_codex_edit_config "$config_file" remove plugins "$plugin_spec"
 }
-
-

@@ -103,15 +103,17 @@ class ResearchState:
 
     def save(self, filepath: Path) -> None:
         max_retries = 3
-        for attempt in range(max_retries):
+        attempt = 0
+        while True:
+            attempt += 1
             try:
                 with open(filepath, 'w', encoding='utf-8') as f:
                     json.dump(self._serialize(), f, indent=2)
                 return
             except (IOError, OSError) as e:
-                if attempt == max_retries - 1:
+                if attempt == max_retries:
                     raise IOError(f"Failed to save state after {max_retries} attempts: {e}") from e
-                time.sleep((attempt + 1) * 0.5)
+                time.sleep(attempt * 0.5)
 
     def _serialize(self) -> dict:
         return {
@@ -241,7 +243,7 @@ Output directory: $SB_RESEARCH_OUT_DIR (research/<date>-<slug>/)
 
     def run_pipeline(self, query: str, out_dir: Optional[Path] = None) -> str:
         self.initialize_research(query)
-        out_dir = out_dir or Path(".planning/research/offline-run")
+        out_dir = out_dir or Path("research/offline-run")
         self.write_phase_manifest(out_dir)
         for phase in self.phases_for_mode():
             self.state.phase = phase  # type: ignore[union-attr]

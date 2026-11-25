@@ -10,7 +10,9 @@ Use `silver-clarify` discipline: one question at a time, multiple choice preferr
 3. **Category** — Primary solution category to evaluate
 4. **Category pack** — Which market contract applies? (required for landscape/compare)
    - `agentic-sdlc-process-orchestrator` — Agentic SDLC process orchestrators above coding agents
-   - *(future packs under `reference/landscape/category-packs/`)*
+   - Any pack the run carries at `<run dir>/category-packs/<category_id>.json` (project-local; schema in
+     `reference/landscape/category-packs/schema.json`). Draft one with the user for a new category
+     (e.g. internal developer portals); never reuse another market's pack for it.
 5. **Adjacent categories** — Related markets to scan (landscape only); pack `adjacent_seeds` are defaults
 6. **Must-haves** — Non-negotiable **capabilities** (multi-select)
 7. **Must-research** — Named products that must appear in core coverage (merge with pack seeds)

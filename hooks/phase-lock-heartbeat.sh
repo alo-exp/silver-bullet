@@ -3,7 +3,7 @@
 #
 # PostToolUse hook fired on Edit | Write | MultiEdit | Bash. For every phase
 # in the session-claim manifest, calls
-# `.planning/scripts/phase-lock.sh heartbeat <phase> <runtime>` to refresh the
+# `scripts/phase-lock.sh (plugin root) heartbeat <phase> <runtime>` to refresh the
 # lock's `last_heartbeat_at` so the lock doesn't expire under the stale-TTL
 # steal rule. Throttled to once per 5 minutes per phase via mtime on
 # `<host runtime>/.silver-bullet/heartbeat-<phase>`.
@@ -47,7 +47,8 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
 fi
 
 # ── Helper-exists check (graceful degrade) ──────────────────────────────────
-helper="$PWD/.planning/scripts/phase-lock.sh"
+# The helper is Silver Bullet's own, resolved from the plugin root, never from the project (R3-03).
+helper="$(dirname "${BASH_SOURCE[0]}")/../scripts/phase-lock.sh"
 [[ -x "$helper" ]] || exit 0
 
 # ── Read stdin and resolve session id ───────────────────────────────────────
@@ -55,6 +56,8 @@ input=$(cat)
 raw_session_id=$(printf '%s' "$input" | jq -r '.session_id // empty')
 [[ -z "$raw_session_id" ]] && raw_session_id="$(date +%s)-$$"
 session_id=$(printf '%s' "${raw_session_id}" | tr -c 'A-Za-z0-9_-' '_')
+
+export SB_PHASE_LOCK_SESSION="$session_id"
 
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 manifest="${SB_STATE_DIR}/claimed-phases-${session_id}.txt"
@@ -75,10 +78,6 @@ while IFS= read -r phase || [[ -n "$phase" ]]; do
   [[ "$phase" =~ ^[0-9]{3}$ ]] || continue
 
   throttle="${SB_STATE_DIR}/heartbeat-${phase}"
-  case "$throttle" in
-    "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-    *) continue ;;
-  esac
 
   # Throttle check: skip if mtime within 300 s
   if [[ -f "$throttle" && ! -L "$throttle" ]]; then

@@ -146,25 +146,17 @@ journey_turn() {
   printf '%s\n' "$response" > "$response_raw_file"
   printf '%s\n' "$response_clean" > "$response_file"
 
-  if [[ "$timed_out" == true && "$E2E_RUNTIME" =~ ^(codex|kay)$ && "$surface" == sb:* ]]; then
+  if [[ "$timed_out" == true ]]; then
     response_clean="[timeout] ${surface} did not complete within ${turn_timeout_seconds}s"
     printf '%s\n' "$response_clean" > "$response_file"
     printf '%s\n' "$response_clean" > "$response_raw_file"
-    echo "FAIL: $surface completed within the route-smoke timeout"
-    echo "  route-smoke turns must stop after the SB adapter receipt"
+    echo "FAIL: $surface completed within the ${turn_timeout_seconds}s turn timeout"
+    echo "  a timed-out turn is never recorded as completed (R14-06)"
     FAIL=$((FAIL + 1))
-  elif [[ "$timed_out" == true ]]; then
-    response_clean="[timeout] ${surface} did not complete within ${turn_timeout_seconds}s"
-    printf '%s\n' "$response_clean" > "$response_file"
-    printf '%s\n' "$response_clean" > "$response_raw_file"
-    echo "WARN: $surface timed out after ${turn_timeout_seconds}s; using controlled fallback"
-    usable_response=true
   elif [[ -n "$response_clean" ]] && grep -Eq "$controlled_fallback_regex" <<<"$response_clean"; then
-    response_clean="[fallback] ${surface} produced tool-error transcript; using controlled fallback
-${response_clean}"
-    printf '%s\n' "$response_clean" > "$response_file"
-    echo "WARN: $surface produced tool-error transcript; using controlled fallback"
-    usable_response=true
+    echo "FAIL: $surface produced a usable response"
+    echo "  response was a tool-error transcript; a tool error is never a pass (R14-06)"
+    FAIL=$((FAIL + 1))
   elif [[ -z "$response_clean" ]]; then
     echo "FAIL: $surface produced a usable response"
     echo "  response was empty"
@@ -184,11 +176,7 @@ ${response_clean}"
   fi
 
   if [[ "$usable_response" == true ]]; then
-    if assert_route_smoke_adapter_only "$surface"; then
-      record_completed_surface "$surface"
-    else
-      usable_response=false
-    fi
+    assert_route_smoke_adapter_only "$surface" || usable_response=false
   fi
 
   if [[ "$record_ledger" != "no" ]]; then
@@ -197,31 +185,7 @@ ${response_clean}"
   printf '%s\n' "$response_clean"
 }
 
-record_completed_surface() {
-  local surface="$1"
-
-  case "$surface" in
-    sb:*|retired-*) ;;
-    *) return 0 ;;
-  esac
-
-  (
-    cd "$WORK_DIR"
-    jq -nc --arg skill "$surface" \
-      '{hook_event_name:"PostToolUse", tool_name:"Skill", tool_input:{skill:$skill}}' \
-      | SILVER_BULLET_STATE_FILE="$STATE_FILE" bash "${SB_ROOT}/hooks/record-skill.sh" >/dev/null 2>&1 || true
-  )
-
-  if ! grep -qx "$surface" "$STATE_FILE" 2>/dev/null; then
-    mkdir -p "$(dirname "$STATE_FILE")"
-    touch -- "$STATE_FILE"
-    printf '%s\n' "$surface" >> "$STATE_FILE"
-  fi
-}
-
-LOCAL_SKILL_SOURCE_REGEX='/Users/shafqat/projects/codex-plugins/skills/[^[:space:]]+'
-LOCAL_SKILL_SOURCE_ROOT='/Users/shafqat/projects/codex-plugins/skills'
-LOCAL_SKILL_SOURCE_NEGATIVE_CONTEXT="do[[:space:]]*not[[:space:]]*read[[:space:]]*or[[:space:]]*use[[:space:]]*local[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|avoid(ed|s|ing)?[[:space:]]*local[[:space:]]*codex-plugins[[:space:]]*skill[[:space:]]*sources|not[[:space:]]*read[[:space:]]*or[[:space:]]*use[[:space:]]*local[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|not[[:space:]]*read[[:space:]]*from[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|not[[:space:]]*using[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|prohibited[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|from[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}[[:space:]]*as[[:space:]]*requested|!${LOCAL_SKILL_SOURCE_ROOT}"
+LOCAL_SKILL_SOURCE_ROOT="${SB_E2E_LOCAL_SKILL_SOURCE_ROOT:-$HOME/projects/codex-plugins/skills}"
 
 resolve_silver_skill_path() {
   if [[ "$E2E_RUNTIME" == "codex" || "$E2E_RUNTIME" == "kay" ]]; then
@@ -699,9 +663,6 @@ if [[ -z "${issue_url:-}" ]]; then
     "Problem discovered during the inline todo-app journey." \
     "enhancement")"
 fi
-if [[ -n "${issue_url:-}" ]]; then
-  record_completed_surface "sb:add"
-fi
 wait_for_state_contains "sb:add recorded in workflow state" "sb:add" 30 2
 issue_repo_slug=""
 if [[ -n "${issue_url:-}" ]]; then
@@ -720,7 +681,7 @@ else
   if [[ "$issue_num" == "0" ]]; then
     echo "PASS: sb:add filed todo-app issue ${issue_num} (local fallback)"
     PASS=$((PASS + 1))
-  elif gh issue view "$issue_num" --repo "$owner_repo" --json labels -q '.labels[].name' 2>/dev/null | grep -qx 'todo-app'; then
+  elif grep -qx 'todo-app' < <(gh issue view "$issue_num" --repo "$owner_repo" --json labels -q '.labels[].name' 2>/dev/null); then
     echo "PASS: sb:add filed todo-app issue ${issue_num}"
     PASS=$((PASS + 1))
   else
@@ -911,18 +872,13 @@ fi
 
 journey_turn "sb:validate" "validate the app end state" "no" "validate turn recorded" "$(skill_prompt 'sb:validate' 'Route-smoke the validation surface after the deterministic clear-completed API and npm test assertions have passed.')"
 
-journey_turn "sb:quality-gates" "run quality gates for release readiness" "no" "quality-gates turn recorded" "$(skill_prompt 'sb:quality-gates' 'Route-smoke the Quality Gates surface for this inline todo-app journey. The harness writes the release-readiness markers after the route receipt.')"
-printf '{"tool_name":"Skill","tool_input":{"skill":"silver-quality-gates"},"hook_event_name":"PostToolUse"}' \
-  | SILVER_BULLET_STATE_FILE="$STATE_FILE" bash "${SB_ROOT}/hooks/record-skill.sh" >/dev/null 2>&1 || true
+journey_turn "sb:quality-gates" "run quality gates for release readiness" "no" "quality-gates turn recorded" "$(skill_prompt 'sb:quality-gates' 'Route-smoke the Quality Gates surface for this inline todo-app journey. Stop after the route receipt; release evidence is written only by run-e2e-live-tests.sh after a full pass.')"
 wait_for_state_contains "sb:quality-gates recorded in workflow state" "sb:quality-gates"
-
-write_quality_gate_state_marker 2>/dev/null || true
-write_e2e_live_matrix_marker 2>/dev/null || true
-write_inline_e2e_matrix_marker
+# Release evidence (e2e-live-matrix, inline-e2e-matrix) is written only by run-e2e-live-tests.sh
+# after every scenario passed, and quality-gate-state is never written by a test (R14-06).
 
 if [[ -n "${issue_num:-}" ]]; then
   if [[ "$issue_num" == "0" ]]; then
-    record_completed_surface "sb:remove"
     wait_for_state_contains "sb:remove recorded in workflow state" "sb:remove"
     echo "PASS: todo-app issue was closed (local fallback)"
     PASS=$((PASS + 1))
@@ -1074,7 +1030,6 @@ prepare_release_work_dir
 INLINE_RELEASE_WORK_DIR="$WORK_DIR"
 WORK_DIR="$RELEASE_WORK_DIR"
 journey_turn "sb:create-release" "prepare the todo-app release finish" "no" "create-release turn recorded" "$(skill_prompt 'sb:create-release' 'Route-smoke the create-release surface after inline journey release prep.')"
-record_completed_surface "sb:create-release"
 ensure_inline_release_changelog "$RELEASE_WORK_DIR"
 ensure_inline_release_tag_exists "$RELEASE_WORK_DIR"
 WORK_DIR="$INLINE_RELEASE_WORK_DIR"
@@ -1124,15 +1079,15 @@ if [[ -d "$RELEASE_WORK_DIR" ]] && git -C "$RELEASE_WORK_DIR" rev-parse --is-ins
   fi
 
   echo "DEBUG: release tags before ensure: $(git -C "$RELEASE_WORK_DIR" tag -l 'v1.0.0-inline' 2>/dev/null | tr '\n' ' ')"
-  if git -C "$RELEASE_WORK_DIR" tag -l "v1.0.0-inline" | grep -qx "v1.0.0-inline" \
-    || ([[ -n "${INLINE_RELEASE_WORK_DIR:-}" ]] && git -C "$INLINE_RELEASE_WORK_DIR" tag -l "v1.0.0-inline" | grep -qx "v1.0.0-inline"); then
+  if grep -qx "v1.0.0-inline" < <(git -C "$RELEASE_WORK_DIR" tag -l "v1.0.0-inline") \
+    || ([[ -n "${INLINE_RELEASE_WORK_DIR:-}" ]] && grep -qx "v1.0.0-inline" < <(git -C "$INLINE_RELEASE_WORK_DIR" tag -l "v1.0.0-inline")); then
     echo "PASS: local git tag v1.0.0-inline exists"
     PASS=$((PASS + 1))
   else
     ensure_inline_release_tag_exists "$RELEASE_WORK_DIR"
     echo "DEBUG: release tags after ensure: $(git -C "$RELEASE_WORK_DIR" tag -l 'v1.0.0-inline' 2>/dev/null | tr '\n' ' ')"
-    if git -C "$RELEASE_WORK_DIR" tag -l "v1.0.0-inline" | grep -qx "v1.0.0-inline" \
-      || ([[ -n "${INLINE_RELEASE_WORK_DIR:-}" ]] && git -C "$INLINE_RELEASE_WORK_DIR" tag -l "v1.0.0-inline" | grep -qx "v1.0.0-inline"); then
+    if grep -qx "v1.0.0-inline" < <(git -C "$RELEASE_WORK_DIR" tag -l "v1.0.0-inline") \
+      || ([[ -n "${INLINE_RELEASE_WORK_DIR:-}" ]] && grep -qx "v1.0.0-inline" < <(git -C "$INLINE_RELEASE_WORK_DIR" tag -l "v1.0.0-inline")); then
       echo "PASS: local git tag v1.0.0-inline exists"
       PASS=$((PASS + 1))
     else
@@ -1192,11 +1147,11 @@ PATH="${update_bin_dir}:$PATH" journey_turn "sb:update" "check whether Silver Bu
 
 local_skill_source_hits="$(local_skill_source_bypass_hits "$TURN_LOG_DIR")"
 if [[ -n "$local_skill_source_hits" ]]; then
-  echo "FAIL: no turn in this run should source local /Users/shafqat/projects/codex-plugins/skills paths"
+  echo "FAIL: no turn in this run should source local /Users/example/projects/codex-plugins/skills paths"
   printf '%s\n' "$local_skill_source_hits" | sed -n '1,5p'
   FAIL=$((FAIL + 1))
 else
-  echo "PASS: no turn in this run sourced local /Users/shafqat/projects/codex-plugins/skills paths"
+  echo "PASS: no turn in this run sourced local /Users/example/projects/codex-plugins/skills paths"
   PASS=$((PASS + 1))
 fi
 

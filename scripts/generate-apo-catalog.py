@@ -163,7 +163,6 @@ SKILL_TO_FLOW = {
     "silver-benchmark": "AF-FAST-PATH",
     "silver-incident": "AF-FAST-PATH",
     "silver-agent-codex": "AF-AGENT-DELEGATE",
-    "silver-agent-cursor": "AF-AGENT-DELEGATE",
     "silver-agent-claude": "AF-AGENT-DELEGATE",
     "silver-agent-opencode": "AF-AGENT-DELEGATE",
     "silver-agent-pi": "AF-AGENT-DELEGATE",
@@ -412,8 +411,28 @@ def build_atomic_flows(flow_steps: list[dict], flow_to_steps: dict[str, list[str
     return atomic_flows, evidence_records
 
 
+def apply_delivery_floor(queue: list[str], tdd: bool = True) -> list[str]:
+    """Delivery floor (mirrors sb_orchestrator_apply_deploy_floor): required_deploy skills with no queue token.
+
+    A queue that does not reach the review-triage and ship steps is returned unchanged."""
+    if "silver-ship" not in queue or "silver-review-triage" not in queue:
+        return queue
+    out = []
+    for token in queue:
+        if tdd and token == "silver-execute" and "tdd" not in queue:
+            out.append("tdd")
+        out.append(token)
+        if token == "silver-review-triage" and "silver-triage" not in queue:
+            out.append("silver-triage")
+        if token == "silver-verify" and "verify-tests" not in queue:
+            out.append("verify-tests")
+    return out
+
+
 def build_workflows() -> list[dict]:
     n = composition_node
+    df = apply_delivery_floor
+
     feature_queue = [
         "FLOW-QUALITY-GATE", "silver-context", "silver-plan", "silver-validate",
         "silver-execute", "silver-review-request", "silver-review", "silver-review-triage",
@@ -437,14 +456,14 @@ def build_workflows() -> list[dict]:
     ]
     workflows = [
         workflow("WF-SILVER-ROUTER", "silver", "dynamic_route", [n("AF-ROUTE"), n("WF-SILVER-FEATURE", "workflow", optional=True), n("WF-SILVER-FAST", "workflow", optional=True)], owner="silver", triggers=["/sb", "route"], queue=["silver-context"]),
-        workflow("WF-SILVER-FEATURE", "silver-feature", "precomposed", core_prefix + [n("AF-DESIGN-CONTRACT", optional=True, condition="ui_scope"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-feature", triggers=["feature", "implement", "build feature"], queue=feature_queue),
+        workflow("WF-SILVER-FEATURE", "silver-feature", "precomposed", core_prefix + [n("AF-DESIGN-CONTRACT", optional=True, condition="ui_scope"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-feature", triggers=["feature", "implement", "build feature"], queue=df(feature_queue)),
         post_exec,
         workflow("WF-VALIDATE-SUBSTEP", "validate-substep", "reusable_component", [n("AF-VALIDATE")], reusable=True, triggers=["gap_analysis"], ops=["loop"]),
         workflow("WF-REVIEW-TRIAD", "review-triad", "reusable_component", [n("AF-REVIEW-REQUEST"), n("AF-REVIEW"), n("AF-REVIEW-TRIAGE")], reusable=True, triggers=["legacy FLOW 10"], ops=["loop"]),
         workflow("WF-SHIP-READINESS", "ship-readiness", "reusable_component", [n("AF-BRANCH-FINISH"), n("AF-COMPLETION-AUDIT"), n("AF-SHIP")], reusable=True, triggers=["legacy FLOW 14"], ops=["loop"]),
-        workflow("WF-SILVER-UI", "silver-ui", "precomposed", core_prefix + [n("AF-DESIGN-CONTRACT"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-ui", triggers=["ui", "frontend"], queue=["FLOW-QUALITY-GATE", "silver-context", "silver-plan", "silver-ui-contract", "silver-validate", "silver-execute", "silver-ui-review"] + feature_queue[5:]),
-        workflow("WF-SILVER-DEVOPS", "silver-devops", "precomposed", [n("AF-BLAST-RADIUS"), n("AF-DEVOPS-ROUTE"), n("AF-QUALITY-GATE"), n("AF-SECURE"), n("AF-ORIENT"), n("AF-PLAN"), n("AF-VALIDATE"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-devops", triggers=["devops", "infra"], queue=["silver-blast-radius", "devops-skill-router", "devops-quality-gates", "security", "silver-context", "silver-plan", "silver-validate", "silver-execute"] + feature_queue[5:]),
-        workflow("WF-SILVER-BUGFIX", "silver-bugfix", "precomposed", [n("AF-ORIENT", optional=True), n("AF-DEBUG"), n("AF-PLAN"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-bugfix", triggers=["bug", "fix", "debug"], queue=["silver-debug", "silver-plan", "silver-execute"] + feature_queue[5:]),
+        workflow("WF-SILVER-UI", "silver-ui", "precomposed", core_prefix + [n("AF-DESIGN-CONTRACT"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-ui", triggers=["ui", "frontend"], queue=df(["FLOW-QUALITY-GATE", "silver-context", "silver-plan", "silver-ui-contract", "silver-validate", "silver-execute", "silver-ui-review"] + feature_queue[5:])),
+        workflow("WF-SILVER-DEVOPS", "silver-devops", "precomposed", [n("AF-BLAST-RADIUS"), n("AF-DEVOPS-ROUTE"), n("AF-QUALITY-GATE"), n("AF-SECURE"), n("AF-ORIENT"), n("AF-PLAN"), n("AF-VALIDATE"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-devops", triggers=["devops", "infra"], queue=df(["silver-blast-radius", "devops-skill-router", "devops-quality-gates", "security", "silver-context", "silver-plan", "silver-validate", "silver-execute"] + feature_queue[5:], tdd=False)),
+        workflow("WF-SILVER-BUGFIX", "silver-bugfix", "precomposed", [n("AF-DEBUG"), n("AF-QUALITY-GATE", label="pre-plan"), n("AF-ORIENT"), n("AF-PLAN"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-bugfix", triggers=["bug", "fix", "debug"], queue=df(["silver-debug", "silver-quality-gates", "silver-context", "silver-plan", "silver-execute"] + feature_queue[5:])),
         workflow("WF-SILVER-DEEP-RESEARCH", "silver-deep-research", "precomposed", [n("AF-CLARIFY"), n("AF-DECIDE"), n("AF-DOCUMENT"), n("AF-VALIDATE")], owner="silver-deep-research", triggers=["deep research", "research", "decide"], queue=["silver-clarify", "silver-deep-research", "silver-ensure-docs", "silver-validate"]),
         workflow("WF-SILVER-MULTI-AI-TASK", "silver-multi-ai-task", "specialized", [n("AF-MULTI-AI-TASK")], owner="silver-multi-ai-task", triggers=["multi-ai-task", "multi model task", "parallel models"], queue=["silver-multi-ai-task"]),
         workflow("WF-SILVER-DEEP-RESEARCH-MULTI-AI", "silver-deep-research-multi-ai", "precomposed", [n("AF-CLARIFY"), n("AF-DECIDE", label="multi-ai"), n("AF-MULTI-AI-TASK"), n("AF-DOCUMENT"), n("AF-VALIDATE")], owner="silver-deep-research-multi-ai", triggers=["deep research multi ai", "multi model research", "triangulated research"], queue=["silver-clarify", "silver-deep-research-multi-ai", "silver-ensure-docs", "silver-validate"]),
@@ -464,19 +483,19 @@ def build_workflows() -> list[dict]:
                 "silver-validate", "silver-ensure-docs",
             ],
         ),
-        workflow("WF-SILVER-FAST", "silver-fast", "precomposed", [n("AF-FAST-PATH"), n("AF-QUALITY-GATE"), n("AF-PLAN"), n("AF-VALIDATE"), n("AF-EXECUTE"), n("AF-VERIFY")], owner="silver-fast", triggers=["fast", "small change"], queue=["FLOW-QUALITY-GATE", "silver-plan", "silver-validate", "silver-execute", "silver-verify"]),
-        workflow("WF-SILVER-RELEASE", "silver-release", "precomposed", [n("AF-QUALITY-GATE"), n("AF-REVIEW-REQUEST"), n("AF-REVIEW"), n("AF-REVIEW-TRIAGE"), n("AF-VERIFY"), n("AF-SECURE"), n("AF-VALIDATE"), n("AF-BRANCH-FINISH"), n("AF-COMPLETION-AUDIT"), n("AF-SHIP"), n("AF-RELEASE")], owner="silver-release", triggers=["release"], queue=["FLOW-QUALITY-GATE", "silver-review-request", "silver-review", "silver-review-triage", "silver-verify", "security", "silver-secure", "silver-validate", "silver-branch-finish", "silver-completion-audit", "silver-ship", "silver-create-release"]),
+        workflow("WF-SILVER-FAST", "silver-fast", "precomposed", [n("AF-FAST-PATH"), n("AF-QUALITY-GATE"), n("AF-ORIENT"), n("AF-PLAN"), n("AF-VALIDATE"), n("AF-EXECUTE"), n("AF-VERIFY")], owner="silver-fast", triggers=["fast", "small change"], queue=["FLOW-QUALITY-GATE", "silver-context", "silver-plan", "silver-validate", "silver-execute", "silver-verify"]),
+        workflow("WF-SILVER-RELEASE", "silver-release", "precomposed", [n("AF-QUALITY-GATE"), n("AF-REVIEW-REQUEST"), n("AF-REVIEW"), n("AF-REVIEW-TRIAGE"), n("AF-VERIFY"), n("AF-SECURE"), n("AF-VALIDATE"), n("AF-BRANCH-FINISH"), n("AF-COMPLETION-AUDIT"), n("AF-SHIP"), n("AF-RELEASE")], owner="silver-release", triggers=["release"], queue=df(["FLOW-QUALITY-GATE", "silver-review-request", "silver-review", "silver-review-triage", "silver-verify", "security", "silver-secure", "silver-validate", "silver-branch-finish", "silver-completion-audit", "silver-ship", "silver-create-release"])),
         workflow("WF-SILVER-DEPLOY", "silver-deploy", "specialized", [n("AF-BLAST-RADIUS"), n("AF-VERIFY"), n("AF-SECURE"), n("AF-SHIP")], owner="silver-deploy", triggers=["deploy"], queue=["silver-blast-radius", "devops-quality-gates", "silver-plan", "silver-execute", "silver-verify", "security", "silver-secure", "silver-ship"]),
         workflow("WF-SILVER-CANARY", "silver-canary", "specialized", [n("AF-BLAST-RADIUS"), n("AF-VERIFY"), n("AF-SHIP")], owner="silver-canary", triggers=["canary"], queue=["silver-blast-radius", "silver-plan", "silver-execute", "silver-verify", "silver-ship"]),
         workflow("WF-SILVER-INCIDENT", "silver-incident", "specialized", [n("AF-BLAST-RADIUS"), n("AF-DEBUG"), n("AF-SECURE"), n("AF-VERIFY"), n("AF-DOCUMENT")], owner="silver-incident", triggers=["incident"], queue=["silver-blast-radius", "silver-debug", "silver-plan", "silver-execute", "security", "silver-secure", "silver-verify", "silver-ensure-docs"]),
         workflow("WF-SILVER-CONTENT", "silver-content", "specialized", [n("AF-CLARIFY"), n("AF-SPECIFY"), n("AF-EXECUTE"), n("AF-VERIFY"), n("AF-DOCUMENT")], owner="silver-content", triggers=["content", "docs"], queue=["silver-clarify", "silver-plan", "silver-execute", "silver-verify", "silver-ensure-docs"]),
         workflow("WF-SILVER-RETRO", "silver-retro", "specialized", [n("AF-ORIENT"), n("AF-DOCUMENT"), n("AF-DECIDE")], owner="silver-retro", triggers=["retro"], queue=["silver-context", "silver-execute", "silver-ensure-docs"]),
         workflow("WF-SILVER-BENCHMARK", "silver-benchmark", "specialized", [n("AF-ORIENT"), n("AF-EXECUTE"), n("AF-VERIFY"), n("AF-DOCUMENT")], owner="silver-benchmark", triggers=["benchmark"], queue=["silver-context", "silver-plan", "silver-execute", "silver-verify", "silver-ensure-docs"]),
-        workflow("WF-SILVER-REFACTOR", "silver-refactor", "specialized", [n("AF-PLAN"), n("AF-EXECUTE"), n("AF-VERIFY"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-refactor", triggers=["refactor"], queue=["silver-plan", "silver-validate", "silver-execute"] + feature_queue[5:]),
+        workflow("WF-SILVER-REFACTOR", "silver-refactor", "specialized", [n("AF-PLAN"), n("AF-EXECUTE"), n("AF-VERIFY"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-refactor", triggers=["refactor"], queue=df(["silver-plan", "silver-validate", "silver-execute"] + feature_queue[5:])),
         workflow("WF-SILVER-TEST", "silver-test", "specialized", [n("AF-PLAN"), n("AF-EXECUTE"), n("AF-VERIFY")], owner="silver-test", triggers=["test", "test hardening"], queue=["silver-plan", "silver-validate", "silver-execute", "silver-verify"]),
         workflow("WF-SILVER-FORENSICS", "silver-forensics", "specialized", [n("AF-DEBUG"), n("AF-DOCUMENT"), n("AF-VALIDATE")], owner="silver-forensics", triggers=["forensics"], queue=["silver-debug", "silver-execute", "silver-ensure-docs", "silver-validate"]),
         workflow("WF-PROCESS-MAINTENANCE", "process-maintenance", "specialized", [n("AF-PHASE-MANAGE"), n("AF-DOCUMENT"), n("AF-VALIDATE")], triggers=["phase", "thread", "backlog", "migration"]),
-        workflow("WF-AGENT-DELEGATE-ENTRY", "agent-delegate-entry", "specialized", [n("AF-AGENT-DELEGATE")], owner="silver-agent", triggers=["agent-delegate", "agent-codex", "agent-cursor", "agent-claude"]),
+        workflow("WF-AGENT-DELEGATE-ENTRY", "agent-delegate-entry", "specialized", [n("AF-AGENT-DELEGATE")], owner="silver-agent", triggers=["agent-delegate", "agent-codex", "agent-claude"]),
     ]
     return workflows
 
@@ -640,7 +659,7 @@ def build_catalog() -> dict:
             "subagent_dispatch_records": [],
         }],
         "tool_policies": [
-            {"id": "TP-GRAPHIFY", "tool_id": "graphify", "policy_name": "once-opted-in-then-mandatory-when-relevant", "opt_in_state_source": ".cursor/rules/graphify.mdc or project config", "relevance_rules": ["codebase orientation", "architecture tracing", "catalog drift analysis"], "required_evidence": "graphify query/path/update output or catalog-backed irrelevance rationale", "failure_policy": "block"},
+            {"id": "TP-GRAPHIFY", "tool_id": "graphify", "policy_name": "once-opted-in-then-mandatory-when-relevant", "opt_in_state_source": ".silver-bullet.json recommended_tools.graphify or project config", "relevance_rules": ["codebase orientation", "architecture tracing", "catalog drift analysis"], "required_evidence": "graphify query/path/update output or catalog-backed irrelevance rationale", "failure_policy": "block"},
             {"id": "TP-AGENTMEMORY", "tool_id": "agentmemory", "policy_name": "once-opted-in-then-mandatory-when-relevant", "opt_in_state_source": ".silver-bullet.json tools.agentmemory", "relevance_rules": ["long-lived project memory lookup", "knowledge capture"], "required_evidence": "memory lookup/write result or irrelevance rationale", "failure_policy": "warn"},
             {"id": "TP-BROWSER", "tool_id": "browser", "policy_name": "once-opted-in-then-mandatory-when-relevant", "opt_in_state_source": ".silver-bullet.json tools.browser", "relevance_rules": ["UI verification", "E2E demonstration"], "required_evidence": "snapshot, screenshot, or E2E command output", "failure_policy": "repair"},
             {"id": "TP-GITHUB", "tool_id": "github", "policy_name": "once-opted-in-then-mandatory-when-relevant", "opt_in_state_source": "repository remote and gh authentication", "relevance_rules": ["PR, CI, release, issue traceability"], "required_evidence": "gh command output or auth blocker", "failure_policy": "degrade"},
@@ -687,6 +706,7 @@ def build_catalog() -> dict:
                 "silver-handoff": "AF-DOCUMENT", "silver-scan": "AF-ORIENT",
                 "silver-review-fix-ladder": "AF-REVIEW-TRIAGE", "silver-new-workflow": "AF-PLAN",
                 "silver-triage": "AF-REVIEW-TRIAGE",
+                "tdd": "AF-EXECUTE", "verify-tests": "AF-VERIFY",
                 "silver-multi-ai-task": "AF-MULTI-AI-TASK",
                 "silver-deep-research-multi-ai": "AF-DECIDE",
             },

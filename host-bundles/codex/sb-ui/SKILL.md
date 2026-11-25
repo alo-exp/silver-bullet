@@ -9,11 +9,13 @@ version: 0.2.0
 
 # /sb:ui — UI Composition Spec
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the installed Silver Bullet package `$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current` (this skill is installed at `$HOME/.codex/skills/sb-ui/SKILL.md`; use that package directory as `PLUGIN_ROOT`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 SB **queue builder** for UI/frontend work. Parent orchestrator seeds the queue and spawns
 Task workers per flow — does not implement UI inline.
 
 **Canonical contracts:** `docs/composable-flows-contracts.md`. **Workers:**
-`templates/orchestrator-workers/*.md`.
+`${PLUGIN_ROOT}/templates/orchestrator-workers/*.md`.
 
 ## Standard composition chain
 
@@ -56,7 +58,7 @@ QUALITY GATE (pre-ship) → SHIP**.
 
 ## Routing and pre-flight
 
-1. Load preferences from `silver-bullet.md` §10.
+1. Load preferences from `silver-bullet.md` §9.
 2. Banner: `SILVER BULLET ► UI WORKFLOW` + intent + mode.
 3. Autonomous default — log `SB ► ui composed {N} paths — orchestrator active`.
 

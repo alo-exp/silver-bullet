@@ -53,21 +53,37 @@ sb_session_ledger_log_path() {
     *) return 1 ;;
   esac
 
-  if project_root="$(sb_session_ledger_project_root 2>/dev/null || true)"; then
-    if [[ -n "$project_root" ]]; then
-      case "$log_path" in
-        "$project_root"/*) ;;
-        *) return 1 ;;
-      esac
-    fi
-  fi
+  # The log must belong to the SB project enclosing the current directory. Without one (a prompt
+  # typed in an unrelated repository) nothing is logged, so it cannot land in the last SB project's
+  # log (R3-12). Containment is judged on physical paths, so `..` and symlinks cannot escape.
+  project_root="$(sb_session_ledger_project_root 2>/dev/null || true)"
+  [[ -n "$project_root" ]] || return 1
+  local real_root real_dir
+  real_root="$(cd -P -- "$project_root" 2>/dev/null && pwd)" || real_root=""
+  real_dir="$(cd -P -- "$(dirname "$log_path")" 2>/dev/null && pwd)" || real_dir=""
+  [[ -n "$real_root" && -n "$real_dir" ]] || return 1
+  case "$real_dir/" in
+    "$real_root"/*) ;;
+    *) return 1 ;;
+  esac
 
   printf '%s' "$log_path"
 }
 
+# Token-like secrets are masked before a prompt is written into a log that is usually committed.
+sb_session_ledger_redact() {
+  sed -E \
+    -e 's/gh[pousr]_[A-Za-z0-9]{20,}/[REDACTED]/g' \
+    -e 's/github_pat_[A-Za-z0-9_]{20,}/[REDACTED]/g' \
+    -e 's/sk-[A-Za-z0-9_-]{16,}/[REDACTED]/g' \
+    -e 's/AKIA[0-9A-Z]{16}/[REDACTED]/g' \
+    -e 's/xox[abprs]-[A-Za-z0-9-]{10,}/[REDACTED]/g' \
+    -e 's/(([Pp][Aa][Ss][Ss]([Ww][Oo][Rr])?[Dd]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Tt][Oo][Kk][Ee][Nn]|[Aa][Pp][Ii][_-]?[Kk][Ee][Yy])[ \t]*[:=][ \t]*)[^ \t]+/\1[REDACTED]/g'
+}
+
 sb_session_ledger_request_block() {
   local prompt="$1"
-  shift || true
+  shift
   local timestamp
   timestamp=$(date -u '+%Y-%m-%d %H:%M:%SZ' 2>/dev/null || date)
 
@@ -75,7 +91,7 @@ sb_session_ledger_request_block() {
   if [[ -n "$prompt" ]]; then
     while IFS= read -r line; do
       printf '  > %s\n' "$line"
-    done <<<"$prompt"
+    done < <(printf '%s\n' "$prompt" | sb_session_ledger_redact)
   else
     printf '  > (empty)\n'
   fi
@@ -148,7 +164,7 @@ sb_session_ledger_append_block() {
 
 sb_session_ledger_append_request() {
   local prompt="$1"
-  shift || true
+  shift
   local log_path block
 
   log_path="$(sb_session_ledger_log_path 2>/dev/null || true)"
@@ -166,14 +182,14 @@ sb_session_ledger_mark_completed() {
   log_path="$(sb_session_ledger_log_path 2>/dev/null || true)"
   [[ -n "$log_path" && -f "$log_path" && ! -L "$log_path" ]] || return 0
 
-  local escaped_skill tmp
-  escaped_skill=$(printf '%s' "$skill" | sed 's/[][(){}.^$*+?|\\/]/\\&/g')
+  local tmp
   tmp=$(mktemp)
-  if awk -v skill="$escaped_skill" '
+  # The skill name is compared literally and passed through the environment: awk -v
+  # processes backslash escapes, which gawk and mawk treat differently.
+  if SB_LEDGER_SKILL="$skill" awk '
     {
       line = $0
-      pattern = "^[[:space:]]*- \\[ \\] " skill "$"
-      if (line ~ pattern) {
+      if (match(line, /^[[:space:]]*- \[ \] /) && substr(line, RLENGTH + 1) == ENVIRON["SB_LEDGER_SKILL"]) {
         sub(/\[ \]/, "[x]", line)
       }
       print line

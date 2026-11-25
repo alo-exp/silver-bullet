@@ -1,0 +1,33 @@
+# Release-surface allowlist (R14-16): the ONLY changes the release commit may make after the live matrices
+# ran. Judged per path from `git diff --raw -z --no-renames` between the marker's commit and the released
+# commit (a rename is a delete plus an add; a symlink, type change or mode change on any path rejects).
+#
+#   prose <glob>            a markdown/html/text file carrying no executable behaviour: any content change is fine,
+#                           an add or delete is fine. `*` crosses `/`. Mode and type must not change.
+#   json <path> <jq paths>  a structured file allowed only when it is deeply equal on both sides after deleting
+#                           ONLY the listed jq paths (version, ref and sha fields the release process rewrites).
+#                           It must exist on both sides (no add, no delete).
+#
+# Anything not listed (a hook, skill, script, template body, test, the site's scripts) invalidates the matrix
+# evidence. tests/scripts/test-release-surface-allowlist.sh pins this file against the write sets of
+# scripts/sync-marketplace-version.sh, scripts/sync-codex-marketplace-version.sh and
+# scripts/sync-release-marketplace-versions.sh, and against every tracked version-bearing JSON file.
+prose CHANGELOG.md
+prose docs/CHANGELOG.md
+prose README.md
+prose SECURITY.md
+prose docs/CONFIGURATION.md
+prose site/*.html
+# The supervised matrix logs every row in its round ledger (a harness output, markdown only)
+prose .planning/enterprise-e2e/ROUND-*-LEDGER.md
+# ... and its row-pass registry, a tracked JSON data file that no hook or script executes.
+prose .planning/enterprise-e2e/.row-pass-registry.json
+json package.json .version
+json .claude-plugin/plugin.json .version
+json .claude-plugin/marketplace.json .plugins[].version, .plugins[].source.ref, .plugins[].source.sha
+json .agents/plugins/marketplace.json .plugins[].version, .plugins[].source.ref, .plugins[].source.sha
+json plugins/silver-bullet/.codex-plugin/plugin.json .version, .config_version
+json scripts/lib/agent-plugins-catalog.json .plugins[].claude.version, .plugins[].claude.ref, .plugins[].claude.sha, .plugins[].codex.version, .plugins[].codex.ref, .plugins[].codex.sha
+json templates/silver-bullet.config.json.default .config_version
+json plugins/silver-bullet/templates/silver-bullet.config.json.default .config_version
+json .silver-bullet.json .config_version

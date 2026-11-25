@@ -7,7 +7,7 @@ Enterprise E2E can file **real GitHub issues** on [`alo-exp/enterprise-grade-tes
 ```bash
 cd /path/to/silver-bullet/repo
 
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app-cursor
+export SB_TEST_ENTERPRISE_APP_ROOT=/path/to/enterprise-grade-test-app-cursor   # your test-app checkout
 export SB_RFL_GITHUB_E2E=1   # optional — auto-enabled when gh auth or token present
 
 bash tests/enterprise-e2e-live/test-enterprise-e2e-triage-ladder-scenario.sh
@@ -25,7 +25,7 @@ bash .planning/enterprise-e2e/cursor-triage-ladder-driver.sh
 |----------|----------|---------|
 | `GITHUB_TOKEN` or `GH_TOKEN` | CI / headless | `gh` API auth when keyring unavailable |
 | `gh auth login` | Local dev | Alternative to token |
-| `SB_TEST_ENTERPRISE_APP_ROOT` | Yes (GitHub path) | Cursor worktree clone with `origin` → test app |
+| `SB_TEST_ENTERPRISE_APP_ROOT` | Yes (GitHub path) | Test-app worktree clone with `origin` → test app |
 | `SB_RFL_GITHUB_E2E` | Opt-in | Force GitHub filing segment (else skip) |
 | `SB_RFL_GITHUB_ISSUE_LABEL` | Optional | Default `rfl-triage-e2e` |
 
@@ -37,6 +37,6 @@ bash .planning/enterprise-e2e/cursor-triage-ladder-driver.sh
 
 ## Hook enforcement
 
-`hooks/review-fix-ladder-guard.sh` enforces the ladder state machine when active (skill invoke or test harness). Disable with `SB_REVIEW_FIX_LADDER_GUARD=0`.
+`hooks/review-fix-ladder-guard.sh` enforces the ladder state machine when active (skill invoke or test harness). The guard is inert unless the session started or resumed a run (there is no off switch).
 
 Violations set `compliance_stop` and deny further Task spawns until the session state is cleared.

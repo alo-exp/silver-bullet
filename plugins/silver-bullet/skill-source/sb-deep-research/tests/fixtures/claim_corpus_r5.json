@@ -1,0 +1,1322 @@
+[
+ {
+  "kind": "F",
+  "claim": "Acme has 500 employees",
+  "quote": "Initech has 500 employees and Acme has 200",
+  "source": "r5 score5.py: fig: other entity's headcount"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 500 employees",
+  "quote": "Initech has 500 employees. Acme has 200 employees.",
+  "source": "r5 score5.py: fig: other entity's headcount (sentences)"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme's market share is 30%",
+  "quote": "Initech's market share is 30%, while Acme's is 10%",
+  "source": "r5 score5.py: fig: other entity's share"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50M in 2023",
+  "quote": "Initech raised $50M in 2023, and Acme raised $10M in 2023",
+  "source": "r5 score5.py: fig: other entity's funding"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme costs $20 per user per month",
+  "quote": "Initech costs $20 per user per month; Acme costs $35 per user per month",
+  "source": "r5 score5.py: fig: other entity's price"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme Cloud has 99.99% uptime",
+  "quote": "Initech Cloud has 99.99% uptime and Acme Cloud has 99.5% uptime",
+  "source": "r5 score5.py: fig: other product's latency"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme was founded in 2015",
+  "quote": "Initech was founded in 2015 and Acme was founded in 2019",
+  "source": "r5 score5.py: year: other entity founded"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Globex acquired Initech. Acme acquired Hooli.",
+  "source": "r5 score5.py: names mixed across sentences"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech in 2021",
+  "quote": "Globex acquired Initech in 2021, and Acme acquired Hooli in 2019",
+  "source": "r5 score5.py: names mixed across clauses"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SCIM",
+  "quote": "Okta supports SCIM. Acme supports SAML.",
+  "source": "r5 score5.py: feature mixed across sentences"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is SOC 2 certified",
+  "quote": "Initech is SOC 2 certified. Acme is ISO 27001 certified.",
+  "source": "r5 score5.py: cert mixed across sentences"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme plans to support SSO in 2025",
+  "source": "r5 score5.py: plans to support"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme Cloud is SOC 2 Type II certified",
+  "quote": "Acme Cloud is pursuing SOC 2 Type II certification",
+  "source": "r5 score5.py: pursuing certification"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SCIM provisioning",
+  "quote": "Acme will support SCIM provisioning next year",
+  "source": "r5 score5.py: will support"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50M in 2023",
+  "quote": "Acme is expected to raise $50M in 2023",
+  "source": "r5 score5.py: is expected to raise"
+ },
+ {
+  "kind": "F",
+  "claim": "Initech acquired Acme",
+  "quote": "Initech is considering acquiring Acme",
+  "source": "r5 score5.py: considering acquisition"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme supports SSO only if customers buy the enterprise add-on",
+  "source": "r5 score5.py: conditional"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Does Acme support SSO? The documentation does not say.",
+  "source": "r5 score5.py: question"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has more than 50 customers",
+  "quote": "Acme has no more than 50 customers",
+  "source": "r5 score5.py: no more than vs more than"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised less than $50M in 2023",
+  "quote": "Acme raised no less than $50M in 2023",
+  "source": "r5 score5.py: no less than vs less than"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has fewer than 500 customers",
+  "quote": "Acme has no fewer than 500 customers",
+  "source": "r5 score5.py: no fewer than vs fewer than"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme hardly supports SSO",
+  "source": "r5 score5.py: hardly"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is HIPAA compliant",
+  "quote": "Acme is HIPAA non-compliant",
+  "source": "r5 score5.py: non-compliant"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme stores backups encrypted",
+  "quote": "Acme stores backups unencrypted",
+  "source": "r5 score5.py: unencrypted"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme supports neither SSO nor SCIM",
+  "source": "r5 score5.py: neither nor late"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SCIM",
+  "quote": "Acme does not support SSO, nor SCIM",
+  "source": "r5 score5.py: nor only"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme encrypts backups",
+  "quote": "Acme never encrypts logs, backups or snapshots",
+  "source": "r5 score5.py: never comma list"
+ },
+ {
+  "kind": "F",
+  "claim": "Initech supports SCIM",
+  "quote": "Okta supports SCIM and Initech does not",
+  "source": "r5 score5.py: B does not (fab claim for B)"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports LDAP",
+  "quote": "Acme supports SAML, not LDAP",
+  "source": "r5 score5.py: X, not Y (fab Y)"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports LDAP",
+  "quote": "Acme supports SAML and OIDC but not LDAP",
+  "source": "r5 score5.py: but not Y"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO on the free plan",
+  "quote": "Acme supports SSO on every plan except the free plan",
+  "source": "r5 score5.py: except"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme offers SCIM",
+  "quote": "Acme offers SSO with no SCIM",
+  "source": "r5 score5.py: with no X (fab X)"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO on enterprise plans",
+  "quote": "Acme does not support SSO, not even on enterprise plans",
+  "source": "r5 score5.py: not even end"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is profitable",
+  "quote": "Not even Acme is profitable",
+  "source": "r5 score5.py: Not even start 2"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has a Linux client",
+  "quote": "No vendor, Acme included, has a Linux client",
+  "source": "r5 score5.py: no-one"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme offers phone support",
+  "quote": "Nobody at Acme offers phone support",
+  "source": "r5 score5.py: nobody"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme passed the SOC 2 audit",
+  "quote": "Acme failed to pass the SOC 2 audit",
+  "source": "r5 score5.py: failed to"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme refused to support SSO",
+  "source": "r5 score5.py: refused"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme uses Postgres",
+  "quote": "Acme uses MySQL instead of Postgres",
+  "source": "r5 score5.py: instead of"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme uses Postgres",
+  "quote": "Acme uses MySQL rather than Postgres",
+  "source": "r5 score5.py: rather than"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme uses Postgres",
+  "quote": "Acme replaced Postgres with MySQL in 2022",
+  "source": "r5 score5.py: replaced"
+ },
+ {
+  "kind": "F",
+  "claim": "Setup takes 5 days",
+  "quote": "Setup takes 2 to 5 days",
+  "source": "r5 score5.py: range end as single"
+ },
+ {
+  "kind": "F",
+  "claim": "Setup takes between 2 and 5 days",
+  "quote": "Setup takes between 2 and 50 days",
+  "source": "r5 score5.py: range digits 2-50"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme handles 10,000 requests per second",
+  "quote": "Acme handles up to 1,000 requests per second, not 10,000",
+  "source": "r5 score5.py: up to"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme revenue grew 5%",
+  "quote": "Acme revenue grew 5 percentage points",
+  "source": "r5 score5.py: percent points vs percent"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is 3x faster than Initech",
+  "quote": "Acme is 3% faster than Initech",
+  "source": "r5 score5.py: x vs %"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme costs $20 per month",
+  "quote": "Acme costs $20 per year",
+  "source": "r5 score5.py: per month vs per year"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme costs $20 per user",
+  "quote": "Acme costs $20 per team",
+  "source": "r5 score5.py: per user vs flat"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 2 million users",
+  "quote": "Acme has 2 thousand users",
+  "source": "r5 score5.py: million vs thousand"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $1.5 billion",
+  "quote": "Acme raised $15 billion",
+  "source": "r5 score5.py: decimal comma"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50M",
+  "quote": "Acme raised R$50M",
+  "source": "r5 score5.py: R$ vs $"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50M",
+  "quote": "Acme raised MX$50M",
+  "source": "r5 score5.py: Mex$ vs $"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50 million",
+  "quote": "Acme raised 50 million kroner",
+  "source": "r5 score5.py: kroner"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50 million",
+  "quote": "Acme raised 50 million in Swiss francs",
+  "source": "r5 score5.py: quote currency after 'in'"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme launched SSO in 2021",
+  "quote": "Acme announced SSO in 2021 and launched it in 2023",
+  "source": "r5 score5.py: year moved: launched vs announced"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme was founded in 2019",
+  "quote": "Acme (founded 2015) was acquired by Globex in 2019",
+  "source": "r5 score5.py: year in parens"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme's churn is 5%",
+  "quote": "Acme's growth is 5% and churn is 9%",
+  "source": "r5 score5.py: percent of other metric (no verb)"
+ },
+ {
+  "kind": "F",
+  "claim": "62% of respondents use Acme",
+  "quote": "62% of respondents use Initech and 12% use Acme",
+  "source": "r5 score5.py: survey %"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme's revenue was $10M in 2023",
+  "quote": "Acme's profit was $10M in 2023",
+  "source": "r5 score5.py: revenue vs profit"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 500 employees",
+  "quote": "Acme has 500 customers",
+  "source": "r5 score5.py: employees vs customers"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme revenue grew 30% in Q3",
+  "quote": "Acme revenue grew 30% in Q2 and 10% in Q3",
+  "source": "r5 score5.py: quarter swap"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme launched SSO in March 2021",
+  "quote": "Acme launched SSO in May 2021",
+  "source": "r5 score5.py: month swap"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme went public on March 3, 2021",
+  "quote": "Acme went public on March 13, 2021",
+  "source": "r5 score5.py: date day swap"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports Python 3.12",
+  "quote": "Acme supports Python 3.11",
+  "source": "r5 score5.py: version swap"
+ },
+ {
+  "kind": "F",
+  "claim": "Initech was acquired by Acme",
+  "quote": "Acme was acquired by Initech",
+  "source": "r5 score5.py: passive role swap"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech in 2021",
+  "quote": "Initech acquired Acme in 2021",
+  "source": "r5 score5.py: subject swap with adjunct"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme outperformed Initech on every benchmark",
+  "quote": "Initech outperformed Acme on every benchmark",
+  "source": "r5 score5.py: subject swap long gap"
+ },
+ {
+  "kind": "F",
+  "claim": "AWS offers Graviton instances",
+  "quote": "Azure offers Graviton instances",
+  "source": "r5 score5.py: entity swap similar"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme costs $20 per user per month",
+  "quote": "Acme's Pro plan costs $20 per user per month, billed annually",
+  "source": "r5 score5.py: price per user"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme was founded in 2015",
+  "quote": "Acme was founded in 2015 in Berlin by two former Initech engineers",
+  "source": "r5 score5.py: founded year"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme was founded in 2015",
+  "quote": "Founded in 2015, Acme now employs 400 people",
+  "source": "r5 score5.py: founded year opener"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is headquartered in Berlin",
+  "quote": "The company is headquartered in Berlin, Germany",
+  "source": "r5 score5.py: headquarters"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme raised $50 million in a Series B round in 2023",
+  "quote": "In 2023 Acme raised $50 million in a Series B round led by Sequoia",
+  "source": "r5 score5.py: funding round"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme employs about 400 people",
+  "quote": "Acme employs roughly 400 people across three offices",
+  "source": "r5 score5.py: employees approx"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has 400 employees",
+  "quote": "Acme has 400 employees",
+  "source": "r5 score5.py: employees"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has more than 2,000 customers",
+  "quote": "More than 2,000 customers use Acme",
+  "source": "r5 score5.py: customers more than"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SAML-based single sign-on",
+  "quote": "Acme supports SAML-based single sign-on for all enterprise accounts",
+  "source": "r5 score5.py: SSO support"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is SOC 2 Type II certified",
+  "quote": "Acme has been SOC 2 Type II certified since 2021",
+  "source": "r5 score5.py: SOC2"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme runs in three AWS regions",
+  "quote": "Acme runs in three AWS regions: us-east-1, eu-west-1 and ap-southeast-2",
+  "source": "r5 score5.py: regions"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme integrates with Slack, Jira and GitHub",
+  "quote": "Acme integrates with Slack, Jira and GitHub out of the box",
+  "source": "r5 score5.py: integrations list"
+ },
+ {
+  "kind": "H",
+  "claim": "62% of respondents said they use Kubernetes in production",
+  "quote": "In the 2023 survey, 62% of respondents said they use Kubernetes in production",
+  "source": "r5 score5.py: survey percent"
+ },
+ {
+  "kind": "H",
+  "claim": "The drug reduced mortality by 12% compared with placebo",
+  "quote": "Compared with placebo, the drug reduced mortality by 12%",
+  "source": "r5 score5.py: study effect"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's p99 latency is 45 ms",
+  "quote": "In our tests, Acme's p99 latency was 45 ms under load",
+  "source": "r5 score5.py: benchmark latency"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme 2.0 was released in March 2024",
+  "quote": "Acme 2.0 was released in March 2024 with a new query engine",
+  "source": "r5 score5.py: release date"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports Python 3.12",
+  "quote": "Acme supports Python 3.9 through 3.12",
+  "source": "r5 score5.py: version support"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme holds a 30% market share",
+  "quote": "Acme holds a 30% share of the market, according to IDC",
+  "source": "r5 score5.py: market share"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's revenue reached $120 million in 2023",
+  "quote": "Acme's 2023 revenue reached $120 million",
+  "source": "r5 score5.py: revenue"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's revenue grew 40% year over year",
+  "quote": "Revenue grew 40% year over year, Acme said",
+  "source": "r5 score5.py: revenue growth"
+ },
+ {
+  "kind": "H",
+  "claim": "Initech acquired Acme in 2022",
+  "quote": "Initech acquired Acme in 2022 for an undisclosed sum",
+  "source": "r5 score5.py: acquisition"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme was acquired by Initech in 2022",
+  "quote": "In 2022 Acme was acquired by Initech",
+  "source": "r5 score5.py: acquisition passive"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is released under the Apache 2.0 license",
+  "quote": "Acme is open source and released under the Apache 2.0 license",
+  "source": "r5 score5.py: open source license"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers a free tier for up to 5 users",
+  "quote": "Acme offers a free tier for teams of up to 5 users",
+  "source": "r5 score5.py: free tier"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme guarantees 99.9% uptime",
+  "quote": "Acme's SLA guarantees 99.9% uptime for paid plans",
+  "source": "r5 score5.py: uptime SLA"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme encrypts data at rest with AES-256",
+  "quote": "All customer data is encrypted at rest with AES-256",
+  "source": "r5 score5.py: encryption"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is GDPR compliant",
+  "quote": "Acme is fully GDPR compliant and stores EU data in Frankfurt",
+  "source": "r5 score5.py: GDPR"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme does not offer an on-premises version",
+  "quote": "Acme does not offer an on-premises version",
+  "source": "r5 score5.py: no on-prem"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme does not offer an on-premises version",
+  "quote": "There is no on-premises version of Acme",
+  "source": "r5 score5.py: no on-prem paraphrase"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme lacks SCIM provisioning",
+  "quote": "Acme does not support SCIM provisioning",
+  "source": "r5 score5.py: lacks SCIM"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is available only as a cloud service",
+  "quote": "Acme is available only as a cloud service",
+  "source": "r5 score5.py: only cloud"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SCIM and Initech does not",
+  "quote": "Acme supports SCIM; Initech does not",
+  "source": "r5 score5.py: comparison A>B"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is cheaper than Initech for teams under 50 users",
+  "quote": "For teams under 50 users, Acme is cheaper than Initech",
+  "source": "r5 score5.py: comparison cheaper"
+ },
+ {
+  "kind": "H",
+  "claim": "Both Acme and Initech support SAML",
+  "quote": "Acme and Initech both support SAML",
+  "source": "r5 score5.py: both support"
+ },
+ {
+  "kind": "H",
+  "claim": "Jane Doe is the CEO of Acme",
+  "quote": "Acme's CEO, Jane Doe, said the company would expand",
+  "source": "r5 score5.py: CEO"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's CEO is Jane Doe",
+  "quote": "Jane Doe has been Acme's CEO since 2020",
+  "source": "r5 score5.py: CEO 2"
+ },
+ {
+  "kind": "H",
+  "claim": "The Acme repository has over 20,000 GitHub stars",
+  "quote": "The Acme repository has more than 20,000 stars on GitHub",
+  "source": "r5 score5.py: stars"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is downloaded 5 million times per week on npm",
+  "quote": "Acme is downloaded about 5 million times a week from npm",
+  "source": "r5 score5.py: downloads"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is written in Rust",
+  "quote": "Acme is written in Rust and compiles to a single binary",
+  "source": "r5 score5.py: written in"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme listens on port 8080 by default",
+  "quote": "By default, Acme listens on port 8080",
+  "source": "r5 score5.py: default port"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme limits uploads to 100 MB",
+  "quote": "Uploads are limited to 100 MB per file in Acme",
+  "source": "r5 score5.py: max file"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme retains logs for 30 days",
+  "quote": "Acme retains logs for 30 days on the Pro plan",
+  "source": "r5 score5.py: retention"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has three pricing tiers",
+  "quote": "Acme offers three pricing tiers: Free, Pro and Enterprise",
+  "source": "r5 score5.py: pricing tier count"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme laid off 10% of its staff in 2023",
+  "quote": "In 2023 Acme laid off 10% of its staff",
+  "source": "r5 score5.py: layoffs"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme went public in 2021",
+  "quote": "Acme went public on the Nasdaq in 2021",
+  "source": "r5 score5.py: IPO"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme was valued at $2 billion in 2022",
+  "quote": "Acme was valued at $2 billion in its 2022 funding round",
+  "source": "r5 score5.py: valuation"
+ },
+ {
+  "kind": "H",
+  "claim": "The study enrolled 1,200 patients",
+  "quote": "The trial enrolled 1,200 patients across 40 sites",
+  "source": "r5 score5.py: study sample"
+ },
+ {
+  "kind": "H",
+  "claim": "Among 1,200 patients, 8% had side effects",
+  "quote": "Of the 1,200 patients, 8% had side effects",
+  "source": "r5 score5.py: study n and result"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme deprecated its v1 API in 2023",
+  "quote": "Acme deprecated its v1 API in 2023",
+  "source": "r5 score5.py: deprecation"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme does not support Windows",
+  "quote": "Acme runs on Linux and macOS but does not support Windows",
+  "source": "r5 score5.py: not support windows"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme runs on Linux and macOS",
+  "quote": "Acme runs on Linux and macOS but does not support Windows",
+  "source": "r5 score5.py: supports linux, not windows"
+ },
+ {
+  "kind": "H",
+  "claim": "Gartner named Acme a Leader in its 2023 Magic Quadrant",
+  "quote": "Acme was named a Leader in the 2023 Gartner Magic Quadrant",
+  "source": "r5 score5.py: gartner"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme partners with Microsoft",
+  "quote": "Acme partners with Microsoft to resell its platform on Azure",
+  "source": "r5 score5.py: partner"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme provides SDKs for Python, Go and Java",
+  "quote": "Acme provides official SDKs for Python, Go and Java",
+  "source": "r5 score5.py: SDK languages"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme stores EU customer data in Frankfurt",
+  "quote": "EU customer data is stored in Frankfurt",
+  "source": "r5 score5.py: data residency"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers 24/7 support on the Enterprise plan",
+  "quote": "The Enterprise plan includes 24/7 support",
+  "source": "r5 score5.py: support hours"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers a 14-day free trial",
+  "quote": "Acme offers a 14-day free trial with no credit card required",
+  "source": "r5 score5.py: trial"
+ },
+ {
+  "kind": "H",
+  "claim": "Symptoms improved in 65% of patients",
+  "quote": "Symptoms improved in 65% of patients after six weeks",
+  "source": "r5 score5.py: patients improved"
+ },
+ {
+  "kind": "H",
+  "claim": "Global temperatures rose 1.1C since pre-industrial times",
+  "quote": "Global temperatures have risen 1.1C since pre-industrial times",
+  "source": "r5 score5.py: temperature"
+ },
+ {
+  "kind": "H",
+  "claim": "Berlin has a population of 3.7 million",
+  "quote": "Berlin has a population of about 3.7 million people",
+  "source": "r5 score5.py: population"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SCIM and Initech does not",
+  "quote": "Acme supports SCIM and Initech does not",
+  "source": "r5 score5b.py: cmp verbatim and"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SCIM, but Initech does not",
+  "quote": "Acme supports SCIM, but Initech does not",
+  "source": "r5 score5b.py: cmp but verbatim"
+ },
+ {
+  "kind": "H",
+  "claim": "Okta supports SCIM provisioning and OneLogin does not",
+  "quote": "Okta supports SCIM provisioning and OneLogin does not",
+  "source": "r5 score5b.py: cmp Okta/OneLogin verbatim"
+ },
+ {
+  "kind": "H",
+  "claim": "Postgres supports JSONB indexes and MySQL doesn't",
+  "quote": "Postgres supports JSONB indexes and MySQL doesn't",
+  "source": "r5 score5b.py: cmp doesn't"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers SSO and Initech lacks it",
+  "quote": "Acme offers SSO, while Initech lacks it",
+  "source": "r5 score5b.py: cmp lacks"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SCIM, whereas Initech does not",
+  "quote": "Acme supports SCIM, whereas Initech does not",
+  "source": "r5 score5b.py: cmp whereas"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SCIM. Initech does not.",
+  "quote": "Acme supports SCIM. Initech does not.",
+  "source": "r5 score5b.py: cmp two sentences"
+ },
+ {
+  "kind": "H",
+  "claim": "Unlike Initech, Acme supports SCIM",
+  "quote": "Acme supports SCIM, which Initech does not",
+  "source": "r5 score5b.py: cmp unlike"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme runs on Linux and macOS but not Windows",
+  "quote": "Acme runs on Linux and macOS but does not support Windows",
+  "source": "r5 score5b.py: linux not windows"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SAML but not LDAP",
+  "quote": "Acme supports SAML, not LDAP",
+  "source": "r5 score5b.py: SAML not LDAP"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme encrypts data at rest and does not store keys in plaintext",
+  "quote": "Acme encrypts data at rest and does not store keys in plaintext",
+  "source": "r5 score5b.py: and does not"
+ },
+ {
+  "kind": "H",
+  "claim": "Neither Acme nor Initech supports SCIM",
+  "quote": "Neither Acme nor Initech supports SCIM",
+  "source": "r5 score5b.py: both lack"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has 500 employees and Initech has 200",
+  "quote": "Acme has 500 employees and Initech has 200",
+  "source": "r5 score5b.py: cmp figure"
+ },
+ {
+  "kind": "F",
+  "claim": "Initech was acquired by Acme in 2021",
+  "quote": "Acme was acquired by Initech in 2021",
+  "source": "r5 score5b.py: passive swap 1"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is owned by Initech",
+  "quote": "Initech is owned by Acme",
+  "source": "r5 score5b.py: passive swap 2"
+ },
+ {
+  "kind": "F",
+  "claim": "Apple was overtaken by Samsung",
+  "quote": "Samsung was overtaken by Apple",
+  "source": "r5 score5b.py: passive swap 3"
+ },
+ {
+  "kind": "F",
+  "claim": "Globex was founded by Acme engineers",
+  "quote": "Acme was founded by Globex engineers",
+  "source": "r5 score5b.py: passive swap 4"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Initech acquired Acme",
+  "source": "r5 score5b.py: active swap 1"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme owns Initech",
+  "quote": "Initech owns Acme",
+  "source": "r5 score5b.py: active swap owns"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme charges a setup fee",
+  "quote": "Acme supports SSO on all plans with no setup fee",
+  "source": "r5 score5b.py: with no setup fee"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has an offline mode",
+  "quote": "Acme ships with no offline mode",
+  "source": "r5 score5b.py: with no offline mode"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme offers SCIM",
+  "quote": "Acme offers SSO without SCIM",
+  "source": "r5 score5b.py: without SCIM"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme's migration caused downtime",
+  "quote": "Acme migrated its customers with no downtime",
+  "source": "r5 score5b.py: with no downtime"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme passes the SOC 2 audit",
+  "quote": "Acme fails to pass the SOC 2 audit",
+  "source": "r5 score5b.py: fails to"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme met its 2023 revenue target",
+  "quote": "Acme failed to meet its 2023 revenue target",
+  "source": "r5 score5b.py: failed to meet"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme met its 2023 revenue target",
+  "quote": "Acme did not meet its 2023 revenue target",
+  "source": "r5 score5b.py: did not manage"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme's uptime is less than 99%",
+  "quote": "Acme's uptime is nothing less than 99%",
+  "source": "r5 score5b.py: nothing less than"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme does not support Windows",
+  "quote": "Acme supports Linux and macOS, but not Windows",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SSO but not SCIM",
+  "quote": "Acme supports SSO. It does not support SCIM.",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SSO but not SCIM",
+  "quote": "Acme supports SSO but does not support SCIM",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Neither Acme nor Initech supports SCIM",
+  "quote": "Acme and Initech both lack SCIM support",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme does not encrypt backups",
+  "quote": "Backups are not encrypted by Acme",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports only SAML",
+  "quote": "SAML is the only SSO protocol Acme supports",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers SSO on all plans, unlike Initech",
+  "quote": "Acme offers SSO on all plans; Initech reserves it for Enterprise",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SCIM and SAML",
+  "quote": "Acme supports SCIM and SAML but not LDAP",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme and Initech support SAML, but only Acme supports SCIM",
+  "quote": "Acme and Initech support SAML, but only Acme supports SCIM",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has no free tier",
+  "quote": "Acme has no free tier",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has no free tier and Initech has one",
+  "quote": "Acme has no free tier, while Initech has one",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Okta supports SCIM while OneLogin does not",
+  "quote": "Okta supports SCIM, while OneLogin does not",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "GitHub supports SAML and GitLab supports LDAP",
+  "quote": "GitHub supports SAML, and GitLab supports LDAP",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "AWS and Azure both offer ARM instances",
+  "quote": "AWS and Azure both offer ARM instances",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Slack integrates with Jira and Asana does not",
+  "quote": "Slack integrates with Jira; Asana does not",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SCIM and Initech also supports it",
+  "quote": "Acme supports SCIM and Initech also supports it",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SAML and Initech supports OIDC",
+  "quote": "Acme supports SAML and Initech supports OIDC",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports Kubernetes and Nomad",
+  "quote": "Acme supports Kubernetes and Nomad",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports Kubernetes and Initech does not",
+  "quote": "Acme supports Kubernetes, and Initech does not",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is open source and Initech is proprietary",
+  "quote": "Acme is open source, and Initech is proprietary",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers SSO and SCIM, and Initech offers neither",
+  "quote": "Acme offers SSO and SCIM, and Initech offers neither",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme raised $50M and Initech raised nothing",
+  "quote": "Acme raised $50M, and Initech raised nothing",
+  "source": "r5 honest5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Microsoft invested $10 billion in OpenAI",
+  "quote": "OpenAI invested $10 billion in Microsoft",
+  "source": "r5 roles5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme licenses its technology to Initech",
+  "quote": "Initech licenses its technology to Acme",
+  "source": "r5 roles5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme sold its stake in Initech in 2022",
+  "quote": "Initech sold its stake in Acme in 2022",
+  "source": "r5 roles5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme sued Initech for patent infringement",
+  "quote": "Initech sued Acme for patent infringement",
+  "source": "r5 roles5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme pays Initech a royalty on every unit",
+  "quote": "Initech pays Acme a royalty on every unit",
+  "source": "r5 roles5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme was acquired by Initech",
+  "quote": "Initech was acquired by Acme",
+  "source": "r5 roles5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is a subsidiary of Initech",
+  "quote": "Initech is a subsidiary of Acme",
+  "source": "r5 roles5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is cheaper than Initech",
+  "quote": "Initech is cheaper than Acme",
+  "source": "r5 roles5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is faster than Initech on the TPC-H benchmark",
+  "quote": "Initech is faster than Acme on the TPC-H benchmark",
+  "source": "r5 roles5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme migrated from Postgres to MySQL",
+  "quote": "Acme migrated from MySQL to Postgres",
+  "source": "r5 roles5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme replaced Jenkins with GitHub Actions",
+  "quote": "Acme replaced GitHub Actions with Jenkins",
+  "source": "r5 roles5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme beat Initech in the Gartner ranking",
+  "quote": "Initech beat Acme in the Gartner ranking",
+  "source": "r5 roles5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme spun off from Initech in 2019",
+  "quote": "Initech spun off from Acme in 2019",
+  "source": "r5 roles5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme no longer offers a free tier",
+  "quote": "Acme offers a free tier for up to 5 users",
+  "source": "r5 misc5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme no longer supports SAML",
+  "quote": "Acme supports SAML on every plan",
+  "source": "r5 misc5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme offers a free tier",
+  "quote": "Acme no longer offers a free tier",
+  "source": "r5 misc5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme's enterprise plan supports SSO",
+  "quote": "Not even Acme's enterprise plan supports SSO",
+  "source": "r5 misc5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Even Acme does not support SSO",
+  "source": "r5 misc5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme? It does not support SSO",
+  "source": "r5 misc5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is profitable",
+  "quote": "Acme is not just unprofitable; it is insolvent",
+  "source": "r5 misc5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SCIM",
+  "quote": "Acme supports SSO; SCIM, however, is not supported",
+  "source": "r5 misc5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SCIM",
+  "quote": "SCIM is not something Acme supports",
+  "source": "r5 misc5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SCIM",
+  "quote": "Acme supports SSO and SAML. SCIM? Not supported.",
+  "source": "r5 misc5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme stores data in the EU",
+  "quote": "Acme stores no data in the EU",
+  "source": "r5 misc5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme sells customer data",
+  "quote": "Acme sells no customer data",
+  "source": "r5 misc5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme sells customer data",
+  "quote": "Acme says it never sells customer data",
+  "source": "r5 misc5.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme offers SCIM provisioning for enterprise customers",
+  "quote": "Acme offers SSO for enterprise customers with no SCIM provisioning",
+  "source": "r5 fab7.tsv row 1"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme charges a setup fee on all plans",
+  "quote": "Acme supports SSO on all plans with no setup fee",
+  "source": "r5 fab7.tsv row 2"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has more than 50 enterprise customers",
+  "quote": "Acme has no more than 50 enterprise customers",
+  "source": "r5 fab7.tsv row 3"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 500 employees in Berlin",
+  "quote": "Initech has 500 employees in Berlin and Acme has 200",
+  "source": "r5 fab7.tsv row 5"
+ },
+ {
+  "kind": "F",
+  "claim": "62% of respondents use Acme in production",
+  "quote": "62% of respondents use Initech in production and 12% use Acme",
+  "source": "r5 fab7.tsv row 6"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech in 2021",
+  "quote": "Globex acquired Initech in 2021. Acme acquired Hooli in 2019.",
+  "source": "r5 fab7.tsv row 7"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme passed its SOC 2 Type II audit in 2023",
+  "quote": "Acme failed to pass its SOC 2 Type II audit in 2023",
+  "source": "r5 fab7.tsv row 8"
+ },
+ {
+  "kind": "F",
+  "claim": "In a 2023 survey 62% of respondents used Acme in production",
+  "quote": "In a 2023 survey 62% of respondents used Initech in production and 12% used Acme",
+  "source": "r5 fab8.tsv row 2"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SCIM provisioning for enterprise tenants",
+  "quote": "Acme plans to support SCIM provisioning for enterprise tenants in 2025",
+  "source": "r5 fab9.tsv row 1"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SCIM provisioning for enterprise tenants",
+  "quote": "Acme will support SCIM provisioning for enterprise tenants next year",
+  "source": "r5 fab9.tsv row 2"
+ },
+ {
+  "kind": "F",
+  "claim": "Initial setup of Acme takes 3 days for enterprise tenants",
+  "quote": "Initial setup of Acme takes one to three days for enterprise tenants",
+  "source": "r5 fab9.tsv row 3"
+ },
+ {
+  "kind": "F",
+  "claim": "Microsoft invested $10 billion in OpenAI in 2023",
+  "quote": "OpenAI invested $10 billion in Microsoft in 2023",
+  "source": "r5 fab9.tsv row 4"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme migrated from Postgres to MySQL in 2022",
+  "quote": "Acme migrated from MySQL to Postgres in 2022",
+  "source": "r5 fab9.tsv row 6"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SCIM provisioning and Initech does not",
+  "quote": "Acme supports SCIM provisioning; Initech does not",
+  "source": "r5 hon8.tsv row 1"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers SSO on every plan and Initech lacks it",
+  "quote": "Acme offers SSO on every plan, while Initech lacks it",
+  "source": "r5 hon8.tsv row 2"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SCIM provisioning and Initech does not",
+  "quote": "Acme supports SCIM provisioning and Initech does not",
+  "source": "r5 hon8.tsv row 3"
+ },
+ {
+  "kind": "H",
+  "claim": "Okta supports SAML and OneLogin does not",
+  "quote": "Okta supports SAML. OneLogin does not.",
+  "source": "r5 hon9.tsv row 4"
+ }
+]

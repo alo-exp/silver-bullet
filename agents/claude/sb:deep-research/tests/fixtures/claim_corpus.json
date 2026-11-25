@@ -1,0 +1,367 @@
+{
+ "description": "Adversarial fabrications (strict mode must not mark them supported) and honest claims (must be supported). Each pair is [claim, evidence quote].",
+ "fabrications": [
+  [
+   "The vendor guarantees zero downtime for all customers and has never had a breach.",
+   "the weather was cold and windy yesterday"
+  ],
+  [
+   "AWS acquired GitHub in 2018 for 7.5 billion dollars",
+   "Microsoft acquired GitHub in 2018 for 7.5 billion dollars"
+  ],
+  [
+   "IBM acquired the company in 2019 for 34 billion",
+   "Oracle acquired the company in 2019 for 34 billion"
+  ],
+  [
+   "GitLab acquired the startup in 2021",
+   "GitHub acquired the startup in 2021"
+  ],
+  [
+   "The vendor does not guarantee zero downtime for enterprise customers",
+   "The vendor guarantees zero downtime for all enterprise customers"
+  ],
+  [
+   "The vendor guarantees zero downtime for enterprise customers",
+   "The vendor does not guarantee zero downtime for enterprise customers"
+  ],
+  [
+   "Acme raised $50M in 2023",
+   "Acme raised $90M in 2023"
+  ],
+  [
+   "Acme raised $7.5B in 2023",
+   "Acme raised $7.9B in 2023"
+  ],
+  [
+   "Acme has 10k users",
+   "Acme has 90k users"
+  ],
+  [
+   "Acme reported results for FY2018",
+   "Acme reported results for FY2021"
+  ],
+  [
+   "Acme shipped the feature in Q3",
+   "Acme shipped the feature in Q4"
+  ],
+  [
+   "Acme runs its workloads on EC2",
+   "Acme runs its workloads on S3"
+  ],
+  [
+   "Acme integrates GPT5 for summaries",
+   "Acme integrates GPT4 for summaries"
+  ],
+  [
+   "Acme serves 2,500 customers",
+   "Acme serves 500 customers in 2 regions"
+  ],
+  [
+   "Acme supports SSO",
+   "Acme does not support SSO; enterprise customers can use SAML"
+  ],
+  [
+   "Acme reported security incidents in 2023",
+   "Acme reported zero security incidents in 2023"
+  ],
+  [
+   "Acme Cloud is SOC 2 Type II certified",
+   "Acme Cloud is pursuing certification. It is not SOC 2 Type II certified yet."
+  ],
+  [
+   "Acme had 500 employees in 2023",
+   "Acme operates 12 offices and 500 customers in 2023"
+  ],
+  [
+   "Revenue grew 30% and costs fell 10%",
+   "Revenue grew 10% and costs fell 30%"
+  ],
+  [
+   "Acme grew 40% in 2024",
+   "Acme grew 4% in 2024"
+  ],
+  [
+   "Acme grew 40% in 2024",
+   "Acme grew 40% in 2021"
+  ],
+  [
+   "Acme was founded in 2015 in Berlin",
+   "Acme was founded in 2012 in Berlin"
+  ],
+  [
+   "Acme supports Kubernetes and Nomad",
+   "Acme supports Kubernetes. Nomad support is not available."
+  ],
+  [
+   "Acme supports Kubernetes but not Nomad",
+   "Acme supports Kubernetes and Nomad on every plan"
+  ],
+  [
+   "Acme offers a free tier",
+   "Acme no longer offers a free tier"
+  ],
+  [
+   "Acme never had an outage",
+   "Acme had an outage in March"
+  ],
+  [
+   "Acme is profitable",
+   "Acme is not profitable"
+  ],
+  [
+   "Acme can export data to CSV",
+   "Acme cannot export data to CSV"
+  ],
+  [
+   "Acme includes audit logging in the base plan",
+   "Acme includes audit logging only without the base plan; it lacks audit logging there"
+  ],
+  [
+   "Acme employs 5,000 engineers",
+   "Acme employs 50 engineers"
+  ],
+  [
+   "Acme charges $20 per seat",
+   "Acme charges $200 per seat"
+  ],
+  [
+   "Acme charges 20 dollars per seat",
+   "Acme charges 29 dollars per seat"
+  ],
+  [
+   "Acme reached 1.5 million users",
+   "Acme reached 1.2 million users"
+  ],
+  [
+   "Uptime was 99.9% last year",
+   "Uptime was 99.5% last year"
+  ],
+  [
+   "Acme runs in 12 regions",
+   "Acme runs in 21 regions"
+  ],
+  [
+   "Acme has 3x faster builds",
+   "Acme has 2x faster builds"
+  ],
+  [
+   "Salesforce announced the product in 2019",
+   "Workday announced the product in 2019"
+  ],
+  [
+   "Kubernetes 1.28 removed the feature",
+   "Kubernetes 1.30 removed the feature"
+  ],
+  [
+   "OpenAI released the model in 2023",
+   "Anthropic released the model in 2023"
+  ],
+  [
+   "Acme was valued at $4B in 2022",
+   "Acme was valued at $4M in 2022"
+  ],
+  [
+   "The company opened 40 stores in 2021",
+   "The company opened 40 stores in 2012"
+  ],
+  [
+   "Acme did not disclose its revenue",
+   "Acme disclosed its revenue in the annual filing"
+  ],
+  [
+   "Acme lacks single sign-on",
+   "Acme provides single sign-on"
+  ],
+  [
+   "Acme is available in Germany",
+   "Acme is unavailable in Germany"
+  ],
+  [
+   "Acme supports 50 languages",
+   "Acme supports 50 file formats"
+  ]
+ ],
+ "honest": [
+  [
+   "Acme Corp revenue grew 40% in 2024 according to its annual filing.",
+   "Acme Corp revenue grew 40% in 2024, its annual filing shows."
+  ],
+  [
+   "Microsoft acquired GitHub in 2018 for 7.5 billion dollars",
+   "Microsoft acquired GitHub in 2018 for $7.5B"
+  ],
+  [
+   "Acme raised $50M in 2023",
+   "Acme raised 50 million dollars in 2023"
+  ],
+  [
+   "Acme raised 50 million dollars in 2023",
+   "Acme raised $50M in 2023"
+  ],
+  [
+   "Acme serves 2,500 customers",
+   "Acme serves 2500 customers"
+  ],
+  [
+   "Acme, which was not profitable in 2022, raised 50 million dollars in 2023",
+   "Acme raised 50 million dollars in 2023. The company was not profitable in 2022."
+  ],
+  [
+   "Acme supports not only SSO but also SCIM provisioning",
+   "Acme supports SSO and SCIM provisioning for every plan"
+  ],
+  [
+   "Acme supports Kubernetes but not Nomad",
+   "Acme supports Kubernetes. Nomad support is not available."
+  ],
+  [
+   "Acme no longer offers a free tier",
+   "Acme no longer offers a free tier as of 2024"
+  ],
+  [
+   "The vendor does not guarantee zero downtime for enterprise customers",
+   "The vendor does not guarantee zero downtime for enterprise customers"
+  ],
+  [
+   "Acme supports SSO",
+   "Acme supports SSO, but not SCIM provisioning"
+  ],
+  [
+   "Acme supports SSO and SCIM",
+   "Acme supports SSO. Acme supports SCIM provisioning too."
+  ],
+  [
+   "Acme is SOC 2 Type II certified",
+   "Acme Cloud is SOC 2 Type II certified and audited annually"
+  ],
+  [
+   "Acme employs 500 engineers",
+   "Acme employs 500 engineers in 2023"
+  ],
+  [
+   "Acme runs its workloads on EC2",
+   "Acme runs its workloads on EC2 and S3"
+  ],
+  [
+   "Acme integrates GPT4 for summaries",
+   "Acme integrates GPT4 for summaries and search"
+  ],
+  [
+   "Acme shipped the feature in Q3",
+   "Acme shipped the feature in Q3 of that year"
+  ],
+  [
+   "Acme reported results for FY2021",
+   "Acme reported results for FY2021 in March"
+  ],
+  [
+   "Acme has 10k users",
+   "Acme has 10,000 users"
+  ],
+  [
+   "Acme reached 1.5 million users",
+   "Acme reached 1.5 million users by December"
+  ],
+  [
+   "Uptime was 99.9% last year",
+   "Uptime was 99.9% last year across all regions"
+  ],
+  [
+   "Acme runs in 12 regions",
+   "Acme runs in 12 regions worldwide"
+  ],
+  [
+   "Acme has 3x faster builds",
+   "Acme has 3x faster builds than before"
+  ],
+  [
+   "Acme was founded in 2015 in Berlin",
+   "Acme was founded in 2015 in Berlin, Germany"
+  ],
+  [
+   "Acme charges $20 per seat",
+   "Acme charges $20 per seat per month"
+  ],
+  [
+   "Acme cannot export data to CSV",
+   "Acme cannot export data to CSV or JSON"
+  ],
+  [
+   "Acme is not profitable",
+   "Acme is not profitable and burns cash"
+  ],
+  [
+   "Acme never had an outage",
+   "Acme never had an outage since launch"
+  ],
+  [
+   "Acme lacks single sign-on",
+   "Acme lacks single sign-on and audit logging"
+  ],
+  [
+   "Acme offers a free tier and a team plan",
+   "Acme offers a free tier. Acme offers a team plan."
+  ],
+  [
+   "Acme opened 40 stores in 2021, which was a record",
+   "Acme opened 40 stores in 2021. That was a record."
+  ],
+  [
+   "Acme supports Python but not Ruby",
+   "Acme supports Python. It does not support Ruby."
+  ],
+  [
+   "Acme integrates with Slack and Jira",
+   "Acme integrates with Slack and Jira out of the box"
+  ],
+  [
+   "Kubernetes 1.28 removed the feature",
+   "Kubernetes 1.28 removed the feature entirely"
+  ],
+  [
+   "Acme grew 40% in 2024",
+   "Acme grew 40% in 2024 while competitors shrank"
+  ],
+  [
+   "The company opened 40 stores in 2021",
+   "The company opened 40 stores in 2021 and closed none"
+  ],
+  [
+   "Acme was valued at $4B in 2022",
+   "Acme was valued at 4 billion dollars in 2022"
+  ],
+  [
+   "Acme has 500 employees in 2023",
+   "Acme has 500 employees in 2023 and 12 offices"
+  ],
+  [
+   "Acme did not disclose its revenue",
+   "Acme did not disclose its revenue in the filing"
+  ],
+  [
+   "Acme is available in Germany",
+   "Acme is available in Germany and France"
+  ],
+  [
+   "Acme supports 50 languages",
+   "Acme supports 50 languages including Hindi"
+  ],
+  [
+   "OpenAI released the model in 2023",
+   "OpenAI released the model in 2023 after months of testing"
+  ],
+  [
+   "Revenue grew 30% and costs fell 10%",
+   "Revenue grew 30% and costs fell 10% year over year"
+  ],
+  [
+   "Acme charges 20 dollars per seat",
+   "Acme charges $20 per seat"
+  ],
+  [
+   "Acme, which was founded in 2015, employs 200 engineers",
+   "Acme was founded in 2015. Acme employs 200 engineers."
+  ]
+ ]
+}

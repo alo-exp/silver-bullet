@@ -71,12 +71,14 @@ append_skill_roots() {
   local cache_root="${SB_RUNTIME_PLUGIN_CACHE_ROOT:-${HOME}/.codex/plugins/cache}"
   local candidate
 
+  # The plugin's own skills come first, so a same-named SKILL.md in a user-level or cache root
+  # can never shadow a Silver Bullet skill and still earn its receipt.
   SKILL_ROOTS+=(
+    "${PLUGIN_ROOT}/skills"
+    "${PLUGIN_ROOT}/skill-source"
     "${SB_RUNTIME_HOME_ROOT:-${HOME}/.codex}/skills"
     "${HOME}/.codex/skills"
     "${HOME}/.agents/skills"
-    "${PLUGIN_ROOT}/skills"
-    "${PLUGIN_ROOT}/skill-source"
   )
 
   shopt -s nullglob
@@ -115,15 +117,15 @@ find_skill_file() {
     while IFS= read -r alias; do
       [[ -n "$alias" ]] && candidate_names+=("$alias")
     done < <(
-      sb_required_skill_aliases "$canonical_skill"
-      sb_required_skill_aliases "$raw_skill"
+      for name in "$canonical_skill" "$raw_skill"; do
+        sb_required_skill_aliases "$name"
+      done
     )
   fi
 
   for root in "${SKILL_ROOTS[@]}"; do
     [[ -d "$root" ]] || continue
     for name in "${candidate_names[@]}"; do
-      [[ -n "$name" ]] || continue
       for candidate in "${root}/${name}/SKILL.md" "${root}/${name}/SILVER_SOURCE"; do
         if [[ -f "$candidate" ]]; then
           printf '%s\n' "$candidate"
@@ -205,13 +207,25 @@ invoke_skill() {
       return 2
       ;;
   esac
-  shift || true
+  shift
   skill_arguments="$*"
 
   canonical_skill="$(canonical_skill_name "$raw_skill")"
   if ! skill_file="$(find_skill_file "$raw_skill" "$canonical_skill")"; then
     printf 'ERROR: skill not installed or not discoverable: %s\n' "$raw_skill" >&2
     return 1
+  fi
+
+  # Refuse BEFORE the skill text is printed or a receipt is written: the host sees this call as
+  # Bash, so its Skill gates (forbidden skills, UAT, review ladder) have not run (R3-08).
+  local denial
+  if [[ -f "${LIB_DIR}/skill-gates.sh" ]]; then
+    # shellcheck source=../hooks/lib/skill-gates.sh
+    source "${LIB_DIR}/skill-gates.sh"
+    if denial="$(sb_skill_gates_denial "$raw_skill" "${PLUGIN_ROOT}/hooks")"; then
+      printf 'ERROR: skill refused by the Silver Bullet Skill gates: %s\n' "$denial" >&2
+      return 1
+    fi
   fi
 
   write_receipt "$raw_skill" "$canonical_skill" "$skill_file"
@@ -221,12 +235,14 @@ invoke_skill() {
   printf 'Canonical: %s\n' "$canonical_skill"
   printf 'Source: %s\n\n' "$skill_file"
   if [[ -n "$skill_arguments" ]]; then
+    # shellcheck disable=SC2016  # $ARGUMENTS is printed literally for the agent
     printf 'Runtime arguments for this skill ($ARGUMENTS):\n%s\n\n' "$skill_arguments"
   fi
   printf '%s\n' "----- BEGIN SKILL ${canonical_skill} -----"
   cat "$skill_file"
   printf '\n%s\n' "----- END SKILL ${canonical_skill} -----"
   if [[ -n "$skill_arguments" ]]; then
+    # shellcheck disable=SC2016  # $ARGUMENTS is printed literally for the agent
     printf '\nUse the runtime arguments above wherever the skill refers to `$ARGUMENTS`.\n'
   fi
   printf 'Follow the skill instructions above. Silver Bullet hooks will record this invocation through the SB-owned Codex adapter receipt.\n'

@@ -105,7 +105,7 @@ jq -n '{id: "EXT-1", url: "https://pm.example/1", status: "duplicate"}'
 EOF
 DEDUP_ADAPTER=$(bash "$SCRIPT" adapter-dedup --fingerprint "$FP" --root "$WORK" 2>/dev/null || true)
 # without dedupe_command, falls back to local dedup
-assert_contains "dedup without adapter cmd uses local" "duplicate" "$DEDUP"
+assert_contains "dedup without adapter cmd uses local" "duplicate" "$DEDUP_ADAPTER"
 
 # --- dedupe_command path ---
 DEDUP_SCRIPT="$WORK/mock-dedup.sh"

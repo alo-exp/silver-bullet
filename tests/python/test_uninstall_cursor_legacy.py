@@ -1,0 +1,585 @@
+"""Unit tests for scripts/lib/uninstall_cursor_legacy.py: strip-only cleanup of ~/.cursor."""
+from __future__ import annotations
+
+import contextlib
+import io
+import json
+import os
+import tempfile
+import unittest
+from pathlib import Path
+
+from sbtest import load_module
+
+m = load_module("scripts/lib/uninstall_cursor_legacy.py")
+
+PLUGIN_ROOT = "/home/u/.cursor/plugins/cache/alo-labs/silver-bullet/0.50.0"
+SB_BRIDGE = f'"{PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh"'
+USER_HOOK = {"command": "/home/u/bin/my-hook.sh"}
+
+
+def run(argv):
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        code = m.main(argv)
+    return code, out.getvalue(), err.getvalue()
+
+
+class Base(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.home = Path(self._tmp.name).resolve() / ".cursor"
+        self.home.mkdir()
+
+    def write(self, rel, text):
+        path = self.home / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+        return path
+
+    def write_json(self, rel, data):
+        return self.write(rel, json.dumps(data))
+
+    def clean(self, *extra):
+        return run(["--cursor-home", str(self.home), *extra])
+
+    def backups(self):
+        root = self.home / ".silver-bullet-legacy-backup"
+        return sorted(p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()) if root.is_dir() else []
+
+
+class HooksTest(Base):
+    def test_removes_only_silver_bullet_entries_and_keeps_a_backup(self):
+        path = self.write_json(
+            "hooks.json",
+            {
+                "version": 1,
+                "hooks": {
+                    "beforeShellExecution": [{"command": SB_BRIDGE}, USER_HOOK],
+                    "stop": [{"command": SB_BRIDGE}],
+                    "afterFileEdit": ["not-a-dict", {"command": 5}, {"matcher": "x"}],
+                    "weird": {"not": "a list"},
+                    "preToolUse": [
+                        {"command": "${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh"},
+                        {"command": "$CURSOR_PLUGIN_ROOT/hooks/not-an-sb-hook.sh"},
+                        {"command": f"bash {self.home}/hooks/toolstack/graphify-gate.sh"},
+                        {"command": f"{self.home}/hooks/toolstack/my-own-gate.sh"},
+                        {"command": "bash codex-hook-adapter.sh cursor-hook-bridge.sh"},
+                    ],
+                },
+            },
+        )
+        code, out, _ = self.clean()
+        self.assertEqual(code, 0)
+        data = json.loads(path.read_text())
+        self.assertEqual(data["hooks"]["beforeShellExecution"], [USER_HOOK])
+        self.assertNotIn("stop", data["hooks"])
+        self.assertEqual(data["hooks"]["afterFileEdit"], ["not-a-dict", {"command": 5}, {"matcher": "x"}])
+        self.assertEqual(data["hooks"]["weird"], {"not": "a list"})
+        self.assertEqual(
+            [e["command"] for e in data["hooks"]["preToolUse"]],
+            ["$CURSOR_PLUGIN_ROOT/hooks/not-an-sb-hook.sh", f"{self.home}/hooks/toolstack/my-own-gate.sh"],
+        )
+        self.assertIn("updated", out)
+        self.assertTrue(Path(str(path) + ".sb-backup").is_file())
+
+    def test_hooks_without_silver_bullet_entries_are_left_alone(self):
+        path = self.write_json("hooks.json", {"hooks": {"stop": [USER_HOOK]}})
+        before = path.read_bytes()
+        code, out, _ = self.clean()
+        self.assertEqual(code, 0)
+        self.assertIn("nothing Silver Bullet created", out)
+        self.assertEqual(path.read_bytes(), before)
+        self.assertFalse(Path(str(path) + ".sb-backup").exists())
+
+    def test_absent_and_shapeless_hooks_files(self):
+        self.assertEqual(self.clean()[0], 0)
+        self.write_json("hooks.json", {"hooks": []})
+        self.assertEqual(self.clean()[0], 0)
+
+    def test_invalid_json_is_an_error_and_unchanged(self):
+        path = self.write("hooks.json", "{nope")
+        code, _, err = self.clean()
+        self.assertEqual(code, 1)
+        self.assertIn("left unchanged", err)
+        self.assertEqual(path.read_text(), "{nope")
+
+
+class McpTest(Base):
+    def test_removes_only_servers_pointing_into_the_silver_bullet_runtime(self):
+        path = self.write_json(
+            "mcp.json",
+            {
+                "mcpServers": {
+                    "leanctx": {"command": "/home/u/.silver-bullet/five-tool-stack/bin/lean-ctx", "args": ["mcp"]},
+                    "graphify": {"command": "graphify", "args": ["--mcp"]},
+                    "agentmemory": "not-a-dict",
+                    "mine": {"command": "/home/u/.silver-bullet/x"},
+                }
+            },
+        )
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        self.assertEqual(sorted(json.loads(path.read_text())["mcpServers"]), ["agentmemory", "graphify", "mine"])
+        self.assertIn("'graphify' does not point into", err)
+        self.assertTrue(Path(str(path) + ".sb-backup").is_file())
+
+    def test_nothing_owned_leaves_the_file_untouched(self):
+        path = self.write_json("mcp.json", {"mcpServers": {"graphify": {"command": "graphify"}, "mine": {"command": "x"}}})
+        before = path.read_text()
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        self.assertEqual(path.read_text(), before)
+        self.assertFalse(Path(str(path) + ".sb-backup").exists())
+        self.assertIn("'graphify' does not point into", err)
+
+    def test_other_shapes_are_ignored(self):
+        self.write_json("mcp.json", {"mcpServers": []})
+        self.assertEqual(self.clean()[0], 0)
+        self.write_json("mcp.json", {})
+        self.assertEqual(self.clean()[0], 0)
+
+
+class AgentsTest(Base):
+    def managed(self, name="sb-ladder-a", description=m.AGENT_DESCRIPTION_PREFIX + "x", marker=m.AGENT_MARKER):
+        return f"---\nname: {name}\ndescription: {description}\n---\nbody\n{marker}\n"
+
+    def test_moves_generated_and_listed_agents_only(self):
+        self.write("agents/sb-ladder-a.md", self.managed())
+        self.write("agents/sb:review.md", "user content")
+        self.write("agents/sb:plan/SKILL.md", "dir")
+        self.write("agents/silver:debug.json", "{}")
+        self.write("agents/sb:mine.md", "not shipped")
+        self.write("agents/sb:review.txt", "wrong suffix")
+        self.write("agents/other.md", "mine")
+        self.write("agents/wrong-name.md", self.managed(name="other"))
+        self.write("agents/bad-desc.md", self.managed(name="bad-desc", description="mine"))
+        self.write("agents/no-marker.md", self.managed(name="no-marker", marker="<!-- x -->"))
+        self.write("agents/no-front.md", "plain\n")
+        self.write("agents/open-front.md", "---\nname: open-front\n")
+        self.write("agents/empty.md", "")
+        (self.home / "agents" / "bad utf8.md").write_bytes(b"\xff\xfe")
+        (self.home / "agents" / "sb:link.md").symlink_to(self.home / "agents" / "other.md")
+        code, _, _ = self.clean()
+        self.assertEqual(code, 0)
+        remaining = sorted(p.name for p in (self.home / "agents").iterdir())
+        self.assertEqual(
+            remaining,
+            ["bad utf8.md", "bad-desc.md", "empty.md", "no-front.md", "no-marker.md", "open-front.md", "other.md",
+             "sb:link.md", "sb:mine.md", "sb:review.txt", "wrong-name.md"],
+        )
+        self.assertEqual(
+            [b.split("/", 1)[1] for b in self.backups()],
+            ["agents/sb-ladder-a.md", "agents/sb:plan/SKILL.md", "agents/sb:review.md", "agents/silver:debug.json"],
+        )
+
+    def test_no_agents_directory(self):
+        self.assertEqual(self.clean()[0], 0)
+
+
+class RulesToolstackPluginsTest(Base):
+    def rule(self, name, description=None):
+        self.write(f"rules/{name}.mdc", f"---\ndescription: {description or (m.RULES[name] if isinstance(m.RULES[name], str) else m.RULES[name][0])}\nalwaysApply: true\n---\nx\n")
+
+    def test_rules_by_name_and_exact_description(self):
+        self.rule("no-fast-mode")
+        self.rule("silver-orchestrator")
+        self.rule("leanctx", description="my own leanctx rule")
+        self.write("rules/graphify.mdc", "---\ndescription: my own graphify notes\n---\n")
+        (self.home / "rules" / "agentmemory.mdc").symlink_to(self.home / "rules" / "graphify.mdc")
+        (self.home / "rules" / "recommended-tools.mdc").write_bytes(b"\xff\xfe")
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            sorted(p.name for p in (self.home / "rules").iterdir()),
+            ["agentmemory.mdc", "graphify.mdc", "leanctx.mdc", "recommended-tools.mdc"],
+        )
+        self.assertIn("leanctx.mdc: named like a Silver Bullet rule", err)
+        self.assertIn("graphify.mdc: named like a Silver Bullet rule", err)
+        self.assertEqual(self.backups(), [self.backups()[0].split("/")[0] + "/rules/no-fast-mode.mdc",
+                                          self.backups()[1].split("/")[0] + "/rules/silver-orchestrator.mdc"])
+
+    def test_toolstack_directory_config_and_state(self):
+        self.write("hooks/toolstack/lib/common.sh", f"# shellcheck shell=bash\n{m.TOOLSTACK_HEADER}\n")
+        self.write("hooks/toolstack/graphify-gate.sh", "x")
+        self.write_json("toolstack.json", {"state_dir": m.TOOLSTACK_STATE_DIR})
+        self.write("state/toolstack/repo-root", "/r")
+        self.assertEqual(self.clean()[0], 0)
+        for rel in ("hooks/toolstack", "toolstack.json", "state/toolstack"):
+            self.assertFalse((self.home / rel).exists(), rel)
+        self.assertEqual(len(self.backups()), 4)
+
+    def test_only_silver_bullet_toolstack_files_move(self):
+        self.write("hooks/toolstack/lib/common.sh", f"{m.TOOLSTACK_HEADER}\n")
+        for name in ("graphify-gate.sh", "session-bootstrap.sh", "patch-hooks.py", "install.sh",
+                     "global-recommended-tools.mdc", "__pycache__/x.pyc"):
+            self.write(f"hooks/toolstack/{name}", "x")
+        self.write("hooks/toolstack/mygate.sh", "mine")
+        self.write("hooks/toolstack/lib/mine.sh", "mine")
+        (self.home / "hooks/toolstack/link.sh").symlink_to(self.home / "hooks/toolstack/mygate.sh")
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        left = sorted(p.relative_to(self.home / "hooks/toolstack").as_posix()
+                      for p in (self.home / "hooks/toolstack").rglob("*") if p.is_file() or p.is_symlink())
+        self.assertEqual(left, ["lib/mine.sh", "link.sh", "mygate.sh"])
+        self.assertIn("mygate.sh", err)
+        self.assertEqual(len(self.backups()), 7)
+
+    def test_recommended_tools_rule_in_both_variants_and_edited_copy_kept(self):
+        for description in ("Global recommended tools — five_tool_routed stack (always enforced)",
+                            "SB recommended tools — full enforcement in Cursor"):
+            self.rule("recommended-tools", description=description)
+            self.assertEqual(self.clean()[0], 0)
+            self.assertFalse((self.home / "rules/recommended-tools.mdc").exists(), description)
+        self.rule("recommended-tools", description="Global recommended tools — my edit")
+        code, _, err = self.clean()
+        self.assertIn("recommended-tools.mdc: named like", err)
+        self.assertTrue((self.home / "rules/recommended-tools.mdc").exists())
+
+    def test_symlinked_parent_directories_are_not_followed(self):
+        outside = Path(self._tmp.name).resolve() / "outside"
+        for rel in ("state/site-session.json", "rules/leanctx.mdc", "cache/silver-bullet/x"):
+            (outside / rel).parent.mkdir(parents=True, exist_ok=True)
+        (outside / "state/site-session.json").write_text("x")
+        (outside / "rules/leanctx.mdc").write_text(f"---\ndescription: {m.RULES['leanctx']}\n---\n")
+        (outside / "cache/silver-bullet/x").write_text("x")
+        self.home.joinpath("plugins/cache").mkdir(parents=True)
+        (self.home / ".silver-bullet").symlink_to(outside / "state")
+        (self.home / "rules").symlink_to(outside / "rules")
+        (self.home / "plugins/cache/alo-labs-agent-plugins").symlink_to(outside / "cache")
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        self.assertTrue((outside / "state/site-session.json").exists())
+        self.assertTrue((outside / "rules/leanctx.mdc").exists())
+        self.assertTrue((outside / "cache/silver-bullet/x").exists())
+        self.assertIn("symlinked parent", err)
+
+    def test_symlinked_registry_folder_is_not_rewritten(self):
+        outside = Path(self._tmp.name).resolve() / "outside-plugins"
+        outside.mkdir()
+        registry = outside / "installed_plugins.json"
+        registry.write_text(json.dumps({"plugins": {m.PLUGIN_ID: [{"x": 1}]}}))
+        (self.home / "plugins").symlink_to(outside)
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        self.assertIn(m.PLUGIN_ID, registry.read_text())
+        self.assertIn("symlinked parent", err)
+
+    def test_a_symlinked_common_sh_is_left_alone(self):
+        real = self.write("elsewhere/common.sh", f"{m.TOOLSTACK_HEADER}\n")
+        link = self.home / "hooks/toolstack/lib/common.sh"
+        link.parent.mkdir(parents=True)
+        link.symlink_to(real)
+        self.assertEqual(self.clean()[0], 0)
+        self.assertTrue(link.is_symlink())
+
+    def test_an_oserror_is_reported_and_the_other_steps_continue(self):
+        self.write(".silver-bullet-legacy-backup", "a regular file where the backup folder goes")
+        self.write("rules/leanctx.mdc", f"---\ndescription: {m.RULES['leanctx']}\n---\n")
+        self.write("plugins/cache/alo-labs/silver-bullet/1/x", "x")
+        code, _, err = self.clean()
+        self.assertEqual(code, 1)
+        self.assertIn("ERROR", err)
+        self.assertNotIn("Traceback", err)
+
+    def test_unmarked_toolstack_is_kept(self):
+        self.write("hooks/toolstack/lib/common.sh", "# mine\n")
+        self.write_json("toolstack.json", {"state_dir": "/elsewhere"})
+        self.write("state/toolstack/f", "x")
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        self.assertIn("lacks the Silver Bullet toolstack header", err)
+        self.assertTrue((self.home / "hooks/toolstack").is_dir())
+        self.assertTrue((self.home / "toolstack.json").is_file())
+        self.assertTrue((self.home / "state/toolstack").is_dir())
+
+    def test_state_dir_without_a_marked_config_stays_and_bad_config_is_not_marked(self):
+        self.write("toolstack.json", "{nope")
+        self.write("state/toolstack/f", "x")
+        self.assertEqual(self.clean()[0], 0)
+        self.assertTrue((self.home / "state/toolstack/f").exists())
+
+    def test_marked_config_without_state_dir_moves_just_the_config(self):
+        self.write_json("toolstack.json", {"state_dir": m.TOOLSTACK_STATE_DIR})
+        self.assertEqual(self.clean()[0], 0)
+        self.assertFalse((self.home / "toolstack.json").exists())
+
+    def test_plugin_copies_and_registry(self):
+        self.write("plugins/cache/alo-labs/silver-bullet/0.5.0/x", "x")
+        self.write("plugins/cache/alo-labs/other/x", "keep")
+        self.write("plugins/marketplaces/github.com/alo-exp/silver-bullet/sha/x", "x")
+        self.write_json("plugins/local/silver-bullet/.cursor-plugin/plugin.json", {"name": "silver-bullet"})
+        registry = self.write_json(
+            "plugins/installed_plugins.json",
+            {"version": 2, "plugins": {m.PLUGIN_ID: [{"x": 1}], "other@x": [{"y": 2}]}},
+        )
+        self.assertEqual(self.clean()[0], 0)
+        self.assertFalse((self.home / "plugins/cache/alo-labs/silver-bullet").exists())
+        self.assertFalse((self.home / "plugins/local/silver-bullet").exists())
+        self.assertTrue((self.home / "plugins/cache/alo-labs/other/x").exists())
+        self.assertEqual(json.loads(registry.read_text())["plugins"], {"other@x": [{"y": 2}]})
+
+    def test_foreign_local_plugin_and_other_registry_shapes_stay(self):
+        self.write_json("plugins/local/silver-bullet/.cursor-plugin/plugin.json", {"name": "mine"})
+        self.write_json("plugins/installed_plugins.json", {"plugins": []})
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        self.assertIn("does not name silver-bullet", err)
+        self.assertTrue((self.home / "plugins/local/silver-bullet").is_dir())
+        self.write("plugins/local/silver-bullet/.cursor-plugin/plugin.json", "{nope")
+        self.assertEqual(self.clean()[0], 0)
+        self.assertTrue((self.home / "plugins/local/silver-bullet").is_dir())
+
+
+class ReviewRepairTest(Base):
+    def test_toolstack_session_bootstrap_and_shell_compression_entries_are_stripped(self):
+        deployed = str(self.home / "hooks" / "toolstack")
+        data = {
+            "hooks": {
+                "sessionStart": [{"command": f"bash {deployed}/session-bootstrap.sh"}, USER_HOOK],
+                "preToolUse": [
+                    {"command": f"bash {deployed}/shell-compression.sh"},
+                    {"command": "bash ~/.cursor/hooks/toolstack/session-bootstrap.sh"},
+                    {"command": "bash $HOME/.cursor/hooks/toolstack/shell-compression.sh"},
+                    {"command": "bash ${HOME}/.cursor/hooks/toolstack/graphify-gate.sh"},
+                    {"command": f"bash {deployed}/mine.sh"},
+                ],
+            }
+        }
+        path = self.write_json("hooks.json", data)
+        self.assertEqual(self.clean()[0], 0)
+        hooks = json.loads(path.read_text())["hooks"]
+        self.assertEqual(hooks["sessionStart"], [USER_HOOK])
+        self.assertEqual(hooks["preToolUse"], [{"command": f"bash {deployed}/mine.sh"}])
+
+    def test_every_plugin_path_the_old_uninstall_removed_is_covered(self):
+        paths = (
+            "plugins/cache/alo-labs/silver-bullet",
+            "plugins/cache/alo-labs-agent-plugins/silver-bullet",
+            "plugins/cache/alo-labs-cursor/silver-bullet",
+            "plugins/marketplaces/github.com/alo-exp/silver-bullet",
+        )
+        for rel in paths:
+            with self.subTest(rel=rel):
+                self.write(rel + "/abc/file", "x")
+                neighbour = self.write(str(Path(rel).parent / "other" / "file"), "keep")
+                self.assertEqual(self.clean()[0], 0)
+                self.assertFalse((self.home / rel).exists())
+                self.assertTrue(neighbour.exists())
+
+    def test_cursor_cache_sha_symlinks_are_moved_not_followed(self):
+        target = self.home / "plugins" / "cache" / "alo-labs" / "silver-bullet" / "deadbeef"
+        target.mkdir(parents=True)
+        link = self.home / "plugins" / "cache" / "alo-labs-cursor" / "silver-bullet" / "deadbeef"
+        link.parent.mkdir(parents=True)
+        link.symlink_to(target)
+        self.assertEqual(self.clean()[0], 0)
+        self.assertFalse(link.is_symlink())
+        self.assertFalse((self.home / "plugins/cache/alo-labs-cursor/silver-bullet").exists())
+
+    def test_symlinked_plugin_directory_itself_is_moved(self):
+        real = self.home / "elsewhere"
+        real.mkdir()
+        link = self.home / "plugins" / "cache" / "alo-labs-agent-plugins" / "silver-bullet"
+        link.parent.mkdir(parents=True)
+        link.symlink_to(real)
+        self.assertEqual(self.clean()[0], 0)
+        self.assertFalse(link.is_symlink())
+        self.assertTrue(real.is_dir())
+
+    def test_sb_state_files_are_moved_and_neighbours_stay(self):
+        names = ("site-session.json", "site-visual-evidence.json", "site-vloops.json",
+                 "agent-delegation-active.json", "subagent-spawns.jsonl", "live-publish-evidence.json",
+                 "pending-completion-audit.json")
+        for name in names:
+            self.write(f".silver-bullet/{name}", "x")
+        mine = self.write(".silver-bullet/mine.json", "keep")
+        self.assertEqual(self.clean()[0], 0)
+        for name in names:
+            self.assertFalse((self.home / ".silver-bullet" / name).exists(), name)
+        self.assertTrue(mine.exists())
+
+    def test_codex_adapter_program_is_stripped_but_user_hooks_stay(self):
+        adapter = "/opt/elsewhere/codex-hook-adapter.sh"
+        path = self.write_json("hooks.json", {"hooks": {"stop": [{"command": f"bash {adapter} stop.sh"}, USER_HOOK]}})
+        self.assertEqual(self.clean()[0], 0)
+        self.assertEqual(json.loads(path.read_text())["hooks"]["stop"], [USER_HOOK])
+
+    def test_user_prefixed_mcp_server_in_the_runtime_is_removed(self):
+        path = self.write_json(
+            "mcp.json",
+            {"mcpServers": {"user-agentmemory": {"command": "/h/.silver-bullet/five-tool-stack/x"}, "user-other": {"command": "x"}}},
+        )
+        self.assertEqual(self.clean()[0], 0)
+        self.assertEqual(list(json.loads(path.read_text())["mcpServers"]), ["user-other"])
+
+    def test_a_malformed_file_does_not_stop_the_other_steps(self):
+        self.write("mcp.json", "{bad")
+        self.write("agents/sb:plan.md", "x")
+        self.write("plugins/cache/alo-labs/silver-bullet/1/x", "x")
+        code, _, err = self.clean()
+        self.assertEqual(code, 1)
+        self.assertIn("ERROR", err)
+        self.assertFalse((self.home / "agents/sb:plan.md").exists())
+        self.assertFalse((self.home / "plugins/cache/alo-labs/silver-bullet").exists())
+
+
+class RunTest(Base):
+    def populate(self):
+        self.write_json("hooks.json", {"hooks": {"stop": [{"command": SB_BRIDGE}]}})
+        self.write("agents/sb:plan.md", "x")
+
+    def test_dry_run_changes_nothing(self):
+        self.populate()
+        before = (self.home / "hooks.json").read_bytes()
+        code, out, _ = self.clean("--dry-run")
+        self.assertEqual(code, 0)
+        self.assertIn("would update", out)
+        self.assertIn("would move", out)
+        self.assertEqual((self.home / "hooks.json").read_bytes(), before)
+        self.assertTrue((self.home / "agents/sb:plan.md").exists())
+        self.assertFalse((self.home / ".silver-bullet-legacy-backup").exists())
+
+    def test_second_run_is_a_no_op(self):
+        self.populate()
+        self.assertEqual(self.clean()[0], 0)
+        snapshot = {p: p.read_bytes() for p in self.home.rglob("*") if p.is_file() and ".silver-bullet-legacy-backup" not in str(p)}
+        code, out, _ = self.clean()
+        self.assertEqual(code, 0)
+        self.assertIn("nothing Silver Bullet created", out)
+        self.assertEqual(snapshot, {p: p.read_bytes() for p in self.home.rglob("*") if p.is_file() and ".silver-bullet-legacy-backup" not in str(p)})
+
+    def test_missing_home_is_not_an_error(self):
+        code, out, _ = run(["--cursor-home", str(self.home / "absent")])
+        self.assertEqual(code, 0)
+        self.assertIn("nothing to do", out)
+
+    def test_default_home_comes_from_the_environment(self):
+        os.environ["CURSOR_HOME"] = str(self.home / "from-env")
+        self.addCleanup(os.environ.pop, "CURSOR_HOME", None)
+        self.assertIn("from-env", run([])[1])
+
+
+FIXTURE = json.loads((Path(__file__).resolve().parents[1] / "fixtures" / "cursor-legacy-toolstack-deploy.json").read_text())
+
+
+class BaseInstallerDeployListTest(Base):
+    """r3: everything the base installers deployed is Silver Bullet's, by exact name, and nothing else is."""
+
+    NOTE = "not a Silver Bullet toolstack file"
+
+    def seed_toolstack(self):
+        self.write("hooks/toolstack/lib/common.sh", f"{m.TOOLSTACK_HEADER}\n")
+        for rel in FIXTURE["toolstack_files"]:
+            if rel != "lib/common.sh":
+                self.write(f"hooks/toolstack/{rel}", f"# deployed {rel}\n")
+
+    def test_every_file_the_base_installers_deployed_is_moved(self):
+        self.seed_toolstack()
+        for name, description in FIXTURE["global_rules"].items():
+            self.write(f"rules/{name}.mdc", f"---\ndescription: {description}\nalwaysApply: true\n---\nx\n")
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        self.assertNotIn(self.NOTE, err)
+        self.assertFalse((self.home / "hooks/toolstack").exists())
+        self.assertEqual(list((self.home / "rules").iterdir()), [])
+        moved = {b.split("/", 1)[1] for b in self.backups()}
+        for rel in FIXTURE["toolstack_files"]:
+            self.assertIn("hooks/toolstack/" + rel, moved)
+        for name in FIXTURE["global_rules"]:
+            self.assertIn(f"rules/{name}.mdc", moved)
+
+    def test_look_alike_files_of_the_user_stay(self):
+        self.seed_toolstack()
+        mine = ["lib/recommended-tools/my-probe.sh", "lib/five_tool_runtime/mine.py", "probe-rtk.sh", "installer.sh",
+                "lib/receipts.sh", "lib/other/runtime.py"]
+        for rel in mine:
+            self.write(f"hooks/toolstack/{rel}", "# mine\n")
+        outside = self.write("elsewhere/x.sh", "x")
+        (self.home / "hooks/toolstack/lib/recommended-tools/link.sh").symlink_to(outside)
+        (self.home / "hooks/toolstack/lib/five_tool_runtime/dirlink").symlink_to(outside.parent)
+        (self.home / "hooks/toolstack/lib/recommended-tools/receipts.sh").unlink()
+        (self.home / "hooks/toolstack/lib/recommended-tools/receipts.sh").symlink_to(outside.parent)
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        left = sorted(p.relative_to(self.home / "hooks/toolstack").as_posix()
+                      for p in (self.home / "hooks/toolstack").rglob("*") if p.is_file() or p.is_symlink())
+        self.assertEqual(left, sorted(mine + ["lib/recommended-tools/link.sh", "lib/five_tool_runtime/dirlink",
+                                              "lib/recommended-tools/receipts.sh"]))
+        for rel in mine:
+            self.assertIn(f"{rel}: {self.NOTE}", err)
+        self.assertEqual(self.read_text("hooks/toolstack/lib/five_tool_runtime/mine.py"), "# mine\n")
+
+    def read_text(self, rel):
+        return (self.home / rel).read_text()
+
+    def test_dry_run_reports_what_it_would_move_and_only_leaves_the_user_files_as_kept(self):
+        self.seed_toolstack()
+        self.write("hooks/toolstack/mygate.sh", "mine")
+        before = sorted(p for p in self.home.rglob("*"))
+        code, out, err = self.clean("--dry-run")
+        self.assertEqual(code, 0)
+        self.assertEqual(sorted(p for p in self.home.rglob("*")), before)
+        self.assertIn("mygate.sh: " + self.NOTE, err)
+        self.assertEqual(err.count(self.NOTE), 1)
+        for rel in FIXTURE["toolstack_files"]:
+            self.assertIn(f"hooks/toolstack/{rel} ->", out)
+
+
+class BackupBucketTest(Base):
+    def seed(self):
+        self.write("rules/leanctx.mdc", f"---\ndescription: {m.RULES['leanctx']}\n---\n")
+        self.write_json("hooks.json", {"hooks": {"stop": [{"command": SB_BRIDGE}]}})
+
+    def test_a_symlinked_backup_folder_aborts_before_anything_moves(self):
+        self.seed()
+        outside = Path(self._tmp.name).resolve() / "outside"
+        outside.mkdir()
+        (self.home / ".silver-bullet-legacy-backup").symlink_to(outside)
+        before = (self.home / "hooks.json").read_bytes()
+        for extra in ((), ("--dry-run",)):
+            code, out, err = self.clean(*extra)
+            self.assertEqual(code, 1)
+            self.assertIn("is a symlink", err)
+            self.assertIn("nothing was changed", err)
+            self.assertNotIn("moved", out)
+        self.assertEqual(list(outside.iterdir()), [])
+        self.assertTrue((self.home / "rules/leanctx.mdc").is_file())
+        self.assertEqual((self.home / "hooks.json").read_bytes(), before)
+        self.assertFalse(Path(str(self.home / "hooks.json") + ".sb-backup").exists())
+
+    def test_a_symlinked_stamp_folder_aborts_too(self):
+        self.seed()
+        outside = Path(self._tmp.name).resolve() / "outside"
+        outside.mkdir()
+        stamp = "20260101T000000000000Z"
+        (self.home / ".silver-bullet-legacy-backup").mkdir()
+        (self.home / ".silver-bullet-legacy-backup" / stamp).symlink_to(outside)
+
+        class FixedClock(m.datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return cls(2026, 1, 1, 0, 0, 0, tzinfo=tz)
+
+        original = m.datetime
+        m.datetime = FixedClock
+        self.addCleanup(setattr, m, "datetime", original)
+        code, _, err = self.clean()
+        self.assertEqual(code, 1)
+        self.assertIn("is a symlink", err)
+        self.assertEqual(list(outside.iterdir()), [])
+        self.assertTrue((self.home / "rules/leanctx.mdc").is_file())
+
+    def test_an_ordinary_backup_folder_is_used_and_two_quick_runs_do_not_share_a_stamp(self):
+        self.seed()
+        (self.home / ".silver-bullet-legacy-backup").mkdir()
+        self.assertEqual(self.clean()[0], 0)
+        self.write("rules/leanctx.mdc", f"---\ndescription: {m.RULES['leanctx']}\n---\n")
+        self.assertEqual(self.clean()[0], 0)
+        stamps = {b.split("/")[0] for b in self.backups() if b.endswith("rules/leanctx.mdc")}
+        self.assertEqual(len(stamps), 2)
+
+
+if __name__ == "__main__":
+    unittest.main()

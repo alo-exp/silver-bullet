@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # RFL rung 1 review: MiniMax M3 High via native OpenCode NI (plan D7 / user NI preference).
 set -euo pipefail
-ROOT="/Users/shafqat/projects/silver-bullet/repo"
+ROOT="/Users/<user>/projects/silver-bullet/repo"
 LOGDIR="$ROOT/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-01-minimax-m3-high"
 OPENCODE="${OPENCODE_BIN:-$HOME/.opencode/bin/opencode}"
 export RTK_DISABLED=1

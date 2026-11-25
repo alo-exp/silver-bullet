@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export SILVER_BULLET_TEST_HOOK_ENFORCED=1
-export SILVER_BULLET_RUNTIME=cursor
+export SILVER_BULLET_RUNTIME=claude
 
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
@@ -25,6 +29,16 @@ touch "${TMPDIR_TEST}/src/app.js"
 cat >"${TMPDIR_TEST}/silver-bullet.md" <<'EOF'
 # Silver Bullet
 EOF
+
+# Before checking the MCP wiring the gate requires npx and runs
+# `npm view alumnium version`, a registry query. Stub both so the checks below
+# exercise the MCP-wiring branch offline, whatever npm/network the host has.
+STUB_BIN="${TMPDIR_TEST}/stub-bin"
+mkdir -p "$STUB_BIN"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$STUB_BIN/npx"
+printf '#!/usr/bin/env bash\n[[ "${1:-}" == view ]] && { echo 0.0.0-test; exit 0; }\nexit 1\n' >"$STUB_BIN/npm"
+chmod +x "$STUB_BIN/npx" "$STUB_BIN/npm"
+export PATH="$STUB_BIN:$PATH"
 
 MOCK_MCP="${TMPDIR_TEST}/mcp.json"
 printf '{"mcpServers":{"alumnium":{"command":"npx","args":["-y","alumnium","mcp"]}}}\n' >"$MOCK_MCP"
@@ -50,7 +64,7 @@ git -C "$TMPDIR_TEST" init -q
 GATE="$REPO_ROOT/hooks/alumnium-gate.sh"
 input=$(jq -n --arg f "${TMPDIR_TEST}/src/app.js" \
   '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"a", new_string:"b"}}')
-out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" SILVER_BULLET_RUNTIME=cursor && printf '%s' "$input" | bash "$GATE" 2>/dev/null)"
+out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" SILVER_BULLET_RUNTIME=claude && printf '%s' "$input" | bash "$GATE" 2>/dev/null)"
 if [[ -z "$out" ]] || ! printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
   pass "gate allows edit when alumnium MCP wired"
 else
@@ -59,7 +73,7 @@ fi
 
 rm -f "$MOCK_MCP"
 export SB_ALUMNIUM_MCP_ARTIFACT="${TMPDIR_TEST}/missing-mcp.json"
-out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" SILVER_BULLET_RUNTIME=cursor && printf '%s' "$input" | bash "$GATE" 2>/dev/null)"
+out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" SILVER_BULLET_RUNTIME=claude && printf '%s' "$input" | bash "$GATE" 2>/dev/null)"
 if [[ -z "$out" ]] || ! printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
   pass "gate allows non-browser Edit when MCP missing"
 else
@@ -68,7 +82,7 @@ fi
 
 plan_input=$(jq -n --arg f "${TMPDIR_TEST}/docs/plan.md" \
   '{hook_event_name:"PreToolUse", tool_name:"Write", tool_input:{file_path:$f, contents:"# plan"}}')
-plan_out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" SILVER_BULLET_RUNTIME=cursor && printf '%s' "$plan_input" | bash "$GATE" 2>/dev/null)"
+plan_out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" SILVER_BULLET_RUNTIME=claude && printf '%s' "$plan_input" | bash "$GATE" 2>/dev/null)"
 if [[ -z "$plan_out" ]] || ! printf '%s' "$plan_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
   pass "gate allows non-browser Write when MCP missing"
 else
@@ -77,7 +91,7 @@ fi
 
 browser_input=$(jq -n --arg f "${TMPDIR_TEST}/e2e/login.spec.ts" \
   '{hook_event_name:"PreToolUse", tool_name:"Write", tool_input:{file_path:$f, contents:"test"}}')
-browser_out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" SILVER_BULLET_RUNTIME=cursor && printf '%s' "$browser_input" | bash "$GATE" 2>/dev/null)"
+browser_out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" SILVER_BULLET_RUNTIME=claude && printf '%s' "$browser_input" | bash "$GATE" 2>/dev/null)"
 if printf '%s' "$browser_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
   pass "gate denies e2e browser Write when MCP missing"
 else

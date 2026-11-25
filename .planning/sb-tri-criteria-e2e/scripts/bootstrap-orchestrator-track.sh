@@ -11,8 +11,8 @@ if [[ "${SB_TRI_CRITERIA_ALLOW_BOOTSTRAP:-}" != "1" ]]; then
 fi
 
 TRACK="${1:-TC-01}"
-WORK_DIR="${2:-/Users/shafqat/projects/enterprise-grade-test-app}"
-SB_ROOT="${SB_ROOT:-/Users/shafqat/projects/silver-bullet/repo}"
+WORK_DIR="${2:-/Users/<user>/projects/enterprise-grade-test-app}"
+SB_ROOT="${SB_ROOT:-/Users/<user>/projects/silver-bullet/repo}"
 RUN_ID="${3:-}"
 INTENT_FILE="${4:-}"
 

@@ -118,15 +118,34 @@ class SourceEvaluator:
         )
 
     def _extract_domain(self, url: str) -> str:
-        parsed = urlparse(url)
-        domain = (parsed.netloc or '').lower().replace('www.', '')
-        return domain
+        try:
+            host = urlparse(url).hostname  # drops userinfo ("x.gov@evil.example") and port
+        except ValueError:
+            host = None
+        domain = (host or '').lower().rstrip('.')
+        return domain[4:] if domain.startswith('www.') else domain
+
+    @staticmethod
+    def _is_gov(domain: str) -> bool:
+        labels = domain.split('.')
+        return len(labels) > 1 and (labels[-1] == 'gov' or labels[-2] == 'gov')
+
+    @staticmethod
+    def _is_edu(domain: str) -> bool:
+        labels = domain.split('.')
+        return len(labels) > 1 and (labels[-1] == 'edu' or labels[-2] == 'edu'
+                                    or labels[-2:] == ['ac', labels[-1]])
+
+    @staticmethod
+    def _has_label(domain: str, names) -> bool:
+        """Whole-label match (nature.com, not acme-nature-blog.example)."""
+        return any(n in domain.split('.') for n in names)
 
     def _subdomain_authority_score(self, domain: str) -> float:
         """Score subdomain patterns (docs.*, api.*, etc.)."""
         if domain.startswith('docs.') or domain.startswith('developer.'):
             return 90.0
-        if '.gov' in domain or domain.endswith('.edu'):
+        if self._is_gov(domain) or self._is_edu(domain):
             return 85.0
         if domain.count('.') >= 3:
             return 45.0
@@ -139,7 +158,7 @@ class SourceEvaluator:
             return 70.0
         if any(indicator in domain for indicator in self.LOW_AUTHORITY_INDICATORS):
             return 40.0
-        if '.gov' in domain or domain.endswith('.edu'):
+        if self._is_gov(domain) or self._is_edu(domain):
             return 88.0
         return 55.0
 
@@ -149,6 +168,8 @@ class SourceEvaluator:
         try:
             pub_date = datetime.fromisoformat(publication_date.replace('Z', '+00:00'))
             age = datetime.now(pub_date.tzinfo) - pub_date if pub_date.tzinfo else datetime.now() - pub_date
+            if age < timedelta(days=-1):
+                return 30.0  # a future publication date is suspicious, not "recent"
             if age < timedelta(days=90):
                 return 100.0
             if age < timedelta(days=365):
@@ -163,11 +184,11 @@ class SourceEvaluator:
 
     def _evaluate_expertise(self, domain: str, title: str, author: Optional[str]) -> float:
         score = 50.0
-        if any(d in domain for d in ['arxiv', 'nature', 'science', 'ieee', 'acm']):
+        if self._has_label(domain, ['arxiv', 'nature', 'science', 'ieee', 'acm']):
             score += 30
-        if '.gov' in domain or 'who.int' in domain:
+        if self._is_gov(domain) or domain == 'who.int' or domain.endswith('.who.int'):
             score += 25
-        if 'docs.' in domain or 'documentation' in title.lower():
+        if domain.startswith('docs.') or 'documentation' in title.lower():
             score += 20
         if author and any(t in author.lower() for t in ['dr.', 'phd', 'professor']):
             score += 15
@@ -184,10 +205,10 @@ class SourceEvaluator:
             score -= 20
             flags.append('sensationalism')
 
-        if any(d in domain for d in ['arxiv', 'nature', 'science', 'ieee']):
+        if self._has_label(domain, ['arxiv', 'nature', 'science', 'ieee']):
             score += 20
 
-        if any(v in domain for v in ['aws.amazon', 'cloud.google', 'azure.microsoft']):
+        if any(domain == v or domain.endswith('.' + v) for v in ['aws.amazon.com', 'cloud.google.com', 'azure.microsoft.com']):
             flags.append('commercial')
 
         if content:
@@ -198,7 +219,7 @@ class SourceEvaluator:
         return min(max(score, 0), 100.0), flags
 
     def _authority_tier(self, domain: str, domain_score: float) -> str:
-        if domain_score >= 85 or '.gov' in domain or domain.endswith('.edu'):
+        if domain_score >= 85 or self._is_gov(domain) or self._is_edu(domain):
             return 'primary'
         if domain_score >= 65:
             return 'secondary'

@@ -31,7 +31,9 @@ default_codex_isolation_parent() {
   local workspace_root
   workspace_root="$(cd "${SB_ROOT}/.." && pwd)"
   mkdir -p "${workspace_root}/.tmp"
-  printf '%s\n' "${workspace_root}/.tmp"
+  # The copied auth.json lives below this directory: a private (0700) subdirectory this run creates;
+  # the shared workspace .tmp itself is never chmod'ed (R14-15).
+  mktemp -d "${workspace_root}/.tmp/sb-codex-isolation.XXXXXX"
 }
 
 seed_native_codex_runtime_config() {
@@ -485,9 +487,9 @@ setup_codex_cli_isolation() {
   isolation_parent="${isolation_parent%/}"
   mkdir -p "$isolation_parent"
   export CODEX_SB_TEST_HOME="${CODEX_SB_TEST_HOME:-$(mktemp -d "${isolation_parent}/sb-codex-test.XXXXXX")}"
-  export CODEX_SB_TEST_HOME="$(normalize_codex_path "$CODEX_SB_TEST_HOME")"
+  CODEX_SB_TEST_HOME="$(normalize_codex_path "$CODEX_SB_TEST_HOME")"
   export SB_LIVE_CODEX_ISOLATION_DIR="${SB_LIVE_CODEX_ISOLATION_DIR:-$CODEX_SB_TEST_HOME}"
-  export SB_LIVE_CODEX_ISOLATION_DIR="$(normalize_codex_path "$SB_LIVE_CODEX_ISOLATION_DIR")"
+  SB_LIVE_CODEX_ISOLATION_DIR="$(normalize_codex_path "$SB_LIVE_CODEX_ISOLATION_DIR")"
   export SB_LIVE_CODEX_ISOLATION_ACTIVE=1
   export HOME="$SB_LIVE_CODEX_ISOLATION_DIR"
   export CODEX_HOME="${HOME}/.codex"
@@ -522,7 +524,9 @@ PY
   export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-}"
   export SB_LIVE_CODEX_REASONING_EFFORT="${SB_LIVE_CODEX_REASONING_EFFORT:-}"
   export CODEX_REASONING_EFFORT="${CODEX_REASONING_EFFORT:-${SB_LIVE_CODEX_REASONING_EFFORT:-}}"
-  export CODEX_TRANSCRIPT_DIR="${CODEX_TRANSCRIPT_DIR:-${SB_ROOT}/tests/live/agents/codex/transcripts}"
+  # Transcripts hold the prompt and tool output: keep them in the isolated home (removed with it)
+  # unless the operator names a directory, never in the checkout (R14-09).
+  export CODEX_TRANSCRIPT_DIR="${CODEX_TRANSCRIPT_DIR:-${SB_LIVE_CODEX_ISOLATION_DIR}/.sb-transcripts}"
 
   mirror_native_codex_runtime_surface
   seed_native_codex_dependency_cache
@@ -535,9 +539,9 @@ PY
   seed_native_codex_runtime_config
   mkdir -p "$isolated_command_cache_root"
   export SB_LIVE_COMMAND_VERSION_BASE="${SB_LIVE_COMMAND_VERSION_BASE:-$(mktemp -d "${isolated_command_cache_root}/sb-live-version.XXXXXX")}"
-  export SB_LIVE_COMMAND_VERSION_BASE="$(normalize_codex_path "$SB_LIVE_COMMAND_VERSION_BASE")"
+  SB_LIVE_COMMAND_VERSION_BASE="$(normalize_codex_path "$SB_LIVE_COMMAND_VERSION_BASE")"
   export SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT="${SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT:-$SB_LIVE_COMMAND_VERSION_BASE}"
-  export SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT="$(normalize_codex_path "$SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT")"
+  SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT="$(normalize_codex_path "$SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT")"
 
 }
 

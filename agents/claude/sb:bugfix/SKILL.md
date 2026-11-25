@@ -52,13 +52,13 @@ Internal `tdd` gate: failing regression test before fix code (RED → GREEN).
 
 ## Enforcement queue
 
-**Pre-execution:** `sb:debug` → `sb:plan` (no quality-gates/context)
+**Pre-execution:** `sb:debug` → `sb:plan`, preceded by the quality-gates and context passes (kept brief for a bounded fix). The chain guard itself requires only debug and plan, but the planning-floor gates (dev-cycle-check before the first source edit, completion-audit before a commit) also need quality-gates and context, so the orchestrator queue runs them ahead of plan.
 
 **Post-execution:** same canonical chain as `sb:feature` after `sb:execute`.
 
 ## Routing and pre-flight
 
-1. Load preferences from `silver-bullet.md` §10.
+1. Load preferences from `silver-bullet.md` §9.
 2. Banner with symptom from `$ARGUMENTS`.
 3. Present triage A/B/C when cause is unclear.
 4. Autonomous default — log `SB ► bugfix composed {N} paths — orchestrator active`.

@@ -8,14 +8,14 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "what-is-sb",
     "title": "What Silver Bullet does",
-    "text": "Silver Bullet is an Agentic Process Orchestrator for AI-native software engineering and DevOps. docs/apo-catalog.json is the source of truth for 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), and 118 flow steps. SB owns routing, planning, execution, verification, review, ship, release, hooks, traceability, and recovery."
+    "text": "Silver Bullet is an Agentic Process Orchestrator for AI-native software engineering and DevOps. docs/apo-catalog.json is the source of truth for 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), and 114 flow steps. SB owns routing, planning, execution, verification, review, ship, release, hooks, traceability, and recovery."
   },
   {
     "page": "Getting Started",
     "url": "/help/getting-started/",
     "anchor": "install",
     "title": "Installing Silver Bullet",
-    "text": "Install by host runtime: Claude Code plugin install or alo-labs/agent-plugins marketplace (alo-labs catalog), the public alo-labs/agent-plugins Codex marketplace package (alo-labs-codex catalog), or the public alo-labs/agent-plugins Cursor marketplace package (alo-labs-cursor catalog). Marketplace users run /sb:doctor for host-aware activation checks. Repository checkout developers can run bash scripts/sb-bootstrap.sh, bash scripts/sb-diagnostics.sh, or the checkout installers for development refresh. Initialize projects with /sb:init."
+    "text": "Install by host runtime: Claude Code plugin install or alo-labs/agent-plugins marketplace (alo-labs catalog), the public alo-labs/agent-plugins Codex marketplace package (alo-labs-codex catalog). Marketplace users run /sb:doctor for host-aware activation checks. Repository checkout developers can run bash scripts/sb-bootstrap.sh, bash scripts/sb-diagnostics.sh, or the checkout installers for development refresh. Initialize projects with /sb:init."
   },
   {
     "page": "Getting Started",
@@ -29,7 +29,7 @@ var IDX = [
     "url": "/help/",
     "anchor": "",
     "title": "Silver Bullet Help Center",
-    "text": "Silver Bullet v0.53.0 Help Center — APO catalog docs/apo-catalog.json, Process Workflow Atomic Flow Flow Step hierarchy, 29 AF-* atomic flows, 26 workflows (22 task-shaped plus 4 reusable components), 118 flow steps, three-host install, dev and DevOps workflow guides, command reference, troubleshooting, and search."
+    "text": "Silver Bullet v0.53.0 Help Center — APO catalog docs/apo-catalog.json, Process Workflow Atomic Flow Flow Step hierarchy, 29 AF-* atomic flows, 26 workflows (22 task-shaped plus 4 reusable components), 114 flow steps, three-host install, dev and DevOps workflow guides, command reference, troubleshooting, and search."
   },
   {
     "page": "Release History",
@@ -169,7 +169,7 @@ var IDX = [
     "url": "/help/concepts/autonomous-enterprise-status.html",
     "anchor": "capability-matrix",
     "title": "Autonomous enterprise capability status",
-    "text": "Status page for enterprise autonomy: parent orchestrator shipped, policy profile config shipped advisory, 22-row E2E partial Cursor strongest, parallel DAG scheduler in progress, generated certification and SOC2 export planned. Links docs/evidence-schema.md and outcome-criteria-registry."
+    "text": "Status page for enterprise autonomy: parent orchestrator shipped, policy profile config shipped advisory, 22-row E2E partial, parallel DAG scheduler in progress, generated certification and SOC2 export planned. Links docs/evidence-schema.md and outcome-criteria-registry."
   },
   {
     "page": "Core Concepts",
@@ -204,14 +204,14 @@ var IDX = [
     "url": "/help/workflows/",
     "anchor": "overview",
     "title": "Orchestration workflows",
-    "text": "Workflow catalog from docs/apo-catalog.json: 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), 118 flow steps, V-loop contracts, composer routes /sb:feature /sb:bugfix /sb:ui /sb:devops /sb:deep-research /sb:release /sb:fast plus /sb:spec /sb:ingest /sb:validate. WF-POST-EXEC-GATES chains AF-REVIEW AF-VERIFY AF-SECURE AF-VALIDATE AF-QUALITY-GATE AF-BRANCH-FINISH AF-COMPLETION-AUDIT AF-SHIP."
+    "text": "Workflow catalog from docs/apo-catalog.json: 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), 114 flow steps, V-loop contracts, composer routes /sb:feature /sb:bugfix /sb:ui /sb:devops /sb:deep-research /sb:release /sb:fast plus /sb:spec /sb:ingest /sb:validate. WF-POST-EXEC-GATES chains AF-REVIEW AF-VERIFY AF-SECURE AF-VALIDATE AF-QUALITY-GATE AF-BRANCH-FINISH AF-COMPLETION-AUDIT AF-SHIP."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/",
     "anchor": "atomic-flows",
     "title": "APO atomic flow catalog",
-    "text": "docs/apo-catalog.json defines 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), and 118 flow steps. Process Workflow Atomic Flow Flow Step hierarchy with V-loop contracts, composition trees, WF-POST-EXEC-GATES, and legacy FLOW 1-18 migration aliases only."
+    "text": "docs/apo-catalog.json defines 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), and 114 flow steps. Process Workflow Atomic Flow Flow Step hierarchy with V-loop contracts, composition trees, WF-POST-EXEC-GATES, and legacy FLOW 1-18 migration aliases only."
   },
   {
     "page": "Getting Started",
@@ -225,7 +225,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "sb-skills",
     "title": "/sb:doctor host-aware audit",
-    "text": "/sb:doctor v0.53.0 host-aware install and project activation audit via scripts/sb-doctor.sh checks D1-D13. Run after /sb:update when hooks seem inactive or before relying on enforcement. D8 orchestrator rule Cursor-only; D2 D3 D13 use active host plugin paths via runtime-paths.sh not Cursor deps on Claude Codex."
+    "text": "/sb:doctor v0.53.0 host-aware install and project activation audit via scripts/sb-doctor.sh checks D1-D13. Run after /sb:update when hooks seem inactive or before relying on enforcement. D2 D3 D13 use active host plugin paths via runtime-paths.sh."
   },
   {
     "page": "Workflows",
@@ -337,7 +337,7 @@ var IDX = [
     "url": "/help/workflows/silver-multi-ai-task.html",
     "anchor": "overview",
     "title": "/sb:multi-ai-task",
-    "text": "Reusable multi-model orchestration primitive (multi-ai-task-v2 spine). Pool resolution, dispatch ledger, work-item manifests, cost caps, Cursor host adapter stub, and OCG multi-ai-worker-v1 delegation."
+    "text": "Reusable multi-model orchestration primitive (multi-ai-task-v2 spine). Pool resolution, dispatch ledger, work-item manifests, cost caps, Cursor worker backend, and OCG multi-ai-worker-v1 delegation."
   },
   {
     "page": "Workflows",
@@ -351,7 +351,7 @@ var IDX = [
     "url": "/help/workflows/silver-agent-delegate.html",
     "anchor": "overview",
     "title": "Agent delegation",
-    "text": "WF-AGENT-DELEGATE-ENTRY and AF-AGENT-DELEGATE provide supervised Claude, Codex, or Cursor execution with a bounded brief, guard activation, checkpoints, independent verification, relaunch or mentoring when needed, and evidence-backed completion."
+    "text": "WF-AGENT-DELEGATE-ENTRY and AF-AGENT-DELEGATE provide supervised Claude or Codex execution with a bounded brief, guard activation, checkpoints, independent verification, relaunch or mentoring when needed, and evidence-backed completion."
   },
   {
     "page": "Workflows",
@@ -511,8 +511,8 @@ var IDX = [
     "page": "Reference",
     "url": "/help/reference/",
     "anchor": "runtime-install",
-    "title": "Three-host runtime install",
-    "text": "Claude Code alo-labs/agent-plugins install-claude.sh Codex alo-labs/agent-plugins install-codex.sh Cursor alo-labs/agent-plugins install-cursor.sh hooks.json cursor-hook-bridge sb-bootstrap sb-diagnostics capability tier hook-enforced"
+    "title": "Two-host runtime install",
+    "text": "Claude Code alo-labs/agent-plugins install-claude.sh Codex alo-labs/agent-plugins install-codex.sh hooks.json sb-bootstrap sb-diagnostics capability tier hook-enforced"
   },
   {
     "page": "Reference",
@@ -568,7 +568,7 @@ var IDX = [
     "url": "/help/troubleshooting/",
     "anchor": "hooks",
     "title": "Hook failures",
-    "text": "Troubleshoot jq missing, hook permission denied, hooks not firing, v0.53.0 hook activation guard silver-bullet.md and .silver-bullet.json required, Cursor hooks.json merge, sb-diagnostics capability tier, sb-doctor.sh sb:doctor host-aware install activation audit, stale compliance state, and /sb:init initialization issues."
+    "text": "Troubleshoot jq missing, hook permission denied, hooks not firing, v0.53.0 hook activation guard silver-bullet.md and .silver-bullet.json required, legacy Cursor cleanup, sb-diagnostics capability tier, sb-doctor.sh sb:doctor host-aware install activation audit, stale compliance state, and /sb:init initialization issues."
   },
   {
     "page": "Troubleshooting",

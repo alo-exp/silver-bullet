@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TOOL="all"
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --tool) TOOL="${2:-all}"; shift 2 ;;
+    --tool) TOOL="${2:-all}"; shift $(( $# > 1 ? 2 : 1 )) ;;
     -h|--help)
       cat <<'EOF'
 Usage: bash scripts/enable-rtk-context-mode.sh [--tool rtk|context_mode|all]
@@ -44,7 +44,7 @@ check_rtk() {
   elif sb_rtk_cli_path >/dev/null 2>&1; then
     err "wrong rtk binary on PATH" "install rtk-ai/rtk; rtk gain --help must succeed"
   else
-    err "rtk not on PATH" "brew tap rtk-ai/rtk && brew install rtk"
+    err "rtk not on PATH" "brew tap rtk-ai/rtk && brew install rtk (Silver Bullet needs rtk >= $(jq -r '.recommended_tools.rtk.min_version // "0.42.0"' "${REPO_ROOT}/templates/silver-bullet.config.json.default" 2>/dev/null || echo 0.42.0))"
   fi
 
   if sb_rtk_version_ok "${REPO_ROOT}/.silver-bullet.json" 2>/dev/null; then
@@ -54,7 +54,7 @@ check_rtk() {
   fi
 
   local host artifact
-  host="$(sb_runtime_host 2>/dev/null || echo cursor)"
+  host="$(sb_runtime_host 2>/dev/null || echo claude)"
   artifact="$(sb_rtk_platform_hook_artifact_path "$REPO_ROOT" "$host" 2>/dev/null || true)"
   if sb_rtk_platform_hook_present "$REPO_ROOT" "$host" 2>/dev/null; then
     ok "host hook wired (${host}: ${artifact})"
@@ -79,7 +79,7 @@ check_context_mode() {
   fi
 
   local host artifact
-  host="$(sb_runtime_host 2>/dev/null || echo cursor)"
+  host="$(sb_runtime_host 2>/dev/null || echo claude)"
   artifact="$(sb_context_mode_platform_artifact_path "$REPO_ROOT" "$host" 2>/dev/null || true)"
   if sb_context_mode_platform_artifact_present "$REPO_ROOT" "$host" 2>/dev/null; then
     ok "platform artifact (${host}: ${artifact})"

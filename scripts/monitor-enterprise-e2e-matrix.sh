@@ -2,7 +2,7 @@
 # Always-on monitor for enterprise E2E Claude matrix batches.
 # Polls batch health, detects stalls/errors, restarts on failure.
 #
-# Usage (from SB repo root, in a persistent Cursor background shell):
+# Usage (from SB repo root, in a persistent background shell):
 #   bash scripts/monitor-enterprise-e2e-matrix.sh &
 #   echo $! > .e2e-matrix-monitor.pid
 #
@@ -25,6 +25,8 @@ source "${SB_ROOT}/tests/live/lib/detach-background.sh"
 sb_prepend_harness_path
 # shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-ledger-reconcile.sh"
+# shellcheck source=scripts/lib/pid-identity.sh
+source "${SB_ROOT}/scripts/lib/pid-identity.sh"
 
 MATRIX_LOG="${SB_E2E_MATRIX_LOG:-${SB_ROOT}/.e2e-matrix-round5-batch-resume.log}"
 MONITOR_AUTO_RESTART="${SB_E2E_MONITOR_AUTO_RESTART:-1}"
@@ -41,7 +43,7 @@ QUOTA_WAIT="${SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-${SB_E2E_MATRIX_QUOTA_WAIT:-60
 NETWORK_WAIT_MIN="${SB_E2E_MATRIX_NETWORK_WAIT_MIN:-120}"
 NETWORK_WAIT_MAX="${SB_E2E_MATRIX_NETWORK_WAIT_MAX:-300}"
 
-FIXTURE_DIR="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+FIXTURE_DIR="${SB_TEST_ENTERPRISE_APP_ROOT:-$(cd "${SB_ROOT}/../.." && pwd)/enterprise-grade-test-app}"
 # shellcheck disable=SC2206
 MATRIX_ROW_ARGS=(${SB_E2E_MATRIX_ROWS:-1 5 7 8 9 10 12 13 17 18 19 20})
 
@@ -60,47 +62,20 @@ batch_elapsed() {
   ps -p "$pid" -o etime= 2>/dev/null | tr -d ' ' || echo "?"
 }
 
-matrix_runner_pgrep_pattern='bash scripts/(run-enterprise-e2e-matrix|enterprise-e2e/matrix)\.sh'
-
+# The batch runner is trusted only through its identity record (scripts/lib/pid-identity.sh), written
+# by the process that started it in this run. A runner found by command-line matching, a stale pid
+# file or a reused pid is never adopted and never signalled (R14-10).
 discover_batch_pid() {
-  local pid p ppid cmd
-  if [[ -f "$BATCH_PID_FILE" ]]; then
-    pid="$(tr -d '[:space:]' <"$BATCH_PID_FILE" 2>/dev/null || true)"
-    if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
-      printf '%s\n' "$pid"
-      return 0
-    fi
-  fi
-  # Pick shallowest (root) matrix runner for this row set.
-  pid=""
-  while read -r p; do
-    [[ -z "$p" ]] && continue
-    ppid="$(ps -p "$p" -o ppid= 2>/dev/null | tr -d ' ')"
-    cmd="$(ps -p "$ppid" -o command= 2>/dev/null || true)"
-    if [[ "$cmd" != *run-enterprise-e2e-matrix.sh* && "$cmd" != *enterprise-e2e/matrix.sh* ]]; then
-      pid="$p"
-      break
-    fi
-  done < <(pgrep -f "$matrix_runner_pgrep_pattern" 2>/dev/null | sort -n)
-  if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
-    printf '%s\n' "$pid" >"$BATCH_PID_FILE"
-    printf '%s\n' "$pid"
-    return 0
-  fi
-  return 1
+  sb_pid_identity_verify "$BATCH_PID_FILE"
 }
 
 is_batch_running() {
   local pid="$1"
-  [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null
+  [[ -n "$pid" && "$(sb_pid_identity_verify "$BATCH_PID_FILE")" == "$pid" ]]
 }
 
 live_test_driver_running() {
   pgrep -f 'run-enterprise-e2e-live-test\.sh|enterprise-e2e/live-test\.sh' >/dev/null 2>&1
-}
-
-any_matrix_runner_pid() {
-  pgrep -f "$matrix_runner_pgrep_pattern" 2>/dev/null | head -1 || true
 }
 
 matrix_agent_child_lines() {
@@ -109,9 +84,6 @@ matrix_agent_child_lines() {
   case "$host" in
     codex)
       pgrep -fl 'codex-interactive-invoke\.expect|/codex ' 2>/dev/null | grep -v grep || true
-      ;;
-    cursor)
-      pgrep -fl 'cursor-agent|/agent -p|/agent --print' 2>/dev/null | grep -v grep || true
       ;;
     *)
       pgrep -fl 'claude-interactive-invoke\.expect|/claude --model' 2>/dev/null | grep -v grep || true
@@ -149,17 +121,19 @@ log_bytes() {
   [[ -f "$1" ]] && wc -c <"$1" | tr -d ' ' || echo 0
 }
 
+# File mtime helpers: GNU stat takes -c, BSD/macOS stat takes -f (on GNU, `stat -f` reports the
+# filesystem and prints unrelated text), so try the GNU form first.
 log_mtime_epoch() {
-  [[ -f "$1" ]] && stat -f '%m' "$1" 2>/dev/null || echo 0
+  local m
+  m="$(stat -c '%Y' "$1" 2>/dev/null)" || m="$(stat -f '%m' "$1" 2>/dev/null)" || m=0
+  echo "${m:-0}"
 }
 
-read_state() {
-  local key="$1" default="${2:-}"
-  if [[ -f "$STATE_FILE" ]]; then
-    # shellcheck disable=SC1090
-    source "$STATE_FILE" 2>/dev/null || true
-  fi
-  printf '%s\n' "${!key:-$default}"
+log_mtime_text() {
+  local t
+  t="$(stat -c '%y' "$1" 2>/dev/null | cut -c1-16)" && [[ -n "$t" ]] \
+    || t="$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$1" 2>/dev/null)" || t="?"
+  echo "$t"
 }
 
 write_state_kv() {
@@ -255,19 +229,19 @@ parse_recent_issues() {
   local chunk
   chunk="$(tail -n "$window" "$MATRIX_LOG" 2>/dev/null || true)"
   local issues=()
-  if printf '%s\n' "$chunk" | grep -qiE '429|token[[:space:]]+plan|usage[[:space:]]+limit'; then
+  if grep -qiE '429|token[[:space:]]+plan|usage[[:space:]]+limit' <<<"$chunk"; then
     issues+=("429")
   fi
-  if printf '%s\n' "$chunk" | grep -qiE 'ENOTFOUND|ConnectionRefused|Unable to connect'; then
+  if grep -qiE 'ENOTFOUND|ConnectionRefused|Unable to connect' <<<"$chunk"; then
     issues+=("network")
   fi
-  if printf '%s\n' "$chunk" | grep -qiE 'Stop hook error'; then
+  if grep -qiE 'Stop hook error' <<<"$chunk"; then
     issues+=("stop-hook")
   fi
-  if printf '%s\n' "$chunk" | grep -qiE 'hookEventName'; then
+  if grep -qiE 'hookEventName' <<<"$chunk"; then
     issues+=("hookEventName")
   fi
-  if printf '%s\n' "$chunk" | grep -qE '^  FAIL:'; then
+  if grep -qE '^  FAIL:' <<<"$chunk"; then
     issues+=("FAIL")
   fi
   if [[ ${#issues[@]} -gt 0 ]]; then
@@ -280,34 +254,54 @@ random_network_wait() {
   echo $((NETWORK_WAIT_MIN + RANDOM % range))
 }
 
-kill_matrix_agent_children() {
-  local sig="${1:-TERM}" host
+# Every descendant PID of $1 (children first-level, then theirs), one per line.
+matrix_descendant_pids() {
+  local root="$1" kid
+  while IFS= read -r kid; do
+    printf '%s\n' "$kid"
+    matrix_descendant_pids "$kid"
+  done < <(pgrep -P "$root" 2>/dev/null || true)
+}
+
+# Exact PIDs of the agent processes (expect wrapper or CLI) that belong to THIS matrix run: the
+# descendants of the batch runner recorded in the batch pid file. A Claude/Codex session the
+# operator started, an IDE-spawned one or another checkout's matrix run is never in that tree, so a
+# command line that merely looks alike is never signalled (R14-10).
+matrix_agent_child_pids() {
+  local host root pid cmd pattern
   host="$(enterprise_e2e_matrix_host)"
   case "$host" in
-    codex)
-      pkill "-$sig" -f 'codex-interactive-invoke\.expect' 2>/dev/null || true
-      ;;
-    cursor)
-      pkill "-$sig" -f 'cursor-agent' 2>/dev/null || true
-      pkill "-$sig" -f '/agent -p' 2>/dev/null || true
-      ;;
-    *)
-      pkill "-$sig" -f 'claude-interactive-invoke\.expect' 2>/dev/null || true
-      pkill "-$sig" -f '/claude --model' 2>/dev/null || true
-      ;;
+    codex) pattern='codex-interactive-invoke\.expect' ;;
+    *) pattern='claude-interactive-invoke\.expect|/claude --model' ;;
   esac
+  # A missing or junk pid file makes `pgrep -P` fail and print nothing: no agent is signalled.
+  root="$(sb_pid_identity_verify "$BATCH_PID_FILE")"
+  while IFS= read -r pid; do
+    cmd="$(ps -p "$pid" -o command= 2>/dev/null || true)"
+    if [[ "$cmd" =~ $pattern ]]; then
+      printf '%s\n' "$pid"
+    fi
+  done < <(matrix_descendant_pids "$root")
+}
+
+kill_matrix_agent_children() {
+  local sig="${1:-TERM}" pid
+  local -a pids=()
+  while IFS= read -r pid; do
+    pids+=("$pid")
+  done < <(matrix_agent_child_pids)
+  if ((${#pids[@]} == 0)); then
+    return 0
+  fi
+  for pid in "${pids[@]}"; do
+    kill "-$sig" "$pid" 2>/dev/null || true
+  done
   sleep 3
-  case "$host" in
-    codex) pkill -KILL -f 'codex-interactive-invoke\.expect' 2>/dev/null || true ;;
-    cursor)
-      pkill -KILL -f 'cursor-agent' 2>/dev/null || true
-      pkill -KILL -f '/agent -p' 2>/dev/null || true
-      ;;
-    *)
-      pkill -KILL -f 'claude-interactive-invoke\.expect' 2>/dev/null || true
-      pkill -KILL -f '/claude --model' 2>/dev/null || true
-      ;;
-  esac
+  for pid in "${pids[@]}"; do
+    if kill -0 "$pid" 2>/dev/null; then
+      kill -KILL "$pid" 2>/dev/null || true
+    fi
+  done
 }
 
 kill_claude_children() {
@@ -320,10 +314,6 @@ monitor_auto_restart_enabled() {
 
 start_batch() {
   local -a rows=("$@")
-  if ! monitor_auto_restart_enabled; then
-    log_poll "$(utc_now) start_batch: SB_E2E_MONITOR_AUTO_RESTART=0 — operator owns batch (rows: ${rows[*]:-none})"
-    return 1
-  fi
   if [[ "${#rows[@]}" -eq 0 ]]; then
     log_poll "$(utc_now) start_batch: no incomplete rows — skip"
     return 1
@@ -357,6 +347,7 @@ start_batch() {
   ) &
   local newpid=$!
   printf '%s\n' "$newpid" >"$BATCH_PID_FILE"
+  sb_pid_identity_write "$BATCH_PID_FILE" "$newpid" || true
   write_state_kv LAST_BATCH_START "$(utc_now)"
   write_state_kv LAST_GROWTH_EPOCH "$(date +%s)"
   write_state_kv LAST_GROWTH_BYTES "$(log_bytes "$MATRIX_LOG")"
@@ -369,7 +360,7 @@ build_status_block() {
   local row log_bytes elapsed claude_lines row_logs tail_block issues
   row="$(current_row_from_log)"
   log_bytes="$(log_bytes "$MATRIX_LOG")"
-  elapsed="$(batch_elapsed "$batch_pid" 2>/dev/null || echo '?')"
+  elapsed="$(batch_elapsed "$batch_pid" 2>/dev/null)"
   claude_lines="$(claude_child_lines)"
   row_logs=""
   local f r bytes mtime
@@ -377,7 +368,7 @@ build_status_block() {
     f="$(row_attempt_log "$r" || true)"
     if [[ -n "$f" && -f "$f" ]]; then
       bytes="$(log_bytes "$f")"
-      mtime="$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$f" 2>/dev/null || echo '?')"
+      mtime="$(log_mtime_text "$f")"
       row_logs+="  row${r}-attempt.log: ${bytes} bytes (${mtime})"$'\n'
     fi
   done
@@ -430,8 +421,8 @@ on_stall_detected() {
     enterprise_e2e_read_lines_to_array inc incomplete_rows
     # If batch dead, full restart; else row will retry via harness quota loop
     local bpid
-    bpid="$(cat "$BATCH_PID_FILE" 2>/dev/null || true)"
-    if [[ -z "$bpid" ]] || ! kill -0 "$bpid" 2>/dev/null; then
+    bpid="$(sb_pid_identity_verify "$BATCH_PID_FILE")"
+    if [[ -z "$bpid" ]]; then
       if monitor_auto_restart_enabled; then
         start_batch "${inc[@]}"
       else
@@ -537,21 +528,11 @@ poll_once() {
 
   if is_batch_running "$batch_pid"; then
     batch_state="RUNNING"
-    printf '%s\n' "$batch_pid" >"$BATCH_PID_FILE"
   else
     batch_state="STOPPED"
     if live_test_driver_running; then
-      local adopted
-      adopted="$(any_matrix_runner_pid)"
-      if [[ -n "$adopted" ]] && kill -0 "$adopted" 2>/dev/null; then
-        batch_pid="$adopted"
-        batch_state="RUNNING"
-        printf '%s\n' "$batch_pid" >"$BATCH_PID_FILE"
-        log_poll "$(utc_now) defer restart: live-test driver active — adopted matrix pid ${batch_pid}"
-      else
-        log_poll "$(utc_now) defer restart: live-test driver pre-matrix (skip duplicate FORCE batch)"
-        batch_state="WAIT_LIVE_TEST"
-      fi
+      log_poll "$(utc_now) defer restart: live-test driver active (its matrix runner is trusted only through its own identity record)"
+      batch_state="WAIT_LIVE_TEST"
     else
       if monitor_auto_restart_enabled; then
         log_poll "$(utc_now) ACTION: batch not running — restarting incomplete rows"
@@ -565,17 +546,8 @@ poll_once() {
           batch_state="$(matrix_reconcile_state 2>/dev/null || echo IN_PROGRESS)"
         fi
       else
-        local adopted_manual
-        adopted_manual="$(any_matrix_runner_pid)"
-        if [[ -n "$adopted_manual" ]] && kill -0 "$adopted_manual" 2>/dev/null; then
-          batch_pid="$adopted_manual"
-          batch_state="RUNNING"
-          printf '%s\n' "$batch_pid" >"$BATCH_PID_FILE"
-          log_poll "$(utc_now) adopt manual batch pid ${batch_pid} (SB_E2E_MONITOR_AUTO_RESTART=0)"
-        else
-          log_poll "$(utc_now) defer restart: SB_E2E_MONITOR_AUTO_RESTART=0 — no operator batch"
-          batch_state="WAIT_OPERATOR"
-        fi
+        log_poll "$(utc_now) defer restart: SB_E2E_MONITOR_AUTO_RESTART=0 — no operator batch"
+        batch_state="WAIT_OPERATOR"
       fi
     fi
   fi
@@ -592,7 +564,9 @@ poll_once() {
         else
         if monitor_auto_restart_enabled; then
           log_poll "$(utc_now) ACTION: no claude child ${idle_sec}s — restarting batch"
-          kill -TERM "$batch_pid" 2>/dev/null || true
+          if is_batch_running "$batch_pid"; then
+            kill -TERM "$batch_pid" 2>/dev/null || true
+          fi
           sleep 5
           enterprise_e2e_read_lines_to_array inc incomplete_rows
           start_batch "${inc[@]}"

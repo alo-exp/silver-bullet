@@ -5,7 +5,7 @@ Silver Bullet uses Graphify as the **mandatory** local retrieval layer before pl
 ## Opt-In Policy
 
 Graphify is a **recommended tool**, not a hard prerequisite like `jq`. SB asks for explicit
-permission at `/sb:init` and session start. Consent is stored in `.silver-bullet.json`:
+permission at `/sb:init` and session start. Your consent is recorded per user, outside the repository (`scripts/sb-consent.sh`; see [CONSENT.md](CONSENT.md)). `.silver-bullet.json` can only recommend the tool or turn it off:
 
 ```json
 "recommended_tools": {
@@ -21,9 +21,9 @@ permission at `/sb:init` and session start. Consent is stored in `.silver-bullet
 
 | `enabled_by_user` | Behavior |
 |-----------------|----------|
-| `null` | Consent pending — SB prompts at init, update, and session start; no hook enforcement |
-| `true` | Mandatory — hooks block substantive edits until index + fresh query |
-| `false` | Opted out — advisory/docs fallback only |
+| `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project . --capabilities enforce`; without `--capabilities` the grant also records machine-wide install and wire consent) |
+| `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 **Install failure after opt-in:** when the user opts in but CLI install or index build fails,
 SB sets `enforcement_suspended: true` and `install_status: "failed"` (with `install_failure_reason`).
@@ -69,14 +69,13 @@ Run from the project root after the CLI is on PATH. SB stores these in
 |------|-------------------|------------------------|----------|
 | Claude Code | `graphify install --project` | `graphify claude install --project` | `.claude/settings.json` |
 | Codex | `graphify install --project --platform codex` | `graphify codex install --project` | `.codex/hooks.json` |
-| Cursor | *(none)* | `graphify cursor install` | `.cursor/rules/graphify.mdc` ([issue #137](https://github.com/safishamsi/graphify/issues/137#issuecomment-4215764533)) |
 | OpenCode | `graphify install --project --platform opencode` | *(hooks in `.opencode/plugins/graphify.js`)* | `.opencode/opencode.json` |
 | Goose (Pi) | `graphify install --project --platform pi` | *(skill only)* | `.pi/agent/skills/graphify/SKILL.md` |
 | Hermes | `graphify install --project --platform hermes` | *(AGENTS.md rules — no PreToolUse)* | `AGENTS.md` graphify section |
 
 Codex also needs `multi_agent = true` under `[features]` in `~/.codex/config.toml` for parallel extraction (upstream note).
 
-SB detects the active host via `SILVER_BULLET_RUNTIME`, `CURSOR_PLUGIN_ROOT`, or Codex env vars
+SB detects the active host via `SILVER_BULLET_RUNTIME` or Codex env vars
 (same logic as `hooks/lib/runtime-paths.sh`). `/sb:init` and `/sb:update` run pre-index
 commands, build the index, then run post-index commands when the user opts in.
 
@@ -172,12 +171,12 @@ Install Graphify with the MCP extra so `graphify-mcp` is on PATH:
 uv tool install "graphifyy[mcp]"
 ```
 
-SB writes Cursor MCP config only after a successful `graphify-mcp` stdio handshake. **Configured ≠ live:** after host config changes, the reconciler emits a reload receipt at `${SB_RUNTIME_STATE}/recommended-tools/reload-receipts/<host>/<project-id>/<worktree-id>/`. Canonical state stays `reload_required` until the current Cursor session supplies a fresh schema-v1 attestation via `--host-evidence-stdin` (max 64KiB, single JSON document) showing every expected tool succeeded.
+SB writes host MCP config only after a successful `graphify-mcp` stdio handshake. **Configured ≠ live:** after host config changes, the reconciler emits a reload receipt at `${SB_RUNTIME_STATE_DIR}/recommended-tools/reload-receipts/<host>/<project-id>/<worktree-id>/`. Canonical state stays `reload_required` until the current host session supplies a fresh schema-v1 attestation via `--host-evidence-stdin` (max 64KiB, single JSON document) showing every expected tool succeeded.
 
 | Signal | Meaning |
 |--------|---------|
-| `CONFIGURED: yes` | `~/.cursor/mcp.json` includes Graphify |
+| `CONFIGURED: yes` | the host MCP config (`~/.claude.json`, `~/.codex/config.toml`, ...) includes Graphify |
 | `LIVE: no` | Receipt active or activation not `full` |
-| `ACTION` | Tools & MCP → graphify off/on, then new chat; fallback Developer: Reload Window |
+| `ACTION` | restart the host session so MCP servers reload, then start a new chat |
 
 Verify read-only: `bash scripts/reconcile-recommended-tools.sh --mode verify --host-evidence-stdin`. Clear requires authorized apply (`/sb:init`, `/sb:update`, installer, or `/sb:doctor --fix`) with a fresh all-success attestation.

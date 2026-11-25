@@ -20,7 +20,6 @@ assert_grep() {
 
 echo "=== recommended-tools policy contract tests ==="
 
-HOST_CURSOR_GUIDE="$REPO_ROOT/scripts/lib/host-install-guides/cursor.md"
 HOST_CLAUDE_GUIDE="$REPO_ROOT/scripts/lib/host-install-guides/claude.md"
 HOST_CODEX_GUIDE="$REPO_ROOT/scripts/lib/host-install-guides/codex.md"
 
@@ -52,13 +51,9 @@ assert_grep "silver-init hook install optional" \
   "$REPO_ROOT/skills/silver-init/SKILL.md" \
   "graphify hook install"
 
-assert_grep "template platform_install_commands cursor" \
-  "$REPO_ROOT/templates/silver-bullet.config.json.default" \
-  '"cursor"'
-
-jq -e '.recommended_tools.graphify.platform_install_commands.cursor.post_index[0] == "graphify cursor install"' \
+jq -e '.recommended_tools.graphify.platform_install_commands | has("cursor") | not' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
-  && pass "template cursor post_index command" || fail "template cursor post_index command"
+  && pass "template has no Cursor graphify platform install" || fail "template has no Cursor graphify platform install"
 
 jq -e '.recommended_tools.graphify.platform_install_commands.claude.pre_index[0] == "graphify install --project"' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
@@ -76,10 +71,6 @@ template_suspended="$(jq -r '.recommended_tools.graphify.enforcement_suspended' 
   "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 [[ "$template_suspended" == "false" ]] && pass "template enforcement_suspended defaults false" || fail "template enforcement_suspended defaults false"
 
-cursor_cmd="$(jq -r '.recommended_tools.graphify.platform_install_commands.cursor.post_index[0]' \
-  "$REPO_ROOT/templates/silver-bullet.config.json.default")"
-[[ "$cursor_cmd" == "graphify cursor install" ]] && pass "template cursor platform install" || fail "template cursor platform install"
-
 claude_pre="$(jq -r '.recommended_tools.graphify.platform_install_commands.claude.pre_index[0]' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 claude_post="$(jq -r '.recommended_tools.graphify.platform_install_commands.claude.post_index[0]' \
@@ -93,10 +84,6 @@ codex_post="$(jq -r '.recommended_tools.graphify.platform_install_commands.codex
   "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 [[ "$codex_pre" == "graphify install --project --platform codex" && "$codex_post" == "graphify codex install --project" ]] \
   && pass "template codex platform install" || fail "template codex platform install"
-
-assert_grep "silver-init documents cursor platform install" \
-  "$HOST_CURSOR_GUIDE" \
-  "graphify cursor install"
 
 assert_grep "silver-init documents claude platform install" \
   "$HOST_CLAUDE_GUIDE" \
@@ -112,7 +99,7 @@ assert_grep "silver-init host detection" \
 
 assert_grep "GRAPHIFY.md platform table" \
   "$REPO_ROOT/docs/GRAPHIFY.md" \
-  "graphify cursor install"
+  "graphify claude install --project"
 
 am_template_null="$(jq -r '.recommended_tools.agentmemory.enabled_by_user' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default")"
@@ -148,7 +135,7 @@ assert_grep "silver-update RTK retry" \
 
 assert_grep "silver-init stack optimize step" \
   "$REPO_ROOT/skills/silver-init/SKILL.md" \
-  "sb-optimize-stack.sh --apply"
+  '${PLUGIN_ROOT}/scripts/sb-optimize-stack.sh" --apply'
 
 assert_grep "silver-update stack optimize step" \
   "$REPO_ROOT/skills/silver-update/SKILL.md" \
@@ -190,12 +177,6 @@ jq -e '.recommended_tools.leanctx.mcp_tool_prefix == "lctx_"' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
   && pass "template leanctx mcp_tool_prefix lctx_" || fail "template leanctx mcp_tool_prefix lctx_"
 
-leanctx_project_root='bash scripts/install-leanctx-sb.sh --host cursor --project-root "$(pwd)"'
-jq -e --arg cmd "$leanctx_project_root" \
-  '.recommended_tools.leanctx.platform_install_commands.cursor.pre_index[0] == $cmd' \
-  "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
-  && pass "template leanctx cursor platform install" || fail "template leanctx cursor platform install"
-
 jq -e '.recommended_tools.leanctx.platform_install_commands.claude.pre_index[0] == "bash scripts/install-leanctx-sb.sh --host claude --project-root \"$(pwd)\""' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
   && pass "template leanctx claude platform install" || fail "template leanctx claude platform install"
@@ -211,14 +192,14 @@ jq -e '.recommended_tools.leanctx.platform_install_commands.opencode.pre_index[0
 # shellcheck source=../../hooks/lib/recommended-tools.sh
 # shellcheck disable=SC1091
 source "$REPO_ROOT/hooks/lib/recommended-tools.sh"
-export SILVER_BULLET_RUNTIME=cursor
+export SILVER_BULLET_RUNTIME=claude
 leanctx_install_lines="$(sb_recommended_tool_platform_install_commands \
-  "$REPO_ROOT/templates/silver-bullet.config.json.default" leanctx cursor)"
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" leanctx claude)"
 leanctx_install_count="$(printf '%s\n' "$leanctx_install_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
 [[ "$leanctx_install_count" -eq 1 ]] \
   && pass "recommended-tools leanctx emits single platform install line" \
   || fail "recommended-tools leanctx emits single platform install line"
-printf '%s' "$leanctx_install_lines" | grep -qF -- '--project-root "$(pwd)"' \
+grep -qF -- '--project-root "$(pwd)"' <<<"$leanctx_install_lines" \
   && pass "recommended-tools leanctx platform install includes --project-root" \
   || fail "recommended-tools leanctx platform install includes --project-root"
 
@@ -238,10 +219,11 @@ jq -e '.optimization_profiles.five_tool_routed.routes.sb_read == "leanctx" and .
 # parity covers the contract only: min_version, mcp_tool_prefix, stack_mode,
 # primary_fts, install_commands, routes.
 LEANCTX_PARITY_FILTER='.recommended_tools.leanctx | del(.enabled_by_user, .install_status, .install_failure_reason, .enforcement_suspended)'
-jq -S "$LEANCTX_PARITY_FILTER" "$REPO_ROOT/templates/silver-bullet.config.json.default" > /tmp/sb-leanctx-template.json
-jq -S "$LEANCTX_PARITY_FILTER" "$REPO_ROOT/.silver-bullet.json" > /tmp/sb-leanctx-live.json
-diff -q /tmp/sb-leanctx-template.json /tmp/sb-leanctx-live.json >/dev/null \
+jq -S "$LEANCTX_PARITY_FILTER" "$REPO_ROOT/templates/silver-bullet.config.json.default" > "${TMPDIR:-/tmp}/sb-leanctx-template.$$.json"
+jq -S "$LEANCTX_PARITY_FILTER" "$REPO_ROOT/.silver-bullet.json" > "${TMPDIR:-/tmp}/sb-leanctx-live.$$.json"
+diff -q "${TMPDIR:-/tmp}/sb-leanctx-template.$$.json" "${TMPDIR:-/tmp}/sb-leanctx-live.$$.json" >/dev/null \
   && pass "leanctx block parity template vs live" || fail "leanctx block parity template vs live"
+rm -f "${TMPDIR:-/tmp}/sb-leanctx-template.$$.json" "${TMPDIR:-/tmp}/sb-leanctx-live.$$.json"
 
 assert_grep "LEANCTX.md exists" \
   "$REPO_ROOT/docs/LEANCTX.md" \

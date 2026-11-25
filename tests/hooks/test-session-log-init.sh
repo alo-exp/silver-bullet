@@ -25,7 +25,6 @@ FAIL=0
 # ── Test infrastructure ───────────────────────────────────────────────────────
 SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
-TEST_RUN_ID="$$"
 
 TMPDIR_TEST=""
 SESSION_LOG_DIR=""
@@ -87,7 +86,7 @@ assert_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -197,7 +196,7 @@ printf '# Session Log\n\n**Date:** %s\n**Mode:** interactive\n\n## Pre-answers\n
 out=$(run_hook "$MODE_CMD_JSON")
 assert_valid_json "date-formatted filename: output is valid JSON" "$out"
 # The message should reference the filename or today's date
-if printf '%s' "$out" | jq -r '.hookSpecificOutput.message // ""' | grep -q "${today}"; then
+if grep -q "${today}" < <(printf '%s' "$out" | jq -r '.hookSpecificOutput.message // ""'); then
   echo "  ✅ message contains today's date (filename reference)"
   PASS=$((PASS + 1))
 else

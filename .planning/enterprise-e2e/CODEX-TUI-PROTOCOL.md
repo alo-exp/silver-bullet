@@ -5,8 +5,8 @@ Operator protocol for executing 22 supervised Codex CLI workflow sessions agains
 **Supervisor session:** Cursor Composer (parent orchestrator with `Task` tool).  
 **Matrix child:** Codex CLI TUI (`codex` in test app CWD).
 
-**Working directory for SB fixes:** `/Users/shafqat/projects/silver-bullet/repo`  
-**Working directory for Codex TUI:** `/Users/shafqat/projects/enterprise-grade-test-app`
+**Working directory for SB fixes:** `/Users/<user>/projects/silver-bullet/repo`  
+**Working directory for Codex TUI:** `/Users/<user>/projects/enterprise-grade-test-app`
 
 See also: [CODEX-ENTERPRISE-E2E-EXECUTION-PROMPT.md](./CODEX-ENTERPRISE-E2E-EXECUTION-PROMPT.md)
 
@@ -25,7 +25,7 @@ See also: [CODEX-ENTERPRISE-E2E-EXECUTION-PROMPT.md](./CODEX-ENTERPRISE-E2E-EXEC
 ## Host-isolated harness env (mandatory)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export SILVER_BULLET_RUNTIME=codex
 export SB_E2E_LIVE_RUNTIME=codex
 export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md"
@@ -64,7 +64,7 @@ Matrix runner translates `/silver:*` → `$silver:*` for Codex. Row 1 uses `$sil
 ## Session 0 — Bootstrap (`$silver:init`)
 
 ```bash
-cd /Users/shafqat/projects/enterprise-grade-test-app
+cd /Users/<user>/projects/enterprise-grade-test-app
 codex   # CWD = test app
 ```
 

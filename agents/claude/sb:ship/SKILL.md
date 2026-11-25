@@ -21,8 +21,10 @@ before publication.
 
 ## Output
 
-Write or update the ship section in `.planning/STATE.md`, current phase
-SUMMARY/VERIFICATION, or a PR description draft.
+Write or update the ship section in `.planning/phases/<phase>/SHIP.md`, or in a PR
+description draft. Do not write `.planning/STATE.md` or the legacy phase
+`*-SUMMARY.md` / `*-VERIFICATION.md` files from this skill: planning-file-guard
+denies direct edits to them; only `/sb:phase` and `/sb:undo` may change STATE.md and ROADMAP.md, through the roadmap override.
 
 ## Process
 
@@ -39,6 +41,12 @@ SUMMARY/VERIFICATION, or a PR description draft.
      `gh pr create` / `gh release create` / `deploy` until a fresh `verify-tests`
      run is recorded. Run it here even when the suite was run earlier in the phase,
      so the recorded freshness marker reflects the shipped tree.
+   - Human approval: under the default `supervised` enterprise profile,
+     `gh pr create`, `gh pr merge`, `gh release create` and deploy commands are
+     blocked (`ENTERPRISE POLICY BLOCK`) until a human creates
+     `$HOME/.claude/.silver-bullet/enterprise-human-deploy-approved` from their own
+     terminal (it expires after `enterprise_policy.human_approval_ttl_minutes`).
+     Tell the user to approve before the ship action; never create the marker yourself.
 3. Run `sb:branch-finish` on non-main branches.
 4. Check git status and separate unrelated user changes from ship scope.
 5. Prepare PR or merge notes with:
@@ -48,7 +56,7 @@ SUMMARY/VERIFICATION, or a PR description draft.
    - docs and artifact updates;
    - deferred items.
 6. Check CI or provide exact missing CI status.
-7. Update planning state only after gates and ship action are consistent.
+7. Record the ship result only after gates and ship action are consistent: write it to `.planning/phases/<phase>/SHIP.md` (the one planning target the guard allows here). Never write `.planning/STATE.md` or `ROADMAP.md` from this skill; `/sb:phase` is the only skill that may change them, through its roadmap override.
 
 ## Exit Gate
 

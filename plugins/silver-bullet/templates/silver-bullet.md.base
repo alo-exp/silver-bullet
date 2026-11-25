@@ -20,7 +20,7 @@ At the very start of any new session, perform these steps automatically:
    **5.1 Silver Bullet**
    The SessionStart hook (`session-start`) performs this check deterministically on `startup` and `clear` events: it reads `installed_plugins.json`, compares semver to GitHub latest, and injects the A/B prompt below when installed < latest. Honor the injected prompt when present; otherwise run:
    ```bash
-   cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+   cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
    curl -s https://api.github.com/repos/alo-exp/silver-bullet/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": *"v\([^"]*\)".*/\1/'
    ```
    Compare as semver. If installed < latest, ask the user directly:
@@ -54,19 +54,23 @@ At the very start of any new session, perform these steps automatically:
 
 Twelve enforcement layers enforce compliance:
 
-1. **Skill tracker** (PostToolUse/Skill or Codex invoke-skill receipt or host `silver-bullet invoke-skill`) — Records every supported Silver Bullet skill invocation to the state file
-2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning skills incomplete before source edits
+1. **Skill tracker** (PostToolUse/Skill or host `silver-bullet invoke-skill`) — Records every supported Silver Bullet skill invocation to the state file
+2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|MultiEdit|Bash, with the workflow chain guard) — HARD STOP if planning skills (or the active composed workflow's pre-execution chain) are incomplete before source edits
 3. **Compliance status** (PostToolUse/all) — Shows workflow progress on every tool use (informational)
 4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — `planning-file-guard.sh` blocks direct edits to SB-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of the owning SB skill or workflow
-5. **Completion audit** (Pre+PostToolUse/Bash) — Blocks intermediate commits until planning is done; blocks PR/deploy/release until full workflow is done
-6. **CI status check** (Pre+PostToolUse/Bash) — Blocks further commits and actions when CI is failing
-7. **Session management** (PostToolUse/Bash) — Session logging, autonomous mode timeout detection, branch-scoped state reset
+5. **Completion audit** (Pre+PostToolUse/Bash, and PreToolUse on MCP tools such as the GitHub server's create/merge/push tools) — Blocks intermediate commits until planning is done; blocks PR/deploy/release until full workflow is done. A push to the default branch, or of a tag, counts as final delivery (full `required_deploy` floor); `project.push_to_default_branch_tier: "intermediate"` is the explicit opt-out
+6. **CI status check** (Pre+PostToolUse/Bash, PreToolUse on MCP tools) — Blocks `git push`, `gh pr create`/`merge` and `gh release create` while the latest CI run failed; after `git commit` it only warns, so a CI fix can still be committed
+7. **Session management** (SessionStart + PostToolUse) — Branch-scoped state reset at session start, session logging, autonomous mode timeout detection
 8. **Stop hook** (Stop/SubagentStop) — Blocks task-complete declaration if required_planning skills are missing (planning floor). The full `required_deploy` list is enforced at delivery (`gh pr create`, deploy, `gh release create`) by completion-audit. Per-prompt outcome checklist is enforced by `outcomes-check.sh` on the same events.
 9. **UserPromptSubmit recorder + reminder** (UserPromptSubmit) — Records requested SB and optional extension routes and re-injects missing skills list before every user message
 10. **Forbidden skill gate** (PreToolUse/Skill) — Blocks deprecated/forbidden skill invocations before they execute
 11. **ROADMAP freshness gate** (PreToolUse/Bash) — `roadmap-freshness.sh` blocks `git commit` if a phase `SUMMARY.md` is staged but the ROADMAP.md checkbox is not ticked; prevents milestone state from diverging from execution reality
 12. **Redundant instructions + anti-rationalization** — Workflow file + silver-bullet.md both enforce;
     explicit rules against skipping, combining, or implicitly covering steps
+
+Further gates run beside these layers: spec floor and UAT gates, phase archive and phase locks,
+orchestrator parent-mode guards, site-session gates, and the opt-in tool gates (§2g-i to §2g-iii). Silver
+Bullet's hook reference (`docs/HOOKS.md` in the plugin) lists every registered hook. The Silver Bullet reference docs named in this file (`docs/HOOKS.md`, `docs/RUNTIME-COMPATIBILITY.md`, `docs/CONSENT.md` and the tool guides) are part of the Silver Bullet plugin, not of your project: find them in the plugin's own `docs/` folder (a marketplace install has the full set; the offline fallback copies only part of it) or in the Silver Bullet source repository.
 
 **Enforcement model**: Hooks combine **invocation tracking** with **outcome checks**.
 `record-skill.sh` records that a skill was *called*. Delivery gates and
@@ -98,7 +102,7 @@ successfully.
 
 **Trivial changes** (typos, copy fixes, config tweaks): Route through `/sb:fast`
 for classification — do not rely on a manual trivial bypass file. SessionStart clears
-any stale `$HOME/.codex/.silver-bullet/trivial` marker; hooks do not
+any stale `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` marker; hooks do not
 auto-create it. The trivial file is a legacy compatibility escape hatch only.
 **Note**: In the `devops-cycle` workflow, `.yml`, `.yaml`, `.json`, and
 `.toml` files are infrastructure code and are NOT auto-exempted.
@@ -106,7 +110,7 @@ auto-create it. The trivial file is a legacy compatibility escape hatch only.
 **Subagent commits**: Every git commit MUST use HEREDOC format and end with:
 Co-Authored-By: host-appropriate co-author line
 
-> **Stop hook false-positive audit**: For a full catalogue of known bail-out scenarios, reproduction steps, and dispositions, see [`docs/internal/stop-hook-audit.md`](docs/internal/stop-hook-audit.md).
+> **Stop hook false-positive audit**: For a full catalogue of known bail-out scenarios, reproduction steps, and dispositions, see `docs/internal/stop-hook-audit.md` in the Silver Bullet source repository.
 
 ---
 
@@ -126,8 +130,8 @@ degraded path.
 > **Anti-Skip:** You are violating this rule if you start a non-trivial task without a Read call to the active workflow file. The compliance-status hook will show your progress — if it shows 0 steps, you have not read the workflow.
 
 > **Design documents**: For architectural notes on future workflow enhancements, see:
-> - [`docs/internal/vfy-01-enforcement-design.md`](docs/internal/vfy-01-enforcement-design.md) — intermediate verification enforcement boundary design (VFY-01)
-> - [`docs/internal/flow-01-parallelism-design.md`](docs/internal/flow-01-parallelism-design.md) — FLOW layer parallelism design for the /sb composer (FLOW-01)
+> - `docs/internal/vfy-01-enforcement-design.md` (Silver Bullet source repository) — intermediate verification enforcement boundary design (VFY-01)
+> - `docs/internal/flow-01-parallelism-design.md` (Silver Bullet source repository) — FLOW layer parallelism design for the /sb composer (FLOW-01)
 
 ### Hand-Holding at Transitions
 
@@ -221,10 +225,10 @@ transition and step boundary, derive the user's current position from `.planning
 1. `.planning/STATE.md` — parse YAML front matter for `current_plan`, `status`, `stopped_at`, `progress.total_phases`, `progress.completed_phases`, `progress.total_plans`, `progress.completed_plans`, `progress.percent`
 2. `.planning/ROADMAP.md` — identify current phase name, its goal, and how many plans it contains
 
-**SB state file (`$HOME/.codex/.silver-bullet/state`) is ONLY for:**
+**SB state file (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`) is ONLY for:**
 - Skill invocation markers (recorded by `record-skill.sh`)
-- Session mode (`$HOME/.codex/.silver-bullet/mode`)
-- Session init sentinel (`$HOME/.codex/.silver-bullet/session-init`)
+- Session mode (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode`)
+- Session init sentinel (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-init`)
 
 These runtime marker files do not replace `.planning/STATE.md`. Use the SB runtime state
 only for invocation evidence, mode, and session sentinels.
@@ -250,7 +254,7 @@ narrate at each plan boundary:
 
 ### 2f. Autonomous Commentary
 
-In autonomous mode (when `$HOME/.codex/.silver-bullet/mode` contains `autonomous`),
+In autonomous mode (when `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` contains `autonomous`),
 do NOT ask questions or pause, but DO output structured commentary at each major step:
 
 **Before each SB lifecycle skill invocation:**
@@ -316,12 +320,14 @@ Before planning, editing, debugging, reviewing, documenting, or shipping, the ac
 agent MUST retrieve project memory that could affect the action.
 
 **Opt-in policy:** Graphify is a **recommended tool** — SB asks for explicit user consent
-at init, update, and session start (`recommended_tools.graphify.enabled_by_user` in `.silver-bullet.json`).
-`null` = consent pending (no enforcement); `true` = mandatory hooks active when install succeeded;
-`false` = advisory only. If the user opts in but install fails, `enforcement_suspended: true`
+at init, update, and session start. The user's answer is recorded in their own consent store with
+`scripts/sb-consent.sh` (see `docs/CONSENT.md`), never in the repository; `recommended_tools.graphify.enabled_by_user`
+in `.silver-bullet.json` only recommends (`true`) or turns the tool off (`false`). Without a recorded
+grant (including `null`) there is no enforcement; with a grant, mandatory hooks are active when
+install succeeded; `false` = advisory only. If the user opts in but install fails, `enforcement_suspended: true`
 lifts hook blocks until the next init/update retry succeeds.
 
-**When opted in (`enabled_by_user: true`) and not suspended:**
+**When the user has consented (enforce granted in their consent store) and not suspended:**
 
 1. **Graphify query (required when CLI installed).** From the project root, run
    `graphify query "<task, file, feature, bug, or workflow context>" --graph graphify-out/graph.json --budget 2000`.
@@ -396,15 +402,15 @@ SB recommends **LeanCTX** as a separate opt-in tool (`recommended_tools.leanctx.
 | `sb_pathjail` | LeanCTX |
 | `sb_injection` | LeanCTX |
 
-**Host-neutral global instances:** Claude Code, Codex, Cursor, OpenCode, and Pi use the same user-global five-tool executable profile at `~/.silver-bullet/five-tool-stack/instances.json`. Their native adapters preserve each host's JSON/TOML/plugin/extension syntax, but SB never selects a host-specific copy of Graphify, agentmemory, Context Mode, LeanCTX, or RTK. Claude's optional native `context-mode@context-mode` plugin is disabled when the stack is optimized so Claude uses the shared Context Mode MCP entry; OpenCode uses its native global `context-mode` plugin as the sole Context Mode owner and removes the legacy `mcp.context-mode` duplicate. Pi's native SB extension and `pi-lean-ctx` bridge read the same manifest. `agentmemory` connects through the one local service at `http://localhost:3111`.
+**Host-neutral global instances:** Claude Code, Codex, OpenCode, and Pi use the same user-global five-tool executable profile at `~/.silver-bullet/five-tool-stack/instances.json`. Their native adapters preserve each host's JSON/TOML/plugin/extension syntax, but SB never selects a host-specific copy of Graphify, agentmemory, Context Mode, LeanCTX, or RTK. Claude's optional native `context-mode@context-mode` plugin is disabled when the stack is optimized so Claude uses the shared Context Mode MCP entry; OpenCode uses its native global `context-mode` plugin as the sole Context Mode owner and removes the legacy `mcp.context-mode` duplicate. Pi's native SB extension and `pi-lean-ctx` bridge read the same manifest. `agentmemory` connects through the one local service at `http://localhost:3111`.
 
 **Native host capability:** Codex PreToolUse is deny-only and cannot perform the `updatedInput` AST rewrite; this is a host-platform limitation, not an unsupported `cross_tool` state. Codex still runs the shared wire proxy, ledger, PathJail, injection detection, Graphify, agentmemory, RTK, and Context Mode profile. OpenCode and Pi use native plugin/extension adapters for the same routes.
 
 Install and wiring: `docs/LEANCTX.md`. Stack optimizer (Phase 2): `bash scripts/optimize-five-tool-stack.sh`.
 
-**Recovery when wedged (`sb_stack_double_compression`):** The stack compression mutex is global (`$HOME/.codex/.silver-bullet/stack-compression-mutex`) — subagents share it and cannot bypass a dirty mutex. When wedged, prior tool self-reports from the host model may be unreliable; verify with fresh tool calls after recovery. Escape hatches: complete one compliant routed-owner tool call (e.g. `ctx_search`, `lctx_read_ast`, RTK Bash without LeanCTX shell rewrite), run `/sb:clear-stack-state`, or `bash scripts/sb-doctor.sh --fix` (check **D20**). See `docs/LEANCTX.md` Recovery section.
+**Recovery when wedged (`sb_stack_double_compression`):** The stack compression mutex is global (`${SB_RUNTIME_STATE_DIR}/stack-compression-mutex`) — subagents share it and cannot bypass a dirty mutex. When wedged, prior tool self-reports from the host model may be unreliable; verify with fresh tool calls after recovery. Escape hatches: complete one compliant routed-owner tool call (e.g. `ctx_search`, `lctx_read_ast`, RTK Bash without LeanCTX shell rewrite), run `/sb:clear-stack-state`, or `bash scripts/sb-doctor.sh --fix` (check **D20**). See `docs/LEANCTX.md` Recovery section.
 
-**Operating guide:** Read [`docs/LEANCTX-OPERATING-GUIDE.md`](docs/LEANCTX-OPERATING-GUIDE.md) for practical routing, timeout, allowlist, output, and edit-safety guidance before using LeanCTX.
+**Operating guide:** Read `docs/LEANCTX-OPERATING-GUIDE.md` (in the installed plugin) for practical routing, timeout, allowlist, output, and edit-safety guidance before using LeanCTX.
 
 <!-- BEGIN context-mode hint (do not edit) -->
 ## Context Mode usage
@@ -426,9 +432,9 @@ For everything else, use your normal tools. RTK handles shell command output aut
 
 Silver Bullet workflows are composed from the APO catalog in `docs/apo-catalog.json`: canonical `AF-*` atomic flows, reusable workflow components, flow-step V-loops, evidence records, and runtime token mappings. Legacy FLOW 1-18 labels are migration aliases only. The `/sb` orchestrator classifies context and composes an ordered chain of catalog-backed atoms tailored to the task.
 
-**Parent orchestrator mode (default, only mode):** The parent session NEVER implements directly. It reads `orchestrator-directive.json`, spawns **Task workers** using `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`, and advances the queue via hooks. Composer skills (`sb:feature`, `sb:ui`, …) are queue builders — not inline execution instructions. See `docs/ORCHESTRATOR.md`.
+**Parent orchestrator mode (default, only mode on Claude Code):** The parent session NEVER implements directly. Codex does not identify workers in hook payloads, so there parent-mode blocks are inactive (`SB_ORCHESTRATOR_PARENT=1` forces them). It reads `orchestrator-directive.json`, spawns **Task workers** using `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`, and advances the queue via hooks. Composer skills (`sb:feature`, `sb:ui`, …) are queue builders — not inline execution instructions. See `docs/ORCHESTRATOR.md`.
 
-**SB OVERRIDE (audited escape hatch):** When a blocking orchestrator directive or PreToolUse gate cannot be satisfied, include in your next user message: `SB OVERRIDE: <reason>`. The hook logs the override to `.planning/orchestrator-override-log.jsonl` and clears the pending directive. Use sparingly — overrides are audited, not silent bypasses.
+**SB OVERRIDE (audited escape hatch):** When a blocking orchestrator directive cannot be satisfied, start your next user message with `SB OVERRIDE: <reason>` (first line, upper case, a real reason of 12+ characters and at least two words). The UserPromptSubmit hook checks the host's prompt payload (it needs the host `session_id` from a parent session, never a worker or delegate, and, when the host sends one, a transcript path under the host's runtime root with symlinks resolved; while a Task worker marker is still fresh the prompt must also be the recorded parent session's own and must carry the host's `transcript_path`, so on a host that sends none the override is refused until the marker is deleted or lapses after 2 hours), writes a hash-chained record with the session id and prompt hash to `.planning/orchestrator-override-log.jsonl` first, and only then clears the pending directive and abandons the flow queue, so the orchestrator no longer holds Stop. The override message is itself a prompt: when it reads as work it seeds its own outcome checklist (route, plan, verify), and that checklist can still hold Stop. It does not lift parent-mode tool restrictions or any other PreToolUse gate. A mention later in a message, a pasted denial text, or a log that cannot be written leaves everything in force. Use sparingly — overrides are audited, not silent bypasses.
 
 The active composed workflow file under `.planning/workflows/<id>.md` tracks execution state — which flows have run, which are next, and any dynamic insertions (e.g., FLOW 15 DEBUG on failure). See `docs/composable-flows-contracts.md` for full flow contracts.
 
@@ -464,7 +470,7 @@ Per-flow steps, produces, and exit conditions live in `docs/composable-flows-con
 When the user requests skipping a workflow step, SB:
 1. Explains why the step exists (one sentence)
 2. Offers lettered options: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. Records the decision in §9 if user chooses A permanently — **before committing, display the exact text being written to §9 and require explicit user confirmation** (showing what will change in both silver-bullet.md and templates/silver-bullet.md.base)
+3. Records the decision in §9 if user chooses A permanently — **before committing, display the exact text being written to §9 and require explicit user confirmation** (showing what will change in silver-bullet.md; in the Silver Bullet source repo, also in templates/silver-bullet.md.base)
 
 Non-skippable gates: `security`, `sb:quality-gates` pre-ship, `sb:verify`.
 
@@ -495,7 +501,7 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 | FLOW 8 | EXECUTE | Implementation — internal `tdd` gate + `sb:execute` |
 | FLOW 9 | UI QUALITY | UI review — `sb:ui-review` plus optional design/accessibility lenses |
 | FLOW 10 | REVIEW | Code review — `sb:review-request` → `sb:review` → `sb:triage` |
-| FLOW 11 | SECURE | Security — `security`, `sb:secure`, `sb:validate`, optional `sb:ai-llm-safety` |
+| FLOW 11 | SECURE | Security — `security`, `sb:secure`, `sb:validate`, optional `ai-llm-safety` (an internal skill, invoked by its plain name, not an `sb:` route) |
 | FLOW 12 | VERIFY | Verification — `sb:verify`, `verify-tests`, `sb:completion-audit` |
 | FLOW 13 | QUALITY GATE | `sb:quality-gates` or `devops-quality-gates` — dual-mode (pre-plan + pre-ship) |
 | FLOW 14 | SHIP | Phase shipping — `sb:branch-finish` → `sb:ship`, PR/CI |
@@ -572,7 +578,7 @@ You MUST NOT:
 - Accept a completion claim from any plugin, skill, or subagent without invoking `/sb:completion-audit` with that claim
 - Execute or respond to a non-trivial bare instruction without first routing it through `/sb`
 - Override a non-skippable gate (security, sb:quality-gates pre-ship, sb:verify) via §9 preferences — these gates are permanent
-- Write runtime preference updates to §9 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
+- Write runtime preference updates to §9 without updating silver-bullet.md (and, in the Silver Bullet source repo, templates/silver-bullet.md.base) atomically
 - Execute an SB lifecycle phase (context, plan, execute, verify, review, ship) without producing the phase's required artifacts — manually driving execution that bypasses skill-based workflows is a §3 violation
 - Advance to the next SB phase if the current phase is missing its required output artifacts (see §3d Post-Execution Artifact Requirements)
 - Minimize, abbreviate, or reduce the thoroughness of ANY step due to context window usage concerns. When a step is expected to consume large context (e.g., SENTINEL security audits, full quality-gate sweeps, comprehensive code reviews), you MUST delegate it through the active runtime's supported subagent or delegation mechanism so it runs in a fresh, independent context window. If subagent dispatch is not possible, summarize the current context or continue in a fresh context before proceeding, then continue the step at full thoroughness. A step executed at reduced quality is NEVER acceptable — dispatch to a subagent or compact first.
@@ -645,13 +651,13 @@ The two-consecutive-approvals rule is enforced by process: the reviewer skill mu
 
 **EXRV-01 (plan review):** After /sb:plan creates a PLAN.md, invoke the SB plan review path iteratively. If issues are found, fix and re-run. The plan is NOT approved until 2 consecutive clean passes. Do not commit the plan until the second consecutive clean pass completes.
 
-**EXRV-02 (code review):** After /sb:execute completes code changes, invoke /sb:review iteratively. If ISSUE findings are returned, apply fixes via /sb:review-fix and re-run the review. Code is NOT considered reviewed until 2 consecutive clean passes. Do not proceed to verification until the second consecutive clean pass completes.
+**EXRV-02 (code review):** After /sb:execute completes code changes, invoke /sb:review iteratively. If ISSUE findings are returned, apply the fixes (route blockers through /sb:triage to the matching fix workflow) and re-run the review. Code is NOT considered reviewed until 2 consecutive clean passes. Do not proceed to verification until the second consecutive clean pass completes.
 
 **EXRV-03 (verifier):** After /sb:verify produces VERIFICATION.md, run verification a second consecutive time to confirm results. If the second pass surfaces new issues (e.g., flaky tests that passed first time), fix and restart the 2-pass count. Verification is NOT complete until 2 consecutive clean passes.
 
 **EXRV-04 (security-auditor):** After /security produces security findings, run the audit a second consecutive time to validate mitigations applied during the first pass. If the second pass finds new or unresolved issues, fix and restart. Security review is NOT complete until 2 consecutive clean passes.
 
-**EXRV-05 (review-fix-ladder):** Two orthogonal contracts. **Policy F (ladder completion):** 2 consecutive CLEAN on unchanged SHA; `accept-apply` resets that rung’s streak; `--assert-rfl-advance` requires streak 2 + canonical verify filenames. **Policy G (pack-ledger / hop review):** residual-only means **do not re-report issue-ledger rows**, not “file only one new ID.” Encoder `--write-review-brief` is the **only legal review brief** (hand-written one-ID briefs are non-compliant). Each hop files **all** valid residuals at the current SHA, **all severities** including nits. CLEAN only if nothing valid remains. ACCEPT → pack APPLY. Invalid REJECT (product KEEP REJECT stays a product lock, not a sixth policy letter). **Canonical verify overlay:** `verify_2` required on CLEAN (and APPLY-landed check); `verify_2` is skipped on already-triaged NOT CLEAN; `verify_1` still required on NOT CLEAN and APPLY.
+**EXRV-05 (review-fix-ladder):** Two orthogonal contracts. **Policy F (ladder completion):** 2 consecutive CLEAN reviews, captured by the hook from the native subagent's tool response, on an unchanged worktree fingerprint; an applied fix resets that rung’s streak by construction; the streak is derived by the encoder (never self-reported); `--advance` / `--assert-rfl-advance` require streak 2 + canonical verify filenames. **Policy G (pack-ledger / hop review):** residual-only means **do not re-report issue-ledger rows**, not “file only one new ID.” The encoder-issued ticket brief (it embeds `--write-review-brief`) is the **only legal review brief**: the spawn hook requires its exact hash. Each hop files **all** valid residuals at the current SHA, **all severities** including nits. CLEAN only if nothing valid remains. ACCEPT → pack APPLY. Invalid REJECT (product KEEP REJECT stays a product lock, not a sixth policy letter). **Canonical verify overlay:** `verify_1` runs every cycle; `verify_2` runs once the streak is 2 (CLEAN rung); an accepted finding the verifier does not report resolved is a FAIL. Claude Code only (native read-only subagents); on Codex the ladder stops with a “not yet verified” message. Only the user can end an unfinished run, by typing `RFL ABORT <run-id>`.
 
 ### 3a-i. Post-Skill Review Gates
 
@@ -792,7 +798,7 @@ at the workflow level.
 user confirmation prompts), skip the interactive/autonomous question entirely.
 Auto-set autonomous mode immediately:
 ```bash
-echo "autonomous" > $HOME/.codex/.silver-bullet/mode
+echo "autonomous" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode
 ```
 Log: "Autonomous mode auto-set: bypass-permissions detected".
 Also suppress ALL other confirmation-asking behaviors for the remainder of the session
@@ -802,7 +808,7 @@ Use defaults for any skipped questions. Log each suppressed question under
 
 **Persistent permission mode**: If the user reports that the host runtime keeps asking
 for permissions despite setting bypass-permissions, the issue is that the UI toggle
-only applies to the current session. To persist it, add to `$HOME/.codex/settings.local.json`:
+only applies to the current session. To persist it, add to `${SB_RUNTIME_HOME_ROOT}/settings.local.json`:
 
 > ⚠️ **CAUTION — bypassPermissions:** Only use this setting in a **fully isolated environment** (container, VM, or dedicated CI runner with no access to production systems, credentials, or sensitive files). Verify isolation **before** applying this setting. Misuse in non-isolated environments permanently disables the host runtime permission guardrails.
 
@@ -815,7 +821,7 @@ Or for safer auto-approval (recommended for non-isolated environments):
 ```
 This is a host runtime platform setting, not a Silver Bullet setting.
 
-**Enterprise policy auto-default:** When `.silver-bullet.json` has `enterprise_policy.active_profile` set to `autonomous_safe` or `internal_dogfood` on a tier 2+ host, SessionStart writes `autonomous` to `$HOME/.codex/.silver-bullet/mode` automatically (no mode file yet, or after `/clear`). Skip the interactive/autonomous question in that case; log "Autonomous mode auto-set: enterprise_policy profile <name>". Supervised and regulated profiles default `interactive` when the mode file is absent.
+**Enterprise policy auto-default:** When `.silver-bullet.json` has `enterprise_policy.active_profile` set to `autonomous_safe` or `internal_dogfood` on a tier 2+ host, SessionStart writes `autonomous` to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` automatically (no mode file yet, or after `/clear`). Skip the interactive/autonomous question in that case; log "Autonomous mode auto-set: enterprise_policy profile <name>". Supervised and regulated profiles default `interactive` when the mode file is absent.
 
 **Unless enterprise policy or bypass-permissions already set mode**, at the start of every session, before any work begins, ask the user directly:
 - Question: "Run this session interactively or autonomously?"
@@ -825,12 +831,12 @@ This is a host runtime platform setting, not a Silver Bullet setting.
 
 Write the choice:
 ```bash
-echo "interactive" > $HOME/.codex/.silver-bullet/mode
+echo "interactive" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode
 # or
-echo "autonomous" > $HOME/.codex/.silver-bullet/mode
+echo "autonomous" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode
 ```
 
-**Fallback**: if `$HOME/.codex/.silver-bullet/mode` is unreadable at any point, default to interactive
+**Fallback**: if `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` is unreadable at any point, default to interactive
 and log "Mode fallback: defaulted to interactive" in the session log.
 
 **In autonomous mode:**
@@ -849,7 +855,7 @@ and log "Mode fallback: defaulted to interactive" in the session log.
 - On completion: output structured summary (phases done, autonomous decisions, blockers queued,
   agents dispatched, commits made, virtual cost)
 
-> **Anti-Skip:** You are violating this rule if the mode file ($HOME/.codex/.silver-bullet/mode) does not exist when you begin work. The compliance-status hook displays mode on every tool call — if it shows "unknown", you skipped this step.
+> **Anti-Skip:** You are violating this rule if the mode file (${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode) does not exist when you begin work. The compliance-status hook displays mode on every tool call — if it shows "unknown", you skipped this step.
 
 ---
 
@@ -857,7 +863,7 @@ and log "Mode fallback: defaulted to interactive" in the session log.
 
 Silver Bullet does not provide a generic automatic model-routing layer. The historical `ensure-model-routing.sh` hook is disabled and is not part of the active model-selection contract. Use the model selected by the current host session unless the host runtime or an external tool explicitly configures a different model.
 
-See [`docs/RUNTIME-COMPATIBILITY.md`](docs/RUNTIME-COMPATIBILITY.md) for the boundary between SB-owned workflow composition and host/tool-owned model choice.
+See `docs/RUNTIME-COMPATIBILITY.md` (in the installed plugin) for the boundary between SB-owned workflow composition and host/tool-owned model choice.
 
 **Session model:** Use the active host session model for inline work, interactive skills, and user-facing conversation.
 
@@ -930,7 +936,7 @@ stop, notify the user, and offer remediation in this order:
 3. Switch to a different workflow or stop
 
 You MUST NOT:
-- Edit any file under `$HOME/.codex/plugins/cache/` (third-party plugin caches)
+- Edit any file under `${SB_RUNTIME_HOME_ROOT}/plugins/cache/` (third-party plugin caches)
 - Modify an optional extension or provider skill file to change behavior
 - Fork or patch an upstream skill — wrap it in a Silver Bullet hook or workflow step instead
 
@@ -964,42 +970,57 @@ SB composes optional third-party tools; they never own lifecycle routing, planni
 
 ### 8.2 Public site and help center work
 
-These rules apply to `site/**`, Help Center pages, homepage copy, `site/help/search.js`, OG cards, and other public-facing HTML under `site/`.
+These rules apply only to a project that opts in with a `site_profile` section in its own `.silver-bullet.json`. Without `site_profile.enabled: true` the site hooks are inert, so a project with a `site/` folder of its own is not affected:
+
+```json
+"site_profile": {
+  "enabled": true,
+  "dir": "site",
+  "regression_scripts": ["tests/scripts/test-site-chrome-regression.sh"],
+  "live_url": "https://example.com/",
+  "preview_port": 8765,
+  "preview_script": "site/serve.sh",
+  "trusted_helpers": ["scripts/check-site.py"],
+  "stop_block_limit": 3
+}
+```
+
+Everything the hooks run, fetch or probe comes from that section: the regression scripts, the live URL, the preview port and script. `trusted_helpers` lists the files those scripts themselves run (checkers, generators): like the scripts, they count only when committed as they stand, and a helper the profile does not list is not covered. A path counts as a site edit only when it lies inside `<project>/<dir>`; the session belongs to the project, not to a branch, so switching branches does not drop it. Shell writes that name no path (`git apply`, `find -exec`, a script) are seen through a change of the site tree's content between two shell commands; a script that writes the site before the session's first shell look is not seen (the first look records the baseline). A prompt that merely mentions the site never starts a site session.
 
 **Authoring model**
-- Website and help-center edits MUST be authored and reviewed via **Composer 2.5 subagents** (`Task` with `model=composer-2.5`), not by the parent agent alone or other models.
 - Route site intents through `/sb` → `sb:content` (site batch protocol in `skills/silver-content/SKILL.md`).
+- Under the parent orchestrator, site edits are made by Task workers, as every other implementation is. That is the orchestrator's rule (§2h), not a site-specific hook: only `site-preview-preflight.sh` and `site-chrome-guard.sh` act on the edits themselves, and the parent's own edits are not preview-checked.
 
 **Workflow catalog presentation order**
 - Homepage (`site/index.html` tabs) and Help Center workflow listings MUST follow typical SDLC order: entry/router → discovery/planning → primary delivery → fast/specialized → infrastructure → ship/release → post-delivery gates → operations/learning.
 - Atomic flows (`AF-*`) order by capability class: orient/bootstrap → plan/specify → research → execute → verify/test → review → ship/deploy → document/process.
 - This is documentation presentation order, not runtime composition order.
 
-**Site/help publish policy**
+**Site/help publish policy** (this repository: publishes via direct commits to `main` through GitHub Pages)
 - `site/**` publishes via direct commits to `main` without a patch release, version bump, git tag, or GitHub release unless the user explicitly requests a release.
-- Before pushing, run `bash tests/scripts/test-site-doc-freshness.sh` and `bash tests/scripts/test-site-content-freshness.sh`; site-only work does not require the full `tests/run-all-tests.sh` suite.
-- Publish path: commit + push to `main`; GitHub Pages deploys via `.github/workflows/pages.yml` (path-filtered to `site/**`).
+- Before pushing, run the profile's regression scripts (`site-regression-gate.sh` runs them for a real `git push` and at Stop; it runs only scripts that are committed as they stand). Site-only work does not require the full `tests/run-all-tests.sh` suite.
+- A push to the default branch is final delivery; a site-only change uses the light change-class floor.
 - Expect **~1–15 minutes** end-to-end deploy latency (Pages queue + `Cache-Control: max-age=600` on GitHub Pages).
 
 **Live publish notification (mandatory)**
-- Do **not** tell the user changes are **LIVE** until deployed page content is verified at the public URL (e.g. `https://sb.alolabs.dev/` or the specific `site/help/` path).
+- Do **not** tell the user changes are **LIVE** until deployed page content is verified at the public URL.
 - A commit pushed to `main` or a queued/succeeded Pages workflow is **not** sufficient alone.
-- Before claiming live status: fetch URL(s), confirm key markers match the commit, inspect headers (`Last-Modified`, `ETag`, `Cache-Control`, `Age`), wait for `pages.yml` when needed.
-- Write `$HOME/.codex/.silver-bullet/live-publish-evidence.json` with `commit_sha`, `urls`, `markers_matched`, `status` (`LIVE`|`NOT_LIVE`), `verified_at`.
+- Verify with the plugin's verifier, never by writing the state directory (the state-tamper guard denies that): `bash <plugin>/scripts/site-live-evidence.sh --marker '<text only the new page contains>'`. It fetches the profile's `live_url`, matches every marker and records `live-publish-evidence.json` for the current `HEAD` itself. The gate accepts the evidence only for this project's current commit, within `site_profile.live_evidence_max_age_seconds` (default 24 hours).
 - Notify the user with: commit SHA; what went live; explicit **LIVE** or **NOT LIVE** with fetched-page evidence; GitHub release URL if applicable.
 
-**Runtime hooks:** `site-regression-gate.sh`, `live-publish-evidence-gate.sh`, `instruction-ledger-gate.sh`, `subagent-stop-enforcement.sh` enforce the above at Stop/push.
+**Visual evidence**
+- Take screenshots with the host browser MCP (Alumnium or the Playwright MCP's `browser_take_screenshot`) after the last site edit. `record-site-visual-evidence.sh` records the screenshot file when the tool returns; do not write `site-visual-evidence.json` by hand. A later site edit needs a new screenshot.
+
+**Runtime hooks:** `site-regression-gate.sh`, `site-visual-evidence-gate.sh`, `v-loop-rollup-gate.sh`, `live-publish-evidence-gate.sh`, `instruction-ledger-gate.sh`, `subagent-stop-enforcement.sh` enforce the above at Stop (and the regression gate before a real push). A Stop gate is not a one-time warning: the host sets `stop_hook_active` on every Stop that follows a block, so the flag alone releases nothing the agent can clear. A gate releases a condition that has blocked `site_profile.stop_block_limit` consecutive times (default 3) with nothing changed, or one the agent cannot clear (a gate setup problem) once the host reports `stop_hook_active`. A new edit, new evidence or a pass starts the count again, and every release is logged to `stop-loop-release.log`. The parent's file-write rule for worker-only site edits is advisory: no hook blocks a parent edit.
 
 ---
 
 <!--
   NUMBERING NOTE (closes #59):
-  This template uses §9.* for User Workflow Preferences and §10 for Multi-Agent
-  Coordination. Silver Bullet's *own* live silver-bullet.md uses §10.* / §11
-  because it has an Ālo-internal §9 "Pre-Release Quality Gate" section that is
-  intentionally NOT stamped into downstream projects. Skills reference
-  `silver-bullet.md §10b` (live) AND `templates/silver-bullet.md.base §9b`
-  (template) explicitly — this asymmetry is by design and must stay.
+  This template and the live silver-bullet.md number the sections the same way:
+  §9.* is User Workflow Preferences (§9b Step Skip Preferences) and §10 is
+  Multi-Agent Coordination. Skills reference `silver-bullet.md §9` / `§9b`
+  only; a downstream project has no templates/ directory to edit.
 -->
 ## 9. User Workflow Preferences
 

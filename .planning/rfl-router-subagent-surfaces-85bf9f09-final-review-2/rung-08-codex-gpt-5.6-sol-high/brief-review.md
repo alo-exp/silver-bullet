@@ -1,7 +1,7 @@
 You are on rung 8/11 of RFL round 2 (`final-review-2`). Named model: **Pi** `codex/gpt-5.6-sol-high` via `/silver:agent-pi` (OmniRoute). You are the reviewer. Reasoning: host-default (`--thinking off` may be present from the harness; do not change it).
 
 **Parent:** d5150f38-4d37-458d-9bdb-5e6f985975d3
-**Repo:** `/Users/shafqat/projects/silver-bullet/repo`
+**Repo:** `/Users/<user>/projects/silver-bullet/repo`
 **Branch:** `main` @ `955f244b` — NEVER git checkout / git switch / SetActiveBranch.
 **Work directory:** this rung folder (not `work/`):
 `.planning/rfl-router-subagent-surfaces-85bf9f09-final-review-2/rung-08-codex-gpt-5.6-sol-high/`
@@ -20,8 +20,8 @@ Expected (post rung-7 APPLY, committed as HEAD `955f244b`):
 
 Copies (must stay byte-identical):
 
-1. Repo working tree: `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-2. Cursor plans: `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+1. Repo working tree: `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+2. Cursor plans: `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 3. Git HEAD blob: `git show HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 If your re-hash differs from the expected SHA above, use **your** live SHA in the report and treat any copy split as a HIGH freeze-integrity finding. Do not sync copies.

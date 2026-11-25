@@ -1,13 +1,131 @@
 #!/usr/bin/env bash
 # completion-audit: TIER 2 final delivery gate
+
+# ca_marker_commit_ok FILE ROOT RELEASE_SHA: the live-matrix marker FILE was earned on the tree being
+# released (R14-16). Its `commit=` line must be a full sha (missing or malformed fails closed) that exists
+# in this checkout (status 2 when it does not: a shallow clone or a commit from another history), and every
+# path that differs between that commit and RELEASE_SHA must be allowed by release-surface-allowlist.txt:
+# a prose file (any text change) or a JSON file that is deeply equal on both sides once ONLY the listed
+# version/ref/sha fields are deleted. The diff is `--raw -z --no-renames`, so a rename is a delete plus an add,
+# and a symlink, type change or mode change on any path rejects. No ancestry is required (a squash or rebase
+# merge with an identical tree is fine). It binds the marker to a TREE; it does not prove a matrix ran.
+ca_marker_commit_ok() {
+  local file="$1" root="$2" release_sha="$3" commit raw meta path rc=0
+  local allowlist
+  allowlist="$(dirname "${BASH_SOURCE[0]}")/../../../scripts/lib/release-surface-allowlist.txt"
+  commit="$(grep -m1 -E '^commit=' "$file" 2>/dev/null | cut -d= -f2-)"
+  [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || return 1
+  [[ "$commit" == "$release_sha" ]] && return 0
+  git -C "$root" cat-file -e "${commit}^{commit}" 2>/dev/null || return 2
+  raw="$(mktemp "${TMPDIR:-/tmp}/sb-surface-diff.XXXXXX")" || return 1
+  if ! git -C "$root" -c core.quotepath=off diff --raw -z --no-renames --no-ext-diff --no-textconv \
+       "$commit" "$release_sha" >"$raw" 2>/dev/null; then
+    rm -f -- "$raw"
+    return 1
+  fi
+  while IFS= read -r -d '' meta && IFS= read -r -d '' path; do
+    ca_surface_change_ok "$root" "$commit" "$release_sha" "$meta" "$path" "$allowlist" || rc=1
+    [[ "$rc" -eq 0 ]] || break
+  done <"$raw"
+  rm -f -- "$raw"
+  return "$rc"
+}
+
+# ca_surface_change_ok ROOT COMMIT RELEASE META PATH ALLOWLIST: one raw diff entry
+# (":<old mode> <new mode> <old sha> <new sha> <status>") against the allowlist.
+ca_surface_change_ok() {
+  local root="$1" commit="$2" release="$3" meta="$4" path="$5" allowlist="$6"
+  local omode nmode status kind pattern jqpaths line
+  read -r omode nmode _ _ status <<<"${meta#:}"
+  # Symlinks, submodules and mode/type changes are never release surface.
+  [[ "$omode" == "$nmode" || "$omode" == 000000 || "$nmode" == 000000 ]] || return 1
+  [[ "$status" != T && "$omode" != 120000 && "$nmode" != 120000 && "$omode" != 160000 && "$nmode" != 160000 ]] || return 1
+  while IFS= read -r line; do
+    case "$line" in ''|'#'*) continue ;; esac
+    kind="${line%% *}"
+    line="${line#* }"
+    pattern="${line%% *}"
+    jqpaths="${line#"$pattern"}"
+    case "$kind" in
+      prose)
+        # shellcheck disable=SC2254  # the allowlist entry is a glob pattern by design
+        case "$path" in $pattern) return 0 ;; esac
+        ;;
+      json)
+        if [[ "$path" == "$pattern" ]]; then
+          [[ "$status" == M ]] || return 1
+          ca_json_equal_modulo "$root" "$commit" "$release" "$path" "$jqpaths"
+          return
+        fi
+        ;;
+    esac
+  done <"$allowlist"
+  return 1
+}
+
+# ca_json_equal_modulo ROOT COMMIT RELEASE PATH JQPATHS: PATH is deeply equal at both commits after deleting
+# only the listed jq paths (comma separated). Unparseable JSON on either side is not equal.
+ca_json_equal_modulo() {
+  local root="$1" commit="$2" release="$3" path="$4" jqpaths="$5" old new
+  old="$(git -C "$root" show "${commit}:${path}" 2>/dev/null | jq -S "del(${jqpaths})" 2>/dev/null)" || return 1
+  new="$(git -C "$root" show "${release}:${path}" 2>/dev/null | jq -S "del(${jqpaths})" 2>/dev/null)" || return 1
+  [[ -n "$old" && "$old" == "$new" ]]
+}
+
+# ca_release_commit_sha ROOT: the commit `gh release create` will release, resolved the way gh does:
+# an existing tag wins (--target is ignored for it), else --target (the remote branch, then a local ref),
+# else the remote default branch, else HEAD. The tag and target are read by release_scope.py (SB_SA_JSON
+# .release: `gh release create TAG --target X`, `gh api .../releases -f tag_name=TAG -f target_commitish=X` in
+# every flag spelling, or the MCP create_release payload); it also says when they cannot be read with certainty
+# (several releases in one command, another tool or repository, a repeated or computed value): the reason is left
+# on stdout. Called as the condition of an `if`, so a failing helper makes the gate deny instead of tripping
+# the ERR trap. Prints the sha; status 1 when the release cannot be read (the reason is printed instead of a sha)
+# or --target names nothing that resolves (nothing is printed) (R13-08, R1-19).
+ca_release_commit_sha() {
+  local root="$1" parsed ok="" reason="" tag="" target="" sha="" ref
+  parsed="$(printf '%s' "${SB_SA_JSON:-}" | jq -rR 'try (fromjson | (.release // {}) | [(.ok // false | tostring), (.reason // ""), (.tag // ""), (.target // "")] | join("\u001f")) catch ""' 2>/dev/null)"
+  IFS=$'\037' read -r ok reason tag target <<<"$parsed"
+  if [[ "$ok" != "true" ]]; then
+    printf '%s' "${reason:-the release command could not be read}"
+    return 1
+  fi
+  if [[ -n "$tag" ]]; then
+    sha="$(git -C "$root" rev-parse -q --verify "refs/tags/${tag}^{commit}" 2>/dev/null || true)"
+  fi
+  if [[ -z "$sha" && -n "$target" ]]; then
+    for ref in "refs/remotes/origin/${target}" "$target" "refs/tags/${target}"; do
+      sha="$(git -C "$root" rev-parse -q --verify "${ref}^{commit}" 2>/dev/null || true)"
+      [[ -n "$sha" ]] && break
+    done
+    [[ -n "$sha" ]] || return 1
+  fi
+  if [[ -z "$sha" ]]; then
+    sha="$(git -C "$root" rev-parse -q --verify "refs/remotes/origin/HEAD^{commit}" 2>/dev/null || true)"
+  fi
+  [[ -n "$sha" ]] || sha="$(git -C "$root" rev-parse HEAD 2>/dev/null || true)"
+  printf '%s' "$sha"
+}
+
 ca_run_deploy_tier_gate() {
-project_root="$(dirname "$config_file")"
-[[ -z "$project_root" ]] && project_root="$PWD"
-if [[ -f "${_lib_dir}/enterprise-policy.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+project_root="$SB_IV_ROOT"
+# Final delivery stands on the verified contract: any drift of a gate-relevant file, or a project that is
+# unbaselined or untrusted, stops it (the planning tier is already strict in those cases).
+if sb_integrity_contract_drift; then
+  emit_block "$(sb_integrity_drift_message "$SB_IV_ROOT")"
+  exit 0
+fi
+# the plugin's own scripts (validators, RC predicate) live next to hooks/: hooks/lib/.. /..
+# shellcheck disable=SC2154  # _lib_dir is set by completion-audit.sh
+_ca_plugin_root="$(cd "${_lib_dir}/../.." && pwd)"
+# shellcheck disable=SC2154  # _lib_dir is set by completion-audit.sh
+# The enterprise policy binds its approval marker to the project root, so it is handed the root's config path;
+# the drift check above proved that file equals the record (any drift stopped delivery).
+_ca_policy_cfg="$SB_IV_ROOT/.silver-bullet.json"
+if [[ -f "${_lib_dir}/enterprise-policy.sh" && -f "$_ca_policy_cfg" ]]; then
   # shellcheck source=lib/enterprise-policy.sh
   source "${_lib_dir}/enterprise-policy.sh"
-  if sb_enterprise_policy_delivery_blocked "$config_file" "${cmd_first_line:-$cmd}"; then
-    emit_block "$(sb_enterprise_policy_delivery_block_message "$config_file")"
+  if sb_enterprise_policy_delivery_blocked "$_ca_policy_cfg" "${cmd_first_line:-$cmd}"; then
+    emit_block "$(sb_enterprise_policy_delivery_block_message "$_ca_policy_cfg")"
     exit 0
   fi
 fi
@@ -20,7 +138,20 @@ run_artifact_substance_delivery_gate "$project_root"
 release_live_matrix_file="${SB_RUNTIME_STATE_DIR}/release-live-matrix"
 e2e_live_matrix_file="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
 inline_e2e_matrix_file="${SB_RUNTIME_STATE_DIR}/inline-e2e-matrix"
-if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
+if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
+  if ! release_commit_sha="$(ca_release_commit_sha "$project_root")"; then
+    if [[ -n "$release_commit_sha" ]]; then
+      emit_block "$(printf '🛑 RELEASE BLOCKED — cannot determine release commit: %s\n\nCreate one release per command with gh release create TAG --target <branch|sha>, or gh api repos/{owner}/{repo}/releases -f tag_name=TAG -f target_commitish=<sha> (literal values, no --input body), in this repository. Then retry.' "$release_commit_sha")"
+    else
+      emit_block "$(printf '🛑 RELEASE BLOCKED — the release target named in the command does not resolve to a commit in this checkout (cannot determine release commit).\n\nFetch it (git fetch origin) or name an existing branch, tag or commit with --target; for gh api use a literal -f target_commitish=<sha>, one releases call and no --input body. Then retry.' )"
+    fi
+    exit 0
+  fi
+  if [[ -z "$release_commit_sha" ]]; then
+    emit_block "$(printf '🛑 RELEASE BLOCKED — Unable to determine the current HEAD commit for this release session.\n\nRe-run the release flow from a valid git checkout after CI finishes.' )"
+    exit 0
+  fi
+  # shellcheck disable=SC2154  # set by completion-audit.sh from .silver-bullet.json
   if [[ "$release_require_plugin_runtime_matrix" == "true" || "${SB_REQUIRE_PLUGIN_RELEASE_MATRIX:-0}" == "1" ]]; then
     release_matrix_value=""
     e2e_matrix_value=""
@@ -35,22 +166,35 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
       inline_matrix_value=$(grep -E '^matrix=' "$inline_e2e_matrix_file" 2>/dev/null || true)
     fi
 
-    if [[ "$release_matrix_value" == 'matrix=full-claude-codex' && "$e2e_matrix_value" == 'matrix=full-claude-codex' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
+    # The inline marker is written by the enterprise-grade-test-app journey or by the Claude supervised
+    # enterprise matrix (full 22-row pass); either way it must carry the commit it was earned at.
+    inline_commit_ok=false
+    inline_commit_missing=false
+    if ca_marker_commit_ok "$inline_e2e_matrix_file" "$project_root" "$release_commit_sha"; then
+      inline_commit_ok=true
+    elif [[ $? -eq 2 ]]; then
+      inline_commit_missing=true
+    fi
+    if [[ "$inline_commit_ok" == true && "$release_matrix_value" == 'matrix=full-claude-codex' && "$e2e_matrix_value" == 'matrix=full-claude-codex' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
-    elif [[ "$release_matrix_value" == 'matrix=claude-only' && "$e2e_matrix_value" == 'matrix=claude-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
+    elif [[ "$inline_commit_ok" == true && "$release_matrix_value" == 'matrix=claude-only' && "$e2e_matrix_value" == 'matrix=claude-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
-    elif [[ "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
-      :
-    elif [[ "$release_matrix_value" == 'matrix=cursor-smoke' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
+    elif [[ "$inline_commit_ok" == true && "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
     else
-      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh in the standard Claude direct-OAuth configuration (or Kay/OpenCode Go/DeepSeek V4 Flash low when isolated Codex-compatible runs are required), ensure the enterprise-grade-test-app journey records matrix=inline-full-surface in the host runtime inline-e2e-matrix (or complete the Claude supervised enterprise-e2e-matrix per .planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md), then retry. A full Claude/Codex matrix is still accepted when explicitly run, but it is no longer required for the release gate.' )"
+      inline_missing_note=""
+      if [[ "$inline_commit_missing" == true ]]; then
+        inline_missing_note=" The marker commit is not in this checkout (shallow clone or another history): fetch full history (git fetch --unshallow) and retry."
+      fi
+      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh in the standard Claude direct-OAuth configuration (or Kay/OpenCode Go/DeepSeek V4 Flash low when isolated Codex-compatible runs are required), and record matrix=inline-full-surface in the host runtime inline-e2e-matrix by completing the enterprise-grade-test-app journey: the Claude supervised enterprise-e2e-matrix (all 22 rows, per .planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md) or the inline journey (tests/e2e-live/run-e2e-live-tests.sh with SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1). The inline marker must carry commit= naming the commit the matrix ran on: the released commit, or a commit whose tree differs only in release-surface files (scripts/lib/release-surface-allowlist.txt: version bumps, manifests, changelog); a marker without it, or from a tree with other changes, is rejected. Note: this check binds the marker to a tree (the commit exists and the diff stays within the allowlist); it does not prove that a matrix ran. Then retry. A full Claude/Codex matrix is still accepted when explicitly run, but it is no longer required for the release gate.%s' "$inline_missing_note")"
       exit 0
     fi
   fi
 
+  # shellcheck disable=SC2154  # set by completion-audit.sh from .silver-bullet.json
   if [[ "$release_require_pre_release_quality_gate" == "true" || "${SB_REQUIRE_PRE_RELEASE_QUALITY_GATE:-0}" == "1" ]]; then
     quality_gate_ready=false
+    # shellcheck disable=SC2154  # set by completion-audit.sh
     if [[ -f "$quality_gate_state_file" && ! -L "$quality_gate_state_file" ]]; then
       quality_gate_ready=true
       for marker in \
@@ -70,39 +214,42 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
       exit 0
     fi
 
-    # Optional automated validation when scripts exist (non-fatal when absent in test fixtures).
-    _qg_validate_launch="${project_root}/scripts/validate-launch-review.sh"
-    if [[ -x "$_qg_validate_launch" ]]; then
-      if ! "$_qg_validate_launch" >/dev/null 2>&1; then
-        emit_block "$(printf '🛑 RELEASE BLOCKED — LAUNCH-REVIEW.md does not satisfy adversarial exit criteria (status: clean, discovery_clean_streak >= 2).\n\nRun bash scripts/validate-launch-review.sh for details, complete ENHANCED adversarial review, then retry.' )"
-        exit 0
-      fi
+    # Automated validation runs the plugin's own validators against the project's files; a validator
+    # that is missing from the plugin or not executable blocks the release instead of skipping it, and
+    # nothing is executed from the project tree (R1-15, R13-10).
+    _qg_validate_launch="${_ca_plugin_root}/scripts/validate-launch-review.sh"
+    if [[ ! -x "$_qg_validate_launch" ]]; then
+      emit_block "$(printf '🛑 RELEASE BLOCKED — the plugin validator scripts/validate-launch-review.sh is missing or not executable in %s, so the adversarial-review exit criteria cannot be verified.\n\nReinstall Silver Bullet (or restore the file mode), then retry.' "$_ca_plugin_root")"
+      exit 0
     fi
-    _qg_validate_sentinel="${project_root}/scripts/validate-sentinel-skills-manifest.sh"
-    if [[ -x "$_qg_validate_sentinel" ]]; then
-      if ! "$_qg_validate_sentinel" >/dev/null 2>&1; then
-        emit_block "$(printf '🛑 RELEASE BLOCKED — SENTINEL per-skill manifest is incomplete (docs/audits/sentinel-skills/manifest.json must show 85/85 clean rows).\n\nRun bash scripts/validate-sentinel-skills-manifest.sh for details, complete per-skill SENTINEL audits, record sentinel-skills-clean, then retry.' )"
-        exit 0
-      fi
+    if ! "$_qg_validate_launch" --file "${project_root}/.planning/phases/launch-readiness-adversarial-review/LAUNCH-REVIEW.md" >/dev/null 2>&1; then
+      emit_block "$(printf '🛑 RELEASE BLOCKED — LAUNCH-REVIEW.md does not satisfy adversarial exit criteria (status: clean, discovery_clean_streak >= 2).\n\nRun bash scripts/validate-launch-review.sh for details, complete ENHANCED adversarial review, then retry.' )"
+      exit 0
     fi
-  fi
-
-  if [[ "$release_require_rc_matrix" == "true" || "${SB_REQUIRE_RC_MATRIX:-0}" == "1" ]]; then
-    _rc_iso="${project_root}/scripts/lib/pre-release-host-isolation.sh"
-    if [[ -f "$_rc_iso" ]]; then
-      # shellcheck source=scripts/lib/pre-release-host-isolation.sh
-      source "$_rc_iso"
+    _qg_validate_sentinel="${_ca_plugin_root}/scripts/validate-sentinel-skills-manifest.sh"
+    if [[ ! -x "$_qg_validate_sentinel" ]]; then
+      emit_block "$(printf '🛑 RELEASE BLOCKED — the plugin validator scripts/validate-sentinel-skills-manifest.sh is missing or not executable in %s, so the SENTINEL manifest cannot be verified.\n\nReinstall Silver Bullet (or restore the file mode), then retry.' "$_ca_plugin_root")"
+      exit 0
     fi
-    if ! declare -F sb_smoke_rc_markers_complete >/dev/null 2>&1 || ! sb_smoke_rc_markers_complete 2>/dev/null; then
-      emit_block "$(printf '🛑 RELEASE BLOCKED — RC validation matrix incomplete.\n\nRun bash scripts/run-rc-validation-matrix.sh locally on your dev machine (cursor/codex/claude × fresh/upgrade with host CLIs + your API keys). CI rc-validation.yml is diagnostic only — it does not satisfy this gate.\nEnsure six operator-local rc-validation markers exist under %s/rc-validation/.\nBypass (audited only): SB_SKIP_RC_MATRIX=1\nSee docs/testing/RC-VALIDATION-MATRIX.md.' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}")"
+    if ! "$_qg_validate_sentinel" --manifest "${project_root}/docs/audits/sentinel-skills/manifest.json" >/dev/null 2>&1; then
+      emit_block "$(printf '🛑 RELEASE BLOCKED — SENTINEL per-skill manifest is incomplete (docs/audits/sentinel-skills/manifest.json must show every row clean; the validator prints the expected row count).\n\nRun bash scripts/validate-sentinel-skills-manifest.sh for details, complete per-skill SENTINEL audits, record sentinel-skills-clean, then retry.' )"
       exit 0
     fi
   fi
 
-  release_commit_sha=$(git -C "$project_root" rev-parse HEAD 2>/dev/null || true)
-  if [[ -z "$release_commit_sha" ]]; then
-    emit_block "$(printf '🛑 RELEASE BLOCKED — Unable to determine the current HEAD commit for this release session.\n\nRe-run the release flow from a valid git checkout after CI finishes.' )"
-    exit 0
+  # shellcheck disable=SC2154  # set by completion-audit.sh from .silver-bullet.json
+  if [[ "$release_require_rc_matrix" == "true" || "${SB_REQUIRE_RC_MATRIX:-0}" == "1" ]]; then
+    # the predicate comes from the plugin, never from the project tree (R13-10); it compares each marker
+    # with the commit being released
+    _rc_iso="${_ca_plugin_root}/scripts/lib/pre-release-host-isolation.sh"
+    if [[ -f "$_rc_iso" ]]; then
+      # shellcheck source=scripts/lib/pre-release-host-isolation.sh
+      source "$_rc_iso"
+    fi
+    if ! declare -F sb_smoke_rc_markers_complete >/dev/null 2>&1 || ! (cd "$project_root" && SB_RC_RELEASE_COMMIT="$release_commit_sha" sb_smoke_rc_markers_complete) 2>/dev/null; then
+      emit_block "$(printf '🛑 RELEASE BLOCKED — RC validation matrix incomplete for commit %s.\n\nRun bash scripts/run-rc-validation-matrix.sh locally on your dev machine (operator-local markers; codex/claude × fresh/upgrade with host CLIs + your API keys) at this commit. A --dry-run, a run without the host CLIs (status=skip) and markers written for another commit do not count. CI rc-validation.yml is diagnostic only — it does not satisfy this gate.\nMarkers live under %s/rc-validation/.\nSee docs/testing/RC-VALIDATION-MATRIX.md.' "$release_commit_sha" "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}")"
+      exit 0
+    fi
   fi
 
   release_runs_json=""
@@ -122,7 +269,10 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
     exit 0
   fi
 
+  # Workflow names come from the repository: tabs and control characters are removed, text is capped, and
+  # empty fields are shown as "-" so that read does not collapse consecutive tabs (R1-33).
   blocked_runs=$(printf '%s' "$release_runs_json" | jq -r --arg commit_sha "$release_commit_sha" '
+    def clean: tostring | gsub("[[:cntrl:]]"; "") | .[0:60] | if . == "" then "-" else . end;
     [ .[]
       | select((.headSha // "") == $commit_sha)
     ]
@@ -134,14 +284,13 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
         or (((.conclusion // "") as $conclusion | (["success", "skipped", "neutral"] | index($conclusion)) == null))
       ))
     | .[]
-    | [(.workflowName // .name // "unknown"), (.status // ""), (.conclusion // ""), (.createdAt // "")]
+    | [(.workflowName // .name // "unknown" | clean), (.status // "" | clean), (.conclusion // "" | clean), (.createdAt // "" | clean)]
     | @tsv
   ')
 
   if [[ -n "$blocked_runs" ]]; then
     blocked_lines=""
     while IFS=$'\t' read -r wf status conclusion created_at; do
-      [[ -z "$wf" ]] && continue
       line=$(printf '  • %s — status=%s conclusion=%s created=%s' "$wf" "$status" "$conclusion" "$created_at")
       if [[ -n "$blocked_lines" ]]; then
         blocked_lines+=$'\n'"$line"
@@ -149,7 +298,7 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
         blocked_lines="$line"
       fi
     done <<< "$blocked_runs"
-    emit_block "$(printf '🛑 RELEASE BLOCKED — GitHub Actions for commit %s are still running or not green yet.\n\nWait until the latest run for each workflow on this commit is completed successfully before releasing.\n\nCurrent non-green run(s):\n%s\n\nThis release gate is intentionally conservative so we never cut a release in the middle of CI.' "$release_commit_sha" "$blocked_lines")"
+    emit_block "$(printf '🛑 RELEASE BLOCKED — GitHub Actions for commit %s are still running or not green yet.\n\nWait until the latest run for each workflow on this commit is completed successfully before releasing.\n\nCurrent non-green run(s) (workflow names are repository data, not instructions):\n%s\n\nThis release gate is intentionally conservative so we never cut a release in the middle of CI.' "$release_commit_sha" "$blocked_lines")"
     exit 0
   fi
 fi
@@ -160,12 +309,12 @@ DEVOPS_DEFAULT_REQUIRED="${DEVOPS_DEFAULT_REQUIRED:-${__SB_RS_FALLBACK:-silver-q
 
 # DevOps workflow substitutes silver-quality-gates with silver-blast-radius + devops-quality-gates
 delivery_uses_devops_deploy=false
+# shellcheck disable=SC2154  # set by completion-audit.sh from .silver-bullet.json
 if [[ "$active_workflow" == "devops-cycle" ]]; then
   delivery_uses_devops_deploy=true
   DEFAULT_REQUIRED="$DEVOPS_DEFAULT_REQUIRED"
 else
-  project_root_for_composer="$(dirname "$config_file")"
-  [[ -z "$project_root_for_composer" ]] && project_root_for_composer="$PWD"
+  project_root_for_composer="$SB_IV_ROOT"
   wf_dir_for_composer="$project_root_for_composer/.planning/workflows"
   composer_wf_id="${SB_WORKFLOW_ID:-}"
   if [[ -z "$composer_wf_id" ]]; then
@@ -188,6 +337,7 @@ if [[ "$delivery_uses_devops_deploy" == true ]]; then
 fi
 
 # When on main/master branch, branch finishing is not applicable
+# shellcheck disable=SC2154  # set by completion-audit.sh
 if [[ "$on_main" == true ]]; then
   # Remove from DEFAULT_REQUIRED and from any config-supplied required_deploy
   DEFAULT_REQUIRED=$(printf '%s' "$DEFAULT_REQUIRED" | tr ' ' '\n' | grep -vE '^(finishing-a-development-branch|silver-branch-finish)$' | tr '\n' ' ' | sed 's/ $//')
@@ -198,6 +348,7 @@ fi
 # truth. Legacy configs are normalized so old projects inherit current gates
 # and retired dependencies do not deadlock delivery.
 if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+  # shellcheck disable=SC2154  # config_file is the verified snapshot set by completion-audit.sh
   all_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "$DEFAULT_REQUIRED")"
 elif [[ -n "$required_deploy_cfg" ]]; then
   all_skills="$required_deploy_cfg"
@@ -206,19 +357,14 @@ else
 fi
 
 # Release commands also require release-only skills (e.g. silver-create-release).
-if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
+if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
   release_defaults="${DEFAULT_RELEASE_REQUIRED:-silver-create-release}"
   if [[ "$delivery_uses_devops_deploy" == true ]]; then
     release_defaults="${DEVOPS_DEFAULT_RELEASE_REQUIRED:-silver-create-release}"
   fi
-  release_cfg=""
-  if command -v jq >/dev/null 2>&1 && [[ -f "$config_file" ]]; then
-    if [[ "$delivery_uses_devops_deploy" == true ]]; then
-      release_cfg=$(jq -r '(.skills.required_release_devops // .skills.required_release // []) | join(" ")' "$config_file" 2>/dev/null || true)
-    else
-      release_cfg=$(jq -r '(.skills.required_release // []) | join(" ")' "$config_file" 2>/dev/null || true)
-    fi
-  fi
+  # The recorded list, never the live config's (hooks/lib/integrity.sh).
+  release_cfg="$SB_IV_REQUIRED_RELEASE"
+  if [[ "$delivery_uses_devops_deploy" == true ]]; then release_cfg="${SB_IV_REQUIRED_RELEASE_DEVOPS:-$SB_IV_REQUIRED_RELEASE}"; fi
   if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
     release_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$release_cfg" "$release_defaults")"
   elif [[ -n "$release_cfg" ]]; then
@@ -266,11 +412,11 @@ done
 # Pre-ship quality-gates must record adversarial mode when VERIFICATION.md passed.
 if declare -f sb_qg_repo_requires_pre_ship_marker >/dev/null 2>&1 \
    && declare -f sb_qg_pre_ship_marker_recorded >/dev/null 2>&1; then
-  project_root_qg="$(dirname "$config_file")"
-  [[ -z "$project_root_qg" || "$project_root_qg" == "." ]] && project_root_qg="$PWD"
+  project_root_qg="$SB_IV_ROOT"
   if sb_qg_repo_requires_pre_ship_marker "$project_root_qg"; then
     if [[ "$delivery_uses_devops_deploy" == true ]] \
        && declare -f sb_dqg_pre_ship_marker_recorded >/dev/null 2>&1; then
+      # shellcheck disable=SC2154  # set by completion-audit.sh
       if ! sb_dqg_pre_ship_marker_recorded "$state_contents"; then
         if has_skill "devops-quality-gates"; then
           missing="${missing:+$missing }devops-quality-gates-adversarial"
@@ -318,12 +464,12 @@ fi
 # Verifies that key SB lifecycle phases produced expected output files.
 # These checks prove the work was done, not just that the skill was invoked.
 artifact_blocks=""
-project_root=$(dirname "$config_file")
+project_root=$SB_IV_ROOT
 
 find_planning_artifact() {
   local pattern="$1"
   [[ -d "$project_root/.planning" ]] || return 1
-  find "$project_root/.planning" -type f -name "$pattern" -print -quit 2>/dev/null | grep -q .
+  grep -q . < <(find "$project_root/.planning" -type f -name "$pattern" -print -quit 2>/dev/null)
 }
 
 # silver-execute should produce .planning/STATE.md
@@ -369,8 +515,16 @@ for skill in $required_skills; do
   fi
 done
 test_freshness_warning=""
+# shellcheck disable=SC2154  # set by completion-audit.sh
 if [[ "$verify_tests_required" == true ]] && has_skill "verify-tests" && [[ ! -f "$verify_tests_state_file" ]]; then
   test_freshness_warning=$(printf '🛑 TEST GATE STALE — /verify-tests was recorded earlier, but the freshness marker is missing at %s.\n\nSource changes invalidate the marker. Re-run /verify-tests before creating the PR, deploy, or release.' "$verify_tests_state_file")
+elif [[ "$verify_tests_required" == true ]] && has_skill "verify-tests" && [[ -f "$verify_tests_state_file" ]]; then
+  # the marker names the repository it verified: one written for another project does not vouch for this
+  # one (R1-08). A marker without a repo_root line (older versions, hand-made) is accepted as before.
+  marker_repo_root="$(sed -n 's/^repo_root=//p' "$verify_tests_state_file" 2>/dev/null | head -1)"
+  if [[ -n "$marker_repo_root" && "$(cd -P "$marker_repo_root" 2>/dev/null && pwd -P)" != "$(cd -P "$project_root" && pwd -P)" ]]; then
+    test_freshness_warning=$(printf '🛑 TEST GATE STALE — the /verify-tests marker at %s was written for another repository (%s), not %s.\n\nRe-run /verify-tests in this project before creating the PR, deploy, or release.' "$verify_tests_state_file" "$(printf '%s' "$marker_repo_root" | tr -d '[:cntrl:]' | cut -c1-120)" "$project_root")
+  fi
 fi
 
 # ── Output result ─────────────────────────────────────────────────────────────
@@ -381,7 +535,14 @@ if [[ -n "$missing" ]]; then
   done
   ordering_note=""
   [[ -n "$ordering_issues" ]] && ordering_note=$(printf '\n⚠️  Ordering issues detected:\n%s' "$ordering_issues")
-  msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\nChange class: %s\nYou are attempting to create a PR/deploy but these required steps are missing:\n%s%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "${ca_change_class:-mixed}" "$missing_lines" "$ordering_note")
+  unseen_note=""
+  if declare -f sb_enterprise_policy_unseen_note >/dev/null 2>&1 && [[ -n "${ca_unseen_reasons:-}" ]]; then
+    unseen_note="$(sb_enterprise_policy_unseen_note)"$'\n\n'
+  fi
+  msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\n%sChange class: %s\nYou are attempting to create a PR/deploy but these required steps are missing:\n%s%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "$unseen_note" "${ca_change_class:-mixed}" "$missing_lines" "$ordering_note")
+  if [[ -n "${ca_push_scope_reason:-}" ]]; then
+    msg="${msg}"$'\n\n'"Why this push counts as final delivery: ${ca_push_scope_reason}. A push stays an intermediate commit when it runs as its own command, \`git push [-u] [<remote>] [<branch>|HEAD]\` (optionally after \`cd <dir> &&\` or \`git checkout -b <new> &&\`), from a checkout of a non-default branch."
+  fi
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do

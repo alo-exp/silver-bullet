@@ -18,9 +18,9 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 TEST_HOME="$(mktemp -d)"
 export HOME="$TEST_HOME"
-mkdir -p "${TEST_HOME}/.cursor"
+mkdir -p "${TEST_HOME}/.claude"
 
-cat >"${TEST_HOME}/.cursor/mcp.json" <<'EOF'
+cat >"${TEST_HOME}/.claude.json" <<'EOF'
 {
   "mcpServers": {
     "lean-ctx": {
@@ -36,31 +36,31 @@ cat >"${TEST_HOME}/.cursor/mcp.json" <<'EOF'
 }
 EOF
 
-if python3 "$MERGE_PY" --host cursor >/dev/null 2>&1; then
+if python3 "$MERGE_PY" --host claude >/dev/null 2>&1; then
   pass "merge exits 0 on duplicate fixture"
 else
   fail "merge exits 0 on duplicate fixture"
 fi
 
-if jq -e '.mcpServers["lean-ctx"]' "${TEST_HOME}/.cursor/mcp.json" >/dev/null 2>&1; then
+if jq -e '.mcpServers["lean-ctx"]' "${TEST_HOME}/.claude.json" >/dev/null 2>&1; then
   fail "lean-ctx still present after merge"
 else
   pass "lean-ctx removed after merge"
 fi
 
-if jq -e '.mcpServers.leanctx.command == "lean-ctx" or (.mcpServers.leanctx.command | endswith("/lean-ctx"))' "${TEST_HOME}/.cursor/mcp.json" >/dev/null 2>&1; then
+if jq -e '.mcpServers.leanctx.command == "lean-ctx" or (.mcpServers.leanctx.command | endswith("/lean-ctx"))' "${TEST_HOME}/.claude.json" >/dev/null 2>&1; then
   pass "leanctx preserved after merge"
 else
-  fail "leanctx missing after merge (expected manifest command '${expected_cmd}')"
+  fail "leanctx missing after merge (expected command lean-ctx or */lean-ctx)"
 fi
 
-if [[ -f "${TEST_HOME}/.cursor/mcp.json.bak" ]]; then
-  pass "backup .bak written before merge overwrite"
+if [[ -f "${TEST_HOME}/.claude.json.sb-backup" ]]; then
+  pass "backup .sb-backup written before merge overwrite"
 else
-  fail "backup .bak missing"
+  fail "backup .sb-backup missing"
 fi
 
-if jq -e '.mcpServers["lean-ctx"]' "${TEST_HOME}/.cursor/mcp.json.bak" >/dev/null 2>&1; then
+if jq -e '.mcpServers["lean-ctx"]' "${TEST_HOME}/.claude.json.sb-backup" >/dev/null 2>&1; then
   pass "backup retains original lean-ctx entry"
 else
   fail "backup should retain lean-ctx entry"

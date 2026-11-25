@@ -15,21 +15,18 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib
 command -v jq >/dev/null 2>&1 || exit 0
 
 input="$(cat 2>/dev/null || true)"
+# shellcheck disable=SC2034  # read by sb_orchestrator_is_worker_session (subagent identity)
+SB_ORCH_HOOK_INPUT="$input"
 hook_event="$(printf '%s' "$input" | jq -r '.hook_event_name // "UserPromptSubmit"' 2>/dev/null || echo UserPromptSubmit)"
 prompt="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)"
+# R2-22: this session's own ledger file (the host session_id keys it).
+[[ -f "$_lib_dir/session-key.sh" ]] && source "$_lib_dir/session-key.sh"
+declare -f sb_session_key_set >/dev/null 2>&1 && sb_session_key_set "$input"
 
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" && -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir="$(dirname "$search_dir")"
-done
+# The project: the nearest root with a record, else the nearest directory with both contract files.
+config_file="$( (source "$(dirname "${BASH_SOURCE[0]}")/lib/integrity-anchor.sh" && sb_integrity_activation_config "$PWD") 2>/dev/null; true)"
+search_dir="${config_file:+${config_file%/*}}"
+search_dir="${search_dir:-$PWD}"
 [[ -n "$config_file" ]] || exit 0
 sb_project_gate_or_exit 2>/dev/null || exit 0
 
@@ -62,13 +59,10 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
   exit 0
 fi
 
-# Stop / SubagentStop — workers skip ledger block
-if [[ "$hook_event" == "SubagentStop" ]]; then
-  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
-    source "$_lib_dir/orchestrator-parent.sh"
-    sb_orchestrator_is_worker_session 2>/dev/null && exit 0
-  fi
-fi
+# Stop / SubagentStop — the ledger is the parent session's record of the user's request, so an
+# ordinary subagent finishing (a research or review Task) is never held by it (R2-10); the
+# parent's own Stop is where unresolved items block.
+[[ "$hook_event" == "SubagentStop" ]] && exit 0
 
 if declare -f sb_trivial_bypass >/dev/null 2>&1; then
   sb_trivial_bypass "$trivial_file"
@@ -79,7 +73,7 @@ if declare -f sb_instruction_ledger_drop_if_scope_mismatch >/dev/null 2>&1; then
   sb_instruction_ledger_drop_if_scope_mismatch "$PWD" 2>/dev/null || true
 fi
 
-sb_instruction_ledger_auto_resolve_parents 2>/dev/null || true
+sb_instruction_ledger_auto_resolve_parents 2>/dev/null
 if sb_instruction_ledger_all_resolved; then
   exit 0
 fi
@@ -92,7 +86,7 @@ if [[ -f "$_lib_dir/stop-coalesce.sh" ]]; then
     exit 0
   fi
 fi
-reason=$(printf 'Cannot complete — instruction ledger has unresolved items.\n\n%s\n\nDo not Edit %s/instruction-ledger.json (state tamper blocks it). Use scripts/resolve-instruction-ledger.sh to mark each leaf done or deferred with evidence, then Stop.' \
+reason=$(printf 'Cannot complete — instruction ledger has unresolved items.\n\n%s\n\nDo not Edit %s/instruction-ledger.json (state tamper blocks it). Use the resolver above to mark each leaf done or deferred with evidence, then Stop.' \
   "$summary" "${SB_RUNTIME_STATE_DIR}")
 json_reason=$(printf '%s' "$reason" | jq -Rs '.')
 if declare -f sb_stop_coalesce_record >/dev/null 2>&1; then

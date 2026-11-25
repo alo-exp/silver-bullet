@@ -7,7 +7,8 @@
 #   sb_stop_coalesce_suppress_secondary_block && exit 0  # in downstream Stop hooks
 
 sb_stop_coalesce_file() {
-  printf '%s/stop-coalesce-block' "${SB_RUNTIME_STATE_DIR:-/tmp}"
+  [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 1
+  printf '%s/stop-coalesce-block' "$SB_RUNTIME_STATE_DIR"
 }
 
 sb_stop_coalesce_reset() {

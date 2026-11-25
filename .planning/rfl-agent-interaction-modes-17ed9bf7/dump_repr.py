@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-p = Path("/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md")
+p = Path("/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md")
 lines = p.read_text().splitlines()
 print(repr(lines[8]))
 print(repr(lines[14]))

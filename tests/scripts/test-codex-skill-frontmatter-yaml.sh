@@ -29,7 +29,9 @@ failures = []
 
 patterns = ["SKILL.md", "SILVER_SOURCE", "SILVER_SOURCE.md", "SILVER_SKILL.md"]
 patterns.flat_map { |pattern| Dir[File.join(root, "**", pattern)] }.sort.each do |path|
-  text = File.read(path)
+  # Skill files are UTF-8; do not depend on the caller's locale (under LANG=C
+  # Ruby reads them as US-ASCII and the regex raises on the first non-ASCII byte).
+  text = File.read(path, encoding: "UTF-8")
   frontmatter = text.match(/\A---\n(.*?)\n---/m)&.[](1)
   next unless frontmatter
 

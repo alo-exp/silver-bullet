@@ -3,7 +3,7 @@
 #
 # Core (skills, templates, silver-bullet.md, hooks runtime boundary, shared scripts)
 # must not embed host-specific prose, paths, or cross-host installer logic.
-# Host references belong in scripts/install-{claude,codex,cursor}.sh and
+# Host references belong in scripts/install-{claude,codex}.sh and
 # scripts/lib/install-{host}/ only.
 #
 # Usage:
@@ -18,7 +18,8 @@ repo_root="$(cd "${script_dir}/.." && pwd)"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --repo-root)
-      repo_root="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'validate-host-agnostic-core: %s requires a value\n' "$1" >&2; exit 2; }
+      repo_root="$2"
       shift 2
       ;;
     -h|--help)
@@ -62,8 +63,6 @@ STRICT_FILES = [
 # Host-specific template trees — excluded from core scan (owned by installers).
 TEMPLATE_EXCLUDE_PREFIXES = (
     "scripts/lib/install-claude/templates/CLAUDE.md.base",
-    "templates/cursor-rules/",
-    "templates/cursor/",
 )
 
 HOOKS_ROOT = "hooks"
@@ -71,7 +70,6 @@ HOOKS_ROOT = "hooks"
 # Bridge / runtime boundary files (host identifiers allowed).
 STRICT_ALLOWLIST = {
     "skills/silver-agent-codex/SKILL.md",
-    "skills/silver-agent-cursor/SKILL.md",
     "skills/silver-agent-claude/SKILL.md",
     "skills/silver-agent-opencode/SKILL.md",
     "skills/silver-agent-pi/SKILL.md",
@@ -90,6 +88,8 @@ STRICT_ALLOWLIST = {
     "templates/silver-bullet.md.base",
     ".silver-bullet/orchestrator-workers/AGENT-DELEGATE.md",
     "templates/orchestrator-workers/AGENT-DELEGATE.md",
+    # Per-host recommended-tool hints keyed by host (config data, not prose).
+    "templates/silver-bullet.config.json.default",
 }
 
 # Ported research engine subtree — host-specific script paths; SKILL.md remains strict.
@@ -109,10 +109,7 @@ STRICT_ALLOWLIST_PREFIXES = (
 )
 
 HOOKS_ALLOWLIST = {
-    "hooks/cursor-hook-bridge.sh",
     "hooks/kay-project-hook-bridge.sh",
-    "hooks/cursor-hooks.json",
-    "hooks/generate-cursor-hooks.py",
     "hooks/lib/runtime-paths.sh",
     "hooks/lib/recommended-tools.sh",
     "hooks/lib/context-mode-gate.sh",
@@ -124,10 +121,14 @@ HOOKS_ALLOWLIST = {
     "hooks/planning-file-guard.sh",
     "hooks/session-start",
     "hooks/lib/leanctx-gate.sh",
-    "hooks/lib/review-fix-ladder-state.sh",
 }
 
 SCRIPTS_ALLOWLIST = {
+    # Release-surface allowlist data: names the host manifests the release process rewrites (R14-16).
+    "scripts/lib/release-surface-allowlist.txt",
+    # The one-time ~/.cursor cleanup for users of the retired Cursor host.
+    "scripts/uninstall-cursor-legacy.sh",
+    "scripts/lib/uninstall_cursor_legacy.py",
     "scripts/lib/agent-bundle-paths.sh",
     "scripts/render-agent-bundle.py",
     "scripts/review-fix-ladder.py",
@@ -136,6 +137,7 @@ SCRIPTS_ALLOWLIST = {
     "scripts/lib/agent-host-exec.sh",
     "scripts/lib/agent-delegate-common.sh",
     "scripts/lib/rfl_launcher_policy.py",
+    "scripts/lib/rfl_native.py",
     "scripts/optimize-rtk-context-mode.sh",
     "scripts/optimize-five-tool-stack.sh",
     "scripts/pre-release-gate.sh",
@@ -147,7 +149,6 @@ SCRIPTS_ALLOWLIST = {
     "scripts/lib/apo_delegate_catalog.py",
     "scripts/lib/recommended-tools/heartbeat.sh",
     "scripts/lib/agent-plugins-common.sh",
-    "scripts/generate-cursor-hooks.py",
     "scripts/generate-apo-catalog.py",
     "scripts/lib/codex-cli.sh",
     "scripts/lib/plugin-cache-version.sh",
@@ -186,33 +187,51 @@ SCRIPTS_HOST_TOOLING_PREFIXES = (
     "scripts/silver-scan.py",
     "scripts/lib/enterprise-e2e",
     "scripts/agent-",
-    "scripts/diagnose-cursor-picker-duplicates.sh",
-    "scripts/enumerate-cursor-slash-picker.sh",
-    "scripts/install-cursor-sb-agents.sh",
-    "scripts/lib/cursor-sb-agents/",
-    "scripts/lib/strip-cursor-sb-hooks.py",
+    "scripts/lib/agent-adapters/",  # the per-host /sb:agent-* adapters name their own host by design
     "scripts/lib/post-release-uninstall.sh",
     "scripts/prune-stale-claude",
     "scripts/watch-enterprise-e2e",
+    "scripts/check-repo-invariants.sh",  # CI invariants over the per-host manifests
+    "scripts/validate-plugin-mirror.sh",  # regenerates and diffs the per-host package surfaces
+    "scripts/claude-interactive-invoke.expect",  # per-host interactive invokers
+    "scripts/codex-interactive-invoke.expect",
 )
+
+# Files whose runtime-boundary code still spells a host home as $HOME/.<host>
+# (host case arms, SB_RUNTIME_* defaults, host config probes). Only the $HOME
+# form is allowed in them; every other check still applies, and any other file
+# that adds the form fails. Shrink this list when a file moves to runtime-paths.sh.
+HOME_FORM_ALLOWLIST = {
+    "hooks/lib/agentmemory-gate.sh",
+    "hooks/lib/graphify-am-global.sh",
+    "hooks/lib/rtk-cm-global.sh",
+    "hooks/lib/token-compression-tools-gate.sh",
+    "hooks/review-fix-ladder-guard.sh",
+    "scripts/dogfood-orchestrator-parent-surface.sh",
+    "scripts/lib/recommended-tools/common.sh",
+    "scripts/lib/recommended-tools/probe-alumnium.sh",
+    "scripts/lib/recommended-tools/probe-context-mode.sh",
+    "scripts/lib/recommended-tools/probe-rtk.sh",
+    "scripts/lib/recommended-tools/receipts.sh",
+    "scripts/run-visual-qa-pipeline.sh",
+    "scripts/sb-doctor.sh",
+    "scripts/sb-tri-criteria-e2e.sh",
+    "scripts/silver-bullet",
+}
+HOME_FORM_LABEL = "$HOME/.<host>"
 
 INSTALLER_SCRIPTS = {
     "scripts/install-claude.sh",
     "scripts/install-codex.sh",
-    "scripts/install-cursor.sh",
-    "scripts/install-recommended-tools-cursor.sh",
 }
 
 INSTALLER_SCRIPT_PREFIXES = (
     "scripts/lib/install-claude/",
     "scripts/lib/install-codex/",
-    "scripts/lib/install-cursor/",
     "scripts/lib/host-install-guides/",
 )
 
 INSTALLER_ONLY_SCRIPT_GLOBS = (
-  "scripts/pre-release-cursor",
-  "scripts/release-live-matrix-cursor",
   "scripts/validate-claude-agent",
   "scripts/run-pre-release-host",
   "scripts/run-tri-host-install",
@@ -230,6 +249,8 @@ HARD_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("~/.claude", re.compile(r"~/.claude")),
     ("~/.codex", re.compile(r"~/.codex")),
     ("~/.cursor", re.compile(r"~/.cursor")),
+    # The forms shell code actually uses: $HOME/.claude, ${HOME}/.codex, "$HOME"/.cursor.
+    (HOME_FORM_LABEL, re.compile(r'(?:\$HOME|\$\{HOME\}|"\$HOME")/\.(?:claude|codex|cursor)\b')),
     ("CODEX_HOME", re.compile(r"CODEX_HOME")),
     ("CURSOR_", re.compile(r"CURSOR_")),
     (".claude-plugin", re.compile(r"\.claude-plugin")),
@@ -255,29 +276,22 @@ RUNTIME_LINE_MARKERS = (
     "CODEX_CI",
     "CODEX_THREAD",
     "CODEX_INTERNAL",
-    "CURSOR_PLUGIN_ROOT",
     "CLAUDE_PLUGIN_ROOT",
     "KAY_HOME",
     "install-claude",
     "install-codex",
-    "install-cursor",
 )
 
 INSTALLER_CROSS_RULES = {
     "scripts/install-claude.sh": {
         "forbidden_hosts": ("codex", "cursor"),
         "forbidden_paths": (r"~/.codex", r"~/.cursor", r"\.codex-plugin", r"\.cursor-plugin", r"CODEX_HOME", r"CURSOR_"),
-        "forbidden_scripts": ("install-codex.sh", "install-cursor.sh"),
+        "forbidden_scripts": ("install-codex.sh",),
     },
     "scripts/install-codex.sh": {
         "forbidden_hosts": ("claude", "cursor"),
         "forbidden_paths": (r"~/.claude", r"~/.cursor", r"\.claude-plugin", r"\.cursor-plugin", r"CURSOR_"),
-        "forbidden_scripts": ("install-claude.sh", "install-cursor.sh"),
-    },
-    "scripts/install-cursor.sh": {
-        "forbidden_hosts": ("claude", "codex"),
-        "forbidden_paths": (r"~/.claude", r"~/.codex", r"\.claude-plugin", r"\.codex-plugin", r"CODEX_HOME"),
-        "forbidden_scripts": ("install-claude.sh", "install-codex.sh"),
+        "forbidden_scripts": ("install-claude.sh",),
     },
 }
 
@@ -300,8 +314,10 @@ def is_glob_excluded(r: str) -> bool:
     for prefix in GLOBAL_EXCLUDE_PREFIXES:
         if r.startswith(prefix):
             return True
+    # Anchored: a strict-tier path such as skills/x/scripts/agent-helper.sh
+    # must not inherit the exclusion of the top-level scripts/agent-* tooling.
     for prefix in SCRIPTS_HOST_TOOLING_PREFIXES:
-        if r.startswith(prefix) or prefix in r:
+        if r.startswith(prefix):
             return True
     return False
 
@@ -322,7 +338,7 @@ def is_installer_script(r: str) -> bool:
     for prefix in INSTALLER_ONLY_SCRIPT_GLOBS:
         if prefix in r:
             return True
-    if "/install-claude/" in r or "/install-codex/" in r or "/install-cursor/" in r:
+    if "/install-claude/" in r or "/install-codex/" in r:
         return True
     base = Path(r).name
     if base.startswith("install-") and base.endswith(".sh") and "recommended-tools" not in base:
@@ -331,11 +347,16 @@ def is_installer_script(r: str) -> bool:
 
 
 def is_scannable_file(path: Path) -> bool:
+    """Every text file, whatever its extension (.js, .toml, .html, ...); binary
+    files (a NUL byte in the first 8 KiB) are skipped."""
     if not path.is_file():
         return False
-    return path.suffix.lower() in {
-        ".md", ".sh", ".json", ".base", ".yaml", ".yml", ".txt", ".mdc", ".py", ""
-    } or path.name in {"session-start", "session-stop"}
+    try:
+        with path.open("rb") as handle:
+            head = handle.read(8192)
+    except OSError:
+        return False
+    return b"\0" not in head
 
 
 def iter_strict_files() -> list[Path]:
@@ -394,8 +415,6 @@ def is_false_positive(word: str, text: str, start: int, end: int) -> bool:
     if word != "cursor":
         return False
     window = text[max(0, start - 24): min(len(text), end + 24)].lower()
-    if "merge-cursor-hooks" in window or "install-cursor/" in window:
-        return True
     for fp in FALSE_POSITIVE_WORDS["cursor"]:
         if fp in window:
             return True
@@ -421,6 +440,8 @@ def scan_content(
         runtime_ok = not strict and line_allows_runtime_identifiers(line)
 
         for label, pattern in HARD_PATTERNS:
+            if label == HOME_FORM_LABEL and rel(path) in HOME_FORM_ALLOWLIST:
+                continue
             if pattern.search(line):
                 hits.append((line_no, label, line.strip()[:120]))
                 continue
@@ -463,6 +484,24 @@ def check_file(path: Path, *, tier: str) -> None:
         failures.append(f"[{tier}] {r}:{line_no}: {label} — {snippet}")
 
 
+def code_part(line: str) -> str:
+    """The line without a trailing shell comment (a `#` at the start of a word,
+    outside quotes). Comments are prose: they neither violate the cross-host
+    rule nor carry the skip markers that exempt a line."""
+    quote = ""
+    previous = " "
+    for index, char in enumerate(line):
+        if quote:
+            if char == quote:
+                quote = ""
+        elif char in "'\"":
+            quote = char
+        elif char == "#" and previous in " \t":
+            return line[:index]
+        previous = char
+    return line
+
+
 def check_installer_cross_contamination() -> None:
     skip_line_markers = (
         "render_agent_bundle",
@@ -470,8 +509,6 @@ def check_installer_cross_contamination() -> None:
         "host-bundles/",
         "agents/claude",
         "agents/codex",
-        "agents/cursor",
-        "validate-host",
         ".replace(",
         "os.homedir(), '.codex'",
         "os.homedir(), \".claude\"",
@@ -490,7 +527,8 @@ def check_installer_cross_contamination() -> None:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         lines = text.splitlines()
-        for line_no, line in enumerate(lines, start=1):
+        for line_no, full_line in enumerate(lines, start=1):
+            line = code_part(full_line)
             if any(marker in line for marker in skip_line_markers):
                 continue
             lower = line.lower()

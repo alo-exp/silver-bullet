@@ -27,7 +27,7 @@ Enterprise E2E harness code moved to a **host-agnostic shared tree**:
 ## How to pull harness updates mid-Round-6
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo
+cd /Users/<user>/projects/silver-bullet/repo
 git fetch origin enterprise-e2e/multi-host
 # Cherry-pick harness-only commits — do NOT reset your Round 6 branch
 git cherry-pick <sha>   # see CHERRY-PICK.md

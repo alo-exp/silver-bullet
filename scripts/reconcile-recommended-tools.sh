@@ -4,6 +4,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# One backup per run: sb_host_config keeps the user's file as it was before the run's first change.
+export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"
 if [[ -d "${SCRIPT_DIR}/lib/recommended-tools" ]]; then
   RT_LIB="${SCRIPT_DIR}/lib/recommended-tools"
 elif [[ -d "${SCRIPT_DIR}/recommended-tools" ]]; then
@@ -14,7 +16,7 @@ fi
 RT_REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 RT_PROJECT_ROOT=""
-RT_HOST="cursor"
+RT_HOST="claude"
 RT_MODE="verify"
 RT_SCOPE="all"
 RT_FORMAT="text"
@@ -32,7 +34,7 @@ RTK, Context Mode, LeanCTX, Alumnium (opt-in), and cross-tool convergence.
 
 Options:
   --project-root <path>     Canonical SB project root (required for project scope)
-  --host <cursor|...>       Target host (default: cursor; five-tool hosts: claude|codex|cursor)
+  --host <claude|...>       Target host (default: claude; five-tool hosts: claude|codex)
   --mode verify|plan|apply  verify/plan are read-only; apply mutates (default: verify)
   --scope project|host|packages|all
   --format text|json
@@ -48,12 +50,19 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --project-root) RT_PROJECT_ROOT="${2:-}"; shift 2 ;;
-    --host) RT_HOST="${2:-cursor}"; shift 2 ;;
-    --mode) RT_MODE="${2:-verify}"; shift 2 ;;
-    --scope) RT_SCOPE="${2:-all}"; shift 2 ;;
-    --format) RT_FORMAT="${2:-text}"; shift 2 ;;
-    --entry-point) RT_ENTRY_POINT="${2:-}"; shift 2 ;;
+    --project-root|--host|--mode|--scope|--format|--entry-point)
+      # A trailing option has no value; `shift 2` would abort silently under set -e.
+      if [[ $# -lt 2 ]]; then echo "ERROR: $1 requires a value" >&2; usage >&2; exit 2; fi
+      case "$1" in
+        --project-root) RT_PROJECT_ROOT="$2" ;;
+        --host) RT_HOST="${2:-claude}" ;;
+        --mode) RT_MODE="${2:-verify}" ;;
+        --scope) RT_SCOPE="${2:-all}" ;;
+        --format) RT_FORMAT="${2:-text}" ;;
+        --entry-point) RT_ENTRY_POINT="$2" ;;
+      esac
+      shift 2
+      ;;
     --host-evidence-stdin) RT_HOST_EVIDENCE_STDIN=true; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
@@ -73,7 +82,7 @@ export RT_PROJECT_ROOT RT_HOST RT_MODE RT_SCOPE RT_FORMAT RT_ENTRY_POINT RT_REPO
 # Reentrancy guard. Apply mode shells out to the optimizers and installers, and
 # those call back into this reconciler (installer post-install). Without a
 # marker the chain reconcile -> optimize-rtk-context-mode ->
-# install-recommended-tools-global -> install-recommended-tools-cursor ->
+# install-recommended-tools-global ->
 # reconcile loops forever. Descendants check this and skip the nested call.
 if [[ "$RT_MODE" == "apply" ]]; then
   export SB_RT_APPLY_ACTIVE=1
@@ -85,10 +94,10 @@ rt_init_paths
 
 if ! rt_validate_host "$RT_HOST"; then
   if [[ "$RT_FORMAT" == "json" ]]; then
-    jq -n --arg err "unknown host: ${RT_HOST} (allowed: cursor|claude|codex|opencode|pi|goose|hermes)" \
+    jq -n --arg err "unknown host: ${RT_HOST} (allowed: claude|codex|opencode|pi|goose|hermes)" \
       '{schema:"1.0.0",ok:false,error:$err,components:[]}'
   else
-    echo "ERROR: unknown host: ${RT_HOST} (allowed: cursor|claude|codex|opencode|pi|goose|hermes)" >&2
+    echo "ERROR: unknown host: ${RT_HOST} (allowed: claude|codex|opencode|pi|goose|hermes)" >&2
   fi
   exit 2
 fi
@@ -196,7 +205,7 @@ rt_run_component() {
 }
 
 rt_reprobe_sibling_components() {
-  local sibling probe_fn probe_json updated=() comp_json comp_name merged
+  local probe_fn probe_json updated=() comp_json comp_name merged
   for comp_json in "${RT_COMPONENT_RESULTS[@]}"; do
     comp_name="$(printf '%s' "$comp_json" | jq -r '.component')"
     if [[ "$comp_name" == "cross_tool" ]]; then
@@ -218,7 +227,6 @@ rt_reprobe_sibling_components() {
 
 rt_forced_host_convergence_pass() {
   local conv_json failure restart
-  [[ "${RT_MODE:-verify}" == "apply" ]] || return 0
   rt_cross_tool_batch_active || return 0
   [[ "$RT_CROSS_TOOL_REPAIRED" == true ]] && return 0
   rt_any_five_tool_mutation_allowed || return 0
@@ -327,8 +335,8 @@ else
   echo "=== reconcile-recommended-tools (${RT_MODE}/${RT_SCOPE} host=${RT_HOST}) ==="
   printf '%s\n' "$result_json" | jq -r '.components[] | "\(.component): \(.canonical_state) (activation=\(.activation_status))"'
   if [[ "$RT_RESTART_REQUIRED" == true ]]; then
-    echo "RESTART_REQUIRED: yes — reload Cursor MCP after host config changes"
-    echo "CONFIGURED: yes | LIVE: no | ACTION: Tools & MCP → graphify off/on, then start a new chat; fallback Developer: Reload Window"
+    echo "RESTART_REQUIRED: yes — reload the host's MCP servers after config changes"
+    echo "CONFIGURED: yes | LIVE: no | ACTION: restart the host session so the MCP servers reload, then start a new chat"
   fi
   if [[ "$receipt_has" == "true" ]]; then
     echo "RELOAD_RECEIPT: active (activation=${receipt_activation}, clear_eligible=${receipt_clear})"

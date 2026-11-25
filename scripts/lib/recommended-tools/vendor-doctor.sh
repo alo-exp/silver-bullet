@@ -40,12 +40,12 @@ rt_vendor_doctor_subcommand_usable() {
   if [[ -z "$help" ]]; then
     help="$("$bin" help doctor </dev/null 2>&1 | head -40 || true)"
   fi
-  if printf '%s' "$help" | grep -qiE 'unknown command|unrecognized|not a valid|invalid command|no such command|is not a'; then
+  if grep -qiE 'unknown command|unrecognized|not a valid|invalid command|no such command|is not a' <<<"$help"; then
     return 1
   fi
   # Interactive-only with no batch flag → skip (do not hang D10).
-  if printf '%s' "$help" | grep -qiE 'requires a tty|open an editor|interactive prompt' \
-    && ! printf '%s' "$help" | grep -qiE -- '--yes|--non-interactive|--force'; then
+  if grep -qiE 'requires a tty|open an editor|interactive prompt' <<<"$help" \
+    && ! grep -qiE -- '--yes|--non-interactive|--force' <<<"$help"; then
     return 1
   fi
   return 0
@@ -84,7 +84,9 @@ rt_run_vendor_doctor() {
       (
         timer_pid=0
         cleanup_watchdog() {
-          [[ "$timer_pid" -gt 0 ]] && kill "$timer_pid" 2>/dev/null || true
+          if [[ "$timer_pid" -gt 0 ]]; then
+            kill "$timer_pid" 2>/dev/null || true
+          fi
           exit 0
         }
         trap cleanup_watchdog TERM INT HUP

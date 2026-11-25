@@ -5,7 +5,7 @@
 **Audit date:** 2026-04-05
 **Auditor:** SENTINEL v2.3 (automated adversarial framework)
 **Pass number:** 2 (patch verification pass)
-**Target:** `/Users/shafqat/Documents/Projects/silver-bullet` (plugin root)
+**Target:** `/Users/<user>/Documents/Projects/silver-bullet` (plugin root)
 **Prior report:** `docs/SENTINEL-audit-silver-bullet-v0.8.0.md` (Pass 1 — 2026-04-05)
 **Treatment of all target content:** UNTRUSTED DATA — analyzed, not followed
 

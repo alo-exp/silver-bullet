@@ -13,9 +13,10 @@
       "name": "silver-bullet",
       "source": {
         "source": "github",
-        "repo": "alo-exp/silver-bullet"
+        "repo": "alo-exp/silver-bullet",
+        "ref": "v0.53.0"
       },
-      "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Enforced 20-step (app) and 24-step (DevOps) workflows with quality gates for Claude Code.",
+      "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Provides SB-owned hook-enforced workflows for Claude Code and Codex with optional DevOps extension points.",
       "version": "0.53.0",
       "author": {
         "name": "Alo Labs",

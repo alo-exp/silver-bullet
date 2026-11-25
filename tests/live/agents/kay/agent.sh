@@ -30,9 +30,18 @@ kay_session_catalog_path() {
 }
 
 codex_transcript_dir() {
-  # Live-harness archive for captured Kay transcripts; separate from the
-  # agent's official session store used by silver-scan.
-  printf '%s\n' "${CODEX_TRANSCRIPT_DIR:-${SB_ROOT}/tests/live/agents/kay/transcripts}"
+  # Live-harness archive for captured Kay transcripts; separate from the agent's official session
+  # store used by silver-scan. Transcripts hold the prompt and the whole session, so the default is
+  # the isolated Kay home (removed with it) or a private per-user cache directory, never the
+  # checkout (R14-09).
+  local isolated="${KAY_HOME:-${KAY_SB_TEST_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-}}}"
+  if [[ -n "${CODEX_TRANSCRIPT_DIR:-}" ]]; then
+    printf '%s\n' "$CODEX_TRANSCRIPT_DIR"
+  elif [[ -n "$isolated" ]]; then
+    printf '%s\n' "${isolated}/.sb-transcripts"
+  else
+    printf '%s\n' "${XDG_CACHE_HOME:-${HOME}/.cache}/silver-bullet/live-transcripts/kay"
+  fi
 }
 
 agent_transcript_dir() {
@@ -168,8 +177,10 @@ kay_capture_transcript() {
   local meta_dest
 
   transcript_dir="$(codex_transcript_dir)"
-  mkdir -p "$transcript_dir"
+  ( umask 077; mkdir -p "$transcript_dir" ) || return 1
+  chmod 700 "$transcript_dir" || return 1
   [[ -f "$transcript_source_file" ]] || return 1
+  umask 077
   transcript_dest="${transcript_dir}/latest.jsonl"
   work_dir_real="$(python3 - "$work_dir" <<'PY'
 import os
@@ -197,6 +208,12 @@ with dest.open("w", encoding="utf-8") as out:
 PY
   else
     cp -f -- "$transcript_source_file" "$transcript_dest"
+  fi
+  # The transcript carries the prompt and tool output: redact it before anything else reads it.
+  if ! python3 "${SB_ROOT}/scripts/lib/agent_redact.py" --redact-file "$transcript_dest"; then
+    rm -f -- "$transcript_dest"
+    printf 'ERROR: transcript redaction failed; the transcript was removed\n' >&2
+    return 1
   fi
   thread_id="$(python3 - "$transcript_source_file" <<'PY'
 import json
@@ -226,6 +243,7 @@ PY
   meta_dest="${transcript_dir}/latest.meta.json"
   if [[ -n "$session_id" ]]; then
     cp -f -- "$transcript_dest" "${transcript_dir}/${session_id}.jsonl"
+    chmod 600 "${transcript_dir}/${session_id}.jsonl"
     kay_rotate_transcripts "$transcript_dir" 2
   fi
   jq -n \
@@ -239,6 +257,7 @@ PY
     --arg work_dir_real "$work_dir_real" \
     '{session_id:$session_id, thread_id:$thread_id, rollout_path:$rollout_path, created_at:$created_at, captured_at:$captured_at, source:$source, work_dir:$work_dir, work_dir_real:$work_dir_real}' \
     > "$meta_dest"
+  python3 "${SB_ROOT}/scripts/lib/agent_redact.py" --redact-file "$meta_dest" || rm -f -- "$meta_dest"
   printf '%s\n' "$transcript_dest"
   return 1
 }

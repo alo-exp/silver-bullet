@@ -62,8 +62,11 @@ rm -rf "$TEST_PLUGIN_DIR"
 # ── Test 2: Path outside cache (e.g. /tmp/evil-skill.md) is rejected ─────────
 echo "--- Test 2: Path outside plugins/cache/ rejected ---"
 
-# Create a real file in /tmp so cd succeeds (tests the actual validation)
-EVIL_FILE="/tmp/evil-skill-$$.md"
+# Create a real file outside the cache so cd succeeds (tests the actual
+# validation); a private temp dir, not a shared /tmp name.
+OUTSIDE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sb-path-validation.XXXXXX")"
+trap 'rm -rf "$OUTSIDE_DIR"' EXIT
+EVIL_FILE="${OUTSIDE_DIR}/evil-skill.md"
 printf '# Evil\n' > "$EVIL_FILE"
 
 result=$(validate_sp_file "$EVIL_FILE")
@@ -83,12 +86,19 @@ echo "--- Test 3: Path traversal attempt rejected ---"
 # Construct a traversal path that starts inside cache but escapes via ../
 CACHE_DIR="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
 mkdir -p "$CACHE_DIR"
-# Create a file in /tmp to traverse to
-TRAVERSAL_TARGET="/tmp/traversal-target-$$.md"
+# Create a file outside the cache to traverse to
+TRAVERSAL_TARGET="${OUTSIDE_DIR}/traversal-target.md"
 printf '# Traversal target\n' > "$TRAVERSAL_TARGET"
 
-# The traversal path — resolves to outside cache
-TRAVERSAL_PATH="${CACHE_DIR}/../../../tmp/traversal-target-$$.md"
+# The traversal path: starts inside the cache and climbs out with ../ to the
+# real target, so only the prefix check can reject it. (A fixed
+# ../../../tmp/... climbed to $HOME/tmp, which does not exist, so the path was
+# rejected for being missing instead.)
+TRAVERSAL_PATH="${CACHE_DIR}/$(python3 -c 'import os, sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$TRAVERSAL_TARGET" "$CACHE_DIR")"
+[[ "$TRAVERSAL_PATH" == "${CACHE_DIR}/../"* && -f "$TRAVERSAL_PATH" ]] || {
+  echo "  ❌ traversal fixture does not resolve to the target: $TRAVERSAL_PATH"
+  FAIL=$((FAIL + 1))
+}
 
 result=$(validate_sp_file "$TRAVERSAL_PATH")
 if [[ -z "$result" ]]; then

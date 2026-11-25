@@ -14,7 +14,7 @@ Do not treat this stub as final. Overwrite follows hash + freeze re-audit.
 Placeholder body so this path exists (≥800 bytes) before independent checks land. This file will be overwritten with hashed SHAs, independent-check results, leftover table, and CLEAN/NOT CLEAN + VERIFY_PASS/VERIFY_FAIL.
 
 Scope (read-only; FORBIDDEN to Edit/Write):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Independent checks queued: SHA both copies; YAML 33/33; 1 mermaid; F-2 HOLD L3246; ws0--ws0b=0; F3/F4 closed; KEEP REJECT / Q1–Q3 / Part A then Part B closed; FAST not a Job; L129 TOC href vs L3929 H2 GFM slug.

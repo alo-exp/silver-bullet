@@ -33,7 +33,7 @@ detect_ui_project() {
     fi
   fi
 
-  if echo "$stack" | grep -qiE 'react|vue|angular|svelte|next\.js|nuxt|flutter|swiftui|frontend|ui/'; then
+  if grep -qiE 'react|vue|angular|svelte|next\.js|nuxt|flutter|swiftui|frontend|ui/' <<<"$stack"; then
     return 0
   fi
 

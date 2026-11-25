@@ -7,7 +7,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/graphify-worktree.sh"
 
 rt_probe_graphify_mcp_configured() {
-  local host="${RT_HOST:-cursor}"
+  local host="${RT_HOST:-claude}"
   rt_host_mcp_server_configured "$host" graphify
 }
 
@@ -24,7 +24,7 @@ rt_probe_graphify_skill_package_skew() {
   command -v graphify >/dev/null 2>&1 || return 1
   local out
   out="$(graphify --version </dev/null 2>&1 || true)"
-  printf '%s' "$out" | grep -qiE 'skill is from graphify|skill.*package'
+  grep -qiE 'skill is from graphify|skill.*package' <<<"$out"
 }
 
 rt_probe_graphify() {
@@ -36,7 +36,7 @@ rt_probe_graphify() {
 
   consent="$(rt_consent_for "$tool_id")"
 
-  if ! rt_host_supported "${RT_HOST:-cursor}"; then
+  if ! rt_host_supported "${RT_HOST:-claude}"; then
     fu=1
     canonical="$(rt_derive_canonical_state "$fu" "$fd" "$fp" "$fs" "$ff" "$frr" "$frp" "$fr")"
     rt_emit_probe_result "$tool_id" "$consent" "$canonical" "$activation" 0
@@ -74,6 +74,7 @@ rt_probe_graphify() {
   esac
 
   canonical="$(rt_derive_canonical_state "$fu" "$fd" "$fp" "$fs" "$ff" "$frr" "$frp" "$fr")"
+  # shellcheck disable=SC2034  # read by rt_emit_probe_result in the sibling common.sh
   RT_PROBE_EXTRA_JSON="$(jq -n \
     --argjson evidence "$(rt_evidence_json_array ${evidence[@]+"${evidence[@]}"})" \
     '{configured:{mcp:(($evidence|index("mcp_not_configured"))|not)},

@@ -30,3 +30,26 @@ sb_safe_write() {
     rm -f -- "$path"
   fi
 }
+
+# sb_atomic_write_file TARGET < content
+# Replace TARGET with the content on stdin: a temp file in TARGET's own directory (never a
+# predictable name), the original mode kept, then a rename. Returns 1, writing nothing, when TARGET
+# is a symlink or the temp file cannot be made. Callers decide whether that is fatal; it never exits.
+sb_atomic_write_file() {
+  local target="${1:-}" dir tmp mode=""
+  [[ -n "$target" && ! -L "$target" ]] || return 1
+  dir="$(dirname "$target")"
+  tmp="$(mktemp "${dir}/.sb-write.XXXXXX" 2>/dev/null)" || return 1
+  if ! cat >"$tmp" 2>/dev/null; then
+    rm -f -- "$tmp"
+    return 1
+  fi
+  mode="$(stat -c %a "$target" 2>/dev/null || stat -f %Lp "$target" 2>/dev/null || true)"
+  # A new file gets 644 (mktemp makes 600): these are project files, not private state.
+  chmod "${mode:-644}" "$tmp"
+  if ! mv -f -- "$tmp" "$target" 2>/dev/null; then
+    rm -f -- "$tmp"
+    return 1
+  fi
+  return 0
+}

@@ -3,7 +3,12 @@
 # shellcheck shell=bash
 
 HOOK_TEST_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-HOOK_TEST_HOOKS_DIR="${HOOK_TEST_REPO_ROOT}/hooks"
+
+# KAY_HOME, PI_CODING_AGENT_DIR, CODEX_HOME, CLAUDE_CONFIG_DIR, ...: nothing may point the runtime paths
+# below, or a fixture, at the developer's real install
+# shellcheck source=tests/lib/sandbox-env.sh
+source "${HOOK_TEST_REPO_ROOT}/tests/lib/sandbox-env.sh"
+sb_test_scrub_runtime_env
 
 if [[ -f "${HOOK_TEST_REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
@@ -12,6 +17,7 @@ fi
 
 export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
 export SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME
+sb_test_assert_sandboxed || exit 70
 
 hook_test_init_counters() {
   HOOK_TEST_PASS="${HOOK_TEST_PASS:-0}"
@@ -31,7 +37,6 @@ hook_test_assert_eq() {
 
 hook_test_setup() {
   local run_id="${1:-$$}"
-  HOOK_TEST_RUN_ID="$run_id"
   export SB_RUNTIME_PRESERVE_STATE_DIR=1
   export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/hook-test-${run_id}"
   HOOK_TEST_DIR="$SB_RUNTIME_STATE_DIR"
@@ -59,8 +64,12 @@ hook_test_setup() {
   export SILVER_BULLET_BRANCH_FILE="$HOOK_TEST_BRANCH"
   export SILVER_BULLET_TEST_HOOK_ENFORCED=1
 
+  # Legacy aliases read by the sourcing test scripts.
+  # shellcheck disable=SC2034  # consumed by the test that sources this helper
   TMPCFG="$HOOK_TEST_CFG"
+  # shellcheck disable=SC2034  # consumed by the test that sources this helper
   TMPSTATE="$HOOK_TEST_STATE"
+  # shellcheck disable=SC2034  # consumed by the test that sources this helper
   TMPDIR_TEST="$HOOK_TEST_TMPDIR"
 }
 

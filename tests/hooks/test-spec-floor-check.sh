@@ -55,7 +55,7 @@ run_hook() {
 is_blocked() {
   local output="$1"
   [[ -z "$output" ]] && return 1
-  printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"'
+  grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"' <<<"$output"
 }
 
 assert_blocks() {
@@ -86,7 +86,7 @@ assert_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -180,7 +180,7 @@ setup
 _retired_route=$(printf '%s%s-quick' gs d)
 out=$(run_hook "$_retired_route")
 assert_passes "retired lifecycle route exits without spec-floor block" "$out"
-if printf '%s' "$out" | grep -q 'ADVISORY'; then
+if grep -q 'ADVISORY' <<<"$out"; then
   echo "  ❌ spec-floor should not emit ADVISORY for retired lifecycle route"
   FAIL=$((FAIL + 1))
 else
@@ -211,7 +211,7 @@ WFEOF
 # FLOW 5 (SPECIFY) not in composition -> spec floor should be advisory
 out=$(run_hook "sb:plan")
 # Should NOT block (advisory mode)
-if echo "$out" | grep -q '"exitCode":1\|BLOCK\|HARD STOP'; then
+if grep -q '"exitCode":1\|BLOCK\|HARD STOP' <<<"$out"; then
   FAIL=$((FAIL + 1)); printf 'FAIL: WF1: FLOW 5 excluded should be advisory\n'
 else
   PASS=$((PASS + 1)); printf 'PASS: WF1: FLOW 5 excluded -> advisory\n'

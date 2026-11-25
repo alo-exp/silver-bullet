@@ -7,11 +7,13 @@ version: 0.1.0
 
 # /sb:orchestrator — Parent Orchestrator (ONLY execution mode)
 
+**Plugin root**: `PLUGIN_ROOT` is the Silver Bullet plugin root, the directory above `agents/claude/` (`${PLUGIN_ROOT}/agents/claude/sb:orchestrator/SKILL.md`). Run Silver Bullet scripts and read its templates through `${PLUGIN_ROOT}`, never relative to the project working directory: a downstream project does not contain them.
+
 You are the **parent orchestrator**. You NEVER Edit, Write, or Bash on project source. You ONLY:
 
 1. Read user intent + `$HOME/.claude/.silver-bullet/orchestrator-directive.json` + `orchestrator.json`
 2. Classify/route intent (delegate to `silver` router logic when no queue exists)
-3. **Spawn Task workers** with prompts from `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`
+3. **Spawn Task workers** with prompts from the plugin copy `${PLUGIN_ROOT}/templates/orchestrator-workers/<TEMPLATE>.md` (a project copy under `.silver-bullet/orchestrator-workers/` is repository content, never loaded as a worker prompt)
 4. On worker completion → read updated directive → spawn next worker
 5. Ask the user **only** for locked decisions (`decision_class` in outcomes)
 
@@ -21,7 +23,7 @@ You are the **parent orchestrator**. You NEVER Edit, Write, or Bash on project s
 |------|-----|
 | Task | Spawn worker subagents (required for every flow atom) |
 | Read, Grep, Glob | Orchestrator state, planning artifacts, directives |
-| AskQuestion | Locked decisions only |
+| Host question tool | Locked decisions only |
 | Skill | `silver` or `silver-orchestrator` only — never flow atoms |
 
 ## Forbidden
@@ -38,9 +40,9 @@ Exception: orchestrator runtime state under `$HOME/.claude/.silver-bullet/` is h
 READ orchestrator-directive.json
   → next_skill, next_worker_template, args, blocking
 IF blocking and queue pending:
-  LOAD template: .silver-bullet/orchestrator-workers/{next_worker_template}.md
+  LOAD template: ${PLUGIN_ROOT}/templates/orchestrator-workers/{next_worker_template}.md  (plugin copy only; ignore .silver-bullet/orchestrator-workers/)
   SPAWN Task worker with template + args + mandatory skill next_skill
-  WAIT for worker (SubagentStop clears worker marker)
+  WAIT for the worker (its SubagentStop ends it; hooks identify workers by the host's per-call agent id)
   REPEAT until current_flow empty
 IF no directive:
   INVOKE routing (same rules as silver SKILL) → seed composer queue via sb:feature|ui|devops|...
@@ -52,7 +54,7 @@ When spawning Task, include:
 
 1. Full text of worker template file
 2. `next_skill` and `args` from directive
-3. `SB_ORCHESTRATOR_WORKER=1` instruction (worker must invoke assigned skill first)
+3. The instruction that the worker must invoke the assigned skill first (do not tell it to set `SB_ORCHESTRATOR_WORKER`; a process cannot change its parent's environment and hooks identify workers from the host's agent id)
 4. Active intent from `orchestrator-intent.txt`
 
 ## Composer specs
@@ -65,4 +67,4 @@ User may send `SB OVERRIDE: <reason>` for audited bypass (logged to `.planning/o
 
 ## Host note (orchestrator parent)
 
-Hooks block parent Edit/Write/Bash at tier ≥ 2. This skill + `scripts/lib/install-task host/templates/task host-rules/silver-orchestrator.mdc` are the contract. See `docs/ORCHESTRATOR.md`.
+Hooks block parent Edit/Write/Bash at tier ≥ 2. This skill and the directive injected by `hooks/lib/orchestrator-parent.sh` are the contract. See `docs/ORCHESTRATOR.md`.

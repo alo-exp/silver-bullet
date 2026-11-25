@@ -5,11 +5,11 @@
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 rt_probe_agentmemory_mcp_configured() {
-  local host="${RT_HOST:-cursor}"
+  local host="${RT_HOST:-claude}"
   rt_host_mcp_server_configured "$host" agentmemory \
     || {
       case "$host" in
-        cursor|claude)
+        claude)
           local path
           path="$(rt_host_mcp_config_path "$host")"
           [[ -f "$path" ]] || return 1
@@ -27,13 +27,13 @@ rt_probe_agentmemory_mcp_configured() {
 rt_repair_agentmemory_mcp_config() {
   local patch_py="${RT_REPO_ROOT}/scripts/lib/global-toolstack/patch-mcp.py"
   [[ -f "$patch_py" ]] || return 1
-  if rt_mutation_allowed agentmemory; then
+  if rt_mutation_allowed agentmemory wire; then
     export RT_PATCH_AGENTMEMORY=1
   else
     export RT_PATCH_AGENTMEMORY=0
   fi
   export RT_PATCH_GRAPHIFY=0 RT_PATCH_LEANCTX=0
-  TOOLSTACK_REPO_ROOT="$RT_REPO_ROOT" RT_HOST="${RT_HOST:-cursor}" python3 "$patch_py"
+  TOOLSTACK_REPO_ROOT="$RT_REPO_ROOT" RT_HOST="${RT_HOST:-claude}" python3 "$patch_py"
   local rc=$?
   unset RT_PATCH_AGENTMEMORY RT_PATCH_GRAPHIFY RT_PATCH_LEANCTX
   return "$rc"
@@ -46,7 +46,7 @@ rt_probe_agentmemory() {
   local fu=0 fd=0 fp=0 fs=0 ff=0 frr=0 frp=0 fr=0
 
   consent="$(rt_consent_for "$tool_id")"
-  if ! rt_host_supported "${RT_HOST:-cursor}"; then fu=1
+  if ! rt_host_supported "${RT_HOST:-claude}"; then fu=1
   else
     case "$consent" in
       disabled) fd=1 ;;
@@ -73,7 +73,14 @@ rt_repair_agentmemory() {
     return 0
   fi
   if ! sb_agentmemory_cli_available 2>/dev/null; then
-    npm install -g @agentmemory/agentmemory 2>/dev/null && actions+=("npm_install_agentmemory") || failures+=("npm_install_failed")
+    # A package install needs the user's "install" consent, not just "wire".
+    if ! rt_mutation_allowed agentmemory install; then
+      failures+=("install_not_consented")
+    elif npm install -g @agentmemory/agentmemory >&2; then
+      actions+=("npm_install_agentmemory")
+    else
+      failures+=("npm_install_failed")
+    fi
   fi
   if ! sb_agentmemory_server_healthy "$(rt_project_config)" 2>/dev/null; then
     # The redirect creates the log file, not its parent — without this the
@@ -81,6 +88,8 @@ rt_repair_agentmemory() {
     mkdir -p "${HOME}/.agentmemory" 2>/dev/null || true
     nohup agentmemory >"${HOME}/.agentmemory/server.log" 2>&1 &
     sleep 1
+    # The health answer is cached for a few seconds: forget the "down" seen before the start.
+    rm -f -- "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/agentmemory-health"
     sb_agentmemory_server_healthy "$(rt_project_config)" 2>/dev/null && actions+=("server_started") || failures+=("server_start_failed")
   fi
   local export_root

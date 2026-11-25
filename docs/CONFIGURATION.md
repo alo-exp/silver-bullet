@@ -1,0 +1,157 @@
+# Configuration Reference (`.silver-bullet.json`)
+
+Every Silver Bullet project has a `.silver-bullet.json` at its root. `/sb:init` creates it from [`templates/silver-bullet.config.json.default`](../templates/silver-bullet.config.json.default), and `/sb:update` or `bash scripts/sb-migrate-config.sh [PROJECT_ROOT]` merges an existing file forward (keeping project values and unioning skill lists). Hooks stay inert until both `.silver-bullet.json` and `silver-bullet.md` exist at the project root.
+
+Edits to `.silver-bullet.json` (and to `silver-bullet.md`) take effect after a session restart: the gates read the values Silver Bullet recorded at session start, and a mid-session change is reported as `ENFORCEMENT CONTRACT CHANGED` until you revert it or restart ([TROUBLESHOOTING.md](TROUBLESHOOTING.md#a-gate-blocks-your-work)). Skills such as `sb:init`, `sb:update` and `sb:migrate` write the files with the contract unlock and need no restart.
+
+This page lists every key in the template, which code reads it, and the keys the code reads that the template does not contain. "Reader" names the main consumer; search the tree for the key to find every use.
+
+## Versions and activation
+
+| Key | Template value | Meaning | Reader |
+|-----|----------------|---------|--------|
+| `config_version` | current release (for example `0.53.0`) | The Silver Bullet release whose config schema this file matches. A project value older than the template's marks the config as legacy (`sb-doctor.sh` check D6 fails; `hooks/lib/required-skills.sh` treats it as legacy). Kept equal to `package.json` in the template by `tests/scripts/test-release-version-alignment.sh` | `required-skills.sh`, `sb-doctor.sh` |
+| `version` | `0.46.0` | Legacy predecessor of `config_version`, read only as a fallback when `config_version` is absent. `sb-migrate-config.sh` sets both to the plugin version | same |
+| `sb_initiated` | `false` | `true` once `/sb:init` (or `scripts/sb-migrate-initiated.sh`) has run; several gates (jq-missing blocks, prerequisite probes) apply only to initiated projects | `hooks/lib/project-active.sh`, `session-start` |
+| `sb_enforcement_tier` | `null` | Persisted capability tier (0–3) of the host; probed and written by the hooks. Delivery is blocked when the effective tier says hooks are inactive | `hooks/lib/enforcement-tier-gate.sh` |
+| `orchestrator_mode` | `"parent"` | Orchestration mode; `parent` (the parent session delegates each atomic flow to Task workers) is the only supported value; it is enforced on Claude Code only (Codex does not identify workers in hook payloads, so parent blocks are inactive there; see [ORCHESTRATOR.md](ORCHESTRATOR.md#worker-identity)) | `hooks/lib/orchestrator-parent.sh` |
+
+## `project`
+
+| Key | Template value | Meaning |
+|-----|----------------|---------|
+| `project.name` | `{{PROJECT_NAME}}` (filled by `/sb:init`) | Project display name, used by skills such as `sb:rem` |
+| `project.src_pattern` | `/src/` | Path-segment pattern for files that count as source and trigger the planning-floor gate; it is matched against the project-relative path, so `tools/src-gen.py` does not match `/src/`. Must look like a path segment pattern (`^/[a-zA-Z0-9/_.\|()-]*/?$`); unsafe or match-everything values fall back to `/src/` |
+| `project.src_exclude_pattern` | `__tests__\|\.test\.` | Regex for source-like files to exempt (tests), matched against the project-relative path. Limited to 200 safe characters, otherwise the default is used. Built-in test layouts (`tests/`, `test/`, `__tests__/`, `*_test.*`, `test_*.py`, `*Test.java`) are always exempt |
+| `project.active_workflow` | `full-dev-cycle` | `full-dev-cycle` or `devops-cycle`; selects the workflow doc and the `_devops` skill lists. In `devops-cycle`, `.yml`, `.yaml`, `.json` and `.toml` files count as infrastructure code |
+| `project.push_to_default_branch_tier` | `completion` | `completion` (default): a push to the default branch, of a tag, or with `--all`/`--mirror` needs the full `required_deploy` floor. `intermediate`: such pushes need only the planning floor (the explicit opt-out). A push is intermediate only when it is proved to be a feature-branch push; the remote's default branch must be known locally (`refs/remotes/<remote>/HEAD`, set by `git clone` or `git remote set-head <remote> --auto`), otherwise the push counts as final delivery |
+
+`dev-cycle-check.sh` reads the patterns; `completion-audit.sh` uses them to classify a change set.
+
+## `skills`
+
+| Key | Meaning | Enforced by |
+|-----|---------|-------------|
+| `skills.required_planning` | Planning floor: skills that must be recorded before source edits, commits and pushes, and before a task can end. Default `silver-quality-gates`, `silver-context`, `silver-plan` | `dev-cycle-check.sh`, `completion-audit.sh`, `stop-check.sh` |
+| `skills.required_planning_devops` | Planning floor in `devops-cycle` (adds `silver-blast-radius`, `devops-quality-gates`) | same |
+| `skills.required_deploy` | Final delivery floor for `gh pr create/merge`, deploy and `gh release create` | `completion-audit.sh` |
+| `skills.required_deploy_devops` | Delivery floor in `devops-cycle` | `completion-audit.sh` |
+| `skills.required_release`, `skills.required_release_devops` | Extra skills for `gh release create` (default `silver-create-release`) | `completion-audit.sh` |
+| `skills.all_tracked` | Skills `record-skill.sh` records in the state file. Project entries are added to the packaged defaults, not substituted | `record-skill.sh` |
+| `skills.forbidden` | Extra skills to block, on top of the built-in `executing-plans` and `subagent-driven-development` | `forbidden-skill-check.sh` |
+
+Project lists replace the template defaults (`hooks/lib/required-skills.sh` supplies the defaults when a list is missing). Adding a skill to `required_deploy` is a breaking change for users; see [CICD.md](CICD.md#breaking-change-policy-for-required-skills).
+
+## `state`
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `state.state_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` | Skill-marker state file. Paths that do not resolve inside the state root are rejected and the default is used |
+| `state.trivial_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | Not honoured by the gates (a config value could point it at any file under the state root and arm the legacy bypass); the guards still refuse an agent writing it. The default marker is the user's to create from a terminal; `session-start` deletes it |
+
+Configured and overridden state paths are checked after resolving `.`, `..`, `//` and symlinked directories (`sb_runtime_state_path` in `hooks/lib/runtime-paths.sh`): they must lie strictly inside `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`, and a symlinked file must point inside it too, so a repository's config cannot make the hooks delete or write files elsewhere.
+
+Tests override these with `SILVER_BULLET_STATE_FILE`, `SILVER_BULLET_BRANCH_FILE`, `SILVER_BULLET_QUALITY_GATE_STATE_FILE` and `SILVER_BULLET_VERIFY_TESTS_STATE_FILE` ([ENFORCEMENT.md](ENFORCEMENT.md#environment-variables)).
+
+## `release`
+
+Read by `completion-audit.sh` on `gh release create` ([ENFORCEMENT.md](ENFORCEMENT.md#release-gates), [RELEASE.md](RELEASE.md)).
+
+| Key | Template value | Meaning |
+|-----|----------------|---------|
+| `release.profile` | `"generic"` | Release profile label; carried forward by migration, not read by the hooks |
+| `release.require_plugin_runtime_matrix` | `false` | Require the live runtime matrix markers (`release-live-matrix`, `e2e-live-matrix`, `inline-e2e-matrix`) |
+| `release.require_pre_release_quality_gate` | `false` | Require the quality-gate markers `adversarial-review-clean`, `sentinel-skills-clean`, `quality-gate-stage-3`, `full-test-suite-rerun` |
+| `release.require_rc_matrix` | `false` | Require four operator-local live RC `pass` markers for the commit being released |
+| `release.quality_gate_state_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` | Where the quality-gate markers are read; cleared at session start |
+| `release._comment_quality_gate_markers` | — | Comment only |
+
+These gates were built for Silver Bullet's own multi-host plugin releases, so the template leaves them off and this repository turns them on. A project that runs the live matrices sets the `require_*` flags it needs to `true`.
+
+## `hooks`
+
+| Key | Template value | Meaning |
+|-----|----------------|---------|
+| `hooks.evidence_schema.strict` | `true` | When true (also the default when absent), malformed finding tables in quality artifacts block delivery instead of only warning (`hooks/lib/evidence-schema-gate.sh`, [evidence-schema.md](evidence-schema.md)) |
+| `hooks.industry_tooling.enabled` | `false` | Turn on `industry-tooling-hint.sh` reminders (for example `npm audit`, `terraform validate`) |
+| `hooks.stop_check.transient_path_ignore_patterns` | *(not in template)* | Extra extended-regex patterns for uncommitted paths `stop-check.sh` should treat as transient; overly broad patterns are ignored |
+
+## `recommended_tools`
+
+One object per optional tool: `graphify`, `agentmemory`, `alumnium`, `rtk`, `context_mode`, `leanctx`, `search_cli`. Each tool's gate hook enforces it only when the user opted in and enforcement is not suspended ([HOOKS.md](HOOKS.md)).
+
+Common fields:
+
+| Field | Meaning |
+|-------|---------|
+| `enabled_by_user` | `null` = no preference, `true` = the project recommends the tool, `false` = the project turns it off. Never consent: consent is per user ([CONSENT.md](CONSENT.md)) |
+| `enforcement_suspended` | `true` after a failed install, so the gate stays advisory |
+| `install_status`, `install_failure_reason` | Written by the installers and reconciler |
+| `required_when_enabled` | Whether an opted-in tool is mandatory (all but `search_cli`) |
+| `install_commands`, `platform_install_commands` | Ignored (repository content is never run or shown as an instruction); install steps come from the built-in tables in `hooks/lib/recommended-tools.sh` |
+| `benefits_summary` | Ignored (repository content; see [CONSENT.md](CONSENT.md)). The consent text comes from built-in tables |
+
+Tool-specific fields:
+
+| Tool | Fields |
+|------|--------|
+| `graphify` | `graph_path` (`graphify-out/graph.json`), `query_ttl_seconds` (how long a query counts as fresh), `query_budget`, `query_state_file`, `optimization` (profile and last apply/verify timestamps) |
+| `agentmemory` | `health_url`, `usage_ttl_seconds`, `usage_state_file`, `export_root` (`.agentmemory`), `optimization` |
+| `alumnium` | `mcp_server_name` |
+| `rtk` | `min_version`, `optimize_on_init`, `optimize_script` |
+| `context_mode` | `read_deny_bytes` (Read/Grep above this size are denied when enforced), `read_deny_bypass_env`, `min_node_version`, `optimize_on_init`, `optimize_script`; `license_note` is ignored (repository content; see [CONSENT.md](CONSENT.md)) |
+| `leanctx` | `min_version`, `cli_command` (ignored; the CLI name is built in, see [CONSENT.md](CONSENT.md)), `usage_ttl_seconds`, `usage_state_file`, `stack_mode`, `optimization_profile`, `primary_fts`, `mcp_server_name`, `mcp_tool_prefix`, `exclusive_surfaces` |
+| `search_cli` | `binary`, `provider_classes` (used by `sb:deep-research` when configured) |
+
+A legacy top-level `graphify.required` boolean is migrated into `recommended_tools.graphify.enabled_by_user` by `hooks/lib/recommended-tools.sh`.
+
+## `optimization_profiles`
+
+Named settings bundles for the five-tool stack, read by `hooks/lib/stack-optimizer.sh`, `hooks/lib/stack-compression-coordinator.sh` and `scripts/optimize-five-tool-stack.sh`: `synergy_max` (Graphify + agentmemory defaults), `cost_minimized` (marked future, not applied yet) and `five_tool_routed` (extends `synergy_max` and routes each surface — reads, grep, shell, web fetch, memory — to one tool).
+
+## Other sections
+
+| Key | Meaning | Reader |
+|-----|---------|--------|
+| `devops_plugins.*` | Which optional DevOps plugin families (`hashicorp`, `awslabs`, `pulumi`, `devops-skills`, `wshobson`) were detected at init | `devops-skill-router` skill |
+| `issue_tracker` | `local` (default; `docs/issues/`), `github`, or `custom` | `sb:add`, `scripts/silver-add.sh` |
+| `issue_tracker_adapter.type`, `.create_issue_command`, `.dedupe_command`, `.payload_schema` | Command adapter used when `issue_tracker` is `custom` | `scripts/silver-add.sh` |
+| `compactPrompt` | Instruction text for context compaction: preserve `silver-bullet.md` rules verbatim. Carried forward by migration; no hook reads it | — |
+| `semantic_compression.enabled`, `.context_budget_kb`, `.min_file_size_bytes`, `.chunk_size_bytes`, `.top_chunks_per_file`, `.debug` | Context assembly after phase skills (budget, files considered, chunking, ranking) | `scripts/semantic-compress.sh` (numbers are validated, `project.src_pattern` must stay inside the repository, symlinks and credential-like files are skipped, the cache in `.planning/.context-cache/` ignores itself) |
+| `multi_agent.identity_tags`, `.stale_lock_ttl_seconds` | Runtime identities allowed to hold phase locks, and when a lock is stale | `scripts/phase-lock.sh` (plugin root) (phase-lock hooks) |
+| `multi_agent.delegation_timeout_seconds` | Child delegation timeout described in [multi-agent-coordination.md](multi-agent-coordination.md); no script reads it at present | — |
+
+### `enterprise_policy`
+
+`enterprise_policy.active_profile` selects one of `enterprise_policy.profiles` (`supervised`, `autonomous_safe`, `regulated`, `internal_dogfood`). Profile fields:
+
+| Field | Effect |
+|-------|--------|
+| `session_mode_default` | `interactive` or `autonomous`; `session-start` applies it as the default session mode (`autonomous` only on hook-enforced hosts, and never over an existing choice) |
+| `clarify_auto` | Allow bounded `sb:clarify --auto` |
+| `production_deploy_requires_human` | When true, `gh pr create/merge`, `gh release create` and deploy commands are blocked until a human creates `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` ([ENFORCEMENT.md](ENFORCEMENT.md#enterprise-policy-delivery-block)). It is true in every shipped profile and is the default when no profile is configured |
+| `non_production_deploy_autonomy` | Exempt a plain deploy command when a non-production word (staging, preview, non-prod, sandbox, dogfood, internal) appears as a whole word in its arguments; never `gh pr create/merge` or `gh release create` (`internal_dogfood` only). Residual: the word is not tied to a target flag, so `deploy --prod --token internal` is exempt too; prefer `supervised` where that matters |
+| `human_approval_ttl_minutes` (on `enterprise_policy`, not per profile) | How long the human approval marker stays valid (default 480) |
+| `evidence_schema_strict` | Force strict evidence-schema validation |
+| `orchestrator_mode`, `label`, `description` | Informational |
+
+The template's `_comment` calls the profiles "advisory scaffolding"; the human-approval delivery block above is enforced today.
+
+## Keys the template does not contain
+
+| Key | Meaning | Reader |
+|-----|---------|--------|
+| `verify_commands` | Array of shell commands `/verify-tests` runs instead of the stack defaults (`bash tests/run-all-tests.sh`, `npm test --if-present`, `pytest`, `cargo test`, `go test ./...`) | `scripts/verify-tests.sh` |
+| `hooks.stop_check.transient_path_ignore_patterns` | See `hooks` above | `stop-check.sh` |
+| `project.tech_stack` | Stack label stamped into `.planning/interface/STATE.md` | `scripts/stamp-interface-state.sh` |
+| `site_profile.enabled`, `.dir`, `.regression_scripts`, `.live_url`, `.preview_port`, `.preview_script`, `.live_evidence_max_age_seconds`, `.trusted_helpers`, `.stop_block_limit` | Opt-in profile of a project that publishes a website. Without `enabled: true` every site hook is inert. `dir` is the site folder (default `site`), `regression_scripts` are project-relative scripts the regression gate runs (only when committed as they stand), `live_url` is fetched by `scripts/site-live-evidence.sh`, `preview_port`/`preview_script` feed the preview preflight, the evidence age defaults to 86400 s, `trusted_helpers` are project-relative files the regression scripts run (committed-as-they-stand rule), `stop_block_limit` (default 3) bounds how many identical Stop blocks a gate repeats. See `silver-bullet.md` §8.2 | `hooks/lib/site-session.sh` (read from the verified record) |
+| `graphify.required` | Legacy; migrated to `recommended_tools.graphify.enabled_by_user` | `hooks/lib/recommended-tools.sh` |
+
+Example:
+
+```json
+{
+  "verify_commands": ["bash tests/run-all-tests.sh --jobs 4", "shellcheck hooks/*.sh"],
+  "hooks": { "stop_check": { "transient_path_ignore_patterns": ["^\\?\\? tmp/"] } }
+}
+```

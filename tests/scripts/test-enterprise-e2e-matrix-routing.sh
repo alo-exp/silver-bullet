@@ -95,7 +95,7 @@ verify_row_routing_state_delta() {
     <(printf '%s\n' "$ROUTING_STATE_SNAPSHOT" | sed '/^$/d' | sort -u) \
     <(sed '/^$/d' "$state_file" | sort -u) 2>/dev/null || true)"
   [[ -n "$new_skills" ]] || return 1
-  printf '%s\n' "$new_skills" | grep -qE '^(silver-feature|silver-fast|silver-clarify|silver-context|silver-quality-gates)$'
+  grep -qE '^(silver-feature|silver-fast|silver-clarify|silver-context|silver-quality-gates)$' <<<"$new_skills"
 }
 
 row1_prompt="$(build_matrix_prompt '/sb' 'I need to add order validation to the API — route me.' '.planning/workflows/router-session.md' '1')"
@@ -139,15 +139,38 @@ if [[ -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]]; then
   fi
   unset SB_E2E_ENTERPRISE_MATRIX
   unset SB_E2E_MATRIX_ROUTING_ROW
-  if sb_e2e_matrix_routing_row_active; then
-    echo "PASS: routing row marker active without enterprise matrix env (hook spawn)"
+  if ! sb_e2e_matrix_routing_row_active; then
+    echo "PASS: routing row marker alone is ignored without the enterprise matrix env (R5-06)"
     ((PASS++)) || true
   else
-    echo "FAIL: routing row marker active without enterprise matrix env (hook spawn)"
+    echo "FAIL: routing row marker alone is ignored without the enterprise matrix env (R5-06)"
     ((FAIL++)) || true
   fi
   sb_e2e_matrix_clear_routing_row_marker
   unset SB_E2E_ENTERPRISE_MATRIX
+  # No resolved state directory: there is no marker to set, and clearing is a no-op (no /tmp fallback).
+  # A state "directory" that is a file: setting fails without side effects, clearing stays quiet.
+  rm_state="$(mktemp "${TMPDIR:-/tmp}/sb-matrix-notdir.XXXXXX")"
+  if ( unset SB_RUNTIME_STATE_DIR; ! sb_e2e_matrix_set_routing_row_marker && sb_e2e_matrix_clear_routing_row_marker ) \
+    && ( export SB_RUNTIME_STATE_DIR="$rm_state"; ! sb_e2e_matrix_set_routing_row_marker && sb_e2e_matrix_clear_routing_row_marker ); then
+    echo "PASS: routing marker helpers refuse without a usable state directory"
+    ((PASS++)) || true
+  else
+    echo "FAIL: routing marker helpers refuse without a usable state directory"
+    ((FAIL++)) || true
+  fi
+  rm -f "$rm_state"
+  # a marker that cannot be removed (a directory under that name) is tolerated
+  rm_dir="$(mktemp -d "${TMPDIR:-/tmp}/sb-matrix-stuck.XXXXXX")"
+  mkdir -p "$rm_dir/e2e-matrix-routing-row/keep"
+  if ( export SB_RUNTIME_STATE_DIR="$rm_dir"; sb_e2e_matrix_clear_routing_row_marker ); then
+    echo "PASS: an unremovable routing marker is tolerated"
+    ((PASS++)) || true
+  else
+    echo "FAIL: an unremovable routing marker is tolerated"
+    ((FAIL++)) || true
+  fi
+  rm -rf "$rm_dir"
 else
   echo "FAIL: e2e-matrix-routing.sh helper missing"
   ((FAIL++)) || true
@@ -157,10 +180,11 @@ SUBAGENT_HOOK="${REPO_ROOT}/hooks/subagent-stop-enforcement.sh"
 if [[ -x "$SUBAGENT_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]]; then
   # shellcheck source=hooks/lib/e2e-matrix-routing.sh
   source "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh"
-  export SB_RUNTIME_STATE_DIR="$(matrix_routing_state_root "$STATE_DIR/home")"
+  SB_RUNTIME_STATE_DIR="$(matrix_routing_state_root "$STATE_DIR/home")"
+  export SB_RUNTIME_STATE_DIR
   sb_e2e_matrix_set_routing_row_marker
   sub_out="$(printf '%s' '{"hook_event_name":"Stop"}' | HOME="$HOME" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$SB_RUNTIME_STATE_DIR" bash "$SUBAGENT_HOOK" 2>/dev/null || true)"
-  if ! printf '%s' "$sub_out" | grep -qE '"decision"\s*:\s*"block"'; then
+  if ! grep -qE '"decision"\s*:\s*"block"' <<<"$sub_out"; then
     echo "PASS: subagent-stop exempt when routing row marker set"
     ((PASS++)) || true
   else
@@ -184,7 +208,7 @@ if [[ -x "$LEDGER_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]];
     >"${ledger_state}/instruction-ledger.json"
   export SB_RUNTIME_STATE_DIR="$ledger_state"
   ledger_out="$(cd "$ledger_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$ledger_home" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$ledger_state" bash "$LEDGER_HOOK" 2>/dev/null || true)"
-  if printf '%s' "$ledger_out" | grep -qE '"decision"\s*:\s*"block"'; then
+  if grep -qE '"decision"\s*:\s*"block"' <<<"$ledger_out"; then
     echo "PASS: instruction-ledger blocks Stop with unresolved items (no marker)"
     ((PASS++)) || true
   else
@@ -193,7 +217,7 @@ if [[ -x "$LEDGER_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]];
   fi
   sb_e2e_matrix_set_routing_row_marker
   ledger_out="$(cd "$ledger_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$ledger_home" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$ledger_state" bash "$LEDGER_HOOK" 2>/dev/null || true)"
-  if ! printf '%s' "$ledger_out" | grep -qE '"decision"\s*:\s*"block"'; then
+  if ! grep -qE '"decision"\s*:\s*"block"' <<<"$ledger_out"; then
     echo "PASS: instruction-ledger exempt when routing row marker set"
     ((PASS++)) || true
   else
@@ -210,24 +234,30 @@ if [[ -x "$SITE_REG_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]
   source "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh"
   site_home="$(mktemp -d "${TMPDIR}/sb-matrix-site.XXXXXX")"
   cp "$REPO_ROOT/silver-bullet.md" "$site_home/silver-bullet.md"
-  printf '{"sb_initiated":true,"orchestrator_mode":"parent","project":{"name":"test","active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"]}}\n' \
+  # The site gates run only for a project with a site_profile (R9-02): a failing committed regression script.
+  printf '{"sb_initiated":true,"orchestrator_mode":"parent","project":{"name":"test","active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"]},"site_profile":{"enabled":true,"regression_scripts":["site-fail.sh"]}}\n' \
     >"$site_home/.silver-bullet.json"
+  printf '#!/usr/bin/env bash\nexit 1\n' >"$site_home/site-fail.sh"
+  git -C "$site_home" init -q -b main
+  git -C "$site_home" add -A >/dev/null 2>&1
+  git -C "$site_home" -c user.name=t -c user.email=t@t commit -q -m init
   site_state="$(matrix_routing_state_root "$site_home")"
   mkdir -p "$site_state"
-  jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",touch_reason:"site-intent",regression_passed_at:null,push_intent:false}' \
+  jq -n --arg sc "$(cd "$site_home" && pwd -P)" '{active:true,scope:$sc,edit_seq:1,regression_passed_seq:0,touch_reason:"edit:site/index.html",push_intent:false}' \
     >"${site_state}/site-session.json"
   export SB_RUNTIME_STATE_DIR="$site_state"
   site_out="$(cd "$site_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$site_home" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$site_state" bash "$SITE_REG_HOOK" 2>/dev/null || true)"
-  if printf '%s' "$site_out" | grep -qE '"decision"\s*:\s*"block"'; then
+  if grep -qE '"decision"\s*:\s*"block"' <<<"$site_out"; then
     echo "PASS: site-regression blocks Stop with active session (no marker)"
     ((PASS++)) || true
   else
     echo "FAIL: site-regression blocks Stop with active session (no marker)"
     ((FAIL++)) || true
   fi
+  export SB_E2E_ENTERPRISE_MATRIX=1
   sb_e2e_matrix_set_routing_row_marker
   site_out="$(cd "$site_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$site_home" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$site_state" bash "$SITE_REG_HOOK" 2>/dev/null || true)"
-  if ! printf '%s' "$site_out" | grep -qE '"decision"\s*:\s*"block"'; then
+  if ! grep -qE '"decision"\s*:\s*"block"' <<<"$site_out"; then
     echo "PASS: site-regression exempt when routing row marker set"
     ((PASS++)) || true
   else
@@ -235,6 +265,7 @@ if [[ -x "$SITE_REG_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]
     ((FAIL++)) || true
   fi
   sb_e2e_matrix_clear_routing_row_marker
+  unset SB_E2E_ENTERPRISE_MATRIX
   rm -rf "$site_home"
 fi
 

@@ -13,7 +13,6 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
   source "$_lib_dir/nofollow-guard.sh"
 else
   sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
-  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
 fi
 if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
@@ -125,6 +124,8 @@ if [[ "$current_state_mtime" -gt "$last_state_mtime" ]] && [[ "$current_state_mt
   sb_guard_nofollow "$last_progress_file"
   echo "$call_count" > "$last_progress_file"
   last_progress_count=$call_count
+  # R2-09: recorded progress is what the stall flag asks for, so it no longer applies.
+  rm -f -- "$SB_DIR/stall-block"
 fi
 
 calls_since_progress=$((call_count - last_progress_count))

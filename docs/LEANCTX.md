@@ -24,9 +24,9 @@ Consent lives in `.silver-bullet.json`:
 
 | `enabled_by_user` | Behavior |
 |-----------------|----------|
-| `null` | Consent pending — SB prompts at init, update, session start |
-| `true` | Mandatory when install succeeded — hooks require LeanCTX for owned surfaces |
-| `false` | Advisory only — two-tool RTK + Context Mode stack unchanged |
+| `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project . --capabilities enforce`; without `--capabilities` the grant also records machine-wide install and wire consent) |
+| `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 **MCP namespace:** LeanCTX tools are registered with the `lctx_` prefix. Never register raw `ctx_*` from LeanCTX when Context Mode is opted in — SB merge scripts enforce this separation.
 
@@ -41,11 +41,10 @@ lean-ctx --version
 
 ### SB host-aware install (library mode)
 
-SB owns host config writes. Use library-mode init only — **never** full `lean-ctx init --agent *` (would clobber `.cursorrules`, `AGENTS.md`, or host settings).
+SB owns host config writes. Use library-mode init only — **never** full `lean-ctx init --agent *` (would clobber `AGENTS.md` or host settings).
 
 | Host | Command |
 |------|---------|
-| Cursor | `bash scripts/install-leanctx-sb.sh --host cursor --project-root "$(pwd)"` |
 | Claude Code | `bash scripts/install-leanctx-sb.sh --host claude --project-root "$(pwd)"` |
 | Codex | `bash scripts/install-leanctx-sb.sh --host codex --project-root "$(pwd)"` |
 | OpenCode | `bash scripts/install-leanctx-sb.sh --host opencode --project-root "$(pwd)"` |
@@ -72,7 +71,7 @@ When LeanCTX is enabled, SB applies the `five_tool_routed` profile (extends `syn
 
 LeanCTX MCP compatibility note: `lctx_read_ast` is Silver Bullet's logical
 `sb_read` route name. Current LeanCTX releases expose the routed operation as
-`ctx_read` on the `leanctx` server (for Cursor, `leanctx-ctx_read`), so live
+`ctx_read` on the `leanctx` server (`leanctx-ctx_read` on some hosts), so live
 scenario checks must use that server-qualified native name with a read mode;
 they must not fall back to native `Read` for analysis.
 
@@ -87,19 +86,18 @@ Registry helpers (Phase 1):
 
 | Host | Wire + ledger | AST read | PathJail | Injection | RTK shell | CM sandbox | CM webfetch | Graphify | agentmemory | `lctx_graph` | `lctx_remember` | Notes |
 |------|---------------|----------|----------|-----------|-----------|------------|-------------|----------|-------------|--------------|-----------------|-------|
-| **Cursor** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Full five-tool routed stack |
 | **Claude Code** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Hook chain verified in Phase 4 tests |
-| **Codex** | ✅ LeanCTX | ❌ deny-only | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | AST blocked until PreToolUse rewrite; wire-proxy ordering validator mandatory |
+| **Codex** | ✅ LeanCTX | ❌ deny-only | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | AST blocked until PreToolUse rewrite; wire-proxy ordering validator (checks captured evidence: `install-leanctx-sb.sh --wire-proxy-evidence FILE`) |
 | **OpenCode** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Native MCP + plugin convergence verified |
 | **Pi** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Native extension adapter + pi-lean-ctx bridge |
 
 ### Cross-tool convergence (`cross_tool`)
 
-`cross_tool` is supported on Claude Code, Codex, Cursor, OpenCode, and Pi. The reconciler uses each host's native configuration contract—JSON/plugin settings for Claude, TOML plus prompt-layer artifacts for Codex, MCP/hooks for Cursor, native MCP plus TypeScript plugins for OpenCode, and Pi extensions plus the `pi-lean-ctx` bridge—while all five resolve the same user-global five-tool executable profile. Codex remains deny-only for PreToolUse rewriting, so its AST read path has a platform limitation; that limitation does not make `cross_tool` unsupported.
+`cross_tool` is supported on Claude Code, Codex, OpenCode, and Pi. The reconciler uses each host's native configuration contract—JSON/plugin settings for Claude, TOML plus prompt-layer artifacts for Codex, native MCP plus TypeScript plugins for OpenCode, and Pi extensions plus the `pi-lean-ctx` bridge—while all five resolve the same user-global five-tool executable profile. Codex remains deny-only for PreToolUse rewriting, so its AST read path has a platform limitation; that limitation does not make `cross_tool` unsupported.
 
 ### Shared global five-tool instances
 
-The five supported hosts must not drift onto separate package runners or binaries. SB writes one local manifest at `~/.silver-bullet/five-tool-stack/instances.json` with the resolved executable and arguments for Graphify, agentmemory, Context Mode, LeanCTX, and RTK. Cursor `mcp.json`, Claude `.claude.json`, and Codex `config.toml` preserve their native syntax but reference those same manifest-selected executables; OpenCode uses its native global `context-mode` plugin and deliberately omits the legacy `mcp.context-mode` duplicate, while its other MCP servers and RTK plugin use the same manifest; Pi's native adapter and `pi-lean-ctx` bridge read the same manifest. If an optional Claude `context-mode@context-mode` plugin is enabled, the optimizer disables it before registering the shared Context Mode MCP entry, so Claude cannot launch a second Context Mode runtime. agentmemory uses the one local service at `http://localhost:3111`.
+The five supported hosts must not drift onto separate package runners or binaries. SB writes one local manifest at `~/.silver-bullet/five-tool-stack/instances.json` with the resolved executable and arguments for Graphify, agentmemory, Context Mode, LeanCTX, and RTK. Claude `.claude.json`, and Codex `config.toml` preserve their native syntax but reference those same manifest-selected executables; OpenCode uses its native global `context-mode` plugin and deliberately omits the legacy `mcp.context-mode` duplicate, while its other MCP servers and RTK plugin use the same manifest; Pi's native adapter and `pi-lean-ctx` bridge read the same manifest. If an optional Claude `context-mode@context-mode` plugin is enabled, the optimizer disables it before registering the shared Context Mode MCP entry, so Claude cannot launch a second Context Mode runtime. agentmemory uses the one local service at `http://localhost:3111`.
 
 ### Codex Limitations
 
@@ -108,11 +106,11 @@ Codex PreToolUse is **deny-only** — no `updatedInput` rewrite. When LeanCTX is
 - **Wire proxy + ledger + PathJail + injection detection** run normally
 - **AST read-path (`lctx_read_ast`)** is unavailable — RTK + Context Mode remain primary compressors for shell and analysis
 - **LeanCTX shell and sandbox MCP** are explicitly OFF (RTK and CM own those surfaces)
-- Install-time **wire-proxy JSON message ordering** is validated by `scripts/lib/verify-leanctx-wire-proxy-ordering.py` (Phase 2)
+- **Wire-proxy JSON message ordering** evidence is validated by `scripts/lib/verify-leanctx-wire-proxy-ordering.py`: pass captured traffic with `install-leanctx-sb.sh --wire-proxy-evidence FILE`. Without evidence the installer only runs the validator's self-test, which proves the validator, not the proxy.
 
 ## Deep-Research Fetch Routing
 
-For `sb:deep-research`, use **search_cli first** when configured. LeanCTX fetch is for **non-research flows only** — avoids overlap with search_cli breadth providers. See `skills/deep-research/SKILL.md`.
+For `sb:deep-research`, use **search_cli first** when configured. LeanCTX fetch is for **non-research flows only** — avoids overlap with search_cli breadth providers. See `skills/silver-deep-research/SKILL.md`.
 
 ## Verification
 

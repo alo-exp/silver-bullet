@@ -19,7 +19,7 @@
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-HELPER_SRC="$REPO_ROOT/.planning/scripts/phase-lock.sh"
+HELPER_SRC="$REPO_ROOT/scripts/phase-lock.sh"   # the hooks run the plugin's copy (R3-03)
 
 PASS=0
 FAIL=0
@@ -31,13 +31,11 @@ trap cleanup_all EXIT
 
 setup() {
   TMPDIR_TEST=$(mktemp -d)
-  cd "$TMPDIR_TEST"
+  cd "$TMPDIR_TEST" || exit 1
   git init -q
   git config user.email t@t
   git config user.name t
   mkdir -p .planning/scripts
-  cp "$HELPER_SRC" .planning/scripts/phase-lock.sh
-  chmod +x .planning/scripts/phase-lock.sh
   export SB_PHASE_LOCK_FILE="$TMPDIR_TEST/.planning/.phase-locks.json"
 }
 
@@ -54,7 +52,7 @@ nope() { printf '  ✗ %s — %s\n' "$1" "$2"; FAIL=$((FAIL+1)); }
 echo "=== TEST-01: two-agent race for same phase ==="
 setup
 
-helper="./.planning/scripts/phase-lock.sh"
+helper="$HELPER_SRC"
 
 # A (claude) claims phase 099
 out=$($helper claim 099 claude "agent-A-task" 2>&1); rc=$?
@@ -65,7 +63,7 @@ out=$($helper claim 099 claude "agent-A-task" 2>&1); rc=$?
 out=$($helper claim 099 opencode "agent-B-task" 2>&1); rc=$?
 [[ "$rc" == "2" ]] && ok "TEST-01.2: opencode claim rejected with rc=2" \
   || nope "TEST-01.2: opencode claim" "expected rc=2, got rc=$rc"
-if printf '%s' "$out" | grep -q '099 is locked by'; then
+if grep -q '099 is locked by' <<<"$out"; then
   ok "TEST-01.3: opencode stderr names current claude owner"
 else
   nope "TEST-01.3: opencode stderr" "$out"
@@ -97,7 +95,7 @@ echo ""
 echo "=== TEST-02: stale-lock TTL steal ==="
 setup
 
-helper="./.planning/scripts/phase-lock.sh"
+helper="$HELPER_SRC"
 
 # A claims
 $helper claim 099 claude "stale-test" >/dev/null 2>&1
@@ -117,7 +115,7 @@ expired=$(printf '%s' "$peek_json" | jq -r '.expired // false')
 stderr_out=$($helper claim 099 opencode "steal-test" 2>&1 >/dev/null); rc=$?
 [[ "$rc" == "0" ]] && ok "TEST-02.2: opencode stale-steal exits 0" \
   || nope "TEST-02.2: stale steal rc" "rc=$rc"
-if printf '%s' "$stderr_out" | grep -qiE 'WARN|stealing|stale'; then
+if grep -qiE 'WARN|stealing|stale' <<<"$stderr_out"; then
   ok "TEST-02.3: stderr mentions stale-steal (WARN)"
 else
   nope "TEST-02.3: stale-steal stderr" "$stderr_out"
@@ -135,7 +133,7 @@ echo ""
 echo "=== TEST-03: SB_PHASE_LOCK_INHERITED prevents double-claim ==="
 setup
 
-helper="./.planning/scripts/phase-lock.sh"
+helper="$HELPER_SRC"
 
 # Parent (claude) claims
 $helper claim 099 claude "parent-claim" >/dev/null 2>&1
@@ -168,7 +166,7 @@ runtime=$(jq -r '."099".agent_runtime' "$SB_PHASE_LOCK_FILE")
 
 # Parent peeks normally (peek is the one op SB_PHASE_LOCK_INHERITED does NOT
 # short-circuit — confirms the contract from Phase 70)
-SB_PHASE_LOCK_INHERITED=true peek_json=$($helper peek 099 2>/dev/null)
+peek_json=$(SB_PHASE_LOCK_INHERITED=true $helper peek 099 2>/dev/null)
 runtime_peek=$(printf '%s' "$peek_json" | jq -r '.agent_runtime')
 [[ "$runtime_peek" == "claude" ]] && ok "TEST-03.6: peek works even under SB_PHASE_LOCK_INHERITED=true" \
   || nope "TEST-03.6: peek under inheritance" "got '$runtime_peek'"

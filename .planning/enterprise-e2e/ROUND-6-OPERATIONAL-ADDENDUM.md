@@ -6,15 +6,15 @@
 
 Read first:
 
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-6-SESSION-HANDOFF.md`
-- `/Users/shafqat/projects/silver-bullet/repo/docs/testing/ENTERPRISE-E2E-LIVE-TEST.md`
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md`
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-6-SESSION-HANDOFF.md`
+- `/Users/<user>/projects/silver-bullet/repo/docs/testing/ENTERPRISE-E2E-LIVE-TEST.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md`
 
 ## A. Mission & workspace
 
-- **Session workspace root:** `/Users/shafqat/projects/silver-bullet/repo` (NOT test app, NOT Cursor global).
-- **Claude TUI CWD:** `/Users/shafqat/projects/enterprise-grade-test-app`.
+- **Session workspace root:** `/Users/<user>/projects/silver-bullet/repo` (NOT test app, NOT Cursor global).
+- **Claude TUI CWD:** `/Users/<user>/projects/enterprise-grade-test-app`.
 - **Goal:** **2 consecutive strict-clean rounds** for release (Round 5 done; Round 6 in progress).
 - **Strict-clean** = ALL of:
   1. review-fix-ladder **8/8** with **2 consecutive clean verify passes per rung**, **0 new issues**

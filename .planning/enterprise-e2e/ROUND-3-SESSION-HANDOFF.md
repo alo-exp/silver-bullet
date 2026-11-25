@@ -42,9 +42,9 @@ echo $! > .e2e-matrix-monitor.pid
 ## Env
 
 ```bash
-export SB_E2E_LEDGER_FILE=/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-3-LEDGER.md
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_E2E_LEDGER_FILE=/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-3-LEDGER.md
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 cd "$SB_ROOT"
 ```
 

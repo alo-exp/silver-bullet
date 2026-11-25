@@ -2,7 +2,7 @@
 
 RFL round 2, rung 10, **verify_1 only** (not verify_2) — **post-panel-purge** re-verify after user-directed fusion-string purge ([Purge fusion from freeze](acf8c382-b82d-40f4-8403-13a67bd2e738)). Native Cursor Task — **no Pi**, no OmniRoute, no `/silver:agent-pi`, no `scripts/agent-pi/invoke.sh`. Model lock: `cursor-grok-4.5-high` / `sb-grok-4-5-high` (not Grok 4.6 High, Extra High, Fast, or any Pi model).
 
-Repo: `/Users/shafqat/projects/silver-bullet/repo`. Branch: `main` (no `git checkout` / `git switch` / SetActiveBranch). VERIFY ONLY — no freeze edits, no second APPLY, no product/YAML execution, no verify_2, no rung 11.
+Repo: `/Users/<user>/projects/silver-bullet/repo`. Branch: `main` (no `git checkout` / `git switch` / SetActiveBranch). VERIFY ONLY — no freeze edits, no second APPLY, no product/YAML execution, no verify_2, no rung 11.
 
 Prior verify_1 on `63680e37…` / 652667 is **stale**. Live freeze is panel-only purge commit `783e9fce` (plan blob); later `81560474` is APPLY-note only — plan blob unchanged.
 
@@ -24,7 +24,7 @@ Expected freeze (post panel-name purge):
 | Copy | Path | SHA-256 | Bytes | Status |
 |---|---|---|---|---|
 | Repo Working Tree | `.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1e3c9866d47de094ba8815fadac95c9cc4ff47062cc0fa9c9a6b24326ed27b13` | 653189 | MATCH |
-| Cursor UI Copy | `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `1e3c9866d47de094ba8815fadac95c9cc4ff47062cc0fa9c9a6b24326ed27b13` | 653189 | MATCH |
+| Cursor UI Copy | `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `1e3c9866d47de094ba8815fadac95c9cc4ff47062cc0fa9c9a6b24326ed27b13` | 653189 | MATCH |
 | Git HEAD Blob | `git show HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1e3c9866d47de094ba8815fadac95c9cc4ff47062cc0fa9c9a6b24326ed27b13` | 653189 | MATCH |
 
 - **Line count:** 4405
