@@ -27,18 +27,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
       # Publish only the public site: local preview/asset tooling stays in the repo.
       - name: Stage public site
         run: |
           rsync -a --delete \
             --exclude '*.py' --exclude '*.sh' --exclude '*.plist' --exclude '.claude/' \
             site/ _site/
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

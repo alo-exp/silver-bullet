@@ -30,7 +30,7 @@ jobs:
       ANNOUNCE_CI_TIMEOUT_SECONDS: 1800
       ANNOUNCE_CI_POLL_INTERVAL_SECONDS: 30
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
