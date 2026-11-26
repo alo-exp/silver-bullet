@@ -215,7 +215,7 @@
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 584,
+   "line": 586,
    "kind": "config",
    "snippet": "if new=\"$(jq -S -c --arg v \"$value\" '.project.active_workflow = $v' <<<\"$cfg\" 2>/dev/null)\" && [[ -n \"$new\" ]]; then",
    "record": "A",
@@ -223,7 +223,7 @@
   },
   {
    "file": "hooks/lib/integrity.sh",
-   "line": 625,
+   "line": 627,
    "kind": "config",
    "snippet": "if [[ -e \"$root/.silver-bullet.json\" || -L \"$root/.silver-bullet.json\" || -e \"$root/silver-bullet.md\" || -L \"$root/silver-bullet.md\" ]]; then printf 'present'; ",
    "record": "A",
@@ -359,7 +359,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 281,
+   "line": 285,
    "kind": "config",
    "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]] && [[ -f \"$search_dir/silver-bullet.md\" ]]; then",
    "record": "A",
@@ -367,7 +367,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 282,
+   "line": 286,
    "kind": "config",
    "snippet": "config_file=\"$search_dir/.silver-bullet.json\"",
    "record": "A",
@@ -375,7 +375,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 305,
+   "line": 309,
    "kind": "config",
    "snippet": "STATE_FILE=$(jq -r '.state.state_file // \"\"' \"$config_file\")",
    "record": "A",
@@ -383,7 +383,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 334,
+   "line": 338,
    "kind": "config",
    "snippet": "custom_tracked=$(jq -r '(.skills.all_tracked // []) | join(\" \")' \"$config_file\")",
    "record": "A",
@@ -391,7 +391,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 418,
+   "line": 443,
    "kind": "state",
    "snippet": "if ! grep -Fqx -- \"$skill\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "A",
@@ -399,7 +399,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 433,
+   "line": 458,
    "kind": "state",
    "snippet": "if ! grep -Fqx -- \"$mode_marker\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "A",
@@ -407,7 +407,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 447,
+   "line": 472,
    "kind": "state",
    "snippet": "if ! grep -Fqx -- \"$mode_marker\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "A",
@@ -415,7 +415,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 476,
+   "line": 505,
    "kind": "state",
    "snippet": "[[ -f \"$STATE_FILE\" ]] && state_contents=\"$(cat \"$STATE_FILE\" 2>/dev/null || true)\"",
    "record": "A",
@@ -673,7 +673,7 @@
    "file": "scripts/sb-doctor.sh",
    "line": 669,
    "kind": "md",
-   "snippet": "grep -q \"^## ${d7_sec}\\\\. \" \"${PROJ_ROOT}/silver-bullet.md\" 2>/dev/null || d7_missing=\"${d7_missing:+${d7_missing}, }\u00a7${d7_sec}\"",
+   "snippet": "grep -q \"^## ${d7_sec}\\\\. \" \"${PROJ_ROOT}/silver-bullet.md\" 2>/dev/null || d7_missing=\"${d7_missing:+${d7_missing}, }§${d7_sec}\"",
    "record": "X",
    "reason": "user-run or skill-run script, not a hook gate"
   },
@@ -889,7 +889,7 @@
    "file": "skills/silver-create-release/SKILL.md",
    "line": 34,
    "kind": "config",
-   "snippet": "- `jq` (read `.silver-bullet.json` config \u2014 verify_commands only)",
+   "snippet": "- `jq` (read `.silver-bullet.json` config — verify_commands only)",
    "record": "X",
    "reason": "agent-run skill instruction (not a hook gate): it reads tracker, consent or verify keys, and every write goes through the contract guard"
   },

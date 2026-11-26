@@ -108,15 +108,102 @@ ih_session_start startup
 sb_integrity_verify "$PROJ" ""
 assert_eq "a branch change resets and re-baselines" "ok" "$SB_IV_STATUS"
 
-# 16. parallel subagents
-ih_project h14
+# 16. parallel subagents: six recorders at once (more writers make a lost update likelier). The recorders wait
+# for the lock as long as it takes (a traced or loaded run is slow; the default wait fits the hook timeout, not a
+# test), so a slow holder cannot make a recorder give up, and every one of the six must keep its skill.
+ih_project h14 '.skills.all_tracked=["inst-a","inst-b","inst-c","inst-d","inst-e","inst-f"]'
 pids=()
-for sk in inst-a inst-b; do
-  ( ih_rec "$sk" ) &
+for sk in inst-a inst-b inst-c inst-d inst-e inst-f; do
+  ( SB_STATE_SEAL_LOCK_TRIES=600 ih_rec "$sk" ) &
   pids+=("$!")
 done
 for pid in "${pids[@]}"; do wait "$pid" || true; done
-assert_eq "parallel recorders keep both skills" "2" "$(sb_state_seal_trusted "$STATE" | grep -cE '^inst-(a|b)$' || true)"
+assert_eq "parallel recorders keep all their skills" "6" "$(sb_state_seal_trusted "$STATE" | grep -cE '^inst-[a-f]$' || true)"
+assert_file_absent "and leave no lock behind" "$STATE.lock"
+
+# 16b. a state lock that stays busy: the recorder writes nothing, says so, and does not touch the owner's lock
+ih_project h14b
+mkdir "$STATE.lock"
+printf '%s %s\n' "$$" "$(date +%s)" >"$STATE.lock/claim.$$.1"
+before="$(cat "$STATE")$(cat "$STATE.seal")"
+out="$(printf '%s' "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:"inst-a"}}')" \
+  | (cd "$PROJ" && SB_STATE_SEAL_LOCK_TRIES=1 SILVER_BULLET_PROJECT_ROOT="$PROJ" bash "$TL_REPO_ROOT/hooks/record-skill.sh") 2>"$TL_TMP/rec.err")" || true
+assert_contains "a busy state lock: the user is told the skill was not recorded" "$out" "Skill not recorded"
+assert_contains "and stderr names the lock" "$(cat "$TL_TMP/rec.err")" "stayed busy"
+assert_eq "the state and its seal are untouched (no unlocked write)" "$before" "$(cat "$STATE")$(cat "$STATE.seal")"
+assert_file_exists "the owner's lock is not robbed" "$STATE.lock/claim.$$.1"
+rm -rf "$STATE.lock"
+ih_rec inst-a
+assert_eq "the skill is recorded when the lock is free again" "1" "$(sb_state_seal_trusted "$STATE" | grep -c '^inst-a$' || true)"
+
+# 16b2. the notice reaches the model too (additionalContext), not only the user
+assert_contains "the busy-lock notice is also model-visible context" "$out" "additionalContext"
+
+# 16b3. a skill that is not tracked, or only loaded, takes no lock and gets no notice, whatever the lock does
+ih_project h14d
+mkdir "$STATE.lock"
+printf '%s %s\n' "$$" "$(date +%s)" >"$STATE.lock/claim.$$.1"
+out="$(printf '%s' "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:"not-a-tracked-skill"}}')" \
+  | (cd "$PROJ" && SB_STATE_SEAL_LOCK_TRIES=1 SILVER_BULLET_PROJECT_ROOT="$PROJ" bash "$TL_REPO_ROOT/hooks/record-skill.sh") 2>&1)" || true
+assert_not_contains "an untracked skill does not wait for the state lock" "$out" "Skill not recorded"
+rm -rf "$STATE.lock"
+
+# 16b4. a busy lock must not leave the previous skill as the one invoked last (that keeps sb:spec's owner allowance)
+ih_project h14e '.skills.all_tracked=["silver-spec","silver-plan"]'
+ih_rec silver-spec
+assert_eq "silver-spec is the skill invoked last" "silver-spec" "$(sb_state_last_read "$STATE")"
+mkdir "$STATE.lock"
+printf '%s %s\n' "$$" "$(date +%s)" >"$STATE.lock/claim.$$.1"
+printf '%s' "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:"silver-plan"}}')" \
+  | (cd "$PROJ" && SB_STATE_SEAL_LOCK_TRIES=1 SILVER_BULLET_PROJECT_ROOT="$PROJ" bash "$TL_REPO_ROOT/hooks/record-skill.sh") >/dev/null 2>&1 || true
+assert_eq "a busy lock: silver-plan still replaces silver-spec as the last" "silver-plan" "$(sb_state_last_read "$STATE")"
+assert_eq "though it is not in the state" "0" "$(sb_state_seal_trusted "$STATE" | grep -c '^silver-plan$' || true)"
+rm -rf "$STATE.lock"
+
+# 16b5. a state file in a directory that does not exist yet: the recorder makes it and records at once
+ih_project h14f
+rm -rf "$SD/sub"
+out="$(printf '%s' "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:"inst-a"}}')" \
+  | (cd "$PROJ" && SILVER_BULLET_STATE_FILE="$SD/sub/state" SILVER_BULLET_PROJECT_ROOT="$PROJ" bash "$TL_REPO_ROOT/hooks/record-skill.sh") 2>&1)" || true
+assert_not_contains "a missing parent directory is not a busy lock" "$out" "Skill not recorded"
+assert_eq "the skill is in the new state file" "1" "$(grep -c '^inst-a$' "$SD/sub/state" || true)"
+rm -rf "$SD/sub"
+
+# 16b6. the record lock is waited for only AFTER the state lock is released: a recorder that has written its skill and
+# waits for a busy record lock does not hold the state lock (parallel recorders would otherwise queue behind it)
+ih_project h14g
+REC="$(_sb_iv_rec_file "$PROJ")"
+mkdir "$REC.lock"
+printf '%s %s\n' "$$" "$(date +%s)" >"$REC.lock/claim.$$.3"
+printf '%s' "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:"inst-a"}}')" \
+  | (cd "$PROJ" && SB_STATE_SEAL_LOCK_TRIES=100 SILVER_BULLET_PROJECT_ROOT="$PROJ" exec bash "$TL_REPO_ROOT/hooks/record-skill.sh") >/dev/null 2>&1 &
+rec_pid=$!
+n=0
+until grep -qx inst-a "$STATE" 2>/dev/null || [[ $n -ge 300 ]]; do n=$((n + 1)); read -r -t 0.1 <> <(:) || true; done
+assert_eq "the recorder has written its skill" "1" "$(grep -cx inst-a "$STATE" || true)"
+# the state lock is released right after the write; give the recorder up to 5 s to get there (bounded polls)
+n=0
+until [[ ! -e "$STATE.lock" || $n -ge 50 ]]; do n=$((n + 1)); read -r -t 0.1 <> <(:) || true; done
+assert_file_absent "the state lock is released while the recorder goes on to wait for the record lock" "$STATE.lock"
+assert_eq "and the recorder is still waiting for the record lock" "alive" "$(kill -0 "$rec_pid" 2>/dev/null && echo alive || echo gone)"
+kill "$rec_pid" 2>/dev/null || true
+wait "$rec_pid" 2>/dev/null || true
+rm -rf "$REC.lock" "$STATE.lock"
+
+# 16c. the record lock (integrity.sh): a busy lock leaves the record as it is
+ih_project h14c
+REC="$(_sb_iv_rec_file "$PROJ")"
+mkdir "$REC.lock"
+printf '%s %s\n' "$$" "$(date +%s)" >"$REC.lock/claim.$$.2"
+before="$(cat "$REC")$(cat "$REC.hwm")"
+SB_STATE_SEAL_LOCK_TRIES=1 sb_integrity_baseline "$PROJ" session 2>/dev/null
+assert_eq "a busy record lock: the baseline is skipped, nothing written" "$before" "$(cat "$REC")$(cat "$REC.hwm")"
+SB_STATE_SEAL_LOCK_TRIES=1 sb_integrity_set_workflow "$PROJ" devops 2>/dev/null
+assert_eq "and so is the workflow reset" "$before" "$(cat "$REC")$(cat "$REC.hwm")"
+assert_file_exists "the owner's record lock is not robbed" "$REC.lock/claim.$$.2"
+rm -rf "$REC.lock"
+sb_integrity_baseline "$PROJ" session
+assert_eq "with the lock free the baseline is made again" "ok" "$(ih_status)"
 
 # 17-19. commit, stop
 ih_project h15

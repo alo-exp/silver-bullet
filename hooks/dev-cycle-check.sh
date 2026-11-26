@@ -435,6 +435,8 @@ Change it through the owning skill (/sb:init, /sb:update, /sb:add, /sb:devops, /
   if [[ "$hook_event" != "PreToolUse" ]]; then
     post_root="$(sb_integrity_root "$PWD")"
     if [[ -n "$post_root" ]]; then
+      # the record locks of the two baselines below share one deadline (the hook's timeout is 15 s)
+      sb_state_seal_lock_deadline
       sb_integrity_verify "$post_root" ""
       # A file tool wrote an artifact: the gates that allowed it vouch for it. A shell command never does.
       if [[ "$is_shell" != true && -n "$a_tags" && "$a_root" == "$post_root" ]]; then
