@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
+## [0.54.0] — 2026-11-26
+
 ### Breaking Changes
+- **Repository history was rewritten (security).** Two forged commits (`ce53d75`, `93ab69b`) and every file a worm planted at `public/fonts/*`, `.vscode/tasks.json`, `temp_auto_push.bat` and `branch_structure.json` were removed from the history of `main`; all other branches were deleted. Commit ids from before the rewrite no longer exist on GitHub. Re-clone, or run `git fetch origin && git reset --hard origin/main` on a clean checkout. Installed plugins are unaffected: install from the `v0.54.0` tag.
 - **`sb-doctor --fix` can no longer be confirmed from the environment.** The `SB_DOCTOR_ASSUME_YES` override is removed: a fix that changes global tools or host configuration asks the user at an interactive terminal (`y`) and otherwise refuses, whatever the environment or a committed config says.
 - **Cursor is no longer a Silver Bullet host.** Silver Bullet no longer installs into, configures or enforces inside Cursor: the Cursor installer, hook bridge, command stubs, host bundle, global toolstack and `SILVER_BULLET_RUNTIME=cursor` are gone. `silver-multi-ai-task` and `silver-deep-research-multi-ai` still use the `cursor-agent` CLI as a worker backend; that is unchanged.
 - **Cursor users: run the one-time cleanup.** An older install left Silver Bullet files under `~/.cursor`. Run `bash scripts/uninstall-cursor-legacy.sh --dry-run` to see what it would do, then `bash scripts/uninstall-cursor-legacy.sh`. It only removes what Silver Bullet created (hook entries in `hooks.json`, generated `sb` agents, Silver Bullet rule files, Silver Bullet MCP entries, the global toolstack and plugin copies), matched by exact markers and names. Removed files and folders are moved to `~/.cursor/.silver-bullet-legacy-backup/<timestamp>/`, edited JSON files keep a `.sb-backup` copy, and a second run changes nothing. It never installs anything.
