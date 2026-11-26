@@ -24,7 +24,7 @@
 #   sb_state_seal_enforce STATE    before appending: drop unsealed lines; empty a tampered state
 #   sb_state_seal_trusted STATE    print the content the gates may trust
 #   sb_state_seal_file STATE       the seal path
-#   sb_state_seal_lock STATE / sb_state_seal_unlock   serialise a recorder's enforce, append and re-seal
+#   sb_state_seal_lock FILE / sb_state_seal_unlock   serialise a recorder's enforce, append and re-seal; lock status 1 = not obtained, the caller must not write
 #   sb_state_last_write STATE SKILL [AGENT]   record (and key-seal) the skill invoked last, re-invocations included
 #   sb_state_last_read STATE [AGENT]          print that skill when its keyed record verifies; nothing otherwise
 #
@@ -213,28 +213,126 @@ sb_state_seal_enforce() {
 }
 
 # One recorder at a time reads, extends and re-seals the state: concurrent recorders (parallel
-# subagents) would otherwise take each other's fresh line for an unsealed one. mkdir is atomic and
-# portable; a lock whose owner is gone, or that is over a minute old, is taken over; after
-# SB_STATE_SEAL_LOCK_TRIES waits (0.1 s apart, default 50) the recorder goes on without it.
-sb_state_seal_lock() { # STATE
-  local lock="$1.lock" tries="${SB_STATE_SEAL_LOCK_TRIES:-50}" pid
-  while ! mkdir "$lock" 2>/dev/null; do
-    pid="$(cat "$lock/pid" 2>/dev/null || true)"
-    if { [[ -n "$pid" ]] && ! kill -0 "$pid" 2>/dev/null; } || [[ -n "$(find "$lock" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then
-      rm -rf -- "$lock"
-      continue
+# subagents) would otherwise take each other's fresh line for an unsealed one.
+#
+# The lock is a directory beside the file (<file>.lock) and follows the claim protocol of the other
+# locks (hooks/lib/orchestrator-io.sh, integrity-anchor.sh, user-consent.sh). The winner of the mkdir writes
+# a claim file claim.<pid>.<nonce> ("PID STAMP") into it and holds the lock only while that claim is the
+# sole entry, so two holders can never both believe they hold it. A waiter takes a lock over only by removing,
+# BY NAME, a claim that is provably abandoned (its process is gone, or it is older than
+# SB_STATE_SEAL_LOCK_STALE_MINUTES, default 1: a reused pid; a hook never runs longer than its 10 s timeout) and
+# then the EMPTY directory with rmdir. A directory with no claim yet is a holder between its mkdir and its claim
+# and is left alone for a minute. Nothing removes a lock recursively, and a holder releases only a lock that
+# still holds its own claim, so a live owner is never robbed (the old take-over removed a lock that two waiters
+# had both judged stale, the second removal destroying the first's fresh lock). The first protocol's "pid"
+# file is still read as a claim. A lock path that is a symlink, or a directory of someone else, is refused.
+#
+# The wait is bounded by SB_STATE_SEAL_LOCK_TRIES tenths of a second (default 60 = 6 s) and by the same
+# number of wall-clock seconds, inside the 10 s timeout of record-skill.sh and the session hooks. When the lock
+# is not obtained, sb_state_seal_lock prints one line on stderr and returns 1, and the caller MUST NOT read,
+# modify or write the file it guards: an unlocked read-modify-write can lose another recorder's line, and a
+# skipped record is visible and is simply made again. Locks nest (the record lock is taken under the state
+# lock): sb_state_seal_unlock releases the one taken last.
+_SB_SEAL_LOCK_CLAIMS=""
+_SB_SEAL_LOCK_CLAIM=""
+_sb_seal_lock_sane() { # LOCK: status 0 unless LOCK exists as something other than our own plain directory
+  local lock="$1"
+  [[ -L "$lock" ]] && return 1
+  if [[ -d "$lock" ]]; then
+    [[ -O "$lock" ]] || [[ ! -e "$lock" ]]
+    return
+  fi
+  [[ ! -e "$lock" ]]
+}
+_sb_seal_claim_name() { [[ "$1" == pid || "$1" =~ ^claim\.[0-9]+\.[0-9]+$ ]]; }
+_sb_seal_claim_stale() { # CLAIM: status 0 when its process is gone or it is far too old
+  local claim="$1" pid="" age="${SB_STATE_SEAL_LOCK_STALE_MINUTES:-1}"
+  [[ "$age" =~ ^[0-9]+$ ]] || age=1
+  { read -r pid _ <"$claim"; } 2>/dev/null || true
+  if [[ "$pid" =~ ^[0-9]+$ ]]; then
+    # kill -0 also fails for a live process of another user: only a pid ps does not list is dead
+    if ! kill -0 "$pid" 2>/dev/null && ! ps -p "$pid" >/dev/null 2>&1; then return 0; fi
+    [[ -n "$(find "$claim" -maxdepth 0 -mmin +"$age" 2>/dev/null)" ]]
+  else
+    [[ -n "$(find "$claim" -maxdepth 0 -mmin +1 2>/dev/null)" ]]
+  fi
+}
+_sb_seal_lock_reclaim() { # LOCK: drop abandoned claims; status 0 when LOCK was left gone
+  local lock="$1" entry seen=0 live=0
+  _sb_seal_lock_sane "$lock" || return 1
+  for entry in "$lock"/*; do
+    [[ -e "$entry" || -L "$entry" ]] || continue
+    seen=1
+    # only a regular file named like a claim is ever removed; anything else keeps the lock held
+    if [[ -f "$entry" && ! -L "$entry" ]] && _sb_seal_claim_name "${entry##*/}" && _sb_seal_claim_stale "$entry"; then
+      rm -f -- "$entry"
+    else
+      live=1
     fi
-    tries=$((tries - 1))
-    [[ "$tries" -gt 0 ]] || return 0
-    sleep 0.1
   done
-  printf '%s\n' "$$" >"$lock/pid"
-  SB_STATE_SEAL_LOCK_HELD="$lock"
+  ((live == 0)) || return 1
+  if ((seen == 0)) && [[ -z "$(find "$lock" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then
+    return 1 # no claim yet: a holder is between its mkdir and its claim
+  fi
+  rmdir "$lock" 2>/dev/null
+}
+_sb_seal_lock_try() { # LOCK: one attempt; status 0 holding it (the claim is in _SB_SEAL_LOCK_CLAIM)
+  local lock="$1" claim entry names="" pid="$$"
+  mkdir "$lock" 2>/dev/null || return 1
+  if [[ "${BASHPID:-}" =~ ^[0-9]+$ ]]; then pid="$BASHPID"; fi
+  claim="$lock/claim.$pid.$RANDOM$RANDOM"
+  if { printf '%s %s\n' "$pid" "$(date +%s)" >"$claim"; } 2>/dev/null; then
+    for entry in "$lock"/*; do
+      if [[ -e "$entry" ]]; then names="$names${entry##*/} "; fi
+    done
+    if [[ "$names" == "${claim##*/} " ]]; then
+      _SB_SEAL_LOCK_CLAIM="$claim"
+      return 0
+    fi
+  fi
+  rm -f -- "$claim"
+  rmdir "$lock" 2>/dev/null || true
+  return 1
+}
+sb_state_seal_lock() { # FILE: status 0 holding FILE.lock; status 1 (and a line on stderr) when not obtained
+  local lock="$1.lock" max="${SB_STATE_SEAL_LOCK_TRIES:-60}" waited=0 spins=0 start=$SECONDS limit
+  [[ "$max" =~ ^[0-9]+$ ]] || max=60
+  limit=$(((max + 9) / 10))
+  # a refusal must persist across short pauses: a directory another holder is making or removing can look wrong for an instant
+  until _sb_seal_lock_sane "$lock"; do
+    if ((spins++ >= 3)); then
+      printf 'silver-bullet: %s is not a plain directory of yours; its state is not updated\n' "$lock" >&2
+      return 1
+    fi
+    sleep 0.05
+  done
+  spins=0
+  until _sb_seal_lock_try "$lock"; do
+    if _sb_seal_lock_reclaim "$lock" && ((spins++ < 1000)); then continue; fi
+    if ((waited >= max || SECONDS - start >= limit)); then
+      printf 'silver-bullet: %s stayed busy for %s.%ss; its state is not updated\n' \
+        "$lock" "$((waited / 10))" "$((waited % 10))" >&2
+      return 1
+    fi
+    sleep "0.1$((RANDOM % 5))" # a tenth of a second (plus jitter) per counted tenth, so the budget is real time
+    waited=$((waited + 1))
+  done
+  _SB_SEAL_LOCK_CLAIMS="${_SB_SEAL_LOCK_CLAIMS:+$_SB_SEAL_LOCK_CLAIMS$'\n'}$_SB_SEAL_LOCK_CLAIM"
 }
 
+# Release the lock taken last, and only while its claim is still present (a holder whose claim was taken
+# over leaves the directory to its new owner). Nothing held: nothing happens.
 sb_state_seal_unlock() {
-  if [[ -n "${SB_STATE_SEAL_LOCK_HELD:-}" ]]; then rm -rf -- "$SB_STATE_SEAL_LOCK_HELD"; fi
-  SB_STATE_SEAL_LOCK_HELD=""
+  local claim="${_SB_SEAL_LOCK_CLAIMS##*$'\n'}"
+  if [[ "$_SB_SEAL_LOCK_CLAIMS" == *$'\n'* ]]; then
+    _SB_SEAL_LOCK_CLAIMS="${_SB_SEAL_LOCK_CLAIMS%$'\n'*}"
+  else
+    _SB_SEAL_LOCK_CLAIMS=""
+  fi
+  if [[ -n "$claim" && -f "$claim" && ! -L "$claim" ]]; then
+    rm -f -- "$claim"
+    rmdir "${claim%/*}" 2>/dev/null || true
+  fi
 }
 
 # A subagent (a worker) has a record of its own: <state>.last.<agent_id> with <state>.lasthwm.<agent_id>, the

@@ -28,8 +28,8 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | hooks/lib/integrity-anchor.sh:594 | config | `if [[ -f "$d/.silver-bullet.json" && -f "$d/silver-bullet.md" ]]; then` | A | the integrity machinery: where the project is (record, contract files, git tracking) |
 | hooks/lib/integrity.sh:117 | config | `if canon="$(jq -S -c 'del(.recommended_tools, .sb_enforcement_tier)' "$cfg" 2>/dev/null)";` | A | the integrity machinery: reads the live files to verify and to record them |
 | hooks/lib/integrity.sh:396 | config | `if [[ ! -e "${1:-/}/.silver-bullet.json" \|\| ! -e "${1:-/}/silver-bullet.md" ]]; then adv` | A | the integrity machinery: reads the live files to verify and to record them |
-| hooks/lib/integrity.sh:584 | config | `if new="$(jq -S -c --arg v "$value" '.project.active_workflow = $v' <<<"$cfg" 2>/dev/null)` | A | the integrity machinery: reads the live files to verify and to record them |
-| hooks/lib/integrity.sh:625 | config | `if [[ -e "$root/.silver-bullet.json" \|\| -L "$root/.silver-bullet.json" \|\| -e "$root/si` | A | the integrity machinery: reads the live files to verify and to record them |
+| hooks/lib/integrity.sh:586 | config | `if new="$(jq -S -c --arg v "$value" '.project.active_workflow = $v' <<<"$cfg" 2>/dev/null)` | A | the integrity machinery: reads the live files to verify and to record them |
+| hooks/lib/integrity.sh:627 | config | `if [[ -e "$root/.silver-bullet.json" \|\| -L "$root/.silver-bullet.json" \|\| -e "$root/si` | A | the integrity machinery: reads the live files to verify and to record them |
 | hooks/lib/leanctx-gate.sh:72 | config | `ttl="$(jq -r '.recommended_tools.leanctx.usage_ttl_seconds // "" \| tostring' "$config_fil` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
 | hooks/lib/leanctx-gate.sh:81 | config | `configured="$(jq -r '.recommended_tools.leanctx.usage_state_file // "" \| strings' "$confi` | X | tool consent (.recommended_tools), kept by the hooks themselves and excluded from the record |
 | hooks/lib/opt-in-gate.sh:91 | config | `trivial_cfg="$(jq -r '.state.trivial_file // "" \| strings' "$config_file" 2>/dev/null \|\` | X | the config trivial path is handed to sb_trivial_bypass, which ignores it once the project has a record (only an install without a record honours it) |
@@ -50,10 +50,10 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | hooks/record-skill.sh:282 | config | `config_file="$search_dir/.silver-bullet.json"` | A | sanctioned writer: keeps the record in step |
 | hooks/record-skill.sh:305 | config | `STATE_FILE=$(jq -r '.state.state_file // ""' "$config_file")` | A | sanctioned writer: keeps the record in step |
 | hooks/record-skill.sh:334 | config | `custom_tracked=$(jq -r '(.skills.all_tracked // []) \| join(" ")' "$config_file")` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:418 | state | `if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:433 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:447 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:476 | state | `[[ -f "$STATE_FILE" ]] && state_contents="$(cat "$STATE_FILE" 2>/dev/null \|\| true)"` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:424 | state | `if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:439 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:453 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:482 | state | `[[ -f "$STATE_FILE" ]] && state_contents="$(cat "$STATE_FILE" 2>/dev/null \|\| true)"` | A | sanctioned writer: keeps the record in step |
 | hooks/session-log-init.sh:68 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | X | session log bookkeeping, no gate decision |
 | hooks/session-start:108 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | A | the trust anchor: baselines the record at the end of session start |
 | hooks/session-start:176 | config | `if [[ -n "$_rt_hb_script" && -f "${sb_project_root}/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |

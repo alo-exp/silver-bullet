@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- **A skill recorded by parallel recorders could be lost.** The lock that serialises `record-skill.sh` and the integrity record (`sb_state_seal_lock`) gave up after five seconds and went on to read and rewrite the state without it, and its take-over removed a lock that two waiters had both judged stale, so a live owner could be robbed. It now follows the claim protocol of the other locks (a claim file as the sole entry of the lock directory, take-over only of a provably abandoned claim, release only of a lock still held, symlinked lock paths refused). When the lock is not obtained within 6 s, nothing is written: `record-skill.sh` reports `Skill not recorded` and the skill is recorded when it is invoked again; `sb_integrity_baseline` and `sb_integrity_set_workflow` leave the record as it is (the gates read a record not refreshed strictly).
+
 ## [0.54.0] — 2026-11-26
 
 ### Breaking Changes

@@ -258,31 +258,151 @@ PATH="$(tl_path_without openssl)" sb_state_seal_write "$S"
 assert_eq "python3 alone seals with a key" "hmac" "$(sed -n 2p "$S.seal")"
 assert_eq "and openssl reads it" "a" "$(sb_state_seal_trusted "$S")"
 
-# the lock
+# the lock: the claim protocol of orchestrator-io.sh (a claim file the sole entry of the lock directory)
 fresh
 LK="$S.lock"
+claims() { local n=0 e; for e in "$LK"/*; do [[ -e "$e" ]] && n=$((n + 1)); done; printf '%s' "$n"; }
 sb_state_seal_lock "$S"
-assert_file_exists "the lock is taken" "$LK/pid"
-assert_eq "it names its owner" "$$" "$(cat "$LK/pid")"
+assert_eq "the lock is taken: a claim is its sole entry" "1" "$(claims)"
+assert_match "the claim is named claim.PID.NONCE" '^claim\.[0-9]+\.[0-9]+$' "$(ls "$LK")"
+assert_eq "and it names its owner" "$$" "$(cut -d' ' -f1 "$LK"/claim.*)"
 sb_state_seal_unlock
-assert_file_absent "and released" "$LK"
+assert_file_absent "released: the directory is gone" "$LK"
 sb_state_seal_unlock
 assert_file_absent "releasing twice does nothing" "$LK"
+rc=0
+SB_STATE_SEAL_LOCK_TRIES=abc sb_state_seal_lock "$S" || rc=$?
+assert_eq "an unreadable tries setting falls back to the default" "0" "$rc"
+sb_state_seal_unlock
+# a holder from the first protocol (a "pid" file) whose process is gone is taken over
 mkdir "$LK"
 printf '99999999\n' >"$LK/pid"
 sb_state_seal_lock "$S"
-assert_eq "a lock whose owner is gone is taken over" "$$" "$(cat "$LK/pid")"
+assert_eq "a lock of a gone owner (old pid file) is taken over" "1" "$(claims)"
+assert_file_absent "and its pid file is gone" "$LK/pid"
+sb_state_seal_unlock
+# a claim of a gone process is taken over
+mkdir "$LK"
+printf '99999999 %s\n' "$(date +%s)" >"$LK/claim.99999999.1"
+sb_state_seal_lock "$S"
+assert_file_absent "a stale claim (process gone) is removed by name" "$LK/claim.99999999.1"
+assert_eq "and the lock is ours" "1" "$(claims)"
+sb_state_seal_unlock
+# a live owner is waited for, then the lock is NOT obtained (status 1, a notice, nothing touched)
+mkdir "$LK"
+printf '%s %s\n' "$$" "$(date +%s)" >"$LK/claim.$$.5"
+rc=0
+err="$(SB_STATE_SEAL_LOCK_TRIES=2 sb_state_seal_lock "$S" 2>&1 >/dev/null)" || rc=$?
+assert_eq "a lock held by a live owner is not obtained" "1" "$rc"
+assert_contains "and says so on stderr" "$err" "stayed busy"
+assert_file_exists "the live owner's claim is left alone" "$LK/claim.$$.5"
+assert_eq "nothing was recorded as held" "" "$_SB_SEAL_LOCK_CLAIMS"
+# a live pid whose claim is over a minute old is a reused pid: taken over
+touch -t 202001010000 "$LK/claim.$$.5"
+sb_state_seal_lock "$S"
+assert_file_absent "an old claim of a reused pid is removed" "$LK/claim.$$.5"
 sb_state_seal_unlock
 mkdir "$LK"
+printf '%s %s\n' "$$" "$(date +%s)" >"$LK/claim.$$.6"
+touch -t 202001010000 "$LK/claim.$$.6"
+SB_STATE_SEAL_LOCK_STALE_MINUTES=x sb_state_seal_lock "$S"
+assert_eq "an unreadable stale age falls back to one minute" "1" "$(claims)"
+sb_state_seal_unlock
+# a claim without a readable pid: left alone while fresh, removed when over a minute old
+mkdir "$LK"
+printf 'garbage\n' >"$LK/claim.1.1"
+rc=0
+SB_STATE_SEAL_LOCK_TRIES=1 sb_state_seal_lock "$S" 2>/dev/null || rc=$?
+assert_eq "a fresh claim with no pid is a holder being written: not taken" "1" "$rc"
+touch -t 202001010000 "$LK/claim.1.1"
+sb_state_seal_lock "$S"
+assert_file_absent "an old claim with no pid is taken over" "$LK/claim.1.1"
+sb_state_seal_unlock
+# a directory with no claim yet: a holder between mkdir and claim. Left alone while fresh, taken over when old
+mkdir "$LK"
+rc=0
+SB_STATE_SEAL_LOCK_TRIES=1 sb_state_seal_lock "$S" 2>/dev/null || rc=$?
+assert_eq "an empty fresh lock directory is not taken" "1" "$rc"
+assert_file_exists "and stays" "$LK"
 touch -t 202001010000 "$LK"
 sb_state_seal_lock "$S"
-assert_eq "a lock over a minute old is taken over" "$$" "$(cat "$LK/pid")"
+assert_eq "an empty lock directory over a minute old is taken over" "1" "$(claims)"
 sb_state_seal_unlock
+# an entry that is no claim keeps the lock held, whatever its age; nothing recursive is ever removed
+mkdir -p "$LK/sub"
+printf 'x\n' >"$LK/sub/f"
+touch -t 202001010000 "$LK" "$LK/sub"
+rc=0
+SB_STATE_SEAL_LOCK_TRIES=1 sb_state_seal_lock "$S" 2>/dev/null || rc=$?
+assert_eq "a foreign entry keeps the lock held" "1" "$rc"
+assert_file_exists "and is not removed" "$LK/sub/f"
+rm -rf "$LK"
+# a symlinked lock path is refused and never followed
+mkdir "$TL_TMP/lktarget"
+printf 'keep\n' >"$TL_TMP/lktarget/f"
+ln -s "$TL_TMP/lktarget" "$LK"
+rc=0
+err="$(sb_state_seal_lock "$S" 2>&1 >/dev/null)" || rc=$?
+assert_eq "a symlinked lock is refused" "1" "$rc"
+assert_contains "with a notice" "$err" "not a plain directory"
+assert_eq "its target is untouched" "keep" "$(cat "$TL_TMP/lktarget/f")"
+assert_eq "and nothing is held" "" "$_SB_SEAL_LOCK_CLAIMS"
+sb_state_seal_unlock
+assert_file_exists "an unlock with nothing held leaves it alone" "$TL_TMP/lktarget/f"
+rm -f "$LK"
+# a file where the lock should be is refused as well
+printf 'x\n' >"$LK"
+rc=0
+sb_state_seal_lock "$S" 2>/dev/null || rc=$?
+assert_eq "a plain file in the way is refused" "1" "$rc"
+rm -f "$LK"
+# a second claim appearing between the claim and the check: not held, the other entry stays
+date() { mkdir -p "$LK"; : >"$LK/other"; command date "$@"; }
+rc=0
+_sb_seal_lock_try "$LK" || rc=$?
+unset -f date
+assert_eq "a claim that is not the sole entry is not held" "1" "$rc"
+assert_file_exists "the other entry is left alone" "$LK/other"
+assert_eq "and our own claim is gone" "1" "$(claims)"
+rm -rf "$LK"
+# no robbery of a live owner after a stale judgement: B judged the lock stale, A took it over and holds it
 mkdir "$LK"
-printf '%s\n' "$$" >"$LK/pid"
-SB_STATE_SEAL_LOCK_TRIES=2 sb_state_seal_lock "$S"
-assert_eq "a lock held by a live owner is waited for, then given up" "" "${SB_STATE_SEAL_LOCK_HELD:-}"
-assert_file_exists "and left alone" "$LK/pid"
+printf '99999999 %s\n' "$(date +%s)" >"$LK/claim.99999999.1"
+_sb_seal_lock_reclaim "$LK"
+sb_state_seal_lock "$S"
+A_CLAIM="$_SB_SEAL_LOCK_CLAIM"
+rc=0
+_sb_seal_lock_reclaim "$LK" || rc=$?
+assert_eq "a late reclaim finds a live owner: it takes nothing" "1" "$rc"
+assert_file_exists "the new owner's claim stands" "$A_CLAIM"
+rc=0
+(SB_STATE_SEAL_LOCK_TRIES=1 sb_state_seal_lock "$S" 2>/dev/null) || rc=$?
+assert_eq "a second waiter does not get the lock either" "1" "$rc"
+assert_file_exists "the owner's claim still stands" "$A_CLAIM"
+sb_state_seal_unlock
+assert_file_absent "the owner releases it" "$LK"
+# unlock never removes a lock it does not own: our claim was taken over (judged gone), a new owner holds the lock
+sb_state_seal_lock "$S"
+rm -f "$_SB_SEAL_LOCK_CLAIM"
+printf '%s %s\n' "$$" "$(date +%s)" >"$LK/claim.$$.9"
+sb_state_seal_unlock
+assert_file_exists "unlock leaves the new owner's lock" "$LK/claim.$$.9"
+rm -rf "$LK"
+# locks nest: the one taken last is released first
+sb_state_seal_lock "$S"
+sb_state_seal_lock "$S.rec"
+assert_eq "two locks are held" "2" "$(printf '%s\n' "$_SB_SEAL_LOCK_CLAIMS" | wc -l | tr -d ' ')"
+sb_state_seal_unlock
+assert_file_absent "the inner lock is released first" "$S.rec.lock"
+assert_file_exists "the outer one is still held" "$LK"
+sb_state_seal_unlock
+assert_file_absent "then the outer" "$LK"
+# a claim that is a symlink is not a claim to release
+mkdir "$LK"
+ln -s "$TL_TMP/lktarget/f" "$LK/claim.$$.8"
+_SB_SEAL_LOCK_CLAIMS="$LK/claim.$$.8"
+sb_state_seal_unlock
+assert_file_exists "a symlinked claim is not removed" "$LK/claim.$$.8"
 rm -rf "$LK"
 
 # the skill invoked last (the .last record)

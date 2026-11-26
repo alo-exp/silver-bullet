@@ -346,7 +346,13 @@ recorded_any=false
 last_invoked=""
 payload_agent_id="$(jq -r 'def v: if type != "string" then "!" elif . == "" then "!" elif test("\\A[A-Za-z0-9_-]{1,64}\\z") then . else "!" end; if type != "object" then "" else (if has("agent_id") then .agent_id elif has("agentId") then .agentId else null end) | if . == null then "" else v end end' <<<"$input")"
 completed_skills_to_mark=()
-sb_state_seal_lock "$STATE_FILE"
+# No lock, no write: an unlocked read-modify-write of the state can lose a parallel recorder's skill. When the
+# lock stays busy for the whole wait (sb_state_seal_lock, 6 s of the 10 s timeout) nothing is recorded, the user
+# is told so (the lock function has already put one line on stderr) and the skill is recorded when it runs again.
+if ! sb_state_seal_lock "$STATE_FILE"; then
+  sb_emit_hook_message "PostToolUse" "⚠️ Skill not recorded: the state lock stayed busy (another recorder holds ${STATE_FILE}.lock). Invoke the skill again." || true
+  exit 0
+fi
 trap 'sb_state_seal_unlock' EXIT
 
 for raw in "${skills_to_record[@]}"; do
