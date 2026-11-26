@@ -9,8 +9,12 @@
 #                                 the quoted string or line holding it; the failing check prints it.
 #                                 Only that exact text is exempt: any other line of the file is still
 #                                 scanned, and a name in a home-directory-shaped path never is.
+email cursoragent@cursor.com
 file .claude-plugin/marketplace.json 5af7aa1d2d9e53c0
 file .claude-plugin/marketplace.json da5a5b6c8e3670f1
+file .gitleaks-baseline.json 5af7aa1d2d9e53c0
+file .gitleaks-baseline.json c122e6ef6f8d16a0
+file .gitleaks-baseline.json da5a5b6c8e3670f1
 file .planning/enterprise-e2e/CODEX-TEST-APP-PRODUCT-AUDIT.md 6fcf21ebfa6c36a7
 file .planning/enterprise-e2e/CODEX-TEST-APP-PRODUCT-AUDIT.md cd9667cb369b6cd8
 file .planning/milestones/v0.26.0-ROADMAP.md 7d6026e90281aab6
