@@ -136,6 +136,39 @@ rm -rf "$STATE.lock"
 ih_rec inst-a
 assert_eq "the skill is recorded when the lock is free again" "1" "$(sb_state_seal_trusted "$STATE" | grep -c '^inst-a$' || true)"
 
+# 16b2. the notice reaches the model too (additionalContext), not only the user
+assert_contains "the busy-lock notice is also model-visible context" "$out" "additionalContext"
+
+# 16b3. a skill that is not tracked, or only loaded, takes no lock and gets no notice, whatever the lock does
+ih_project h14d
+mkdir "$STATE.lock"
+printf '%s %s\n' "$$" "$(date +%s)" >"$STATE.lock/claim.$$.1"
+out="$(printf '%s' "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:"not-a-tracked-skill"}}')" \
+  | (cd "$PROJ" && SB_STATE_SEAL_LOCK_TRIES=1 SILVER_BULLET_PROJECT_ROOT="$PROJ" bash "$TL_REPO_ROOT/hooks/record-skill.sh") 2>&1)" || true
+assert_not_contains "an untracked skill does not wait for the state lock" "$out" "Skill not recorded"
+rm -rf "$STATE.lock"
+
+# 16b4. a busy lock must not leave the previous skill as the one invoked last (that keeps sb:spec's owner allowance)
+ih_project h14e '.skills.all_tracked=["silver-spec","silver-plan"]'
+ih_rec silver-spec
+assert_eq "silver-spec is the skill invoked last" "silver-spec" "$(sb_state_last_read "$STATE")"
+mkdir "$STATE.lock"
+printf '%s %s\n' "$$" "$(date +%s)" >"$STATE.lock/claim.$$.1"
+printf '%s' "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:"silver-plan"}}')" \
+  | (cd "$PROJ" && SB_STATE_SEAL_LOCK_TRIES=1 SILVER_BULLET_PROJECT_ROOT="$PROJ" bash "$TL_REPO_ROOT/hooks/record-skill.sh") >/dev/null 2>&1 || true
+assert_eq "a busy lock: silver-plan still replaces silver-spec as the last" "silver-plan" "$(sb_state_last_read "$STATE")"
+assert_eq "though it is not in the state" "0" "$(sb_state_seal_trusted "$STATE" | grep -c '^silver-plan$' || true)"
+rm -rf "$STATE.lock"
+
+# 16b5. a state file in a directory that does not exist yet: the recorder makes it and records at once
+ih_project h14f
+rm -rf "$SD/sub"
+out="$(printf '%s' "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:"inst-a"}}')" \
+  | (cd "$PROJ" && SILVER_BULLET_STATE_FILE="$SD/sub/state" SILVER_BULLET_PROJECT_ROOT="$PROJ" bash "$TL_REPO_ROOT/hooks/record-skill.sh") 2>&1)" || true
+assert_not_contains "a missing parent directory is not a busy lock" "$out" "Skill not recorded"
+assert_eq "the skill is in the new state file" "1" "$(grep -c '^inst-a$' "$SD/sub/state" || true)"
+rm -rf "$SD/sub"
+
 # 16c. the record lock (integrity.sh): a busy lock leaves the record as it is
 ih_project h14c
 REC="$(_sb_iv_rec_file "$PROJ")"

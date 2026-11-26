@@ -227,14 +227,24 @@ sb_state_seal_enforce() {
 # had both judged stale, the second removal destroying the first's fresh lock). The first protocol's "pid"
 # file is still read as a claim. A lock path that is a symlink, or a directory of someone else, is refused.
 #
-# The wait is bounded by SB_STATE_SEAL_LOCK_TRIES tenths of a second (default 60 = 6 s) and by the same
-# number of wall-clock seconds, inside the 10 s timeout of record-skill.sh and the session hooks. When the lock
-# is not obtained, sb_state_seal_lock prints one line on stderr and returns 1, and the caller MUST NOT read,
+# The wait of one call is bounded by SB_STATE_SEAL_LOCK_TRIES tenths of a second (default 60 = 6 s; each wait is
+# 0.1 s plus up to 0.04 s of jitter, so the real time is somewhat longer) and by a wall clock of the same number
+# of seconds (whole-second clock: up to a second more). A hook that takes several locks sets one deadline for
+# all of them with sb_state_seal_lock_deadline (6 s after it started, SB_STATE_SEAL_LOCK_DEADLINE, epoch
+# seconds): once it has passed, a lock is still tried and reclaimed, but not waited for. That keeps the sum of
+# the waits inside the 10 s timeout of record-skill.sh and the session hooks. A lock path that cannot be made
+# (a missing or unwritable directory) is not "busy": it fails after a few retries with its own message. When
+# the lock is not obtained, sb_state_seal_lock prints one line on stderr and returns 1, and the caller MUST NOT read,
 # modify or write the file it guards: an unlocked read-modify-write can lose another recorder's line, and a
 # skipped record is visible and is simply made again. Locks nest (the record lock is taken under the state
 # lock): sb_state_seal_unlock releases the one taken last.
 _SB_SEAL_LOCK_CLAIMS=""
 _SB_SEAL_LOCK_CLAIM=""
+sb_state_seal_lock_deadline() { # set the hook's lock deadline once: TRIES (default 60) tenths of a second from now
+  local tries="${SB_STATE_SEAL_LOCK_TRIES:-60}"
+  [[ "$tries" =~ ^[0-9]+$ ]] || tries=60
+  if [[ -z "${SB_STATE_SEAL_LOCK_DEADLINE:-}" ]]; then SB_STATE_SEAL_LOCK_DEADLINE=$(($(date +%s) + (tries + 9) / 10)); fi
+}
 _sb_seal_lock_sane() { # LOCK: status 0 unless LOCK exists as something other than our own plain directory
   local lock="$1"
   [[ -L "$lock" ]] && return 1
@@ -283,7 +293,7 @@ _sb_seal_lock_try() { # LOCK: one attempt; status 0 holding it (the claim is in 
   claim="$lock/claim.$pid.$RANDOM$RANDOM"
   if { printf '%s %s\n' "$pid" "$(date +%s)" >"$claim"; } 2>/dev/null; then
     for entry in "$lock"/*; do
-      if [[ -e "$entry" ]]; then names="$names${entry##*/} "; fi
+      if [[ -e "$entry" || -L "$entry" ]]; then names="$names${entry##*/} "; fi
     done
     if [[ "$names" == "${claim##*/} " ]]; then
       _SB_SEAL_LOCK_CLAIM="$claim"
@@ -295,7 +305,7 @@ _sb_seal_lock_try() { # LOCK: one attempt; status 0 holding it (the claim is in 
   return 1
 }
 sb_state_seal_lock() { # FILE: status 0 holding FILE.lock; status 1 (and a line on stderr) when not obtained
-  local lock="$1.lock" max="${SB_STATE_SEAL_LOCK_TRIES:-60}" waited=0 spins=0 start=$SECONDS limit
+  local lock="$1.lock" max="${SB_STATE_SEAL_LOCK_TRIES:-60}" waited=0 spins=0 missing=0 start=$SECONDS limit now
   [[ "$max" =~ ^[0-9]+$ ]] || max=60
   limit=$(((max + 9) / 10))
   # a refusal must persist across short pauses: a directory another holder is making or removing can look wrong for an instant
@@ -309,12 +319,24 @@ sb_state_seal_lock() { # FILE: status 0 holding FILE.lock; status 1 (and a line 
   spins=0
   until _sb_seal_lock_try "$lock"; do
     if _sb_seal_lock_reclaim "$lock" && ((spins++ < 1000)); then continue; fi
-    if ((waited >= max || SECONDS - start >= limit)); then
-      printf 'silver-bullet: %s stayed busy for %s.%ss; its state is not updated\n' \
+    if [[ ! -e "$lock" && ! -L "$lock" ]]; then
+      # the mkdir failed and nothing is there: the directory above is missing or not writable (a holder that has
+      # just released leaves the path free for the next attempt, so only a run of such failures counts)
+      if ((missing++ >= 3)); then
+        printf 'silver-bullet: cannot create %s (is its directory there and writable?); its state is not updated\n' "$lock" >&2
+        return 1
+      fi
+      sleep 0.05
+      continue
+    fi
+    missing=0
+    now=$(date +%s)
+    if ((waited >= max || SECONDS - start > limit || now >= ${SB_STATE_SEAL_LOCK_DEADLINE:-$((now + 1))})); then
+      printf 'silver-bullet: %s stayed busy; gave up after about %s.%ss of waiting; its state is not updated\n' \
         "$lock" "$((waited / 10))" "$((waited % 10))" >&2
       return 1
     fi
-    sleep "0.1$((RANDOM % 5))" # a tenth of a second (plus jitter) per counted tenth, so the budget is real time
+    sleep "0.1$((RANDOM % 5))" # a tenth of a second (plus jitter) per counted tenth
     waited=$((waited + 1))
   done
   _SB_SEAL_LOCK_CLAIMS="${_SB_SEAL_LOCK_CLAIMS:+$_SB_SEAL_LOCK_CLAIMS$'\n'}$_SB_SEAL_LOCK_CLAIM"
@@ -333,6 +355,11 @@ sb_state_seal_unlock() {
     rm -f -- "$claim"
     rmdir "${claim%/*}" 2>/dev/null || true
   fi
+}
+
+# Release every lock this process holds (an EXIT trap: the locks nest, each release takes the one taken last).
+sb_state_seal_unlock_all() {
+  while [[ -n "$_SB_SEAL_LOCK_CLAIMS" ]]; do sb_state_seal_unlock; done
 }
 
 # A subagent (a worker) has a record of its own: <state>.last.<agent_id> with <state>.lasthwm.<agent_id>, the

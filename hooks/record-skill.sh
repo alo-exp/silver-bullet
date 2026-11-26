@@ -63,7 +63,11 @@ if ! declare -F sb_state_seal_write >/dev/null 2>&1; then
   sb_state_seal_enforce() { :; }
   sb_state_seal_lock() { :; }
   sb_state_seal_unlock() { :; }
+  sb_state_seal_unlock_all() { :; }
+  sb_state_seal_lock_deadline() { :; }
 fi
+# every lock wait of this hook ends at one deadline, whatever the number of locks (state, record)
+sb_state_seal_lock_deadline
 if [[ -f "$_lib_dir/contract-unlock.sh" ]]; then
   # shellcheck source=lib/contract-unlock.sh
   source "$_lib_dir/contract-unlock.sh"
@@ -346,15 +350,10 @@ recorded_any=false
 last_invoked=""
 payload_agent_id="$(jq -r 'def v: if type != "string" then "!" elif . == "" then "!" elif test("\\A[A-Za-z0-9_-]{1,64}\\z") then . else "!" end; if type != "object" then "" else (if has("agent_id") then .agent_id elif has("agentId") then .agentId else null end) | if . == null then "" else v end end' <<<"$input")"
 completed_skills_to_mark=()
-# No lock, no write: an unlocked read-modify-write of the state can lose a parallel recorder's skill. When the
-# lock stays busy for the whole wait (sb_state_seal_lock, 6 s of the 10 s timeout) nothing is recorded, the user
-# is told so (the lock function has already put one line on stderr) and the skill is recorded when it runs again.
-if ! sb_state_seal_lock "$STATE_FILE"; then
-  sb_emit_hook_message "PostToolUse" "⚠️ Skill not recorded: the state lock stayed busy (another recorder holds ${STATE_FILE}.lock). Invoke the skill again." || true
-  exit 0
-fi
-trap 'sb_state_seal_unlock' EXIT
+skills_to_write=()
 
+# Phase 1, no state lock: canonical names, the tracked filter, the loaded-only receipts and the unlock entry of a
+# contract-writing skill (the verified record has its own lock and does not depend on the state).
 for raw in "${skills_to_record[@]}"; do
   loaded_only=false
   if [[ "$raw" == loaded:* ]]; then
@@ -402,6 +401,7 @@ for raw in "${skills_to_record[@]}"; do
   fi
 
   completed_skills_to_mark+=("$skill")
+  skills_to_write+=("$skill")
   # The skill invoked last, re-invocations included (the state lists a skill only once), sealed after the loop.
   # Only a skill this recorder tracks counts (exact canonical name: an untracked helper such as
   # artifact-reviewer neither becomes nor displaces it). The record is the caller's own: a call made inside a
@@ -414,57 +414,80 @@ for raw in "${skills_to_record[@]}"; do
     sb_integrity_baseline "$(sb_integrity_root "$PWD")" unlock "$skill"
     if : 2>/dev/null >"${SB_STATE_DIR}/unlock-hint"; then :; fi
   fi
-
-  # --- Record completed skill invocation (no duplicates) ---
-  mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true
-  # SEC-02: refuse to write through a symlink at STATE_FILE
-  sb_guard_nofollow "$STATE_FILE"
-  touch -- "$STATE_FILE"
-  sb_state_seal_enforce "$STATE_FILE"
-  if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then
-    printf '%s\n' "$skill" >> "$STATE_FILE"
-    recorded_any=true
-  fi
-
-  # Distinguishable pre-plan vs pre-ship quality-gates markers (fixes invocation theater).
-  if [[ "$skill" == "silver-quality-gates" ]] && declare -f sb_qg_detect_mode >/dev/null 2>&1; then
-    repo_root_for_qg=""
-    if [[ -n "$config_file" ]]; then
-      repo_root_for_qg="$(dirname "$config_file")"
-    else
-      repo_root_for_qg="$PWD"
-    fi
-    qg_mode="$(sb_qg_detect_mode "$repo_root_for_qg")"
-    mode_marker="$(sb_qg_mode_marker "$qg_mode")"
-    if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then
-      printf '%s\n' "$mode_marker" >> "$STATE_FILE"
-      recorded_any=true
-    fi
-  fi
-  if [[ "$skill" == "devops-quality-gates" ]] && declare -f sb_qg_detect_mode >/dev/null 2>&1; then
-    repo_root_for_qg=""
-    if [[ -n "$config_file" ]]; then
-      repo_root_for_qg="$(dirname "$config_file")"
-    else
-      repo_root_for_qg="$PWD"
-    fi
-    qg_mode="$(sb_qg_detect_mode "$repo_root_for_qg")"
-    mode_marker="$(sb_dqg_mode_marker "$qg_mode")"
-    if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then
-      printf '%s\n' "$mode_marker" >> "$STATE_FILE"
-      recorded_any=true
-    fi
-  fi
 done
 
-if [[ "${recorded_any:-false}" == true ]]; then
-  sb_state_seal_write "$STATE_FILE"
-  # the keyed record remembers that skills were tracked here (a deleted counter file proves nothing)
-  if declare -F sb_integrity_baseline >/dev/null 2>&1; then sb_integrity_baseline "$(sb_integrity_root "$PWD")" tracked; fi
+# Phase 2, under the state lock: only when a skill is to be written. No lock, no write: an unlocked
+# read-modify-write of the state can lose a parallel recorder's skill. The lock waits at most until the
+# deadline of this hook (sb_state_seal_lock_deadline: 6 s of the 10 s timeout, shared with the record locks).
+# When it is not obtained nothing is recorded and the user and the model are told; the skill is recorded when it
+# is invoked again. The keyed record of the skill invoked last is still updated (it has files of its own and
+# only ever narrows what a worker may write): a skill that cannot be recorded must not leave the previous one
+# (sb:spec) as the last, which would keep an owner allowance the new skill (sb:plan) has ended.
+if [[ ${#skills_to_write[@]} -gt 0 ]]; then
+  mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true
+  if ! sb_state_seal_lock "$STATE_FILE"; then
+    sb_state_last_write "$STATE_FILE" "$last_invoked" "$payload_agent_id"
+    sb_emit_hook_decision "PostToolUse" none "" \
+      "Skill not recorded: the state lock ${STATE_FILE}.lock could not be taken (busy or not creatable), so ${skills_to_write[*]} is not in the state. Invoke the skill again." \
+      "⚠️ Skill not recorded: the state lock could not be taken. Invoke the skill again."
+    exit 0
+  fi
+  trap 'sb_state_seal_unlock_all' EXIT
+
+  for skill in "${skills_to_write[@]}"; do
+    # --- Record completed skill invocation (no duplicates) ---
+    # SEC-02: refuse to write through a symlink at STATE_FILE
+    sb_guard_nofollow "$STATE_FILE"
+    touch -- "$STATE_FILE"
+    sb_state_seal_enforce "$STATE_FILE"
+    if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then
+      printf '%s\n' "$skill" >> "$STATE_FILE"
+      recorded_any=true
+    fi
+
+    # Distinguishable pre-plan vs pre-ship quality-gates markers (fixes invocation theater).
+    if [[ "$skill" == "silver-quality-gates" ]] && declare -f sb_qg_detect_mode >/dev/null 2>&1; then
+      repo_root_for_qg=""
+      if [[ -n "$config_file" ]]; then
+        repo_root_for_qg="$(dirname "$config_file")"
+      else
+        repo_root_for_qg="$PWD"
+      fi
+      qg_mode="$(sb_qg_detect_mode "$repo_root_for_qg")"
+      mode_marker="$(sb_qg_mode_marker "$qg_mode")"
+      if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then
+        printf '%s\n' "$mode_marker" >> "$STATE_FILE"
+        recorded_any=true
+      fi
+    fi
+    if [[ "$skill" == "devops-quality-gates" ]] && declare -f sb_qg_detect_mode >/dev/null 2>&1; then
+      repo_root_for_qg=""
+      if [[ -n "$config_file" ]]; then
+        repo_root_for_qg="$(dirname "$config_file")"
+      else
+        repo_root_for_qg="$PWD"
+      fi
+      qg_mode="$(sb_qg_detect_mode "$repo_root_for_qg")"
+      mode_marker="$(sb_dqg_mode_marker "$qg_mode")"
+      if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then
+        printf '%s\n' "$mode_marker" >> "$STATE_FILE"
+        recorded_any=true
+      fi
+    fi
+  done
+
+  if [[ "${recorded_any:-false}" == true ]]; then
+    sb_state_seal_write "$STATE_FILE"
+  fi
+  # Keyed record of the skill invoked last: read by planning-file-guard's owner allowance.
+  if [[ -n "$last_invoked" ]]; then sb_state_last_write "$STATE_FILE" "$last_invoked" "$payload_agent_id"; fi
+  sb_state_seal_unlock
+  # the keyed record remembers that skills were tracked here (a deleted counter file proves nothing); it has its
+  # own lock, taken after the state lock is released so that the two waits never add up inside one lock
+  if [[ "${recorded_any:-false}" == true ]] && declare -F sb_integrity_baseline >/dev/null 2>&1; then
+    sb_integrity_baseline "$(sb_integrity_root "$PWD")" tracked
+  fi
 fi
-# Keyed record of the skill invoked last: read by planning-file-guard's owner allowance.
-if [[ -n "$last_invoked" ]]; then sb_state_last_write "$STATE_FILE" "$last_invoked" "$payload_agent_id"; fi
-sb_state_seal_unlock
 
 if [[ ${#completed_skills_to_mark[@]} -gt 0 ]] && declare -F sb_session_ledger_mark_completed >/dev/null 2>&1; then
   for skill in "${completed_skills_to_mark[@]}"; do

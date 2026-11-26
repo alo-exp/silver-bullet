@@ -359,7 +359,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 281,
+   "line": 285,
    "kind": "config",
    "snippet": "if [[ -f \"$search_dir/.silver-bullet.json\" ]] && [[ -f \"$search_dir/silver-bullet.md\" ]]; then",
    "record": "A",
@@ -367,7 +367,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 282,
+   "line": 286,
    "kind": "config",
    "snippet": "config_file=\"$search_dir/.silver-bullet.json\"",
    "record": "A",
@@ -375,7 +375,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 305,
+   "line": 309,
    "kind": "config",
    "snippet": "STATE_FILE=$(jq -r '.state.state_file // \"\"' \"$config_file\")",
    "record": "A",
@@ -383,7 +383,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 334,
+   "line": 338,
    "kind": "config",
    "snippet": "custom_tracked=$(jq -r '(.skills.all_tracked // []) | join(\" \")' \"$config_file\")",
    "record": "A",
@@ -391,7 +391,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 424,
+   "line": 443,
    "kind": "state",
    "snippet": "if ! grep -Fqx -- \"$skill\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "A",
@@ -399,7 +399,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 439,
+   "line": 458,
    "kind": "state",
    "snippet": "if ! grep -Fqx -- \"$mode_marker\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "A",
@@ -407,7 +407,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 453,
+   "line": 472,
    "kind": "state",
    "snippet": "if ! grep -Fqx -- \"$mode_marker\" \"$STATE_FILE\" 2>/dev/null; then",
    "record": "A",
@@ -415,7 +415,7 @@
   },
   {
    "file": "hooks/record-skill.sh",
-   "line": 482,
+   "line": 505,
    "kind": "state",
    "snippet": "[[ -f \"$STATE_FILE\" ]] && state_contents=\"$(cat \"$STATE_FILE\" 2>/dev/null || true)\"",
    "record": "A",

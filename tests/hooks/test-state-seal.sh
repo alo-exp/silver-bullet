@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # hooks/lib/state-seal.sh: the keyed seal, the counter, tamper evidence and the event log.
+# shellcheck disable=SC2218  # the reclaim-race case shadows rm and date with functions, on purpose
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
@@ -397,6 +398,89 @@ assert_file_absent "the inner lock is released first" "$S.rec.lock"
 assert_file_exists "the outer one is still held" "$LK"
 sb_state_seal_unlock
 assert_file_absent "then the outer" "$LK"
+# an EMPTY claim file (a holder dead between creating it and writing its pid, or one still being written): fresh is
+# left alone, over a minute old it is taken over
+mkdir "$LK"
+: >"$LK/claim.1.3"
+rc=0
+SB_STATE_SEAL_LOCK_TRIES=1 sb_state_seal_lock "$S" 2>/dev/null || rc=$?
+assert_eq "a fresh empty claim is a holder being written: not taken" "1" "$rc"
+touch -t 202001010000 "$LK/claim.1.3"
+sb_state_seal_lock "$S"
+assert_file_absent "an old empty claim is taken over" "$LK/claim.1.3"
+sb_state_seal_unlock
+# a reclaim that finds the lock path turned into a symlink touches nothing
+rm -rf "$LK"
+ln -s "$TL_TMP/lktarget" "$LK"
+rc=0
+_sb_seal_lock_reclaim "$LK" || rc=$?
+assert_eq "a reclaim of a symlinked lock path is refused" "1" "$rc"
+assert_file_exists "and its target is untouched" "$TL_TMP/lktarget/f"
+rm -f "$LK"
+# an unlock whose directory holds another entry keeps the directory (rmdir only): our claim goes, nothing else
+sb_state_seal_lock "$S"
+: >"$LK/other"
+sb_state_seal_unlock
+assert_file_exists "a foreign entry keeps the lock directory" "$LK/other"
+assert_eq "and our claim is gone" "1" "$(claims)"
+rm -rf "$LK"
+# no robbery by the reclaim itself: after it removed a stale claim, a NEW owner appears (the directory was
+# removed and made again by someone else) before the rmdir; the new owner's claim must survive
+mkdir "$LK"
+printf '99999999 %s\n' "$(date +%s)" >"$LK/claim.99999999.1"
+rm() {
+  command rm "$@"
+  if [[ -d "$LK" && -z "$(ls "$LK")" ]]; then
+    command rmdir "$LK"
+    mkdir "$LK"
+    printf '%s %s\n' "$$" "$(date +%s)" >"$LK/claim.$$.4"
+  fi
+}
+rc=0
+_sb_seal_lock_reclaim "$LK" || rc=$?
+unset -f rm
+assert_eq "the reclaim finds the directory taken again: it does not report it gone" "1" "$rc"
+assert_file_exists "the new owner's claim survives the reclaim" "$LK/claim.$$.4"
+rm -rf "$LK"
+# a dangling symlink among the entries is an entry: the claim is not the sole one
+date() { mkdir -p "$LK"; ln -s "$TL_TMP/nowhere" "$LK/other"; command date "$@"; }
+rc=0
+_sb_seal_lock_try "$LK" || rc=$?
+unset -f date
+assert_eq "a dangling link beside the claim keeps the lock from being held" "1" "$rc"
+assert_eq "and the reclaim counts it too (the lock stays held)" "1" "$(_sb_seal_lock_reclaim "$LK" || echo 1)"
+rm -rf "$LK"
+# a lock that cannot be made (the directory above is missing) is not "busy": it fails at once with its own message
+rc=0
+err="$(sb_state_seal_lock "$TL_TMP/nodir/state" 2>&1 >/dev/null)" || rc=$?
+assert_eq "an uncreatable lock path fails" "1" "$rc"
+assert_contains "with a message of its own" "$err" "cannot create"
+assert_not_contains "that does not call it busy" "$err" "stayed busy"
+# unlock_all releases every lock held, innermost first; nothing held: nothing happens
+sb_state_seal_lock "$S"
+sb_state_seal_lock "$S.rec"
+sb_state_seal_unlock_all
+assert_file_absent "unlock_all releases the outer lock" "$LK"
+assert_file_absent "and the inner one" "$S.rec.lock"
+assert_eq "and holds nothing" "" "$_SB_SEAL_LOCK_CLAIMS"
+sb_state_seal_unlock_all
+# one deadline for all the locks of a hook: set once from the tries; past it a busy lock is not waited for
+unset SB_STATE_SEAL_LOCK_DEADLINE
+SB_STATE_SEAL_LOCK_TRIES=abc sb_state_seal_lock_deadline
+d1="$SB_STATE_SEAL_LOCK_DEADLINE"
+assert_eq "the deadline is about six seconds away (an unreadable tries setting counts as the default)" "1" "$((d1 - $(date +%s) >= 5 && d1 - $(date +%s) <= 7 ? 1 : 0))"
+sb_state_seal_lock_deadline
+assert_eq "it is set once" "$d1" "$SB_STATE_SEAL_LOCK_DEADLINE"
+mkdir "$LK"
+printf '%s %s\n' "$$" "$(date +%s)" >"$LK/claim.$$.7"
+SB_STATE_SEAL_LOCK_DEADLINE=1
+rc=0
+err="$(SB_STATE_SEAL_LOCK_TRIES=600 sb_state_seal_lock "$S" 2>&1 >/dev/null)" || rc=$?
+unset SB_STATE_SEAL_LOCK_DEADLINE
+assert_eq "past the deadline a busy lock is given up at once" "1" "$rc"
+assert_contains "saying so" "$err" "stayed busy"
+assert_file_exists "and the owner's claim stands" "$LK/claim.$$.7"
+rm -rf "$LK"
 # a claim that is a symlink is not a claim to release
 mkdir "$LK"
 ln -s "$TL_TMP/lktarget/f" "$LK/claim.$$.8"
