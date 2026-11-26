@@ -169,6 +169,27 @@ assert_not_contains "a missing parent directory is not a busy lock" "$out" "Skil
 assert_eq "the skill is in the new state file" "1" "$(grep -c '^inst-a$' "$SD/sub/state" || true)"
 rm -rf "$SD/sub"
 
+# 16b6. the record lock is waited for only AFTER the state lock is released: a recorder that has written its skill and
+# waits for a busy record lock does not hold the state lock (parallel recorders would otherwise queue behind it)
+ih_project h14g
+REC="$(_sb_iv_rec_file "$PROJ")"
+mkdir "$REC.lock"
+printf '%s %s\n' "$$" "$(date +%s)" >"$REC.lock/claim.$$.3"
+printf '%s' "$(jq -cn '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:"inst-a"}}')" \
+  | (cd "$PROJ" && SB_STATE_SEAL_LOCK_TRIES=100 SILVER_BULLET_PROJECT_ROOT="$PROJ" exec bash "$TL_REPO_ROOT/hooks/record-skill.sh") >/dev/null 2>&1 &
+rec_pid=$!
+n=0
+until grep -qx inst-a "$STATE" 2>/dev/null || [[ $n -ge 300 ]]; do n=$((n + 1)); read -r -t 0.1 <> <(:) || true; done
+assert_eq "the recorder has written its skill" "1" "$(grep -cx inst-a "$STATE" || true)"
+# the state lock is released right after the write; give the recorder up to 5 s to get there (bounded polls)
+n=0
+until [[ ! -e "$STATE.lock" || $n -ge 50 ]]; do n=$((n + 1)); read -r -t 0.1 <> <(:) || true; done
+assert_file_absent "the state lock is released while the recorder goes on to wait for the record lock" "$STATE.lock"
+assert_eq "and the recorder is still waiting for the record lock" "alive" "$(kill -0 "$rec_pid" 2>/dev/null && echo alive || echo gone)"
+kill "$rec_pid" 2>/dev/null || true
+wait "$rec_pid" 2>/dev/null || true
+rm -rf "$REC.lock" "$STATE.lock"
+
 # 16c. the record lock (integrity.sh): a busy lock leaves the record as it is
 ih_project h14c
 REC="$(_sb_iv_rec_file "$PROJ")"

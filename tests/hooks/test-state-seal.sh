@@ -481,6 +481,33 @@ assert_eq "past the deadline a busy lock is given up at once" "1" "$rc"
 assert_contains "saying so" "$err" "stayed busy"
 assert_file_exists "and the owner's claim stands" "$LK/claim.$$.7"
 rm -rf "$LK"
+# the missing-path counter ends the wait: bounded by a timeout, so a loop that never ends fails instead of hanging
+rc=0
+timeout 20 bash -c 'source "$1"; sb_state_seal_lock "$2"' _ "$TL_REPO_ROOT/hooks/lib/state-seal.sh" "$TL_TMP/nodir/state" 2>/dev/null || rc=$?
+assert_eq "an uncreatable lock path returns within the timeout (status 1, not 124)" "1" "$rc"
+# a non-numeric deadline is replaced, never evaluated; a garbage deadline in the lock is read as none
+SB_STATE_SEAL_LOCK_DEADLINE='x+$(touch '"$TL_TMP"'/evaluated)'
+sb_state_seal_lock_deadline
+assert_match "an inherited non-numeric deadline is replaced by a number" '^[0-9]+$' "$SB_STATE_SEAL_LOCK_DEADLINE"
+assert_file_absent "and was never evaluated" "$TL_TMP/evaluated"
+SB_STATE_SEAL_LOCK_DEADLINE='y+$(touch '"$TL_TMP"'/evaluated)'
+sb_state_seal_lock "$S"
+assert_file_absent "a garbage deadline is not evaluated by the lock either" "$TL_TMP/evaluated"
+sb_state_seal_unlock
+unset SB_STATE_SEAL_LOCK_DEADLINE
+# one deadline for the several locks of a hook: the first wait uses it up, the second gives up at once
+mkdir "$LK"
+printf '%s %s\n' "$$" "$(date +%s)" >"$LK/claim.$$.8"
+SB_STATE_SEAL_LOCK_DEADLINE=$(($(date +%s) + 2))
+t0=$SECONDS
+SB_STATE_SEAL_LOCK_TRIES=600 sb_state_seal_lock "$S" 2>/dev/null || true
+t1=$SECONDS
+SB_STATE_SEAL_LOCK_TRIES=600 sb_state_seal_lock "$S" 2>/dev/null || true
+t2=$SECONDS
+assert_eq "the first wait ends at the deadline (3 s at most)" "1" "$((t1 - t0 <= 3 ? 1 : 0))"
+assert_eq "the second lock of the hook does not wait again (at most a second)" "1" "$((t2 - t1 <= 1 ? 1 : 0))"
+unset SB_STATE_SEAL_LOCK_DEADLINE
+rm -rf "$LK"
 # a claim that is a symlink is not a claim to release
 mkdir "$LK"
 ln -s "$TL_TMP/lktarget/f" "$LK/claim.$$.8"
