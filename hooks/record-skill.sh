@@ -425,6 +425,13 @@ done
 # (sb:spec) as the last, which would keep an owner allowance the new skill (sb:plan) has ended.
 if [[ ${#skills_to_write[@]} -gt 0 ]]; then
   mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true
+  if [[ ! -d "$(dirname "$STATE_FILE")" ]]; then
+    # Not a busy lock: the state directory cannot exist, so asking for a retry would not help.
+    sb_emit_hook_decision "PostToolUse" none "" \
+      "Skill not recorded: the Silver Bullet state directory $(dirname "$STATE_FILE") cannot be created, so ${skills_to_write[*]} is not in the state. No skill can be recorded until that path is a writable directory." \
+      "⚠️ Skill not recorded: the Silver Bullet state directory cannot be created."
+    exit 0
+  fi
   if ! sb_state_seal_lock "$STATE_FILE"; then
     sb_state_last_write "$STATE_FILE" "$last_invoked" "$payload_agent_id"
     sb_emit_hook_decision "PostToolUse" none "" \

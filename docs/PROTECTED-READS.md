@@ -50,10 +50,10 @@ Every place in `hooks/` (shell and Python), `hooks/lib/`, `scripts/` and `skills
 | hooks/record-skill.sh:286 | config | `config_file="$search_dir/.silver-bullet.json"` | A | sanctioned writer: keeps the record in step |
 | hooks/record-skill.sh:309 | config | `STATE_FILE=$(jq -r '.state.state_file // ""' "$config_file")` | A | sanctioned writer: keeps the record in step |
 | hooks/record-skill.sh:338 | config | `custom_tracked=$(jq -r '(.skills.all_tracked // []) \| join(" ")' "$config_file")` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:443 | state | `if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:458 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:472 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
-| hooks/record-skill.sh:505 | state | `[[ -f "$STATE_FILE" ]] && state_contents="$(cat "$STATE_FILE" 2>/dev/null \|\| true)"` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:450 | state | `if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:465 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:479 | state | `if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then` | A | sanctioned writer: keeps the record in step |
+| hooks/record-skill.sh:512 | state | `[[ -f "$STATE_FILE" ]] && state_contents="$(cat "$STATE_FILE" 2>/dev/null \|\| true)"` | A | sanctioned writer: keeps the record in step |
 | hooks/session-log-init.sh:68 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | X | session log bookkeeping, no gate decision |
 | hooks/session-start:108 | config | `if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; ` | A | the trust anchor: baselines the record at the end of session start |
 | hooks/session-start:176 | config | `if [[ -n "$_rt_hb_script" && -f "${sb_project_root}/.silver-bullet.json" ]]; then` | A | the trust anchor: baselines the record at the end of session start |
