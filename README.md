@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.53.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.53.0)
+[![version](https://img.shields.io/badge/version-v0.54.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.54.0)
 [![license](https://img.shields.io/badge/license-BUSL--1.1-blue)](LICENSE)
 [![website](https://img.shields.io/badge/site-sb.alolabs.dev-green)](https://sb.alolabs.dev)
 
@@ -292,8 +292,8 @@ Run `bash scripts/sb-doctor.sh` for an install and activation audit and `bash sc
 
 ## Current Release
 
-- Version: `0.53.0`
-- Release: [v0.53.0](https://github.com/alo-exp/silver-bullet/releases/tag/v0.53.0)
+- Version: `0.54.0`
+- Release: [v0.54.0](https://github.com/alo-exp/silver-bullet/releases/tag/v0.54.0)
 - Changelog: [CHANGELOG.md](CHANGELOG.md) · [site/changelog/](https://sb.alolabs.dev/changelog/)
 
 ## License

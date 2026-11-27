@@ -482,7 +482,9 @@ sb_integrity_baseline() { # ROOT MODE [..]
   state="$(_sb_iv_state_dir)/state"
   rec="$(_sb_iv_rec_file "$root")"
   [[ -n "$root" ]] || return 0
-  sb_state_seal_lock "$rec"
+  # Lock not obtained: the record is left as it is (a refresh not made leaves a stale record, which the gates
+  # read as a drift or an unfinished baseline, i.e. strictly; the next session start or recorded skill makes it).
+  sb_state_seal_lock "$rec" || return 0
   if [[ "$mode" == session ]]; then
     body="$(_sb_iv_live_body "$root")"
     marker_state=ABSENT
@@ -574,7 +576,7 @@ sb_integrity_set_workflow() { # ROOT VALUE
   local root="$1" value="$2" state rec body cfg new line
   state="$(_sb_iv_state_dir)/state"
   rec="$(_sb_iv_rec_file "$root")"
-  sb_state_seal_lock "$rec"
+  sb_state_seal_lock "$rec" || return 0
   if [[ -f "$rec" ]] && _sb_iv_authentic "$rec" "$state" "$root"; then
     cfg="${_SB_IV_BODY#config$'\t'*$'\t'}"
     cfg="${cfg%%$'\n'*}"

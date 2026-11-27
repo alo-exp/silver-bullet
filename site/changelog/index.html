@@ -85,6 +85,27 @@ main{padding:48px 24px 96px}
 </header>
  <main>
   <div class="container">
+  <article class="release" id="v0-54-0">
+   <div class="release-header">
+    <h2>v0.54.0</h2>
+    <time class="release-date" datetime="2026-11-26">2026-11-26</time>
+   </div>
+   <p class="release-summary">Minor release: an adversarial review of the whole product (491 findings fixed, rejected with evidence or recorded as known limits), 100% measured test coverage, the native review-fix ladder on Claude subagents, and a security cleanup of the repository history.</p>
+   <h3>Breaking Changes</h3>
+   <ul>
+    <li>Cursor is no longer a Silver Bullet host; run <code>scripts/uninstall-cursor-legacy.sh</code> once to remove old files under <code>~/.cursor</code>.</li>
+    <li>The review-fix ladder runs on native Claude subagents (Claude-only; Codex reports it as not yet verified).</li>
+    <li>Contract files are verified against a keyed integrity record at every gate decision; edits to <code>.silver-bullet.json</code> or <code>silver-bullet.md</code> take effect after a session restart.</li>
+    <li>Tool consent is per user, never from the repository; <code>SB_DOCTOR_ASSUME_YES</code> is removed.</li>
+    <li>The repository history was rewritten to remove worm artifacts and two forged commits; re-clone, or reset to <code>origin/main</code>.</li>
+   </ul>
+   <h3>Security and reliability</h3>
+   <ul>
+    <li>Fail-closed delivery gates classified by a real shell analyzer; a tree-bound release marker; claim-protocol locks that never rob a live owner.</li>
+    <li>Every GitHub Action pinned to a full commit SHA; marketplace entries pinned to the release tag.</li>
+   </ul>
+   <p>Full details: <a href="https://github.com/alo-exp/silver-bullet/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">CHANGELOG.md</a>.</p>
+  </article>
   <article class="release" id="v0-53-0">
    <div class="release-header">
     <h2>v0.53.0</h2>

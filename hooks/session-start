@@ -764,6 +764,7 @@ if [[ "$sb_should_mutate" == true && -n "$sb_project_root" && -f "$_lib_dir/inte
     fi
   fi
   _sb_state_seal_log "${SB_STATE_DIR}/state" "integrity baseline recorded by session-start (source: ${sb_session_source}) for $sb_iv_root"
+  sb_state_seal_lock_deadline
   sb_integrity_baseline "$sb_iv_root" session
   if [[ "$sb_session_source" == startup || "$sb_session_source" == clear ]]; then sb_integrity_prune_registry; fi
 fi

@@ -10,7 +10,7 @@ This page lists every key in the template, which code reads it, and the keys the
 
 | Key | Template value | Meaning | Reader |
 |-----|----------------|---------|--------|
-| `config_version` | current release (for example `0.53.0`) | The Silver Bullet release whose config schema this file matches. A project value older than the template's marks the config as legacy (`sb-doctor.sh` check D6 fails; `hooks/lib/required-skills.sh` treats it as legacy). Kept equal to `package.json` in the template by `tests/scripts/test-release-version-alignment.sh` | `required-skills.sh`, `sb-doctor.sh` |
+| `config_version` | current release (for example `0.54.0`) | The Silver Bullet release whose config schema this file matches. A project value older than the template's marks the config as legacy (`sb-doctor.sh` check D6 fails; `hooks/lib/required-skills.sh` treats it as legacy). Kept equal to `package.json` in the template by `tests/scripts/test-release-version-alignment.sh` | `required-skills.sh`, `sb-doctor.sh` |
 | `version` | `0.46.0` | Legacy predecessor of `config_version`, read only as a fallback when `config_version` is absent. `sb-migrate-config.sh` sets both to the plugin version | same |
 | `sb_initiated` | `false` | `true` once `/sb:init` (or `scripts/sb-migrate-initiated.sh`) has run; several gates (jq-missing blocks, prerequisite probes) apply only to initiated projects | `hooks/lib/project-active.sh`, `session-start` |
 | `sb_enforcement_tier` | `null` | Persisted capability tier (0–3) of the host; probed and written by the hooks. Delivery is blocked when the effective tier says hooks are inactive | `hooks/lib/enforcement-tier-gate.sh` |

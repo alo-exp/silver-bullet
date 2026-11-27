@@ -79,6 +79,7 @@ if [[ "$skill" == "silver-ship" && -f "$_lib_dir/integrity.sh" ]]; then
       updated="$(jq '.project.active_workflow = "full-dev-cycle"' "$repo_root/.silver-bullet.json" 2>/dev/null || true)"
     fi
     if [[ -n "$updated" ]] && printf '%s\n' "$updated" | sb_atomic_write_file "$repo_root/.silver-bullet.json"; then
+      sb_state_seal_lock_deadline
       sb_integrity_set_workflow "$SB_IV_ROOT" full-dev-cycle
       reset_note="SB ► active_workflow reset to full-dev-cycle after devops ship"
       msg="${msg:+$msg — }${reset_note}"
